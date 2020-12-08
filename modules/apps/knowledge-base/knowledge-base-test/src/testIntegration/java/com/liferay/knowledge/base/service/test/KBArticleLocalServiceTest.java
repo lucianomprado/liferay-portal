@@ -30,22 +30,21 @@ import com.liferay.knowledge.base.service.KBArticleLocalServiceUtil;
 import com.liferay.knowledge.base.service.KBCommentLocalServiceUtil;
 import com.liferay.knowledge.base.service.KBFolderLocalServiceUtil;
 import com.liferay.knowledge.base.util.comparator.KBArticlePriorityComparator;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.ModelHintsUtil;
 import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.security.auth.PrincipalThreadLocal;
 import com.liferay.portal.kernel.service.ClassNameLocalServiceUtil;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.WorkflowDefinitionLinkLocalServiceUtil;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
-import com.liferay.portal.kernel.test.rule.Sync;
-import com.liferay.portal.kernel.test.rule.SynchronousDestinationTestRule;
 import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
@@ -57,6 +56,8 @@ import com.liferay.subscription.service.SubscriptionLocalServiceUtil;
 import java.io.InputStream;
 
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -70,15 +71,12 @@ import org.junit.runner.RunWith;
  * @author Roberto Díaz
  */
 @RunWith(Arquillian.class)
-@Sync
 public class KBArticleLocalServiceTest {
 
 	@ClassRule
 	@Rule
 	public static final AggregateTestRule aggregateTestRule =
-		new AggregateTestRule(
-			new LiferayIntegrationTestRule(),
-			SynchronousDestinationTestRule.INSTANCE);
+		new LiferayIntegrationTestRule();
 
 	@Before
 	public void setUp() throws Exception {
@@ -137,7 +135,7 @@ public class KBArticleLocalServiceTest {
 	}
 
 	@Test
-	public void testAddApprovedKBArticleInsideNonLatestApprovedKBArticle()
+	public void testAddApprovedKBArticleInsideNonlatestApprovedKBArticle()
 		throws Exception {
 
 		_serviceContext.setWorkflowAction(WorkflowConstants.ACTION_PUBLISH);
@@ -259,7 +257,7 @@ public class KBArticleLocalServiceTest {
 			_serviceContext);
 	}
 
-	@Test(expected = KBArticleUrlTitleException.class)
+	@Test
 	public void testAddKBArticleWithBlankURLTitle() throws Exception {
 		String urlTitle = StringPool.BLANK;
 
@@ -270,6 +268,32 @@ public class KBArticleLocalServiceTest {
 			StringUtil.randomString(), null, null, null, _serviceContext);
 
 		Assert.assertTrue(Validator.isNotNull(kbArticle.getUrlTitle()));
+	}
+
+	@Test
+	public void testAddKBArticleWithCustomHTML() throws Exception {
+		String name = PrincipalThreadLocal.getName();
+
+		try {
+			PrincipalThreadLocal.setName(TestPropsValues.getUserId());
+
+			String content =
+				"<a href=\"http://www.liferay.com\" target=\"_blank\" />";
+
+			KBArticle kbArticle = KBArticleLocalServiceUtil.addKBArticle(
+				_user.getUserId(), _kbFolderClassNameId,
+				KBFolderConstants.DEFAULT_PARENT_FOLDER_ID,
+				StringUtil.randomString(), StringUtil.randomString(), content,
+				StringUtil.randomString(), null, null, null, _serviceContext);
+
+			Matcher matcher = _tagetBlankPattern.matcher(
+				kbArticle.getContent());
+
+			Assert.assertTrue(matcher.matches());
+		}
+		finally {
+			PrincipalThreadLocal.setName(name);
+		}
 	}
 
 	@Test(expected = KBArticleUrlTitleException.class)
@@ -331,7 +355,7 @@ public class KBArticleLocalServiceTest {
 		int urlTitleMaxSize = ModelHintsUtil.getMaxLength(
 			KBArticle.class.getName(), "urlTitle");
 
-		String invalidURLTitle = StringUtil.randomString(urlTitleMaxSize);
+		String invalidURLTitle = StringUtil.randomString(urlTitleMaxSize + 1);
 
 		KBArticleLocalServiceUtil.addKBArticle(
 			_user.getUserId(), _kbFolderClassNameId,
@@ -938,12 +962,13 @@ public class KBArticleLocalServiceTest {
 
 		String fileName = "markdown-articles.zip";
 
-		InputStream zipFileStream = classLoader.getResourceAsStream(fileName);
+		InputStream zipFileInputStream = classLoader.getResourceAsStream(
+			fileName);
 
 		KBArticleLocalServiceUtil.addKBArticlesMarkdown(
 			_user.getUserId(), _group.getGroupId(),
 			KBFolderConstants.DEFAULT_PARENT_FOLDER_ID, fileName, true,
-			zipFileStream, _serviceContext);
+			zipFileInputStream, _serviceContext);
 	}
 
 	protected void updateWorkflowDefinitionForKBArticle(
@@ -954,6 +979,9 @@ public class KBArticleLocalServiceTest {
 			_user.getUserId(), _user.getCompanyId(), _group.getGroupId(),
 			KBArticle.class.getName(), 0, 0, workflowDefinition);
 	}
+
+	private static final Pattern _tagetBlankPattern = Pattern.compile(
+		".*target=\"_blank\".*");
 
 	@DeleteAfterTestRun
 	private Group _group;

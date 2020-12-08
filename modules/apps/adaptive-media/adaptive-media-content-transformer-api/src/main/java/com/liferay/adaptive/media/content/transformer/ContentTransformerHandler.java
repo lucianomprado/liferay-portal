@@ -14,81 +14,13 @@
 
 package com.liferay.adaptive.media.content.transformer;
 
-import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMap;
-import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMapFactory;
-import com.liferay.portal.kernel.log.Log;
-import com.liferay.portal.kernel.log.LogFactoryUtil;
-
-import java.util.List;
-
-import org.osgi.framework.BundleContext;
-import org.osgi.service.component.annotations.Activate;
-import org.osgi.service.component.annotations.Component;
-import org.osgi.service.component.annotations.Deactivate;
-
 /**
- * @author Alejandro Tardín
+ * @author Lance Ji
  */
-@Component(immediate = true, service = ContentTransformerHandler.class)
-public class ContentTransformerHandler {
+public interface ContentTransformerHandler {
 
 	public <T> T transform(
-		ContentTransformerContentType<T> contentType, T originalContent) {
-
-		List<ContentTransformer> contentTransformers =
-			_serviceTrackerMap.getService(contentType);
-
-		if (contentTransformers == null) {
-			return originalContent;
-		}
-
-		T transformedContent = originalContent;
-
-		for (ContentTransformer<T> contentTransformer : contentTransformers) {
-			try {
-				transformedContent = contentTransformer.transform(
-					transformedContent);
-			}
-			catch (Exception e) {
-				_log.error(e);
-			}
-		}
-
-		return transformedContent;
-	}
-
-	@Activate
-	protected void activate(BundleContext bundleContext) {
-		_serviceTrackerMap = ServiceTrackerMapFactory.openMultiValueMap(
-			bundleContext, ContentTransformer.class, null,
-			(serviceReference, emitter) -> {
-				ContentTransformer contentTransformer =
-					bundleContext.getService(serviceReference);
-
-				emitter.emit(contentTransformer.getContentType());
-
-				bundleContext.ungetService(serviceReference);
-			});
-	}
-
-	@Deactivate
-	protected void deactivate() {
-		_serviceTrackerMap.close();
-	}
-
-	protected final void setServiceTrackerMap(
-		ServiceTrackerMap
-			<ContentTransformerContentType, List<ContentTransformer>>
-				serviceTrackerMap) {
-
-		_serviceTrackerMap = serviceTrackerMap;
-	}
-
-	private static final Log _log = LogFactoryUtil.getLog(
-		ContentTransformerHandler.class);
-
-	private ServiceTrackerMap
-		<ContentTransformerContentType, List<ContentTransformer>>
-			_serviceTrackerMap;
+		ContentTransformerContentType<T> contentTransformerContentType,
+		T originalContent);
 
 }

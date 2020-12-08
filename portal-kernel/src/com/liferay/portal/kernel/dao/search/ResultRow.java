@@ -51,75 +51,35 @@ public interface ResultRow {
 
 	public void addDate(int index, Date date, String href);
 
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link #addJSP(String, String, int,
-	 *             String, ServletContext, HttpServletRequest ,
-	 *             HttpServletResponse)}
-	 */
-	@Deprecated
-	public void addJSP(int index, String path);
-
 	public void addJSP(
 		int index, String path, ServletContext servletContext,
-		HttpServletRequest request, HttpServletResponse response);
-
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	public void addJSP(
-		int index, String align, String valign, int colspan, String path);
+		HttpServletRequest httpServletRequest,
+		HttpServletResponse httpServletResponse);
 
 	public void addJSP(
 		int index, String align, String valign, int colspan, String path,
-		ServletContext servletContext, HttpServletRequest request,
-		HttpServletResponse response);
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link #addJSP(String, String,
-	 *             ServletContext, HttpServletRequest , HttpServletResponse)}
-	 */
-	@Deprecated
-	public void addJSP(String path);
+		ServletContext servletContext, HttpServletRequest httpServletRequest,
+		HttpServletResponse httpServletResponse);
 
 	public void addJSP(
-		String path, ServletContext servletContext, HttpServletRequest request,
-		HttpServletResponse response);
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link #addJSP(String, String,
-	 *             ServletContext, HttpServletRequest , HttpServletResponse)}
-	 */
-	@Deprecated
-	public void addJSP(String path, String cssClass);
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link #addJSP(String, String, int,
-	 *             String, ServletContext, HttpServletRequest ,
-	 *             HttpServletResponse)}
-	 */
-	@Deprecated
-	public void addJSP(String align, String valign, int colspan, String path);
+		String path, ServletContext servletContext,
+		HttpServletRequest httpServletRequest,
+		HttpServletResponse httpServletResponse);
 
 	public void addJSP(
 		String align, String valign, int colspan, String path,
-		ServletContext servletContext, HttpServletRequest request,
-		HttpServletResponse response);
+		ServletContext servletContext, HttpServletRequest httpServletRequest,
+		HttpServletResponse httpServletResponse);
 
 	public void addJSP(
 		String path, String cssClass, ServletContext servletContext,
-		HttpServletRequest request, HttpServletResponse response);
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link #addJSP(String, String,
-	 *             ServletContext, HttpServletRequest , HttpServletResponse)}
-	 */
-	@Deprecated
-	public void addJSP(String align, String valign, String path);
+		HttpServletRequest httpServletRequest,
+		HttpServletResponse httpServletResponse);
 
 	public void addJSP(
 		String align, String valign, String path, ServletContext servletContext,
-		HttpServletRequest request, HttpServletResponse response);
+		HttpServletRequest httpServletRequest,
+		HttpServletResponse httpServletResponse);
 
 	public void addSearchEntry(int index, SearchEntry searchEntry);
 
@@ -133,7 +93,8 @@ public interface ResultRow {
 
 	public void addStatus(
 		int index, int status, String href, ServletContext servletContext,
-		HttpServletRequest request, HttpServletResponse response);
+		HttpServletRequest httpServletRequest,
+		HttpServletResponse httpServletResponse);
 
 	public void addStatus(int status, long statusByUserId, Date statusDate);
 
@@ -227,7 +188,7 @@ public interface ResultRow {
 
 	public void setData(Map<String, Object> data);
 
-	public void setObject(Object obj);
+	public void setObject(Object object);
 
 	public void setParameter(String param, Object value);
 

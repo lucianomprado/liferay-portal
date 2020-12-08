@@ -25,7 +25,8 @@ import net.sourceforge.pmd.lang.java.ast.JavaNode;
  * @author Shuyang Zhou
  */
 public class OverrideBothEqualsAndHashcodeRule
-	extends net.sourceforge.pmd.lang.java.rule.basic.OverrideBothEqualsAndHashcodeRule {
+	extends net.sourceforge.pmd.lang.java.rule.basic.
+				OverrideBothEqualsAndHashcodeRule {
 
 	@Override
 	public Object visit(ASTImplementsList astImplementsList, Object data) {
@@ -42,8 +43,11 @@ public class OverrideBothEqualsAndHashcodeRule
 					try {
 						_implementsComparableField.set(this, true);
 					}
-					catch (ReflectiveOperationException roe) {
-						throw new RuntimeException(roe);
+					catch (ReflectiveOperationException
+								reflectiveOperationException) {
+
+						throw new RuntimeException(
+							reflectiveOperationException);
 					}
 
 					return data;
@@ -67,8 +71,8 @@ public class OverrideBothEqualsAndHashcodeRule
 
 			_implementsComparableField.setAccessible(true);
 		}
-		catch (Exception e) {
-			throw new ExceptionInInitializerError(e);
+		catch (Exception exception) {
+			throw new ExceptionInInitializerError(exception);
 		}
 	}
 

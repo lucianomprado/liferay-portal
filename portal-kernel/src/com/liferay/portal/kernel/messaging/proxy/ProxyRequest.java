@@ -14,9 +14,9 @@
 
 package com.liferay.portal.kernel.messaging.proxy;
 
-import com.liferay.portal.kernel.annotation.AnnotationLocator;
+import com.liferay.petra.reflect.AnnotationLocator;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.util.MethodKey;
-import com.liferay.portal.kernel.util.StringBundler;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -81,15 +81,14 @@ public class ProxyRequest implements Externalizable {
 		try {
 			return _method.invoke(object, _arguments);
 		}
-		catch (InvocationTargetException ite) {
-			Throwable t = ite.getCause();
+		catch (InvocationTargetException invocationTargetException) {
+			Throwable throwable = invocationTargetException.getCause();
 
-			if (t instanceof Exception) {
-				throw (Exception)t;
+			if (throwable instanceof Exception) {
+				throw (Exception)throwable;
 			}
-			else {
-				throw new Exception(t);
-			}
+
+			throw new Exception(throwable);
 		}
 	}
 
@@ -126,8 +125,8 @@ public class ProxyRequest implements Externalizable {
 		try {
 			_method = methodKey.getMethod();
 		}
-		catch (NoSuchMethodException nsme) {
-			throw new IOException(nsme);
+		catch (NoSuchMethodException noSuchMethodException) {
+			throw new IOException(noSuchMethodException);
 		}
 
 		_synchronous = objectInput.readBoolean();
@@ -135,7 +134,7 @@ public class ProxyRequest implements Externalizable {
 
 	@Override
 	public String toString() {
-		StringBundler sb = new StringBundler(7);
+		StringBundler sb = new StringBundler(9);
 
 		sb.append("{arguments=");
 		sb.append(Arrays.toString(_arguments));

@@ -14,8 +14,6 @@
 
 package com.liferay.portlet.ratings.model.impl;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.ratings.kernel.model.RatingsStats;
 import com.liferay.ratings.kernel.service.RatingsStatsLocalServiceUtil;
 
@@ -31,13 +29,13 @@ import com.liferay.ratings.kernel.service.RatingsStatsLocalServiceUtil;
  * @see RatingsStats
  * @generated
  */
-@ProviderType
-public abstract class RatingsStatsBaseImpl extends RatingsStatsModelImpl
-	implements RatingsStats {
+public abstract class RatingsStatsBaseImpl
+	extends RatingsStatsModelImpl implements RatingsStats {
+
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. All methods that expect a ratings stats model instance should use the {@link RatingsStats} interface instead.
+	 * Never modify or reference this class directly. All methods that expect a ratings stats model instance should use the <code>RatingsStats</code> interface instead.
 	 */
 	@Override
 	public void persist() {
@@ -48,4 +46,5 @@ public abstract class RatingsStatsBaseImpl extends RatingsStatsModelImpl
 			RatingsStatsLocalServiceUtil.updateRatingsStats(this);
 		}
 	}
+
 }

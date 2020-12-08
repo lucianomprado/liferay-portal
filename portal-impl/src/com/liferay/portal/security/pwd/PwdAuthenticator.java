@@ -14,6 +14,7 @@
 
 package com.liferay.portal.security.pwd;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PwdEncryptorException;
 import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.log.Log;
@@ -22,7 +23,6 @@ import com.liferay.portal.kernel.security.pwd.PasswordEncryptorUtil;
 import com.liferay.portal.kernel.util.Base64;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.util.PropsUtil;
 
@@ -74,15 +74,14 @@ public class PwdAuthenticator {
 				if (clearTextPassword.equals(encryptedPassword)) {
 					return true;
 				}
-				else {
-					return false;
-				}
+
+				return false;
 			}
-			catch (NoSuchAlgorithmException nsae) {
-				throw new SystemException(nsae);
+			catch (NoSuchAlgorithmException noSuchAlgorithmException) {
+				throw new SystemException(noSuchAlgorithmException);
 			}
-			catch (UnsupportedEncodingException uee) {
-				throw new SystemException(uee);
+			catch (UnsupportedEncodingException unsupportedEncodingException) {
+				throw new SystemException(unsupportedEncodingException);
 			}
 		}
 

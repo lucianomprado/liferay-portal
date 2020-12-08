@@ -15,9 +15,11 @@
 package com.liferay.knowledge.base.internal.importer;
 
 import com.liferay.knowledge.base.configuration.KBGroupServiceConfiguration;
+import com.liferay.knowledge.base.constants.KBConstants;
 import com.liferay.knowledge.base.exception.KBArticleImportException;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.module.configuration.ConfigurationProvider;
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.portal.kernel.settings.GroupServiceSettingsLocator;
 import com.liferay.portal.kernel.zip.ZipReader;
 
 import java.util.Arrays;
@@ -28,21 +30,44 @@ import java.util.Iterator;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import org.mockito.Mockito;
+import org.mockito.stubbing.OngoingStubbing;
+
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.api.mockito.expectation.ConstructorExpectationSetup;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 /**
  * @author Adolfo Pérez
  */
+@PrepareForTest({GroupServiceSettingsLocator.class, KBArchiveFactory.class})
+@RunWith(PowerMockRunner.class)
 public class KBArchiveFactoryTest {
 
 	@Before
 	public void setUp() throws Exception {
 		_kbArchiveFactory.setConfigurationProvider(_configurationProvider);
 
+		ConstructorExpectationSetup<GroupServiceSettingsLocator>
+			groupServiceSettingsLocatorConstructorExpectationSetup =
+				PowerMockito.whenNew(GroupServiceSettingsLocator.class);
+
+		OngoingStubbing<GroupServiceSettingsLocator>
+			groupServiceSettingsLocatorOngoingStubbing =
+				groupServiceSettingsLocatorConstructorExpectationSetup.
+					withArguments(
+						Mockito.anyLong(),
+						Mockito.eq(KBConstants.SERVICE_NAME));
+
+		groupServiceSettingsLocatorOngoingStubbing.thenReturn(
+			_groupServiceSettingsLocator);
+
 		Mockito.when(
-			_configurationProvider.getGroupConfiguration(
-				Mockito.any(Class.class), Mockito.any(long.class))
+			_configurationProvider.getConfiguration(
+				KBGroupServiceConfiguration.class, _groupServiceSettingsLocator)
 		).thenReturn(
 			_kbGroupServiceConfiguration
 		);
@@ -73,7 +98,7 @@ public class KBArchiveFactoryTest {
 
 		Collection<KBArchive.Folder> folders = kbArchive.getFolders();
 
-		Assert.assertTrue(folders.isEmpty());
+		Assert.assertTrue(folders.toString(), folders.isEmpty());
 	}
 
 	@Test
@@ -122,23 +147,36 @@ public class KBArchiveFactoryTest {
 		KBArchive.Folder folder0 = folderIterator.next();
 
 		Assert.assertEquals(StringPool.SLASH, folder0.getName());
-		Assert.assertEquals("/intro.md", folder0.getIntroFile().getName());
+
+		KBArchive.File introFile0 = folder0.getIntroFile();
+
+		Assert.assertEquals("/intro.md", introFile0.getName());
+
 		Assert.assertNull(folder0.getParentFolderIntroFile());
-		Assert.assertTrue(folder0.getFiles().isEmpty());
+
+		Collection<KBArchive.File> files0 = folder0.getFiles();
+
+		Assert.assertTrue(files0.isEmpty());
 
 		KBArchive.Folder folder1 = folderIterator.next();
 
 		Assert.assertEquals("/x", folder1.getName());
 		Assert.assertNull(folder1.getIntroFile());
 		Assert.assertNotNull(folder1.getParentFolderIntroFile());
-		Assert.assertEquals(1, folder1.getFiles().size());
+
+		Collection<KBArchive.File> files1 = folder1.getFiles();
+
+		Assert.assertEquals(files1.toString(), 1, files1.size());
 
 		KBArchive.Folder folder2 = folderIterator.next();
 
 		Assert.assertEquals("/y/z", folder2.getName());
 		Assert.assertNull(folder2.getIntroFile());
 		Assert.assertNull(folder2.getParentFolderIntroFile());
-		Assert.assertEquals(2, folder2.getFiles().size());
+
+		Collection<KBArchive.File> files2 = folder2.getFiles();
+
+		Assert.assertEquals(files2.toString(), 2, files2.size());
 	}
 
 	@Test(expected = KBArticleImportException.class)
@@ -167,7 +205,9 @@ public class KBArchiveFactoryTest {
 
 		Assert.assertEquals(folders.toString(), 1, folders.size());
 
-		KBArchive.Folder folder = folders.iterator().next();
+		Iterator<KBArchive.Folder> foldersIterator = folders.iterator();
+
+		KBArchive.Folder folder = foldersIterator.next();
 
 		Assert.assertNull(folder.getIntroFile());
 
@@ -175,13 +215,13 @@ public class KBArchiveFactoryTest {
 
 		Assert.assertEquals(files.toString(), 2, files.size());
 
-		Iterator<KBArchive.File> iterator = files.iterator();
+		Iterator<KBArchive.File> filesIterator = files.iterator();
 
-		KBArchive.File file0 = iterator.next();
+		KBArchive.File file0 = filesIterator.next();
 
 		Assert.assertEquals("/a.md", file0.getName());
 
-		KBArchive.File file1 = iterator.next();
+		KBArchive.File file1 = filesIterator.next();
 
 		Assert.assertEquals("/b.md", file1.getName());
 	}
@@ -201,11 +241,13 @@ public class KBArchiveFactoryTest {
 
 		Collection<KBArchive.Folder> folders = kbArchive.getFolders();
 
-		Assert.assertTrue(folders.isEmpty());
+		Assert.assertTrue(folders.toString(), folders.isEmpty());
 	}
 
 	private final ConfigurationProvider _configurationProvider = Mockito.mock(
 		ConfigurationProvider.class);
+	private final GroupServiceSettingsLocator _groupServiceSettingsLocator =
+		Mockito.mock(GroupServiceSettingsLocator.class);
 	private final KBArchiveFactory _kbArchiveFactory = new KBArchiveFactory();
 	private final KBGroupServiceConfiguration _kbGroupServiceConfiguration =
 		Mockito.mock(KBGroupServiceConfiguration.class);

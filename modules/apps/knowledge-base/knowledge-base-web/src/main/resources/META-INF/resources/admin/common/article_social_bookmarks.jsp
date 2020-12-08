@@ -20,15 +20,14 @@
 KBArticle kbArticle = (KBArticle)request.getAttribute(KBWebKeys.KNOWLEDGE_BASE_KB_ARTICLE);
 
 KBArticleURLHelper kbArticleURLHelper = new KBArticleURLHelper(renderRequest, renderResponse, templatePath);
-
-PortletURL viewKBArticleURL = kbArticleURLHelper.createViewURL(kbArticle);
 %>
 
-<liferay-ui:social-bookmarks
-	contentId="<%= String.valueOf(kbArticle.getResourcePrimKey()) %>"
+<liferay-social-bookmarks:bookmarks
+	className="<%= KBArticle.class.getName() %>"
+	classPK="<%= kbArticle.getKbArticleId() %>"
 	displayStyle="<%= socialBookmarksDisplayStyle %>"
 	target="_blank"
 	title="<%= kbArticle.getTitle() %>"
-	types="<%= socialBookmarksTypes %>"
-	url="<%= PortalUtil.getCanonicalURL(viewKBArticleURL.toString(), themeDisplay, layout) %>"
+	types="<%= SocialBookmarksUtil.getSocialBookmarksTypes(socialBookmarksTypes) %>"
+	urlImpl="<%= kbArticleURLHelper.createViewURL(kbArticle) %>"
 />

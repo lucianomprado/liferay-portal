@@ -206,9 +206,7 @@ public class UploadPortletRequestImpl
 			FileItem[] fileItems = entry.getValue();
 
 			if (name.startsWith(_namespace)) {
-				map.put(
-					name.substring(_namespace.length(), name.length()),
-					fileItems);
+				map.put(name.substring(_namespace.length()), fileItems);
 			}
 			else {
 				map.put(name, fileItems);
@@ -234,10 +232,10 @@ public class UploadPortletRequestImpl
 	public Map<String, String[]> getParameterMap() {
 		Map<String, String[]> map = new HashMap<>();
 
-		Enumeration<String> enu = getParameterNames();
+		Enumeration<String> enumeration = getParameterNames();
 
-		while (enu.hasMoreElements()) {
-			String name = enu.nextElement();
+		while (enumeration.hasMoreElements()) {
+			String name = enumeration.nextElement();
 
 			map.put(name, getParameterValues(name));
 		}
@@ -249,10 +247,11 @@ public class UploadPortletRequestImpl
 	public Enumeration<String> getParameterNames() {
 		List<String> parameterNames = new ArrayList<>();
 
-		Enumeration<String> enu = _uploadServletRequest.getParameterNames();
+		Enumeration<String> enumeration =
+			_uploadServletRequest.getParameterNames();
 
-		while (enu.hasMoreElements()) {
-			String name = enu.nextElement();
+		while (enumeration.hasMoreElements()) {
+			String name = enumeration.nextElement();
 
 			if (name.startsWith(_namespace)) {
 				parameterNames.add(name.substring(_namespace.length()));
@@ -303,9 +302,7 @@ public class UploadPortletRequestImpl
 			List<String> parameters = entry.getValue();
 
 			if (name.startsWith(_namespace)) {
-				map.put(
-					name.substring(_namespace.length(), name.length()),
-					parameters);
+				map.put(name.substring(_namespace.length()), parameters);
 			}
 			else {
 				map.put(name, parameters);
@@ -342,9 +339,8 @@ public class UploadPortletRequestImpl
 		if (formField == null) {
 			return true;
 		}
-		else {
-			return formField.booleanValue();
-		}
+
+		return formField.booleanValue();
 	}
 
 	private final String _namespace;

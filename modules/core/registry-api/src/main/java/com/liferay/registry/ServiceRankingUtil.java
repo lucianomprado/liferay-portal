@@ -14,12 +14,9 @@
 
 package com.liferay.registry;
 
-import java.util.Comparator;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Stream;
 
 /**
  * @author Shuyang Zhou
@@ -43,15 +40,27 @@ public class ServiceRankingUtil {
 			(Long)serviceReference2.getProperty("service.id"));
 	}
 
-	public static <S, T> Optional<Entry<ServiceReference<S>, T>>
+	public static <S, T> Optional<Map.Entry<ServiceReference<S>, T>>
 		getHighestRankingEntry(Map<ServiceReference<S>, T> services) {
 
-		Set<Entry<ServiceReference<S>, T>> entrySet = services.entrySet();
+		Set<Map.Entry<ServiceReference<S>, T>> entrySet = services.entrySet();
 
-		Stream<Entry<ServiceReference<S>, T>> stream = entrySet.stream();
+		if (entrySet.isEmpty()) {
+			return Optional.empty();
+		}
 
-		return stream.max(
-			Comparator.comparing(Entry::getKey, ServiceRankingUtil::compare));
+		Map.Entry<ServiceReference<S>, T> maxEntry = null;
+
+		for (Map.Entry<ServiceReference<S>, T> entry : entrySet) {
+			if (maxEntry == null) {
+				maxEntry = entry;
+			}
+			else if (compare(entry.getKey(), maxEntry.getKey()) > 0) {
+				maxEntry = entry;
+			}
+		}
+
+		return Optional.of(maxEntry);
 	}
 
 	private static int _getServiceRanking(
@@ -67,7 +76,7 @@ public class ServiceRankingUtil {
 			try {
 				return Integer.parseInt((String)serviceRanking);
 			}
-			catch (NumberFormatException nfe) {
+			catch (NumberFormatException numberFormatException) {
 			}
 		}
 

@@ -21,7 +21,11 @@ import com.liferay.registry.collections.ServiceTrackerMap;
 
 /**
  * @author Carlos Sierra Andrés
+ *
+ * @deprecated As of Athanasius (7.3.x), replaced by {@link
+ *             com.liferay.portal.kernel.resource.bundle.ResourceBundleLoaderUtil}
  */
+@Deprecated
 public class ResourceBundleLoaderUtil {
 
 	public static ResourceBundleLoader getPortalResourceBundleLoader() {
@@ -40,19 +44,6 @@ public class ResourceBundleLoaderUtil {
 
 		return _servletContextNameServiceTrackerMap.getService(
 			servletContextName);
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	public static ResourceBundleLoader
-		getResourceBundleLoaderByServletContextNameAndBaseName(
-			String servletContextName, String baseName) {
-
-		return ServiceTrackerHolder.
-			_servletContextNameAndBaseNameServiceTrackerMap.getService(
-				baseName + "#" + servletContextName);
 	}
 
 	public static void setPortalResourceBundleLoader(

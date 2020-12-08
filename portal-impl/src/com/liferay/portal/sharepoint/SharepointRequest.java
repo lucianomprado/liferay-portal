@@ -14,6 +14,7 @@
 
 package com.liferay.portal.sharepoint;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.io.unsync.UnsyncBufferedReader;
 import com.liferay.portal.kernel.io.unsync.UnsyncByteArrayOutputStream;
 import com.liferay.portal.kernel.model.User;
@@ -21,7 +22,6 @@ import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HttpUtil;
 import com.liferay.portal.kernel.util.StreamUtil;
-import com.liferay.portal.kernel.util.StringPool;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -39,10 +39,11 @@ import javax.servlet.http.HttpServletResponse;
 public class SharepointRequest {
 
 	public SharepointRequest(
-			HttpServletRequest request, HttpServletResponse response, User user)
+			HttpServletRequest httpServletRequest,
+			HttpServletResponse httpServletResponse, User user)
 		throws SharepointException {
 
-		this(request, response, user, StringPool.BLANK);
+		this(httpServletRequest, httpServletResponse, user, StringPool.BLANK);
 	}
 
 	public SharepointRequest(String rootPath) throws SharepointException {
@@ -62,11 +63,11 @@ public class SharepointRequest {
 	}
 
 	public HttpServletRequest getHttpServletRequest() {
-		return _request;
+		return _httpServletRequest;
 	}
 
 	public HttpServletResponse getHttpServletResponse() {
-		return _response;
+		return _httpServletResponse;
 	}
 
 	public String getParameterValue(String name) {
@@ -75,9 +76,8 @@ public class SharepointRequest {
 		if (ArrayUtil.isNotEmpty(values)) {
 			return GetterUtil.getString(_params.get(name)[0]);
 		}
-		else {
-			return StringPool.BLANK;
-		}
+
+		return StringPool.BLANK;
 	}
 
 	public String getRootPath() {
@@ -109,19 +109,19 @@ public class SharepointRequest {
 	}
 
 	protected void addParams() throws SharepointException {
-		String contentType = _request.getContentType();
+		String contentType = _httpServletRequest.getContentType();
 
 		if (!contentType.equals(SharepointUtil.VEERMER_URLENCODED)) {
 			return;
 		}
 
 		try {
-			InputStream is = _request.getInputStream();
+			InputStream inputStream = _httpServletRequest.getInputStream();
 
 			UnsyncByteArrayOutputStream unsyncByteArrayOutputStream =
 				new UnsyncByteArrayOutputStream();
 
-			StreamUtil.transfer(is, unsyncByteArrayOutputStream);
+			StreamUtil.transfer(inputStream, unsyncByteArrayOutputStream);
 
 			byte[] bytes = unsyncByteArrayOutputStream.toByteArray();
 
@@ -151,30 +151,30 @@ public class SharepointRequest {
 
 			setBytes(bytes);
 		}
-		catch (Exception e) {
-			throw new SharepointException(e);
+		catch (Exception exception) {
+			throw new SharepointException(exception);
 		}
 	}
 
 	private SharepointRequest(
-			HttpServletRequest request, HttpServletResponse response, User user,
-			String rootPath)
+			HttpServletRequest httpServletRequest,
+			HttpServletResponse httpServletResponse, User user, String rootPath)
 		throws SharepointException {
 
-		_request = request;
-		_response = response;
+		_httpServletRequest = httpServletRequest;
+		_httpServletResponse = httpServletResponse;
 		_user = user;
 		_rootPath = rootPath;
 
-		_params.putAll(request.getParameterMap());
+		_params.putAll(httpServletRequest.getParameterMap());
 
 		addParams();
 	}
 
 	private byte[] _bytes;
+	private final HttpServletRequest _httpServletRequest;
+	private final HttpServletResponse _httpServletResponse;
 	private final Map<String, String[]> _params = new HashMap<>();
-	private final HttpServletRequest _request;
-	private final HttpServletResponse _response;
 	private String _rootPath = StringPool.BLANK;
 	private SharepointStorage _storage;
 	private final User _user;

@@ -22,9 +22,18 @@ String lowerCaseName = name.toLowerCase();
 
 ### Exceptions
 
-We do allow chaining on Mockito methods in our test classes and on variables
-that are a builder, optional or stream. In these cases we apply the following
-formatting rules:
+Chaining on variables is allowed as long as the variable type is one of the
+following types:
+
+`*Builder`, `Column`, `CompletableFuture`, `*Consumer`, `ContactsEngineClient`,
+`Dataset`, `Description`, `DoubleStream`, `ExecuteActionRequest`,
+`FormsEventDatasetFilter`, `Filter`, `FormsEventDatasetFilter`, `*Function`,
+`HttpSecurity`, `InOrder`, `IntSTream`, `JSONArray`, `JSONObject`, `JsonPath`,
+`LongStream`, `*Mapper`, `Optional`, `PowerMockitoStubber`, `Predicate`,
+`RequestSpecification`, `Response`, `Stream`, `Try`,
+`UpdateFieldPropertyRequest`, `ValidatableResponse` or `WebTarget`
+
+#### Example
 
 ```java
 Stream<User> usersStream = users.stream();
@@ -42,7 +51,15 @@ usersStream.filter(
 );
 ```
 
-or
+Chaining on classes directly is allowed for the following classes:
+
+`ActionSemantics`, `*Builder`, `Assertions`, `Awaitility`, `*Consumer`,
+`DoubleStream`, `EasyMock`, `Either`, `Filter`,
+`FormNavigatorEntryConfigurationRetriever`, `GenericUtil`, `IntStream`,
+`JSONUtil`, `List`, `LongStream`, `MemberMatcher`, `Mockito`, `Optional`,
+`PowerMockito`, `Response`, `RestAssured`, `Stream`, `Try` or `Validation`
+
+#### Examples
 
 ```java
 Mockito.doReturn(
@@ -53,5 +70,15 @@ Mockito.doReturn(
     (Document)Matchers.any(), Matchers.anyString(),
     (PortletRequest)Matchers.isNull(),
     (PortletResponse)Matchers.isNull()
+);
+```
+
+```java
+String gender = Try.fromFallible(
+    user::isMale
+).map(
+    male -> male ? "male" : "female"
+).orElse(
+    null
 );
 ```

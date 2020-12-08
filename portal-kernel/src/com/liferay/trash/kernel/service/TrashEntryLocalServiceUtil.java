@@ -14,7 +14,7 @@
 
 package com.liferay.trash.kernel.service;
 
-import aQute.bnd.annotation.ProviderType;
+import org.osgi.annotation.versioning.ProviderType;
 
 import com.liferay.portal.kernel.bean.PortalBeanLocatorUtil;
 import com.liferay.portal.kernel.util.ReferenceRegistry;
@@ -31,12 +31,11 @@ import com.liferay.portal.kernel.util.ReferenceRegistry;
  * @see TrashEntryLocalService
  * @see com.liferay.portlet.trash.service.base.TrashEntryLocalServiceBaseImpl
  * @see com.liferay.portlet.trash.service.impl.TrashEntryLocalServiceImpl
- * @deprecated As of 7.0.0, replaced by {@link
+ * @deprecated As of Judson (7.1.x), replaced by {@link
 com.liferay.trash.service.impl.TrashEntryLocalServiceImpl}
  * @generated
  */
 @Deprecated
-@ProviderType
 public class TrashEntryLocalServiceUtil {
 	/*
 	 * NOTE FOR DEVELOPERS:
@@ -153,6 +152,10 @@ public class TrashEntryLocalServiceUtil {
 	public static com.liferay.trash.kernel.model.TrashEntry deleteEntry(
 		java.lang.String className, long classPK) {
 		return getService().deleteEntry(className, classPK);
+	}
+
+	public static void deleteEntries(long groupId, boolean deleteTrashedModels) {
+		getService().deleteEntries(groupId, deleteTrashedModels);
 	}
 
 	/**

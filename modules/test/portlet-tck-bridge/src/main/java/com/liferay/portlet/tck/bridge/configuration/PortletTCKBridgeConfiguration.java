@@ -16,9 +16,14 @@ package com.liferay.portlet.tck.bridge.configuration;
 
 import aQute.bnd.annotation.metatype.Meta;
 
+import com.liferay.portal.configuration.metatype.annotations.ExtendedObjectClassDefinition;
+
 /**
  * @author Shuyang Zhou
+ * @author Vernon Singleton
+ * @author Kyle Stiemann
  */
+@ExtendedObjectClassDefinition(category = "infrastructure")
 @Meta.OCD(
 	id = "com.liferay.portlet.tck.bridge.configuration.PortletTCKBridgeConfiguration",
 	localization = "content/Language",
@@ -26,13 +31,7 @@ import aQute.bnd.annotation.metatype.Meta;
 )
 public interface PortletTCKBridgeConfiguration {
 
-	@Meta.AD(deflt = "8239", required = false)
-	public int handshakeServerPort();
-
-	@Meta.AD(deflt = "", required = false)
-	public String[] servletContextNames();
-
-	@Meta.AD(deflt = "1200", required = false)
-	public long timeout();
+	@Meta.AD(deflt = "")
+	public String configFile();
 
 }

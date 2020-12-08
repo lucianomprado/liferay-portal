@@ -14,8 +14,14 @@
 
 package com.liferay.portal.kernel.util;
 
-import com.liferay.portal.kernel.memory.FinalizeAction;
-import com.liferay.portal.kernel.memory.FinalizeManager;
+import com.liferay.petra.memory.FinalizeAction;
+import com.liferay.petra.memory.FinalizeManager;
+import com.liferay.petra.reflect.ReflectionUtil;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.internal.util.SystemCheckerUtil;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.registry.Registry;
 import com.liferay.registry.RegistryUtil;
 import com.liferay.registry.ServiceTracker;
@@ -25,9 +31,11 @@ import com.liferay.registry.ServiceTrackerFieldUpdaterCustomizer;
 import java.lang.ref.Reference;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -80,8 +88,8 @@ public class ServiceProxyFactory {
 				serviceClass, null, field, filterString, blocking,
 				useNullAsDummyService);
 		}
-		catch (ReflectiveOperationException roe) {
-			return ReflectionUtil.throwException(roe);
+		catch (ReflectiveOperationException reflectiveOperationException) {
+			return ReflectionUtil.throwException(reflectiveOperationException);
 		}
 	}
 
@@ -118,8 +126,8 @@ public class ServiceProxyFactory {
 
 			return serviceInstance;
 		}
-		catch (ReflectiveOperationException roe) {
-			return ReflectionUtil.throwException(roe);
+		catch (ReflectiveOperationException reflectiveOperationException) {
+			return ReflectionUtil.throwException(reflectiveOperationException);
 		}
 	}
 
@@ -138,7 +146,8 @@ public class ServiceProxyFactory {
 
 			T awaitService = (T)ProxyUtil.newProxyInstance(
 				serviceClass.getClassLoader(), new Class<?>[] {serviceClass},
-				new AwaitServiceInvocationHandler(field, realServiceSet, lock));
+				new AwaitServiceInvocationHandler(
+					serviceClass, filterString, field, realServiceSet, lock));
 
 			field.set(declaringInstance, awaitService);
 
@@ -206,12 +215,21 @@ public class ServiceProxyFactory {
 		return serviceTracker;
 	}
 
+	private static final long _TIMEOUT = GetterUtil.getLong(
+		System.getProperty(ServiceProxyFactory.class.getName() + ".timeout"),
+		60000);
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		ServiceProxyFactory.class);
+
 	private static class AwaitServiceInvocationHandler
 		implements InvocationHandler {
 
 		@Override
 		public Object invoke(Object proxy, Method method, Object[] arguments)
 			throws Throwable {
+
+			boolean calledSystemCheckers = false;
 
 			while (true) {
 				_lock.lock();
@@ -222,10 +240,50 @@ public class ServiceProxyFactory {
 					if (!ProxyUtil.isProxyClass(service.getClass()) ||
 						(ProxyUtil.getInvocationHandler(service) != this)) {
 
-						return method.invoke(service, arguments);
+						try {
+							return method.invoke(service, arguments);
+						}
+						catch (InvocationTargetException
+									invocationTargetException) {
+
+							throw invocationTargetException.getCause();
+						}
 					}
 
-					_realServiceSet.await();
+					if (!_realServiceSet.await(
+							_TIMEOUT, TimeUnit.MILLISECONDS)) {
+
+						StringBundler sb = new StringBundler(12);
+
+						sb.append("Service \"");
+						sb.append(_serviceClass.getName());
+
+						if (Validator.isNotNull(_filterString)) {
+							sb.append("{");
+							sb.append(_filterString);
+							sb.append("}");
+						}
+
+						sb.append("\" is unavailable in ");
+						sb.append(_TIMEOUT);
+						sb.append(" milliseconds while setting field \"");
+						sb.append(_field.getName());
+						sb.append("\" for class \"");
+
+						Class<?> declaringClass = _field.getDeclaringClass();
+
+						sb.append(declaringClass.getName());
+
+						sb.append("\", will retry...");
+
+						_log.error(sb.toString());
+
+						if (!calledSystemCheckers) {
+							SystemCheckerUtil.runSystemCheckers(_log);
+
+							calledSystemCheckers = true;
+						}
+					}
 				}
 				finally {
 					_lock.unlock();
@@ -234,16 +292,21 @@ public class ServiceProxyFactory {
 		}
 
 		private AwaitServiceInvocationHandler(
-			Field field, Condition realServiceSet, Lock lock) {
+			Class<?> serviceClass, String filterString, Field field,
+			Condition realServiceSet, Lock lock) {
 
+			_serviceClass = serviceClass;
+			_filterString = filterString;
 			_field = field;
 			_realServiceSet = realServiceSet;
 			_lock = lock;
 		}
 
 		private final Field _field;
+		private final String _filterString;
 		private final Lock _lock;
 		private final Condition _realServiceSet;
+		private final Class<?> _serviceClass;
 
 	}
 

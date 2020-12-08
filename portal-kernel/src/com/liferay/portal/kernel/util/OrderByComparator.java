@@ -14,6 +14,8 @@
 
 package com.liferay.portal.kernel.util;
 
+import com.liferay.petra.sql.dsl.query.sort.OrderByInfo;
+import com.liferay.petra.string.CharPool;
 import com.liferay.portal.kernel.bean.BeanPropertiesUtil;
 
 import java.io.Serializable;
@@ -25,7 +27,7 @@ import java.util.Comparator;
  * @author Shuyang Zhou
  */
 public abstract class OrderByComparator<T>
-	implements Comparator<T>, Serializable {
+	implements Comparator<T>, OrderByInfo, Serializable {
 
 	public String getOrderBy() {
 		return null;
@@ -35,18 +37,19 @@ public abstract class OrderByComparator<T>
 		return getOrderByFields();
 	}
 
-	public Object[] getOrderByConditionValues(Object obj) {
+	public Object[] getOrderByConditionValues(Object object) {
 		String[] fields = getOrderByConditionFields();
 
 		Object[] values = new Object[fields.length];
 
 		for (int i = 0; i < fields.length; i++) {
-			values[i] = BeanPropertiesUtil.getObject(obj, fields[i]);
+			values[i] = BeanPropertiesUtil.getObject(object, fields[i]);
 		}
 
 		return values;
 	}
 
+	@Override
 	public String[] getOrderByFields() {
 		String orderBy = getOrderBy();
 
@@ -76,18 +79,16 @@ public abstract class OrderByComparator<T>
 	}
 
 	public boolean isAscending() {
-		String orderBy = getOrderBy();
+		String orderBy = StringUtil.toUpperCase(getOrderBy());
 
-		if ((orderBy == null) ||
-			StringUtil.toUpperCase(orderBy).endsWith(_ORDER_BY_DESC)) {
-
+		if ((orderBy == null) || orderBy.endsWith(_ORDER_BY_DESC)) {
 			return false;
 		}
-		else {
-			return true;
-		}
+
+		return true;
 	}
 
+	@Override
 	public boolean isAscending(String field) {
 		return isAscending();
 	}
@@ -99,9 +100,8 @@ public abstract class OrderByComparator<T>
 		if (orderBy == null) {
 			return super.toString();
 		}
-		else {
-			return orderBy;
-		}
+
+		return orderBy;
 	}
 
 	private static final String _ORDER_BY_DESC = " DESC";

@@ -14,6 +14,8 @@
 
 package com.liferay.portal.kernel.language;
 
+import com.liferay.petra.string.StringBundler;
+import com.liferay.portal.kernel.language.constants.LanguageConstants;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 
@@ -75,6 +77,16 @@ public class LanguagePropertyTest {
 	}
 
 	@Test
+	public void testSpecialKeyUserDefaultPortrait() {
+		_testSpecialKey(LanguageConstants.KEY_USER_DEFAULT_PORTRAIT);
+	}
+
+	@Test
+	public void testSpecialKeyUserInitialsFieldNames() {
+		_testSpecialKey(LanguageConstants.KEY_USER_INITIALS_FIELD_NAMES);
+	}
+
+	@Test
 	public void testSpecialKeyUserNameFieldNames() {
 		_testSpecialKey(LanguageConstants.KEY_USER_NAME_FIELD_NAMES);
 	}
@@ -130,11 +142,10 @@ public class LanguagePropertyTest {
 			}
 		}
 
-		if (!failureMessages.isEmpty()) {
-			Assert.fail(
-				"Required field names are not a subset of user name field " +
-					"names in " + failureMessages);
-		}
+		Assert.assertTrue(
+			"Required field names are not a subset of user name field names " +
+				"in " + failureMessages,
+			failureMessages.isEmpty());
 	}
 
 	@Test
@@ -150,6 +161,16 @@ public class LanguagePropertyTest {
 	@Test
 	public void testValidKeyLineEnd() {
 		_testValidKey(LanguageConstants.KEY_LINE_END);
+	}
+
+	@Test
+	public void testValidKeyUserDefaultPortrait() {
+		_testValidKey(LanguageConstants.KEY_USER_DEFAULT_PORTRAIT);
+	}
+
+	@Test
+	public void testValidKeyUserInitialsFieldNames() {
+		_testValidKey(LanguageConstants.KEY_USER_INITIALS_FIELD_NAMES);
 	}
 
 	@Test
@@ -172,9 +193,7 @@ public class LanguagePropertyTest {
 		_testValidKey(LanguageConstants.KEY_USER_NAME_SUFFIX_VALUES);
 	}
 
-	private static List<String> _getFileNames(String pattern)
-		throws IOException {
-
+	private static List<String> _getFileNames(String pattern) throws Exception {
 		final List<String> fileNames = new ArrayList<>();
 
 		FileSystem fileSystem = FileSystems.getDefault();
@@ -197,7 +216,7 @@ public class LanguagePropertyTest {
 
 			@Override
 			public FileVisitResult visitFileFailed(
-				Path path, IOException ioeException) {
+				Path path, IOException ioException) {
 
 				return FileVisitResult.CONTINUE;
 			}
@@ -211,7 +230,7 @@ public class LanguagePropertyTest {
 
 	private static Map<String, Properties> _getPropertiesMap(
 			List<String> fileNames)
-		throws IOException {
+		throws Exception {
 
 		Map<String, Properties> propertiesMap = new HashMap<>();
 
@@ -243,10 +262,10 @@ public class LanguagePropertyTest {
 			}
 		}
 
-		if (!invalidFileNames.isEmpty()) {
-			Assert.fail(
-				"Special key \"" + key + "\" is found in: " + invalidFileNames);
-		}
+		Assert.assertTrue(
+			StringBundler.concat(
+				"Special key \"", key, "\" is found in: ", invalidFileNames),
+			invalidFileNames.isEmpty());
 	}
 
 	private void _testValidKey(String key) {
@@ -264,11 +283,11 @@ public class LanguagePropertyTest {
 			}
 		}
 
-		if (!invalidFileNames.isEmpty()) {
-			Assert.fail(
-				"Invalid values for key \"" + key + "\" are found in: " +
-					invalidFileNames);
-		}
+		Assert.assertTrue(
+			StringBundler.concat(
+				"Invalid values for key \"", key, "\" are found in: ",
+				invalidFileNames),
+			invalidFileNames.isEmpty());
 	}
 
 	private static Map<String, Properties> _modulesPropertiesMap;

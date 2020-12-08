@@ -18,6 +18,7 @@ import com.liferay.registry.Filter;
 import com.liferay.registry.Registry;
 import com.liferay.registry.ServiceReference;
 import com.liferay.registry.ServiceRegistrar;
+import com.liferay.registry.ServiceRegistration;
 import com.liferay.registry.ServiceTracker;
 import com.liferay.registry.ServiceTrackerCustomizer;
 import com.liferay.registry.dependency.ServiceDependencyManager;
@@ -27,6 +28,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 
 /**
  * @author Carlos Sierra Andrés
@@ -38,6 +40,26 @@ public class RegistryWrapper implements Registry {
 	}
 
 	@Override
+	public <S, R> R callService(
+		Class<S> serviceClass, Function<S, R> function) {
+
+		return _registry.callService(serviceClass, function);
+	}
+
+	@Override
+	public <S, R> R callService(String className, Function<S, R> function) {
+		return _registry.callService(className, function);
+	}
+
+	@Override
+	public <T> ServiceReference<T>[] getAllServiceReferences(
+			String className, String filterString)
+		throws Exception {
+
+		return _registry.getAllServiceReferences(className, filterString);
+	}
+
+	@Override
 	public Filter getFilter(String filterString) throws RuntimeException {
 		return _registry.getFilter(filterString);
 	}
@@ -45,14 +67,6 @@ public class RegistryWrapper implements Registry {
 	@Override
 	public Registry getRegistry() throws SecurityException {
 		return this;
-	}
-
-	@Override
-	public <T> T getService(Class<T> clazz) {
-		ServiceReference<T> serviceReference = _registry.getServiceReference(
-			clazz);
-
-		return _registry.getService(serviceReference);
 	}
 
 	@Override
@@ -75,14 +89,6 @@ public class RegistryWrapper implements Registry {
 		serviceReferenceCount.incrementAndGet();
 
 		return _registry.getService(serviceReference);
-	}
-
-	@Override
-	public <T> T getService(String className) {
-		ServiceReference<Object> serviceReference =
-			_registry.getServiceReference(className);
-
-		return (T)_registry.getService(serviceReference);
 	}
 
 	@Override
@@ -141,47 +147,52 @@ public class RegistryWrapper implements Registry {
 		return _registry.getServices(className, filterString);
 	}
 
+	@Override
+	public String getSymbolicName(ClassLoader classLoader) {
+		return _registry.getSymbolicName(classLoader);
+	}
+
 	public Registry getWrappedRegistry() {
 		return _registry;
 	}
 
 	@Override
-	public <T> com.liferay.registry.ServiceRegistration<T> registerService(
+	public <T> ServiceRegistration<T> registerService(
 		Class<T> clazz, T service) {
 
 		return _registry.registerService(clazz, service);
 	}
 
 	@Override
-	public <T> com.liferay.registry.ServiceRegistration<T> registerService(
+	public <T> ServiceRegistration<T> registerService(
 		Class<T> clazz, T service, Map<String, Object> properties) {
 
 		return _registry.registerService(clazz, service, properties);
 	}
 
 	@Override
-	public <T> com.liferay.registry.ServiceRegistration<T> registerService(
+	public <T> ServiceRegistration<T> registerService(
 		String className, T service) {
 
 		return _registry.registerService(className, service);
 	}
 
 	@Override
-	public <T> com.liferay.registry.ServiceRegistration<T> registerService(
+	public <T> ServiceRegistration<T> registerService(
 		String className, T service, Map<String, Object> properties) {
 
 		return _registry.registerService(className, service, properties);
 	}
 
 	@Override
-	public <T> com.liferay.registry.ServiceRegistration<T> registerService(
+	public <T> ServiceRegistration<T> registerService(
 		String[] classNames, T service) {
 
 		return _registry.registerService(classNames, service);
 	}
 
 	@Override
-	public <T> com.liferay.registry.ServiceRegistration<T> registerService(
+	public <T> ServiceRegistration<T> registerService(
 		String[] classNames, T service, Map<String, Object> properties) {
 
 		return _registry.registerService(classNames, service, properties);

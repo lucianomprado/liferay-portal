@@ -16,28 +16,23 @@ package com.liferay.portal.kernel.util.comparator;
 
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.GroupWrapper;
-import com.liferay.portal.kernel.test.ReflectionTestUtil;
+import com.liferay.portal.kernel.test.util.PropsTestUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
-import com.liferay.portal.kernel.util.Props;
-import com.liferay.portal.kernel.util.PropsUtil;
-import com.liferay.portal.kernel.util.ProxyUtil;
+
+import java.util.Collections;
 
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 /**
- * @author Eduardo Garcia
+ * @author Eduardo García
  */
 public class GroupNameComparatorTest {
 
 	@Before
 	public void setUp() {
-		ReflectionTestUtil.setFieldValue(
-			PropsUtil.class, "_props",
-			ProxyUtil.newProxyInstance(
-				GroupNameComparatorTest.class.getClassLoader(),
-				new Class<?>[] {Props.class}, (proxy, method, args) -> null));
+		PropsTestUtil.setProps(Collections.emptyMap());
 
 		setUpGroups();
 	}

@@ -14,8 +14,6 @@
 
 package com.liferay.portal.kernel.model;
 
-import aQute.bnd.annotation.ProviderType;
-
 import java.io.Serializable;
 
 import java.util.ArrayList;
@@ -26,10 +24,12 @@ import java.util.List;
  * This class is used by SOAP remote services.
  *
  * @author Brian Wing Shun Chan
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
-@ProviderType
+@Deprecated
 public class UserTrackerSoap implements Serializable {
+
 	public static UserTrackerSoap toSoapModel(UserTracker model) {
 		UserTrackerSoap soapModel = new UserTrackerSoap();
 
@@ -74,7 +74,8 @@ public class UserTrackerSoap implements Serializable {
 	}
 
 	public static UserTrackerSoap[] toSoapModels(List<UserTracker> models) {
-		List<UserTrackerSoap> soapModels = new ArrayList<UserTrackerSoap>(models.size());
+		List<UserTrackerSoap> soapModels = new ArrayList<UserTrackerSoap>(
+			models.size());
 
 		for (UserTracker model : models) {
 			soapModels.add(toSoapModel(model));
@@ -175,4 +176,5 @@ public class UserTrackerSoap implements Serializable {
 	private String _remoteAddr;
 	private String _remoteHost;
 	private String _userAgent;
+
 }

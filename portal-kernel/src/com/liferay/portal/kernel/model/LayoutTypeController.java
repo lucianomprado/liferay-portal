@@ -14,6 +14,8 @@
 
 package com.liferay.portal.kernel.model;
 
+import com.liferay.portal.kernel.exception.PortalException;
+
 import java.io.Serializable;
 
 import javax.servlet.http.HttpServletRequest;
@@ -28,18 +30,25 @@ public interface LayoutTypeController extends Serializable {
 
 	public String[] getConfigurationActionUpdate();
 
+	public default String getFriendlyURL(
+			HttpServletRequest httpServletRequest, Layout layout)
+		throws PortalException {
+
+		return null;
+	}
+
 	public String getType();
 
 	public String getURL();
 
 	public String includeEditContent(
-			HttpServletRequest request, HttpServletResponse response,
-			Layout layout)
+			HttpServletRequest httpServletRequest,
+			HttpServletResponse httpServletResponse, Layout layout)
 		throws Exception;
 
 	public boolean includeLayoutContent(
-			HttpServletRequest request, HttpServletResponse response,
-			Layout layout)
+			HttpServletRequest httpServletRequest,
+			HttpServletResponse httpServletResponse, Layout layout)
 		throws Exception;
 
 	public boolean isBrowsable();
@@ -54,11 +63,20 @@ public interface LayoutTypeController extends Serializable {
 
 	public boolean isParentable();
 
+	public default boolean isPrimaryType() {
+		return false;
+	}
+
 	public boolean isSitemapable();
 
 	public boolean isURLFriendliable();
 
+	public default boolean isWorkflowEnabled() {
+		return true;
+	}
+
 	public boolean matches(
-		HttpServletRequest request, String friendlyURL, Layout layout);
+		HttpServletRequest httpServletRequest, String friendlyURL,
+		Layout layout);
 
 }

@@ -25,7 +25,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 /**
- * @author Mariano Alvaro Saiz
+ * @author Mariano Álvaro Sáiz
  */
 public class UpgradeProcessTest {
 
@@ -47,7 +47,7 @@ public class UpgradeProcessTest {
 
 		String sql = alterColumnName.getSQL(_TABLE_NAME);
 
-		Assert.assertTrue(sql.contains(_NEW_COLUMN));
+		Assert.assertTrue(sql, sql.contains(_NEW_COLUMN));
 	}
 
 	@Test

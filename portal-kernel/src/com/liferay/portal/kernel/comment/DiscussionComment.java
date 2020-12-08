@@ -14,13 +14,13 @@
 
 package com.liferay.portal.kernel.comment;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.ratings.kernel.model.RatingsEntry;
 import com.liferay.ratings.kernel.model.RatingsStats;
 
 import java.util.List;
+
+import org.osgi.annotation.versioning.ProviderType;
 
 /**
  * @author Adolfo Pérez
@@ -37,19 +37,6 @@ public interface DiscussionComment extends Comment {
 	public RatingsEntry getRatingsEntry();
 
 	public RatingsStats getRatingsStats();
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link #getDescendantComments()}
-	 */
-	@Deprecated
-	public List<DiscussionComment> getThreadComments();
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link
-	 *             #getDescendantCommentsCount()}
-	 */
-	@Deprecated
-	public int getThreadCommentsCount();
 
 	public DiscussionCommentIterator getThreadDiscussionCommentIterator();
 

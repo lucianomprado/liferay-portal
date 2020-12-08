@@ -16,16 +16,22 @@ package com.liferay.portal.kernel.search;
 
 import com.liferay.portal.kernel.search.filter.BooleanFilter;
 
+import org.osgi.annotation.versioning.ProviderType;
+
 /**
  * @author Michael C. Han
  */
+@ProviderType
 public interface RelatedEntryIndexer {
 
 	public void addRelatedClassNames(
 			BooleanFilter contextBooleanFilter, SearchContext searchContext)
 		throws Exception;
 
-	public void addRelatedEntryFields(Document document, Object obj)
+	public void addRelatedEntryFields(Document document, Object object)
+		throws Exception;
+
+	public boolean isVisibleRelatedEntry(long classPK, int status)
 		throws Exception;
 
 	public void updateFullQuery(SearchContext searchContext);

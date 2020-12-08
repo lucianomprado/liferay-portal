@@ -14,27 +14,25 @@
 
 package com.liferay.portal.kernel.service.persistence;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.portal.kernel.bean.PortalBeanLocatorUtil;
-import com.liferay.portal.kernel.util.ReferenceRegistry;
 
 /**
  * @author Brian Wing Shun Chan
  * @generated
  */
-@ProviderType
 public class ServiceComponentFinderUtil {
-	public static java.util.List<com.liferay.portal.kernel.model.ServiceComponent> findByMaxBuildNumber() {
+
+	public static java.util.List
+		<com.liferay.portal.kernel.model.ServiceComponent>
+			findByMaxBuildNumber() {
+
 		return getFinder().findByMaxBuildNumber();
 	}
 
 	public static ServiceComponentFinder getFinder() {
 		if (_finder == null) {
-			_finder = (ServiceComponentFinder)PortalBeanLocatorUtil.locate(ServiceComponentFinder.class.getName());
-
-			ReferenceRegistry.registerReference(ServiceComponentFinderUtil.class,
-				"_finder");
+			_finder = (ServiceComponentFinder)PortalBeanLocatorUtil.locate(
+				ServiceComponentFinder.class.getName());
 		}
 
 		return _finder;
@@ -42,10 +40,8 @@ public class ServiceComponentFinderUtil {
 
 	public void setFinder(ServiceComponentFinder finder) {
 		_finder = finder;
-
-		ReferenceRegistry.registerReference(ServiceComponentFinderUtil.class,
-			"_finder");
 	}
 
 	private static ServiceComponentFinder _finder;
+
 }

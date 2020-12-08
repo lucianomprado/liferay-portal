@@ -23,7 +23,7 @@ KBSuggestionListDisplayContext kbSuggestionListDisplayContext = new KBSuggestion
 
 request.setAttribute(KBWebKeys.KNOWLEDGE_BASE_KB_SUGGESTION_LIST_DISPLAY_CONTEXT, kbSuggestionListDisplayContext);
 
-SearchContainer kbCommentsSearchContainer = new SearchContainer(renderRequest, null, null, SearchContainer.DEFAULT_CUR_PARAM, SearchContainer.DEFAULT_DELTA, currentURLObj, null, kbSuggestionListDisplayContext.getEmptyResultsMessage());
+SearchContainer<KBComment> kbCommentsSearchContainer = new SearchContainer(renderRequest, null, null, SearchContainer.DEFAULT_CUR_PARAM, SearchContainer.DEFAULT_DELTA, currentURLObj, null, kbSuggestionListDisplayContext.getEmptyResultsMessage());
 
 String orderByCol = ParamUtil.getString(request, "orderByCol");
 String orderByType = ParamUtil.getString(request, "orderByType");
@@ -53,97 +53,70 @@ kbSuggestionListDisplayContext.populateResultsAndTotal(kbCommentsSearchContainer
 
 kbCommentsSearchContainer.setRowChecker(new KBCommentsChecker(liferayPortletRequest, liferayPortletResponse));
 
+KBSuggestionListManagementToolbarDisplayContext kbSuggestionListManagementToolbarDisplayContext = new KBSuggestionListManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, kbCommentsSearchContainer);
+
+request.setAttribute("view_suggestions.jsp-kbSuggestionListManagementToolbarDisplayContext", kbSuggestionListManagementToolbarDisplayContext);
 request.setAttribute("view_suggestions.jsp-resultRowSplitter", kbCommentResultRowSplitter);
 request.setAttribute("view_suggestions.jsp-searchContainer", kbCommentsSearchContainer);
-
-List<KBComment> kbComments = kbCommentsSearchContainer.getResults();
 %>
 
 <liferay-util:include page="/admin/common/top_tabs.jsp" servletContext="<%= application %>" />
 
-<liferay-frontend:management-bar
-	disabled="<%= kbComments.isEmpty() %>"
-	includeCheckBox="<%= true %>"
+<clay:management-toolbar-v2
+	actionDropdownItems="<%= kbSuggestionListManagementToolbarDisplayContext.getActionDropdownItems() %>"
+	clearResultsURL="<%= kbSuggestionListManagementToolbarDisplayContext.getClearResultsURL() %>"
+	componentId="kbSuggestionListManagementToolbar"
+	disabled="<%= kbSuggestionListManagementToolbarDisplayContext.isDisabled() %>"
+	filterDropdownItems="<%= kbSuggestionListManagementToolbarDisplayContext.getFilterDropdownItems() %>"
+	filterLabelItems="<%= kbSuggestionListManagementToolbarDisplayContext.getFilterLabelItems() %>"
+	itemsTotal="<%= kbSuggestionListManagementToolbarDisplayContext.getTotal() %>"
 	searchContainerId="kbComments"
->
-	<liferay-frontend:management-bar-buttons>
-		<liferay-frontend:management-bar-display-buttons
-			displayViews='<%= new String[] {"descriptive"} %>'
-			portletURL="<%= currentURLObj %>"
-			selectedDisplayStyle="descriptive"
-		/>
-	</liferay-frontend:management-bar-buttons>
+	selectable="<%= true %>"
+	showSearch="<%= false %>"
+	sortingOrder="<%= kbSuggestionListManagementToolbarDisplayContext.getOrderByType() %>"
+	sortingURL="<%= String.valueOf(kbSuggestionListManagementToolbarDisplayContext.getSortingURL()) %>"
+/>
 
-	<liferay-frontend:management-bar-filters>
+<clay:container-fluid>
+	<liferay-ui:success key="suggestionDeleted" message="suggestion-deleted-successfully" />
 
-		<%
-		PortletURL navigationURL = PortletURLUtil.clone(currentURLObj, liferayPortletResponse);
+	<liferay-ui:success key="suggestionsDeleted" message="suggestions-deleted-successfully" />
 
-		navigationURL.setParameter("storeOrderByPreference", Boolean.FALSE.toString());
-		%>
+	<liferay-ui:success key="suggestionStatusUpdated" message="suggestion-status-updated-successfully" />
 
-		<liferay-frontend:management-bar-navigation
-			disabled="<%= false %>"
-			navigationKeys='<%= new String[] {"all", "new", "in-progress", "resolved"} %>'
-			portletURL="<%= navigationURL %>"
-		/>
-
-		<%
-		Map<String, String> orderColumns = new HashMap<String, String>();
-
-		if (navigation.equals("all")) {
-			orderColumns.put("status", "status");
-		}
-
-		orderColumns.put("modified-date", "modified-date");
-		orderColumns.put("user-name", "user-name");
-
-		PortletURL sortURL = PortletURLUtil.clone(currentURLObj, liferayPortletResponse);
-
-		sortURL.setParameter("storeOrderByPreference", Boolean.TRUE.toString());
-		%>
-
-		<liferay-frontend:management-bar-sort
-			orderByCol="<%= orderByCol %>"
-			orderByType="<%= orderByType %>"
-			orderColumns="<%= orderColumns %>"
-			portletURL="<%= sortURL %>"
-		/>
-	</liferay-frontend:management-bar-filters>
-
-	<liferay-frontend:management-bar-action-buttons>
-		<liferay-frontend:management-bar-button href='<%= "javascript:" + renderResponse.getNamespace() + "deleteKBComments();" %>' icon="times" label="delete" />
-	</liferay-frontend:management-bar-action-buttons>
-</liferay-frontend:management-bar>
-
-<div class="container-fluid-1280">
-	<liferay-ui:success
-		key="suggestionDeleted"
-		message="suggestion-deleted-successfully"
-	/>
-
-	<liferay-ui:success
-		key="suggestionsDeleted"
-		message="suggestions-deleted-successfully"
-	/>
-
-	<liferay-ui:success
-		key="suggestionStatusUpdated"
-		message="suggestion-status-updated-successfully"
-	/>
-
-	<liferay-ui:success
-		key="suggestionSaved"
-		message="suggestion-saved-successfully"
-	/>
+	<liferay-ui:success key="suggestionSaved" message="suggestion-saved-successfully" />
 
 	<liferay-util:include page="/admin/common/view_suggestions_by_status.jsp" servletContext="<%= application %>" />
-</div>
+</clay:container-fluid>
 
-<aui:script>
-	function <portlet:namespace />deleteKBComments() {
-		if (confirm('<liferay-ui:message key="are-you-sure-you-want-to-delete-this" />')) {
-			submitForm($(document.<portlet:namespace />fm));
+<script>
+	var deleteKBComments = function () {
+		if (
+			confirm(
+				'<liferay-ui:message key="are-you-sure-you-want-to-delete-this" />'
+			)
+		) {
+			var form = document.getElementById('<portlet:namespace />fm');
+
+			if (form) {
+				submitForm(form);
+			}
 		}
-	}
-</aui:script>
+	};
+
+	var ACTIONS = {
+		deleteKBComments: deleteKBComments,
+	};
+
+	Liferay.componentReady('kbSuggestionListManagementToolbar').then(function (
+		managementToolbar
+	) {
+		managementToolbar.on('actionItemClicked', function (event) {
+			var itemData = event.data.item.data;
+
+			if (itemData && itemData.action && ACTIONS[itemData.action]) {
+				ACTIONS[itemData.action]();
+			}
+		});
+	});
+</script>

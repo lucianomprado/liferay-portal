@@ -28,7 +28,6 @@ import com.liferay.portal.kernel.notifications.ChannelListener;
 import com.liferay.portal.kernel.notifications.DuplicateChannelHubException;
 import com.liferay.portal.kernel.notifications.NotificationEvent;
 import com.liferay.portal.kernel.notifications.UnknownChannelHubException;
-import com.liferay.portal.kernel.security.pacl.DoPrivileged;
 import com.liferay.portal.kernel.util.MethodHandler;
 import com.liferay.portal.kernel.util.MethodKey;
 
@@ -43,7 +42,6 @@ import java.util.concurrent.ConcurrentMap;
  * @author Brian Wing Shun
  * @author Shuyang Zhou
  */
-@DoPrivileged
 public class ChannelHubManagerImpl implements ChannelHubManager {
 
 	@Override
@@ -150,12 +148,14 @@ public class ChannelHubManagerImpl implements ChannelHubManager {
 		ClusterRequest clusterRequest = ClusterRequest.createMulticastRequest(
 			methodHandler, true);
 
+		clusterRequest.setFireAndForget(true);
+
 		try {
 			ClusterExecutorUtil.execute(clusterRequest);
 		}
-		catch (Exception e) {
+		catch (Exception exception) {
 			throw new ChannelException(
-				"Unable to destroy channel across cluster", e);
+				"Unable to destroy channel across cluster", exception);
 		}
 	}
 
@@ -183,10 +183,8 @@ public class ChannelHubManagerImpl implements ChannelHubManager {
 			synchronized (_channelHubs) {
 				channelHub = _channelHubs.get(companyId);
 
-				if (channelHub == null) {
-					if (createIfAbsent) {
-						channelHub = createChannelHub(companyId);
-					}
+				if ((channelHub == null) && createIfAbsent) {
+					channelHub = createChannelHub(companyId);
 				}
 			}
 		}
@@ -359,8 +357,9 @@ public class ChannelHubManagerImpl implements ChannelHubManager {
 		try {
 			ClusterExecutorUtil.execute(clusterRequest);
 		}
-		catch (Exception e) {
-			throw new ChannelException("Unable to notify cluster of event", e);
+		catch (Exception exception) {
+			throw new ChannelException(
+				"Unable to notify cluster of event", exception);
 		}
 	}
 

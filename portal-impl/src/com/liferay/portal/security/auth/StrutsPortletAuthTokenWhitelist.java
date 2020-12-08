@@ -14,7 +14,7 @@
 
 package com.liferay.portal.security.auth;
 
-import com.liferay.portal.kernel.concurrent.ConcurrentHashSet;
+import com.liferay.petra.string.CharPool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Layout;
@@ -22,76 +22,46 @@ import com.liferay.portal.kernel.model.Portlet;
 import com.liferay.portal.kernel.portlet.LiferayPortletURL;
 import com.liferay.portal.kernel.portlet.PortletIdCodec;
 import com.liferay.portal.kernel.security.auth.BaseAuthTokenWhitelist;
-import com.liferay.portal.kernel.security.pacl.DoPrivileged;
 import com.liferay.portal.kernel.service.LayoutLocalServiceUtil;
 import com.liferay.portal.kernel.service.PortletLocalServiceUtil;
-import com.liferay.portal.kernel.util.CharPool;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.Validator;
 
+import java.util.Collections;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.servlet.http.HttpServletRequest;
 
 /**
  * @author Tomas Polesovsky
  */
-@DoPrivileged
 public class StrutsPortletAuthTokenWhitelist extends BaseAuthTokenWhitelist {
-
-	public StrutsPortletAuthTokenWhitelist() {
-		trackWhitelistServices(
-			PropsKeys.AUTH_TOKEN_IGNORE_ACTIONS, _portletCSRFWhitelist);
-
-		registerPortalProperty(PropsKeys.AUTH_TOKEN_IGNORE_ACTIONS);
-
-		trackWhitelistServices(
-			PropsKeys.PORTLET_ADD_DEFAULT_RESOURCE_CHECK_WHITELIST_ACTIONS,
-			_portletInvocationWhitelist);
-
-		registerPortalProperty(
-			PropsKeys.PORTLET_ADD_DEFAULT_RESOURCE_CHECK_WHITELIST_ACTIONS);
-	}
-
-	/**
-	 * @deprecated As of 7.0.0
-	 */
-	@Deprecated
-	@Override
-	public Set<String> getPortletCSRFWhitelistActions() {
-		return _portletCSRFWhitelist;
-	}
-
-	/**
-	 * @deprecated As of 7.0.0
-	 */
-	@Deprecated
-	@Override
-	public Set<String> getPortletInvocationWhitelistActions() {
-		return _portletInvocationWhitelist;
-	}
 
 	@Override
 	public boolean isPortletCSRFWhitelisted(
-		HttpServletRequest request, Portlet portlet) {
+		HttpServletRequest httpServletRequest, Portlet portlet) {
 
 		String portletId = portlet.getPortletId();
 
 		String namespace = PortalUtil.getPortletNamespace(portletId);
 
-		String strutsAction = request.getParameter(
+		String strutsAction = httpServletRequest.getParameter(
 			namespace.concat("struts_action"));
 
-		String rootPortletId = PortletIdCodec.decodePortletName(portletId);
+		if (Validator.isNull(strutsAction)) {
+			return false;
+		}
 
-		if (Validator.isNotNull(strutsAction)) {
-			if (_portletCSRFWhitelist.contains(strutsAction) &&
-				isValidStrutsAction(
-					portlet.getCompanyId(), rootPortletId, strutsAction)) {
+		Set<String> portletCSRFWhitelist = _getPortletCSRFWhitelist();
 
-				return true;
-			}
+		if (portletCSRFWhitelist.contains(strutsAction) &&
+			isValidStrutsAction(
+				portlet.getCompanyId(),
+				PortletIdCodec.decodePortletName(portletId), strutsAction)) {
+
+			return true;
 		}
 
 		return false;
@@ -99,26 +69,31 @@ public class StrutsPortletAuthTokenWhitelist extends BaseAuthTokenWhitelist {
 
 	@Override
 	public boolean isPortletInvocationWhitelisted(
-		HttpServletRequest request, Portlet portlet) {
+		HttpServletRequest httpServletRequest, Portlet portlet) {
 
 		String portletId = portlet.getPortletId();
 
 		String namespace = PortalUtil.getPortletNamespace(portletId);
 
-		String strutsAction = request.getParameter(
+		String strutsAction = httpServletRequest.getParameter(
 			namespace.concat("struts_action"));
 
 		if (Validator.isNull(strutsAction)) {
-			strutsAction = request.getParameter("struts_action");
+			strutsAction = httpServletRequest.getParameter("struts_action");
 		}
 
-		if (Validator.isNotNull(strutsAction)) {
-			if (_portletInvocationWhitelist.contains(strutsAction) &&
-				isValidStrutsAction(
-					portlet.getCompanyId(), portletId, strutsAction)) {
+		if (Validator.isNull(strutsAction)) {
+			return false;
+		}
 
-				return true;
-			}
+		Set<String> portletInvocationWhitelist =
+			_getPortletInvocationWhitelist();
+
+		if (portletInvocationWhitelist.contains(strutsAction) &&
+			isValidStrutsAction(
+				portlet.getCompanyId(), portletId, strutsAction)) {
+
+			return true;
 		}
 
 		return false;
@@ -134,9 +109,9 @@ public class StrutsPortletAuthTokenWhitelist extends BaseAuthTokenWhitelist {
 			return false;
 		}
 
-		if (_portletCSRFWhitelist.contains(strutsAction)) {
-			long companyId = 0;
+		Set<String> portletCSRFWhitelist = _getPortletCSRFWhitelist();
 
+		if (portletCSRFWhitelist.contains(strutsAction)) {
 			long plid = liferayPortletURL.getPlid();
 
 			Layout layout = LayoutLocalServiceUtil.fetchLayout(plid);
@@ -149,11 +124,10 @@ public class StrutsPortletAuthTokenWhitelist extends BaseAuthTokenWhitelist {
 				return false;
 			}
 
-			String portletId = liferayPortletURL.getPortletId();
+			String rootPortletId = PortletIdCodec.decodePortletName(
+				liferayPortletURL.getPortletId());
 
-			String rootPortletId = PortletIdCodec.decodePortletName(portletId);
-
-			if (isValidStrutsAction(companyId, rootPortletId, strutsAction)) {
+			if (isValidStrutsAction(0, rootPortletId, strutsAction)) {
 				return true;
 			}
 		}
@@ -171,9 +145,10 @@ public class StrutsPortletAuthTokenWhitelist extends BaseAuthTokenWhitelist {
 			return false;
 		}
 
-		if (_portletInvocationWhitelist.contains(strutsAction)) {
-			long companyId = 0;
+		Set<String> portletInvocationWhitelist =
+			_getPortletInvocationWhitelist();
 
+		if (portletInvocationWhitelist.contains(strutsAction)) {
 			long plid = liferayPortletURL.getPlid();
 
 			Layout layout = LayoutLocalServiceUtil.fetchLayout(plid);
@@ -186,9 +161,9 @@ public class StrutsPortletAuthTokenWhitelist extends BaseAuthTokenWhitelist {
 				return false;
 			}
 
-			String portletId = liferayPortletURL.getPortletId();
+			if (isValidStrutsAction(
+					0, liferayPortletURL.getPortletId(), strutsAction)) {
 
-			if (isValidStrutsAction(companyId, portletId, strutsAction)) {
 				return true;
 			}
 		}
@@ -216,20 +191,77 @@ public class StrutsPortletAuthTokenWhitelist extends BaseAuthTokenWhitelist {
 				return true;
 			}
 		}
-		catch (Exception e) {
+		catch (Exception exception) {
 			if (_log.isDebugEnabled()) {
-				_log.debug(e, e);
+				_log.debug(exception, exception);
 			}
 		}
 
 		return false;
 	}
 
+	private Set<String> _getPortletCSRFWhitelist() {
+		Set<String> portletCSRFWhitelist = _portletCSRFWhitelist;
+
+		if (portletCSRFWhitelist != null) {
+			return portletCSRFWhitelist;
+		}
+
+		synchronized (this) {
+			if (_portletCSRFWhitelist == null) {
+				portletCSRFWhitelist = Collections.newSetFromMap(
+					new ConcurrentHashMap<>());
+
+				registerPortalProperty(PropsKeys.AUTH_TOKEN_IGNORE_ACTIONS);
+
+				trackWhitelistServices(
+					PropsKeys.AUTH_TOKEN_IGNORE_ACTIONS, portletCSRFWhitelist);
+
+				_portletCSRFWhitelist = portletCSRFWhitelist;
+			}
+			else {
+				portletCSRFWhitelist = _portletCSRFWhitelist;
+			}
+		}
+
+		return portletCSRFWhitelist;
+	}
+
+	private Set<String> _getPortletInvocationWhitelist() {
+		Set<String> portletInvocationWhitelist = _portletInvocationWhitelist;
+
+		if (portletInvocationWhitelist != null) {
+			return portletInvocationWhitelist;
+		}
+
+		synchronized (this) {
+			if (_portletInvocationWhitelist == null) {
+				portletInvocationWhitelist = Collections.newSetFromMap(
+					new ConcurrentHashMap<>());
+
+				registerPortalProperty(
+					PropsKeys.
+						PORTLET_ADD_DEFAULT_RESOURCE_CHECK_WHITELIST_ACTIONS);
+
+				trackWhitelistServices(
+					PropsKeys.
+						PORTLET_ADD_DEFAULT_RESOURCE_CHECK_WHITELIST_ACTIONS,
+					portletInvocationWhitelist);
+
+				_portletInvocationWhitelist = portletInvocationWhitelist;
+			}
+			else {
+				portletInvocationWhitelist = _portletInvocationWhitelist;
+			}
+		}
+
+		return portletInvocationWhitelist;
+	}
+
 	private static final Log _log = LogFactoryUtil.getLog(
 		StrutsPortletAuthTokenWhitelist.class);
 
-	private final Set<String> _portletCSRFWhitelist = new ConcurrentHashSet<>();
-	private final Set<String> _portletInvocationWhitelist =
-		new ConcurrentHashSet<>();
+	private volatile Set<String> _portletCSRFWhitelist;
+	private volatile Set<String> _portletInvocationWhitelist;
 
 }

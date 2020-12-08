@@ -15,7 +15,6 @@
 package com.liferay.sync.service.persistence.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
-
 import com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery;
 import com.liferay.portal.kernel.dao.orm.DynamicQuery;
 import com.liferay.portal.kernel.dao.orm.DynamicQueryFactoryUtil;
@@ -28,26 +27,15 @@ import com.liferay.portal.kernel.transaction.Propagation;
 import com.liferay.portal.kernel.util.IntegerWrapper;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.OrderByComparatorFactoryUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Time;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PersistenceTestRule;
 import com.liferay.portal.test.rule.TransactionalTestRule;
-
 import com.liferay.sync.exception.NoSuchDeviceException;
 import com.liferay.sync.model.SyncDevice;
 import com.liferay.sync.service.SyncDeviceLocalServiceUtil;
 import com.liferay.sync.service.persistence.SyncDevicePersistence;
 import com.liferay.sync.service.persistence.SyncDeviceUtil;
-
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
-
-import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 
@@ -58,17 +46,27 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
 /**
  * @generated
  */
 @RunWith(Arquillian.class)
 public class SyncDevicePersistenceTest {
+
 	@ClassRule
 	@Rule
-	public static final AggregateTestRule aggregateTestRule = new AggregateTestRule(new LiferayIntegrationTestRule(),
-			PersistenceTestRule.INSTANCE,
-			new TransactionalTestRule(Propagation.REQUIRED,
-				"com.liferay.sync.service"));
+	public static final AggregateTestRule aggregateTestRule =
+		new AggregateTestRule(
+			new LiferayIntegrationTestRule(), PersistenceTestRule.INSTANCE,
+			new TransactionalTestRule(
+				Propagation.REQUIRED, "com.liferay.sync.service"));
 
 	@Before
 	public void setUp() {
@@ -107,7 +105,8 @@ public class SyncDevicePersistenceTest {
 
 		_persistence.remove(newSyncDevice);
 
-		SyncDevice existingSyncDevice = _persistence.fetchByPrimaryKey(newSyncDevice.getPrimaryKey());
+		SyncDevice existingSyncDevice = _persistence.fetchByPrimaryKey(
+			newSyncDevice.getPrimaryKey());
 
 		Assert.assertNull(existingSyncDevice);
 	}
@@ -147,50 +146,53 @@ public class SyncDevicePersistenceTest {
 
 		_syncDevices.add(_persistence.update(newSyncDevice));
 
-		SyncDevice existingSyncDevice = _persistence.findByPrimaryKey(newSyncDevice.getPrimaryKey());
+		SyncDevice existingSyncDevice = _persistence.findByPrimaryKey(
+			newSyncDevice.getPrimaryKey());
 
-		Assert.assertEquals(existingSyncDevice.getUuid(),
-			newSyncDevice.getUuid());
-		Assert.assertEquals(existingSyncDevice.getSyncDeviceId(),
+		Assert.assertEquals(
+			existingSyncDevice.getUuid(), newSyncDevice.getUuid());
+		Assert.assertEquals(
+			existingSyncDevice.getSyncDeviceId(),
 			newSyncDevice.getSyncDeviceId());
-		Assert.assertEquals(existingSyncDevice.getCompanyId(),
-			newSyncDevice.getCompanyId());
-		Assert.assertEquals(existingSyncDevice.getUserId(),
-			newSyncDevice.getUserId());
-		Assert.assertEquals(existingSyncDevice.getUserName(),
-			newSyncDevice.getUserName());
-		Assert.assertEquals(Time.getShortTimestamp(
-				existingSyncDevice.getCreateDate()),
+		Assert.assertEquals(
+			existingSyncDevice.getCompanyId(), newSyncDevice.getCompanyId());
+		Assert.assertEquals(
+			existingSyncDevice.getUserId(), newSyncDevice.getUserId());
+		Assert.assertEquals(
+			existingSyncDevice.getUserName(), newSyncDevice.getUserName());
+		Assert.assertEquals(
+			Time.getShortTimestamp(existingSyncDevice.getCreateDate()),
 			Time.getShortTimestamp(newSyncDevice.getCreateDate()));
-		Assert.assertEquals(Time.getShortTimestamp(
-				existingSyncDevice.getModifiedDate()),
+		Assert.assertEquals(
+			Time.getShortTimestamp(existingSyncDevice.getModifiedDate()),
 			Time.getShortTimestamp(newSyncDevice.getModifiedDate()));
-		Assert.assertEquals(existingSyncDevice.getType(),
-			newSyncDevice.getType());
-		Assert.assertEquals(existingSyncDevice.getBuildNumber(),
+		Assert.assertEquals(
+			existingSyncDevice.getType(), newSyncDevice.getType());
+		Assert.assertEquals(
+			existingSyncDevice.getBuildNumber(),
 			newSyncDevice.getBuildNumber());
-		Assert.assertEquals(existingSyncDevice.getFeatureSet(),
-			newSyncDevice.getFeatureSet());
-		Assert.assertEquals(existingSyncDevice.getHostname(),
-			newSyncDevice.getHostname());
-		Assert.assertEquals(existingSyncDevice.getStatus(),
-			newSyncDevice.getStatus());
+		Assert.assertEquals(
+			existingSyncDevice.getFeatureSet(), newSyncDevice.getFeatureSet());
+		Assert.assertEquals(
+			existingSyncDevice.getHostname(), newSyncDevice.getHostname());
+		Assert.assertEquals(
+			existingSyncDevice.getStatus(), newSyncDevice.getStatus());
 	}
 
 	@Test
 	public void testCountByUuid() throws Exception {
-		_persistence.countByUuid(StringPool.BLANK);
+		_persistence.countByUuid("");
 
-		_persistence.countByUuid(StringPool.NULL);
+		_persistence.countByUuid("null");
 
 		_persistence.countByUuid((String)null);
 	}
 
 	@Test
 	public void testCountByUuid_C() throws Exception {
-		_persistence.countByUuid_C(StringPool.BLANK, RandomTestUtil.nextLong());
+		_persistence.countByUuid_C("", RandomTestUtil.nextLong());
 
-		_persistence.countByUuid_C(StringPool.NULL, 0L);
+		_persistence.countByUuid_C("null", 0L);
 
 		_persistence.countByUuid_C((String)null, 0L);
 	}
@@ -204,9 +206,9 @@ public class SyncDevicePersistenceTest {
 
 	@Test
 	public void testCountByC_U() throws Exception {
-		_persistence.countByC_U(RandomTestUtil.nextLong(), StringPool.BLANK);
+		_persistence.countByC_U(RandomTestUtil.nextLong(), "");
 
-		_persistence.countByC_U(0L, StringPool.NULL);
+		_persistence.countByC_U(0L, "null");
 
 		_persistence.countByC_U(0L, (String)null);
 	}
@@ -215,7 +217,8 @@ public class SyncDevicePersistenceTest {
 	public void testFindByPrimaryKeyExisting() throws Exception {
 		SyncDevice newSyncDevice = addSyncDevice();
 
-		SyncDevice existingSyncDevice = _persistence.findByPrimaryKey(newSyncDevice.getPrimaryKey());
+		SyncDevice existingSyncDevice = _persistence.findByPrimaryKey(
+			newSyncDevice.getPrimaryKey());
 
 		Assert.assertEquals(existingSyncDevice, newSyncDevice);
 	}
@@ -229,23 +232,24 @@ public class SyncDevicePersistenceTest {
 
 	@Test
 	public void testFindAll() throws Exception {
-		_persistence.findAll(QueryUtil.ALL_POS, QueryUtil.ALL_POS,
-			getOrderByComparator());
+		_persistence.findAll(
+			QueryUtil.ALL_POS, QueryUtil.ALL_POS, getOrderByComparator());
 	}
 
 	protected OrderByComparator<SyncDevice> getOrderByComparator() {
-		return OrderByComparatorFactoryUtil.create("SyncDevice", "uuid", true,
-			"syncDeviceId", true, "companyId", true, "userId", true,
-			"userName", true, "createDate", true, "modifiedDate", true, "type",
-			true, "buildNumber", true, "featureSet", true, "hostname", true,
-			"status", true);
+		return OrderByComparatorFactoryUtil.create(
+			"SyncDevice", "uuid", true, "syncDeviceId", true, "companyId", true,
+			"userId", true, "userName", true, "createDate", true,
+			"modifiedDate", true, "type", true, "buildNumber", true,
+			"featureSet", true, "hostname", true, "status", true);
 	}
 
 	@Test
 	public void testFetchByPrimaryKeyExisting() throws Exception {
 		SyncDevice newSyncDevice = addSyncDevice();
 
-		SyncDevice existingSyncDevice = _persistence.fetchByPrimaryKey(newSyncDevice.getPrimaryKey());
+		SyncDevice existingSyncDevice = _persistence.fetchByPrimaryKey(
+			newSyncDevice.getPrimaryKey());
 
 		Assert.assertEquals(existingSyncDevice, newSyncDevice);
 	}
@@ -262,6 +266,7 @@ public class SyncDevicePersistenceTest {
 	@Test
 	public void testFetchByPrimaryKeysWithMultiplePrimaryKeysWhereAllPrimaryKeysExist()
 		throws Exception {
+
 		SyncDevice newSyncDevice1 = addSyncDevice();
 		SyncDevice newSyncDevice2 = addSyncDevice();
 
@@ -270,18 +275,20 @@ public class SyncDevicePersistenceTest {
 		primaryKeys.add(newSyncDevice1.getPrimaryKey());
 		primaryKeys.add(newSyncDevice2.getPrimaryKey());
 
-		Map<Serializable, SyncDevice> syncDevices = _persistence.fetchByPrimaryKeys(primaryKeys);
+		Map<Serializable, SyncDevice> syncDevices =
+			_persistence.fetchByPrimaryKeys(primaryKeys);
 
 		Assert.assertEquals(2, syncDevices.size());
-		Assert.assertEquals(newSyncDevice1,
-			syncDevices.get(newSyncDevice1.getPrimaryKey()));
-		Assert.assertEquals(newSyncDevice2,
-			syncDevices.get(newSyncDevice2.getPrimaryKey()));
+		Assert.assertEquals(
+			newSyncDevice1, syncDevices.get(newSyncDevice1.getPrimaryKey()));
+		Assert.assertEquals(
+			newSyncDevice2, syncDevices.get(newSyncDevice2.getPrimaryKey()));
 	}
 
 	@Test
 	public void testFetchByPrimaryKeysWithMultiplePrimaryKeysWhereNoPrimaryKeysExist()
 		throws Exception {
+
 		long pk1 = RandomTestUtil.nextLong();
 
 		long pk2 = RandomTestUtil.nextLong();
@@ -291,7 +298,8 @@ public class SyncDevicePersistenceTest {
 		primaryKeys.add(pk1);
 		primaryKeys.add(pk2);
 
-		Map<Serializable, SyncDevice> syncDevices = _persistence.fetchByPrimaryKeys(primaryKeys);
+		Map<Serializable, SyncDevice> syncDevices =
+			_persistence.fetchByPrimaryKeys(primaryKeys);
 
 		Assert.assertTrue(syncDevices.isEmpty());
 	}
@@ -299,6 +307,7 @@ public class SyncDevicePersistenceTest {
 	@Test
 	public void testFetchByPrimaryKeysWithMultiplePrimaryKeysWhereSomePrimaryKeysExist()
 		throws Exception {
+
 		SyncDevice newSyncDevice = addSyncDevice();
 
 		long pk = RandomTestUtil.nextLong();
@@ -308,52 +317,57 @@ public class SyncDevicePersistenceTest {
 		primaryKeys.add(newSyncDevice.getPrimaryKey());
 		primaryKeys.add(pk);
 
-		Map<Serializable, SyncDevice> syncDevices = _persistence.fetchByPrimaryKeys(primaryKeys);
+		Map<Serializable, SyncDevice> syncDevices =
+			_persistence.fetchByPrimaryKeys(primaryKeys);
 
 		Assert.assertEquals(1, syncDevices.size());
-		Assert.assertEquals(newSyncDevice,
-			syncDevices.get(newSyncDevice.getPrimaryKey()));
+		Assert.assertEquals(
+			newSyncDevice, syncDevices.get(newSyncDevice.getPrimaryKey()));
 	}
 
 	@Test
-	public void testFetchByPrimaryKeysWithNoPrimaryKeys()
-		throws Exception {
+	public void testFetchByPrimaryKeysWithNoPrimaryKeys() throws Exception {
 		Set<Serializable> primaryKeys = new HashSet<Serializable>();
 
-		Map<Serializable, SyncDevice> syncDevices = _persistence.fetchByPrimaryKeys(primaryKeys);
+		Map<Serializable, SyncDevice> syncDevices =
+			_persistence.fetchByPrimaryKeys(primaryKeys);
 
 		Assert.assertTrue(syncDevices.isEmpty());
 	}
 
 	@Test
-	public void testFetchByPrimaryKeysWithOnePrimaryKey()
-		throws Exception {
+	public void testFetchByPrimaryKeysWithOnePrimaryKey() throws Exception {
 		SyncDevice newSyncDevice = addSyncDevice();
 
 		Set<Serializable> primaryKeys = new HashSet<Serializable>();
 
 		primaryKeys.add(newSyncDevice.getPrimaryKey());
 
-		Map<Serializable, SyncDevice> syncDevices = _persistence.fetchByPrimaryKeys(primaryKeys);
+		Map<Serializable, SyncDevice> syncDevices =
+			_persistence.fetchByPrimaryKeys(primaryKeys);
 
 		Assert.assertEquals(1, syncDevices.size());
-		Assert.assertEquals(newSyncDevice,
-			syncDevices.get(newSyncDevice.getPrimaryKey()));
+		Assert.assertEquals(
+			newSyncDevice, syncDevices.get(newSyncDevice.getPrimaryKey()));
 	}
 
 	@Test
 	public void testActionableDynamicQuery() throws Exception {
 		final IntegerWrapper count = new IntegerWrapper();
 
-		ActionableDynamicQuery actionableDynamicQuery = SyncDeviceLocalServiceUtil.getActionableDynamicQuery();
+		ActionableDynamicQuery actionableDynamicQuery =
+			SyncDeviceLocalServiceUtil.getActionableDynamicQuery();
 
-		actionableDynamicQuery.setPerformActionMethod(new ActionableDynamicQuery.PerformActionMethod<SyncDevice>() {
+		actionableDynamicQuery.setPerformActionMethod(
+			new ActionableDynamicQuery.PerformActionMethod<SyncDevice>() {
+
 				@Override
 				public void performAction(SyncDevice syncDevice) {
 					Assert.assertNotNull(syncDevice);
 
 					count.increment();
 				}
+
 			});
 
 		actionableDynamicQuery.performActions();
@@ -362,17 +376,18 @@ public class SyncDevicePersistenceTest {
 	}
 
 	@Test
-	public void testDynamicQueryByPrimaryKeyExisting()
-		throws Exception {
+	public void testDynamicQueryByPrimaryKeyExisting() throws Exception {
 		SyncDevice newSyncDevice = addSyncDevice();
 
-		DynamicQuery dynamicQuery = DynamicQueryFactoryUtil.forClass(SyncDevice.class,
-				_dynamicQueryClassLoader);
+		DynamicQuery dynamicQuery = DynamicQueryFactoryUtil.forClass(
+			SyncDevice.class, _dynamicQueryClassLoader);
 
-		dynamicQuery.add(RestrictionsFactoryUtil.eq("syncDeviceId",
-				newSyncDevice.getSyncDeviceId()));
+		dynamicQuery.add(
+			RestrictionsFactoryUtil.eq(
+				"syncDeviceId", newSyncDevice.getSyncDeviceId()));
 
-		List<SyncDevice> result = _persistence.findWithDynamicQuery(dynamicQuery);
+		List<SyncDevice> result = _persistence.findWithDynamicQuery(
+			dynamicQuery);
 
 		Assert.assertEquals(1, result.size());
 
@@ -383,32 +398,34 @@ public class SyncDevicePersistenceTest {
 
 	@Test
 	public void testDynamicQueryByPrimaryKeyMissing() throws Exception {
-		DynamicQuery dynamicQuery = DynamicQueryFactoryUtil.forClass(SyncDevice.class,
-				_dynamicQueryClassLoader);
+		DynamicQuery dynamicQuery = DynamicQueryFactoryUtil.forClass(
+			SyncDevice.class, _dynamicQueryClassLoader);
 
-		dynamicQuery.add(RestrictionsFactoryUtil.eq("syncDeviceId",
-				RandomTestUtil.nextLong()));
+		dynamicQuery.add(
+			RestrictionsFactoryUtil.eq(
+				"syncDeviceId", RandomTestUtil.nextLong()));
 
-		List<SyncDevice> result = _persistence.findWithDynamicQuery(dynamicQuery);
+		List<SyncDevice> result = _persistence.findWithDynamicQuery(
+			dynamicQuery);
 
 		Assert.assertEquals(0, result.size());
 	}
 
 	@Test
-	public void testDynamicQueryByProjectionExisting()
-		throws Exception {
+	public void testDynamicQueryByProjectionExisting() throws Exception {
 		SyncDevice newSyncDevice = addSyncDevice();
 
-		DynamicQuery dynamicQuery = DynamicQueryFactoryUtil.forClass(SyncDevice.class,
-				_dynamicQueryClassLoader);
+		DynamicQuery dynamicQuery = DynamicQueryFactoryUtil.forClass(
+			SyncDevice.class, _dynamicQueryClassLoader);
 
-		dynamicQuery.setProjection(ProjectionFactoryUtil.property(
-				"syncDeviceId"));
+		dynamicQuery.setProjection(
+			ProjectionFactoryUtil.property("syncDeviceId"));
 
 		Object newSyncDeviceId = newSyncDevice.getSyncDeviceId();
 
-		dynamicQuery.add(RestrictionsFactoryUtil.in("syncDeviceId",
-				new Object[] { newSyncDeviceId }));
+		dynamicQuery.add(
+			RestrictionsFactoryUtil.in(
+				"syncDeviceId", new Object[] {newSyncDeviceId}));
 
 		List<Object> result = _persistence.findWithDynamicQuery(dynamicQuery);
 
@@ -421,14 +438,15 @@ public class SyncDevicePersistenceTest {
 
 	@Test
 	public void testDynamicQueryByProjectionMissing() throws Exception {
-		DynamicQuery dynamicQuery = DynamicQueryFactoryUtil.forClass(SyncDevice.class,
-				_dynamicQueryClassLoader);
+		DynamicQuery dynamicQuery = DynamicQueryFactoryUtil.forClass(
+			SyncDevice.class, _dynamicQueryClassLoader);
 
-		dynamicQuery.setProjection(ProjectionFactoryUtil.property(
-				"syncDeviceId"));
+		dynamicQuery.setProjection(
+			ProjectionFactoryUtil.property("syncDeviceId"));
 
-		dynamicQuery.add(RestrictionsFactoryUtil.in("syncDeviceId",
-				new Object[] { RandomTestUtil.nextLong() }));
+		dynamicQuery.add(
+			RestrictionsFactoryUtil.in(
+				"syncDeviceId", new Object[] {RandomTestUtil.nextLong()}));
 
 		List<Object> result = _persistence.findWithDynamicQuery(dynamicQuery);
 
@@ -470,4 +488,5 @@ public class SyncDevicePersistenceTest {
 	private List<SyncDevice> _syncDevices = new ArrayList<SyncDevice>();
 	private SyncDevicePersistence _persistence;
 	private ClassLoader _dynamicQueryClassLoader;
+
 }

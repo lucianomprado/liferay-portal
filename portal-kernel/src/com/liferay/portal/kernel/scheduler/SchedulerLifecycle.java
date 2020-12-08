@@ -33,15 +33,19 @@ public class SchedulerLifecycle extends BasePortalLifecycle {
 	protected void doPortalInit() throws Exception {
 		Registry registry = RegistryUtil.getRegistry();
 
-		SchedulerEngineHelper schedulerEngineHelper = registry.getService(
-			SchedulerEngineHelper.class);
+		registry.callService(
+			SchedulerEngineHelper.class,
+			schedulerEngineHelper -> {
+				try {
+					schedulerEngineHelper.start();
+				}
+				catch (SchedulerException schedulerException) {
+					_log.error(
+						"Unable to start scheduler engine", schedulerException);
+				}
 
-		try {
-			schedulerEngineHelper.start();
-		}
-		catch (SchedulerException se) {
-			_log.error("Unable to start scheduler engine", se);
-		}
+				return null;
+			});
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(

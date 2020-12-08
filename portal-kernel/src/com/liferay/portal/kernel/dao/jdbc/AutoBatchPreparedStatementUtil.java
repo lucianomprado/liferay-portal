@@ -14,15 +14,15 @@
 
 package com.liferay.portal.kernel.dao.jdbc;
 
-import com.liferay.portal.kernel.concurrent.ConcurrentHashSet;
-import com.liferay.portal.kernel.concurrent.FutureListener;
-import com.liferay.portal.kernel.concurrent.NoticeableFuture;
-import com.liferay.portal.kernel.concurrent.ThreadPoolExecutor;
-import com.liferay.portal.kernel.executor.PortalExecutorManagerUtil;
+import com.liferay.petra.concurrent.FutureListener;
+import com.liferay.petra.concurrent.NoticeableExecutorService;
+import com.liferay.petra.concurrent.NoticeableFuture;
+import com.liferay.petra.executor.PortalExecutorManager;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
+import com.liferay.portal.kernel.util.ServiceProxyFactory;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -32,8 +32,9 @@ import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
+import java.util.Collections;
 import java.util.Set;
-import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -53,12 +54,12 @@ public class AutoBatchPreparedStatementUtil {
 
 		if (databaseMetaData.supportsBatchUpdates()) {
 			return (PreparedStatement)ProxyUtil.newProxyInstance(
-				ClassLoader.getSystemClassLoader(), _interfaces,
+				ClassLoader.getSystemClassLoader(), _INTERFACES,
 				new BatchInvocationHandler(preparedStatement));
 		}
 
 		return (PreparedStatement)ProxyUtil.newProxyInstance(
-			ClassLoader.getSystemClassLoader(), _interfaces,
+			ClassLoader.getSystemClassLoader(), _INTERFACES,
 			new NoBatchInvocationHandler(preparedStatement));
 	}
 
@@ -70,23 +71,29 @@ public class AutoBatchPreparedStatementUtil {
 
 		if (databaseMetaData.supportsBatchUpdates()) {
 			return (PreparedStatement)ProxyUtil.newProxyInstance(
-				ClassLoader.getSystemClassLoader(), _interfaces,
+				ClassLoader.getSystemClassLoader(), _INTERFACES,
 				new ConcurrentBatchInvocationHandler(connection, sql));
 		}
 
 		return (PreparedStatement)ProxyUtil.newProxyInstance(
-			ClassLoader.getSystemClassLoader(), _interfaces,
+			ClassLoader.getSystemClassLoader(), _INTERFACES,
 			new ConcurrentNoBatchInvocationHandler(connection, sql));
 	}
 
 	private static final int _HIBERNATE_JDBC_BATCH_SIZE = GetterUtil.getInteger(
 		PropsUtil.get(PropsKeys.HIBERNATE_JDBC_BATCH_SIZE));
 
+	private static final Class<?>[] _INTERFACES = new Class<?>[] {
+		PreparedStatement.class
+	};
+
 	private static final Method _addBatchMethod;
 	private static final Method _closeMethod;
 	private static final Method _executeBatch;
-	private static final Class<?>[] _interfaces =
-		new Class<?>[] {PreparedStatement.class};
+	private static volatile PortalExecutorManager _portalExecutorManager =
+		ServiceProxyFactory.newServiceTrackedInstance(
+			PortalExecutorManager.class, AutoBatchPreparedStatementUtil.class,
+			"_portalExecutorManager", true);
 
 	static {
 		try {
@@ -94,8 +101,8 @@ public class AutoBatchPreparedStatementUtil {
 			_closeMethod = PreparedStatement.class.getMethod("close");
 			_executeBatch = PreparedStatement.class.getMethod("executeBatch");
 		}
-		catch (NoSuchMethodException nsme) {
-			throw new ExceptionInInitializerError(nsme);
+		catch (NoSuchMethodException noSuchMethodException) {
+			throw new ExceptionInInitializerError(noSuchMethodException);
 		}
 	}
 
@@ -165,28 +172,28 @@ public class AutoBatchPreparedStatementUtil {
 			}
 
 			if (method.equals(_closeMethod)) {
-				Throwable throwable = null;
+				Throwable throwable1 = null;
 
 				for (Future<Void> future : _futures) {
 					try {
 						future.get();
 					}
-					catch (Throwable t) {
-						if (t instanceof ExecutionException) {
-							t = t.getCause();
+					catch (Throwable throwable2) {
+						if (throwable2 instanceof ExecutionException) {
+							throwable2 = throwable2.getCause();
 						}
 
-						if (throwable == null) {
-							throwable = t;
+						if (throwable1 == null) {
+							throwable1 = throwable2;
 						}
 						else {
-							throwable.addSuppressed(t);
+							throwable1.addSuppressed(throwable2);
 						}
 					}
 				}
 
-				if (throwable != null) {
-					throw throwable;
+				if (throwable1 != null) {
+					throw throwable1;
 				}
 			}
 
@@ -209,21 +216,16 @@ public class AutoBatchPreparedStatementUtil {
 			final PreparedStatement preparedStatement = _preparedStatement;
 
 			NoticeableFuture<Void> noticeableFuture =
-				_threadPoolExecutor.submit(
-					new Callable<Void>() {
-
-						@Override
-						public Void call() throws SQLException {
-							try {
-								preparedStatement.executeBatch();
-							}
-							finally {
-								preparedStatement.close();
-							}
-
-							return null;
+				_noticeableExecutorService.submit(
+					() -> {
+						try {
+							preparedStatement.executeBatch();
+						}
+						finally {
+							preparedStatement.close();
 						}
 
+						return null;
 					});
 
 			_futures.add(noticeableFuture);
@@ -238,7 +240,7 @@ public class AutoBatchPreparedStatementUtil {
 
 							_futures.remove(future);
 						}
-						catch (Throwable t) {
+						catch (Throwable throwable) {
 						}
 					}
 
@@ -249,12 +251,13 @@ public class AutoBatchPreparedStatementUtil {
 
 		private final Connection _connection;
 		private int _count;
-		private final Set<Future<Void>> _futures = new ConcurrentHashSet<>();
+		private final Set<Future<Void>> _futures = Collections.newSetFromMap(
+			new ConcurrentHashMap<>());
+		private final NoticeableExecutorService _noticeableExecutorService =
+			_portalExecutorManager.getPortalExecutor(
+				ConcurrentBatchInvocationHandler.class.getName());
 		private PreparedStatement _preparedStatement;
 		private final String _sql;
-		private final ThreadPoolExecutor _threadPoolExecutor =
-			PortalExecutorManagerUtil.getPortalExecutor(
-				ConcurrentBatchInvocationHandler.class.getName());
 
 	}
 
@@ -276,28 +279,28 @@ public class AutoBatchPreparedStatementUtil {
 			}
 
 			if (method.equals(_closeMethod)) {
-				Throwable throwable = null;
+				Throwable throwable1 = null;
 
 				for (Future<Void> future : _futures) {
 					try {
 						future.get();
 					}
-					catch (Throwable t) {
-						if (t instanceof ExecutionException) {
-							t = t.getCause();
+					catch (Throwable throwable2) {
+						if (throwable2 instanceof ExecutionException) {
+							throwable2 = throwable2.getCause();
 						}
 
-						if (throwable == null) {
-							throwable = t;
+						if (throwable1 == null) {
+							throwable1 = throwable2;
 						}
 						else {
-							throwable.addSuppressed(t);
+							throwable1.addSuppressed(throwable2);
 						}
 					}
 				}
 
-				if (throwable != null) {
-					throw throwable;
+				if (throwable1 != null) {
+					throw throwable1;
 				}
 			}
 
@@ -318,21 +321,16 @@ public class AutoBatchPreparedStatementUtil {
 			final PreparedStatement preparedStatement = _preparedStatement;
 
 			NoticeableFuture<Void> noticeableFuture =
-				_threadPoolExecutor.submit(
-					new Callable<Void>() {
-
-						@Override
-						public Void call() throws SQLException {
-							try {
-								preparedStatement.executeUpdate();
-							}
-							finally {
-								preparedStatement.close();
-							}
-
-							return null;
+				_noticeableExecutorService.submit(
+					() -> {
+						try {
+							preparedStatement.executeUpdate();
+						}
+						finally {
+							preparedStatement.close();
 						}
 
+						return null;
 					});
 
 			_futures.add(noticeableFuture);
@@ -347,7 +345,7 @@ public class AutoBatchPreparedStatementUtil {
 
 							_futures.remove(future);
 						}
-						catch (Throwable t) {
+						catch (Throwable throwable) {
 						}
 					}
 
@@ -357,12 +355,13 @@ public class AutoBatchPreparedStatementUtil {
 		}
 
 		private final Connection _connection;
-		private final Set<Future<Void>> _futures = new ConcurrentHashSet<>();
+		private final Set<Future<Void>> _futures = Collections.newSetFromMap(
+			new ConcurrentHashMap<>());
+		private final NoticeableExecutorService _noticeableExecutorService =
+			_portalExecutorManager.getPortalExecutor(
+				ConcurrentNoBatchInvocationHandler.class.getName());
 		private PreparedStatement _preparedStatement;
 		private final String _sql;
-		private final ThreadPoolExecutor _threadPoolExecutor =
-			PortalExecutorManagerUtil.getPortalExecutor(
-				ConcurrentNoBatchInvocationHandler.class.getName());
 
 	}
 

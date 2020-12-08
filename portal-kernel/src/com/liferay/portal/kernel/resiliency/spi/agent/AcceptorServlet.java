@@ -14,12 +14,12 @@
 
 package com.liferay.portal.kernel.resiliency.spi.agent;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.resiliency.spi.SPI;
 import com.liferay.portal.kernel.resiliency.spi.SPIUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
-import com.liferay.portal.kernel.util.StringPool;
 
 import java.io.IOException;
 
@@ -31,15 +31,18 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 /**
- * @author Shuyang Zhou
+ * @author     Shuyang Zhou
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  */
+@Deprecated
 public class AcceptorServlet extends HttpServlet {
 
 	protected void doService(
-			HttpServletRequest request, HttpServletResponse response)
+			HttpServletRequest httpServletRequest,
+			HttpServletResponse httpServletResponse)
 		throws IOException {
 
-		PortalUtil.setPortalInetSocketAddresses(request);
+		PortalUtil.setPortalInetSocketAddresses(httpServletRequest);
 
 		ServletContext servletContext = getServletContext();
 
@@ -60,23 +63,24 @@ public class AcceptorServlet extends HttpServlet {
 		SPIAgent spiAgent = spi.getSPIAgent();
 
 		HttpServletRequest spiAgentHttpServletRequest = spiAgent.prepareRequest(
-			request);
+			httpServletRequest);
 
 		HttpServletResponse spiAgentHttpServletResponse =
-			spiAgent.prepareResponse(request, response);
+			spiAgent.prepareResponse(httpServletRequest, httpServletResponse);
 
-		Exception exception = null;
+		Exception exception1 = null;
 
 		try {
 			requestDispatcher.forward(
 				spiAgentHttpServletRequest, spiAgentHttpServletResponse);
 		}
-		catch (Exception e) {
-			exception = e;
+		catch (Exception exception2) {
+			exception1 = exception2;
 		}
 
 		spiAgent.transferResponse(
-			spiAgentHttpServletRequest, spiAgentHttpServletResponse, exception);
+			spiAgentHttpServletRequest, spiAgentHttpServletResponse,
+			exception1);
 
 		HttpSession session = spiAgentHttpServletRequest.getSession();
 
@@ -85,21 +89,22 @@ public class AcceptorServlet extends HttpServlet {
 
 	@Override
 	protected void service(
-			HttpServletRequest request, HttpServletResponse response)
+			HttpServletRequest httpServletRequest,
+			HttpServletResponse httpServletResponse)
 		throws IOException {
 
 		try {
-			doService(request, response);
+			doService(httpServletRequest, httpServletResponse);
 		}
-		catch (IOException ioe) {
-			_log.error(ioe, ioe);
+		catch (IOException ioException) {
+			_log.error(ioException, ioException);
 
-			throw ioe;
+			throw ioException;
 		}
-		catch (RuntimeException re) {
-			_log.error(re, re);
+		catch (RuntimeException runtimeException) {
+			_log.error(runtimeException, runtimeException);
 
-			throw re;
+			throw runtimeException;
 		}
 	}
 

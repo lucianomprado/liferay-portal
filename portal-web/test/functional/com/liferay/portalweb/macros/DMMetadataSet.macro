@@ -1,134 +1,133 @@
-<definition>
-	<command name="add">
-		<execute macro="DMMetadataSet#selectMetadataSetsFrame" />
+definition {
 
-		<execute function="AssertTextEquals" locator1="Portlet#HEADER" value1="Metadata Sets" />
+	macro addMultipleFields {
+		DMMetadataSet.gotoFieldsTab();
 
-		<execute function="Click" locator1="Button#PLUS" />
+		for (var fieldType : list "${fieldType}") {
+			var key_fieldType = "${fieldType}";
 
-		<execute function="AssertTextEquals" locator1="Portlet#HEADER" value1="New Metadata Set" />
+			DoubleClick(locator1 = "DocumentsAndMediaMetadataSets#ADD_FIELD_TYPE");
 
-		<execute macro="PortletEntry#inputName">
-			<var name="name" value="${metadataSetName}" />
-		</execute>
+			AssertElementPresent(locator1 = "DocumentsAndMediaMetadataSets#SIDEBAR_ACTIVE_BASIC_TAB");
 
-		<for list="${dmMetadataSetFieldNames}" param="dmMetadataSetFieldName">
-			<execute macro="DMMetadataSet#addField">
-				<var name="field" value="${dmMetadataSetFieldName}" />
-				<var name="fieldFieldLabel" value="${dmMetadataSetFieldName}" />
-				<var method="StringUtil#replace('${dmMetadataSetFieldName}', ' ', '')" name="fieldName" />
-			</execute>
-		</for>
-	</command>
+			DMMetadataSet.editFieldLabel(fieldType = "${fieldType}");
 
-	<command name="addField">
-		<var name="key_field" value="${field}" />
+			DMMetadataSet.gotoBack();
+		}
 
-		<execute function="DragAndDrop" locator1="DDMEditStructure#FIELDS_FIELD" locator2="DDMEditStructure#FORM_BUILDER" value1="${field}" />
+		DDLDataDefinition.save();
+	}
 
-		<var name="key_fieldFieldLabel" value="${field}" />
+	macro addTitle {
+		LexiconEntry.gotoAdd();
 
-		<execute function="Click" locator1="DDMEditStructure#FORM_FIELD" />
+		var key_headerTitle = "New Metadata Set";
 
-		<execute function="DoubleClick" locator1="DDMEditStructure#SETTINGS_FIELD_LABEL" />
+		AssertTextEquals(
+			locator1 = "Dynamicdatamapping#HEADER_TITLE",
+			value1 = "New Metadata Set");
 
-		<execute function="Type" locator1="DDMEditStructure#SETTINGS_CELL_EDITOR_FIELD" value1="${fieldFieldLabel}" />
+		PortletEntry.inputName(name = "${metadataSetName}");
+	}
 
-		<execute function="AssertClick" locator1="DDMEditStructure#SETTINGS_CELL_EDITOR_SAVE_BUTTON" value1="Save" />
+	macro delete {
+		Search.searchCP(searchTerm = "${metadataSetName}");
 
-		<execute function="AssertTextEquals" locator1="DDMEditStructure#SETTINGS_FIELD_LABEL" value1="${fieldFieldLabel}" />
+		LexiconEntry.openEntryMenu(rowEntry = "${metadataSetName}");
 
-		<execute function="DoubleClick" locator1="DDMEditStructure#SETTINGS_NAME" />
+		MenuItem.clickNoError(menuItem = "Delete");
 
-		<execute function="Type" locator1="DDMEditStructure#SETTINGS_CELL_EDITOR_FIELD" value1="${fieldName}" />
+		AssertConfirm(value1 = "Are you sure you want to delete this? It will be deleted immediately.");
 
-		<execute function="AssertClick" locator1="DDMEditStructure#SETTINGS_CELL_EDITOR_SAVE_BUTTON" value1="Save" />
+		if ("${metadataSetHasReference}" == "true") {
+			Alert.viewRequestFailedToComplete();
 
-		<execute function="AssertTextEquals" locator1="DDMEditStructure#SETTINGS_NAME" value1="${fieldName}" />
+			AssertTextEquals.assertPartialText(
+				locator1 = "Message#ERROR_1",
+				value1 = "The structure cannot be deleted because it is required by one or more structure links.");
+		}
+		else {
+			Alert.viewSuccessMessage();
 
-		<execute function="AssertClick" locator1="DDMEditStructure#FIELDS_LINK" value1="Fields" />
+			AssertTextNotPresent(
+				locator1 = "DocumentsAndMediaMetadataSets#METADATA_SETS_NAME",
+				value1 = "${metadataSetName}");
+		}
+	}
 
-		<execute function="Click" locator1="TextInput#NAME" />
-	</command>
+	macro editFieldLabel {
+		Pause(locator1 = "1000");
 
-	<command name="deletePG">
-		<execute macro="DMMetadataSet#selectMetadataSetsFrame" />
+		Type(
+			key_fieldName = "label",
+			locator1 = "FormFields#TEXT_FIELD",
+			value1 = "${fieldType}");
 
-		<var name="key_metadataSetName" value="${metadataSetName}" />
+		if (!(isSet(fieldName))) {
+			var fieldName = StringUtil.replace("${fieldType}", " ", "");
+		}
 
-		<execute function="AssertClick" locator1="DocumentsAndMediaMetadataSets#METADATA_SETS_TABLE_ACTIONS" value1="Actions" />
+		DMMetadataSet.gotoAdvancedTab();
 
-		<execute function="AssertClickNoError" locator1="MenuItem#ANY_MENU_ITEM" value1="Delete">
-			<var name="key_menuItem" value="Delete" />
-		</execute>
+		AssertTextEquals(
+			locator1 = "FormFields#FIELD_NAME_EDIT",
+			value1 = "${fieldName}");
 
-		<execute function="Confirm" value1="Are you sure you want to delete this? It will be deleted immediately." />
+		DMMetadataSet.gotoBasicTab();
 
-		<execute macro="Alert#viewSuccessMessage" />
-		<execute function="AssertTextNotPresent" locator1="DocumentsAndMediaDocumentTypes#DOCUMENT_TYPES_TABLE_NAME" value1="${dmDocumentTypeName}" />
-	</command>
+		AssertTextEquals(
+			locator1 = "DocumentsAndMediaMetadataSets#FIELD_LABEL",
+			value1 = "${fieldType}");
+	}
 
-	<command name="deletePGFailure">
-		<execute macro="DMMetadataSet#selectMetadataSetsFrame" />
+	macro gotoAdvancedTab {
+		Click(locator1 = "DocumentsAndMediaMetadataSets#SIDEBAR_ADVANCED_TAB");
+	}
 
-		<var name="key_metadataSetName" value="${metadataSetName}" />
+	macro gotoBack {
+		Click.pauseClickAt(locator1 = "DocumentsAndMediaMetadataSets#SIDEBAR_BACK");
+	}
 
-		<execute function="AssertClick" locator1="DocumentsAndMediaMetadataSets#METADATA_SETS_TABLE_ACTIONS" value1="Actions" />
+	macro gotoBasicTab {
+		Click(locator1 = "DocumentsAndMediaMetadataSets#SIDEBAR_BASIC_TAB");
+	}
 
-		<execute function="AssertClickNoError" locator1="MenuItem#ANY_MENU_ITEM" value1="Delete">
-			<var name="key_menuItem" value="Delete" />
-		</execute>
+	macro gotoFieldsTab {
+		Click(locator1 = "DocumentsAndMediaMetadataSets#SIDEBAR_FIELDS_TAB");
+	}
 
-		<execute function="Confirm" value1="Are you sure you want to delete this? It will be deleted immediately." />
+	macro selectMetadataSetsFrame {
+		if (IsElementPresent(locator1 = "IFrame#MODAL_BODY")) {
+			SelectFrameTop();
 
-		<execute macro="Alert#viewRequestFailedToComplete" />
-		<execute function="AssertTextEquals" locator1="Message#ERROR" value1="Required structures could not be deleted." />
-		<execute function="AssertTextEquals" locator1="DocumentsAndMediaMetadataSets#METADATA_SETS_TABLE_NAME" value1="${metadataSetName}" />
-	</command>
+			SelectFrame(locator1 = "IFrame#MODAL_BODY");
+		}
+	}
 
-	<command name="save">
-		<execute function="AssertClick" locator1="DocumentsAndMediaMetadataSets#SAVE_BUTTON" value1="Save" />
-	</command>
+	macro tearDownCP {
+		Navigator.openURL();
 
-	<command name="selectMetadataSetsFrame">
-		<if>
-			<condition function="IsElementPresent" locator1="DocumentsAndMediaMetadataSets#METADATA_SETS_IFRAME" />
-			<then>
-				<execute function="SelectFrameTop" />
+		ProductMenu.gotoPortlet(
+			category = "Content &amp; Data",
+			portlet = "Documents and Media");
 
-				<execute function="SelectFrame" locator1="DocumentsAndMediaMetadataSets#METADATA_SETS_IFRAME" />
-			</then>
-		</if>
-	</command>
+		DMNavigator.gotoMetadataSets();
 
-	<command name="tearDownCP">
-		<execute macro="Navigator#openURL" />
+		DMMetadataSet.selectMetadataSetsFrame();
 
-		<execute macro="ProductMenu#gotoSitesContent">
-			<var name="portlet" value="Documents and Media" />
-		</execute>
+		Search.searchCP(searchTerm = "DM");
 
-		<execute macro="DMNavigator#gotoMetadataSets" />
+		while (IsElementPresent(locator1 = "DocumentsAndMediaMetadataSets#METADATA_SETS_TABLE_ACTIONS_1")) {
+			AssertClick(
+				locator1 = "DocumentsAndMediaMetadataSets#METADATA_SETS_TABLE_ACTIONS_1",
+				value1 = "Actions");
 
-		<execute macro="DMMetadataSet#selectMetadataSetsFrame" />
+			MenuItem.clickNoError(menuItem = "Delete");
 
-		<execute function="Type" locator1="NavBar#BASIC_SEARCH_FIELD" value1="DM" />
+			AssertConfirm(value1 = "Are you sure you want to delete this? It will be deleted immediately.");
 
-		<execute function="AssertClick" locator1="NavBar#BASIC_SEARCH_BUTTON" value1="Search" />
+			Alert.viewSuccessMessage();
+		}
+	}
 
-		<while>
-			<condition function="IsElementPresent" locator1="DocumentsAndMediaMetadataSets#METADATA_SETS_TABLE_ACTIONS_1" />
-			<then>
-				<execute function="AssertClick" locator1="DocumentsAndMediaMetadataSets#METADATA_SETS_TABLE_ACTIONS_1" value1="Actions" />
-
-				<execute function="AssertClickNoError" locator1="MenuItem#ANY_MENU_ITEM" value1="Delete">
-					<var name="key_menuItem" value="Delete" />
-				</execute>
-
-				<execute function="Confirm" value1="Are you sure you want to delete this? It will be deleted immediately." />
-
-				<execute macro="Alert#viewSuccessMessage" />
-			</then>
-		</while>
-	</command>
-</definition>
+}

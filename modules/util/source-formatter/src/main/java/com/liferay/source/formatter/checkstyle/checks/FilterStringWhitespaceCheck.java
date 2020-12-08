@@ -14,9 +14,6 @@
 
 package com.liferay.source.formatter.checkstyle.checks;
 
-import com.liferay.source.formatter.checkstyle.util.DetailASTUtil;
-
-import com.puppycrawl.tools.checkstyle.api.AbstractCheck;
 import com.puppycrawl.tools.checkstyle.api.DetailAST;
 import com.puppycrawl.tools.checkstyle.api.TokenTypes;
 
@@ -25,7 +22,7 @@ import java.util.List;
 /**
  * @author Hugo Huijser
  */
-public class FilterStringWhitespaceCheck extends AbstractCheck {
+public class FilterStringWhitespaceCheck extends BaseCheck {
 
 	@Override
 	public int[] getDefaultTokens() {
@@ -33,39 +30,39 @@ public class FilterStringWhitespaceCheck extends AbstractCheck {
 	}
 
 	@Override
-	public void visitToken(DetailAST detailAST) {
+	protected void doVisitToken(DetailAST detailAST) {
 		_checkMethod(detailAST, "ServiceTrackerFactory", "open");
 		_checkMethod(detailAST, "WaiterUtil", "waitForFilter");
 	}
 
 	private void _checkFilterStringAssign(
-		DetailAST assignAST, String filterStringVariableName) {
+		DetailAST assignDetailAST, String filterStringVariableName) {
 
-		DetailAST nameAST = null;
+		DetailAST nameDetailAST = null;
 
-		DetailAST parentAST = assignAST.getParent();
+		DetailAST parentDetailAST = assignDetailAST.getParent();
 
-		if (parentAST.getType() == TokenTypes.VARIABLE_DEF) {
-			nameAST = parentAST.findFirstToken(TokenTypes.IDENT);
+		if (parentDetailAST.getType() == TokenTypes.VARIABLE_DEF) {
+			nameDetailAST = parentDetailAST.findFirstToken(TokenTypes.IDENT);
 		}
 		else {
-			nameAST = assignAST.findFirstToken(TokenTypes.IDENT);
+			nameDetailAST = assignDetailAST.findFirstToken(TokenTypes.IDENT);
 		}
 
-		String name = nameAST.getText();
+		String name = nameDetailAST.getText();
 
 		if (!name.equals(filterStringVariableName)) {
 			return;
 		}
 
-		List<DetailAST> literalStringASTList = DetailASTUtil.getAllChildTokens(
-			assignAST, true, TokenTypes.STRING_LITERAL);
+		List<DetailAST> literalStringDetailASTList = getAllChildTokens(
+			assignDetailAST, true, TokenTypes.STRING_LITERAL);
 
-		for (DetailAST literalStringAST : literalStringASTList) {
-			String literalStringValue = literalStringAST.getText();
+		for (DetailAST literalStringDetailAST : literalStringDetailASTList) {
+			String literalStringValue = literalStringDetailAST.getText();
 
 			if (literalStringValue.contains(" = ")) {
-				log(nameAST.getLineNo(), _MSG_INCORRECT_WHITESPACE, name);
+				log(nameDetailAST, _MSG_INCORRECT_WHITESPACE, name);
 
 				return;
 			}
@@ -75,45 +72,48 @@ public class FilterStringWhitespaceCheck extends AbstractCheck {
 	private void _checkMethod(
 		DetailAST detailAST, String className, String methodName) {
 
-		List<DetailAST> methodCallASTList = DetailASTUtil.getMethodCalls(
+		List<DetailAST> methodCallDetailASTList = getMethodCalls(
 			detailAST, className, methodName);
 
-		for (DetailAST methodCallAST : methodCallASTList) {
+		for (DetailAST methodCallDetailAST : methodCallDetailASTList) {
 			String filterStringVariableName = _getFilterStringVariableName(
-				methodCallAST);
+				methodCallDetailAST);
 
 			if (filterStringVariableName == null) {
 				continue;
 			}
 
-			List<DetailAST> assignASTList = DetailASTUtil.getAllChildTokens(
+			List<DetailAST> assignDetailASTList = getAllChildTokens(
 				detailAST, true, TokenTypes.ASSIGN);
 
-			for (DetailAST assignAST : assignASTList) {
-				_checkFilterStringAssign(assignAST, filterStringVariableName);
+			for (DetailAST assignDetailAST : assignDetailASTList) {
+				_checkFilterStringAssign(
+					assignDetailAST, filterStringVariableName);
 			}
 		}
 	}
 
-	private String _getFilterStringVariableName(DetailAST methodCallAST) {
-		DetailAST elistAST = methodCallAST.findFirstToken(TokenTypes.ELIST);
+	private String _getFilterStringVariableName(DetailAST methodCallDetailAST) {
+		DetailAST elistDetailAST = methodCallDetailAST.findFirstToken(
+			TokenTypes.ELIST);
 
-		List<DetailAST> exprASTList = DetailASTUtil.getAllChildTokens(
-			elistAST, false, TokenTypes.EXPR);
+		List<DetailAST> exprDetailASTList = getAllChildTokens(
+			elistDetailAST, false, TokenTypes.EXPR);
 
-		if (exprASTList.size() < 2) {
+		if (exprDetailASTList.size() < 2) {
 			return null;
 		}
 
-		DetailAST secondParameterAST = exprASTList.get(1);
+		DetailAST secondParameterDetailAST = exprDetailASTList.get(1);
 
-		DetailAST firstChildAST = secondParameterAST.getFirstChild();
+		DetailAST firstChildDetailAST =
+			secondParameterDetailAST.getFirstChild();
 
-		if (firstChildAST.getType() != TokenTypes.IDENT) {
+		if (firstChildDetailAST.getType() != TokenTypes.IDENT) {
 			return null;
 		}
 
-		return firstChildAST.getText();
+		return firstChildDetailAST.getText();
 	}
 
 	private static final String _MSG_INCORRECT_WHITESPACE =

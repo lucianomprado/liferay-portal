@@ -31,6 +31,7 @@ import javax.management.remote.JMXServiceURL;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.GradleException;
 import org.gradle.api.logging.Logger;
+import org.gradle.api.tasks.CacheableTask;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.TaskAction;
@@ -41,13 +42,13 @@ import org.osgi.jmx.framework.BundleStateMBean;
 /**
  * @author Andrea Di Giorgi
  */
+@CacheableTask
 public class CheckOSGiBundleStateTask extends DefaultTask {
 
 	@TaskAction
 	public void checkOSGiBundleState() throws Exception {
-		Logger logger = getLogger();
-
 		String bundleState = getBundleState();
+
 		String bundleSymbolicName = getBundleSymbolicName();
 
 		boolean singleBundle = Validator.isNotNull(bundleSymbolicName);
@@ -103,6 +104,8 @@ public class CheckOSGiBundleStateTask extends DefaultTask {
 				}
 			}
 		}
+
+		Logger logger = getLogger();
 
 		if (singleBundle) {
 			if (logger.isWarnEnabled()) {

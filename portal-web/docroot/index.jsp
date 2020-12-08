@@ -14,17 +14,7 @@
  */
 --%>
 
-<%@ page import="com.liferay.portal.events.ServicePreAction" %><%@
-page import="com.liferay.portal.kernel.model.Layout" %><%@
-page import="com.liferay.portal.kernel.model.LayoutConstants" %><%@
-page import="com.liferay.portal.kernel.model.LayoutSet" %><%@
-page import="com.liferay.portal.kernel.service.LayoutLocalServiceUtil" %><%@
-page import="com.liferay.portal.kernel.servlet.HttpHeaders" %><%@
-page import="com.liferay.portal.kernel.theme.ThemeDisplay" %><%@
-page import="com.liferay.portal.kernel.util.HtmlUtil" %><%@
-page import="com.liferay.portal.kernel.util.InstancePool" %><%@
-page import="com.liferay.portal.kernel.util.PortalUtil" %><%@
-page import="com.liferay.portal.kernel.util.WebKeys" %>
+<%@ include file="/init.jsp" %>
 
 <%
 
@@ -42,13 +32,11 @@ if (layoutSet != null) {
 	long defaultPlid = LayoutLocalServiceUtil.getDefaultPlid(layoutSet.getGroupId(), layoutSet.isPrivateLayout());
 
 	if (defaultPlid != LayoutConstants.DEFAULT_PLID) {
-		Layout layout = LayoutLocalServiceUtil.getLayout(defaultPlid);
-
 		ServicePreAction servicePreAction = (ServicePreAction)InstancePool.get(ServicePreAction.class.getName());
 
-		ThemeDisplay themeDisplay = servicePreAction.initThemeDisplay(request, response);
+		servicePreAction.run(request, response);
 
-		redirect = PortalUtil.getLayoutURL(layout, themeDisplay);
+		redirect = PortalUtil.getLayoutURL(LayoutLocalServiceUtil.getLayout(defaultPlid), (ThemeDisplay)request.getAttribute(WebKeys.THEME_DISPLAY));
 	}
 	else {
 		redirect = PortalUtil.getPathMain();
@@ -62,6 +50,17 @@ if (!request.isRequestedSessionIdFromCookie()) {
 	redirect = PortalUtil.getURLWithSessionId(redirect, session.getId());
 }
 
+String queryString = request.getQueryString();
+
+if (Validator.isNotNull(queryString)) {
+	if (redirect.indexOf(CharPool.QUESTION) == -1) {
+		redirect = redirect + StringPool.QUESTION + queryString;
+	}
+	else {
+		redirect = redirect + StringPool.AMPERSAND + queryString;
+	}
+}
+
 response.setHeader(HttpHeaders.LOCATION, redirect);
 
 response.setStatus(HttpServletResponse.SC_MOVED_PERMANENTLY);
@@ -70,6 +69,7 @@ response.setStatus(HttpServletResponse.SC_MOVED_PERMANENTLY);
 <html>
 	<head>
 		<title></title>
+
 		<meta content="1; url=<%= HtmlUtil.escapeAttribute(redirect) %>" http-equiv="refresh" />
 	</head>
 

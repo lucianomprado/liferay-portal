@@ -4,8 +4,6 @@ package ${packagePath}.service.http;
 	import ${apiPackagePath}.service.${entity.name}ServiceUtil;
 </#if>
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.security.auth.HttpPrincipal;
@@ -15,10 +13,11 @@ import com.liferay.portal.kernel.util.MethodKey;
 
 /**
  * Provides the HTTP utility for the
- * {@link ${apiPackagePath}.service.${entity.name}ServiceUtil} service utility. The
+ * <code>${apiPackagePath}.service.${entity.name}ServiceUtil</code> service
+ * utility. The
  * static methods of this class calls the same methods of the service utility.
  * However, the signatures are different because it requires an additional
- * {@link com.liferay.portal.kernel.security.auth.HttpPrincipal} parameter.
+ * <code>com.liferay.portal.kernel.security.auth.HttpPrincipal</code> parameter.
  *
  * <p>
  * The benefits of using the HTTP utility is that it is fast and allows for
@@ -37,8 +36,6 @@ import com.liferay.portal.kernel.util.MethodKey;
  *
  * @author ${author}
  * @see ${entity.name}ServiceSoap
- * @see com.liferay.portal.kernel.security.auth.HttpPrincipal
- * @see ${apiPackagePath}.service.${entity.name}ServiceUtil
 <#if classDeprecated>
  * @deprecated ${classDeprecatedComment}
 </#if>
@@ -48,14 +45,12 @@ import com.liferay.portal.kernel.util.MethodKey;
 <#if classDeprecated>
 	@Deprecated
 </#if>
-
-@ProviderType
 public class ${entity.name}ServiceHttp {
 
 	<#assign hasMethods = false />
 
 	<#list methods as method>
-		<#if !method.isConstructor() && method.isPublic() && serviceBuilder.isCustomMethod(method)>
+		<#if method.isPublic() && serviceBuilder.isCustomMethod(method)>
 			<#assign
 				hasMethods = true
 
@@ -75,7 +70,7 @@ public class ${entity.name}ServiceHttp {
 				throws
 
 				<#list method.exceptions as exception>
-					${exception.value}
+					${exception.fullyQualifiedName}
 
 					<#if exception_has_next>
 						,
@@ -106,14 +101,14 @@ public class ${entity.name}ServiceHttp {
 
 						TunnelUtil.invoke(httpPrincipal, methodHandler);
 					}
-					catch (Exception e) {
-						<#list method.exceptions as exception>
-							if (e instanceof ${exception.value}) {
-								throw (${exception.value})e;
+					catch (Exception exception) {
+						<#list method.exceptions as methodException>
+							if (exception instanceof ${methodException.fullyQualifiedName}) {
+								throw (${methodException.fullyQualifiedName})exception;
 							}
 						</#list>
 
-						throw new com.liferay.portal.kernel.exception.SystemException(e);
+						throw new com.liferay.portal.kernel.exception.SystemException(exception);
 					}
 
 					<#if !stringUtil.equals(returnTypeName, "void")>
@@ -136,10 +131,10 @@ public class ${entity.name}ServiceHttp {
 						</#if>
 					</#if>
 				}
-				catch (com.liferay.portal.kernel.exception.SystemException se) {
-					_log.error(se, se);
+				catch (com.liferay.portal.kernel.exception.SystemException systemException) {
+					_log.error(systemException, systemException);
 
-					throw se;
+					throw systemException;
 				}
 			}
 		</#if>
@@ -150,7 +145,7 @@ public class ${entity.name}ServiceHttp {
 	</#if>
 
 	<#list methods as method>
-		<#if !method.isConstructor() && method.isPublic() && serviceBuilder.isCustomMethod(method)>
+		<#if method.isPublic() && serviceBuilder.isCustomMethod(method)>
 			<#assign parameters = method.parameters />
 
 			private static final Class<?>[] _${method.name}ParameterTypes${method_index} = new Class[] {

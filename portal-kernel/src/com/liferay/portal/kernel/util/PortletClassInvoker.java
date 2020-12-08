@@ -25,19 +25,6 @@ import javax.servlet.ServletContext;
  */
 public class PortletClassInvoker {
 
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link #invoke(String, MethodKey,
-	 *             Object...)}
-	 */
-	@Deprecated
-	public static Object invoke(
-			boolean newInstance, String portletId, MethodKey methodKey,
-			Object... arguments)
-		throws Exception {
-
-		return invoke(portletId, methodKey, arguments);
-	}
-
 	public static Object invoke(
 			String portletId, MethodKey methodKey, Object... arguments)
 		throws Exception {
@@ -81,9 +68,8 @@ public class PortletClassInvoker {
 		if (pos == -1) {
 			return portletId;
 		}
-		else {
-			return portletId.substring(0, pos);
-		}
+
+		return portletId.substring(0, pos);
 	}
 
 	private static final String _INSTANCE_SEPARATOR = "_INSTANCE_";

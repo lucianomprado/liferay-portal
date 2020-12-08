@@ -1,37 +1,120 @@
-<definition>
-	<command name="addContent">
-		<execute function="SelectFrame" locator1="CKEditor#BODY_FIELD_IFRAME" />
+definition {
 
-		<execute function="KeyPress" locator1="CKEditor#BODY" value1="${content}" />
+	macro addContent {
+		SelectFrame.selectFrameNoLoading(locator1 = "CKEditor#BODY_FIELD_IFRAME");
 
-		<execute function="SelectFrame" value1="relative=top" />
-	</command>
+		if (isSet(kbArticleContentEdit)) {
+			Type(
+				locator1 = "CKEditor#BODY",
+				value1 = "${kbArticleContentEdit}");
+		}
+		else {
+			KeyPress.keyPressCKEditorWaitForCKEditor(
+				locator1 = "CKEditor#BODY",
+				value1 = "${content}");
+		}
 
-	<command name="assertEditorPresent">
-		<execute function="AssertElementPresent" locator1="CKEditor#BODY_FIELD" />
-	</command>
+		SelectFrame(value1 = "relative=top");
+	}
 
-	<command name="selectHeading">
-		<execute function="Click" locator1="CKEditor#TOOLBAR_FORMAT_BUTTON" />
+	macro addContentInWebContent {
+		SelectFrame.selectFrameNoLoading(
+			key_fieldLabel = "${fieldLabel}",
+			locator1 = "CKEditor#BODY_FIELD_IFRAME_WEB_CONTENT_ARTICLE");
 
-		<execute function="SelectFrame" locator1="CKEditor#IFRAME" />
+		Type(
+			locator1 = "CKEditor#BODY",
+			value1 = "${content}");
 
-		<var name="key_format" value="${format}" />
+		SelectFrame(value1 = "relative=top");
+	}
 
-		<execute function="Click" locator1="CKEditor#TOOLBAR_FORMAT_MENULIST" value1="${format}" />
+	macro addEntryExternalURL {
+		Click(
+			key_fieldLabel = "${fieldLabel}",
+			locator1 = "CKEditor#TOOLBAR_LINK_BUTTON");
 
-		<execute function="SelectFrame" value1="relative=top" />
-	</command>
+		Type(
+			key_text = "Display Text",
+			locator1 = "TextInput#ANY",
+			value1 = "${displayText}");
 
-	<command name="typeEnterKey">
-		<execute function="SelectFrame" locator1="CKEditor#BODY_FIELD_IFRAME" />
+		Type(
+			key_text = "URL",
+			locator1 = "TextInput#ANY",
+			value1 = "${entryExternalURL}");
 
-		<execute function="KeyPress" locator1="CKEditor#BODY" value1="\RETURN" />
+		Click(locator1 = "CKEditor#OK_BUTTON");
+	}
 
-		<execute function="SelectFrame" value1="relative=top" />
-	</command>
+	macro addSourceContent {
+		Click(locator1 = "CKEditor#TOOLBAR_SOURCE_BUTTON");
 
-	<command name="viewEntryContent">
-		<execute function="AssertTextEquals" locator1="CKEditor#BODY" value1="${content}" />
-	</command>
-</definition>
+		Type.typeCodeMirrorEditorNoError(
+			locator1 = "CKEditor#BODY_FIELD_SOURCE_ON",
+			value1 = "${content}");
+	}
+
+	macro addTextWithLink {
+		SelectFrame.selectFrameNoLoading(
+			key_fieldLabel = "${fieldLabel}",
+			locator1 = "CKEditor#BODY_FIELD_IFRAME_WEB_CONTENT_ARTICLE");
+
+		Type(
+			locator1 = "CKEditor#BODY",
+			value1 = "${displayText}");
+
+		SelectFieldText(locator1 = "CKEditor#BODY");
+
+		SelectFrame(value1 = "relative=top");
+
+		Click(
+			key_fieldLabel = "${fieldLabel}",
+			locator1 = "CKEditor#TOOLBAR_LINK_BUTTON");
+
+		Click(
+			key_text = "Browse Server",
+			locator1 = "Link#ANY");
+
+		SelectFrame(locator1 = "ItemSelector#ITEM_SELECTOR_IFRAME");
+
+		if (isSet(dmDocumentTitle)) {
+			Navigator.gotoNavItem(navItem = "Documents and Media");
+
+			LexiconCard.clickCard(card = "${dmDocumentTitle}");
+		}
+		else if (isSet(pageName)) {
+			Navigator.gotoNavItem(navItem = "Public Pages");
+
+			Portlet.expandTree();
+
+			AssertClick.assertPartialTextClickAt(
+				key_nodeName = "${pageName}",
+				locator1 = "Treeview#NODE_UNSELECTED",
+				value1 = "${pageName}");
+		}
+
+		Click(locator1 = "CKEditor#OK_BUTTON");
+	}
+
+	macro assertEditorPresent {
+		AssertElementPresent(locator1 = "CKEditor#BODY_FIELD");
+	}
+
+	macro viewEntryContent {
+		AssertTextEquals(
+			locator1 = "CKEditor#BODY",
+			value1 = "${content}");
+	}
+
+	macro viewEntryContentImage {
+		SelectFrame.selectFrameNoLoading(locator1 = "CKEditor#BODY_FIELD_IFRAME");
+
+		AssertVisible(
+			key_contentImageName = "${contentImageName}",
+			locator1 = "Wiki#CONTENT_IMAGE_NAME");
+
+		SelectFrame(value1 = "relative=top");
+	}
+
+}

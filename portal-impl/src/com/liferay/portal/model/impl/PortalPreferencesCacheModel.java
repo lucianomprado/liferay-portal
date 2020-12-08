@@ -14,14 +14,11 @@
 
 package com.liferay.portal.model.impl;
 
-import aQute.bnd.annotation.ProviderType;
-
+import com.liferay.petra.lang.HashUtil;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.model.CacheModel;
 import com.liferay.portal.kernel.model.MVCCModel;
 import com.liferay.portal.kernel.model.PortalPreferences;
-import com.liferay.portal.kernel.util.HashUtil;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -32,26 +29,28 @@ import java.io.ObjectOutput;
  * The cache model class for representing PortalPreferences in entity cache.
  *
  * @author Brian Wing Shun Chan
- * @see PortalPreferences
  * @generated
  */
-@ProviderType
-public class PortalPreferencesCacheModel implements CacheModel<PortalPreferences>,
-	Externalizable, MVCCModel {
+public class PortalPreferencesCacheModel
+	implements CacheModel<PortalPreferences>, Externalizable, MVCCModel {
+
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
+	public boolean equals(Object object) {
+		if (this == object) {
 			return true;
 		}
 
-		if (!(obj instanceof PortalPreferencesCacheModel)) {
+		if (!(object instanceof PortalPreferencesCacheModel)) {
 			return false;
 		}
 
-		PortalPreferencesCacheModel portalPreferencesCacheModel = (PortalPreferencesCacheModel)obj;
+		PortalPreferencesCacheModel portalPreferencesCacheModel =
+			(PortalPreferencesCacheModel)object;
 
-		if ((portalPreferencesId == portalPreferencesCacheModel.portalPreferencesId) &&
-				(mvccVersion == portalPreferencesCacheModel.mvccVersion)) {
+		if ((portalPreferencesId ==
+				portalPreferencesCacheModel.portalPreferencesId) &&
+			(mvccVersion == portalPreferencesCacheModel.mvccVersion)) {
+
 			return true;
 		}
 
@@ -96,7 +95,8 @@ public class PortalPreferencesCacheModel implements CacheModel<PortalPreferences
 
 	@Override
 	public PortalPreferences toEntityModel() {
-		PortalPreferencesImpl portalPreferencesImpl = new PortalPreferencesImpl();
+		PortalPreferencesImpl portalPreferencesImpl =
+			new PortalPreferencesImpl();
 
 		portalPreferencesImpl.setMvccVersion(mvccVersion);
 		portalPreferencesImpl.setPortalPreferencesId(portalPreferencesId);
@@ -104,7 +104,7 @@ public class PortalPreferencesCacheModel implements CacheModel<PortalPreferences
 		portalPreferencesImpl.setOwnerType(ownerType);
 
 		if (preferences == null) {
-			portalPreferencesImpl.setPreferences(StringPool.BLANK);
+			portalPreferencesImpl.setPreferences("");
 		}
 		else {
 			portalPreferencesImpl.setPreferences(preferences);
@@ -116,7 +116,9 @@ public class PortalPreferencesCacheModel implements CacheModel<PortalPreferences
 	}
 
 	@Override
-	public void readExternal(ObjectInput objectInput) throws IOException {
+	public void readExternal(ObjectInput objectInput)
+		throws ClassNotFoundException, IOException {
+
 		mvccVersion = objectInput.readLong();
 
 		portalPreferencesId = objectInput.readLong();
@@ -124,12 +126,11 @@ public class PortalPreferencesCacheModel implements CacheModel<PortalPreferences
 		ownerId = objectInput.readLong();
 
 		ownerType = objectInput.readInt();
-		preferences = objectInput.readUTF();
+		preferences = (String)objectInput.readObject();
 	}
 
 	@Override
-	public void writeExternal(ObjectOutput objectOutput)
-		throws IOException {
+	public void writeExternal(ObjectOutput objectOutput) throws IOException {
 		objectOutput.writeLong(mvccVersion);
 
 		objectOutput.writeLong(portalPreferencesId);
@@ -139,10 +140,10 @@ public class PortalPreferencesCacheModel implements CacheModel<PortalPreferences
 		objectOutput.writeInt(ownerType);
 
 		if (preferences == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeObject("");
 		}
 		else {
-			objectOutput.writeUTF(preferences);
+			objectOutput.writeObject(preferences);
 		}
 	}
 
@@ -151,4 +152,5 @@ public class PortalPreferencesCacheModel implements CacheModel<PortalPreferences
 	public long ownerId;
 	public int ownerType;
 	public String preferences;
+
 }

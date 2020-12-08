@@ -14,15 +14,16 @@
 
 package com.liferay.portal.kernel.portlet;
 
-import aQute.bnd.annotation.ProviderType;
-
 import javax.portlet.Portlet;
 import javax.portlet.PortletConfig;
 import javax.portlet.PortletContext;
 import javax.portlet.PortletException;
 
+import org.osgi.annotation.versioning.ProviderType;
+
 /**
  * @author Shuyang Zhou
+ * @author Neil Griffin
  */
 @ProviderType
 public interface InvokerPortletFactory {
@@ -32,8 +33,7 @@ public interface InvokerPortletFactory {
 			Portlet portlet, PortletConfig portletConfig,
 			PortletContext portletContext,
 			InvokerFilterContainer invokerFilterContainer,
-			boolean checkAuthToken, boolean facesPortlet, boolean strutsPortlet,
-			boolean strutsBridgePortlet)
+			boolean checkAuthToken, boolean facesPortlet, boolean headerPortlet)
 		throws PortletException;
 
 	public InvokerPortlet create(

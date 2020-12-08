@@ -37,9 +37,11 @@ import javax.servlet.http.HttpServletRequest;
 public class GroupPortletRatingsDefinitionDisplayContext {
 
 	public GroupPortletRatingsDefinitionDisplayContext(
-		UnicodeProperties groupTypeSettings, HttpServletRequest request) {
+		UnicodeProperties groupTypeSettingsUnicodeProperties,
+		HttpServletRequest httpServletRequest) {
 
-		_populateRatingsTypeMaps(groupTypeSettings, request);
+		_populateRatingsTypeMaps(
+			groupTypeSettingsUnicodeProperties, httpServletRequest);
 	}
 
 	public Map<String, Map<String, RatingsType>> getGroupRatingsTypeMaps() {
@@ -47,7 +49,8 @@ public class GroupPortletRatingsDefinitionDisplayContext {
 	}
 
 	private void _populateRatingsTypeMaps(
-		UnicodeProperties groupTypeSettings, HttpServletRequest request) {
+		UnicodeProperties groupTypeSettingsUnicodeProperties,
+		HttpServletRequest httpServletRequest) {
 
 		Map<String, PortletRatingsDefinitionValues>
 			portletRatingsDefinitionValuesMap =
@@ -66,8 +69,9 @@ public class GroupPortletRatingsDefinitionDisplayContext {
 
 			String portletId = portletRatingsDefinitionValues.getPortletId();
 
-			ThemeDisplay themeDisplay = (ThemeDisplay)request.getAttribute(
-				WebKeys.THEME_DISPLAY);
+			ThemeDisplay themeDisplay =
+				(ThemeDisplay)httpServletRequest.getAttribute(
+					WebKeys.THEME_DISPLAY);
 
 			if (!PortletLocalServiceUtil.hasPortlet(
 					themeDisplay.getCompanyId(), portletId)) {
@@ -77,19 +81,17 @@ public class GroupPortletRatingsDefinitionDisplayContext {
 
 			String className = entry.getKey();
 
-			Map<String, RatingsType> ratingsTypeMap = new HashMap<>();
-
-			String propertyKey = RatingsDataTransformerUtil.getPropertyKey(
-				className);
-
 			String groupRatingsTypeString = PropertiesParamUtil.getString(
-				groupTypeSettings, request, propertyKey);
+				groupTypeSettingsUnicodeProperties, httpServletRequest,
+				RatingsDataTransformerUtil.getPropertyKey(className));
 
 			RatingsType ratingsType = null;
 
 			if (Validator.isNotNull(groupRatingsTypeString)) {
 				ratingsType = RatingsType.parse(groupRatingsTypeString);
 			}
+
+			Map<String, RatingsType> ratingsTypeMap = new HashMap<>();
 
 			ratingsTypeMap.put(className, ratingsType);
 

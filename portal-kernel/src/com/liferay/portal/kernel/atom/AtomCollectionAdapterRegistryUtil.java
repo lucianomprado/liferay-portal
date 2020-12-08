@@ -14,8 +14,6 @@
 
 package com.liferay.portal.kernel.atom;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.ListUtil;
@@ -32,25 +30,25 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * @author Igor Spasic
  */
-@ProviderType
 public class AtomCollectionAdapterRegistryUtil {
 
 	public static AtomCollectionAdapter<?> getAtomCollectionAdapter(
 		String collectionName) {
 
-		return _instance._getAtomCollectionAdapter(collectionName);
+		return _atomCollectionAdapterRegistryUtil._getAtomCollectionAdapter(
+			collectionName);
 	}
 
 	public static List<AtomCollectionAdapter<?>> getAtomCollectionAdapters() {
-		return _instance._getAtomCollectionAdapters();
+		return _atomCollectionAdapterRegistryUtil._getAtomCollectionAdapters();
 	}
 
 	private AtomCollectionAdapterRegistryUtil() {
 		Registry registry = RegistryUtil.getRegistry();
 
 		_serviceTracker = registry.trackServices(
-			(Class<AtomCollectionAdapter<?>>)(Class<?>)
-				AtomCollectionAdapter.class,
+			(Class<AtomCollectionAdapter<?>>)
+				(Class<?>)AtomCollectionAdapter.class,
 			new AtomCollectionAdapterServiceTrackerCustomizer());
 
 		_serviceTracker.open();
@@ -69,14 +67,14 @@ public class AtomCollectionAdapterRegistryUtil {
 	private static final Log _log = LogFactoryUtil.getLog(
 		AtomCollectionAdapterRegistryUtil.class);
 
-	private static final AtomCollectionAdapterRegistryUtil _instance =
-		new AtomCollectionAdapterRegistryUtil();
+	private static final AtomCollectionAdapterRegistryUtil
+		_atomCollectionAdapterRegistryUtil =
+			new AtomCollectionAdapterRegistryUtil();
 
 	private final Map<String, AtomCollectionAdapter<?>>
 		_atomCollectionAdapters = new ConcurrentHashMap<>();
-	private final
-		ServiceTracker<AtomCollectionAdapter<?>, AtomCollectionAdapter<?>>
-			_serviceTracker;
+	private final ServiceTracker
+		<AtomCollectionAdapter<?>, AtomCollectionAdapter<?>> _serviceTracker;
 
 	private class AtomCollectionAdapterServiceTrackerCustomizer
 		implements ServiceTrackerCustomizer

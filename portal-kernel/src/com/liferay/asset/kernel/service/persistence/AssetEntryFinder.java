@@ -14,7 +14,7 @@
 
 package com.liferay.asset.kernel.service.persistence;
 
-import aQute.bnd.annotation.ProviderType;
+import org.osgi.annotation.versioning.ProviderType;
 
 /**
  * @author Brian Wing Shun Chan
@@ -22,14 +22,12 @@ import aQute.bnd.annotation.ProviderType;
  */
 @ProviderType
 public interface AssetEntryFinder {
+
 	public int countEntries(AssetEntryQuery entryQuery);
 
-	public java.util.List<com.liferay.asset.kernel.model.AssetEntry> findByDLFileEntryC_T(
-		long classNameId, java.lang.String treePath);
+	public java.util.List<com.liferay.asset.kernel.model.AssetEntry>
+		findEntries(AssetEntryQuery entryQuery);
 
-	public java.util.List<com.liferay.asset.kernel.model.AssetEntry> findByDLFolderC_T(
-		long classNameId, java.lang.String treePath);
+	public double findPriorityByC_C(long classNameId, long classPK);
 
-	public java.util.List<com.liferay.asset.kernel.model.AssetEntry> findEntries(
-		AssetEntryQuery entryQuery);
 }

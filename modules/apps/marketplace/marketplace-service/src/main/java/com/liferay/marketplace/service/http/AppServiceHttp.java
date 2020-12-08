@@ -14,10 +14,7 @@
 
 package com.liferay.marketplace.service.http;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.marketplace.service.AppServiceUtil;
-
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.security.auth.HttpPrincipal;
@@ -27,10 +24,11 @@ import com.liferay.portal.kernel.util.MethodKey;
 
 /**
  * Provides the HTTP utility for the
- * {@link AppServiceUtil} service utility. The
+ * <code>AppServiceUtil</code> service
+ * utility. The
  * static methods of this class calls the same methods of the service utility.
  * However, the signatures are different because it requires an additional
- * {@link HttpPrincipal} parameter.
+ * <code>HttpPrincipal</code> parameter.
  *
  * <p>
  * The benefits of using the HTTP utility is that it is fast and allows for
@@ -49,18 +47,17 @@ import com.liferay.portal.kernel.util.MethodKey;
  *
  * @author Ryan Park
  * @see AppServiceSoap
- * @see HttpPrincipal
- * @see AppServiceUtil
  * @generated
  */
-@ProviderType
 public class AppServiceHttp {
+
 	public static com.liferay.marketplace.model.App deleteApp(
-		HttpPrincipal httpPrincipal, long appId)
+			HttpPrincipal httpPrincipal, long appId)
 		throws com.liferay.portal.kernel.exception.PortalException {
+
 		try {
-			MethodKey methodKey = new MethodKey(AppServiceUtil.class,
-					"deleteApp", _deleteAppParameterTypes0);
+			MethodKey methodKey = new MethodKey(
+				AppServiceUtil.class, "deleteApp", _deleteAppParameterTypes0);
 
 			MethodHandler methodHandler = new MethodHandler(methodKey, appId);
 
@@ -69,84 +66,106 @@ public class AppServiceHttp {
 			try {
 				returnObj = TunnelUtil.invoke(httpPrincipal, methodHandler);
 			}
-			catch (Exception e) {
-				if (e instanceof com.liferay.portal.kernel.exception.PortalException) {
-					throw (com.liferay.portal.kernel.exception.PortalException)e;
+			catch (Exception exception) {
+				if (exception instanceof
+						com.liferay.portal.kernel.exception.PortalException) {
+
+					throw (com.liferay.portal.kernel.exception.PortalException)
+						exception;
 				}
 
-				throw new com.liferay.portal.kernel.exception.SystemException(e);
+				throw new com.liferay.portal.kernel.exception.SystemException(
+					exception);
 			}
 
 			return (com.liferay.marketplace.model.App)returnObj;
 		}
-		catch (com.liferay.portal.kernel.exception.SystemException se) {
-			_log.error(se, se);
+		catch (com.liferay.portal.kernel.exception.SystemException
+					systemException) {
 
-			throw se;
+			_log.error(systemException, systemException);
+
+			throw systemException;
 		}
 	}
 
 	public static void installApp(HttpPrincipal httpPrincipal, long remoteAppId)
 		throws com.liferay.portal.kernel.exception.PortalException {
-		try {
-			MethodKey methodKey = new MethodKey(AppServiceUtil.class,
-					"installApp", _installAppParameterTypes1);
 
-			MethodHandler methodHandler = new MethodHandler(methodKey,
-					remoteAppId);
+		try {
+			MethodKey methodKey = new MethodKey(
+				AppServiceUtil.class, "installApp", _installAppParameterTypes1);
+
+			MethodHandler methodHandler = new MethodHandler(
+				methodKey, remoteAppId);
 
 			try {
 				TunnelUtil.invoke(httpPrincipal, methodHandler);
 			}
-			catch (Exception e) {
-				if (e instanceof com.liferay.portal.kernel.exception.PortalException) {
-					throw (com.liferay.portal.kernel.exception.PortalException)e;
+			catch (Exception exception) {
+				if (exception instanceof
+						com.liferay.portal.kernel.exception.PortalException) {
+
+					throw (com.liferay.portal.kernel.exception.PortalException)
+						exception;
 				}
 
-				throw new com.liferay.portal.kernel.exception.SystemException(e);
+				throw new com.liferay.portal.kernel.exception.SystemException(
+					exception);
 			}
 		}
-		catch (com.liferay.portal.kernel.exception.SystemException se) {
-			_log.error(se, se);
+		catch (com.liferay.portal.kernel.exception.SystemException
+					systemException) {
 
-			throw se;
+			_log.error(systemException, systemException);
+
+			throw systemException;
 		}
 	}
 
-	public static void uninstallApp(HttpPrincipal httpPrincipal,
-		long remoteAppId)
+	public static void uninstallApp(
+			HttpPrincipal httpPrincipal, long remoteAppId)
 		throws com.liferay.portal.kernel.exception.PortalException {
-		try {
-			MethodKey methodKey = new MethodKey(AppServiceUtil.class,
-					"uninstallApp", _uninstallAppParameterTypes2);
 
-			MethodHandler methodHandler = new MethodHandler(methodKey,
-					remoteAppId);
+		try {
+			MethodKey methodKey = new MethodKey(
+				AppServiceUtil.class, "uninstallApp",
+				_uninstallAppParameterTypes2);
+
+			MethodHandler methodHandler = new MethodHandler(
+				methodKey, remoteAppId);
 
 			try {
 				TunnelUtil.invoke(httpPrincipal, methodHandler);
 			}
-			catch (Exception e) {
-				if (e instanceof com.liferay.portal.kernel.exception.PortalException) {
-					throw (com.liferay.portal.kernel.exception.PortalException)e;
+			catch (Exception exception) {
+				if (exception instanceof
+						com.liferay.portal.kernel.exception.PortalException) {
+
+					throw (com.liferay.portal.kernel.exception.PortalException)
+						exception;
 				}
 
-				throw new com.liferay.portal.kernel.exception.SystemException(e);
+				throw new com.liferay.portal.kernel.exception.SystemException(
+					exception);
 			}
 		}
-		catch (com.liferay.portal.kernel.exception.SystemException se) {
-			_log.error(se, se);
+		catch (com.liferay.portal.kernel.exception.SystemException
+					systemException) {
 
-			throw se;
+			_log.error(systemException, systemException);
+
+			throw systemException;
 		}
 	}
 
 	public static com.liferay.marketplace.model.App updateApp(
-		HttpPrincipal httpPrincipal, java.io.File file)
+			HttpPrincipal httpPrincipal, java.io.File file)
 		throws com.liferay.portal.kernel.exception.PortalException {
+
 		try {
-			MethodKey methodKey = new MethodKey(AppServiceUtil.class,
-					"updateApp", _updateAppParameterTypes3);
+			MethodKey methodKey = new MethodKey(
+				AppServiceUtil.class, "updateApp", _updateAppParameterTypes3);
 
 			MethodHandler methodHandler = new MethodHandler(methodKey, file);
 
@@ -155,34 +174,42 @@ public class AppServiceHttp {
 			try {
 				returnObj = TunnelUtil.invoke(httpPrincipal, methodHandler);
 			}
-			catch (Exception e) {
-				if (e instanceof com.liferay.portal.kernel.exception.PortalException) {
-					throw (com.liferay.portal.kernel.exception.PortalException)e;
+			catch (Exception exception) {
+				if (exception instanceof
+						com.liferay.portal.kernel.exception.PortalException) {
+
+					throw (com.liferay.portal.kernel.exception.PortalException)
+						exception;
 				}
 
-				throw new com.liferay.portal.kernel.exception.SystemException(e);
+				throw new com.liferay.portal.kernel.exception.SystemException(
+					exception);
 			}
 
 			return (com.liferay.marketplace.model.App)returnObj;
 		}
-		catch (com.liferay.portal.kernel.exception.SystemException se) {
-			_log.error(se, se);
+		catch (com.liferay.portal.kernel.exception.SystemException
+					systemException) {
 
-			throw se;
+			_log.error(systemException, systemException);
+
+			throw systemException;
 		}
 	}
 
 	private static Log _log = LogFactoryUtil.getLog(AppServiceHttp.class);
+
 	private static final Class<?>[] _deleteAppParameterTypes0 = new Class[] {
-			long.class
-		};
+		long.class
+	};
 	private static final Class<?>[] _installAppParameterTypes1 = new Class[] {
-			long.class
-		};
+		long.class
+	};
 	private static final Class<?>[] _uninstallAppParameterTypes2 = new Class[] {
-			long.class
-		};
+		long.class
+	};
 	private static final Class<?>[] _updateAppParameterTypes3 = new Class[] {
-			java.io.File.class
-		};
+		java.io.File.class
+	};
+
 }

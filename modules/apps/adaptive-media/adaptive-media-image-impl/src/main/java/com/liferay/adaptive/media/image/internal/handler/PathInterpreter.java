@@ -14,10 +14,10 @@
 
 package com.liferay.adaptive.media.image.internal.handler;
 
-import com.liferay.adaptive.media.AdaptiveMediaAttribute;
-import com.liferay.adaptive.media.exception.AdaptiveMediaRuntimeException;
-import com.liferay.adaptive.media.image.configuration.AdaptiveMediaImageConfigurationEntry;
-import com.liferay.adaptive.media.image.configuration.AdaptiveMediaImageConfigurationHelper;
+import com.liferay.adaptive.media.AMAttribute;
+import com.liferay.adaptive.media.exception.AMRuntimeException;
+import com.liferay.adaptive.media.image.configuration.AMImageConfigurationEntry;
+import com.liferay.adaptive.media.image.configuration.AMImageConfigurationHelper;
 import com.liferay.adaptive.media.image.internal.util.Tuple;
 import com.liferay.document.library.kernel.service.DLAppService;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -39,15 +39,15 @@ import org.osgi.service.component.annotations.Reference;
 @Component(immediate = true, service = PathInterpreter.class)
 public class PathInterpreter {
 
-	public Optional<Tuple<FileVersion, Map<String, String>>>
-		interpretPath(String pathInfo) {
+	public Optional<Tuple<FileVersion, Map<String, String>>> interpretPath(
+		String pathInfo) {
 
 		try {
 			if (pathInfo == null) {
-				throw new IllegalArgumentException("pathInfo cannot be null");
+				throw new IllegalArgumentException("Path information is null");
 			}
 
-			Matcher matcher = _URL_PATTERN.matcher(pathInfo);
+			Matcher matcher = _pattern.matcher(pathInfo);
 
 			if (!matcher.matches()) {
 				return Optional.empty();
@@ -63,48 +63,37 @@ public class PathInterpreter {
 
 			String configurationEntryUUID = _getConfigurationEntryUUID(matcher);
 
-			Optional<AdaptiveMediaImageConfigurationEntry>
-				configurationEntryOptional =
-					_configurationHelper.
-						getAdaptiveMediaImageConfigurationEntry(
-							fileVersion.getCompanyId(), configurationEntryUUID);
+			Optional<AMImageConfigurationEntry>
+				amImageConfigurationEntryOptional =
+					_amImageConfigurationHelper.getAMImageConfigurationEntry(
+						fileVersion.getCompanyId(), configurationEntryUUID);
 
-			Map<String, String> properties = configurationEntryOptional.map(
-				configurationEntry -> {
-					Map<String, String> curProperties =
-						configurationEntry.getProperties();
+			return Optional.of(
+				Tuple.of(
+					fileVersion,
+					amImageConfigurationEntryOptional.map(
+						amImageConfigurationEntry -> {
+							Map<String, String> curProperties =
+								amImageConfigurationEntry.getProperties();
 
-					AdaptiveMediaAttribute<?, String>
-						configurationUuidAdaptiveMediaAttribute =
-							AdaptiveMediaAttribute.getConfigurationUuid();
+							AMAttribute<?, String>
+								configurationUuidAMAttribute =
+									AMAttribute.
+										getConfigurationUuidAMAttribute();
 
-					curProperties.put(
-						configurationUuidAdaptiveMediaAttribute.getName(),
-						configurationEntry.getUUID());
+							curProperties.put(
+								configurationUuidAMAttribute.getName(),
+								amImageConfigurationEntry.getUUID());
 
-					return curProperties;
-				}
-			).orElse(
-				new HashMap<>()
-			);
-
-			return Optional.of(Tuple.of(fileVersion, properties));
+							return curProperties;
+						}
+					).orElse(
+						new HashMap<>()
+					)));
 		}
-		catch (PortalException pe) {
-			throw new AdaptiveMediaRuntimeException(pe);
+		catch (PortalException portalException) {
+			throw new AMRuntimeException(portalException);
 		}
-	}
-
-	@Reference(unbind = "-")
-	public void setAdaptiveMediaImageConfigurationHelper(
-		AdaptiveMediaImageConfigurationHelper configurationHelper) {
-
-		_configurationHelper = configurationHelper;
-	}
-
-	@Reference(unbind = "-")
-	public void setDLAppService(DLAppService dlAppService) {
-		_dlAppService = dlAppService;
 	}
 
 	private String _getConfigurationEntryUUID(Matcher matcher) {
@@ -129,10 +118,13 @@ public class PathInterpreter {
 		return Long.valueOf(matcher.group(2));
 	}
 
-	private static final Pattern _URL_PATTERN = Pattern.compile(
+	private static final Pattern _pattern = Pattern.compile(
 		"/image/(\\d+)(?:/(\\d+))?/([^/]+)/(?:[^/]+)");
 
-	private AdaptiveMediaImageConfigurationHelper _configurationHelper;
+	@Reference
+	private AMImageConfigurationHelper _amImageConfigurationHelper;
+
+	@Reference
 	private DLAppService _dlAppService;
 
 }

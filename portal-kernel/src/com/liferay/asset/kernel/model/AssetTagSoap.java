@@ -14,8 +14,6 @@
 
 package com.liferay.asset.kernel.model;
 
-import aQute.bnd.annotation.ProviderType;
-
 import java.io.Serializable;
 
 import java.util.ArrayList;
@@ -26,14 +24,17 @@ import java.util.List;
  * This class is used by SOAP remote services, specifically {@link com.liferay.portlet.asset.service.http.AssetTagServiceSoap}.
  *
  * @author Brian Wing Shun Chan
- * @see com.liferay.portlet.asset.service.http.AssetTagServiceSoap
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
-@ProviderType
+@Deprecated
 public class AssetTagSoap implements Serializable {
+
 	public static AssetTagSoap toSoapModel(AssetTag model) {
 		AssetTagSoap soapModel = new AssetTagSoap();
 
+		soapModel.setMvccVersion(model.getMvccVersion());
+		soapModel.setCtCollectionId(model.getCtCollectionId());
 		soapModel.setUuid(model.getUuid());
 		soapModel.setTagId(model.getTagId());
 		soapModel.setGroupId(model.getGroupId());
@@ -77,7 +78,8 @@ public class AssetTagSoap implements Serializable {
 	}
 
 	public static AssetTagSoap[] toSoapModels(List<AssetTag> models) {
-		List<AssetTagSoap> soapModels = new ArrayList<AssetTagSoap>(models.size());
+		List<AssetTagSoap> soapModels = new ArrayList<AssetTagSoap>(
+			models.size());
 
 		for (AssetTag model : models) {
 			soapModels.add(toSoapModel(model));
@@ -95,6 +97,22 @@ public class AssetTagSoap implements Serializable {
 
 	public void setPrimaryKey(long pk) {
 		setTagId(pk);
+	}
+
+	public long getMvccVersion() {
+		return _mvccVersion;
+	}
+
+	public void setMvccVersion(long mvccVersion) {
+		_mvccVersion = mvccVersion;
+	}
+
+	public long getCtCollectionId() {
+		return _ctCollectionId;
+	}
+
+	public void setCtCollectionId(long ctCollectionId) {
+		_ctCollectionId = ctCollectionId;
 	}
 
 	public String getUuid() {
@@ -185,6 +203,8 @@ public class AssetTagSoap implements Serializable {
 		_lastPublishDate = lastPublishDate;
 	}
 
+	private long _mvccVersion;
+	private long _ctCollectionId;
 	private String _uuid;
 	private long _tagId;
 	private long _groupId;
@@ -196,4 +216,5 @@ public class AssetTagSoap implements Serializable {
 	private String _name;
 	private int _assetCount;
 	private Date _lastPublishDate;
+
 }

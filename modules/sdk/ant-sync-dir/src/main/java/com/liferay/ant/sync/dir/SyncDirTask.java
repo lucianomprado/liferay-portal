@@ -17,19 +17,22 @@ package com.liferay.ant.sync.dir;
 import java.io.File;
 import java.io.IOException;
 
-import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.Paths;
 
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Task;
 
 /**
  * @author Andrea Di Giorgi
+ * @author Minhchau Dang
  */
 public class SyncDirTask extends Task {
 
@@ -41,24 +44,49 @@ public class SyncDirTask extends Task {
 
 		long start = System.currentTimeMillis();
 
-		try {
-			int count = _syncDirectory();
+		int count = _syncDirectory();
 
-			log(
-				count + " files synchronized in " +
-					(System.currentTimeMillis() - start) + "ms");
-		}
-		catch (IOException ioe) {
-			throw new BuildException(ioe);
-		}
+		log(
+			count + " files synchronized in " +
+				(System.currentTimeMillis() - start) + "ms");
 	}
 
 	public void setDir(File dir) {
 		_dir = dir;
 	}
 
+	public void setSymbolic(Boolean symbolic) {
+		_symbolic = symbolic;
+	}
+
+	public void setThreadCount(Integer threadCount) {
+		_threadCount = threadCount;
+	}
+
 	public void setToDir(File toDir) {
 		_toDir = toDir;
+	}
+
+	private List<SyncFileCallable> _buildSyncFileCallables(
+		File dir, File toDir, List<SyncFileCallable> syncFileCallables) {
+
+		toDir.mkdirs();
+
+		for (File fromFile : dir.listFiles()) {
+			File toFile = new File(toDir, fromFile.getName());
+
+			if (fromFile.isDirectory()) {
+				_buildSyncFileCallables(fromFile, toFile, syncFileCallables);
+			}
+			else if (!toFile.exists()) {
+				SyncFileCallable syncFileCallable = new SyncFileCallable(
+					fromFile, toFile, _symbolic);
+
+				syncFileCallables.add(syncFileCallable);
+			}
+		}
+
+		return syncFileCallables;
 	}
 
 	private void _checkConfiguration() throws BuildException {
@@ -80,58 +108,73 @@ public class SyncDirTask extends Task {
 		}
 	}
 
-	private int _syncDirectory() throws IOException {
-		final Path rootDirPath = _dir.toPath();
-		final Path toRootDirPath = _toDir.toPath();
+	private int _syncDirectory() {
+		List<SyncFileCallable> syncFileCallables = _buildSyncFileCallables(
+			_dir, _toDir, new ArrayList<SyncFileCallable>());
 
-		Files.createDirectories(toRootDirPath);
+		ExecutorService executorService = Executors.newFixedThreadPool(
+			_threadCount);
 
-		final AtomicInteger atomicInteger = new AtomicInteger();
+		List<Future<Integer>> futures;
 
-		Files.walkFileTree(
-			rootDirPath,
-			new SimpleFileVisitor<Path>() {
+		try {
+			futures = executorService.invokeAll(syncFileCallables);
 
-				@Override
-				public FileVisitResult preVisitDirectory(
-						Path dirPath, BasicFileAttributes basicFileAttributes)
-					throws IOException {
+			executorService.shutdown();
 
-					Path relativePath = rootDirPath.relativize(dirPath);
+			int syncronizedFileCount = 0;
 
-					Path toDirPath = toRootDirPath.resolve(relativePath);
+			for (Future<Integer> future : futures) {
+				syncronizedFileCount += future.get();
+			}
 
-					if (Files.notExists(toDirPath)) {
-						Files.createDirectory(toDirPath);
-					}
+			return syncronizedFileCount;
+		}
+		catch (Exception exception) {
+			exception.printStackTrace();
 
-					return FileVisitResult.CONTINUE;
-				}
-
-				@Override
-				public FileVisitResult visitFile(
-						Path path, BasicFileAttributes basicFileAttributes)
-					throws IOException {
-
-					Path relativePath = rootDirPath.relativize(path);
-
-					Path toPath = toRootDirPath.resolve(relativePath);
-
-					if (Files.notExists(toPath)) {
-						Files.copy(path, toPath);
-
-						atomicInteger.incrementAndGet();
-					}
-
-					return FileVisitResult.CONTINUE;
-				}
-
-			});
-
-		return atomicInteger.intValue();
+			throw new RuntimeException(exception);
+		}
 	}
 
 	private File _dir;
+	private boolean _symbolic = true;
+	private int _threadCount = 10;
 	private File _toDir;
+
+	private static class SyncFileCallable implements Callable<Integer> {
+
+		public SyncFileCallable(File file, File toFile, boolean symbolic) {
+			_file = file;
+			_toFile = toFile;
+			_symbolic = symbolic;
+		}
+
+		@Override
+		public Integer call() {
+			try {
+				if (_symbolic) {
+					Files.createSymbolicLink(
+						Paths.get(_toFile.toURI()), Paths.get(_file.toURI()));
+				}
+				else {
+					Files.copy(
+						Paths.get(_file.toURI()), Paths.get(_toFile.toURI()));
+				}
+			}
+			catch (IOException ioException) {
+				throw new RuntimeException(
+					"Unable to sync " + _file + " into " + _toFile,
+					ioException);
+			}
+
+			return 1;
+		}
+
+		private final File _file;
+		private boolean _symbolic;
+		private final File _toFile;
+
+	}
 
 }

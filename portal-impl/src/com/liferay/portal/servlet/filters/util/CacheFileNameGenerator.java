@@ -14,14 +14,14 @@
 
 package com.liferay.portal.servlet.filters.util;
 
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.cache.key.CacheKeyGenerator;
 import com.liferay.portal.kernel.cache.key.CacheKeyGeneratorUtil;
-import com.liferay.portal.kernel.util.CharPool;
 import com.liferay.portal.kernel.util.Digester;
 import com.liferay.portal.kernel.util.DigesterUtil;
 import com.liferay.portal.kernel.util.HttpUtil;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.registry.collections.ServiceTrackerCollections;
 
@@ -36,14 +36,15 @@ import javax.servlet.http.HttpServletRequest;
 public class CacheFileNameGenerator {
 
 	public static String getCacheFileName(
-		HttpServletRequest request, String cacheName) {
+		HttpServletRequest httpServletRequest, String cacheName) {
 
 		CacheKeyGenerator cacheKeyGenerator =
 			CacheKeyGeneratorUtil.getCacheKeyGenerator(cacheName);
 
-		cacheKeyGenerator.append(HttpUtil.getProtocol(request.isSecure()));
+		cacheKeyGenerator.append(
+			HttpUtil.getProtocol(httpServletRequest.isSecure()));
 		cacheKeyGenerator.append(StringPool.UNDERLINE);
-		cacheKeyGenerator.append(request.getRequestURI());
+		cacheKeyGenerator.append(httpServletRequest.getRequestURI());
 
 		StringBundler queryStringSB = new StringBundler(
 			_cacheFileNameContributors.size() * 4);
@@ -51,7 +52,8 @@ public class CacheFileNameGenerator {
 		for (CacheFileNameContributor cacheFileNameContributor :
 				_cacheFileNameContributors) {
 
-			String value = cacheFileNameContributor.getParameterValue(request);
+			String value = cacheFileNameContributor.getParameterValue(
+				httpServletRequest);
 
 			if (value == null) {
 				continue;

@@ -27,8 +27,8 @@ public class BNDRangeCheck extends BaseFileCheck {
 
 		if (pos != -1) {
 			addMessage(
-				fileName, "Do not use range expression, see LPS-70519",
-				getLineCount(content, pos));
+				fileName, "Do not use range expression",
+				getLineNumber(content, pos));
 		}
 
 		return content;

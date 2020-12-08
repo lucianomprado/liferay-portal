@@ -1,141 +1,117 @@
-<definition component-name="portal-web-forms-and-data-lists">
-	<property name="portal.release" value="true" />
-	<property name="testray.main.component.name" value="Dynamic Data Lists" />
+@component-name = "portal-web-forms-and-data-lists"
+definition {
 
-	<set-up>
-		<execute macro="TestCase#setUpPortalInstance" />
+	property portal.release = "true";
+	property portal.upstream = "true";
+	property testray.main.component.name = "Dynamic Data Lists";
 
-		<execute macro="User#firstLoginPG" />
-	</set-up>
+	setUp {
+		TestCase.setUpPortalInstance();
 
-	<tear-down>
-		<var method="TestPropsUtil#get('test.portal.instance')" name="testPortalInstance" />
+		User.firstLoginPG();
+	}
 
-		<if>
-			<equals arg1="${testPortalInstance}" arg2="true" />
-			<then>
-				<execute macro="PortalInstances#tearDownCP" />
-			</then>
-			<else>
-				<execute macro="User#firstLoginPG" />
+	tearDown {
+		var testPortalInstance = PropsUtil.get("test.portal.instance");
 
-				<execute macro="DDLList#tearDownCP" />
+		if ("${testPortalInstance}" == "true") {
+			PortalInstances.tearDownCP();
+		}
+		else {
+			User.firstLoginPG();
 
-				<execute macro="DDLDataDefinition#tearDownCP" />
-			</else>
-		</if>
-	</tear-down>
+			DDLList.tearDownCP();
 
-	<command name="ViewCacheableCheckbox" priority="4">
-		<description message="This is a use case for LPS-67094." />
+			DDLDataDefinition.tearDownCP();
+		}
+	}
 
-		<execute macro="ProductMenu#gotoSitesContent">
-			<var name="portlet" value="Web Content" />
-		</execute>
+	@description = "This is a use case for LPS-67094."
+	@priority = "4"
+	test ViewCacheableCheckbox {
+		ProductMenu.gotoPortlet(
+			category = "Content &amp; Data",
+			portlet = "Web Content");
 
-		<execute macro="WebContentNavigator#gotoManageStructures" />
+		Navigator.gotoNavItem(navItem = "Structures");
 
-		<execute macro="WebContentStructures#addCP">
-			<var name="structureDescription" value="WC Structure Description" />
-			<var name="structureName" value="WC Structure Name" />
-		</execute>
+		WebContentStructures.addCP(
+			structureDescription = "WC Structure Description",
+			structureName = "WC Structure Name");
 
-		<execute macro="DynamicDataMapping#addField">
-			<var name="field" value="Text" />
-			<var name="fieldFieldLabel" value="Text" />
-			<var name="fieldName" value="Text" />
-		</execute>
+		DataEngine.addField(
+			fieldFieldLabel = "Text",
+			fieldName = "Text");
 
-		<execute macro="WebContentStructures#saveCP">
-			<var name="structureName" value="WC Structure Name" />
-		</execute>
+		WebContentStructures.saveCP(structureName = "WC Structure Name");
 
-		<execute macro="ProductMenu#gotoSitesContent">
-			<var name="portlet" value="Web Content" />
-		</execute>
+		ProductMenu.gotoPortlet(
+			category = "Content &amp; Data",
+			portlet = "Web Content");
 
-		<execute macro="WebContentNavigator#gotoManageTemplates" />
+		Navigator.gotoNavItem(navItem = "Templates");
 
-		<execute macro="WebContentTemplates#addCP">
-			<var name="templateDescription" value="WC Template Description" />
-			<var name="templateLanguage" value="ftl" />
-			<var name="templateName" value="WC Template Name" />
-		</execute>
+		LexiconEntry.gotoAdd();
 
-		<execute function="AssertElementPresent" locator1="DDMEditTemplate#CACHEABLE_CHECKBOX" />
+		WebContentTemplates.inputTemplateAddScreenFields(
+			templateDescription = "WC Template Description",
+			templateName = "WC Template Name");
 
-		<execute macro="WebContentTemplates#addStructure">
-			<var name="structureName" value="WC Structure Name" />
-			<var name="templateFieldNames" value="Text" />
-			<var name="templateLanguage" value="ftl" />
-		</execute>
+		AssertElementPresent(locator1 = "DDMEditTemplate#CACHEABLE_CHECKBOX");
 
-		<execute macro="WebContentStructures#saveCP" />
+		WebContentTemplates.inputTemplateAddScreenFields(
+			structureName = "WC Structure Name",
+			templateFieldNames = "Text");
 
-		<execute macro="ProductMenu#gotoSitesContent">
-			<var name="portlet" value="Web Content" />
-		</execute>
+		DDLDataDefinition.save();
 
-		<execute macro="WebContentNavigator#gotoManageTemplates" />
+		ProductMenu.gotoPortlet(
+			category = "Content &amp; Data",
+			portlet = "Web Content");
 
-		<execute macro="WebContentNavigator#gotoEditTemplate">
-			<var name="templateName" value="WC Template Name" />
-		</execute>
+		Navigator.gotoNavItem(navItem = "Templates");
 
-		<execute macro="Panel#expandPanel">
-			<var name="panelHeading" value="Details" />
-		</execute>
+		LexiconEntry.gotoEntryMenuItem(
+			menuItem = "Edit",
+			rowEntry = "WC Template Name");
 
-		<execute function="AssertElementPresent" locator1="DDMEditTemplate#CACHEABLE_CHECKBOX" />
+		AssertElementPresent(locator1 = "DDMEditTemplate#CACHEABLE_CHECKBOX");
 
-		<execute macro="Navigator#openURL" />
+		Navigator.openURL();
 
-		<execute macro="ProductMenu#gotoSitesContent">
-			<var name="portlet" value="Web Content" />
-		</execute>
+		ProductMenu.gotoPortlet(
+			category = "Content &amp; Data",
+			portlet = "Web Content");
 
-		<execute macro="WebContentNavigator#gotoAddWithStructureCP">
-			<var name="structureName" value="WC Structure Name" />
-		</execute>
+		WebContentNavigator.gotoAddWithStructureCP(structureName = "WC Structure Name");
 
-		<execute macro="WebContent#addWithStructureCP">
-			<var name="structureName" value="WC Structure Name" />
-			<var name="templateName" value="WC Template Name" />
-			<var name="webContentText" value="Test" />
-			<var name="webContentTitle" value="WC WebContent Title" />
-		</execute>
+		WebContent.addWithStructureCP(
+			structureName = "WC Structure Name",
+			templateName = "WC Template Name",
+			webContentText = "Test",
+			webContentTitle = "WC WebContent Title");
 
-		<execute macro="PortletEntry#publish" />
+		PortletEntry.publish();
 
-		<execute macro="Navigator#openURL" />
+		Navigator.openURL();
 
-		<execute macro="Page#add">
-			<var name="pageName" value="Test Page" />
-		</execute>
+		ProductMenu.gotoPortlet(
+			category = "Site Builder",
+			portlet = "Pages");
 
-		<execute macro="Portlet#addPG">
-			<var name="portletName" value="Web Content Display" />
-		</execute>
+		SitePages.addPublicPage(pageName = "Test Page");
 
-		<execute macro="WebContentDisplayPortlet#selectWebContent">
-			<var name="webContentTitle" value="WC WebContent Title" />
-		</execute>
+		Navigator.gotoPage(pageName = "Test Page");
 
-		<execute macro="Navigator#gotoPage">
-			<var name="pageName" value="Test Page" />
-		</execute>
+		Portlet.addPG(portletName = "Web Content Display");
 
-		<execute macro="Portlet#gotoPortletOptions">
-			<var name="portletName" value="Web Content Display" />
-			<var name="portletOption" value="Edit Template" />
-		</execute>
+		WebContentDisplayPortlet.selectWebContent(webContentTitle = "WC WebContent Title");
 
-		<execute function="SelectFrame" locator1="IFrame#DIALOG" />
+		Navigator.gotoPage(pageName = "Test Page");
 
-		<execute macro="Panel#expandPanel">
-			<var name="panelHeading" value="Details" />
-		</execute>
+		WebContentDisplayPortlet.gotoEditTemplate(webContentTitle = "WC WebContent Title");
 
-		<execute function="AssertElementPresent" locator1="DDMEditTemplate#CACHEABLE_CHECKBOX" />
-	</command>
-</definition>
+		AssertElementPresent(locator1 = "DDMEditTemplate#CACHEABLE_CHECKBOX");
+	}
+
+}

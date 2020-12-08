@@ -27,12 +27,15 @@ import com.liferay.portal.kernel.messaging.DestinationNames;
 import com.liferay.portal.kernel.messaging.MessageBusUtil;
 import com.liferay.portal.kernel.model.PasswordPolicy;
 import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.search.Indexer;
+import com.liferay.portal.kernel.search.IndexerRegistryUtil;
 import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.servlet.HttpHeaders;
 import com.liferay.portal.kernel.servlet.SessionMessages;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.Time;
+import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.util.PrefsPropsUtil;
 import com.liferay.portal.util.PropsValues;
 
@@ -42,30 +45,30 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import org.apache.struts.Globals;
-
 /**
  * @author Brian Wing Shun Chan
  */
 public class LoginPostAction extends Action {
 
 	@Override
-	public void run(HttpServletRequest request, HttpServletResponse response)
+	public void run(
+			HttpServletRequest httpServletRequest,
+			HttpServletResponse httpServletResponse)
 		throws ActionException {
 
 		try {
 			if (_log.isDebugEnabled()) {
-				_log.debug("Running " + request.getRemoteUser());
+				_log.debug("Running " + httpServletRequest.getRemoteUser());
 			}
 
-			HttpSession session = request.getSession();
+			HttpSession httpSession = httpServletRequest.getSession();
 
-			long companyId = PortalUtil.getCompanyId(request);
+			long companyId = PortalUtil.getCompanyId(httpServletRequest);
 			long userId = 0;
 
 			// Language
 
-			session.removeAttribute(Globals.LOCALE_KEY);
+			httpSession.removeAttribute(WebKeys.LOCALE);
 
 			// Live users
 
@@ -80,17 +83,24 @@ public class LoginPostAction extends Action {
 						"clusterNodeId", clusterNode.getClusterNodeId());
 				}
 
-				jsonObject.put("command", "signIn");
-				jsonObject.put("companyId", companyId);
-				jsonObject.put("remoteAddr", request.getRemoteAddr());
-				jsonObject.put("remoteHost", request.getRemoteHost());
-				jsonObject.put("sessionId", session.getId());
+				jsonObject.put(
+					"command", "signIn"
+				).put(
+					"companyId", companyId
+				).put(
+					"remoteAddr", httpServletRequest.getRemoteAddr()
+				).put(
+					"remoteHost", httpServletRequest.getRemoteHost()
+				).put(
+					"sessionId", httpSession.getId()
+				);
 
-				String userAgent = request.getHeader(HttpHeaders.USER_AGENT);
+				String userAgent = httpServletRequest.getHeader(
+					HttpHeaders.USER_AGENT);
 
 				jsonObject.put("userAgent", userAgent);
 
-				userId = PortalUtil.getUserId(request);
+				userId = PortalUtil.getUserId(httpServletRequest);
 
 				jsonObject.put("userId", userId);
 
@@ -102,37 +112,49 @@ public class LoginPostAction extends Action {
 					companyId, PropsKeys.ADMIN_SYNC_DEFAULT_ASSOCIATIONS)) {
 
 				if (userId == 0) {
-					userId = PortalUtil.getUserId(request);
+					userId = PortalUtil.getUserId(httpServletRequest);
 				}
 
 				UserLocalServiceUtil.addDefaultGroups(userId);
 				UserLocalServiceUtil.addDefaultRoles(userId);
 				UserLocalServiceUtil.addDefaultUserGroups(userId);
+
+				Indexer<User> userIndexer = IndexerRegistryUtil.getIndexer(
+					User.class.getName());
+
+				userIndexer.reindex(User.class.getName(), userId);
 			}
 
-			User user = PortalUtil.getUser(request);
+			User user = PortalUtil.getUser(httpServletRequest);
 
 			PasswordPolicy passwordPolicy = user.getPasswordPolicy();
 
 			if ((passwordPolicy != null) && passwordPolicy.isExpireable() &&
 				(passwordPolicy.getWarningTime() > 0)) {
 
-				_setPasswordExpirationMessage(request, passwordPolicy, user);
+				_setPasswordExpirationMessage(
+					httpServletRequest, passwordPolicy, user);
 			}
 		}
-		catch (Exception e) {
-			throw new ActionException(e);
+		catch (Exception exception) {
+			throw new ActionException(exception);
 		}
 	}
 
 	private void _setPasswordExpirationMessage(
-			HttpServletRequest request, PasswordPolicy passwordPolicy,
-			User user)
+			HttpServletRequest httpServletRequest,
+			PasswordPolicy passwordPolicy, User user)
 		throws PortalException {
 
 		Date now = new Date();
 
 		if (user.getPasswordModifiedDate() == null) {
+			HttpSession httpSession = httpServletRequest.getSession(false);
+
+			if (httpSession != null) {
+				now = new Date(httpSession.getCreationTime());
+			}
+
 			user.setPasswordModifiedDate(now);
 
 			UserLocalServiceUtil.updateUser(user);
@@ -153,14 +175,16 @@ public class LoginPostAction extends Action {
 
 			if (passwordExpiresInXDays >= 0) {
 				SessionMessages.add(
-					request, "passwordExpiresInXDays", passwordExpiresInXDays);
+					httpServletRequest, "passwordExpiresInXDays",
+					passwordExpiresInXDays);
 			}
 			else {
 				int remainingGraceLogins =
 					passwordPolicy.getGraceLimit() - user.getGraceLoginCount();
 
 				SessionMessages.add(
-					request, "remainingGraceLogins", remainingGraceLogins);
+					httpServletRequest, "remainingGraceLogins",
+					remainingGraceLogins);
 			}
 		}
 	}

@@ -19,7 +19,6 @@ import com.liferay.portal.kernel.concurrent.NoticeableFuture;
 import com.liferay.portal.kernel.io.Deserializer;
 import com.liferay.portal.kernel.io.Serializer;
 import com.liferay.portal.kernel.nio.intraband.CompletionHandler;
-import com.liferay.portal.kernel.nio.intraband.CompletionHandler.CompletionType;
 import com.liferay.portal.kernel.nio.intraband.Datagram;
 import com.liferay.portal.kernel.nio.intraband.Intraband;
 import com.liferay.portal.kernel.nio.intraband.RegistrationReference;
@@ -61,8 +60,8 @@ public class IntrabandRPCUtil {
 		return defaultNoticeableFuture;
 	}
 
-	protected static EnumSet<CompletionType> repliedEnumSet = EnumSet.of(
-		CompletionType.REPLIED);
+	protected static EnumSet<CompletionHandler.CompletionType> repliedEnumSet =
+		EnumSet.of(CompletionHandler.CompletionType.REPLIED);
 
 	protected static class FutureCompletionHandler<V extends Serializable>
 		implements CompletionHandler<Object> {
@@ -72,8 +71,8 @@ public class IntrabandRPCUtil {
 		}
 
 		@Override
-		public void failed(Object attachment, IOException ioe) {
-			_defaultNoticeableFuture.setException(ioe);
+		public void failed(Object attachment, IOException ioException) {
+			_defaultNoticeableFuture.setException(ioException);
 		}
 
 		@Override
@@ -93,8 +92,8 @@ public class IntrabandRPCUtil {
 					_defaultNoticeableFuture.set((V)rpcResponse.getResult());
 				}
 			}
-			catch (ClassNotFoundException cnfe) {
-				_defaultNoticeableFuture.setException(cnfe);
+			catch (ClassNotFoundException classNotFoundException) {
+				_defaultNoticeableFuture.setException(classNotFoundException);
 			}
 		}
 

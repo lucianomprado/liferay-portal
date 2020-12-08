@@ -14,8 +14,8 @@
 
 package com.liferay.source.formatter.checks;
 
-import com.liferay.portal.kernel.util.CharPool;
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 
 import java.util.regex.Matcher;
@@ -94,7 +94,7 @@ public class JSPLogFileNameCheck extends BaseFileCheck {
 			"Log _log = LogFactoryUtil.getLog(\"" + logFileName + "\")");
 	}
 
-	private final Pattern _logPattern = Pattern.compile(
+	private static final Pattern _logPattern = Pattern.compile(
 		"Log _log = LogFactoryUtil\\.getLog\\(\"(.*?)\"\\)");
 
 }

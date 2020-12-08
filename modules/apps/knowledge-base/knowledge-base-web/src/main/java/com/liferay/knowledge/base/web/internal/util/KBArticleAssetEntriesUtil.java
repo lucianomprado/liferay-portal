@@ -27,7 +27,7 @@ import com.liferay.journal.model.JournalArticle;
 import com.liferay.journal.service.JournalArticleLocalServiceUtil;
 import com.liferay.knowledge.base.constants.KBPortletKeys;
 import com.liferay.knowledge.base.model.KBArticle;
-import com.liferay.message.boards.kernel.model.MBMessage;
+import com.liferay.message.boards.model.MBMessage;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -104,12 +104,12 @@ public class KBArticleAssetEntriesUtil {
 			try {
 				AssetTagServiceUtil.getTag(tagId);
 			}
-			catch (PrincipalException pe) {
+			catch (PrincipalException principalException) {
 
 				// LPS-52675
 
 				if (_log.isDebugEnabled()) {
-					_log.debug(pe, pe);
+					_log.debug(principalException, principalException);
 				}
 
 				continue;
@@ -126,9 +126,9 @@ public class KBArticleAssetEntriesUtil {
 	}
 
 	public static String getURL(
-			HttpServletRequest request, ThemeDisplay themeDisplay,
-			AssetRendererFactory assetRendererFactory,
-			AssetRenderer assetRenderer)
+			HttpServletRequest httpServletRequest, ThemeDisplay themeDisplay,
+			AssetRendererFactory<?> assetRendererFactory,
+			AssetRenderer<?> assetRenderer)
 		throws Exception {
 
 		long classPK = assetRenderer.getClassPK();
@@ -142,7 +142,7 @@ public class KBArticleAssetEntriesUtil {
 
 		if (className.equals(BlogsEntry.class.getName())) {
 			portletURL = PortletURLFactoryUtil.create(
-				request, portletId, PortletRequest.RENDER_PHASE);
+				httpServletRequest, portletId, PortletRequest.RENDER_PHASE);
 
 			portletURL.setParameter(
 				"mvcRenderCommandName", "/blogs/view_entry");
@@ -153,7 +153,7 @@ public class KBArticleAssetEntriesUtil {
 				JournalArticleLocalServiceUtil.getLatestArticle(classPK);
 
 			portletURL = PortletURLFactoryUtil.create(
-				request, portletId, PortletRequest.RENDER_PHASE);
+				httpServletRequest, portletId, PortletRequest.RENDER_PHASE);
 
 			portletURL.setParameter("struts_action", "/journal_content/view");
 			portletURL.setParameter(
@@ -162,7 +162,8 @@ public class KBArticleAssetEntriesUtil {
 		}
 		else if (className.equals(KBArticle.class.getName())) {
 			portletURL = PortletURLFactoryUtil.create(
-				request, KBPortletKeys.KNOWLEDGE_BASE_ARTICLE_DEFAULT_INSTANCE,
+				httpServletRequest,
+				KBPortletKeys.KNOWLEDGE_BASE_ARTICLE_DEFAULT_INSTANCE,
 				PortletRequest.RENDER_PHASE);
 
 			portletURL.setParameter("mvcPath", "/article/view_article.jsp");
@@ -170,7 +171,7 @@ public class KBArticleAssetEntriesUtil {
 		}
 		else if (className.equals(MBMessage.class.getName())) {
 			portletURL = PortletURLFactoryUtil.create(
-				request, portletId, PortletRequest.RENDER_PHASE);
+				httpServletRequest, portletId, PortletRequest.RENDER_PHASE);
 
 			portletURL.setParameter(
 				"struts_action", "/message_boards/view_message");
@@ -180,7 +181,7 @@ public class KBArticleAssetEntriesUtil {
 			WikiPage wikiPage = WikiPageLocalServiceUtil.getPage(classPK);
 
 			portletURL = PortletURLFactoryUtil.create(
-				request, portletId, PortletRequest.RENDER_PHASE);
+				httpServletRequest, portletId, PortletRequest.RENDER_PHASE);
 
 			portletURL.setParameter("struts_action", "/wiki/view");
 			portletURL.setParameter(
@@ -188,7 +189,7 @@ public class KBArticleAssetEntriesUtil {
 			portletURL.setParameter("title", wikiPage.getTitle());
 		}
 
-		String currentURL = PortalUtil.getCurrentURL(request);
+		String currentURL = PortalUtil.getCurrentURL(httpServletRequest);
 
 		if (portletURL == null) {
 			return currentURL;

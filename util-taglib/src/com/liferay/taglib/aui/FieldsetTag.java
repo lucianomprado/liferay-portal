@@ -14,10 +14,10 @@
 
 package com.liferay.taglib.aui;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.JavaConstants;
 import com.liferay.portal.kernel.util.PortalUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.taglib.aui.base.BaseFieldsetTag;
 import com.liferay.taglib.ui.IconHelpTag;
@@ -141,25 +141,27 @@ public class FieldsetTag extends BaseFieldsetTag {
 	}
 
 	@Override
-	protected void setAttributes(HttpServletRequest request) {
+	protected void setAttributes(HttpServletRequest httpServletRequest) {
 		if (Validator.isNull(getId()) && Validator.isNotNull(getLabel()) &&
 			getCollapsible()) {
 
 			String id = PortalUtil.getUniqueElementId(
-				request, _getNamespace(), AUIUtil.normalizeId(getLabel()));
+				httpServletRequest, _getNamespace(),
+				AUIUtil.normalizeId(getLabel()));
 
 			setId(_getNamespace() + id);
 		}
 
-		super.setAttributes(request);
+		super.setAttributes(httpServletRequest);
 	}
 
 	private String _getNamespace() {
-		HttpServletRequest request =
+		HttpServletRequest httpServletRequest =
 			(HttpServletRequest)pageContext.getRequest();
 
-		PortletResponse portletResponse = (PortletResponse)request.getAttribute(
-			JavaConstants.JAVAX_PORTLET_RESPONSE);
+		PortletResponse portletResponse =
+			(PortletResponse)httpServletRequest.getAttribute(
+				JavaConstants.JAVAX_PORTLET_RESPONSE);
 
 		if (portletResponse != null) {
 			return portletResponse.getNamespace();

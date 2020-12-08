@@ -14,6 +14,9 @@
 
 package com.liferay.portal.servlet.filters.cache;
 
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.NoSuchLayoutException;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.LanguageUtil;
@@ -29,13 +32,10 @@ import com.liferay.portal.kernel.servlet.BrowserSnifferUtil;
 import com.liferay.portal.kernel.servlet.BufferCacheServletResponse;
 import com.liferay.portal.kernel.servlet.HttpHeaders;
 import com.liferay.portal.kernel.struts.LastPath;
-import com.liferay.portal.kernel.util.CharPool;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.JavaConstants;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
@@ -72,37 +72,48 @@ public class CacheFilter extends BasePortalFilter {
 
 			_log.error("Cache pattern is invalid");
 		}
+
+		_includeUserAgent = GetterUtil.getBoolean(
+			filterConfig.getInitParameter("includeUserAgent"),
+			PropsValues.CACHE_FILTER_INCLUDE_USER_AGENT);
 	}
 
 	@Override
 	public boolean isFilterEnabled(
-		HttpServletRequest request, HttpServletResponse response) {
+		HttpServletRequest httpServletRequest,
+		HttpServletResponse httpServletResponse) {
 
-		if (isCacheableRequest(request) && !isInclude(request) &&
-			!isAlreadyFiltered(request)) {
+		if (isCacheableRequest(httpServletRequest) &&
+			!isInclude(httpServletRequest) &&
+			!isAlreadyFiltered(httpServletRequest)) {
 
 			return true;
 		}
-		else {
-			return false;
-		}
+
+		return false;
 	}
 
-	protected String getCacheKey(HttpServletRequest request) {
-		StringBundler sb = new StringBundler(9);
+	protected String getCacheKey(HttpServletRequest httpServletRequest) {
+		StringBundler sb = new StringBundler(11);
 
-		// Url
+		// Method
 
-		sb.append(request.getRequestURL());
+		sb.append(httpServletRequest.getMethod());
 
-		String queryString = request.getQueryString();
+		// URL
+
+		sb.append(StringPool.POUND);
+		sb.append(httpServletRequest.getRequestURL());
+
+		String queryString = httpServletRequest.getQueryString();
 
 		if (queryString == null) {
-			queryString = (String)request.getAttribute(
+			queryString = (String)httpServletRequest.getAttribute(
 				JavaConstants.JAVAX_SERVLET_FORWARD_QUERY_STRING);
 
 			if (queryString == null) {
-				String url = PortalUtil.getCurrentCompleteURL(request);
+				String url = PortalUtil.getCurrentCompleteURL(
+					httpServletRequest);
 
 				int pos = url.indexOf(CharPool.QUESTION);
 
@@ -121,29 +132,34 @@ public class CacheFilter extends BasePortalFilter {
 
 		sb.append(StringPool.POUND);
 
-		String languageId = (String)request.getAttribute(
+		String languageId = (String)httpServletRequest.getAttribute(
 			WebKeys.I18N_LANGUAGE_ID);
 
 		if (Validator.isNull(languageId)) {
-			languageId = LanguageUtil.getLanguageId(request);
+			languageId = LanguageUtil.getLanguageId(httpServletRequest);
 		}
 
 		sb.append(languageId);
 
 		// User agent
 
-		String userAgent = GetterUtil.getString(
-			request.getHeader(HttpHeaders.USER_AGENT));
+		if (_includeUserAgent) {
+			String userAgent = GetterUtil.getString(
+				httpServletRequest.getHeader(HttpHeaders.USER_AGENT));
 
-		sb.append(StringPool.POUND);
-		sb.append(StringUtil.toLowerCase(userAgent).hashCode());
+			sb.append(StringPool.POUND);
+
+			String userAgentLowerCase = StringUtil.toLowerCase(userAgent);
+
+			sb.append(userAgentLowerCase.hashCode());
+		}
 
 		// Gzip compression
 
 		sb.append(StringPool.POUND);
-		sb.append(BrowserSnifferUtil.acceptsGzip(request));
+		sb.append(BrowserSnifferUtil.acceptsGzip(httpServletRequest));
 
-		return StringUtil.toUpperCase(sb.toString().trim());
+		return StringUtil.toUpperCase(StringUtil.trim(sb.toString()));
 	}
 
 	protected long getPlid(
@@ -201,14 +217,14 @@ public class CacheFilter extends BasePortalFilter {
 				privateLayout = false;
 			}
 		}
-		catch (NoSuchLayoutException nsle) {
+		catch (NoSuchLayoutException noSuchLayoutException) {
 			if (_log.isWarnEnabled()) {
-				_log.warn(nsle, nsle);
+				_log.warn(noSuchLayoutException, noSuchLayoutException);
 			}
 		}
-		catch (Exception e) {
+		catch (Exception exception) {
 			if (_log.isWarnEnabled()) {
-				_log.warn("Unable to get friendly URL group", e);
+				_log.warn("Unable to get friendly URL group", exception);
 			}
 
 			return 0;
@@ -224,13 +240,11 @@ public class CacheFilter extends BasePortalFilter {
 
 		if (Validator.isNull(friendlyURL)) {
 			try {
-				long plid = LayoutLocalServiceUtil.getDefaultPlid(
+				return LayoutLocalServiceUtil.getDefaultPlid(
 					groupId, privateLayout);
-
-				return plid;
 			}
-			catch (Exception e) {
-				_log.warn(e);
+			catch (Exception exception) {
+				_log.warn(exception, exception);
 
 				return 0;
 			}
@@ -247,29 +261,29 @@ public class CacheFilter extends BasePortalFilter {
 
 			return layout.getPlid();
 		}
-		catch (NoSuchLayoutException nsle) {
-			_log.warn("Unable to get friendly URL layout", nsle);
+		catch (NoSuchLayoutException noSuchLayoutException) {
+			_log.warn(
+				"Unable to get friendly URL layout", noSuchLayoutException);
 
 			return 0;
 		}
-		catch (Exception e) {
-			_log.error("Unable to get friendly URL layout", e);
+		catch (Exception exception) {
+			_log.error("Unable to get friendly URL layout", exception);
 
 			return 0;
 		}
 	}
 
-	protected boolean isAlreadyFiltered(HttpServletRequest request) {
-		if (request.getAttribute(SKIP_FILTER) != null) {
+	protected boolean isAlreadyFiltered(HttpServletRequest httpServletRequest) {
+		if (httpServletRequest.getAttribute(SKIP_FILTER) != null) {
 			return true;
 		}
-		else {
-			return false;
-		}
+
+		return false;
 	}
 
 	protected boolean isCacheableData(
-		long companyId, HttpServletRequest request) {
+		long companyId, HttpServletRequest httpServletRequest) {
 
 		try {
 			if (_pattern == _PATTERN_RESOURCE) {
@@ -277,8 +291,9 @@ public class CacheFilter extends BasePortalFilter {
 			}
 
 			long plid = getPlid(
-				companyId, request.getPathInfo(), request.getServletPath(),
-				ParamUtil.getLong(request, "p_l_id"));
+				companyId, httpServletRequest.getPathInfo(),
+				httpServletRequest.getServletPath(),
+				ParamUtil.getLong(httpServletRequest, "p_l_id"));
 
 			if (plid <= 0) {
 				return false;
@@ -295,29 +310,32 @@ public class CacheFilter extends BasePortalFilter {
 
 			return layoutTypePortlet.isCacheable();
 		}
-		catch (Exception e) {
+		catch (Exception exception) {
 			return false;
 		}
 	}
 
-	protected boolean isCacheableRequest(HttpServletRequest request) {
-		String portletId = ParamUtil.getString(request, "p_p_id");
+	protected boolean isCacheableRequest(
+		HttpServletRequest httpServletRequest) {
+
+		String portletId = ParamUtil.getString(httpServletRequest, "p_p_id");
 
 		if (Validator.isNotNull(portletId)) {
 			return false;
 		}
 
 		if ((_pattern == _PATTERN_FRIENDLY) || (_pattern == _PATTERN_LAYOUT)) {
-			long userId = PortalUtil.getUserId(request);
-			String remoteUser = request.getRemoteUser();
+			long userId = PortalUtil.getUserId(httpServletRequest);
 
-			if ((userId > 0) || Validator.isNotNull(remoteUser)) {
+			if ((userId > 0) ||
+				Validator.isNotNull(httpServletRequest.getRemoteUser())) {
+
 				return false;
 			}
 		}
 
 		if (_pattern == _PATTERN_LAYOUT) {
-			String plid = ParamUtil.getString(request, "p_l_id");
+			String plid = ParamUtil.getString(httpServletRequest, "p_l_id");
 
 			if (Validator.isNull(plid)) {
 				return false;
@@ -337,66 +355,65 @@ public class CacheFilter extends BasePortalFilter {
 
 			return true;
 		}
-		else {
-			return false;
-		}
+
+		return false;
 	}
 
-	protected boolean isInclude(HttpServletRequest request) {
-		String uri = (String)request.getAttribute(
+	protected boolean isInclude(HttpServletRequest httpServletRequest) {
+		String uri = (String)httpServletRequest.getAttribute(
 			JavaConstants.JAVAX_SERVLET_INCLUDE_REQUEST_URI);
 
 		if (uri == null) {
 			return false;
 		}
-		else {
-			return true;
-		}
+
+		return true;
 	}
 
 	@Override
 	protected void processFilter(
-			HttpServletRequest request, HttpServletResponse response,
-			FilterChain filterChain)
+			HttpServletRequest httpServletRequest,
+			HttpServletResponse httpServletResponse, FilterChain filterChain)
 		throws Exception {
 
-		request.setAttribute(SKIP_FILTER, Boolean.TRUE);
+		httpServletRequest.setAttribute(SKIP_FILTER, Boolean.TRUE);
 
-		String key = getCacheKey(request);
+		String key = getCacheKey(httpServletRequest);
 
-		String pAuth = request.getParameter("p_auth");
+		String pAuth = httpServletRequest.getParameter("p_auth");
 
 		if (Validator.isNotNull(pAuth)) {
 			try {
 				AuthTokenUtil.checkCSRFToken(
-					request, CacheFilter.class.getName());
+					httpServletRequest, CacheFilter.class.getName());
 			}
-			catch (PortalException pe) {
+			catch (PortalException portalException) {
 				if (_log.isDebugEnabled()) {
 					_log.debug(
 						"Request is not cacheable " + key +
 							", invalid token received",
-						pe);
+						portalException);
 				}
 
 				processFilter(
-					CacheFilter.class.getName(), request, response,
-					filterChain);
+					CacheFilter.class.getName(), httpServletRequest,
+					httpServletResponse, filterChain);
 
 				return;
 			}
 
-			key = key.replace(StringUtil.toUpperCase(pAuth), "VALID");
+			key = StringUtil.replace(
+				key, StringUtil.toUpperCase(pAuth), "VALID");
 		}
 
-		long companyId = PortalInstances.getCompanyId(request);
+		long companyId = PortalInstances.getCompanyId(httpServletRequest);
 
 		CacheResponseData cacheResponseData = CacheUtil.getCacheResponseData(
 			companyId, key);
 
 		if ((cacheResponseData == null) || !cacheResponseData.isValid()) {
 			if (!_isValidCache(cacheResponseData) ||
-				!isCacheableData(companyId, request)) {
+				!isCacheableData(companyId, httpServletRequest)) {
 
 				if (_log.isDebugEnabled()) {
 					_log.debug("Request is not cacheable " + key);
@@ -412,8 +429,8 @@ public class CacheFilter extends BasePortalFilter {
 				}
 
 				processFilter(
-					CacheFilter.class.getName(), request, response,
-					filterChain);
+					CacheFilter.class.getName(), httpServletRequest,
+					httpServletResponse, filterChain);
 
 				return;
 			}
@@ -423,16 +440,16 @@ public class CacheFilter extends BasePortalFilter {
 			}
 
 			BufferCacheServletResponse bufferCacheServletResponse =
-				new BufferCacheServletResponse(response);
+				new BufferCacheServletResponse(httpServletResponse);
 
 			processFilter(
-				CacheFilter.class.getName(), request,
+				CacheFilter.class.getName(), httpServletRequest,
 				bufferCacheServletResponse, filterChain);
 
 			cacheResponseData = new CacheResponseData(
 				bufferCacheServletResponse);
 
-			LastPath lastPath = (LastPath)request.getAttribute(
+			LastPath lastPath = (LastPath)httpServletRequest.getAttribute(
 				WebKeys.LAST_PATH);
 
 			if (lastPath != null) {
@@ -450,7 +467,7 @@ public class CacheFilter extends BasePortalFilter {
 
 			if (isCacheableResponse(bufferCacheServletResponse) &&
 				!cacheControl.contains(HttpHeaders.PRAGMA_NO_CACHE_VALUE) &&
-				isCacheableRequest(request)) {
+				isCacheableRequest(httpServletRequest)) {
 
 				CacheUtil.putCacheResponseData(
 					companyId, key, cacheResponseData);
@@ -461,13 +478,13 @@ public class CacheFilter extends BasePortalFilter {
 				WebKeys.LAST_PATH);
 
 			if (lastPath != null) {
-				HttpSession session = request.getSession();
+				HttpSession session = httpServletRequest.getSession();
 
 				session.setAttribute(WebKeys.LAST_PATH, lastPath);
 			}
 		}
 
-		CacheResponseUtil.write(response, cacheResponseData);
+		CacheResponseUtil.write(httpServletResponse, cacheResponseData);
 	}
 
 	private boolean _isValidCache(CacheResponseData cacheResponseData) {
@@ -486,6 +503,7 @@ public class CacheFilter extends BasePortalFilter {
 
 	private static final Log _log = LogFactoryUtil.getLog(CacheFilter.class);
 
+	private boolean _includeUserAgent;
 	private int _pattern;
 
 }

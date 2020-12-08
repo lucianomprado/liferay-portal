@@ -14,13 +14,10 @@
 
 package com.liferay.knowledge.base.model.impl;
 
-import aQute.bnd.annotation.ProviderType;
-
 /**
  * @author Peter Shin
  * @author Brian Wing Shun Chan
  */
-@ProviderType
 public class KBTemplateImpl extends KBTemplateBaseImpl {
 
 	public KBTemplateImpl() {

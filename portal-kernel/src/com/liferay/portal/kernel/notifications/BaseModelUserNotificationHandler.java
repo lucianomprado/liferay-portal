@@ -14,11 +14,10 @@
 
 package com.liferay.portal.kernel.notifications;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.asset.kernel.AssetRendererFactoryRegistryUtil;
 import com.liferay.asset.kernel.model.AssetRenderer;
 import com.liferay.asset.kernel.model.AssetRendererFactory;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.language.LanguageUtil;
@@ -28,9 +27,10 @@ import com.liferay.portal.kernel.service.UserNotificationEventLocalServiceUtil;
 import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.HttpUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
+
+import org.osgi.annotation.versioning.ProviderType;
 
 /**
  * @author Brian Wing Shun Chan
@@ -63,7 +63,7 @@ public abstract class BaseModelUserNotificationHandler
 		try {
 			assetRenderer = assetRendererFactory.getAssetRenderer(classPK);
 		}
-		catch (Exception e) {
+		catch (Exception exception) {
 		}
 
 		return assetRenderer;
@@ -124,11 +124,14 @@ public abstract class BaseModelUserNotificationHandler
 
 		String entryURL = jsonObject.getString("entryURL");
 
+		if (Validator.isNull(entryURL)) {
+			return StringPool.BLANK;
+		}
+
 		String entryURLDomain = HttpUtil.getDomain(entryURL);
 
-		String portalURL = serviceContext.getPortalURL();
-
-		String portalURLDomain = HttpUtil.getDomain(portalURL);
+		String portalURLDomain = HttpUtil.getDomain(
+			serviceContext.getPortalURL());
 
 		if (!entryURLDomain.equals(portalURLDomain)) {
 			entryURL = StringUtil.replaceFirst(

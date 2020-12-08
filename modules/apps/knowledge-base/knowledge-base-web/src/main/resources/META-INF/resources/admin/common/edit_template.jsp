@@ -32,8 +32,8 @@ renderResponse.setTitle((kbTemplate == null) ? LanguageUtil.get(request, "new-te
 
 <liferay-portlet:actionURL name="updateKBTemplate" var="updateKBTemplateURL" />
 
-<div class="container-fluid-1280">
-	<aui:form action="<%= updateKBTemplateURL %>" method="post" name="fm" onSubmit='<%= "event.preventDefault(); " + renderResponse.getNamespace() + "updateKBTemplate();" %>'>
+<clay:container-fluid>
+	<aui:form action="<%= updateKBTemplateURL %>" method="post" name="fm" onSubmit='<%= "event.preventDefault(); " + liferayPortletResponse.getNamespace() + "updateKBTemplate();" %>'>
 		<aui:input name="mvcPath" type="hidden" value='<%= templatePath + "edit_template.jsp" %>' />
 		<aui:input name="<%= Constants.CMD %>" type="hidden" />
 		<aui:input name="redirect" type="hidden" value="<%= redirect %>" />
@@ -47,12 +47,15 @@ renderResponse.setTitle((kbTemplate == null) ? LanguageUtil.get(request, "new-te
 		<aui:fieldset-group markupView="lexicon">
 			<aui:fieldset>
 				<h1 class="kb-title">
-					<liferay-ui:input-editor contents="<%= title %>" editorName="alloyeditor" name="titleEditor" placeholder="title" showSource="<%= false %>" />
+					<aui:input autocomplete="off" label='<%= LanguageUtil.get(request, "title") %>' name="title" required="<%= true %>" type="text" value="<%= HtmlUtil.escape(title) %>" />
 				</h1>
 
-				<aui:input name="title" type="hidden" />
-
-				<liferay-ui:input-editor contents="<%= content %>" editorName="alloyeditor" name="contentEditor" placeholder="content" />
+				<liferay-editor:editor
+					contents="<%= content %>"
+					editorName="ckeditor"
+					name="contentEditor"
+					placeholder="content"
+				/>
 
 				<aui:input name="content" type="hidden" />
 			</aui:fieldset>
@@ -67,23 +70,22 @@ renderResponse.setTitle((kbTemplate == null) ? LanguageUtil.get(request, "new-te
 		</aui:fieldset-group>
 
 		<aui:button-row>
-			<aui:button cssClass="btn-lg" type="submit" value="publish" />
+			<aui:button type="submit" value="publish" />
 
-			<aui:button cssClass="btn-lg" href="<%= redirect %>" type="cancel" />
+			<aui:button href="<%= redirect %>" type="cancel" />
 		</aui:button-row>
 	</aui:form>
-</div>
+</clay:container-fluid>
 
-<aui:script>
+<script>
 	function <portlet:namespace />updateKBTemplate() {
-		var form = AUI.$(document.<portlet:namespace />fm);
-
-		form.fm('<%= Constants.CMD %>').val('<%= (kbTemplate == null) ? Constants.ADD : Constants.UPDATE %>');
-
-		form.fm('title').val(window.<portlet:namespace />titleEditor.getText());
-
-		form.fm('content').val(window.<portlet:namespace />contentEditor.getHTML());
-
-		submitForm(form);
+		Liferay.Util.postForm(document.<portlet:namespace />fm, {
+			data: {
+				<%= Constants.CMD %>:
+					'<%= (kbTemplate == null) ? Constants.ADD : Constants.UPDATE %>',
+				title: document.getElementById('<portlet:namespace />title').value,
+				content: window.<portlet:namespace />contentEditor.getHTML(),
+			},
+		});
 	}
-</aui:script>
+</script>

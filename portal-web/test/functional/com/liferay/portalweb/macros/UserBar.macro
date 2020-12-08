@@ -1,113 +1,72 @@
-<definition>
-	<var name="key_panelId" value="user" />
+definition {
 
-	<command name="gotoDashboard">
-		<description message="Navigate to My Dashboard." />
+	macro gotoDropdown {
+		if (IsElementPresent(locator1 = "UserBar#USER_AVATAR_PORTRAIT")) {
+			Click.waitForPersonalMenuJSClick(locator1 = "UserBar#USER_AVATAR_PORTRAIT");
+		}
+		else if (IsElementPresent(locator1 = "UserBar#USER_AVATAR_TOGGLE")) {
+			Click.waitForMenuToggleJSClick(locator1 = "UserBar#USER_AVATAR_TOGGLE");
+		}
+		else {
+			Click.waitForPersonalMenuJSClick(locator1 = "UserBar#USER_AVATAR_ICON");
+		}
 
-		<execute macro="Navigator#openURL" />
+		AssertVisible(locator1 = "UserBar#USER_AVATAR_DROPDOWN_PORTAL_OPEN");
+	}
 
-		<if>
-			<condition function="IsElementNotPresent" locator1="ProductMenu#PRODUCT_MENU_TABS_USER_EXPANDED" />
-			<then>
-				<if>
-					<condition function="IsElementPresent" locator1="UserBar#USER_AVATAR_IMAGE" />
-					<then>
-						<execute function="Click" locator1="UserBar#USER_AVATAR_IMAGE" />
+	@description = "Navigate to a dropdown item in the User Personal Bar."
+	macro gotoDropdownItem {
+		UserBar.gotoDropdown();
 
-						<execute function="Pause" locator1="5000" />
+		AssertClick(
+			key_dropdownItem = "${dropdownItem}",
+			locator1 = "UserBar#USER_AVATAR_DROPDOWN_ITEM",
+			value1 = "${dropdownItem}");
+	}
 
-						<execute function="AssertClick" locator1="UserBar#USER_DASHBOARD" value1="My Dashboard" />
-					</then>
-				</if>
-			</then>
-			<else>
-				<execute function="AssertClick" locator1="UserBar#USER_DASHBOARD" value1="My Dashboard" />
-			</else>
-		</if>
-	</command>
+	macro openUserOrganizations {
+		UserBar.gotoDropdown();
 
-	<command name="gotoMyAccount">
-		<description message="Navigate to Account via the User Bar." />
+		Click(locator1 = "UserBar#USER_ORGANIZATIONS");
+	}
 
-		<execute macro="Navigator#openURL" />
+	macro signOut {
+		if (IsElementNotPresent(locator1 = "UserBar#USER_SIGN_IN")) {
+			UserBar.gotoDropdown();
 
-		<if>
-			<condition function="IsElementNotPresent" locator1="ProductMenu#PRODUCT_MENU_TABS_USER_EXPANDED" />
-			<then>
-				<if>
-					<condition function="IsElementPresent" locator1="UserBar#USER_AVATAR_IMAGE" />
-					<then>
-						<execute function="Click" locator1="UserBar#USER_AVATAR_IMAGE" />
+			ScrollWebElementIntoView(locator1 = "UserBar#USER_AVATAR_DROPDOWN_SIGNOUT");
 
-						<execute macro="ProductMenuHelper#expandCategory">
-							<var name="category" value="My Account" />
-						</execute>
+			Click(locator1 = "UserBar#USER_AVATAR_DROPDOWN_SIGNOUT");
+		}
+	}
 
-						<execute macro="ProductMenuHelper#gotoPortlet">
-							<var name="portlet" value="Account Settings" />
-						</execute>
-					</then>
-				</if>
-			</then>
-			<else>
-				<execute macro="ProductMenuHelper#expandCategory">
-					<var name="category" value="My Account" />
-				</execute>
+	macro viewFullName {
+		AssertTextEquals(
+			locator1 = "UserBar#USER_FULL_NAME",
+			value1 = "${userName}");
+	}
 
-				<execute macro="ProductMenuHelper#gotoPortlet">
-					<var name="portlet" value="Account Settings" />
-				</execute>
-			</else>
-		</if>
-	</command>
+	macro viewNoDropdownItem {
+		AssertElementNotPresent(
+			key_dropdownItem = "${dropdownItem}",
+			locator1 = "UserBar#USER_AVATAR_DROPDOWN_ITEM");
+	}
 
-	<command name="gotoProfile">
-		<description message="Navigate to My Profile." />
+	macro viewUserDefaultIcon {
+		AssertElementPresent(locator1 = "UserBar#USER_AVATAR_ICON");
+	}
 
-		<execute macro="Navigator#openURL" />
+	macro viewUserPortraitMatchConfiguration {
+		AssertElementPresent(locator1 = "UserBar#USER_AVATAR_PORTRAIT");
 
-		<if>
-			<condition function="IsElementNotPresent" locator1="ProductMenu#PRODUCT_MENU_TABS_USER_EXPANDED" />
-			<then>
-				<if>
-					<condition function="IsElementPresent" locator1="UserBar#USER_AVATAR_IMAGE" />
-					<then>
-						<execute function="Click" locator1="UserBar#USER_AVATAR_IMAGE" />
+		AssertElementPresent(locator1 = "UsersAndOrganizationsEditUser#DETAILS_PORTRAIT");
 
-						<execute function="AssertClick" locator1="UserBar#USER_PROFILE" value1="My Profile" />
-					</then>
-				</if>
-			</then>
-			<else>
-				<execute function="AssertClick" locator1="UserBar#USER_PROFILE" value1="My Profile" />
-			</else>
-		</if>
-	</command>
+		var accountDetailImage = selenium.getAttribute("//a//img[contains(@src,'user_portrait')]@src");
+		var accountImage = selenium.getAttribute("//button//img[contains(@src,'user_portrait')]@src");
 
-	<command name="signOut">
-		<if>
-			<condition function="IsElementPresent" locator1="UserBar#USER_AVATAR_IMAGE" />
-			<then>
-				<if>
-					<condition function="IsElementNotPresent" locator1="ProductMenu#PRODUCT_MENU_TABS_USER_EXPANDED" />
-					<then>
-						<execute function="Click" locator1="UserBar#USER_AVATAR_IMAGE" />
-					</then>
-				</if>
+		if ("${accountImage}" != "${accountDetailImage}") {
+			fail("User portrait not match configuration!");
+		}
+	}
 
-				<execute function="AssertVisible" locator1="ProductMenu#PRODUCT_MENU_TABS_EXPANDED_PANEL" />
-
-				<execute function="Click" locator1="UserBar#USER_SIGN_OUT" />
-			</then>
-		</if>
-	</command>
-
-	<command name="viewUserPageLayoutPG">
-		<execute macro="Navigator#openURL" />
-
-		<execute function="Click" locator1="UserBar#USER_AVATAR_IMAGE" />
-
-		<execute function="AssertTextNotPresent" locator1="UserBar#USER_PROFILE" value1="My Profile" />
-		<execute function="AssertTextNotPresent" locator1="UserBar#USER_DASHBOARD" value1="My Dashboard" />
-	</command>
-</definition>
+}

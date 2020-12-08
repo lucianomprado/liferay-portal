@@ -15,8 +15,8 @@
 package com.liferay.document.library.google.docs.internal.display.context;
 
 import com.liferay.document.library.display.context.DLUIItemKeys;
-import com.liferay.document.library.google.docs.internal.util.GoogleDocsConstants;
 import com.liferay.document.library.google.docs.internal.util.GoogleDocsMetadataHelper;
+import com.liferay.document.library.google.docs.internal.util.constants.GoogleDocsConstants;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.servlet.taglib.ui.MenuItem;
 import com.liferay.portal.kernel.servlet.taglib.ui.ToolbarItem;
@@ -39,10 +39,10 @@ import javax.servlet.http.HttpServletRequest;
 public class GoogleDocsUIItemsProcessor {
 
 	public GoogleDocsUIItemsProcessor(
-		HttpServletRequest request,
+		HttpServletRequest httpServletRequest,
 		GoogleDocsMetadataHelper googleDocsMetadataHelper) {
 
-		_request = request;
+		_httpServletRequest = httpServletRequest;
 		_googleDocsMetadataHelper = googleDocsMetadataHelper;
 	}
 
@@ -91,8 +91,9 @@ public class GoogleDocsUIItemsProcessor {
 
 		urlUIItem.setKey(GoogleDocsUIItemKeys.EDIT_IN_GOOGLE);
 
-		ThemeDisplay themeDisplay = (ThemeDisplay)_request.getAttribute(
-			WebKeys.THEME_DISPLAY);
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)_httpServletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
 
 		ResourceBundle resourceBundle = ResourceBundleUtil.getBundle(
 			"content.Language", themeDisplay.getLocale(), getClass());
@@ -131,6 +132,6 @@ public class GoogleDocsUIItemsProcessor {
 	}
 
 	private final GoogleDocsMetadataHelper _googleDocsMetadataHelper;
-	private final HttpServletRequest _request;
+	private final HttpServletRequest _httpServletRequest;
 
 }

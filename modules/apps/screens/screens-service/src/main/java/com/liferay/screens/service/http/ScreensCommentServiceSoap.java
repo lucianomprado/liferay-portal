@@ -14,21 +14,18 @@
 
 package com.liferay.screens.service.http;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-
 import com.liferay.screens.service.ScreensCommentServiceUtil;
 
 import java.rmi.RemoteException;
 
 /**
  * Provides the SOAP utility for the
- * {@link ScreensCommentServiceUtil} service utility. The
- * static methods of this class calls the same methods of the service utility.
- * However, the signatures are different because it is difficult for SOAP to
- * support certain types.
+ * <code>ScreensCommentServiceUtil</code> service
+ * utility. The static methods of this class call the same methods of the
+ * service utility. However, the signatures are different because it is
+ * difficult for SOAP to support certain types.
  *
  * <p>
  * The benefits of using the SOAP utility is that it is cross platform
@@ -49,84 +46,93 @@ import java.rmi.RemoteException;
  *
  * @author José Manuel Navarro
  * @see ScreensCommentServiceHttp
- * @see ScreensCommentServiceUtil
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
-@ProviderType
+@Deprecated
 public class ScreensCommentServiceSoap {
-	public static java.lang.String addComment(java.lang.String className,
-		long classPK, java.lang.String body) throws RemoteException {
-		try {
-			com.liferay.portal.kernel.json.JSONObject returnValue = ScreensCommentServiceUtil.addComment(className,
-					classPK, body);
 
-			return returnValue.toString();
-		}
-		catch (Exception e) {
-			_log.error(e, e);
-
-			throw new RemoteException(e.getMessage());
-		}
-	}
-
-	public static java.lang.String getComment(long commentId)
+	public static String addComment(String className, long classPK, String body)
 		throws RemoteException {
+
 		try {
-			com.liferay.portal.kernel.json.JSONObject returnValue = ScreensCommentServiceUtil.getComment(commentId);
+			com.liferay.portal.kernel.json.JSONObject returnValue =
+				ScreensCommentServiceUtil.addComment(className, classPK, body);
 
 			return returnValue.toString();
 		}
-		catch (Exception e) {
-			_log.error(e, e);
+		catch (Exception exception) {
+			_log.error(exception, exception);
 
-			throw new RemoteException(e.getMessage());
+			throw new RemoteException(exception.getMessage());
 		}
 	}
 
-	public static java.lang.String getComments(java.lang.String className,
-		long classPK, int start, int end) throws RemoteException {
+	public static String getComment(long commentId) throws RemoteException {
 		try {
-			com.liferay.portal.kernel.json.JSONArray returnValue = ScreensCommentServiceUtil.getComments(className,
-					classPK, start, end);
+			com.liferay.portal.kernel.json.JSONObject returnValue =
+				ScreensCommentServiceUtil.getComment(commentId);
 
 			return returnValue.toString();
 		}
-		catch (Exception e) {
-			_log.error(e, e);
+		catch (Exception exception) {
+			_log.error(exception, exception);
 
-			throw new RemoteException(e.getMessage());
+			throw new RemoteException(exception.getMessage());
 		}
 	}
 
-	public static int getCommentsCount(java.lang.String className, long classPK)
+	public static String getComments(
+			String className, long classPK, int start, int end)
 		throws RemoteException {
+
 		try {
-			int returnValue = ScreensCommentServiceUtil.getCommentsCount(className,
-					classPK);
+			com.liferay.portal.kernel.json.JSONArray returnValue =
+				ScreensCommentServiceUtil.getComments(
+					className, classPK, start, end);
+
+			return returnValue.toString();
+		}
+		catch (Exception exception) {
+			_log.error(exception, exception);
+
+			throw new RemoteException(exception.getMessage());
+		}
+	}
+
+	public static int getCommentsCount(String className, long classPK)
+		throws RemoteException {
+
+		try {
+			int returnValue = ScreensCommentServiceUtil.getCommentsCount(
+				className, classPK);
 
 			return returnValue;
 		}
-		catch (Exception e) {
-			_log.error(e, e);
+		catch (Exception exception) {
+			_log.error(exception, exception);
 
-			throw new RemoteException(e.getMessage());
+			throw new RemoteException(exception.getMessage());
 		}
 	}
 
-	public static java.lang.String updateComment(long commentId,
-		java.lang.String body) throws RemoteException {
+	public static String updateComment(long commentId, String body)
+		throws RemoteException {
+
 		try {
-			com.liferay.portal.kernel.json.JSONObject returnValue = ScreensCommentServiceUtil.updateComment(commentId,
-					body);
+			com.liferay.portal.kernel.json.JSONObject returnValue =
+				ScreensCommentServiceUtil.updateComment(commentId, body);
 
 			return returnValue.toString();
 		}
-		catch (Exception e) {
-			_log.error(e, e);
+		catch (Exception exception) {
+			_log.error(exception, exception);
 
-			throw new RemoteException(e.getMessage());
+			throw new RemoteException(exception.getMessage());
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(ScreensCommentServiceSoap.class);
+	private static Log _log = LogFactoryUtil.getLog(
+		ScreensCommentServiceSoap.class);
+
 }

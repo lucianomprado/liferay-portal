@@ -112,8 +112,8 @@ public class SelectorIntraband extends BaseIntraband {
 		try {
 			return registerFutureTask.get();
 		}
-		catch (Exception e) {
-			throw new IOException(e);
+		catch (Exception exception) {
+			throw new IOException(exception);
 		}
 	}
 
@@ -143,13 +143,14 @@ public class SelectorIntraband extends BaseIntraband {
 
 		SelectableChannel readSelectableChannel =
 			(SelectableChannel)scatteringByteChannel;
-		SelectableChannel writeSelectableChannel =
-			(SelectableChannel)gatheringByteChannel;
 
 		if ((readSelectableChannel.validOps() & SelectionKey.OP_READ) == 0) {
 			throw new IllegalArgumentException(
 				"Scattering byte channel is not valid for reading");
 		}
+
+		SelectableChannel writeSelectableChannel =
+			(SelectableChannel)gatheringByteChannel;
 
 		if ((writeSelectableChannel.validOps() & SelectionKey.OP_WRITE) == 0) {
 			throw new IllegalArgumentException(
@@ -172,8 +173,8 @@ public class SelectorIntraband extends BaseIntraband {
 		try {
 			return registerFutureTask.get();
 		}
-		catch (Exception e) {
-			throw new IOException(e);
+		catch (Exception exception) {
+			throw new IOException(exception);
 		}
 	}
 
@@ -208,11 +209,11 @@ public class SelectorIntraband extends BaseIntraband {
 	}
 
 	protected void registerChannels() {
-		FutureTask<RegistrationReference> registerFuturetask = null;
+		FutureTask<RegistrationReference> registerFutureTask = null;
 
 		synchronized (selector) {
-			while ((registerFuturetask = registerQueue.poll()) != null) {
-				registerFuturetask.run();
+			while ((registerFutureTask = registerQueue.poll()) != null) {
+				registerFutureTask.run();
 			}
 		}
 	}
@@ -268,39 +269,37 @@ public class SelectorIntraband extends BaseIntraband {
 
 				return selectionKeyRegistrationReference;
 			}
-			else {
 
-				// Register channels with zero interest, no dispatch will happen
-				// before channel contexts are ready. This ensures thread safe
-				// publication for ChannelContext#_registrationReference.
+			// Register channels with zero interest, no dispatch will happen
+			// before channel contexts are ready. This ensures thread safe
+			// publication for ChannelContext#_registrationReference.
 
-				SelectionKey readSelectionKey = _readSelectableChannel.register(
-					selector, 0);
+			SelectionKey readSelectionKey = _readSelectableChannel.register(
+				selector, 0);
 
-				SelectionKey writeSelectionKey =
-					_writeSelectableChannel.register(selector, 0);
+			SelectionKey writeSelectionKey = _writeSelectableChannel.register(
+				selector, 0);
 
-				SelectionKeyRegistrationReference
-					selectionKeyRegistrationReference =
-						new SelectionKeyRegistrationReference(
-							SelectorIntraband.this, readSelectionKey,
-							writeSelectionKey);
+			SelectionKeyRegistrationReference
+				selectionKeyRegistrationReference =
+					new SelectionKeyRegistrationReference(
+						SelectorIntraband.this, readSelectionKey,
+						writeSelectionKey);
 
-				ChannelContext channelContext = new ChannelContext(
-					new ConcurrentLinkedQueue<Datagram>());
+			ChannelContext channelContext = new ChannelContext(
+				new ConcurrentLinkedQueue<Datagram>());
 
-				channelContext.setRegistrationReference(
-					selectionKeyRegistrationReference);
+			channelContext.setRegistrationReference(
+				selectionKeyRegistrationReference);
 
-				readSelectionKey.attach(channelContext);
-				writeSelectionKey.attach(channelContext);
+			readSelectionKey.attach(channelContext);
+			writeSelectionKey.attach(channelContext);
 
-				// Alter interest ops after ChannelContexts preparation
+			// Alter interest ops after ChannelContexts preparation
 
-				readSelectionKey.interestOps(SelectionKey.OP_READ);
+			readSelectionKey.interestOps(SelectionKey.OP_READ);
 
-				return selectionKeyRegistrationReference;
-			}
+			return selectionKeyRegistrationReference;
 		}
 
 		private final SelectableChannel _readSelectableChannel;
@@ -334,10 +333,10 @@ public class SelectorIntraband extends BaseIntraband {
 		boolean backOff = false;
 
 		if (channelContext.getWritingDatagram() != null) {
-			if (handleWriting(gatheringByteChannel, channelContext)) {
-				if (sendingQueue.isEmpty()) {
-					backOff = true;
-				}
+			if (handleWriting(gatheringByteChannel, channelContext) &&
+				sendingQueue.isEmpty()) {
+
+				backOff = true;
 			}
 		}
 		else {
@@ -394,7 +393,8 @@ public class SelectorIntraband extends BaseIntraband {
 										_processWriting(selectionKey);
 									}
 								}
-								catch (CancelledKeyException cke) {
+								catch (CancelledKeyException
+											cancelledKeyException) {
 
 									// Concurrent cancelling, move to next key
 
@@ -413,7 +413,7 @@ public class SelectorIntraband extends BaseIntraband {
 					selector.close();
 				}
 			}
-			catch (ClosedSelectorException cse) {
+			catch (ClosedSelectorException closedSelectorException) {
 				if (_log.isInfoEnabled()) {
 					Thread currentThread = Thread.currentThread();
 
@@ -422,11 +422,12 @@ public class SelectorIntraband extends BaseIntraband {
 							" exiting gracefully on selector closure");
 				}
 			}
-			catch (Throwable t) {
+			catch (Throwable throwable) {
 				Thread currentThread = Thread.currentThread();
 
 				_log.error(
-					currentThread.getName() + " exiting exceptionally", t);
+					currentThread.getName() + " exiting exceptionally",
+					throwable);
 			}
 
 			// Flush out pending register requests to unblock their invokers,

@@ -23,13 +23,13 @@ import com.liferay.portal.kernel.portlet.PortalPreferences;
 import com.liferay.portal.kernel.portlet.PortletPreferencesFactoryUtil;
 import com.liferay.portal.kernel.portlet.PortletProvider;
 import com.liferay.portal.kernel.portlet.PortletProviderUtil;
+import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.users.admin.kernel.util.UsersAdminUtil;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -44,16 +44,17 @@ public class UserGroupSearch extends SearchContainer<UserGroup> {
 	public static final String EMPTY_RESULTS_MESSAGE =
 		"no-user-groups-were-found";
 
-	public static List<String> headerNames = new ArrayList<>();
-	public static Map<String, String> orderableHeaders = new HashMap<>();
-
-	static {
-		headerNames.add("name");
-		headerNames.add("description");
-
-		orderableHeaders.put("description", "description");
-		orderableHeaders.put("name", "name");
-	}
+	public static List<String> headerNames = new ArrayList<String>() {
+		{
+			add("name");
+			add("description");
+		}
+	};
+	public static Map<String, String> orderableHeaders = HashMapBuilder.put(
+		"description", "description"
+	).put(
+		"name", "name"
+	).build();
 
 	public UserGroupSearch(
 		PortletRequest portletRequest, PortletURL iteratorURL) {
@@ -107,8 +108,8 @@ public class UserGroupSearch extends SearchContainer<UserGroup> {
 			setOrderByType(orderByType);
 			setOrderByComparator(orderByComparator);
 		}
-		catch (Exception e) {
-			_log.error("Unable to initialize user group search", e);
+		catch (Exception exception) {
+			_log.error("Unable to initialize user group search", exception);
 		}
 	}
 

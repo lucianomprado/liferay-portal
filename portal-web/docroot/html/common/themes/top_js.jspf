@@ -54,6 +54,9 @@
 			isChrome: function() {
 				return <%= browserMetadata.isChrome() %>;
 			},
+			isEdge: function() {
+				return <%= BrowserSnifferUtil.isEdge(request) %>;
+			},
 			isFirefox: function() {
 				return <%= browserMetadata.isFirefox() %>;
 			},
@@ -107,25 +110,25 @@
 		Liferay.Data.NAV_SELECTOR_MOBILE = '#navigationCollapse';
 
 		Liferay.Data.isCustomizationView = function() {
-			return <%= (layoutTypePortlet.isCustomizable() && LayoutPermissionUtil.contains(permissionChecker, layout, ActionKeys.CUSTOMIZE)) %>;
+			return <%= layoutTypePortlet.isCustomizable() && LayoutPermissionUtil.contains(permissionChecker, layout, ActionKeys.CUSTOMIZE) %>;
 		};
 
 		Liferay.Data.notices = [
-			null
-
 			<c:if test="<%= permissionChecker.isOmniadmin() && PortalUtil.isUpdateAvailable() %>">
-				, {
-					content: '<a class="update-available" href="<%= themeDisplay.getURLUpdateManager() %>"><liferay-ui:message key="updates-are-available-for-liferay" /></a>',
-					toggleText: false
-				}
+				{
+					message: '<a class="update-available" href="<%= themeDisplay.getURLUpdateManager() %>"><liferay-ui:message key="updates-are-available-for-liferay" /></a>'
+				},
 			</c:if>
 
 			<c:if test="<%= ShutdownUtil.isInProcess() %>">
-				, {
-					node: '#lfrShutdownMessage',
-					toggleText: false,
+				{
+					title: '<liferay-ui:message key="maintenance-alert" /> <span class="notice-date"><%= FastDateFormatFactoryUtil.getTime(locale).format(Time.getDate(CalendarFactoryUtil.getCalendar(timeZone))) %> <%= timeZone.getDisplayName(false, TimeZone.SHORT, locale) %></span>',
+					message: '<liferay-ui:message arguments="<%= String.valueOf((ShutdownUtil.getInProcess() / Time.MINUTE) + 1) %>" key="the-portal-will-shutdown-for-maintenance-in-x-minutes" translateArguments="<%= false %>" />'
+						<c:if test="<%= Validator.isNotNull(ShutdownUtil.getMessage()) %>">
+							+ '<span class="custom-shutdown-message"><%= HtmlUtil.escape(ShutdownUtil.getMessage()) %></span>'
+						</c:if>,
 					type: 'warning'
-				}
+				},
 			</c:if>
 		];
 
@@ -158,11 +161,9 @@
 				Layout controlPanelLayout = themeDisplay.getControlPanelLayout();
 				%>
 
-				<c:if test="<%= controlPanelLayout.getGroupId() != scopeGroup.getGroupId() %>">
-					getLayoutRelativeControlPanelURL: function() {
-						return '<%= PortalUtil.getLayoutRelativeURL(new VirtualLayout(controlPanelLayout, scopeGroup), themeDisplay) %>';
-					},
-				</c:if>
+				getLayoutRelativeControlPanelURL: function() {
+					return '<%= PortalUtil.getLayoutRelativeURL(new VirtualLayout(controlPanelLayout, scopeGroup), themeDisplay) %>';
+				},
 
 				getLayoutRelativeURL: function() {
 					return '<%= PortalUtil.getLayoutRelativeURL(layout, themeDisplay) %>';
@@ -180,12 +181,26 @@
 					return '<%= layout.isPrivateLayout() %>';
 				},
 				isVirtualLayout: function() {
-					return <%= (layout instanceof VirtualLayout) %>;
+					return <%= layout instanceof VirtualLayout %>;
 				},
 			</c:if>
 
 			getBCP47LanguageId: function() {
 				return '<%= LanguageUtil.getBCP47LanguageId(request) %>';
+			},
+			getCanonicalURL: function() {
+
+				<%
+				LayoutSEOLinkManager layoutSEOLinkManager = LayoutSEOLinkManagerUtil.getLayoutSEOLinkManager();
+
+				String completeURL = PortalUtil.getCurrentCompleteURL(request);
+
+				String canonicalURL = PortalUtil.getCanonicalURL(completeURL, themeDisplay, layout, false, false);
+
+				LayoutSEOLink layoutSEOLink = layoutSEOLinkManager.getCanonicalLayoutSEOLink(layout, themeDisplay.getLocale(), canonicalURL, PortalUtil.getAlternateURLs(canonicalURL, themeDisplay, layout));
+				%>
+
+				return '<%= HtmlUtil.escapeJS(layoutSEOLink.getHref()) %>';
 			},
 			getCDNBaseURL: function() {
 				return '<%= themeDisplay.getCDNBaseURL() %>';
@@ -259,6 +274,9 @@
 			getURLHome: function() {
 				return '<%= HtmlUtil.escapeJS(themeDisplay.getURLHome()) %>';
 			},
+			getUserEmailAddress: function() {
+				return '<%= themeDisplay.isSignedIn() ? HtmlUtil.escapeJS(user.getEmailAddress()) : StringPool.BLANK %>';
+			},
 			getUserId: function() {
 				return '<%= themeDisplay.getUserId() %>';
 			},
@@ -267,9 +285,6 @@
 			},
 			isAddSessionIdToURL: function() {
 				return <%= themeDisplay.isAddSessionIdToURL() %>;
-			},
-			isFreeformLayout: function() {
-				return <%= themeDisplay.isFreeformLayout() %>;
 			},
 			isImpersonated: function() {
 				return <%= themeDisplay.isImpersonated() %>;
@@ -297,7 +312,7 @@
 			%>
 
 			getAvailableLangPath: function() {
-				return '<%= PortalUtil.getStaticResourceURL(request, "available_languages.jsp", jsLastModified) %>';
+				return '<%= PortalUtil.getStaticResourceURL(request, "available_languages.jsp", LanguageUtil.getLastModified()) %>';
 			},
 			getCombine: function() {
 				return <%= themeDisplay.isThemeJsFastLoad() %>;
@@ -364,51 +379,7 @@
 	// ]]>
 </script>
 
-<c:if test="<%= PortalWebResourcesUtil.getPortalWebResources(PortalWebResourceConstants.RESOURCE_TYPE_JS_LOADER_MODULES) != null %>">
-
-	<%
-	long jsLoaderModulesLastModified = PortalWebResourcesUtil.getLastModified(PortalWebResourceConstants.RESOURCE_TYPE_JS_LOADER_MODULES);
-	%>
-
-	<script src="<%= HtmlUtil.escape(themeDisplay.getCDNDynamicResourcesHost() + PortalWebResourcesUtil.getContextPath(PortalWebResourceConstants.RESOURCE_TYPE_JS_LOADER_MODULES) + "/js_loader_modules?t=" + jsLoaderModulesLastModified) %>" type="text/javascript"></script>
-</c:if>
-
-<c:choose>
-	<c:when test="<%= themeDisplay.isThemeJsFastLoad() %>">
-		<c:choose>
-			<c:when test="<%= themeDisplay.isThemeJsBarebone() %>">
-				<script src="<%= HtmlUtil.escape(PortalUtil.getStaticResourceURL(request, themeDisplay.getCDNDynamicResourcesHost() + themeDisplay.getPathJavaScript() + "/barebone.jsp", "minifierBundleId=javascript.barebone.files", jsLastModified)) %>" type="text/javascript"></script>
-			</c:when>
-			<c:otherwise>
-				<script src="<%= HtmlUtil.escape(PortalUtil.getStaticResourceURL(request, themeDisplay.getCDNDynamicResourcesHost() + themeDisplay.getPathJavaScript() + "/everything.jsp", "minifierBundleId=javascript.everything.files", jsLastModified)) %>" type="text/javascript"></script>
-			</c:otherwise>
-		</c:choose>
-	</c:when>
-	<c:otherwise>
-
-		<%
-		String path = themeDisplay.getCDNHost().concat(themeDisplay.getPathJavaScript());
-
-		String[] javaScriptFiles = null;
-
-		if (themeDisplay.isThemeJsBarebone()) {
-			javaScriptFiles = JavaScriptBundleUtil.getFileNames(PropsKeys.JAVASCRIPT_BAREBONE_FILES);
-		}
-		else {
-			javaScriptFiles = JavaScriptBundleUtil.getFileNames(PropsKeys.JAVASCRIPT_EVERYTHING_FILES);
-		}
-
-		for (String javaScriptFile : javaScriptFiles) {
-		%>
-
-			<script data-senna-track="permanent" src="<%= HtmlUtil.escape(PortalUtil.getStaticResourceURL(request, path + "/" + javaScriptFile, "minifierType=", jsLastModified)) %>" type="text/javascript"></script>
-
-		<%
-		}
-		%>
-
-	</c:otherwise>
-</c:choose>
+<liferay-util:dynamic-include key="/html/common/themes/top_js.jspf#resources" />
 
 <c:if test="<%= PortalWebResourcesUtil.getPortalWebResources(PortalWebResourceConstants.RESOURCE_TYPE_JS_BUNDLE_CONFIG) != null %>">
 
@@ -416,37 +387,18 @@
 	long jsBundleConfigLastModified = PortalWebResourcesUtil.getLastModified(PortalWebResourceConstants.RESOURCE_TYPE_JS_BUNDLE_CONFIG);
 	%>
 
-	<script src="<%= HtmlUtil.escape(themeDisplay.getCDNDynamicResourcesHost() + PortalWebResourcesUtil.getContextPath(PortalWebResourceConstants.RESOURCE_TYPE_JS_BUNDLE_CONFIG) + "/js_bundle_config?t=" + jsBundleConfigLastModified) %>" type="text/javascript"></script>
+	<script data-senna-track="temporary" src="<%= HtmlUtil.escape(themeDisplay.getCDNDynamicResourcesHost() + PortalWebResourcesUtil.getContextPath(PortalWebResourceConstants.RESOURCE_TYPE_JS_BUNDLE_CONFIG) + "/js_bundle_config?t=" + jsBundleConfigLastModified) %>" type="text/javascript"></script>
 </c:if>
 
 <script data-senna-track="temporary" type="text/javascript">
 	// <![CDATA[
 		<c:if test="<%= layoutTypePortlet != null %>">
-
-			<%
-			StringBundler sb = new StringBundler(portlets.size() * 2);
-
-			for (Portlet portlet : portlets) {
-				if (portlet.isActive() && portlet.isReady() && !portlet.isUndeployedPortlet()) {
-					sb.append(HtmlUtil.escapeJS(portlet.getPortletId()));
-					sb.append("', '");
-				}
-			}
-
-			if (sb.index() > 0) {
-				sb.setIndex(sb.index() - 1);
-			}
-			%>
-
 			<c:choose>
 				<c:when test="<%= layoutTypePortlet.hasStateMax() %>">
-					Liferay.Portlet.list = ['<%= HtmlUtil.escapeJS(layoutTypePortlet.getStateMaxPortletId()) %>'];
+					Liferay.Portlet.register('<%= HtmlUtil.escapeJS(layoutTypePortlet.getStateMaxPortletId()) %>');
 				</c:when>
 				<c:when test="<%= themeDisplay.isStatePopUp() %>">
-					Liferay.Portlet.list = ['<%= HtmlUtil.escapeJS(themeDisplay.getPpid()) %>'];
-				</c:when>
-				<c:when test="<%= (sb.index() > 0) && !layoutTypePortlet.hasStateMax() %>">
-					Liferay.Portlet.list = ['<%= sb.toString() %>'];
+					Liferay.Portlet.register('<%= HtmlUtil.escapeJS(themeDisplay.getPpid()) %>');
 				</c:when>
 			</c:choose>
 		</c:if>
@@ -511,7 +463,29 @@ for (String analyticsType : analyticsTypes) {
 						m.parentNode.insertBefore(a, m);
 					})(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
 
-					ga('create', '<%= HtmlUtil.escapeJS(googleAnalyticsId) %>', 'auto');
+					<%
+					String googleAnalyticsCreateCustomConfiguration = groupTypeSettings.getProperty("googleAnalyticsCreateCustomConfiguration");
+					%>
+
+					<c:choose>
+						<c:when test="<%= Validator.isNotNull(googleAnalyticsCreateCustomConfiguration) %>">
+							ga('create', '<%= HtmlUtil.escapeJS(googleAnalyticsId) %>', 'auto', <%= googleAnalyticsCreateCustomConfiguration %>);
+						</c:when>
+						<c:otherwise>
+							ga('create', '<%= HtmlUtil.escapeJS(googleAnalyticsId) %>', 'auto');
+						</c:otherwise>
+					</c:choose>
+
+					<%
+					String googleAnalyticsCustomConfiguration = groupTypeSettings.getProperty("googleAnalyticsCustomConfiguration");
+					%>
+
+					<c:if test="<%= Validator.isNotNull(googleAnalyticsCustomConfiguration) %>">
+						(function(ga) {
+							<%= googleAnalyticsCustomConfiguration %>
+						})(ga);
+					</c:if>
+
 					ga('send', 'pageview');
 
 					<c:if test="<%= PropsValues.JAVASCRIPT_SINGLE_PAGE_APPLICATION_ENABLED %>">
@@ -529,7 +503,7 @@ for (String analyticsType : analyticsTypes) {
 		<c:otherwise>
 
 			<%
-			String analyticsScript = groupTypeSettings.getProperty(Sites.ANALYTICS_PREFIX + analyticsType);
+			String analyticsScript = HtmlUtil.escape(groupTypeSettings.getProperty(Sites.ANALYTICS_PREFIX + analyticsType));
 			%>
 
 			<c:if test="<%= Validator.isNotNull(analyticsScript) %>">
@@ -549,18 +523,40 @@ private static String _getDateFormatPattern(Locale locale) {
 	String dateFormatPattern = _dateFormatPatterns.get(languageId);
 
 	if (dateFormatPattern == null) {
+		boolean endDelimiter = false;
+
+		String delimiterString = StringPool.FORWARD_SLASH;
+
 		SimpleDateFormat simpleDateFormat = (SimpleDateFormat)DateFormat.getDateInstance(DateFormat.SHORT, locale);
 
 		dateFormatPattern = simpleDateFormat.toPattern();
 
-		if (dateFormatPattern.indexOf("y") == 0) {
-			dateFormatPattern = "%Y/%m/%d";
+		for (char dateDelimiter : _DATE_DELIMITERS) {
+			if (dateFormatPattern.indexOf(dateDelimiter) != -1) {
+				delimiterString = String.valueOf(dateDelimiter);
+
+				endDelimiter = dateFormatPattern.endsWith(delimiterString);
+
+				break;
+			}
 		}
-		else if (dateFormatPattern.indexOf("d") == 0) {
-			dateFormatPattern = "%d/%m/%Y";
+
+		int dayOrder = dateFormatPattern.indexOf('d');
+		int monthOrder = dateFormatPattern.indexOf('M');
+		int yearOrder = dateFormatPattern.indexOf('y');
+
+		if ((yearOrder < dayOrder) && (yearOrder < monthOrder)) {
+			dateFormatPattern = StringBundler.concat("%Y", delimiterString, "%m", delimiterString, "%d");
+		}
+		else if (dayOrder < monthOrder) {
+			dateFormatPattern = StringBundler.concat("%d", delimiterString, "%m", delimiterString, "%Y");
 		}
 		else {
-			dateFormatPattern = "%m/%d/%Y";
+			dateFormatPattern = StringBundler.concat("%m", delimiterString, "%d", delimiterString, "%Y");
+		}
+
+		if (endDelimiter) {
+			dateFormatPattern += delimiterString;
 		}
 
 		_dateFormatPatterns.put(languageId, dateFormatPattern);
@@ -568,6 +564,10 @@ private static String _getDateFormatPattern(Locale locale) {
 
 	return dateFormatPattern;
 }
+
+private static final char[] _DATE_DELIMITERS = {
+	CharPool.DASH, CharPool.FORWARD_SLASH, CharPool.PERIOD
+};
 
 private static final Map<String, String> _dateFormatPatterns = new ConcurrentHashMap<>();
 %>

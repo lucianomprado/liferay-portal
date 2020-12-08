@@ -23,9 +23,9 @@ import com.liferay.portal.kernel.util.OrderByComparator;
  */
 public class KBArticleViewCountComparator extends OrderByComparator<KBArticle> {
 
-	public static final String ORDER_BY_ASC = "KBArticle.viewCount ASC";
+	public static final String ORDER_BY_ASC = "viewCount ASC";
 
-	public static final String ORDER_BY_DESC = "KBArticle.viewCount DESC";
+	public static final String ORDER_BY_DESC = "viewCount DESC";
 
 	public static final String[] ORDER_BY_FIELDS = {"viewCount", "title"};
 
@@ -57,9 +57,8 @@ public class KBArticleViewCountComparator extends OrderByComparator<KBArticle> {
 		if (_ascending) {
 			return value;
 		}
-		else {
-			return -value;
-		}
+
+		return -value;
 	}
 
 	@Override
@@ -67,9 +66,8 @@ public class KBArticleViewCountComparator extends OrderByComparator<KBArticle> {
 		if (_ascending) {
 			return ORDER_BY_ASC;
 		}
-		else {
-			return ORDER_BY_DESC;
-		}
+
+		return ORDER_BY_DESC;
 	}
 
 	@Override

@@ -37,14 +37,14 @@ import org.osgi.service.component.annotations.Reference;
  */
 @Component(
 	immediate = true,
-	property = {"javax.portlet.name=" + KBPortletKeys.KNOWLEDGE_BASE_ADMIN},
+	property = "javax.portlet.name=" + KBPortletKeys.KNOWLEDGE_BASE_ADMIN,
 	service = ConfigurationAction.class
 )
 public class AdminConfigurationAction
 	extends BaseJSPSettingsConfigurationAction {
 
 	@Override
-	public String getJspPath(HttpServletRequest request) {
+	public String getJspPath(HttpServletRequest httpServletRequest) {
 		return "/admin/configuration.jsp";
 	}
 
@@ -79,17 +79,20 @@ public class AdminConfigurationAction
 
 		boolean emailEnabled = GetterUtil.getBoolean(
 			getParameter(actionRequest, emailParam + "Enabled"));
+
+		if (!emailEnabled) {
+			return;
+		}
+
 		String emailSubject = getParameter(
 			actionRequest, emailParam + "Subject");
 		String emailBody = getParameter(actionRequest, emailParam + "Body");
 
-		if (emailEnabled) {
-			if (Validator.isNull(emailSubject)) {
-				SessionErrors.add(actionRequest, emailParam + "Subject");
-			}
-			else if (Validator.isNull(emailBody)) {
-				SessionErrors.add(actionRequest, emailParam + "Body");
-			}
+		if (Validator.isNull(emailSubject)) {
+			SessionErrors.add(actionRequest, emailParam + "Subject");
+		}
+		else if (Validator.isNull(emailBody)) {
+			SessionErrors.add(actionRequest, emailParam + "Body");
 		}
 	}
 

@@ -26,8 +26,6 @@ import com.liferay.portal.kernel.service.BaseServiceImpl;
 import com.liferay.portal.kernel.service.LayoutSetPrototypeService;
 import com.liferay.portal.kernel.service.persistence.GroupFinder;
 import com.liferay.portal.kernel.service.persistence.GroupPersistence;
-import com.liferay.portal.kernel.service.persistence.LayoutFinder;
-import com.liferay.portal.kernel.service.persistence.LayoutPersistence;
 import com.liferay.portal.kernel.service.persistence.LayoutSetPersistence;
 import com.liferay.portal.kernel.service.persistence.LayoutSetPrototypePersistence;
 import com.liferay.portal.kernel.service.persistence.UserFinder;
@@ -45,15 +43,16 @@ import javax.sql.DataSource;
  *
  * @author Brian Wing Shun Chan
  * @see com.liferay.portal.service.impl.LayoutSetPrototypeServiceImpl
- * @see com.liferay.portal.kernel.service.LayoutSetPrototypeServiceUtil
  * @generated
  */
-public abstract class LayoutSetPrototypeServiceBaseImpl extends BaseServiceImpl
-	implements LayoutSetPrototypeService, IdentifiableOSGiService {
+public abstract class LayoutSetPrototypeServiceBaseImpl
+	extends BaseServiceImpl
+	implements IdentifiableOSGiService, LayoutSetPrototypeService {
+
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. Always use {@link com.liferay.portal.kernel.service.LayoutSetPrototypeServiceUtil} to access the layout set prototype remote service.
+	 * Never modify or reference this class directly. Use <code>LayoutSetPrototypeService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>com.liferay.portal.kernel.service.LayoutSetPrototypeServiceUtil</code>.
 	 */
 
 	/**
@@ -61,7 +60,9 @@ public abstract class LayoutSetPrototypeServiceBaseImpl extends BaseServiceImpl
 	 *
 	 * @return the layout set prototype local service
 	 */
-	public com.liferay.portal.kernel.service.LayoutSetPrototypeLocalService getLayoutSetPrototypeLocalService() {
+	public com.liferay.portal.kernel.service.LayoutSetPrototypeLocalService
+		getLayoutSetPrototypeLocalService() {
+
 		return layoutSetPrototypeLocalService;
 	}
 
@@ -71,7 +72,9 @@ public abstract class LayoutSetPrototypeServiceBaseImpl extends BaseServiceImpl
 	 * @param layoutSetPrototypeLocalService the layout set prototype local service
 	 */
 	public void setLayoutSetPrototypeLocalService(
-		com.liferay.portal.kernel.service.LayoutSetPrototypeLocalService layoutSetPrototypeLocalService) {
+		com.liferay.portal.kernel.service.LayoutSetPrototypeLocalService
+			layoutSetPrototypeLocalService) {
+
 		this.layoutSetPrototypeLocalService = layoutSetPrototypeLocalService;
 	}
 
@@ -91,6 +94,7 @@ public abstract class LayoutSetPrototypeServiceBaseImpl extends BaseServiceImpl
 	 */
 	public void setLayoutSetPrototypeService(
 		LayoutSetPrototypeService layoutSetPrototypeService) {
+
 		this.layoutSetPrototypeService = layoutSetPrototypeService;
 	}
 
@@ -110,6 +114,7 @@ public abstract class LayoutSetPrototypeServiceBaseImpl extends BaseServiceImpl
 	 */
 	public void setLayoutSetPrototypePersistence(
 		LayoutSetPrototypePersistence layoutSetPrototypePersistence) {
+
 		this.layoutSetPrototypePersistence = layoutSetPrototypePersistence;
 	}
 
@@ -118,7 +123,9 @@ public abstract class LayoutSetPrototypeServiceBaseImpl extends BaseServiceImpl
 	 *
 	 * @return the counter local service
 	 */
-	public com.liferay.counter.kernel.service.CounterLocalService getCounterLocalService() {
+	public com.liferay.counter.kernel.service.CounterLocalService
+		getCounterLocalService() {
+
 		return counterLocalService;
 	}
 
@@ -128,7 +135,9 @@ public abstract class LayoutSetPrototypeServiceBaseImpl extends BaseServiceImpl
 	 * @param counterLocalService the counter local service
 	 */
 	public void setCounterLocalService(
-		com.liferay.counter.kernel.service.CounterLocalService counterLocalService) {
+		com.liferay.counter.kernel.service.CounterLocalService
+			counterLocalService) {
+
 		this.counterLocalService = counterLocalService;
 	}
 
@@ -137,7 +146,9 @@ public abstract class LayoutSetPrototypeServiceBaseImpl extends BaseServiceImpl
 	 *
 	 * @return the group local service
 	 */
-	public com.liferay.portal.kernel.service.GroupLocalService getGroupLocalService() {
+	public com.liferay.portal.kernel.service.GroupLocalService
+		getGroupLocalService() {
+
 		return groupLocalService;
 	}
 
@@ -148,6 +159,7 @@ public abstract class LayoutSetPrototypeServiceBaseImpl extends BaseServiceImpl
 	 */
 	public void setGroupLocalService(
 		com.liferay.portal.kernel.service.GroupLocalService groupLocalService) {
+
 		this.groupLocalService = groupLocalService;
 	}
 
@@ -167,6 +179,7 @@ public abstract class LayoutSetPrototypeServiceBaseImpl extends BaseServiceImpl
 	 */
 	public void setGroupService(
 		com.liferay.portal.kernel.service.GroupService groupService) {
+
 		this.groupService = groupService;
 	}
 
@@ -207,85 +220,13 @@ public abstract class LayoutSetPrototypeServiceBaseImpl extends BaseServiceImpl
 	}
 
 	/**
-	 * Returns the layout local service.
-	 *
-	 * @return the layout local service
-	 */
-	public com.liferay.portal.kernel.service.LayoutLocalService getLayoutLocalService() {
-		return layoutLocalService;
-	}
-
-	/**
-	 * Sets the layout local service.
-	 *
-	 * @param layoutLocalService the layout local service
-	 */
-	public void setLayoutLocalService(
-		com.liferay.portal.kernel.service.LayoutLocalService layoutLocalService) {
-		this.layoutLocalService = layoutLocalService;
-	}
-
-	/**
-	 * Returns the layout remote service.
-	 *
-	 * @return the layout remote service
-	 */
-	public com.liferay.portal.kernel.service.LayoutService getLayoutService() {
-		return layoutService;
-	}
-
-	/**
-	 * Sets the layout remote service.
-	 *
-	 * @param layoutService the layout remote service
-	 */
-	public void setLayoutService(
-		com.liferay.portal.kernel.service.LayoutService layoutService) {
-		this.layoutService = layoutService;
-	}
-
-	/**
-	 * Returns the layout persistence.
-	 *
-	 * @return the layout persistence
-	 */
-	public LayoutPersistence getLayoutPersistence() {
-		return layoutPersistence;
-	}
-
-	/**
-	 * Sets the layout persistence.
-	 *
-	 * @param layoutPersistence the layout persistence
-	 */
-	public void setLayoutPersistence(LayoutPersistence layoutPersistence) {
-		this.layoutPersistence = layoutPersistence;
-	}
-
-	/**
-	 * Returns the layout finder.
-	 *
-	 * @return the layout finder
-	 */
-	public LayoutFinder getLayoutFinder() {
-		return layoutFinder;
-	}
-
-	/**
-	 * Sets the layout finder.
-	 *
-	 * @param layoutFinder the layout finder
-	 */
-	public void setLayoutFinder(LayoutFinder layoutFinder) {
-		this.layoutFinder = layoutFinder;
-	}
-
-	/**
 	 * Returns the layout set local service.
 	 *
 	 * @return the layout set local service
 	 */
-	public com.liferay.portal.kernel.service.LayoutSetLocalService getLayoutSetLocalService() {
+	public com.liferay.portal.kernel.service.LayoutSetLocalService
+		getLayoutSetLocalService() {
+
 		return layoutSetLocalService;
 	}
 
@@ -295,7 +236,9 @@ public abstract class LayoutSetPrototypeServiceBaseImpl extends BaseServiceImpl
 	 * @param layoutSetLocalService the layout set local service
 	 */
 	public void setLayoutSetLocalService(
-		com.liferay.portal.kernel.service.LayoutSetLocalService layoutSetLocalService) {
+		com.liferay.portal.kernel.service.LayoutSetLocalService
+			layoutSetLocalService) {
+
 		this.layoutSetLocalService = layoutSetLocalService;
 	}
 
@@ -304,7 +247,9 @@ public abstract class LayoutSetPrototypeServiceBaseImpl extends BaseServiceImpl
 	 *
 	 * @return the layout set remote service
 	 */
-	public com.liferay.portal.kernel.service.LayoutSetService getLayoutSetService() {
+	public com.liferay.portal.kernel.service.LayoutSetService
+		getLayoutSetService() {
+
 		return layoutSetService;
 	}
 
@@ -315,6 +260,7 @@ public abstract class LayoutSetPrototypeServiceBaseImpl extends BaseServiceImpl
 	 */
 	public void setLayoutSetService(
 		com.liferay.portal.kernel.service.LayoutSetService layoutSetService) {
+
 		this.layoutSetService = layoutSetService;
 	}
 
@@ -334,6 +280,7 @@ public abstract class LayoutSetPrototypeServiceBaseImpl extends BaseServiceImpl
 	 */
 	public void setLayoutSetPersistence(
 		LayoutSetPersistence layoutSetPersistence) {
+
 		this.layoutSetPersistence = layoutSetPersistence;
 	}
 
@@ -342,7 +289,9 @@ public abstract class LayoutSetPrototypeServiceBaseImpl extends BaseServiceImpl
 	 *
 	 * @return the resource local service
 	 */
-	public com.liferay.portal.kernel.service.ResourceLocalService getResourceLocalService() {
+	public com.liferay.portal.kernel.service.ResourceLocalService
+		getResourceLocalService() {
+
 		return resourceLocalService;
 	}
 
@@ -352,7 +301,9 @@ public abstract class LayoutSetPrototypeServiceBaseImpl extends BaseServiceImpl
 	 * @param resourceLocalService the resource local service
 	 */
 	public void setResourceLocalService(
-		com.liferay.portal.kernel.service.ResourceLocalService resourceLocalService) {
+		com.liferay.portal.kernel.service.ResourceLocalService
+			resourceLocalService) {
+
 		this.resourceLocalService = resourceLocalService;
 	}
 
@@ -361,7 +312,9 @@ public abstract class LayoutSetPrototypeServiceBaseImpl extends BaseServiceImpl
 	 *
 	 * @return the user local service
 	 */
-	public com.liferay.portal.kernel.service.UserLocalService getUserLocalService() {
+	public com.liferay.portal.kernel.service.UserLocalService
+		getUserLocalService() {
+
 		return userLocalService;
 	}
 
@@ -372,6 +325,7 @@ public abstract class LayoutSetPrototypeServiceBaseImpl extends BaseServiceImpl
 	 */
 	public void setUserLocalService(
 		com.liferay.portal.kernel.service.UserLocalService userLocalService) {
+
 		this.userLocalService = userLocalService;
 	}
 
@@ -391,6 +345,7 @@ public abstract class LayoutSetPrototypeServiceBaseImpl extends BaseServiceImpl
 	 */
 	public void setUserService(
 		com.liferay.portal.kernel.service.UserService userService) {
+
 		this.userService = userService;
 	}
 
@@ -461,61 +416,91 @@ public abstract class LayoutSetPrototypeServiceBaseImpl extends BaseServiceImpl
 	 */
 	protected void runSQL(String sql) {
 		try {
-			DataSource dataSource = layoutSetPrototypePersistence.getDataSource();
+			DataSource dataSource =
+				layoutSetPrototypePersistence.getDataSource();
 
 			DB db = DBManagerUtil.getDB();
 
 			sql = db.buildSQL(sql);
 			sql = PortalUtil.transformSQL(sql);
 
-			SqlUpdate sqlUpdate = SqlUpdateFactoryUtil.getSqlUpdate(dataSource,
-					sql);
+			SqlUpdate sqlUpdate = SqlUpdateFactoryUtil.getSqlUpdate(
+				dataSource, sql);
 
 			sqlUpdate.update();
 		}
-		catch (Exception e) {
-			throw new SystemException(e);
+		catch (Exception exception) {
+			throw new SystemException(exception);
 		}
 	}
 
-	@BeanReference(type = com.liferay.portal.kernel.service.LayoutSetPrototypeLocalService.class)
-	protected com.liferay.portal.kernel.service.LayoutSetPrototypeLocalService layoutSetPrototypeLocalService;
+	@BeanReference(
+		type = com.liferay.portal.kernel.service.LayoutSetPrototypeLocalService.class
+	)
+	protected com.liferay.portal.kernel.service.LayoutSetPrototypeLocalService
+		layoutSetPrototypeLocalService;
+
 	@BeanReference(type = LayoutSetPrototypeService.class)
 	protected LayoutSetPrototypeService layoutSetPrototypeService;
+
 	@BeanReference(type = LayoutSetPrototypePersistence.class)
 	protected LayoutSetPrototypePersistence layoutSetPrototypePersistence;
-	@BeanReference(type = com.liferay.counter.kernel.service.CounterLocalService.class)
-	protected com.liferay.counter.kernel.service.CounterLocalService counterLocalService;
-	@BeanReference(type = com.liferay.portal.kernel.service.GroupLocalService.class)
-	protected com.liferay.portal.kernel.service.GroupLocalService groupLocalService;
+
+	@BeanReference(
+		type = com.liferay.counter.kernel.service.CounterLocalService.class
+	)
+	protected com.liferay.counter.kernel.service.CounterLocalService
+		counterLocalService;
+
+	@BeanReference(
+		type = com.liferay.portal.kernel.service.GroupLocalService.class
+	)
+	protected com.liferay.portal.kernel.service.GroupLocalService
+		groupLocalService;
+
 	@BeanReference(type = com.liferay.portal.kernel.service.GroupService.class)
 	protected com.liferay.portal.kernel.service.GroupService groupService;
+
 	@BeanReference(type = GroupPersistence.class)
 	protected GroupPersistence groupPersistence;
+
 	@BeanReference(type = GroupFinder.class)
 	protected GroupFinder groupFinder;
-	@BeanReference(type = com.liferay.portal.kernel.service.LayoutLocalService.class)
-	protected com.liferay.portal.kernel.service.LayoutLocalService layoutLocalService;
-	@BeanReference(type = com.liferay.portal.kernel.service.LayoutService.class)
-	protected com.liferay.portal.kernel.service.LayoutService layoutService;
-	@BeanReference(type = LayoutPersistence.class)
-	protected LayoutPersistence layoutPersistence;
-	@BeanReference(type = LayoutFinder.class)
-	protected LayoutFinder layoutFinder;
-	@BeanReference(type = com.liferay.portal.kernel.service.LayoutSetLocalService.class)
-	protected com.liferay.portal.kernel.service.LayoutSetLocalService layoutSetLocalService;
-	@BeanReference(type = com.liferay.portal.kernel.service.LayoutSetService.class)
-	protected com.liferay.portal.kernel.service.LayoutSetService layoutSetService;
+
+	@BeanReference(
+		type = com.liferay.portal.kernel.service.LayoutSetLocalService.class
+	)
+	protected com.liferay.portal.kernel.service.LayoutSetLocalService
+		layoutSetLocalService;
+
+	@BeanReference(
+		type = com.liferay.portal.kernel.service.LayoutSetService.class
+	)
+	protected com.liferay.portal.kernel.service.LayoutSetService
+		layoutSetService;
+
 	@BeanReference(type = LayoutSetPersistence.class)
 	protected LayoutSetPersistence layoutSetPersistence;
-	@BeanReference(type = com.liferay.portal.kernel.service.ResourceLocalService.class)
-	protected com.liferay.portal.kernel.service.ResourceLocalService resourceLocalService;
-	@BeanReference(type = com.liferay.portal.kernel.service.UserLocalService.class)
-	protected com.liferay.portal.kernel.service.UserLocalService userLocalService;
+
+	@BeanReference(
+		type = com.liferay.portal.kernel.service.ResourceLocalService.class
+	)
+	protected com.liferay.portal.kernel.service.ResourceLocalService
+		resourceLocalService;
+
+	@BeanReference(
+		type = com.liferay.portal.kernel.service.UserLocalService.class
+	)
+	protected com.liferay.portal.kernel.service.UserLocalService
+		userLocalService;
+
 	@BeanReference(type = com.liferay.portal.kernel.service.UserService.class)
 	protected com.liferay.portal.kernel.service.UserService userService;
+
 	@BeanReference(type = UserPersistence.class)
 	protected UserPersistence userPersistence;
+
 	@BeanReference(type = UserFinder.class)
 	protected UserFinder userFinder;
+
 }

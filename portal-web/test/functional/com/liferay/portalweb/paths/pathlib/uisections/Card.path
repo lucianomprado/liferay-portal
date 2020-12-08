@@ -9,48 +9,83 @@
 </thead>
 <tbody>
 <tr>
-	<td>GENERIC_CHECKBOX</td>
-	<td>//div[contains(@class,'vertical-card')]//input[@type='checkbox']</td>
+	<td>CARD</td>
+	<td>//div[contains(@class,'card')][contains(.,'${key_card}')]</td>
 	<td></td>
 </tr>
 <tr>
-	<td>GENERIC_LARGE_TEXT</td>
-	<td>//div[contains(@class,'vertical-card')]//span[contains(@class,'lfr-card-title-text')]</td>
+	<td>CARD_ITEM</td>
+	<td>xpath=(//li[contains(@class,'asset-item')])[${key_index}]//*[contains(@class,'card-title')][contains(.,'${key_card}')]</td>
 	<td></td>
 </tr>
 <tr>
-	<td>GENERIC_LARGE_TEXT_LINK</td>
-	<td>//div[contains(@class,'vertical-card')]//span[contains(@class,'lfr-card-title-text')]//a</td>
+	<td>CARD_LINK</td>
+	<td>//div[contains(@data-analytics-asset-title,'${key_card}')]//a[contains(@class,'card-link')]</td>
 	<td></td>
 </tr>
 <tr>
-	<td>GENERIC_SMALL_TEXT</td>
-	<td>//div[contains(@class,'vertical-card')]//span[contains(@class,'lfr-card-workflow-text')]</td>
+	<td>CARD_TITLE</td>
+	<td>//*[contains(@class,'card-title')][contains(.,'${key_card}')]</td>
 	<td></td>
 </tr>
 <tr>
-	<td>SPECIFIC_CHECKBOX</td>
-	<td>//div[contains(@class,'vertical-card') and contains(.,'${key_cardText}')]//input[@type='checkbox']</td>
+	<td>CARD_TITLE_LINK</td>
+	<td>//div[contains(@class,'card')][contains(.,'${key_card}')]//*[contains(@class,'card-title')]//a</td>
 	<td></td>
 </tr>
 <tr>
-	<td>SPECIFIC_LARGE_TEXT</td>
-	<td>//div[contains(@class,'vertical-card') and contains(.,'${key_cardText}')]//span[contains(@class,'lfr-card-title-text')]</td>
+	<td>CARD_SUBTITLE</td>
+	<td>//div[contains(@class,'card')][contains(.,'${key_card}')]//*[contains(@class,'card-subtitle')]</td>
 	<td></td>
 </tr>
 <tr>
-	<td>SPECIFIC_LARGE_TEXT_LINK</td>
-	<td>//div[contains(@class,'vertical-card') and contains(.,'${key_cardText}')]//span[contains(@class,'lfr-card-title-text')]//span</td>
+	<td>CARD_LABEL</td>
+	<td>//div[contains(@class,'card')][contains(.,'${key_card}')]//span[contains(@class,'label-item')]</td>
 	<td></td>
 </tr>
 <tr>
-	<td>SPECIFIC_TEXT</td>
-	<td>//div[contains(@class,'vertical-card') and contains(.,'${key_cardText}')]//span[contains(@class,'lfr-card-subtitle-text')]</td>
+	<td>CARD_CHECKBOX</td>
+	<td>//div[contains(@class,'card')][contains(.,'${key_card}')]//input[@type='checkbox']</td>
 	<td></td>
 </tr>
 <tr>
-	<td>SPECIFIC_SMALL_TEXT</td>
-	<td>//div[contains(@class,'vertical-card') and contains(.,'${key_cardText}')]//span[contains(@class,'lfr-card-workflow-text')]</td>
+	<td>CARD_ELLIPSIS</td>
+	<td>//div[contains(@class,'card')][contains(.,'${key_card}')]//*[contains(@class,'dropdown-toggle')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>CARD_SELECTED</td>
+	<td>//li[contains(@class,'active')]//div[contains(@class,'card')][contains(.,'${key_card}')] | //div[contains(@class,'card')][contains(@class,'active')][contains(.,'${key_card}')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>CARD_STICKER</td>
+	<td>//div[contains(@class,'card')][contains(.,'${key_card}')]//span[contains(@class,'sticker')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>CARD_STYLE</td>
+	<td>//div[contains(@data-analytics-asset-title,'${key_card}')]/parent::div[contains(@class,'${key_cardStyle}') or contains(@style,'${key_cardStyle}')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>CARD_THUMBNAIL</td>
+	<td>//div[contains(@class,'card')][contains(.,'${key_card}')]//img</td>
+	<td></td>
+</tr>
+<tr>
+	<td>CARD_TYPE_ASSET</td>
+	<td>//div[contains(@aria-label,'${key_card}') and contains(@class,'card-type-asset')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>CARD_CUSTOM_LOGO</td>
+	<td>//div[contains(@class,'card')][contains(.,'${key_card}')]//span[contains(@class,'sticker')]/img</td>
+	<td></td>
+</tr>
+<tr>
+	<td>CARD_RADIO</td>
+	<td>//div[contains(@class,'card')][contains(.,'${key_card}')]//input[@type='radio']</td>
 	<td></td>
 </tr>
 </tbody>

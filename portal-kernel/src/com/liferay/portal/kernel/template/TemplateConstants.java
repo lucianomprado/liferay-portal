@@ -14,7 +14,7 @@
 
 package com.liferay.portal.kernel.template;
 
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.petra.string.StringPool;
 
 /**
  * @author Tina Tian
@@ -30,15 +30,12 @@ public interface TemplateConstants {
 
 	public static final String BUNDLE_SEPARATOR = "_BUNDLE_CONTEXT_";
 
+	public static final String CLASS_LOADER_SEPARATOR =
+		"_CLASS_LOADER_CONTEXT_";
+
 	public static final String CLASS_NAME_ID = "class_name_id";
 
 	public static final String DEFAUT_ENCODING = StringPool.UTF8;
-
-	/**
-	 * @deprecated As of 6.2.0
-	 */
-	@Deprecated
-	public static final String JOURNAL_SEPARATOR = "_JOURNAL_CONTEXT_";
 
 	public static final String LANG_TYPE_CSS = "css";
 

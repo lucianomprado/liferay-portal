@@ -14,11 +14,11 @@
 
 package com.liferay.pmd;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.test.CaptureHandler;
 import com.liferay.portal.kernel.test.JDKLoggerTestUtil;
 import com.liferay.portal.kernel.test.ci.AutoBalanceTestCase;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 
 import java.io.File;
@@ -125,10 +125,10 @@ public class PMDTest extends AutoBalanceTestCase {
 
 		_pmdTask.addConfiguredSourceLanguage(sourceLanguage);
 
-		CaptureHandler captureHandler = JDKLoggerTestUtil.configureJDKLogger(
-			ClassTypeResolver.class.getName(), Level.SEVERE);
+		try (CaptureHandler captureHandler =
+				JDKLoggerTestUtil.configureJDKLogger(
+					ClassTypeResolver.class.getName(), Level.SEVERE)) {
 
-		try {
 			_pmdTask.execute();
 
 			List<LogRecord> logRecords = captureHandler.getLogRecords();
@@ -150,9 +150,6 @@ public class PMDTest extends AutoBalanceTestCase {
 				_logFilePath, Charset.defaultCharset());
 
 			Assert.assertTrue(list.toString(), list.isEmpty());
-		}
-		finally {
-			captureHandler.close();
 		}
 	}
 

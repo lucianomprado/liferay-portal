@@ -1,22 +1,33 @@
-import com.liferay.gradle.plugins.change.log.builder.BuildChangeLogTask
 import com.liferay.gradle.plugins.defaults.tasks.CopyIvyDependenciesTask
+import com.liferay.gradle.plugins.source.formatter.FormatSourceTask
 import com.liferay.gradle.plugins.util.PortalTools
 import com.liferay.gradle.util.FileUtil
 import com.liferay.gradle.util.StringUtil
 
 import java.util.regex.Matcher
 
+import org.gradle.util.GUtil
+
 buildscript {
 	apply from: file("build-buildscript.gradle"), to: buildscript
 }
 
-task buildFixPackChangeLog(type: BuildChangeLogTask)
-task cleanReleng
-task cleanVersionOverride
+apply plugin: "com.liferay.python"
+apply plugin: "com.liferay.source.formatter"
+apply plugin: "com.liferay.source.formatter.defaults"
+
+task appendHotfixQualifier
+task formatSourceCurrentBranch(type: FormatSourceTask)
+task formatSourceLatestAuthor(type: FormatSourceTask)
+task formatSourceLocalChanges(type: FormatSourceTask)
 task printDependencyPath
+task removeHotfixQualifier
 task setUpLibs
 task setUpPortalTools
-task wrapper(type: Wrapper)
+task setUpYarnOfflineCache
+task updateYarnBinariesCache
+task wrapperPortal(type: Wrapper)
+task wrapperProjectTemplates(type: Wrapper)
 task wrapperSubrepo(type: Wrapper)
 
 FileTree libDependenciesFileTree = fileTree(dir: "../lib", include: "*/dependencies.properties")
@@ -27,63 +38,47 @@ Map<File, Properties> libDependenciesMap = libDependenciesFileTree.collectEntrie
 	[it.parentFile, properties]
 }
 
-buildFixPackChangeLog {
-	changeLogHeader = {
-		File releaseInfoFile = file("../portal-kernel/src/com/liferay/portal/kernel/util/ReleaseInfo.java")
-
-		Matcher matcher = (releaseInfoFile.text =~ /private static final String _VERSION = "(.+)";/)
-
-		return matcher[0][1]
-	}
-
-	changeLogFile = "../.releng/fix-pack.changelog"
-	dirs = ["../portal-impl", "../portal-kernel", "../portal-web", "../util-bridges", "../util-java", "../util-slf4j", "../util-taglib"]
-
-	if (project.hasProperty("rangeStart")) {
-		rangeStart = project.rangeStart
-	}
-
-	ticketIdPrefixes "LRQA"
-}
-
-cleanReleng {
+appendHotfixQualifier {
 	doLast {
-		File relengRootDir = file(".releng")
+		String dirs = System.getProperty("patcher.hotfix.dirs", "")
+		String qualifier = System.getProperty("patcher.hotfix.qualifier", "")
 
-		FileTree relengFileTree = fileTree(dir: relengRootDir, include: "**/artifact.properties")
+		for (String dirName : dirs.split(",")) {
+			File bndBndFile = new File(new File(projectDir, dirName), "bnd.bnd")
 
-		relengFileTree.each {
-			File relengFile ->
+			if (bndBndFile.exists()) {
+				Properties properties = GUtil.loadProperties(bndBndFile)
 
-			File relengDir = relengFile.parentFile
+				String version = properties.getProperty("Bundle-Version")
 
-			File moduleDir = file(FileUtil.relativize(relengDir, relengRootDir))
+				if ((version != null) && (version.indexOf(qualifier) == -1)) {
+					String newLine = "Bundle-Version: " + version + qualifier
+					String oldLine = bndBndFile.filterLine {
+						it =~ "^Bundle-Version.*"
+					}
 
-			if (!moduleDir.exists()) {
-				delete relengDir
+					bndBndFile.text = bndBndFile.text.replace(oldLine.trim(), newLine)
 
-				logger.lifecycle "Removed {}", relativePath(relengDir)
+					logger.lifecycle "Appended {}:{}", project.relativePath(bndBndFile), qualifier
+				}
 			}
 		}
 	}
 }
 
-cleanVersionOverride {
-	doLast {
-		String gitRepoPath = project.properties["gitRepoPath"]
+formatSourceCurrentBranch {
+	description = "Runs Liferay Source Formatter to format the project files that are added or modified in the current Git branch."
+	formatCurrentBranch = true
+}
 
-		if (!gitRepoPath) {
-			throw new GradleException("Please set the property \"-PgitRepoPath\".")
-		}
+formatSourceLatestAuthor {
+	description = "Runs Liferay Source Formatter to format the project files that are added or modified in the latest Git commits of the same author."
+	formatCurrentBranch = true
+}
 
-		File gitRepoDir = file(gitRepoPath)
-
-		FileTree bndBndFileTree = fileTree(dir: gitRepoDir, include : "**/bnd.bnd")
-
-		delete bndBndFileTree.collect {
-			new File(gitRepoDir.parentFile, ".version-override-${it.parentFile.name}.properties")
-		}
-	}
+formatSourceLocalChanges {
+	description = "Runs Liferay Source Formatter to format the unstaged project files."
+	formatLocalChanges = true
 }
 
 printDependencyPath {
@@ -100,6 +95,29 @@ printDependencyPath {
 	}
 }
 
+removeHotfixQualifier {
+	doLast {
+		String dirs = System.getProperty("patcher.hotfix.dirs", "")
+		String qualifier = System.getProperty("patcher.hotfix.qualifier", "")
+
+		for (String dirName : dirs.split(",")) {
+			File bndBndFile = new File(new File(projectDir, dirName), "bnd.bnd")
+
+			if (bndBndFile.exists()) {
+				Properties properties = GUtil.loadProperties(bndBndFile)
+
+				String version = properties.getProperty("Bundle-Version")
+
+				if ((version != null) && (version.indexOf(qualifier) != -1)) {
+					bndBndFile.text = bndBndFile.text.replace(version, version.minus(qualifier))
+
+					logger.lifecycle "Removed {}:{}", project.relativePath(bndBndFile), qualifier
+				}
+			}
+		}
+	}
+}
+
 repositories {
 	mavenLocal()
 
@@ -112,11 +130,35 @@ repositories {
 	}
 
 	maven {
-		url System.properties["repository.url"] ?: "https://cdn.lfrs.sl/repository.liferay.com/nexus/content/groups/public"
+		url System.properties["repository.url"] ?: "https://repository-cdn.liferay.com/nexus/content/groups/public"
+	}
+
+	String repositoryPrivateURL = System.getProperty("repository.private.url")
+
+	if (repositoryPrivateURL) {
+		maven {
+			credentials {
+				password System.properties["repository.private.password"]
+				username System.properties["repository.private.username"]
+			}
+			url repositoryPrivateURL
+		}
 	}
 }
 
-wrapper {
+setUpYarnOfflineCache {
+	doFirst {
+		logger.lifecycle "Checking Yarn binaries cache directories"
+	}
+}
+
+updateYarnBinariesCache {
+	doFirst {
+		logger.lifecycle "Updating Yarn binaries cache directories"
+	}
+}
+
+wrapperPortal {
 	File wrapperDir = projectDir.parentFile
 
 	distributionUrl = "../../tools/gradle-${gradle.gradleVersion}.LIFERAY-PATCHED-1-bin.zip"
@@ -155,8 +197,8 @@ set DEFAULT_JVM_OPTS=%DEFAULT_JVM_OPTS% "-Dgradle.user.home=%APP_HOME%\\.gradle"
 		ant.replace(
 			failOnNoReplacements: true,
 			file: gradlewBatFile,
-			token: 'org.gradle.wrapper.GradleWrapperMain %CMD_LINE_ARGS%',
-			value: 'org.gradle.wrapper.GradleWrapperMain "--init-script=%APP_HOME%\\modules\\init.gradle" %CMD_LINE_ARGS%'
+			token: 'org.gradle.wrapper.GradleWrapperMain %*',
+			value: 'org.gradle.wrapper.GradleWrapperMain "--init-script=%APP_HOME%\\modules\\init.gradle" %*'
 		)
 	}
 
@@ -164,15 +206,69 @@ set DEFAULT_JVM_OPTS=%DEFAULT_JVM_OPTS% "-Dgradle.user.home=%APP_HOME%\\.gradle"
 	scriptFile = new File(wrapperDir, "gradlew")
 }
 
+wrapperProjectTemplates {
+	File wrapperDir = new File(projectDir.parentFile, "modules/sdk/project-templates/project-templates/src/main/resources/gradle-wrapper")
+
+	jarFile = new File(wrapperDir, "gradle/wrapper/gradle-wrapper.jar")
+	scriptFile = new File(wrapperDir, "gradlew")
+
+	doLast {
+		File gradleWrapperPropertiesFile = new File(wrapperDir, "gradle/wrapper/gradle-wrapper.properties")
+
+		gradleWrapperPropertiesFile.text = gradleWrapperPropertiesFile.text.trim()
+	}
+}
+
 wrapperSubrepo {
 	File wrapperDir = new File(projectDir.parentFile, "tools/subrepo")
+
+	doLast {
+		File gradlewFile = new File(wrapperDir, "gradlew")
+
+		ant.replace(
+			failOnNoReplacements: true,
+			file: gradlewFile,
+			token: '# Escape application args',
+			value: '''\
+# Escape application args
+DEFAULT_JVM_OPTS="$DEFAULT_JVM_OPTS \\\"-Dgradle.user.home=$APP_HOME/.gradle\\\""'''
+		)
+
+		File gradlewBatFile = new File(wrapperDir, "gradlew.bat")
+
+		ant.replace(
+			failOnNoReplacements: true,
+			file: gradlewBatFile,
+			token: '@rem Setup the command line',
+			value: '''\
+@rem Setup the command line
+set DEFAULT_JVM_OPTS=%DEFAULT_JVM_OPTS% "-Dgradle.user.home=%APP_HOME%\\.gradle"'''
+		)
+	}
 
 	jarFile = new File(wrapperDir, "gradle/wrapper/gradle-wrapper.jar")
 	scriptFile = new File(wrapperDir, "gradlew")
 }
 
+tasks.withType(FormatSourceTask) {
+	baseDirName = "../"
+	group = "formatting"
+	showStatusUpdates = true
+}
+
 _createSetUpLibTasks(libDependenciesMap)
 _createSetUpPortalToolTasks()
+_createYarnTasks()
+
+private String _camelCase(String dirName) {
+	String suffix = dirName.replaceAll(/\.(\w)/) {
+		String s = it[1]
+
+		s.toUpperCase()
+	}
+
+	return StringUtil.capitalize(suffix)
+}
 
 private void _createSetUpLibTasks(Map<File, Properties> libDependenciesMap) {
 	libDependenciesMap.each {
@@ -211,20 +307,16 @@ private void _createSetUpLibTasks(Map<File, Properties> libDependenciesMap) {
 private void _createSetUpPortalToolTasks() {
 	FileTree ivyXmlFileTree = fileTree(dir: "../tools/sdk", includes: ["ivy.xml", "dependencies/*/ivy.xml"])
 
-	XmlSlurper xmlSlurper = new XmlSlurper()
-
 	ivyXmlFileTree.each {
 		File ivyXmlFile ->
 
 		File portalToolDir = ivyXmlFile.parentFile
 
-		String portalToolSuffix = _getPortalToolSuffix(portalToolDir.name)
-
-		CopyIvyDependenciesTask copyIvyDependenciesTask = tasks.create(name: "setUp" + portalToolSuffix, type: CopyIvyDependenciesTask) {
+		CopyIvyDependenciesTask copyIvyDependenciesTask = tasks.create(name: "setUp" + _camelCase(portalToolDir.name), type: CopyIvyDependenciesTask) {
 			configuration.exclude group: "com.liferay.portal"
 
 			dependencyTransformClosure = {
-				Map<String, String> dependencyNotation ->
+				Map<String, Object> dependencyNotation ->
 
 				String version = PortalTools.getVersion(project, dependencyNotation["name"])
 
@@ -235,20 +327,58 @@ private void _createSetUpPortalToolTasks() {
 				dependencyNotation
 			}
 
+			if (ivyXmlFile.parentFile.name != "sdk") {
+				doFirst {
+					delete destinationDir
+				}
+			}
+
 			inputFile = ivyXmlFile
 			into new File(portalToolDir, "lib")
+
+			outputs.upToDateWhen {
+				false
+			}
 		}
 
 		setUpPortalTools.dependsOn copyIvyDependenciesTask
 	}
 }
 
-private String _getPortalToolSuffix(String name) {
-	String suffix = name.replaceAll(/\.(\w)/) {
-		String s = it[1]
+private void _createYarnTasks() {
+	FileTree yarnLockFileTree = fileTree(dir: rootDir, includes: ["yarn.lock", "private/yarn.lock", "apps/*/yarn.lock", "private/apps/*/yarn.lock"])
 
-		s.toUpperCase()
+	yarnLockFileTree.each {
+		File yarnLockFile ->
+
+		if (project.findProperty("build.binaries.cache.dir")) {
+			File cacheDir = new File(rootDir.parentFile, project.findProperty("build.binaries.cache.dir"))
+			String relativePath = FileUtil.relativize(yarnLockFile.parentFile, rootDir)
+
+			File nodeModulesCacheDir = new File(yarnLockFile.parentFile, "node_modules_cache")
+			File offlineCacheDir = new File(cacheDir, ".yarn/" + relativePath + "/offline-cache")
+
+			Task yarnTask = tasks.create(name: "setUpYarnOfflineCache" + _camelCase(yarnLockFile.parentFile.name), type: Copy) {
+				from offlineCacheDir
+				into nodeModulesCacheDir
+
+				doFirst {
+					logger.lifecycle "Copying {} into {}", offlineCacheDir, nodeModulesCacheDir
+				}
+			}
+
+			setUpYarnOfflineCache.finalizedBy yarnTask
+
+			yarnTask = tasks.create(name: "updateYarnBinariesCache" + _camelCase(yarnLockFile.parentFile.name), type: Copy) {
+				from nodeModulesCacheDir
+				into offlineCacheDir
+
+				doFirst {
+					logger.lifecycle "Copying {} into {}", nodeModulesCacheDir, offlineCacheDir
+				}
+			}
+
+			updateYarnBinariesCache.finalizedBy yarnTask
+		}
 	}
-
-	return StringUtil.capitalize(suffix)
 }

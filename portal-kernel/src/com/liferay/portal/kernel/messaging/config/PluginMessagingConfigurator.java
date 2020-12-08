@@ -15,12 +15,12 @@
 package com.liferay.portal.kernel.messaging.config;
 
 import com.liferay.portal.kernel.portlet.PortletClassLoaderUtil;
-import com.liferay.portal.kernel.util.ClassLoaderPool;
+import com.liferay.portal.kernel.servlet.ServletContextClassLoaderPool;
 
 /**
  * @author Michael C. Han
  */
-public class PluginMessagingConfigurator extends AbstractMessagingConfigurator {
+public class PluginMessagingConfigurator extends BaseMessagingConfigurator {
 
 	@Override
 	public void afterPropertiesSet() {
@@ -29,15 +29,25 @@ public class PluginMessagingConfigurator extends AbstractMessagingConfigurator {
 		super.afterPropertiesSet();
 	}
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *             #getOperatingClassLoader()}
+	 */
+	@Deprecated
 	@Override
 	protected ClassLoader getOperatingClassloader() {
-		ClassLoader classLoader = ClassLoaderPool.getClassLoader(
+		return getOperatingClassLoader();
+	}
+
+	@Override
+	protected ClassLoader getOperatingClassLoader() {
+		ClassLoader classLoader = ServletContextClassLoaderPool.getClassLoader(
 			_servletContextName);
 
 		if (classLoader == null) {
-			Thread currentThread = Thread.currentThread();
-
-			classLoader = currentThread.getContextClassLoader();
+			throw new IllegalStateException(
+				"Unable to find the class loader for servlet context " +
+					_servletContextName);
 		}
 
 		return classLoader;

@@ -19,9 +19,14 @@ import com.liferay.portal.kernel.transaction.TransactionLifecycleListener;
 import com.liferay.portal.kernel.transaction.TransactionLifecycleManager;
 import com.liferay.portal.kernel.transaction.TransactionStatus;
 
+import java.util.Arrays;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Test;
+
+import org.springframework.transaction.PlatformTransactionManager;
 
 /**
  * @author Shuyang Zhou
@@ -42,6 +47,7 @@ public class DefaultTransactionExecutorTest
 	}
 
 	@Override
+	@Test
 	public void testCommit() throws Throwable {
 		super.testCommit();
 
@@ -49,6 +55,7 @@ public class DefaultTransactionExecutorTest
 	}
 
 	@Override
+	@Test
 	public void testCommitWithAppException() throws Throwable {
 		super.testCommitWithAppException();
 
@@ -56,6 +63,7 @@ public class DefaultTransactionExecutorTest
 	}
 
 	@Override
+	@Test
 	public void testCommitWithAppExceptionWithCommitException()
 		throws Throwable {
 
@@ -65,13 +73,129 @@ public class DefaultTransactionExecutorTest
 	}
 
 	@Override
+	@Test
 	public void testCommitWithCommitException() throws Throwable {
 		super.testCommitWithCommitException();
 
 		_recordTransactionLifecycleListener.verify(commitException);
 	}
 
+	@Test
+	public void testFailingTransactionLifecycleListeners() {
+		FailingTransactionLifecycleListener
+			failingTransactionLifecycleListener =
+				new FailingTransactionLifecycleListener();
+
+		TransactionLifecycleManager.register(
+			failingTransactionLifecycleListener);
+
+		try {
+			RecordPlatformTransactionManager recordPlatformTransactionManager =
+				new RecordPlatformTransactionManager();
+
+			TransactionExecutor transactionExecutor = createTransactionExecutor(
+				recordPlatformTransactionManager);
+
+			try {
+				transactionExecutor.execute(
+					new TestTransactionAttributeAdapter(false), () -> null);
+
+				Assert.fail();
+			}
+			catch (Throwable throwable) {
+				Assert.assertEquals("createThrowable", throwable.getMessage());
+
+				Throwable[] throwables = throwable.getSuppressed();
+
+				Assert.assertEquals(
+					Arrays.toString(throwables), 1, throwables.length);
+				Assert.assertEquals(
+					"commitThrowable", throwables[0].getMessage());
+			}
+
+			Exception exception1 = new Exception();
+
+			try {
+				transactionExecutor.execute(
+					new TestTransactionAttributeAdapter(false),
+					() -> {
+						throw exception1;
+					});
+
+				Assert.fail();
+			}
+			catch (Throwable throwable) {
+				Assert.assertSame(exception1, throwable);
+
+				Throwable[] throwables = throwable.getSuppressed();
+
+				Assert.assertEquals(
+					Arrays.toString(throwables), 1, throwables.length);
+				Assert.assertSame(
+					"createThrowable", throwables[0].getMessage());
+
+				throwables = throwables[0].getSuppressed();
+
+				Assert.assertEquals(
+					Arrays.toString(throwables), 1, throwables.length);
+				Assert.assertSame(
+					"commitThrowable", throwables[0].getMessage());
+			}
+
+			try {
+				transactionExecutor.execute(
+					new TestTransactionAttributeAdapter(true), () -> null);
+
+				Assert.fail();
+			}
+			catch (Throwable throwable) {
+				Assert.assertEquals("createThrowable", throwable.getMessage());
+
+				Throwable[] throwables = throwable.getSuppressed();
+
+				Assert.assertEquals(
+					Arrays.toString(throwables), 1, throwables.length);
+				Assert.assertEquals(
+					"commitThrowable", throwables[0].getMessage());
+			}
+
+			Exception exception2 = new Exception();
+
+			try {
+				transactionExecutor.execute(
+					new TestTransactionAttributeAdapter(true),
+					() -> {
+						throw exception2;
+					});
+
+				Assert.fail();
+			}
+			catch (Throwable throwable) {
+				Assert.assertSame(exception2, throwable);
+
+				Throwable[] throwables = throwable.getSuppressed();
+
+				Assert.assertEquals(
+					Arrays.toString(throwables), 1, throwables.length);
+				Assert.assertSame(
+					"createThrowable", throwables[0].getMessage());
+
+				throwables = throwables[0].getSuppressed();
+
+				Assert.assertEquals(
+					Arrays.toString(throwables), 1, throwables.length);
+				Assert.assertSame(
+					"rollbackThrowable", throwables[0].getMessage());
+			}
+		}
+		finally {
+			TransactionLifecycleManager.unregister(
+				failingTransactionLifecycleListener);
+		}
+	}
+
 	@Override
+	@Test
 	public void testRollbackOnAppException() throws Throwable {
 		super.testRollbackOnAppException();
 
@@ -79,6 +203,7 @@ public class DefaultTransactionExecutorTest
 	}
 
 	@Override
+	@Test
 	public void testRollbackOnAppExceptionWithRollbackException()
 		throws Throwable {
 
@@ -88,13 +213,59 @@ public class DefaultTransactionExecutorTest
 	}
 
 	@Override
-	protected TransactionExecutor createTransactionExecutor() {
-		return new DefaultTransactionExecutor();
+	protected void assertTransactionExecutorThreadLocal(
+		TransactionHandler transactionHandler, boolean inTransaction) {
+
+		if (inTransaction) {
+			Assert.assertSame(
+				transactionHandler,
+				TransactionExecutorThreadLocal.getCurrentTransactionExecutor());
+		}
+		else {
+			Assert.assertNull(
+				TransactionExecutorThreadLocal.getCurrentTransactionExecutor());
+		}
+	}
+
+	@Override
+	protected TransactionExecutor createTransactionExecutor(
+		PlatformTransactionManager platformTransactionManager) {
+
+		return new DefaultTransactionExecutor(platformTransactionManager);
 	}
 
 	private final RecordTransactionLifecycleListener
 		_recordTransactionLifecycleListener =
 			new RecordTransactionLifecycleListener();
+
+	private static class FailingTransactionLifecycleListener
+		implements TransactionLifecycleListener {
+
+		@Override
+		public void committed(
+			TransactionAttribute transactionAttribute,
+			TransactionStatus transactionStatus) {
+
+			throw new RuntimeException("commitThrowable");
+		}
+
+		@Override
+		public void created(
+			TransactionAttribute transactionAttribute,
+			TransactionStatus transactionStatus) {
+
+			throw new RuntimeException("createThrowable");
+		}
+
+		@Override
+		public void rollbacked(
+			TransactionAttribute transactionAttribute,
+			TransactionStatus transactionStatus, Throwable throwable) {
+
+			throw new RuntimeException("rollbackThrowable");
+		}
+
+	}
 
 	private static class RecordTransactionLifecycleListener
 		implements TransactionLifecycleListener {
@@ -111,6 +282,8 @@ public class DefaultTransactionExecutorTest
 		public void created(
 			TransactionAttribute transactionAttribute,
 			TransactionStatus transactionStatus) {
+
+			_created = true;
 		}
 
 		@Override
@@ -122,6 +295,8 @@ public class DefaultTransactionExecutorTest
 		}
 
 		public void verify(Throwable throwable) {
+			Assert.assertTrue(_created);
+
 			if (throwable == null) {
 				Assert.assertTrue(_committed);
 			}
@@ -132,7 +307,26 @@ public class DefaultTransactionExecutorTest
 		}
 
 		private boolean _committed;
+		private boolean _created;
 		private Throwable _throwable;
+
+	}
+
+	private static class TestTransactionAttributeAdapter
+		extends TransactionAttributeAdapter {
+
+		@Override
+		public boolean rollbackOn(Throwable throwable) {
+			return _rollback;
+		}
+
+		private TestTransactionAttributeAdapter(boolean rollback) {
+			super(null);
+
+			_rollback = rollback;
+		}
+
+		private final boolean _rollback;
 
 	}
 

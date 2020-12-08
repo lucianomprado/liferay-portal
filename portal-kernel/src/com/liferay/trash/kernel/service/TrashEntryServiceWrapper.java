@@ -14,7 +14,7 @@
 
 package com.liferay.trash.kernel.service;
 
-import aQute.bnd.annotation.ProviderType;
+import org.osgi.annotation.versioning.ProviderType;
 
 import com.liferay.portal.kernel.service.ServiceWrapper;
 
@@ -23,12 +23,11 @@ import com.liferay.portal.kernel.service.ServiceWrapper;
  *
  * @author Brian Wing Shun Chan
  * @see TrashEntryService
- * @deprecated As of 7.0.0, replaced by {@link
+ * @deprecated As of Judson (7.1.x), replaced by {@link
 com.liferay.trash.service.impl.TrashEntryServiceImpl}
  * @generated
  */
 @Deprecated
-@ProviderType
 public class TrashEntryServiceWrapper implements TrashEntryService,
 	ServiceWrapper<TrashEntryService> {
 	public TrashEntryServiceWrapper(TrashEntryService trashEntryService) {

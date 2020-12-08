@@ -14,14 +14,11 @@
 
 package com.liferay.marketplace.exception;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.portal.kernel.exception.PortalException;
 
 /**
  * @author Ryan Park
  */
-@ProviderType
 public class ModuleNamespaceException extends PortalException {
 
 	public ModuleNamespaceException() {
@@ -31,12 +28,12 @@ public class ModuleNamespaceException extends PortalException {
 		super(msg);
 	}
 
-	public ModuleNamespaceException(String msg, Throwable cause) {
-		super(msg, cause);
+	public ModuleNamespaceException(String msg, Throwable throwable) {
+		super(msg, throwable);
 	}
 
-	public ModuleNamespaceException(Throwable cause) {
-		super(cause);
+	public ModuleNamespaceException(Throwable throwable) {
+		super(throwable);
 	}
 
 }

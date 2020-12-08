@@ -14,23 +14,15 @@
 
 package com.liferay.exportimport.kernel.lar;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.portal.kernel.model.StagedModel;
+
+import org.osgi.annotation.versioning.ProviderType;
 
 /**
  * @author Michael C. Han
  */
 @ProviderType
 public interface PortletDataHandlerStatusMessageSender {
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link #sendStatusMessage(String,
-	 *             String[], ManifestSummary)}
-	 */
-	@Deprecated
-	public void sendStatusMessage(
-		String messageType, ManifestSummary manifestSummary);
 
 	public void sendStatusMessage(
 		String messageType, String portletId, ManifestSummary manifestSummary);

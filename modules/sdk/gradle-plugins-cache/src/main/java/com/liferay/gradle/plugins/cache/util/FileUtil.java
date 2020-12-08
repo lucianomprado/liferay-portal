@@ -27,10 +27,13 @@ import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -45,7 +48,6 @@ import org.gradle.internal.hash.HashUtil;
 import org.gradle.internal.hash.HashValue;
 import org.gradle.process.ExecSpec;
 import org.gradle.process.internal.ExecException;
-import org.gradle.util.Clock;
 
 /**
  * @author Andrea Di Giorgi
@@ -96,12 +98,12 @@ public class FileUtil extends com.liferay.gradle.util.FileUtil {
 
 			digest = Integer.toHexString(lines.hashCode());
 		}
-		catch (IOException ioe) {
+		catch (IOException ioException) {
 
 			// File is not a text file
 
 			if (_logger.isDebugEnabled()) {
-				_logger.debug(file + " is not a text file", ioe);
+				_logger.debug(file + " is not a text file", ioException);
 			}
 
 			HashValue hashValue = HashUtil.sha1(file);
@@ -119,11 +121,7 @@ public class FileUtil extends com.liferay.gradle.util.FileUtil {
 	public static String getDigest(
 		Project project, Iterable<File> files, boolean excludeIgnoredFiles) {
 
-		Clock clock = null;
-
-		if (_logger.isInfoEnabled()) {
-			clock = new Clock();
-		}
+		long start = System.currentTimeMillis();
 
 		StringBuilder sb = new StringBuilder();
 
@@ -132,8 +130,8 @@ public class FileUtil extends com.liferay.gradle.util.FileUtil {
 		try {
 			sortedFiles = flattenAndSort(files);
 		}
-		catch (IOException ioe) {
-			throw new GradleException("Unable to flatten files", ioe);
+		catch (IOException ioException) {
+			throw new GradleException("Unable to flatten files", ioException);
 		}
 
 		if (excludeIgnoredFiles) {
@@ -145,7 +143,7 @@ public class FileUtil extends com.liferay.gradle.util.FileUtil {
 				continue;
 			}
 
-			if (".DS_Store".equals(file.getName())) {
+			if (Objects.equals(file.getName(), ".DS_Store")) {
 				continue;
 			}
 
@@ -159,9 +157,10 @@ public class FileUtil extends com.liferay.gradle.util.FileUtil {
 
 		sb.setLength(sb.length() - 1);
 
-		if (_logger.isInfoEnabled() && (clock != null)) {
+		if (_logger.isInfoEnabled()) {
 			_logger.info(
-				"Getting the digest took " + clock.getTimeInMs() + " ms");
+				"Getting the digest took " +
+					(System.currentTimeMillis() - start) + " ms");
 		}
 
 		return sb.toString();
@@ -206,13 +205,25 @@ public class FileUtil extends com.liferay.gradle.util.FileUtil {
 			"--exclude-standard", "--modified", "--others", "-z");
 
 		if (Validator.isNull(result)) {
-			if (_logger.isWarnEnabled()) {
+			result = _getGitIgnoredFileNamesResult(project, rootDir);
+
+			if (Validator.isNull(result) && _logger.isWarnEnabled()) {
 				_logger.warn(
 					"Unable to remove ignored files, Git returned an empty " +
 						"result");
+
+				return false;
 			}
 
-			return false;
+			String[] ignoredFileNames = result.split("\\000");
+
+			Set<File> ignoredFiles = new HashSet<>();
+
+			for (String fileName : ignoredFileNames) {
+				ignoredFiles.add(new File(rootDir, fileName));
+			}
+
+			return files.removeAll(ignoredFiles);
 		}
 
 		String[] committedFileNames = result.split("\\000");
@@ -236,9 +247,76 @@ public class FileUtil extends com.liferay.gradle.util.FileUtil {
 
 			return canonicalPath;
 		}
-		catch (IOException ioe) {
+		catch (IOException ioException) {
 			throw new UncheckedIOException(
-				"Unable to get canonical path of " + file, ioe);
+				"Unable to get canonical path of " + file, ioException);
+		}
+	}
+
+	private static String _getGitIgnoredFileNamesResult(
+		Project project, File rootDir) {
+
+		List<File> gitIgnoreDirs = _getGitIgnoreDirs(rootDir);
+
+		for (File gitIgnoreDir : gitIgnoreDirs) {
+			File file = new File(gitIgnoreDir, _GIT_IGNORE_FILE_NAME);
+
+			file.renameTo(new File(gitIgnoreDir, _GIT_IGNORE_TEMP_FILE_NAME));
+		}
+
+		String result = _getGitResult(
+			project, rootDir, "ls-files",
+			"--exclude-per-directory=" + _GIT_IGNORE_TEMP_FILE_NAME,
+			"--ignored", "--others", "-z");
+
+		for (File gitIgnoreDir : gitIgnoreDirs) {
+			File file = new File(gitIgnoreDir, _GIT_IGNORE_TEMP_FILE_NAME);
+
+			file.renameTo(new File(gitIgnoreDir, _GIT_IGNORE_FILE_NAME));
+		}
+
+		return result;
+	}
+
+	private static List<File> _getGitIgnoreDirs(File dir) {
+		try {
+			final List<File> gitIgnoreDirs = new ArrayList<>();
+
+			Files.walkFileTree(
+				dir.toPath(),
+				new SimpleFileVisitor<Path>() {
+
+					@Override
+					public FileVisitResult preVisitDirectory(
+							Path path, BasicFileAttributes basicFileAttributes)
+						throws IOException {
+
+						String dirName = String.valueOf(path.getFileName());
+
+						if (_excludedDirNames.contains(dirName)) {
+							return FileVisitResult.SKIP_SUBTREE;
+						}
+
+						Path gitIgnorePath = path.resolve(
+							_GIT_IGNORE_FILE_NAME);
+
+						if (Files.exists(gitIgnorePath)) {
+							gitIgnoreDirs.add(path.toFile());
+						}
+
+						return FileVisitResult.CONTINUE;
+					}
+
+				});
+
+			return gitIgnoreDirs;
+		}
+		catch (IOException ioException) {
+			if (_logger.isWarnEnabled()) {
+				_logger.warn("Unable to get .gitignore files");
+			}
+
+			return Collections.emptyList();
 		}
 	}
 
@@ -262,9 +340,9 @@ public class FileUtil extends com.liferay.gradle.util.FileUtil {
 
 				});
 		}
-		catch (ExecException ee) {
+		catch (ExecException execException) {
 			if (_logger.isInfoEnabled()) {
-				_logger.info(ee.getMessage(), ee);
+				_logger.info(execException.getMessage(), execException);
 			}
 		}
 
@@ -273,7 +351,15 @@ public class FileUtil extends com.liferay.gradle.util.FileUtil {
 
 	private static final char _DIGEST_SEPARATOR = '-';
 
+	private static final String _GIT_IGNORE_FILE_NAME = ".gitignore";
+
+	private static final String _GIT_IGNORE_TEMP_FILE_NAME = ".gitignore.temp";
+
 	private static final Logger _logger = Logging.getLogger(FileUtil.class);
+
+	private static final List<String> _excludedDirNames = Arrays.asList(
+		"bin", "build", "classes", "node_modules", "node_modules_cache",
+		"test-classes", "tmp");
 
 	private static class FileComparator implements Comparator<File> {
 

@@ -14,10 +14,6 @@
 
 package com.liferay.portal.kernel.model;
 
-import aQute.bnd.annotation.ProviderType;
-
-import com.liferay.portal.kernel.service.persistence.UserGroupRolePK;
-
 import java.io.Serializable;
 
 import java.util.ArrayList;
@@ -27,19 +23,22 @@ import java.util.List;
  * This class is used by SOAP remote services, specifically {@link com.liferay.portal.service.http.UserGroupRoleServiceSoap}.
  *
  * @author Brian Wing Shun Chan
- * @see com.liferay.portal.service.http.UserGroupRoleServiceSoap
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
-@ProviderType
+@Deprecated
 public class UserGroupRoleSoap implements Serializable {
+
 	public static UserGroupRoleSoap toSoapModel(UserGroupRole model) {
 		UserGroupRoleSoap soapModel = new UserGroupRoleSoap();
 
 		soapModel.setMvccVersion(model.getMvccVersion());
+		soapModel.setCtCollectionId(model.getCtCollectionId());
+		soapModel.setUserGroupRoleId(model.getUserGroupRoleId());
+		soapModel.setCompanyId(model.getCompanyId());
 		soapModel.setUserId(model.getUserId());
 		soapModel.setGroupId(model.getGroupId());
 		soapModel.setRoleId(model.getRoleId());
-		soapModel.setCompanyId(model.getCompanyId());
 
 		return soapModel;
 	}
@@ -72,7 +71,8 @@ public class UserGroupRoleSoap implements Serializable {
 	}
 
 	public static UserGroupRoleSoap[] toSoapModels(List<UserGroupRole> models) {
-		List<UserGroupRoleSoap> soapModels = new ArrayList<UserGroupRoleSoap>(models.size());
+		List<UserGroupRoleSoap> soapModels = new ArrayList<UserGroupRoleSoap>(
+			models.size());
 
 		for (UserGroupRole model : models) {
 			soapModels.add(toSoapModel(model));
@@ -84,14 +84,12 @@ public class UserGroupRoleSoap implements Serializable {
 	public UserGroupRoleSoap() {
 	}
 
-	public UserGroupRolePK getPrimaryKey() {
-		return new UserGroupRolePK(_userId, _groupId, _roleId);
+	public long getPrimaryKey() {
+		return _userGroupRoleId;
 	}
 
-	public void setPrimaryKey(UserGroupRolePK pk) {
-		setUserId(pk.userId);
-		setGroupId(pk.groupId);
-		setRoleId(pk.roleId);
+	public void setPrimaryKey(long pk) {
+		setUserGroupRoleId(pk);
 	}
 
 	public long getMvccVersion() {
@@ -100,6 +98,30 @@ public class UserGroupRoleSoap implements Serializable {
 
 	public void setMvccVersion(long mvccVersion) {
 		_mvccVersion = mvccVersion;
+	}
+
+	public long getCtCollectionId() {
+		return _ctCollectionId;
+	}
+
+	public void setCtCollectionId(long ctCollectionId) {
+		_ctCollectionId = ctCollectionId;
+	}
+
+	public long getUserGroupRoleId() {
+		return _userGroupRoleId;
+	}
+
+	public void setUserGroupRoleId(long userGroupRoleId) {
+		_userGroupRoleId = userGroupRoleId;
+	}
+
+	public long getCompanyId() {
+		return _companyId;
+	}
+
+	public void setCompanyId(long companyId) {
+		_companyId = companyId;
 	}
 
 	public long getUserId() {
@@ -126,17 +148,12 @@ public class UserGroupRoleSoap implements Serializable {
 		_roleId = roleId;
 	}
 
-	public long getCompanyId() {
-		return _companyId;
-	}
-
-	public void setCompanyId(long companyId) {
-		_companyId = companyId;
-	}
-
 	private long _mvccVersion;
+	private long _ctCollectionId;
+	private long _userGroupRoleId;
+	private long _companyId;
 	private long _userId;
 	private long _groupId;
 	private long _roleId;
-	private long _companyId;
+
 }

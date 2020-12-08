@@ -1,133 +1,120 @@
-<definition component-name="portal-collaboration">
-	<property name="portal.release" value="true" />
-	<property name="portal.upstream" value="true" />
-	<property name="custom.properties" value="default.layout.template.id=1_column" />
-	<property name="testray.main.component.name" value="Mentions" />
+@component-name = "portal-collaboration"
+definition {
 
-	<set-up>
-		<execute macro="TestCase#setUpPortalInstance" />
+	property custom.properties = "default.layout.template.id=1_column${line.separator}jsonws.web.service.paths.excludes=";
+	property portal.release = "true";
+	property portal.upstream = "true";
+	property testray.component.names = "Mentions";
+	property testray.main.component.name = "Mentions";
 
-		<execute macro="User#firstLoginPG" />
+	setUp {
+		TestCase.setUpPortalInstance();
 
-		<execute macro="ProductMenu#gotoControlPanelUsers">
-			<var name="portlet" value="Users and Organizations" />
-		</execute>
+		User.firstLoginPG();
 
-		<execute macro="User#addCP">
-			<var name="userEmailAddress" value="userea@liferay.com" />
-			<var name="userFirstName" value="userfn" />
-			<var name="userLastName" value="userln" />
-			<var name="userScreenName" value="usersn" />
-		</execute>
+		JSONUser.addUser(
+			userEmailAddress = "userea@liferay.com",
+			userFirstName = "userfn",
+			userLastName = "userln",
+			userScreenName = "usersn");
 
-		<execute macro="ProductMenu#gotoControlPanelUsers">
-			<var name="portlet" value="Users and Organizations" />
-		</execute>
+		JSONUser.setFirstPassword(
+			agreeToTermsAndAnswerReminderQuery = "true",
+			requireReset = "false",
+			userEmailAddress = "userea@liferay.com");
 
-		<execute macro="User#editPasswordCP">
-			<var name="password" value="password" />
-			<var name="userEmailAddress" value="userea@liferay.com" />
-			<var name="userScreenName" value="usersn" />
-		</execute>
-	</set-up>
+		User.logoutPG();
 
-	<tear-down>
-		<var method="TestPropsUtil#get('test.portal.instance')" name="testPortalInstance" />
+		User.loginPG(
+			password = "test",
+			userEmailAddress = "userea@liferay.com");
 
-		<if>
-			<equals arg1="${testPortalInstance}" arg2="true" />
-			<then>
-				<execute macro="PortalInstances#tearDownCP" />
-			</then>
-			<else>
-				<execute macro="BlogsEntry#tearDownCP" />
+		User.logoutPG();
 
-				<execute macro="User#tearDownCP" />
+		User.loginPG();
+	}
 
-				<execute macro="Page#tearDownPG" />
-			</else>
-		</if>
-	</tear-down>
+	tearDown {
+		var testPortalInstance = PropsUtil.get("test.portal.instance");
 
-	<command name="ViewMentionViaBlogsEntry" priority="5">
-		<execute macro="Page#add">
-			<var name="pageName" value="Blogs Page" />
-		</execute>
+		if ("${testPortalInstance}" == "true") {
+			PortalInstances.tearDownCP();
+		}
+		else {
+			BlogsEntry.tearDownCP();
 
-		<execute macro="Navigator#gotoPage">
-			<var name="pageName" value="Blogs Page" />
-		</execute>
+			JSONUser.tearDownNonAdminUsers();
 
-		<execute macro="Portlet#addPG">
-			<var name="portletName" value="Blogs" />
-		</execute>
+			Page.tearDownCP();
+		}
+	}
 
-		<execute macro="Navigator#gotoPage">
-			<var name="pageName" value="Blogs Page" />
-		</execute>
+	@priority = "5"
+	test ViewMentionViaBlogsEntry {
+		ProductMenu.gotoPortlet(
+			category = "Site Builder",
+			portlet = "Pages");
 
-		<execute macro="Mentions#addMentionViaBlogsEntry">
-			<var name="entryContent" value="Blogs Entry Content" />
-			<var name="entryTitle" value="Blogs Entry Title" />
-			<var name="mentionsUserScreenName" value="usersn" />
-		</execute>
+		SitePages.addPublicPage(
+			pageName = "Blogs Page",
+			sitePageType = "Widget Page");
 
-		<execute macro="Navigator#gotoPage">
-			<var name="pageName" value="Blogs Page" />
-		</execute>
+		Navigator.gotoPage(pageName = "Blogs Page");
 
-		<execute macro="BlogsNavigator#gotoPG">
-			<var name="entryTitle" value="Blogs Entry Title" />
-		</execute>
+		Portlet.addPG(portletName = "Blogs");
 
-		<execute macro="Mentions#viewMentionTagLink">
-			<var name="mentionsUserFullName" value="userfn userln" />
-			<var name="mentionsUserScreenName" value="usersn" />
-		</execute>
-	</command>
+		Navigator.gotoPage(pageName = "Blogs Page");
 
-	<command name="ViewMentionViaBlogsEntryComment" priority="5">
-		<execute macro="Page#add">
-			<var name="pageName" value="Blogs Page" />
-		</execute>
+		Mentions.addMentionViaBlogsEntry(
+			entryContent = "Blogs Entry Content",
+			entryTitle = "Blogs Entry Title",
+			mentionsUserScreenName = "usersn");
 
-		<execute macro="Navigator#gotoPage">
-			<var name="pageName" value="Blogs Page" />
-		</execute>
+		Navigator.gotoPage(pageName = "Blogs Page");
 
-		<execute macro="Portlet#addPG">
-			<var name="portletName" value="Blogs" />
-		</execute>
+		BlogsNavigator.gotoPG(entryTitle = "Blogs Entry Title");
 
-		<execute macro="Navigator#gotoPage">
-			<var name="pageName" value="Blogs Page" />
-		</execute>
+		Mentions.viewMentionTagLink(
+			mentionsUserFullName = "userfn userln",
+			mentionsUserScreenName = "usersn");
+	}
 
-		<execute macro="Blogs#addEntry">
-			<var name="entryContent" value="Blogs Entry Content" />
-			<var name="entryTitle" value="Blogs Entry Title" />
-		</execute>
+	@priority = "5"
+	test ViewMentionViaBlogsEntryComment {
+		ProductMenu.gotoPortlet(
+			category = "Site Builder",
+			portlet = "Pages");
 
-		<execute macro="Navigator#gotoPage">
-			<var name="pageName" value="Blogs Page" />
-		</execute>
+		SitePages.addPublicPage(
+			pageName = "Blogs Page",
+			sitePageType = "Widget Page");
 
-		<execute macro="BlogsNavigator#gotoEntryPG">
-			<var name="entryContent" value="Blogs Entry Content" />
-			<var name="entryTitle" value="Blogs Entry Title" />
-		</execute>
+		Navigator.gotoPage(pageName = "Blogs Page");
 
-		<execute function="Pause" locator1="3000" />
+		Portlet.addPG(portletName = "Blogs");
 
-		<execute macro="Mentions#addMentionViaComments">
-			<var name="entryComment" value="Comment mentioning" />
-			<var name="mentionsUserFullName" value="userfn userln" />
-			<var name="mentionsUserScreenName" value="usersn" />
-		</execute>
+		Navigator.gotoPage(pageName = "Blogs Page");
 
-		<execute macro="Mentions#viewCommentMentionTagLink">
-			<var name="mentionsUserFullName" value="userfn userln" />
-			<var name="mentionsUserScreenName" value="usersn" />
-		</execute>
-	</command>
-</definition>
+		Blogs.addEntry(
+			entryContent = "Blogs Entry Content",
+			entryTitle = "Blogs Entry Title");
+
+		Navigator.gotoPage(pageName = "Blogs Page");
+
+		BlogsNavigator.gotoEntryPG(
+			entryContent = "Blogs Entry Content",
+			entryTitle = "Blogs Entry Title");
+
+		Pause(locator1 = "3000");
+
+		Mentions.addMentionViaComments(
+			entryComment = "Comment mentioning",
+			mentionsUserFullName = "userfn userln",
+			mentionsUserScreenName = "usersn");
+
+		Mentions.viewCommentMentionTagLink(
+			mentionsUserFullName = "userfn userln",
+			mentionsUserScreenName = "usersn");
+	}
+
+}

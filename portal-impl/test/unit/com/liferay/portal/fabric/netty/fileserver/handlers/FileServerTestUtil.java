@@ -14,6 +14,7 @@
 
 package com.liferay.portal.fabric.netty.fileserver.handlers;
 
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.fabric.netty.fileserver.FileHelperUtil;
 
 import io.netty.buffer.ByteBuf;
@@ -47,7 +48,7 @@ public class FileServerTestUtil {
 	}
 
 	public static void cleanUp() {
-		FileHelperUtil.delete(true, paths.toArray(new Path[paths.size()]));
+		FileHelperUtil.delete(true, paths.toArray(new Path[0]));
 
 		paths.clear();
 	}
@@ -94,8 +95,7 @@ public class FileServerTestUtil {
 	 *      |->subfolder3
 	 *                  |
 	 *                  |->subfolder4
-	 * </pre>
-	 * </p>
+	 * </pre></p>
 	 *
 	 * @param  folder the folder
 	 * @return the folder with new subfolders and files included in its
@@ -172,7 +172,7 @@ public class FileServerTestUtil {
 
 	public static ByteBuf wrapSecondHalf(byte[] data) {
 		return Unpooled.wrappedBuffer(
-			data, data.length / 2, data.length - data.length / 2);
+			data, data.length / 2, data.length - (data.length / 2));
 	}
 
 	protected static final Set<Path> paths = new HashSet<>();
@@ -194,8 +194,9 @@ public class FileServerTestUtil {
 			Assert.assertTrue(
 				otherFile + " is not file", Files.isRegularFile(otherFile));
 			Assert.assertArrayEquals(
-				"File content does not match, file1 " + file + ", file2 " +
-					otherFile,
+				StringBundler.concat(
+					"File content does not match, file1 ", file, ", file2 ",
+					otherFile),
 				Files.readAllBytes(file), Files.readAllBytes(otherFile));
 
 			return FileVisitResult.CONTINUE;

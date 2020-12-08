@@ -14,8 +14,6 @@
 
 package com.liferay.portal.model.impl;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.portal.kernel.model.ServiceComponent;
 import com.liferay.portal.kernel.service.ServiceComponentLocalServiceUtil;
 
@@ -31,13 +29,13 @@ import com.liferay.portal.kernel.service.ServiceComponentLocalServiceUtil;
  * @see ServiceComponent
  * @generated
  */
-@ProviderType
-public abstract class ServiceComponentBaseImpl extends ServiceComponentModelImpl
-	implements ServiceComponent {
+public abstract class ServiceComponentBaseImpl
+	extends ServiceComponentModelImpl implements ServiceComponent {
+
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. All methods that expect a service component model instance should use the {@link ServiceComponent} interface instead.
+	 * Never modify or reference this class directly. All methods that expect a service component model instance should use the <code>ServiceComponent</code> interface instead.
 	 */
 	@Override
 	public void persist() {
@@ -48,4 +46,5 @@ public abstract class ServiceComponentBaseImpl extends ServiceComponentModelImpl
 			ServiceComponentLocalServiceUtil.updateServiceComponent(this);
 		}
 	}
+
 }

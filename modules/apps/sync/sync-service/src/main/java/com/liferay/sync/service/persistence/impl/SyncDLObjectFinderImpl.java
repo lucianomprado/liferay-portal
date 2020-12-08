@@ -14,7 +14,9 @@
 
 package com.liferay.sync.service.persistence.impl;
 
-import com.liferay.portal.dao.orm.custom.sql.CustomSQLUtil;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.dao.orm.custom.sql.CustomSQL;
 import com.liferay.portal.kernel.dao.orm.QueryPos;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.dao.orm.SQLQuery;
@@ -26,8 +28,6 @@ import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
 import com.liferay.portal.kernel.util.ArrayUtil;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.sync.model.SyncDLObject;
 import com.liferay.sync.model.impl.SyncDLObjectImpl;
@@ -36,9 +36,13 @@ import com.liferay.sync.service.persistence.SyncDLObjectFinder;
 import java.util.Collections;
 import java.util.List;
 
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
+
 /**
  * @author Shinn Lok
  */
+@Component(service = SyncDLObjectFinder.class)
 public class SyncDLObjectFinderImpl
 	extends SyncDLObjectFinderBaseImpl implements SyncDLObjectFinder {
 
@@ -61,7 +65,7 @@ public class SyncDLObjectFinderImpl
 		try {
 			session = openSession();
 
-			String sql = CustomSQLUtil.get(getClass(), FIND_BY_TYPE_PKS);
+			String sql = _customSQL.get(getClass(), FIND_BY_TYPE_PKS);
 
 			sql = StringUtil.replace(
 				sql, new String[] {"[$TYPE_PKS$]", "[$ROLE_IDS_OR_OWNER_ID$]"},
@@ -73,15 +77,15 @@ public class SyncDLObjectFinderImpl
 
 			sqlQuery.addScalar("primKey", Type.LONG);
 
-			QueryPos qPos = QueryPos.getInstance(sqlQuery);
+			QueryPos queryPos = QueryPos.getInstance(sqlQuery);
 
-			qPos.add(CompanyThreadLocal.getCompanyId());
-			qPos.add(ResourceConstants.SCOPE_INDIVIDUAL);
+			queryPos.add(CompanyThreadLocal.getCompanyId());
+			queryPos.add(ResourceConstants.SCOPE_INDIVIDUAL);
 
 			return (List<Long>)sqlQuery.list();
 		}
-		catch (Exception e) {
-			throw new SystemException(e);
+		catch (Exception exception) {
+			throw new SystemException(exception);
 		}
 		finally {
 			closeSession(session);
@@ -98,54 +102,52 @@ public class SyncDLObjectFinderImpl
 		try {
 			session = openSession();
 
-			String sql = CustomSQLUtil.get(getClass(), FIND_BY_MODIFIED_TIME);
+			String sql = _customSQL.get(getClass(), FIND_BY_MODIFIED_TIME);
 
 			if (modifiedTime <= 0) {
-				sql = StringUtil.replace(
-					sql, "(SyncDLObject.modifiedTime > ?) AND",
-					StringPool.BLANK);
+				sql = StringUtil.removeSubstring(
+					sql, "(SyncDLObject.modifiedTime > ?) AND");
 			}
 
 			if (parentFolderId == 0) {
-				sql = StringUtil.replace(
-					sql, "AND (SyncDLObject.treePath LIKE ?)",
-					StringPool.BLANK);
+				sql = StringUtil.removeSubstring(
+					sql, "AND (SyncDLObject.treePath LIKE ?)");
 			}
 
 			if (type == null) {
-				sql = StringUtil.replace(
-					sql, "AND (SyncDLObject.type_ = ?)", StringPool.BLANK);
+				sql = StringUtil.removeSubstring(
+					sql, "AND (SyncDLObject.type_ = ?)");
 			}
 
 			if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS)) {
-				sql = CustomSQLUtil.removeOrderBy(sql);
+				sql = _customSQL.removeOrderBy(sql);
 			}
 
 			SQLQuery sqlQuery = session.createSynchronizedSQLQuery(sql);
 
 			sqlQuery.addEntity("SyncDLObject", SyncDLObjectImpl.class);
 
-			QueryPos qPos = QueryPos.getInstance(sqlQuery);
+			QueryPos queryPos = QueryPos.getInstance(sqlQuery);
 
 			if (modifiedTime > 0) {
-				qPos.add(modifiedTime);
+				queryPos.add(modifiedTime);
 			}
 
-			qPos.add(repositoryId);
+			queryPos.add(repositoryId);
 
 			if (parentFolderId != 0) {
-				qPos.add("%/" + parentFolderId + "/%");
+				queryPos.add("%/" + parentFolderId + "/%");
 			}
 
 			if (type != null) {
-				qPos.add(type);
+				queryPos.add(type);
 			}
 
 			return (List<SyncDLObject>)QueryUtil.list(
 				sqlQuery, getDialect(), start, end);
 		}
-		catch (Exception e) {
-			throw new SystemException(e);
+		catch (Exception exception) {
+			throw new SystemException(exception);
 		}
 		finally {
 			closeSession(session);
@@ -177,13 +179,13 @@ public class SyncDLObjectFinderImpl
 	}
 
 	protected String getTypePKsSQL(long[] typePKs) {
-		StringBundler sb = new StringBundler(typePKs.length * 4 + 1);
+		StringBundler sb = new StringBundler((typePKs.length * 4) + 1);
 
 		sb.append("primKey IN (");
 
 		for (int i = 0; i < typePKs.length; i++) {
 			sb.append("CAST_TEXT(");
-			sb.append(String.valueOf(typePKs[i]).trim());
+			sb.append(StringUtil.trim(String.valueOf(typePKs[i])));
 			sb.append(StringPool.CLOSE_PARENTHESIS);
 
 			if ((i + 1) != typePKs.length) {
@@ -195,5 +197,8 @@ public class SyncDLObjectFinderImpl
 
 		return sb.toString();
 	}
+
+	@Reference
+	private CustomSQL _customSQL;
 
 }

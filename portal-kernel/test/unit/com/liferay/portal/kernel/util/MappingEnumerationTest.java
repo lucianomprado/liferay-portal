@@ -15,7 +15,6 @@
 package com.liferay.portal.kernel.util;
 
 import com.liferay.portal.kernel.test.rule.CodeCoverageAssertor;
-import com.liferay.portal.kernel.util.MappingEnumeration.Mapper;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -74,12 +73,12 @@ public class MappingEnumerationTest {
 
 			Assert.fail();
 		}
-		catch (NoSuchElementException nsee) {
+		catch (NoSuchElementException noSuchElementException) {
 		}
 	}
 
-	private static final Mapper<Integer, String> _mapper =
-		new Mapper<Integer, String>() {
+	private static final MappingEnumeration.Mapper<Integer, String> _mapper =
+		new MappingEnumeration.Mapper<Integer, String>() {
 
 			@Override
 			public String map(Integer i) {

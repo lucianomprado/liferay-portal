@@ -14,8 +14,6 @@
 
 package com.liferay.portlet.social.model.impl;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.social.kernel.model.SocialActivitySetting;
 import com.liferay.social.kernel.service.SocialActivitySettingLocalServiceUtil;
 
@@ -31,21 +29,24 @@ import com.liferay.social.kernel.service.SocialActivitySettingLocalServiceUtil;
  * @see SocialActivitySetting
  * @generated
  */
-@ProviderType
 public abstract class SocialActivitySettingBaseImpl
 	extends SocialActivitySettingModelImpl implements SocialActivitySetting {
+
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. All methods that expect a social activity setting model instance should use the {@link SocialActivitySetting} interface instead.
+	 * Never modify or reference this class directly. All methods that expect a social activity setting model instance should use the <code>SocialActivitySetting</code> interface instead.
 	 */
 	@Override
 	public void persist() {
 		if (this.isNew()) {
-			SocialActivitySettingLocalServiceUtil.addSocialActivitySetting(this);
+			SocialActivitySettingLocalServiceUtil.addSocialActivitySetting(
+				this);
 		}
 		else {
-			SocialActivitySettingLocalServiceUtil.updateSocialActivitySetting(this);
+			SocialActivitySettingLocalServiceUtil.updateSocialActivitySetting(
+				this);
 		}
 	}
+
 }

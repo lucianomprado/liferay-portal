@@ -50,7 +50,10 @@ public class AutoEscapeBeanHandler implements InvocationHandler, Serializable {
 				"Setter methods cannot be called on an escaped bean");
 		}
 
-		if (methodName.endsWith("isEscapedModel")) {
+		if (methodName.equals("getWrappedModel")) {
+			return _bean;
+		}
+		else if (methodName.endsWith("isEscapedModel")) {
 			return true;
 		}
 		else if (methodName.endsWith("toEscapedModel")) {
@@ -62,8 +65,8 @@ public class AutoEscapeBeanHandler implements InvocationHandler, Serializable {
 		try {
 			result = method.invoke(_bean, arguments);
 		}
-		catch (InvocationTargetException ite) {
-			throw ite.getTargetException();
+		catch (InvocationTargetException invocationTargetException) {
+			throw invocationTargetException.getTargetException();
 		}
 
 		if (method.getAnnotation(AutoEscape.class) != null) {

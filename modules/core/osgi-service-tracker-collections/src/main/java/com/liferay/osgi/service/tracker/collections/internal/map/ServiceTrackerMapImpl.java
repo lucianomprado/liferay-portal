@@ -30,8 +30,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import org.apache.felix.utils.log.Logger;
-
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.osgi.util.tracker.ServiceTracker;
@@ -59,7 +57,7 @@ public class ServiceTrackerMapImpl<K, SR, TS, R>
 			bundleContext, clazz, filterString,
 			new ServiceReferenceServiceTrackerCustomizer());
 
-		_logger = new Logger(bundleContext);
+		_serviceTracker.open();
 	}
 
 	@Override
@@ -87,11 +85,6 @@ public class ServiceTrackerMapImpl<K, SR, TS, R>
 	@Override
 	public Set<K> keySet() {
 		return Collections.unmodifiableSet(_serviceTrackerBuckets.keySet());
-	}
-
-	@Override
-	public void open() {
-		_serviceTracker.open();
 	}
 
 	@Override
@@ -133,17 +126,10 @@ public class ServiceTrackerMapImpl<K, SR, TS, R>
 			}
 
 			if (_serviceTrackerMapListener != null) {
-				try {
-					_serviceTrackerMapListener.keyRemoved(
-						ServiceTrackerMapImpl.this, emittedKey,
-						keyedServiceReferenceServiceTuple.getService(),
-						serviceTrackerBucket.getContent());
-				}
-				catch (Throwable t) {
-					_logger.log(
-						Logger.LOG_ERROR,
-						"Invocation to listener threw exception", t);
-				}
+				_serviceTrackerMapListener.keyRemoved(
+					ServiceTrackerMapImpl.this, emittedKey,
+					keyedServiceReferenceServiceTuple.getService(),
+					serviceTrackerBucket.getContent());
 			}
 		}
 
@@ -175,7 +161,6 @@ public class ServiceTrackerMapImpl<K, SR, TS, R>
 		keyedServiceReferenceServiceTuple.addEmittedKey(key);
 	}
 
-	private final Logger _logger;
 	private final ServiceReferenceMapper<K, ? super SR> _serviceReferenceMapper;
 	private final ServiceTracker
 		<SR, KeyedServiceReferenceServiceTuple<SR, TS, K>> _serviceTracker;
@@ -218,20 +203,13 @@ public class ServiceTrackerMapImpl<K, SR, TS, R>
 			_storeKey(key, _keyedServiceReferenceServiceTuple);
 
 			if (_serviceTrackerMapListener != null) {
-				try {
-					ServiceTrackerBucket<SR, TS, R> serviceTrackerBucket =
-						_serviceTrackerBuckets.get(key);
+				ServiceTrackerBucket<SR, TS, R> serviceTrackerBucket =
+					_serviceTrackerBuckets.get(key);
 
-					_serviceTrackerMapListener.keyEmitted(
-						ServiceTrackerMapImpl.this, key,
-						_keyedServiceReferenceServiceTuple.getService(),
-						serviceTrackerBucket.getContent());
-				}
-				catch (Throwable t) {
-					_logger.log(
-						Logger.LOG_ERROR,
-						"Invocation to listener threw exception", t);
-				}
+				_serviceTrackerMapListener.keyEmitted(
+					ServiceTrackerMapImpl.this, key,
+					_keyedServiceReferenceServiceTuple.getService(),
+					serviceTrackerBucket.getContent());
 			}
 		}
 
@@ -249,9 +227,8 @@ public class ServiceTrackerMapImpl<K, SR, TS, R>
 	}
 
 	private class ServiceReferenceServiceTrackerCustomizer
-		implements
-			ServiceTrackerCustomizer
-				<SR, KeyedServiceReferenceServiceTuple<SR, TS, K>> {
+		implements ServiceTrackerCustomizer
+			<SR, KeyedServiceReferenceServiceTuple<SR, TS, K>> {
 
 		@Override
 		@SuppressWarnings({"rawtypes", "unchecked"})

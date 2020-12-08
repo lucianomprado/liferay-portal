@@ -29,7 +29,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -41,35 +40,15 @@ import java.util.concurrent.ConcurrentHashMap;
 public class TemplateManagerUtil {
 
 	public static void destroy() {
-		_instance._destroy();
+		_templateManagerUtil._destroy();
 	}
 
 	public static void destroy(ClassLoader classLoader) {
-		_instance._destroy(classLoader);
+		_templateManagerUtil._destroy(classLoader);
 	}
 
 	public static Set<String> getSupportedLanguageTypes(String propertyKey) {
-		return _instance._getSupportedLanguageTypes(propertyKey);
-	}
-
-	public static Template getTemplate(
-			String templateManagerName,
-			List<TemplateResource> templateResources, boolean restricted)
-		throws TemplateException {
-
-		return _instance._getTemplate(
-			templateManagerName, templateResources, restricted);
-	}
-
-	public static Template getTemplate(
-			String templateManagerName,
-			List<TemplateResource> templateResources,
-			TemplateResource errorTemplateResource, boolean restricted)
-		throws TemplateException {
-
-		return _instance._getTemplate(
-			templateManagerName, templateResources, errorTemplateResource,
-			restricted);
+		return _templateManagerUtil._getSupportedLanguageTypes(propertyKey);
 	}
 
 	public static Template getTemplate(
@@ -77,36 +56,26 @@ public class TemplateManagerUtil {
 			boolean restricted)
 		throws TemplateException {
 
-		return _instance._getTemplate(
+		return _templateManagerUtil._getTemplate(
 			templateManagerName, templateResource, restricted);
-	}
-
-	public static Template getTemplate(
-			String templateManagerName, TemplateResource templateResource,
-			TemplateResource errorTemplateResource, boolean restricted)
-		throws TemplateException {
-
-		return _instance._getTemplate(
-			templateManagerName, templateResource, errorTemplateResource,
-			restricted);
 	}
 
 	public static TemplateManager getTemplateManager(
 		String templateManagerName) {
 
-		return _instance._getTemplateManager(templateManagerName);
+		return _templateManagerUtil._getTemplateManager(templateManagerName);
 	}
 
 	public static Set<String> getTemplateManagerNames() {
-		return _instance._getTemplateManagerNames();
+		return _templateManagerUtil._getTemplateManagerNames();
 	}
 
 	public static Map<String, TemplateManager> getTemplateManagers() {
-		return _instance._getTemplateManagers();
+		return _templateManagerUtil._getTemplateManagers();
 	}
 
 	public static boolean hasTemplateManager(String templateManagerName) {
-		return _instance._hasTemplateManager(templateManagerName);
+		return _templateManagerUtil._hasTemplateManager(templateManagerName);
 	}
 
 	private TemplateManagerUtil() {
@@ -170,30 +139,6 @@ public class TemplateManagerUtil {
 	}
 
 	private Template _getTemplate(
-			String templateManagerName,
-			List<TemplateResource> templateResources, boolean restricted)
-		throws TemplateException {
-
-		TemplateManager templateManager = _getTemplateManagerChecked(
-			templateManagerName);
-
-		return templateManager.getTemplate(templateResources, restricted);
-	}
-
-	private Template _getTemplate(
-			String templateManagerName,
-			List<TemplateResource> templateResources,
-			TemplateResource errorTemplateResource, boolean restricted)
-		throws TemplateException {
-
-		TemplateManager templateManager = _getTemplateManagerChecked(
-			templateManagerName);
-
-		return templateManager.getTemplate(
-			templateResources, errorTemplateResource, restricted);
-	}
-
-	private Template _getTemplate(
 			String templateManagerName, TemplateResource templateResource,
 			boolean restricted)
 		throws TemplateException {
@@ -202,18 +147,6 @@ public class TemplateManagerUtil {
 			templateManagerName);
 
 		return templateManager.getTemplate(templateResource, restricted);
-	}
-
-	private Template _getTemplate(
-			String templateManagerName, TemplateResource templateResource,
-			TemplateResource errorTemplateResource, boolean restricted)
-		throws TemplateException {
-
-		TemplateManager templateManager = _getTemplateManagerChecked(
-			templateManagerName);
-
-		return templateManager.getTemplate(
-			templateResource, errorTemplateResource, restricted);
 	}
 
 	private TemplateManager _getTemplateManager(String templateManagerName) {
@@ -281,7 +214,7 @@ public class TemplateManagerUtil {
 	private static final Log _log = LogFactoryUtil.getLog(
 		TemplateManagerUtil.class);
 
-	private static final TemplateManagerUtil _instance =
+	private static final TemplateManagerUtil _templateManagerUtil =
 		new TemplateManagerUtil();
 
 	private final ServiceTracker<TemplateManager, TemplateManager>
@@ -303,17 +236,18 @@ public class TemplateManagerUtil {
 			TemplateManager templateManager = registry.getService(
 				serviceReference);
 
-			String name = templateManager.getName();
-
 			try {
 				templateManager.init();
 
 				_templateManagers.put(serviceReference, templateManager);
 			}
-			catch (TemplateException te) {
+			catch (TemplateException templateException) {
 				if (_log.isWarnEnabled()) {
+					String name = templateManager.getName();
+
 					_log.warn(
-						"unable to init " + name + " Template Manager ", te);
+						"unable to init " + name + " Template Manager ",
+						templateException);
 				}
 			}
 
@@ -324,6 +258,10 @@ public class TemplateManagerUtil {
 		public void modifiedService(
 			ServiceReference<TemplateManager> serviceReference,
 			TemplateManager templateManager) {
+
+			removedService(serviceReference, templateManager);
+
+			addingService(serviceReference);
 		}
 
 		@Override

@@ -14,8 +14,6 @@
 
 package com.liferay.portal.kernel.model;
 
-import aQute.bnd.annotation.ProviderType;
-
 import java.io.Serializable;
 
 import java.util.ArrayList;
@@ -26,10 +24,12 @@ import java.util.List;
  * This class is used by SOAP remote services.
  *
  * @author Brian Wing Shun Chan
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
-@ProviderType
+@Deprecated
 public class PasswordTrackerSoap implements Serializable {
+
 	public static PasswordTrackerSoap toSoapModel(PasswordTracker model) {
 		PasswordTrackerSoap soapModel = new PasswordTrackerSoap();
 
@@ -44,7 +44,8 @@ public class PasswordTrackerSoap implements Serializable {
 	}
 
 	public static PasswordTrackerSoap[] toSoapModels(PasswordTracker[] models) {
-		PasswordTrackerSoap[] soapModels = new PasswordTrackerSoap[models.length];
+		PasswordTrackerSoap[] soapModels =
+			new PasswordTrackerSoap[models.length];
 
 		for (int i = 0; i < models.length; i++) {
 			soapModels[i] = toSoapModel(models[i]);
@@ -55,10 +56,12 @@ public class PasswordTrackerSoap implements Serializable {
 
 	public static PasswordTrackerSoap[][] toSoapModels(
 		PasswordTracker[][] models) {
+
 		PasswordTrackerSoap[][] soapModels = null;
 
 		if (models.length > 0) {
-			soapModels = new PasswordTrackerSoap[models.length][models[0].length];
+			soapModels =
+				new PasswordTrackerSoap[models.length][models[0].length];
 		}
 		else {
 			soapModels = new PasswordTrackerSoap[0][0];
@@ -73,7 +76,9 @@ public class PasswordTrackerSoap implements Serializable {
 
 	public static PasswordTrackerSoap[] toSoapModels(
 		List<PasswordTracker> models) {
-		List<PasswordTrackerSoap> soapModels = new ArrayList<PasswordTrackerSoap>(models.size());
+
+		List<PasswordTrackerSoap> soapModels =
+			new ArrayList<PasswordTrackerSoap>(models.size());
 
 		for (PasswordTracker model : models) {
 			soapModels.add(toSoapModel(model));
@@ -147,4 +152,5 @@ public class PasswordTrackerSoap implements Serializable {
 	private long _userId;
 	private Date _createDate;
 	private String _password;
+
 }

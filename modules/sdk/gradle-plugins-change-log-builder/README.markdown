@@ -28,7 +28,7 @@ the range start.
 - If a change log already exists for your project, the start range begins at the
 range end of the last line in the change log.
 
-The plugin has been successfully tested with Gradle 2.5 up to 3.3.
+The plugin has been successfully tested with Gradle 5.6.4 and 6.6.1.
 
 ## Usage
 
@@ -37,12 +37,12 @@ To use the plugin, include it in your build script:
 ```gradle
 buildscript {
 	dependencies {
-		classpath group: "com.liferay", name: "com.liferay.gradle.plugins.change.log.builder", version: "1.0.3"
+		classpath group: "com.liferay", name: "com.liferay.gradle.plugins.change.log.builder", version: "1.1.5"
 	}
 
 	repositories {
 		maven {
-			url "https://cdn.lfrs.sl/repository.liferay.com/nexus/content/groups/public"
+			url "https://repository-cdn.liferay.com/nexus/content/groups/public"
 		}
 	}
 }
@@ -76,7 +76,7 @@ Property Name | Type | Default Value | Description
 ------------- | ---- | ------------- | -----------
 <a name="changelogfile"></a>`changeLogFile` | `File` | `null` | The change log file to build.
 <a name="changelogheader"></a>`changeLogHeader` | `String` | `null` | The header for the new line in the change log.
-`dirs` | `FileCollection` | `[]` | The directories to consider when listing the commits in the range specified.
+<a name="dirs"></a>`dirs` | `FileCollection` | `[]` | The directories to consider when listing the commits in the range specified.
 `gitDir` | `File` | `project.rootDir` | The base directory to start searching for the `.git` directory. The search proceeds in all the ancestors of the directory specified.
 `rangeEnd` | `String` | `null` | The hash of the last commit to consider. If not set, it corresponds to the range end of the last line in the change log, or the most recent commit from at least two years ago if the change log file does not exist yet.
 `rangeStart` | `String` | `null` | The hash of the first commit to consider. If not set, it corresponds to the hash of the tip of the current branch.

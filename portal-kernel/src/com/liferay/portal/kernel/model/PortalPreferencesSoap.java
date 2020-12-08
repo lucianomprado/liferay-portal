@@ -14,8 +14,6 @@
 
 package com.liferay.portal.kernel.model;
 
-import aQute.bnd.annotation.ProviderType;
-
 import java.io.Serializable;
 
 import java.util.ArrayList;
@@ -25,10 +23,12 @@ import java.util.List;
  * This class is used by SOAP remote services.
  *
  * @author Brian Wing Shun Chan
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
-@ProviderType
+@Deprecated
 public class PortalPreferencesSoap implements Serializable {
+
 	public static PortalPreferencesSoap toSoapModel(PortalPreferences model) {
 		PortalPreferencesSoap soapModel = new PortalPreferencesSoap();
 
@@ -43,7 +43,9 @@ public class PortalPreferencesSoap implements Serializable {
 
 	public static PortalPreferencesSoap[] toSoapModels(
 		PortalPreferences[] models) {
-		PortalPreferencesSoap[] soapModels = new PortalPreferencesSoap[models.length];
+
+		PortalPreferencesSoap[] soapModels =
+			new PortalPreferencesSoap[models.length];
 
 		for (int i = 0; i < models.length; i++) {
 			soapModels[i] = toSoapModel(models[i]);
@@ -54,10 +56,12 @@ public class PortalPreferencesSoap implements Serializable {
 
 	public static PortalPreferencesSoap[][] toSoapModels(
 		PortalPreferences[][] models) {
+
 		PortalPreferencesSoap[][] soapModels = null;
 
 		if (models.length > 0) {
-			soapModels = new PortalPreferencesSoap[models.length][models[0].length];
+			soapModels =
+				new PortalPreferencesSoap[models.length][models[0].length];
 		}
 		else {
 			soapModels = new PortalPreferencesSoap[0][0];
@@ -72,7 +76,9 @@ public class PortalPreferencesSoap implements Serializable {
 
 	public static PortalPreferencesSoap[] toSoapModels(
 		List<PortalPreferences> models) {
-		List<PortalPreferencesSoap> soapModels = new ArrayList<PortalPreferencesSoap>(models.size());
+
+		List<PortalPreferencesSoap> soapModels =
+			new ArrayList<PortalPreferencesSoap>(models.size());
 
 		for (PortalPreferences model : models) {
 			soapModels.add(toSoapModel(model));
@@ -137,4 +143,5 @@ public class PortalPreferencesSoap implements Serializable {
 	private long _ownerId;
 	private int _ownerType;
 	private String _preferences;
+
 }

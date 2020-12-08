@@ -65,9 +65,10 @@ public class NettyFabricAgentRegistrationChannelHandlerTest {
 
 			Assert.fail();
 		}
-		catch (NullPointerException npe) {
+		catch (NullPointerException nullPointerException) {
 			Assert.assertEquals(
-				"Fabric agent registry is null", npe.getMessage());
+				"Fabric agent registry is null",
+				nullPointerException.getMessage());
 		}
 
 		try {
@@ -78,9 +79,10 @@ public class NettyFabricAgentRegistrationChannelHandlerTest {
 
 			Assert.fail();
 		}
-		catch (NullPointerException npe) {
+		catch (NullPointerException nullPointerException) {
 			Assert.assertEquals(
-				"Repository parent path is null", npe.getMessage());
+				"Repository parent path is null",
+				nullPointerException.getMessage());
 		}
 
 		try {
@@ -91,9 +93,10 @@ public class NettyFabricAgentRegistrationChannelHandlerTest {
 
 			Assert.fail();
 		}
-		catch (NullPointerException npe) {
+		catch (NullPointerException nullPointerException) {
 			Assert.assertEquals(
-				"Event executor group is null", npe.getMessage());
+				"Event executor group is null",
+				nullPointerException.getMessage());
 		}
 
 		new NettyFabricAgentRegistrationChannelHandler(
@@ -187,7 +190,7 @@ public class NettyFabricAgentRegistrationChannelHandlerTest {
 
 			fabricAgents = fabricAgentRegistry.getFabricAgents();
 
-			Assert.assertTrue(fabricAgents.isEmpty());
+			Assert.assertTrue(fabricAgents.toString(), fabricAgents.isEmpty());
 		}
 
 		// With log
@@ -237,7 +240,7 @@ public class NettyFabricAgentRegistrationChannelHandlerTest {
 
 			fabricAgents = fabricAgentRegistry.getFabricAgents();
 
-			Assert.assertTrue(fabricAgents.isEmpty());
+			Assert.assertTrue(fabricAgents.toString(), fabricAgents.isEmpty());
 		}
 	}
 
@@ -357,7 +360,7 @@ public class NettyFabricAgentRegistrationChannelHandlerTest {
 
 			fabricAgents = fabricAgentRegistry.getFabricAgents();
 
-			Assert.assertTrue(fabricAgents.isEmpty());
+			Assert.assertTrue(fabricAgents.toString(), fabricAgents.isEmpty());
 		}
 
 		// With log
@@ -402,7 +405,7 @@ public class NettyFabricAgentRegistrationChannelHandlerTest {
 
 			fabricAgents = fabricAgentRegistry.getFabricAgents();
 
-			Assert.assertTrue(fabricAgents.isEmpty());
+			Assert.assertTrue(fabricAgents.toString(), fabricAgents.isEmpty());
 		}
 	}
 

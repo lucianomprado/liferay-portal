@@ -14,11 +14,7 @@
 
 package com.liferay.exportimport.kernel.lar;
 
-import aQute.bnd.annotation.ProviderType;
-
-import com.liferay.asset.kernel.model.AssetLink;
 import com.liferay.expando.kernel.model.ExpandoColumn;
-import com.liferay.message.boards.kernel.model.MBMessage;
 import com.liferay.portal.kernel.dao.orm.Criterion;
 import com.liferay.portal.kernel.dao.orm.DynamicQuery;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -33,7 +29,6 @@ import com.liferay.portal.kernel.util.KeyValuePair;
 import com.liferay.portal.kernel.xml.Element;
 import com.liferay.portal.kernel.zip.ZipReader;
 import com.liferay.portal.kernel.zip.ZipWriter;
-import com.liferay.ratings.kernel.model.RatingsEntry;
 
 import java.io.InputStream;
 import java.io.Serializable;
@@ -43,6 +38,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.osgi.annotation.versioning.ProviderType;
+
 /**
  * <p>
  * Holds context information that is used during exporting and importing portlet
@@ -51,7 +48,7 @@ import java.util.Set;
  *
  * @author Brian Wing Shun Chan
  * @author Raymond Augé
- * @author Mate Thurzo
+ * @author Máté Thurzó
  */
 @ProviderType
 public interface PortletDataContext extends Serializable {
@@ -71,24 +68,8 @@ public interface PortletDataContext extends Serializable {
 
 	public static final String REFERENCE_TYPE_WEAK = "weak";
 
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link
-	 *             BaseStagedModelDataHandler#exportAssetCategories(
-	 *             PortletDataContext, StagedModel)}
-	 */
-	@Deprecated
-	public void addAssetCategories(Class<?> clazz, long classPK);
-
 	public void addAssetCategories(
 		String className, long classPK, long[] assetCategoryIds);
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link
-	 *             BaseStagedModelDataHandler#exportAssetTags(
-	 *             PortletDataContext, StagedModel)}
-	 */
-	@Deprecated
-	public void addAssetTags(Class<?> clazz, long classPK);
 
 	public void addAssetTags(
 		String className, long classPK, String[] assetTagNames);
@@ -101,23 +82,6 @@ public interface PortletDataContext extends Serializable {
 			Element element, String path, ClassedModel classedModel,
 			Class<?> clazz)
 		throws PortalException;
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link
-	 *             BaseStagedModelDataHandler#exportComments(PortletDataContext,
-	 *             StagedModel)}
-	 */
-	@Deprecated
-	public void addComments(Class<?> clazz, long classPK);
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link
-	 *             BaseStagedModelDataHandler#exportComments(PortletDataContext,
-	 *             StagedModel)}
-	 */
-	@Deprecated
-	public void addComments(
-		String className, long classPK, List<MBMessage> messages);
 
 	public void addDateRangeCriteria(
 		DynamicQuery dynamicQuery, String propertyName);
@@ -132,14 +96,6 @@ public interface PortletDataContext extends Serializable {
 	public void addLocks(Class<?> clazz, String key) throws PortalException;
 
 	public void addLocks(String className, String key, Lock lock);
-
-	/**
-	 * @deprecated As of 3.0.0, replaced by {@link #addPermissions(Class,
-	 *             Serializable)}
-	 */
-	@Deprecated
-	public void addPermissions(Class<?> clazz, long classPK)
-		throws PortalException;
 
 	public void addPermissions(Class<?> clazz, Serializable classPK)
 		throws PortalException;
@@ -156,32 +112,6 @@ public interface PortletDataContext extends Serializable {
 		throws PortalException;
 
 	public boolean addPrimaryKey(Class<?> clazz, String primaryKey);
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link
-	 *             BaseStagedModelDataHandler#exportRatings(PortletDataContext,
-	 *             StagedModel)}
-	 */
-	@Deprecated
-	public void addRatingsEntries(Class<?> clazz, long classPK);
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link
-	 *             BaseStagedModelDataHandler#exportRatings(PortletDataContext,
-	 *             StagedModel)}
-	 */
-	@Deprecated
-	public void addRatingsEntries(
-		String className, long classPK, List<RatingsEntry> ratingsEntries);
-
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	public Element addReferenceElement(
-		ClassedModel referrerClassedModel, Element element,
-		ClassedModel classedModel, Class<?> clazz, String referenceType,
-		boolean missing);
 
 	public Element addReferenceElement(
 		ClassedModel referrerClassedModel, Element element,
@@ -201,7 +131,7 @@ public interface PortletDataContext extends Serializable {
 
 	public void addZipEntry(String path, byte[] bytes);
 
-	public void addZipEntry(String path, InputStream is);
+	public void addZipEntry(String path, InputStream inputStream);
 
 	public void addZipEntry(String path, Object object);
 
@@ -228,50 +158,11 @@ public interface PortletDataContext extends Serializable {
 
 	public Object fromXML(String xml);
 
-	/**
-	 * @deprecated As of 3.0.0, replaced by {@link #getAssetCategoryIds(Class,
-	 *             Serializable)}
-	 */
-	@Deprecated
-	public long[] getAssetCategoryIds(Class<?> clazz, long classPK);
-
 	public long[] getAssetCategoryIds(Class<?> clazz, Serializable classPK);
-
-	/**
-	 * @deprecated As of 7.0.0
-	 */
-	@Deprecated
-	public Map<String, long[]> getAssetCategoryIdsMap();
-
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	public Map<String, String[]> getAssetCategoryUuidsMap();
 
 	public Set<Long> getAssetLinkIds();
 
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link #getAssetLinkIds()}
-	 */
-	@Deprecated
-	public Map<String, List<AssetLink>> getAssetLinksMap();
-
-	/**
-	 * @deprecated As of 3.0.0, replaced by {@link #getAssetTagNames(Class,
-	 *             Serializable)}
-	 */
-	@Deprecated
-	public String[] getAssetTagNames(Class<?> clazz, long classPK);
-
 	public String[] getAssetTagNames(Class<?> clazz, Serializable classPK);
-
-	/**
-	 * @deprecated As of 3.0.0, replaced by {@link #getAssetTagNames(String,
-	 *             Serializable)}
-	 */
-	@Deprecated
-	public String[] getAssetTagNames(String className, long classPK);
 
 	public String[] getAssetTagNames(String className, Serializable classPK);
 
@@ -283,12 +174,6 @@ public interface PortletDataContext extends Serializable {
 		String namespace, String name, boolean useDefaultValue);
 
 	public ClassLoader getClassLoader();
-
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	public Map<String, List<MBMessage>> getComments();
 
 	public long getCompanyGroupId();
 
@@ -307,14 +192,6 @@ public interface PortletDataContext extends Serializable {
 	public Map<String, List<ExpandoColumn>> getExpandoColumns();
 
 	public Element getExportDataElement(ClassedModel classedModel);
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link
-	 *             #getExportDataElement(ClassedModel, String)}
-	 */
-	@Deprecated
-	public Element getExportDataElement(
-		ClassedModel classedModel, Class<?> modelClass);
 
 	public Element getExportDataElement(
 		ClassedModel classedModel, String modelClassSimpleName);
@@ -352,24 +229,15 @@ public interface PortletDataContext extends Serializable {
 
 	public Element getMissingReferencesElement();
 
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link
-	 *             #getNewPrimaryKeysMap(String)}
-	 */
-	@Deprecated
-	public List<Layout> getNewLayouts();
+	public Object getNewPrimaryKey(Class<?> clazz, Object newPrimaryKey);
+
+	public Object getNewPrimaryKey(String className, Object newPrimaryKey);
 
 	public Map<?, ?> getNewPrimaryKeysMap(Class<?> clazz);
 
 	public Map<?, ?> getNewPrimaryKeysMap(String className);
 
 	public Map<String, Map<?, ?>> getNewPrimaryKeysMaps();
-
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	public long getOldPlid();
 
 	public Map<String, String[]> getParameterMap();
 
@@ -380,12 +248,6 @@ public interface PortletDataContext extends Serializable {
 	public String getPortletId();
 
 	public Set<String> getPrimaryKeys();
-
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	public Map<String, List<RatingsEntry>> getRatingsEntries();
 
 	public Element getReferenceDataElement(
 		Element parentElement, Class<?> clazz, long classPK);
@@ -400,13 +262,6 @@ public interface PortletDataContext extends Serializable {
 		StagedModel parentStagedModel, Class<?> clazz, long groupId,
 		String uuid);
 
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	public List<Element> getReferenceDataElements(
-		Element parentElement, Class<?> clazz);
-
 	public List<Element> getReferenceDataElements(
 		Element parentElement, Class<?> clazz, String referenceType);
 
@@ -416,47 +271,17 @@ public interface PortletDataContext extends Serializable {
 	public List<Element> getReferenceDataElements(
 		StagedModel parentStagedModel, Class<?> clazz, String referenceType);
 
-	/**
-	 * @deprecated As of 3.0.0, replaced by {@link #getReferenceElement(Class,
-	 *             Serializable)}
-	 */
-	@Deprecated
-	public Element getReferenceElement(Class<?> clazz, long classPK);
-
 	public Element getReferenceElement(Class<?> clazz, Serializable classPK);
 
 	public Element getReferenceElement(
 		Element parentElement, Class<?> clazz, long groupId, String uuid,
 		String referenceType);
 
-	/**
-	 * @deprecated As of 3.0.0, replaced by {@link
-	 *             #getReferenceElement(StagedModel, Class, Serializable)}
-	 */
-	@Deprecated
-	public Element getReferenceElement(
-		StagedModel parentStagedModel, Class<?> clazz, long classPK);
-
 	public Element getReferenceElement(
 		StagedModel parentStagedModel, Class<?> clazz, Serializable classPK);
 
-	/**
-	 * @deprecated As of 3.0.0, replaced by {@link
-	 *             #getReferenceElement(StagedModel, String, Serializable)}
-	 */
-	@Deprecated
-	public Element getReferenceElement(
-		StagedModel parentStagedModel, String className, long classPK);
-
 	public Element getReferenceElement(
 		StagedModel parentStagedModel, String className, Serializable classPK);
-
-	/**
-	 * @deprecated As of 3.0.0, replaced by {@link #getReferenceElement(String,
-	 *             Serializable)}
-	 */
-	@Deprecated
-	public Element getReferenceElement(String className, long classPK);
 
 	public Element getReferenceElement(String className, Serializable classPK);
 
@@ -464,12 +289,6 @@ public interface PortletDataContext extends Serializable {
 		StagedModel parentStagedModel, Class<?> clazz);
 
 	public String getRootPortletId();
-
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	public Set<String> getScopedPrimaryKeys();
 
 	public long getScopeGroupId();
 
@@ -495,12 +314,6 @@ public interface PortletDataContext extends Serializable {
 
 	public long getUserPersonalSiteGroupId();
 
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	public List<String> getZipEntries();
-
 	public byte[] getZipEntryAsByteArray(String path);
 
 	public InputStream getZipEntryAsInputStream(String path);
@@ -510,12 +323,6 @@ public interface PortletDataContext extends Serializable {
 	public Object getZipEntryAsObject(String path);
 
 	public String getZipEntryAsString(String path);
-
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	public List<String> getZipFolderEntries();
 
 	public List<String> getZipFolderEntries(String path);
 
@@ -540,25 +347,7 @@ public interface PortletDataContext extends Serializable {
 			Class<?> clazz)
 		throws PortalException;
 
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link
-	 *             BaseStagedModelDataHandler#importComments(PortletDataContext,
-	 *             StagedModel)}
-	 */
-	@Deprecated
-	public void importComments(
-			Class<?> clazz, long classPK, long newClassPK, long groupId)
-		throws PortalException;
-
 	public void importLocks(Class<?> clazz, String key, String newKey)
-		throws PortalException;
-
-	/**
-	 * @deprecated As of 3.0.0, replaced by {@link #importPermissions(Class,
-	 *             Serializable, Serializable)}
-	 */
-	@Deprecated
-	public void importPermissions(Class<?> clazz, long classPK, long newClassPK)
 		throws PortalException;
 
 	public void importPermissions(
@@ -574,16 +363,6 @@ public interface PortletDataContext extends Serializable {
 	public void importPortletPermissions(String resourceName)
 		throws PortalException;
 
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link
-	 *             BaseStagedModelDataHandler#importRatings(PortletDataContext,
-	 *             StagedModel)}
-	 */
-	@Deprecated
-	public void importRatingsEntries(
-			Class<?> clazz, long classPK, long newClassPK)
-		throws PortalException;
-
 	public boolean isCompanyStagedGroupedModel(
 		StagedGroupedModel stagedGroupedModel);
 
@@ -595,22 +374,9 @@ public interface PortletDataContext extends Serializable {
 
 	public boolean isMissingReference(Element referenceElement);
 
-	/**
-	 * @deprecated As of 3.0.0, replaced by {@link #isModelCounted(String,
-	 *             Serializable)}
-	 */
-	@Deprecated
-	public boolean isModelCounted(String className, long classPK);
-
 	public boolean isModelCounted(String className, Serializable classPK);
 
 	public boolean isPathExportedInScope(String path);
-
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	public boolean isPathNotExportedInScope(String path);
 
 	public boolean isPathNotProcessed(String path);
 
@@ -625,6 +391,8 @@ public interface PortletDataContext extends Serializable {
 	public boolean isWithinDateRange(Date modifiedDate);
 
 	public void putNotUniquePerLayout(String dataKey);
+
+	public void removePrimaryKey(String path);
 
 	public void setClassLoader(ClassLoader classLoader);
 
@@ -654,18 +422,9 @@ public interface PortletDataContext extends Serializable {
 
 	public void setNewLayouts(List<Layout> newLayouts);
 
-	public void setOldPlid(long oldPlid);
-
 	public void setParameterMap(Map<String, String[]> parameterMap);
 
 	public void setPlid(long plid);
-
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	public void setPortetDataContextListener(
-		PortletDataContextListener portletDataContextListener);
 
 	public void setPortletId(String portletId);
 

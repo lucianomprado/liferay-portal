@@ -14,11 +14,14 @@
 
 package com.liferay.portal.kernel.search;
 
+import com.liferay.portal.kernel.messaging.DestinationFactory;
+import com.liferay.portal.kernel.messaging.MessageBus;
+
 /**
  * @author Michael C. Han
  */
 public class DefaultSearchEngineConfigurator
-	extends AbstractSearchEngineConfigurator {
+	extends BaseSearchEngineConfigurator {
 
 	public void setDefaultSearchEngineId(String defaultSearchEngineId) {
 		_defaultSearchEngineId = defaultSearchEngineId;
@@ -38,6 +41,13 @@ public class DefaultSearchEngineConfigurator
 	}
 
 	@Override
+	protected Class<?>[] getDependencies() {
+		return new Class<?>[] {
+			DestinationFactory.class, MessageBus.class, SearchEngineHelper.class
+		};
+	}
+
+	@Override
 	protected IndexSearcher getIndexSearcher() {
 		return _indexSearcher;
 	}
@@ -47,8 +57,18 @@ public class DefaultSearchEngineConfigurator
 		return _indexWriter;
 	}
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *             #getOperatingClassLoader()}
+	 */
+	@Deprecated
 	@Override
 	protected ClassLoader getOperatingClassloader() {
+		return getOperatingClassLoader();
+	}
+
+	@Override
+	protected ClassLoader getOperatingClassLoader() {
 		Thread currentThread = Thread.currentThread();
 
 		return currentThread.getContextClassLoader();

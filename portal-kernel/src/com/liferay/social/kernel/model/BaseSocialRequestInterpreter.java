@@ -14,6 +14,8 @@
 
 package com.liferay.social.kernel.model;
 
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Group;
@@ -21,7 +23,6 @@ import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.HtmlUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.social.kernel.service.persistence.SocialRequestUtil;
 
 import java.util.List;
@@ -55,10 +56,11 @@ public abstract class BaseSocialRequestInterpreter
 
 			String userDisplayURL = user.getDisplayURL(themeDisplay);
 
-			return "<a href=\"" + userDisplayURL + "\">" +
-				HtmlUtil.escape(userName) + "</a>";
+			return StringBundler.concat(
+				"<a href=\"", userDisplayURL, "\">", HtmlUtil.escape(userName),
+				"</a>");
 		}
-		catch (Exception e) {
+		catch (Exception exception) {
 			return StringPool.BLANK;
 		}
 	}
@@ -75,10 +77,11 @@ public abstract class BaseSocialRequestInterpreter
 
 			String userDisplayURL = user.getDisplayURL(themeDisplay);
 
-			return "<a href=\"" + userDisplayURL + "\">" +
-				HtmlUtil.escape(userName) + "</a>";
+			return StringBundler.concat(
+				"<a href=\"", userDisplayURL, "\">", HtmlUtil.escape(userName),
+				"</a>");
 		}
-		catch (Exception e) {
+		catch (Exception exception) {
 			return StringPool.BLANK;
 		}
 	}
@@ -90,8 +93,8 @@ public abstract class BaseSocialRequestInterpreter
 		try {
 			return doInterpret(request, themeDisplay);
 		}
-		catch (Exception e) {
-			_log.error("Unable to interpret request", e);
+		catch (Exception exception) {
+			_log.error("Unable to interpret request", exception);
 		}
 
 		return null;
@@ -104,8 +107,8 @@ public abstract class BaseSocialRequestInterpreter
 		try {
 			return doProcessConfirmation(request, themeDisplay);
 		}
-		catch (Exception e) {
-			_log.error("Unable to process confirmation", e);
+		catch (Exception exception) {
+			_log.error("Unable to process confirmation", exception);
 		}
 
 		return false;
@@ -150,8 +153,8 @@ public abstract class BaseSocialRequestInterpreter
 		try {
 			return doProcessRejection(request, themeDisplay);
 		}
-		catch (Exception e) {
-			_log.error("Unable to process rejection", e);
+		catch (Exception exception) {
+			_log.error("Unable to process rejection", exception);
 		}
 
 		return false;

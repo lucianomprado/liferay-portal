@@ -14,6 +14,7 @@
 
 package com.liferay.portal.service.impl;
 
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.exception.NoSuchLayoutFriendlyURLException;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.LanguageUtil;
@@ -28,7 +29,6 @@ import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
-import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.Validator;
@@ -235,38 +235,42 @@ public class LayoutFriendlyURLLocalServiceImpl
 
 		Map<Long, String> layoutFriendlyURLMap = new HashMap<>();
 
-		UnicodeProperties typeSettingsProperties =
+		UnicodeProperties typeSettingsUnicodeProperties =
 			siteGroup.getTypeSettingsProperties();
 
-		if (!GetterUtil.getBoolean(
-				typeSettingsProperties.getProperty(
+		List<LayoutFriendlyURL> layoutFriendlyURLs =
+			layoutFriendlyURLPersistence.findByP_L(
+				ListUtil.toLongArray(layouts, Layout.PLID_ACCESSOR),
+				languageId);
+
+		for (LayoutFriendlyURL layoutFriendlyURL : layoutFriendlyURLs) {
+			layoutFriendlyURLMap.put(
+				layoutFriendlyURL.getPlid(),
+				layoutFriendlyURL.getFriendlyURL());
+		}
+
+		if (GetterUtil.getBoolean(
+				typeSettingsUnicodeProperties.getProperty(
 					GroupConstants.TYPE_SETTINGS_KEY_INHERIT_LOCALES),
 				true)) {
 
-			String[] locales = StringUtil.split(
-				typeSettingsProperties.getProperty(PropsKeys.LOCALES));
-
-			if (!ArrayUtil.contains(locales, languageId)) {
-				for (Layout layout : layouts) {
-					layoutFriendlyURLMap.put(
-						layout.getPlid(), layout.getFriendlyURL());
-				}
-			}
+			return layoutFriendlyURLMap;
 		}
-		else {
-			List<LayoutFriendlyURL> layoutFriendlyURLs =
-				layoutFriendlyURLPersistence.findByP_L(
-					ListUtil.toLongArray(layouts, Layout.PLID_ACCESSOR),
-					languageId);
 
-			for (LayoutFriendlyURL layoutFriendlyURL : layoutFriendlyURLs) {
-				layoutFriendlyURLMap.put(
-					layoutFriendlyURL.getPlid(),
-					layoutFriendlyURL.getFriendlyURL());
+		Map<Long, String> filteredLayoutFriendlyURLMap = new HashMap<>();
+
+		String[] locales = StringUtil.split(
+			typeSettingsUnicodeProperties.getProperty(PropsKeys.LOCALES));
+
+		if (!ArrayUtil.contains(locales, languageId)) {
+			for (Layout layout : layouts) {
+				String friendlyURL = layoutFriendlyURLMap.get(layout.getPlid());
+
+				filteredLayoutFriendlyURLMap.put(layout.getPlid(), friendlyURL);
 			}
 		}
 
-		return layoutFriendlyURLMap;
+		return filteredLayoutFriendlyURLMap;
 	}
 
 	@Override
@@ -310,19 +314,43 @@ public class LayoutFriendlyURLLocalServiceImpl
 			ServiceContext serviceContext)
 		throws PortalException {
 
-		List<LayoutFriendlyURL> layoutFriendlyURLs = new ArrayList<>();
+		Map<String, LayoutFriendlyURL> layoutFriendlyURLMap = new HashMap<>();
+
+		for (LayoutFriendlyURL layoutFriendlyURL :
+				layoutFriendlyURLPersistence.findByPlid(plid)) {
+
+			layoutFriendlyURLMap.put(
+				layoutFriendlyURL.getLanguageId(), layoutFriendlyURL);
+		}
+
+		List<LayoutFriendlyURL> layoutFriendlyURLs = new ArrayList<>(
+			friendlyURLMap.size());
 
 		for (Locale locale : LanguageUtil.getAvailableLocales(groupId)) {
 			String friendlyURL = friendlyURLMap.get(locale);
+
 			String languageId = LocaleUtil.toLanguageId(locale);
 
+			LayoutFriendlyURL layoutFriendlyURL = layoutFriendlyURLMap.get(
+				languageId);
+
 			if (Validator.isNull(friendlyURL)) {
-				deleteLayoutFriendlyURL(plid, languageId);
+				if (layoutFriendlyURL != null) {
+					deleteLayoutFriendlyURL(layoutFriendlyURL);
+				}
 			}
 			else {
-				LayoutFriendlyURL layoutFriendlyURL = updateLayoutFriendlyURL(
-					userId, companyId, groupId, plid, privateLayout,
-					friendlyURL, languageId, serviceContext);
+				if (layoutFriendlyURL == null) {
+					layoutFriendlyURL = addLayoutFriendlyURL(
+						userId, companyId, groupId, plid, privateLayout,
+						friendlyURL, languageId, serviceContext);
+				}
+				else {
+					layoutFriendlyURL.setFriendlyURL(friendlyURL);
+
+					layoutFriendlyURL = layoutFriendlyURLPersistence.update(
+						layoutFriendlyURL);
+				}
 
 				layoutFriendlyURLs.add(layoutFriendlyURL);
 			}

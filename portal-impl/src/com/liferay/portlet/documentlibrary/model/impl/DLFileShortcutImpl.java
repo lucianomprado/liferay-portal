@@ -18,6 +18,7 @@ import com.liferay.document.library.kernel.model.DLFolder;
 import com.liferay.document.library.kernel.model.DLFolderConstants;
 import com.liferay.document.library.kernel.service.DLAppLocalServiceUtil;
 import com.liferay.document.library.kernel.service.DLFolderLocalServiceUtil;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -26,7 +27,6 @@ import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.repository.model.FileVersion;
 import com.liferay.portal.kernel.repository.model.Folder;
 import com.liferay.portal.kernel.service.RepositoryLocalServiceUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.repository.liferayrepository.model.LiferayFolder;
 
 /**
@@ -79,8 +79,8 @@ public class DLFileShortcutImpl extends DLFileShortcutBaseImpl {
 
 			toTitle = fileEntry.getTitle();
 		}
-		catch (Exception e) {
-			_log.error(e, e);
+		catch (PortalException portalException) {
+			_log.error(portalException, portalException);
 		}
 
 		return toTitle;
@@ -91,16 +91,31 @@ public class DLFileShortcutImpl extends DLFileShortcutBaseImpl {
 		try {
 			long repositoryId = getRepositoryId();
 
+			if (getGroupId() == repositoryId) {
+				return false;
+			}
+
 			Repository repository = RepositoryLocalServiceUtil.getRepository(
 				repositoryId);
 
-			long dlFolderId = repository.getDlFolderId();
-
-			DLFolder dlFolder = DLFolderLocalServiceUtil.getFolder(dlFolderId);
+			DLFolder dlFolder = DLFolderLocalServiceUtil.getFolder(
+				repository.getDlFolderId());
 
 			return dlFolder.isHidden();
 		}
-		catch (Exception e) {
+		catch (PortalException portalException) {
+			if (_log.isWarnEnabled()) {
+				_log.warn(portalException, portalException);
+			}
+		}
+
+		return false;
+	}
+
+	@Override
+	public boolean isInTrash() {
+		if (super.isInTrash() || !isActive()) {
+			return true;
 		}
 
 		return false;

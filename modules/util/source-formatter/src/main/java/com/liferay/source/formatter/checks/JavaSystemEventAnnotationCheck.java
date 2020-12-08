@@ -14,12 +14,13 @@
 
 package com.liferay.source.formatter.checks;
 
-import com.liferay.portal.kernel.util.CharPool;
-import com.liferay.portal.kernel.util.StringBundler;
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.source.formatter.util.FileUtil;
 
 import java.io.File;
+import java.io.IOException;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -30,14 +31,14 @@ import java.util.regex.Pattern;
 public class JavaSystemEventAnnotationCheck extends BaseFileCheck {
 
 	@Override
-	public boolean isPortalCheck() {
+	public boolean isLiferaySourceCheck() {
 		return true;
 	}
 
 	@Override
 	protected String doProcess(
 			String fileName, String absolutePath, String content)
-		throws Exception {
+		throws IOException {
 
 		if (fileName.endsWith("PortletDataHandler.java")) {
 			_checkSystemEventAnnotations(fileName, content);
@@ -47,7 +48,7 @@ public class JavaSystemEventAnnotationCheck extends BaseFileCheck {
 	}
 
 	private void _checkSystemEventAnnotations(String fileName, String content)
-		throws Exception {
+		throws IOException {
 
 		int pos = content.indexOf("setDeletionSystemEventStagedModelTypes");
 
@@ -115,7 +116,7 @@ public class JavaSystemEventAnnotationCheck extends BaseFileCheck {
 		}
 	}
 
-	private final Pattern _stagedModelTypesPattern = Pattern.compile(
+	private static final Pattern _stagedModelTypesPattern = Pattern.compile(
 		"StagedModelType\\(([a-zA-Z.]*(class|getClassName[\\(\\)]*))\\)");
 
 }

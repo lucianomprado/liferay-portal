@@ -14,8 +14,6 @@
 
 package com.liferay.portal.model.impl;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.portal.kernel.model.BrowserTracker;
 import com.liferay.portal.kernel.service.BrowserTrackerLocalServiceUtil;
 
@@ -31,13 +29,13 @@ import com.liferay.portal.kernel.service.BrowserTrackerLocalServiceUtil;
  * @see BrowserTracker
  * @generated
  */
-@ProviderType
-public abstract class BrowserTrackerBaseImpl extends BrowserTrackerModelImpl
-	implements BrowserTracker {
+public abstract class BrowserTrackerBaseImpl
+	extends BrowserTrackerModelImpl implements BrowserTracker {
+
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. All methods that expect a browser tracker model instance should use the {@link BrowserTracker} interface instead.
+	 * Never modify or reference this class directly. All methods that expect a browser tracker model instance should use the <code>BrowserTracker</code> interface instead.
 	 */
 	@Override
 	public void persist() {
@@ -48,4 +46,5 @@ public abstract class BrowserTrackerBaseImpl extends BrowserTrackerModelImpl
 			BrowserTrackerLocalServiceUtil.updateBrowserTracker(this);
 		}
 	}
+
 }

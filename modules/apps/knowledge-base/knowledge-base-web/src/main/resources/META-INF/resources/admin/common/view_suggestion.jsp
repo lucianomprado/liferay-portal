@@ -21,20 +21,20 @@ KBComment kbComment = KBCommentServiceUtil.getKBComment(ParamUtil.getLong(reques
 
 String kbCommentTitle = StringUtil.shorten(kbComment.getContent(), 100);
 
-KBSuggestionListDisplayContext kbSuggestionListDisplayContext = new KBSuggestionListDisplayContext(request, templatePath, scopeGroupId);
-
 portletDisplay.setShowBackIcon(true);
 portletDisplay.setURLBack(redirect);
 
 renderResponse.setTitle(kbCommentTitle);
 %>
 
-<div class="card list-group-card panel" id="<portlet:namespace /><%= kbComment.getKbCommentId() %>">
+<div class="card panel" id="<portlet:namespace /><%= kbComment.getKbCommentId() %>">
 	<div class="panel-heading">
-		<div class="card-row card-row-padded">
+		<div class="card-body">
 			<div class="card-col-field">
 				<div class="list-group-card-icon">
-					<liferay-ui:user-portrait cssClass="user-icon-lg" userId="<%= kbComment.getUserId() %>" />
+					<liferay-ui:user-portrait
+						userId="<%= kbComment.getUserId() %>"
+					/>
 				</div>
 			</div>
 
@@ -76,7 +76,7 @@ renderResponse.setTitle(kbCommentTitle);
 	<div class="divider"></div>
 
 	<div class="panel-body">
-		<div class="card-row card-row-padded text-default">
+		<div class="card-body text-default">
 			<%= HtmlUtil.replaceNewLine(HtmlUtil.escape(kbComment.getContent())) %>
 		</div>
 	</div>
@@ -92,20 +92,22 @@ int nextStatus = KBUtil.getNextStatus(kbComment.getStatus());
 		<c:if test="<%= KBArticlePermission.contains(permissionChecker, kbArticle, KBActionKeys.UPDATE) %>">
 			<c:if test="<%= previousStatus != KBCommentConstants.STATUS_NONE %>">
 				<liferay-portlet:actionURL name="updateKBCommentStatus" varImpl="previousStatusURL">
+					<portlet:param name="redirect" value="<%= currentURL %>" />
 					<portlet:param name="kbCommentId" value="<%= String.valueOf(kbComment.getKbCommentId()) %>" />
 					<portlet:param name="kbCommentStatus" value="<%= String.valueOf(previousStatus) %>" />
 				</liferay-portlet:actionURL>
 
-				<aui:button cssClass="btn-lg" href="<%= kbSuggestionListDisplayContext.getViewSuggestionURL(previousStatusURL) %>" name="previousStatusButton" type="submit" value="<%= KBUtil.getStatusTransitionLabel(previousStatus) %>" />
+				<aui:button href="<%= previousStatusURL.toString() %>" name="previousStatusButton" type="submit" value="<%= KBUtil.getStatusTransitionLabel(previousStatus) %>" />
 			</c:if>
 
 			<c:if test="<%= nextStatus != KBCommentConstants.STATUS_NONE %>">
 				<liferay-portlet:actionURL name="updateKBCommentStatus" varImpl="nextStatusURL">
+					<portlet:param name="redirect" value="<%= currentURL %>" />
 					<portlet:param name="kbCommentId" value="<%= String.valueOf(kbComment.getKbCommentId()) %>" />
 					<portlet:param name="kbCommentStatus" value="<%= String.valueOf(nextStatus) %>" />
 				</liferay-portlet:actionURL>
 
-				<aui:button cssClass="btn-lg" href="<%= kbSuggestionListDisplayContext.getViewSuggestionURL(nextStatusURL) %>" name="previousStatusButton" type="submit" value="<%= KBUtil.getStatusTransitionLabel(nextStatus) %>" />
+				<aui:button href="<%= nextStatusURL.toString() %>" name="nextStatusButton" type="submit" value="<%= KBUtil.getStatusTransitionLabel(nextStatus) %>" />
 			</c:if>
 		</c:if>
 
@@ -115,7 +117,25 @@ int nextStatus = KBUtil.getNextStatus(kbComment.getStatus());
 				<portlet:param name="kbCommentId" value="<%= String.valueOf(kbComment.getKbCommentId()) %>" />
 			</liferay-portlet:actionURL>
 
-			<aui:button cssClass="btn-lg" href="<%= kbSuggestionListDisplayContext.getViewSuggestionURL(deleteURL) %>" name="previousStatusButton" value="<%= Constants.DELETE %>" />
+			<aui:button href="<%= deleteURL.toString() %>" name="deleteButton" value="<%= Constants.DELETE %>" />
 		</c:if>
 	</aui:button-row>
 </c:if>
+
+<script>
+	var deleteButtonElement = document.getElementById(
+		'<portlet:namespace />deleteButton'
+	);
+
+	if (deleteButtonElement) {
+		deleteButtonElement.addEventListener('click', function (event) {
+			if (
+				!confirm(
+					'<liferay-ui:message key="are-you-sure-you-want-to-delete-this" />'
+				)
+			) {
+				event.preventDefault();
+			}
+		});
+	}
+</script>

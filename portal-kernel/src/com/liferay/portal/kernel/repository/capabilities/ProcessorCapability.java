@@ -18,9 +18,12 @@ import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.repository.model.FileVersion;
 
+import org.osgi.annotation.versioning.ProviderType;
+
 /**
  * @author Adolfo Pérez
  */
+@ProviderType
 public interface ProcessorCapability extends Capability {
 
 	public void cleanUp(FileEntry fileEntry) throws PortalException;

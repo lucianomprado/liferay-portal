@@ -14,11 +14,8 @@
 
 package com.liferay.portal.model.impl;
 
-import aQute.bnd.annotation.ProviderType;
-
 /**
  * @author Brian Wing Shun Chan
  */
-@ProviderType
 public class RecentLayoutRevisionImpl extends RecentLayoutRevisionBaseImpl {
 }

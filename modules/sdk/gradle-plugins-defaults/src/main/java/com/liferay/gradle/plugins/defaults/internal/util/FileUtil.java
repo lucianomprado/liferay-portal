@@ -21,6 +21,9 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -36,6 +39,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
 import org.gradle.api.UncheckedIOException;
@@ -111,6 +115,34 @@ public class FileUtil extends com.liferay.gradle.util.FileUtil {
 			});
 	}
 
+	public static File[] getFiles(
+		File dir, final String prefix, final String suffix) {
+
+		return dir.listFiles(
+			new FileFilter() {
+
+				@Override
+				public boolean accept(File file) {
+					if (file.isDirectory()) {
+						return false;
+					}
+
+					String name = file.getName();
+
+					if (!name.startsWith(prefix)) {
+						return false;
+					}
+
+					if (!name.endsWith(suffix)) {
+						return false;
+					}
+
+					return true;
+				}
+
+			});
+	}
+
 	public static FileTree getJarsFileTree(
 		Project project, File dir, String... excludes) {
 
@@ -133,10 +165,22 @@ public class FileUtil extends com.liferay.gradle.util.FileUtil {
 		return relativePath.replace('\\', '/');
 	}
 
-	public static boolean hasSourceFiles(Task task, Spec<File> spec) {
-		TaskInputs taskInputs = task.getInputs();
+	public static String getUrl(File file) {
+		URI uri = file.toURI();
 
-		FileCollection fileCollection = taskInputs.getSourceFiles();
+		try {
+			uri = new URI("file", "", uri.getPath(), null, null);
+		}
+		catch (URISyntaxException uriSyntaxException) {
+			throw new GradleException(
+				"Unable to create URI for " + file, uriSyntaxException);
+		}
+
+		return uri.toString();
+	}
+
+	public static boolean hasFiles(
+		FileCollection fileCollection, Spec<File> spec) {
 
 		fileCollection = fileCollection.filter(spec);
 
@@ -145,6 +189,16 @@ public class FileUtil extends com.liferay.gradle.util.FileUtil {
 		}
 
 		return true;
+	}
+
+	public static boolean hasSourceFiles(Task task, Spec<File> spec) {
+		if (exists(task.getProject(), ".lfrbuild-releng-skip-source")) {
+			return false;
+		}
+
+		TaskInputs taskInputs = task.getInputs();
+
+		return hasFiles(taskInputs.getSourceFiles(), spec);
 	}
 
 	public static FileCollection join(FileCollection... fileCollections) {
@@ -216,8 +270,8 @@ public class FileUtil extends com.liferay.gradle.util.FileUtil {
 				bufferedWriter.write(value);
 			}
 		}
-		catch (IOException ioe) {
-			throw new UncheckedIOException(ioe);
+		catch (IOException ioException) {
+			throw new UncheckedIOException(ioException);
 		}
 	}
 

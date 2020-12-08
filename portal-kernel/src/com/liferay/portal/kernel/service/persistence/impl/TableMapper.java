@@ -14,12 +14,12 @@
 
 package com.liferay.portal.kernel.service.persistence.impl;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.portal.kernel.model.BaseModel;
 import com.liferay.portal.kernel.util.OrderByComparator;
 
 import java.util.List;
+
+import org.osgi.annotation.versioning.ProviderType;
 
 /**
  * @author Shuyang Zhou
@@ -55,14 +55,16 @@ public interface TableMapper<L extends BaseModel<L>, R extends BaseModel<R>> {
 	public void destroy();
 
 	public List<L> getLeftBaseModels(
-		long rightPrimaryKey, int start, int end, OrderByComparator<L> obc);
+		long rightPrimaryKey, int start, int end,
+		OrderByComparator<L> orderByComparator);
 
 	public long[] getLeftPrimaryKeys(long rightPrimaryKey);
 
 	public TableMapper<R, L> getReverseTableMapper();
 
 	public List<R> getRightBaseModels(
-		long leftPrimaryKey, int start, int end, OrderByComparator<R> obc);
+		long leftPrimaryKey, int start, int end,
+		OrderByComparator<R> orderByComparator);
 
 	public long[] getRightPrimaryKeys(long leftPrimaryKey);
 

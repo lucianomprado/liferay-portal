@@ -15,6 +15,7 @@
 package com.liferay.sync.web.internal.portlet;
 
 import com.liferay.portal.kernel.model.Group;
+import com.liferay.portal.kernel.model.Release;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
@@ -29,7 +30,7 @@ import com.liferay.sync.constants.SyncPortletKeys;
 import com.liferay.sync.exception.OAuthPortletUndeployedException;
 import com.liferay.sync.oauth.helper.SyncOAuthHelperUtil;
 import com.liferay.sync.service.configuration.SyncServiceConfigurationKeys;
-import com.liferay.sync.util.SyncUtil;
+import com.liferay.sync.util.SyncHelper;
 
 import java.io.IOException;
 
@@ -59,12 +60,11 @@ import org.osgi.service.component.annotations.Reference;
 		"com.liferay.portlet.use-default-template=true",
 		"javax.portlet.display-name=Sync Connector Admin",
 		"javax.portlet.expiration-cache=0",
-		"javax.portlet.init-param.template-path=/",
+		"javax.portlet.init-param.template-path=/META-INF/resources/",
 		"javax.portlet.init-param.view-template=/view.jsp",
 		"javax.portlet.name=" + SyncPortletKeys.SYNC_ADMIN_PORTLET,
 		"javax.portlet.resource-bundle=content.Language",
-		"javax.portlet.security-role-ref=administrator",
-		"javax.portlet.supports.mime-type=text/html"
+		"javax.portlet.security-role-ref=administrator"
 	},
 	service = Portlet.class
 )
@@ -77,8 +77,8 @@ public class SyncAdminPortlet extends BaseSyncPortlet {
 		try {
 			doUpdatePreferences(actionRequest, actionResponse);
 		}
-		catch (Exception e) {
-			throw new PortletException(e);
+		catch (Exception exception) {
+			throw new PortletException(exception);
 		}
 	}
 
@@ -93,19 +93,20 @@ public class SyncAdminPortlet extends BaseSyncPortlet {
 		for (long groupId : groupIds) {
 			Group group = _groupLocalService.fetchGroup(groupId);
 
-			UnicodeProperties typeSettingsProperties =
+			UnicodeProperties typeSettingsUnicodeProperties =
 				group.getTypeSettingsProperties();
 
 			if (Validator.isNotNull(enabled)) {
-				typeSettingsProperties.setProperty("syncEnabled", enabled);
+				typeSettingsUnicodeProperties.setProperty(
+					"syncEnabled", enabled);
 			}
 
 			if (Validator.isNotNull(permissions)) {
-				typeSettingsProperties.setProperty(
+				typeSettingsUnicodeProperties.setProperty(
 					"syncSiteMemberFilePermissions", permissions);
 			}
 
-			group.setTypeSettingsProperties(typeSettingsProperties);
+			group.setTypeSettingsProperties(typeSettingsUnicodeProperties);
 
 			_groupLocalService.updateGroup(group);
 		}
@@ -141,7 +142,7 @@ public class SyncAdminPortlet extends BaseSyncPortlet {
 		boolean lanEnabled = ParamUtil.getBoolean(actionRequest, "lanEnabled");
 
 		if (lanEnabled) {
-			_syncUtil.enableLanSync(CompanyThreadLocal.getCompanyId());
+			_syncHelper.enableLanSync(CompanyThreadLocal.getCompanyId());
 		}
 
 		portletPreferences.setValue(
@@ -208,6 +209,13 @@ public class SyncAdminPortlet extends BaseSyncPortlet {
 		_groupLocalService = groupLocalService;
 	}
 
+	@Reference(
+		target = "(&(release.bundle.symbolic.name=com.liferay.sync.web)(&(release.schema.version>=1.0.0)(!(release.schema.version>=2.0.0))))",
+		unbind = "-"
+	)
+	protected void setRelease(Release release) {
+	}
+
 	@Reference(unbind = "-")
 	protected void setSyncOAuthHelperUtil(
 		SyncOAuthHelperUtil syncOAuthHelperUtil) {
@@ -216,9 +224,10 @@ public class SyncAdminPortlet extends BaseSyncPortlet {
 	}
 
 	private GroupLocalService _groupLocalService;
-	private SyncOAuthHelperUtil _syncOAuthHelperUtil;
 
 	@Reference
-	private SyncUtil _syncUtil;
+	private SyncHelper _syncHelper;
+
+	private SyncOAuthHelperUtil _syncOAuthHelperUtil;
 
 }

@@ -179,10 +179,10 @@ public class AppJavadocBuilderPlugin implements Plugin<Project> {
 		Javadoc javadoc,
 		AppJavadocBuilderExtension appJavadocBuilderExtension) {
 
-		CoreJavadocOptions coreJavadocOptions =
-			(CoreJavadocOptions)javadoc.getOptions();
-
 		if (appJavadocBuilderExtension.isDoclintDisabled()) {
+			CoreJavadocOptions coreJavadocOptions =
+				(CoreJavadocOptions)javadoc.getOptions();
+
 			coreJavadocOptions.addStringOption("Xdoclint:none", "-quiet");
 		}
 	}
@@ -260,8 +260,7 @@ public class AppJavadocBuilderPlugin implements Plugin<Project> {
 
 			if (Validator.isNotNull(groupName) && !packageNames.isEmpty()) {
 				standardJavadocDocletOptions.group(
-					groupName,
-					packageNames.toArray(new String[packageNames.size()]));
+					groupName, packageNames.toArray(new String[0]));
 			}
 		}
 	}

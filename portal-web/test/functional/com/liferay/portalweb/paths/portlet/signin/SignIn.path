@@ -10,22 +10,7 @@
 <tbody>
 <tr>
 	<td>PORTLET_TITLE</td>
-	<td>//section[@id='portlet_com_liferay_login_web_portlet_LoginPortlet']//h2[@class='portlet-title-text']</td>
-	<td></td>
-</tr>
-<tr>
-	<td>PORTLET_TITLE_LOCALIZED</td>
-	<td>//section[@id='portlet_com_liferay_login_web_portlet_LoginPortlet']//h2[@class='portlet-title-text']</td>
-	<td></td>
-</tr>
-<tr>
-	<td>PORTLET_CONTENT</td>
-	<td>//section[@id='portlet_com_liferay_login_web_portlet_LoginPortlet']//div[@class='portlet-body']</td>
-	<td></td>
-</tr>
-<tr>
-	<td>PORTLET_CONTENT_LOCALIZED</td>
-	<td>//section[@id='portlet_com_liferay_login_web_portlet_LoginPortlet']//div[@class='portlet-body']</td>
+	<td>//section[@id='portlet_com_liferay_login_web_portlet_LoginPortlet']</td>
 	<td></td>
 </tr>
 <tr>
@@ -34,8 +19,8 @@
 	<td></td>
 </tr>
 <tr>
-	<td>PORTLET_CONTENT_USER_NAME_LOCALIZED</td>
-	<td>//section[@id='portlet_com_liferay_login_web_portlet_LoginPortlet']//div[@class='portlet-body']/a</td>
+	<td>LOGIN_PORTLET_PNG</td>
+	<td>portal/screenshots/user/login_portlet.png</td>
 	<td></td>
 </tr>
 </tbody>

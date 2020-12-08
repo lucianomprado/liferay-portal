@@ -1,18 +1,23 @@
 {
 	"dependencies": {
-		"metal": "^2.6.4",
-		"metal-ajax": "^2.0.3",
-		"metal-component": "^2.6.4",
-		"metal-dom": "^2.6.4",
-		"metal-events": "^2.6.4",
-		"metal-progressbar": "^2.0.1",
-		"metal-soy": "^2.7.0",
-		"metal-tooltip": "^2.0.3"
-	},
-	"devDependencies": {
-		"liferay-module-config-generator": "^1.2.0",
-		"metal-cli": "^4.2.0"
+		"@clayui/alert": "3.5.0",
+		"@clayui/button": "3.5.0",
+		"@clayui/form": "3.13.0",
+		"@clayui/icon": "3.1.0",
+		"@clayui/progress-bar": "3.2.0",
+		"formik": "2.1.4",
+		"frontend-js-react-web": "*",
+		"frontend-js-web": "*",
+		"metal": "2.16.8",
+		"metal-dom": "2.16.8",
+		"prop-types": "15.7.2",
+		"react": "16.12.0"
 	},
 	"name": "adaptive-media-web",
-	"version": "1.0.0"
+	"scripts": {
+		"build": "liferay-npm-scripts build",
+		"checkFormat": "liferay-npm-scripts check",
+		"format": "liferay-npm-scripts fix"
+	},
+	"version": "5.0.0"
 }

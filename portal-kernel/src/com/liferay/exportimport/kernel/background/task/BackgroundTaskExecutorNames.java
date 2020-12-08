@@ -14,13 +14,18 @@
 
 package com.liferay.exportimport.kernel.background.task;
 
-import aQute.bnd.annotation.ProviderType;
-
 /**
  * @author Michael C. Han
  */
-@ProviderType
 public class BackgroundTaskExecutorNames {
+
+	/**
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
+	 */
+	@Deprecated
+	public static final String DDM_STRUCTURE_INDEXER_BACKGROUND_TASK_EXECUTOR =
+		"com.liferay.dynamic.data.mapping.internal.background.task." +
+			"DDMStructureIndexerBackgroundTaskExecutor";
 
 	public static final String LAYOUT_EXPORT_BACKGROUND_TASK_EXECUTOR =
 		"com.liferay.exportimport.internal.background.task." +
@@ -34,6 +39,11 @@ public class BackgroundTaskExecutorNames {
 		"com.liferay.exportimport.internal.background.task." +
 			"LayoutRemoteStagingBackgroundTaskExecutor";
 
+	public static final String
+		LAYOUT_SET_PROTOTYPE_IMPORT_BACKGROUND_TASK_EXECUTOR =
+			"com.liferay.exportimport.internal.background.task." +
+				"LayoutSetPrototypeImportBackgroundTaskExcecutor";
+
 	public static final String LAYOUT_STAGING_BACKGROUND_TASK_EXECUTOR =
 		"com.liferay.exportimport.internal.background.task." +
 			"LayoutStagingBackgroundTaskExecutor";
@@ -45,6 +55,10 @@ public class BackgroundTaskExecutorNames {
 	public static final String PORTLET_IMPORT_BACKGROUND_TASK_EXECUTOR =
 		"com.liferay.exportimport.internal.background.task." +
 			"PortletImportBackgroundTaskExecutor";
+
+	public static final String PORTLET_REMOTE_STAGING_BACKGROUND_TASK_EXECUTOR =
+		"com.liferay.exportimport.internal.background.task." +
+			"PortletRemoteStagingBackgroundTaskExecutor";
 
 	public static final String PORTLET_STAGING_BACKGROUND_TASK_EXECUTOR =
 		"com.liferay.exportimport.internal.background.task." +

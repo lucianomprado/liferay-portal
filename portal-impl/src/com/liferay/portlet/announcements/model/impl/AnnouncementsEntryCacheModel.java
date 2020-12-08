@@ -14,14 +14,11 @@
 
 package com.liferay.portlet.announcements.model.impl;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.announcements.kernel.model.AnnouncementsEntry;
-
+import com.liferay.petra.lang.HashUtil;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.model.CacheModel;
-import com.liferay.portal.kernel.util.HashUtil;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.portal.kernel.model.MVCCModel;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -34,25 +31,27 @@ import java.util.Date;
  * The cache model class for representing AnnouncementsEntry in entity cache.
  *
  * @author Brian Wing Shun Chan
- * @see AnnouncementsEntry
  * @generated
  */
-@ProviderType
-public class AnnouncementsEntryCacheModel implements CacheModel<AnnouncementsEntry>,
-	Externalizable {
+public class AnnouncementsEntryCacheModel
+	implements CacheModel<AnnouncementsEntry>, Externalizable, MVCCModel {
+
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
+	public boolean equals(Object object) {
+		if (this == object) {
 			return true;
 		}
 
-		if (!(obj instanceof AnnouncementsEntryCacheModel)) {
+		if (!(object instanceof AnnouncementsEntryCacheModel)) {
 			return false;
 		}
 
-		AnnouncementsEntryCacheModel announcementsEntryCacheModel = (AnnouncementsEntryCacheModel)obj;
+		AnnouncementsEntryCacheModel announcementsEntryCacheModel =
+			(AnnouncementsEntryCacheModel)object;
 
-		if (entryId == announcementsEntryCacheModel.entryId) {
+		if ((entryId == announcementsEntryCacheModel.entryId) &&
+			(mvccVersion == announcementsEntryCacheModel.mvccVersion)) {
+
 			return true;
 		}
 
@@ -61,14 +60,28 @@ public class AnnouncementsEntryCacheModel implements CacheModel<AnnouncementsEnt
 
 	@Override
 	public int hashCode() {
-		return HashUtil.hash(0, entryId);
+		int hashCode = HashUtil.hash(0, entryId);
+
+		return HashUtil.hash(hashCode, mvccVersion);
+	}
+
+	@Override
+	public long getMvccVersion() {
+		return mvccVersion;
+	}
+
+	@Override
+	public void setMvccVersion(long mvccVersion) {
+		this.mvccVersion = mvccVersion;
 	}
 
 	@Override
 	public String toString() {
-		StringBundler sb = new StringBundler(35);
+		StringBundler sb = new StringBundler(37);
 
-		sb.append("{uuid=");
+		sb.append("{mvccVersion=");
+		sb.append(mvccVersion);
+		sb.append(", uuid=");
 		sb.append(uuid);
 		sb.append(", entryId=");
 		sb.append(entryId);
@@ -109,10 +122,13 @@ public class AnnouncementsEntryCacheModel implements CacheModel<AnnouncementsEnt
 
 	@Override
 	public AnnouncementsEntry toEntityModel() {
-		AnnouncementsEntryImpl announcementsEntryImpl = new AnnouncementsEntryImpl();
+		AnnouncementsEntryImpl announcementsEntryImpl =
+			new AnnouncementsEntryImpl();
+
+		announcementsEntryImpl.setMvccVersion(mvccVersion);
 
 		if (uuid == null) {
-			announcementsEntryImpl.setUuid(StringPool.BLANK);
+			announcementsEntryImpl.setUuid("");
 		}
 		else {
 			announcementsEntryImpl.setUuid(uuid);
@@ -123,7 +139,7 @@ public class AnnouncementsEntryCacheModel implements CacheModel<AnnouncementsEnt
 		announcementsEntryImpl.setUserId(userId);
 
 		if (userName == null) {
-			announcementsEntryImpl.setUserName(StringPool.BLANK);
+			announcementsEntryImpl.setUserName("");
 		}
 		else {
 			announcementsEntryImpl.setUserName(userName);
@@ -147,28 +163,28 @@ public class AnnouncementsEntryCacheModel implements CacheModel<AnnouncementsEnt
 		announcementsEntryImpl.setClassPK(classPK);
 
 		if (title == null) {
-			announcementsEntryImpl.setTitle(StringPool.BLANK);
+			announcementsEntryImpl.setTitle("");
 		}
 		else {
 			announcementsEntryImpl.setTitle(title);
 		}
 
 		if (content == null) {
-			announcementsEntryImpl.setContent(StringPool.BLANK);
+			announcementsEntryImpl.setContent("");
 		}
 		else {
 			announcementsEntryImpl.setContent(content);
 		}
 
 		if (url == null) {
-			announcementsEntryImpl.setUrl(StringPool.BLANK);
+			announcementsEntryImpl.setUrl("");
 		}
 		else {
 			announcementsEntryImpl.setUrl(url);
 		}
 
 		if (type == null) {
-			announcementsEntryImpl.setType(StringPool.BLANK);
+			announcementsEntryImpl.setType("");
 		}
 		else {
 			announcementsEntryImpl.setType(type);
@@ -197,7 +213,10 @@ public class AnnouncementsEntryCacheModel implements CacheModel<AnnouncementsEnt
 	}
 
 	@Override
-	public void readExternal(ObjectInput objectInput) throws IOException {
+	public void readExternal(ObjectInput objectInput)
+		throws ClassNotFoundException, IOException {
+
+		mvccVersion = objectInput.readLong();
 		uuid = objectInput.readUTF();
 
 		entryId = objectInput.readLong();
@@ -213,7 +232,7 @@ public class AnnouncementsEntryCacheModel implements CacheModel<AnnouncementsEnt
 
 		classPK = objectInput.readLong();
 		title = objectInput.readUTF();
-		content = objectInput.readUTF();
+		content = (String)objectInput.readObject();
 		url = objectInput.readUTF();
 		type = objectInput.readUTF();
 		displayDate = objectInput.readLong();
@@ -225,10 +244,11 @@ public class AnnouncementsEntryCacheModel implements CacheModel<AnnouncementsEnt
 	}
 
 	@Override
-	public void writeExternal(ObjectOutput objectOutput)
-		throws IOException {
+	public void writeExternal(ObjectOutput objectOutput) throws IOException {
+		objectOutput.writeLong(mvccVersion);
+
 		if (uuid == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(uuid);
@@ -241,7 +261,7 @@ public class AnnouncementsEntryCacheModel implements CacheModel<AnnouncementsEnt
 		objectOutput.writeLong(userId);
 
 		if (userName == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(userName);
@@ -255,28 +275,28 @@ public class AnnouncementsEntryCacheModel implements CacheModel<AnnouncementsEnt
 		objectOutput.writeLong(classPK);
 
 		if (title == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(title);
 		}
 
 		if (content == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeObject("");
 		}
 		else {
-			objectOutput.writeUTF(content);
+			objectOutput.writeObject(content);
 		}
 
 		if (url == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(url);
 		}
 
 		if (type == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(type);
@@ -290,6 +310,7 @@ public class AnnouncementsEntryCacheModel implements CacheModel<AnnouncementsEnt
 		objectOutput.writeBoolean(alert);
 	}
 
+	public long mvccVersion;
 	public String uuid;
 	public long entryId;
 	public long companyId;
@@ -307,4 +328,5 @@ public class AnnouncementsEntryCacheModel implements CacheModel<AnnouncementsEnt
 	public long expirationDate;
 	public int priority;
 	public boolean alert;
+
 }

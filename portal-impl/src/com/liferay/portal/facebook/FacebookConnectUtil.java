@@ -14,11 +14,8 @@
 
 package com.liferay.portal.facebook;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.portal.kernel.facebook.FacebookConnect;
 import com.liferay.portal.kernel.json.JSONObject;
-import com.liferay.portal.kernel.security.pacl.permission.PortalRuntimePermission;
 import com.liferay.registry.Registry;
 import com.liferay.registry.RegistryUtil;
 import com.liferay.registry.ServiceTracker;
@@ -30,7 +27,6 @@ import javax.portlet.PortletRequest;
  * @author Brian Wing Shun Chan
  * @author Mika Koivisto
  */
-@ProviderType
 public class FacebookConnectUtil {
 
 	public static String getAccessToken(
@@ -56,9 +52,7 @@ public class FacebookConnectUtil {
 	}
 
 	public static FacebookConnect getFacebookConnect() {
-		PortalRuntimePermission.checkGetBeanProperty(FacebookConnectUtil.class);
-
-		return _instance._serviceTracker.getService();
+		return _facebookConnectUtil._serviceTracker.getService();
 	}
 
 	public static JSONObject getGraphResources(
@@ -96,7 +90,7 @@ public class FacebookConnectUtil {
 		_serviceTracker.open();
 	}
 
-	private static final FacebookConnectUtil _instance =
+	private static final FacebookConnectUtil _facebookConnectUtil =
 		new FacebookConnectUtil();
 
 	private final ServiceTracker<FacebookConnect, FacebookConnect>

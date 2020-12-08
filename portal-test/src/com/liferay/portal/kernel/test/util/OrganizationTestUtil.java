@@ -14,6 +14,7 @@
 
 package com.liferay.portal.kernel.test.util;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.model.Address;
 import com.liferay.portal.kernel.model.EmailAddress;
 import com.liferay.portal.kernel.model.ListType;
@@ -23,7 +24,6 @@ import com.liferay.portal.kernel.model.Organization;
 import com.liferay.portal.kernel.model.OrganizationConstants;
 import com.liferay.portal.kernel.model.PasswordPolicy;
 import com.liferay.portal.kernel.model.Phone;
-import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.model.Website;
 import com.liferay.portal.kernel.service.AddressLocalServiceUtil;
 import com.liferay.portal.kernel.service.EmailAddressLocalServiceUtil;
@@ -82,10 +82,17 @@ public class OrganizationTestUtil {
 			long parentOrganizationId, String name, boolean site)
 		throws Exception {
 
-		User user = UserTestUtil.addUser();
-
 		return OrganizationLocalServiceUtil.addOrganization(
-			user.getUserId(), parentOrganizationId, name, site);
+			TestPropsValues.getUserId(), parentOrganizationId, name, site);
+	}
+
+	public static Organization addOrganization(String type) throws Exception {
+		return OrganizationLocalServiceUtil.addOrganization(
+			TestPropsValues.getUserId(),
+			OrganizationConstants.DEFAULT_PARENT_ORGANIZATION_ID,
+			RandomTestUtil.randomString(), type, 0, 0,
+			ListTypeConstants.ORGANIZATION_STATUS_DEFAULT, StringPool.BLANK,
+			false, null);
 	}
 
 	public static OrgLabor addOrgLabor(Organization organization)
@@ -144,6 +151,16 @@ public class OrganizationTestUtil {
 			organization.getOrganizationId(), "http://www.test.com",
 			_getListTypeId(ListTypeConstants.ORGANIZATION_WEBSITE), false,
 			new ServiceContext());
+	}
+
+	public static void updateAsset(
+			Organization organization, long[] assetCategoryIds,
+			String[] assetTagNames)
+		throws Exception {
+
+		OrganizationLocalServiceUtil.updateAsset(
+			organization.getUserId(), organization, assetCategoryIds,
+			assetTagNames);
 	}
 
 	private static long _getListTypeId(String type) throws Exception {

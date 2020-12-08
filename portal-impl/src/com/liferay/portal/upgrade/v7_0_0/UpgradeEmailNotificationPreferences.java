@@ -21,24 +21,24 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @author Eduardo Garcia
+ * @author Eduardo García
  */
 public class UpgradeEmailNotificationPreferences
 	extends RenameUpgradePortalPreferences {
 
 	public UpgradeEmailNotificationPreferences() {
 		_preferenceNamesMap.put(
-			PropsKeys.ADMIN_EMAIL_PASSWORD_SENT_BODY,
-			"adminEmailPasswordSentBody");
-		_preferenceNamesMap.put(
-			PropsKeys.ADMIN_EMAIL_PASSWORD_SENT_SUBJECT,
-			"adminEmailPasswordSentSubject");
-		_preferenceNamesMap.put(
 			PropsKeys.ADMIN_EMAIL_PASSWORD_RESET_BODY,
 			"adminEmailPasswordResetBody");
 		_preferenceNamesMap.put(
 			PropsKeys.ADMIN_EMAIL_PASSWORD_RESET_SUBJECT,
 			"adminEmailPasswordResetSubject");
+		_preferenceNamesMap.put(
+			PropsKeys.ADMIN_EMAIL_PASSWORD_SENT_BODY,
+			"adminEmailPasswordSentBody");
+		_preferenceNamesMap.put(
+			PropsKeys.ADMIN_EMAIL_PASSWORD_SENT_SUBJECT,
+			"adminEmailPasswordSentSubject");
 		_preferenceNamesMap.put(
 			PropsKeys.ADMIN_EMAIL_USER_ADDED_BODY, "adminEmailUserAddedBody");
 		_preferenceNamesMap.put(

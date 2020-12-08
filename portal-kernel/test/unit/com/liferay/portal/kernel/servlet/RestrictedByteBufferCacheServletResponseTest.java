@@ -14,11 +14,11 @@
 
 package com.liferay.portal.kernel.servlet;
 
+import com.liferay.petra.reflect.ReflectionUtil;
 import com.liferay.portal.kernel.io.DummyOutputStream;
 import com.liferay.portal.kernel.io.unsync.UnsyncByteArrayOutputStream;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.rule.CodeCoverageAssertor;
-import com.liferay.portal.kernel.util.ReflectionUtil;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -146,8 +146,9 @@ public class RestrictedByteBufferCacheServletResponseTest {
 
 			Assert.fail();
 		}
-		catch (IllegalStateException ise) {
-			Assert.assertEquals("Cache overflowed", ise.getMessage());
+		catch (IllegalStateException illegalStateException) {
+			Assert.assertEquals(
+				"Cache overflowed", illegalStateException.getMessage());
 		}
 
 		Assert.assertTrue(
@@ -193,7 +194,7 @@ public class RestrictedByteBufferCacheServletResponseTest {
 		try {
 			restrictedByteBufferCacheServletResponse.getOutputStream();
 		}
-		catch (IllegalStateException ise) {
+		catch (IllegalStateException illegalStateException) {
 		}
 	}
 
@@ -236,7 +237,7 @@ public class RestrictedByteBufferCacheServletResponseTest {
 		try {
 			restrictedByteBufferCacheServletResponse.getWriter();
 		}
-		catch (IllegalStateException ise) {
+		catch (IllegalStateException illegalStateException) {
 		}
 	}
 
@@ -346,7 +347,7 @@ public class RestrictedByteBufferCacheServletResponseTest {
 
 			Assert.fail();
 		}
-		catch (IllegalStateException ise) {
+		catch (IllegalStateException illegalStateException) {
 		}
 	}
 
@@ -407,13 +408,13 @@ public class RestrictedByteBufferCacheServletResponseTest {
 
 			Assert.fail();
 		}
-		catch (IllegalStateException ise) {
+		catch (IllegalStateException illegalStateException) {
 		}
 
 		// Setting a larger buffer size causes overflow with a failure in
 		// flushing
 
-		IOException ioe = new IOException();
+		IOException ioException = new IOException();
 
 		stubHttpServletResponse = new StubHttpServletResponse() {
 
@@ -431,7 +432,7 @@ public class RestrictedByteBufferCacheServletResponseTest {
 						public void write(
 							byte[] bytes, int offset, int length) {
 
-							ReflectionUtil.throwException(ioe);
+							ReflectionUtil.throwException(ioException);
 						}
 
 					});
@@ -463,8 +464,8 @@ public class RestrictedByteBufferCacheServletResponseTest {
 
 			Assert.fail();
 		}
-		catch (IllegalStateException ise) {
-			Assert.assertSame(ioe, ise.getCause());
+		catch (IllegalStateException illegalStateException) {
+			Assert.assertSame(ioException, illegalStateException.getCause());
 		}
 	}
 

@@ -23,6 +23,7 @@ import com.liferay.portal.kernel.nio.intraband.BaseAsyncDatagramReceiveHandler;
 import com.liferay.portal.kernel.nio.intraband.Datagram;
 import com.liferay.portal.kernel.nio.intraband.Intraband;
 import com.liferay.portal.kernel.nio.intraband.RegistrationReference;
+import com.liferay.portal.kernel.util.ServiceProxyFactory;
 
 import java.nio.ByteBuffer;
 
@@ -34,8 +35,7 @@ import java.util.Set;
 public class MessageDatagramReceiveHandler
 	extends BaseAsyncDatagramReceiveHandler {
 
-	public MessageDatagramReceiveHandler(MessageBus messageBus) {
-		_messageBus = messageBus;
+	public MessageDatagramReceiveHandler() {
 	}
 
 	@Override
@@ -74,8 +74,11 @@ public class MessageDatagramReceiveHandler
 							messageListener.receive(
 								messageRoutingBag.getMessage());
 						}
-						catch (MessageListenerException mle) {
-							throw new MessageBusException(mle);
+						catch (MessageListenerException
+									messageListenerException) {
+
+							throw new MessageBusException(
+								messageListenerException);
 						}
 					}
 				}
@@ -92,6 +95,9 @@ public class MessageDatagramReceiveHandler
 		}
 	}
 
-	private final MessageBus _messageBus;
+	private volatile MessageBus _messageBus =
+		ServiceProxyFactory.newServiceTrackedInstance(
+			MessageBus.class, MessageDatagramReceiveHandler.class, this,
+			"_messageBus", null, true);
 
 }

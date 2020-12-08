@@ -18,8 +18,8 @@ import com.liferay.expando.kernel.model.ExpandoBridge;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Role;
-import com.liferay.portal.kernel.model.RoleConstants;
 import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.model.role.RoleConstants;
 import com.liferay.portal.kernel.security.membershippolicy.OrganizationMembershipPolicyUtil;
 import com.liferay.portal.kernel.security.membershippolicy.RoleMembershipPolicyUtil;
 import com.liferay.portal.kernel.security.membershippolicy.SiteMembershipPolicyUtil;
@@ -352,10 +352,10 @@ public class RoleServiceImpl extends RoleServiceBaseImpl {
 	public List<Role> search(
 		long companyId, String keywords, Integer[] types,
 		LinkedHashMap<String, Object> params, int start, int end,
-		OrderByComparator<Role> obc) {
+		OrderByComparator<Role> orderByComparator) {
 
 		return roleFinder.filterFindByKeywords(
-			companyId, keywords, types, params, start, end, obc);
+			companyId, keywords, types, params, start, end, orderByComparator);
 	}
 
 	@Override
@@ -446,9 +446,9 @@ public class RoleServiceImpl extends RoleServiceBaseImpl {
 	protected void checkUserRolesPermission(long userId, long[] roleIds)
 		throws PortalException {
 
-		for (int i = 0; i < roleIds.length; i++) {
+		for (long roleId : roleIds) {
 			RolePermissionUtil.check(
-				getPermissionChecker(), roleIds[i], ActionKeys.ASSIGN_MEMBERS);
+				getPermissionChecker(), roleId, ActionKeys.ASSIGN_MEMBERS);
 		}
 	}
 

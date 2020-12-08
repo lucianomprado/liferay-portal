@@ -14,14 +14,11 @@
 
 package com.liferay.portal.model.impl;
 
-import aQute.bnd.annotation.ProviderType;
-
+import com.liferay.petra.lang.HashUtil;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.model.CacheModel;
 import com.liferay.portal.kernel.model.MVCCModel;
 import com.liferay.portal.kernel.model.SystemEvent;
-import com.liferay.portal.kernel.util.HashUtil;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -34,26 +31,27 @@ import java.util.Date;
  * The cache model class for representing SystemEvent in entity cache.
  *
  * @author Brian Wing Shun Chan
- * @see SystemEvent
  * @generated
  */
-@ProviderType
-public class SystemEventCacheModel implements CacheModel<SystemEvent>,
-	Externalizable, MVCCModel {
+public class SystemEventCacheModel
+	implements CacheModel<SystemEvent>, Externalizable, MVCCModel {
+
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
+	public boolean equals(Object object) {
+		if (this == object) {
 			return true;
 		}
 
-		if (!(obj instanceof SystemEventCacheModel)) {
+		if (!(object instanceof SystemEventCacheModel)) {
 			return false;
 		}
 
-		SystemEventCacheModel systemEventCacheModel = (SystemEventCacheModel)obj;
+		SystemEventCacheModel systemEventCacheModel =
+			(SystemEventCacheModel)object;
 
 		if ((systemEventId == systemEventCacheModel.systemEventId) &&
-				(mvccVersion == systemEventCacheModel.mvccVersion)) {
+			(mvccVersion == systemEventCacheModel.mvccVersion)) {
+
 			return true;
 		}
 
@@ -79,10 +77,12 @@ public class SystemEventCacheModel implements CacheModel<SystemEvent>,
 
 	@Override
 	public String toString() {
-		StringBundler sb = new StringBundler(31);
+		StringBundler sb = new StringBundler(33);
 
 		sb.append("{mvccVersion=");
 		sb.append(mvccVersion);
+		sb.append(", ctCollectionId=");
+		sb.append(ctCollectionId);
 		sb.append(", systemEventId=");
 		sb.append(systemEventId);
 		sb.append(", groupId=");
@@ -121,13 +121,14 @@ public class SystemEventCacheModel implements CacheModel<SystemEvent>,
 		SystemEventImpl systemEventImpl = new SystemEventImpl();
 
 		systemEventImpl.setMvccVersion(mvccVersion);
+		systemEventImpl.setCtCollectionId(ctCollectionId);
 		systemEventImpl.setSystemEventId(systemEventId);
 		systemEventImpl.setGroupId(groupId);
 		systemEventImpl.setCompanyId(companyId);
 		systemEventImpl.setUserId(userId);
 
 		if (userName == null) {
-			systemEventImpl.setUserName(StringPool.BLANK);
+			systemEventImpl.setUserName("");
 		}
 		else {
 			systemEventImpl.setUserName(userName);
@@ -144,7 +145,7 @@ public class SystemEventCacheModel implements CacheModel<SystemEvent>,
 		systemEventImpl.setClassPK(classPK);
 
 		if (classUuid == null) {
-			systemEventImpl.setClassUuid(StringPool.BLANK);
+			systemEventImpl.setClassUuid("");
 		}
 		else {
 			systemEventImpl.setClassUuid(classUuid);
@@ -156,7 +157,7 @@ public class SystemEventCacheModel implements CacheModel<SystemEvent>,
 		systemEventImpl.setType(type);
 
 		if (extraData == null) {
-			systemEventImpl.setExtraData(StringPool.BLANK);
+			systemEventImpl.setExtraData("");
 		}
 		else {
 			systemEventImpl.setExtraData(extraData);
@@ -168,8 +169,12 @@ public class SystemEventCacheModel implements CacheModel<SystemEvent>,
 	}
 
 	@Override
-	public void readExternal(ObjectInput objectInput) throws IOException {
+	public void readExternal(ObjectInput objectInput)
+		throws ClassNotFoundException, IOException {
+
 		mvccVersion = objectInput.readLong();
+
+		ctCollectionId = objectInput.readLong();
 
 		systemEventId = objectInput.readLong();
 
@@ -193,13 +198,14 @@ public class SystemEventCacheModel implements CacheModel<SystemEvent>,
 		systemEventSetKey = objectInput.readLong();
 
 		type = objectInput.readInt();
-		extraData = objectInput.readUTF();
+		extraData = (String)objectInput.readObject();
 	}
 
 	@Override
-	public void writeExternal(ObjectOutput objectOutput)
-		throws IOException {
+	public void writeExternal(ObjectOutput objectOutput) throws IOException {
 		objectOutput.writeLong(mvccVersion);
+
+		objectOutput.writeLong(ctCollectionId);
 
 		objectOutput.writeLong(systemEventId);
 
@@ -210,7 +216,7 @@ public class SystemEventCacheModel implements CacheModel<SystemEvent>,
 		objectOutput.writeLong(userId);
 
 		if (userName == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(userName);
@@ -223,7 +229,7 @@ public class SystemEventCacheModel implements CacheModel<SystemEvent>,
 		objectOutput.writeLong(classPK);
 
 		if (classUuid == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(classUuid);
@@ -238,14 +244,15 @@ public class SystemEventCacheModel implements CacheModel<SystemEvent>,
 		objectOutput.writeInt(type);
 
 		if (extraData == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeObject("");
 		}
 		else {
-			objectOutput.writeUTF(extraData);
+			objectOutput.writeObject(extraData);
 		}
 	}
 
 	public long mvccVersion;
+	public long ctCollectionId;
 	public long systemEventId;
 	public long groupId;
 	public long companyId;
@@ -260,4 +267,5 @@ public class SystemEventCacheModel implements CacheModel<SystemEvent>,
 	public long systemEventSetKey;
 	public int type;
 	public String extraData;
+
 }

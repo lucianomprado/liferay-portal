@@ -14,14 +14,14 @@
 
 package com.liferay.portal.kernel.servlet.taglib.util;
 
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.Mergeable;
-import com.liferay.portal.kernel.util.StringBundler;
 
 import java.io.Serializable;
 
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -30,7 +30,7 @@ import java.util.Set;
  */
 public class OutputData implements Mergeable<OutputData>, Serializable {
 
-	public void addData(String outputKey, String webKey, StringBundler sb) {
+	public void addDataSB(String outputKey, String webKey, StringBundler sb) {
 		DataKey dataKey = new DataKey(outputKey, webKey);
 
 		StringBundler mergedSB = _dataMap.get(dataKey);
@@ -47,13 +47,13 @@ public class OutputData implements Mergeable<OutputData>, Serializable {
 		return _outputKeys.add(outputKey);
 	}
 
-	public StringBundler getData(String outputKey, String webKey) {
+	public StringBundler getDataSB(String outputKey, String webKey) {
 		DataKey dataKey = new DataKey(outputKey, webKey);
 
 		return _dataMap.get(dataKey);
 	}
 
-	public StringBundler getMergedData(String webKey) {
+	public StringBundler getMergedDataSB(String webKey) {
 		StringBundler mergedSB = null;
 
 		for (Map.Entry<DataKey, StringBundler> entry : _dataMap.entrySet()) {
@@ -89,9 +89,9 @@ public class OutputData implements Mergeable<OutputData>, Serializable {
 
 			String outputKey = dataKey._outputKey;
 
-			StringBundler sb = entry.getValue();
-
 			if (!_outputKeys.contains(outputKey)) {
+				StringBundler sb = entry.getValue();
+
 				StringBundler mergedSB = _dataMap.get(dataKey);
 
 				if (mergedSB == null) {
@@ -110,7 +110,7 @@ public class OutputData implements Mergeable<OutputData>, Serializable {
 		return this;
 	}
 
-	public void setData(String outputKey, String webKey, StringBundler sb) {
+	public void setDataSB(String outputKey, String webKey, StringBundler sb) {
 		DataKey dataKey = new DataKey(outputKey, webKey);
 
 		_dataMap.put(dataKey, sb);
@@ -123,8 +123,8 @@ public class OutputData implements Mergeable<OutputData>, Serializable {
 
 	private static final long serialVersionUID = 1L;
 
-	private final Map<DataKey, StringBundler> _dataMap = new HashMap<>();
-	private final Set<String> _outputKeys = new HashSet<>();
+	private final Map<DataKey, StringBundler> _dataMap = new LinkedHashMap<>();
+	private final Set<String> _outputKeys = new LinkedHashSet<>();
 
 	private static class DataKey implements Serializable {
 
@@ -134,8 +134,8 @@ public class OutputData implements Mergeable<OutputData>, Serializable {
 		}
 
 		@Override
-		public boolean equals(Object obj) {
-			DataKey dataKey = (DataKey)obj;
+		public boolean equals(Object object) {
+			DataKey dataKey = (DataKey)object;
 
 			if (_outputKey.equals(dataKey._outputKey) &&
 				_webKey.equals(dataKey._webKey)) {
@@ -148,7 +148,7 @@ public class OutputData implements Mergeable<OutputData>, Serializable {
 
 		@Override
 		public int hashCode() {
-			return _outputKey.hashCode() * 11 + _webKey.hashCode();
+			return (_outputKey.hashCode() * 11) + _webKey.hashCode();
 		}
 
 		private static final long serialVersionUID = 1L;

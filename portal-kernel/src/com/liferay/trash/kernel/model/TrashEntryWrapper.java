@@ -14,7 +14,7 @@
 
 package com.liferay.trash.kernel.model;
 
-import aQute.bnd.annotation.ProviderType;
+import org.osgi.annotation.versioning.ProviderType;
 
 import com.liferay.expando.kernel.model.ExpandoBridge;
 
@@ -35,12 +35,11 @@ import java.util.Objects;
  *
  * @author Brian Wing Shun Chan
  * @see TrashEntry
- * @deprecated As of 7.0.0, replaced by {@link
+ * @deprecated As of Judson (7.1.x), replaced by {@link
 com.liferay.trash.model.impl.TrashEntryImpl}
  * @generated
  */
 @Deprecated
-@ProviderType
 public class TrashEntryWrapper implements TrashEntry, ModelWrapper<TrashEntry> {
 	public TrashEntryWrapper(TrashEntry trashEntry) {
 		_trashEntry = trashEntry;

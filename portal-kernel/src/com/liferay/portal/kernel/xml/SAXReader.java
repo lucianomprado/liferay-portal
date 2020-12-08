@@ -14,8 +14,6 @@
 
 package com.liferay.portal.kernel.xml;
 
-import aQute.bnd.annotation.ProviderType;
-
 import java.io.File;
 import java.io.InputStream;
 import java.io.Reader;
@@ -25,6 +23,8 @@ import java.net.URL;
 
 import java.util.List;
 import java.util.Map;
+
+import org.osgi.annotation.versioning.ProviderType;
 
 /**
  * @author Brian Wing Shun Chan
@@ -78,9 +78,9 @@ public interface SAXReader {
 
 	public Document read(File file, boolean validate) throws DocumentException;
 
-	public Document read(InputStream is) throws DocumentException;
+	public Document read(InputStream inputStream) throws DocumentException;
 
-	public Document read(InputStream is, boolean validate)
+	public Document read(InputStream inputStream, boolean validate)
 		throws DocumentException;
 
 	public Document read(Reader reader) throws DocumentException;

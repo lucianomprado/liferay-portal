@@ -17,10 +17,13 @@ package com.liferay.knowledge.base.web.internal.portlet.configuration.icon;
 import com.liferay.knowledge.base.constants.KBActionKeys;
 import com.liferay.knowledge.base.constants.KBPortletKeys;
 import com.liferay.knowledge.base.model.KBArticle;
-import com.liferay.knowledge.base.service.permission.KBArticlePermission;
 import com.liferay.knowledge.base.web.internal.constants.KBWebKeys;
+import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.portlet.configuration.icon.PortletConfigurationIcon;
+import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
@@ -35,7 +38,7 @@ import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
 /**
- * @author Ambrin Chaudhary
+ * @author Ambrín Chaudhary
  */
 @Component(
 	immediate = true,
@@ -100,10 +103,28 @@ public class DeleteKBArticlePortletConfigurationIcon
 
 		KBArticle kbArticle = getKBArticle(portletRequest);
 
-		return KBArticlePermission.contains(
-			themeDisplay.getPermissionChecker(), kbArticle,
-			KBActionKeys.DELETE);
+		try {
+			return _kbArticleModelResourcePermission.contains(
+				themeDisplay.getPermissionChecker(), kbArticle,
+				KBActionKeys.DELETE);
+		}
+		catch (PortalException portalException) {
+			if (_log.isWarnEnabled()) {
+				_log.warn(portalException, portalException);
+			}
+		}
+
+		return false;
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		DeleteKBArticlePortletConfigurationIcon.class);
+
+	@Reference(
+		target = "(model.class.name=com.liferay.knowledge.base.model.KBArticle)"
+	)
+	private ModelResourcePermission<KBArticle>
+		_kbArticleModelResourcePermission;
 
 	@Reference
 	private Portal _portal;

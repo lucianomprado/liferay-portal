@@ -30,7 +30,6 @@ import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.kernel.util.ProtectedClassLoaderObjectInputStream;
 
 import java.io.EOFException;
-import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
@@ -63,12 +62,12 @@ public class TunnelUtil {
 				new ObjectValuePair<HttpPrincipal, MethodHandler>(
 					httpPrincipal, methodHandler));
 		}
-		catch (SocketTimeoutException ste) {
+		catch (SocketTimeoutException socketTimeoutException) {
 			_log.error(
 				"Tunnel connection time out may be configured with the " +
 					"portal property \"tunneling.servlet.timeout\"");
 
-			throw ste;
+			throw socketTimeoutException;
 		}
 
 		Object returnObject = null;
@@ -84,13 +83,13 @@ public class TunnelUtil {
 
 			returnObject = objectInputStream.readObject();
 		}
-		catch (EOFException eofe) {
+		catch (EOFException eofException) {
 			if (_log.isDebugEnabled()) {
-				_log.debug("Unable to read object", eofe);
+				_log.debug("Unable to read object", eofException);
 			}
 		}
 
-		if ((returnObject != null) && returnObject instanceof Exception) {
+		if ((returnObject != null) && (returnObject instanceof Exception)) {
 			throw (Exception)returnObject;
 		}
 
@@ -98,7 +97,7 @@ public class TunnelUtil {
 	}
 
 	private static HttpURLConnection _getConnection(HttpPrincipal httpPrincipal)
-		throws IOException {
+		throws Exception {
 
 		if ((httpPrincipal == null) || (httpPrincipal.getUrl() == null)) {
 			return null;

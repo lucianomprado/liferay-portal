@@ -14,15 +14,16 @@
 
 package com.liferay.portal.kernel.portlet;
 
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.util.LinkedHashMapBuilder;
 import com.liferay.portal.kernel.util.ObjectValuePair;
 import com.liferay.portal.kernel.util.PortalUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
 
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
@@ -54,12 +55,13 @@ public class DefaultFriendlyURLMapper extends BaseFriendlyURLMapper {
 
 		defaultIgnoredParameters.add("p_p_id");
 
-		defaultReservedParameters = new LinkedHashMap<>();
-
-		defaultReservedParameters.put("p_p_lifecycle", "0");
-		defaultReservedParameters.put(
-			"p_p_state", WindowState.NORMAL.toString());
-		defaultReservedParameters.put("p_p_mode", PortletMode.VIEW.toString());
+		defaultReservedParameters = LinkedHashMapBuilder.put(
+			"p_p_lifecycle", "0"
+		).put(
+			"p_p_state", WindowState.NORMAL.toString()
+		).put(
+			"p_p_mode", PortletMode.VIEW.toString()
+		).build();
 	}
 
 	/**
@@ -104,10 +106,8 @@ public class DefaultFriendlyURLMapper extends BaseFriendlyURLMapper {
 
 		addParametersIncludedInPath(liferayPortletURL, routeParameters);
 
-		friendlyURLPath = StringPool.SLASH.concat(getMapping()).concat(
-			friendlyURLPath);
-
-		return friendlyURLPath;
+		return StringBundler.concat(
+			StringPool.SLASH, getMapping(), friendlyURLPath);
 	}
 
 	/**
@@ -155,7 +155,7 @@ public class DefaultFriendlyURLMapper extends BaseFriendlyURLMapper {
 
 		String namespace = null;
 
-		String portletInstanceKey = getPortletId(routeParameters);
+		String portletInstanceKey = getPortletInstanceKey(routeParameters);
 
 		if (Validator.isNotNull(portletInstanceKey)) {
 			namespace = PortalUtil.getPortletNamespace(portletInstanceKey);
@@ -281,22 +281,6 @@ public class DefaultFriendlyURLMapper extends BaseFriendlyURLMapper {
 		// Copy reserved parameters
 
 		liferayPortletURL.visitReservedParameters(routeParameters::put);
-	}
-
-	/**
-	 * Returns the portlet ID, including the instance ID if applicable, from the
-	 * parameter map.
-	 *
-	 * @param      routeParameters the parameter map. For an instanceable
-	 *             portlet, this must contain either <code>p_p_id</code> or
-	 *             <code>instanceId</code>.
-	 * @return     the portlet ID, including the instance ID if applicable, or
-	 *             <code>null</code> if it cannot be determined
-	 * @deprecated As of 7.0.0, replaced by {@link #getPortletInstanceKey(Map)}
-	 */
-	@Deprecated
-	protected String getPortletId(Map<String, String> routeParameters) {
-		return getPortletInstanceKey(routeParameters);
 	}
 
 	/**

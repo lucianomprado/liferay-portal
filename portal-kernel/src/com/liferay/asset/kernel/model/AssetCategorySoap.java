@@ -14,8 +14,6 @@
 
 package com.liferay.asset.kernel.model;
 
-import aQute.bnd.annotation.ProviderType;
-
 import java.io.Serializable;
 
 import java.util.ArrayList;
@@ -26,15 +24,19 @@ import java.util.List;
  * This class is used by SOAP remote services, specifically {@link com.liferay.portlet.asset.service.http.AssetCategoryServiceSoap}.
  *
  * @author Brian Wing Shun Chan
- * @see com.liferay.portlet.asset.service.http.AssetCategoryServiceSoap
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
-@ProviderType
+@Deprecated
 public class AssetCategorySoap implements Serializable {
+
 	public static AssetCategorySoap toSoapModel(AssetCategory model) {
 		AssetCategorySoap soapModel = new AssetCategorySoap();
 
+		soapModel.setMvccVersion(model.getMvccVersion());
+		soapModel.setCtCollectionId(model.getCtCollectionId());
 		soapModel.setUuid(model.getUuid());
+		soapModel.setExternalReferenceCode(model.getExternalReferenceCode());
 		soapModel.setCategoryId(model.getCategoryId());
 		soapModel.setGroupId(model.getGroupId());
 		soapModel.setCompanyId(model.getCompanyId());
@@ -43,8 +45,7 @@ public class AssetCategorySoap implements Serializable {
 		soapModel.setCreateDate(model.getCreateDate());
 		soapModel.setModifiedDate(model.getModifiedDate());
 		soapModel.setParentCategoryId(model.getParentCategoryId());
-		soapModel.setLeftCategoryId(model.getLeftCategoryId());
-		soapModel.setRightCategoryId(model.getRightCategoryId());
+		soapModel.setTreePath(model.getTreePath());
 		soapModel.setName(model.getName());
 		soapModel.setTitle(model.getTitle());
 		soapModel.setDescription(model.getDescription());
@@ -82,7 +83,8 @@ public class AssetCategorySoap implements Serializable {
 	}
 
 	public static AssetCategorySoap[] toSoapModels(List<AssetCategory> models) {
-		List<AssetCategorySoap> soapModels = new ArrayList<AssetCategorySoap>(models.size());
+		List<AssetCategorySoap> soapModels = new ArrayList<AssetCategorySoap>(
+			models.size());
 
 		for (AssetCategory model : models) {
 			soapModels.add(toSoapModel(model));
@@ -102,12 +104,36 @@ public class AssetCategorySoap implements Serializable {
 		setCategoryId(pk);
 	}
 
+	public long getMvccVersion() {
+		return _mvccVersion;
+	}
+
+	public void setMvccVersion(long mvccVersion) {
+		_mvccVersion = mvccVersion;
+	}
+
+	public long getCtCollectionId() {
+		return _ctCollectionId;
+	}
+
+	public void setCtCollectionId(long ctCollectionId) {
+		_ctCollectionId = ctCollectionId;
+	}
+
 	public String getUuid() {
 		return _uuid;
 	}
 
 	public void setUuid(String uuid) {
 		_uuid = uuid;
+	}
+
+	public String getExternalReferenceCode() {
+		return _externalReferenceCode;
+	}
+
+	public void setExternalReferenceCode(String externalReferenceCode) {
+		_externalReferenceCode = externalReferenceCode;
 	}
 
 	public long getCategoryId() {
@@ -174,20 +200,12 @@ public class AssetCategorySoap implements Serializable {
 		_parentCategoryId = parentCategoryId;
 	}
 
-	public long getLeftCategoryId() {
-		return _leftCategoryId;
+	public String getTreePath() {
+		return _treePath;
 	}
 
-	public void setLeftCategoryId(long leftCategoryId) {
-		_leftCategoryId = leftCategoryId;
-	}
-
-	public long getRightCategoryId() {
-		return _rightCategoryId;
-	}
-
-	public void setRightCategoryId(long rightCategoryId) {
-		_rightCategoryId = rightCategoryId;
+	public void setTreePath(String treePath) {
+		_treePath = treePath;
 	}
 
 	public String getName() {
@@ -230,7 +248,10 @@ public class AssetCategorySoap implements Serializable {
 		_lastPublishDate = lastPublishDate;
 	}
 
+	private long _mvccVersion;
+	private long _ctCollectionId;
 	private String _uuid;
+	private String _externalReferenceCode;
 	private long _categoryId;
 	private long _groupId;
 	private long _companyId;
@@ -239,11 +260,11 @@ public class AssetCategorySoap implements Serializable {
 	private Date _createDate;
 	private Date _modifiedDate;
 	private long _parentCategoryId;
-	private long _leftCategoryId;
-	private long _rightCategoryId;
+	private String _treePath;
 	private String _name;
 	private String _title;
 	private String _description;
 	private long _vocabularyId;
 	private Date _lastPublishDate;
+
 }

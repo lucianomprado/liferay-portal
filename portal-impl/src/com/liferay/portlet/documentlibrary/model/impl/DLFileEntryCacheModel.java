@@ -14,14 +14,11 @@
 
 package com.liferay.portlet.documentlibrary.model.impl;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.document.library.kernel.model.DLFileEntry;
-
+import com.liferay.petra.lang.HashUtil;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.model.CacheModel;
-import com.liferay.portal.kernel.util.HashUtil;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.portal.kernel.model.MVCCModel;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -34,25 +31,27 @@ import java.util.Date;
  * The cache model class for representing DLFileEntry in entity cache.
  *
  * @author Brian Wing Shun Chan
- * @see DLFileEntry
  * @generated
  */
-@ProviderType
-public class DLFileEntryCacheModel implements CacheModel<DLFileEntry>,
-	Externalizable {
+public class DLFileEntryCacheModel
+	implements CacheModel<DLFileEntry>, Externalizable, MVCCModel {
+
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
+	public boolean equals(Object object) {
+		if (this == object) {
 			return true;
 		}
 
-		if (!(obj instanceof DLFileEntryCacheModel)) {
+		if (!(object instanceof DLFileEntryCacheModel)) {
 			return false;
 		}
 
-		DLFileEntryCacheModel dlFileEntryCacheModel = (DLFileEntryCacheModel)obj;
+		DLFileEntryCacheModel dlFileEntryCacheModel =
+			(DLFileEntryCacheModel)object;
 
-		if (fileEntryId == dlFileEntryCacheModel.fileEntryId) {
+		if ((fileEntryId == dlFileEntryCacheModel.fileEntryId) &&
+			(mvccVersion == dlFileEntryCacheModel.mvccVersion)) {
+
 			return true;
 		}
 
@@ -61,14 +60,30 @@ public class DLFileEntryCacheModel implements CacheModel<DLFileEntry>,
 
 	@Override
 	public int hashCode() {
-		return HashUtil.hash(0, fileEntryId);
+		int hashCode = HashUtil.hash(0, fileEntryId);
+
+		return HashUtil.hash(hashCode, mvccVersion);
+	}
+
+	@Override
+	public long getMvccVersion() {
+		return mvccVersion;
+	}
+
+	@Override
+	public void setMvccVersion(long mvccVersion) {
+		this.mvccVersion = mvccVersion;
 	}
 
 	@Override
 	public String toString() {
-		StringBundler sb = new StringBundler(61);
+		StringBundler sb = new StringBundler(63);
 
-		sb.append("{uuid=");
+		sb.append("{mvccVersion=");
+		sb.append(mvccVersion);
+		sb.append(", ctCollectionId=");
+		sb.append(ctCollectionId);
+		sb.append(", uuid=");
 		sb.append(uuid);
 		sb.append(", fileEntryId=");
 		sb.append(fileEntryId);
@@ -114,8 +129,6 @@ public class DLFileEntryCacheModel implements CacheModel<DLFileEntry>,
 		sb.append(version);
 		sb.append(", size=");
 		sb.append(size);
-		sb.append(", readCount=");
-		sb.append(readCount);
 		sb.append(", smallImageId=");
 		sb.append(smallImageId);
 		sb.append(", largeImageId=");
@@ -137,8 +150,11 @@ public class DLFileEntryCacheModel implements CacheModel<DLFileEntry>,
 	public DLFileEntry toEntityModel() {
 		DLFileEntryImpl dlFileEntryImpl = new DLFileEntryImpl();
 
+		dlFileEntryImpl.setMvccVersion(mvccVersion);
+		dlFileEntryImpl.setCtCollectionId(ctCollectionId);
+
 		if (uuid == null) {
-			dlFileEntryImpl.setUuid(StringPool.BLANK);
+			dlFileEntryImpl.setUuid("");
 		}
 		else {
 			dlFileEntryImpl.setUuid(uuid);
@@ -150,7 +166,7 @@ public class DLFileEntryCacheModel implements CacheModel<DLFileEntry>,
 		dlFileEntryImpl.setUserId(userId);
 
 		if (userName == null) {
-			dlFileEntryImpl.setUserName(StringPool.BLANK);
+			dlFileEntryImpl.setUserName("");
 		}
 		else {
 			dlFileEntryImpl.setUserName(userName);
@@ -176,56 +192,56 @@ public class DLFileEntryCacheModel implements CacheModel<DLFileEntry>,
 		dlFileEntryImpl.setFolderId(folderId);
 
 		if (treePath == null) {
-			dlFileEntryImpl.setTreePath(StringPool.BLANK);
+			dlFileEntryImpl.setTreePath("");
 		}
 		else {
 			dlFileEntryImpl.setTreePath(treePath);
 		}
 
 		if (name == null) {
-			dlFileEntryImpl.setName(StringPool.BLANK);
+			dlFileEntryImpl.setName("");
 		}
 		else {
 			dlFileEntryImpl.setName(name);
 		}
 
 		if (fileName == null) {
-			dlFileEntryImpl.setFileName(StringPool.BLANK);
+			dlFileEntryImpl.setFileName("");
 		}
 		else {
 			dlFileEntryImpl.setFileName(fileName);
 		}
 
 		if (extension == null) {
-			dlFileEntryImpl.setExtension(StringPool.BLANK);
+			dlFileEntryImpl.setExtension("");
 		}
 		else {
 			dlFileEntryImpl.setExtension(extension);
 		}
 
 		if (mimeType == null) {
-			dlFileEntryImpl.setMimeType(StringPool.BLANK);
+			dlFileEntryImpl.setMimeType("");
 		}
 		else {
 			dlFileEntryImpl.setMimeType(mimeType);
 		}
 
 		if (title == null) {
-			dlFileEntryImpl.setTitle(StringPool.BLANK);
+			dlFileEntryImpl.setTitle("");
 		}
 		else {
 			dlFileEntryImpl.setTitle(title);
 		}
 
 		if (description == null) {
-			dlFileEntryImpl.setDescription(StringPool.BLANK);
+			dlFileEntryImpl.setDescription("");
 		}
 		else {
 			dlFileEntryImpl.setDescription(description);
 		}
 
 		if (extraSettings == null) {
-			dlFileEntryImpl.setExtraSettings(StringPool.BLANK);
+			dlFileEntryImpl.setExtraSettings("");
 		}
 		else {
 			dlFileEntryImpl.setExtraSettings(extraSettings);
@@ -234,14 +250,13 @@ public class DLFileEntryCacheModel implements CacheModel<DLFileEntry>,
 		dlFileEntryImpl.setFileEntryTypeId(fileEntryTypeId);
 
 		if (version == null) {
-			dlFileEntryImpl.setVersion(StringPool.BLANK);
+			dlFileEntryImpl.setVersion("");
 		}
 		else {
 			dlFileEntryImpl.setVersion(version);
 		}
 
 		dlFileEntryImpl.setSize(size);
-		dlFileEntryImpl.setReadCount(readCount);
 		dlFileEntryImpl.setSmallImageId(smallImageId);
 		dlFileEntryImpl.setLargeImageId(largeImageId);
 		dlFileEntryImpl.setCustom1ImageId(custom1ImageId);
@@ -261,7 +276,12 @@ public class DLFileEntryCacheModel implements CacheModel<DLFileEntry>,
 	}
 
 	@Override
-	public void readExternal(ObjectInput objectInput) throws IOException {
+	public void readExternal(ObjectInput objectInput)
+		throws ClassNotFoundException, IOException {
+
+		mvccVersion = objectInput.readLong();
+
+		ctCollectionId = objectInput.readLong();
 		uuid = objectInput.readUTF();
 
 		fileEntryId = objectInput.readLong();
@@ -289,14 +309,12 @@ public class DLFileEntryCacheModel implements CacheModel<DLFileEntry>,
 		mimeType = objectInput.readUTF();
 		title = objectInput.readUTF();
 		description = objectInput.readUTF();
-		extraSettings = objectInput.readUTF();
+		extraSettings = (String)objectInput.readObject();
 
 		fileEntryTypeId = objectInput.readLong();
 		version = objectInput.readUTF();
 
 		size = objectInput.readLong();
-
-		readCount = objectInput.readInt();
 
 		smallImageId = objectInput.readLong();
 
@@ -311,10 +329,13 @@ public class DLFileEntryCacheModel implements CacheModel<DLFileEntry>,
 	}
 
 	@Override
-	public void writeExternal(ObjectOutput objectOutput)
-		throws IOException {
+	public void writeExternal(ObjectOutput objectOutput) throws IOException {
+		objectOutput.writeLong(mvccVersion);
+
+		objectOutput.writeLong(ctCollectionId);
+
 		if (uuid == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(uuid);
@@ -329,7 +350,7 @@ public class DLFileEntryCacheModel implements CacheModel<DLFileEntry>,
 		objectOutput.writeLong(userId);
 
 		if (userName == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(userName);
@@ -347,73 +368,71 @@ public class DLFileEntryCacheModel implements CacheModel<DLFileEntry>,
 		objectOutput.writeLong(folderId);
 
 		if (treePath == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(treePath);
 		}
 
 		if (name == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(name);
 		}
 
 		if (fileName == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(fileName);
 		}
 
 		if (extension == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(extension);
 		}
 
 		if (mimeType == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(mimeType);
 		}
 
 		if (title == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(title);
 		}
 
 		if (description == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(description);
 		}
 
 		if (extraSettings == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeObject("");
 		}
 		else {
-			objectOutput.writeUTF(extraSettings);
+			objectOutput.writeObject(extraSettings);
 		}
 
 		objectOutput.writeLong(fileEntryTypeId);
 
 		if (version == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(version);
 		}
 
 		objectOutput.writeLong(size);
-
-		objectOutput.writeInt(readCount);
 
 		objectOutput.writeLong(smallImageId);
 
@@ -427,6 +446,8 @@ public class DLFileEntryCacheModel implements CacheModel<DLFileEntry>,
 		objectOutput.writeLong(lastPublishDate);
 	}
 
+	public long mvccVersion;
+	public long ctCollectionId;
 	public String uuid;
 	public long fileEntryId;
 	public long groupId;
@@ -450,11 +471,11 @@ public class DLFileEntryCacheModel implements CacheModel<DLFileEntry>,
 	public long fileEntryTypeId;
 	public String version;
 	public long size;
-	public int readCount;
 	public long smallImageId;
 	public long largeImageId;
 	public long custom1ImageId;
 	public long custom2ImageId;
 	public boolean manualCheckInRequired;
 	public long lastPublishDate;
+
 }

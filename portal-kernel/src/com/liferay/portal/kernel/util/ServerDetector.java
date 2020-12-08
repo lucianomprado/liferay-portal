@@ -17,23 +17,41 @@ package com.liferay.portal.kernel.util;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 
-import java.lang.reflect.Field;
-
 /**
  * @author Brian Wing Shun Chan
  */
 public class ServerDetector {
 
+	/**
+	 * @deprecated As of Mueller (7.2.x), with no direct replacement
+	 */
+	@Deprecated
 	public static final String GLASSFISH_ID = "glassfish";
 
 	public static final String JBOSS_ID = "jboss";
 
+	/**
+	 * @deprecated As of Mueller (7.2.x), with no direct replacement
+	 */
+	@Deprecated
 	public static final String JETTY_ID = "jetty";
 
+	/**
+	 * @deprecated As of Mueller (7.2.x), with no direct replacement
+	 */
+	@Deprecated
 	public static final String JONAS_ID = "jonas";
 
+	/**
+	 * @deprecated As of Mueller (7.2.x), with no direct replacement
+	 */
+	@Deprecated
 	public static final String OC4J_ID = "oc4j";
 
+	/**
+	 * @deprecated As of Mueller (7.2.x), with no direct replacement
+	 */
+	@Deprecated
 	public static final String RESIN_ID = "resin";
 
 	public static final String SYSTEM_PROPERTY_KEY_SERVER_DETECTOR_SERVER_ID =
@@ -47,43 +65,14 @@ public class ServerDetector {
 
 	public static final String WILDFLY_ID = "wildfly";
 
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	public static ServerDetector getInstance() {
-		return new ServerDetector();
-	}
-
 	public static String getServerId() {
-		return StringUtil.toLowerCase(_serverType.toString());
+		return _serverType.getLowerCaseName();
 	}
 
 	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
+	 * @deprecated As of Mueller (7.2.x), with no direct replacement
 	 */
 	@Deprecated
-	public static void init(String serverId) {
-		ServerType serverType = null;
-
-		try {
-			serverType = ServerType.valueOf(StringUtil.toUpperCase(serverId));
-		}
-		catch (IllegalArgumentException iae) {
-			serverType = _detectServerType();
-		}
-
-		try {
-			Field field = ReflectionUtil.getDeclaredField(
-				ServerDetector.class, "_serverType");
-
-			field.set(null, serverType);
-		}
-		catch (Exception e) {
-			ReflectionUtil.throwException(e);
-		}
-	}
-
 	public static boolean isGlassfish() {
 		if (_serverType == ServerType.GLASSFISH) {
 			return true;
@@ -100,6 +89,10 @@ public class ServerDetector {
 		return false;
 	}
 
+	/**
+	 * @deprecated As of Mueller (7.2.x), with no direct replacement
+	 */
+	@Deprecated
 	public static boolean isJetty() {
 		if (_serverType == ServerType.JETTY) {
 			return true;
@@ -108,6 +101,10 @@ public class ServerDetector {
 		return false;
 	}
 
+	/**
+	 * @deprecated As of Mueller (7.2.x), with no direct replacement
+	 */
+	@Deprecated
 	public static boolean isJOnAS() {
 		if (_serverType == ServerType.JONAS) {
 			return true;
@@ -116,6 +113,10 @@ public class ServerDetector {
 		return false;
 	}
 
+	/**
+	 * @deprecated As of Mueller (7.2.x), with no direct replacement
+	 */
+	@Deprecated
 	public static boolean isOC4J() {
 		if (_serverType == ServerType.OC4J) {
 			return true;
@@ -124,6 +125,10 @@ public class ServerDetector {
 		return false;
 	}
 
+	/**
+	 * @deprecated As of Mueller (7.2.x), with no direct replacement
+	 */
+	@Deprecated
 	public static boolean isResin() {
 		if (_serverType == ServerType.RESIN) {
 			return true;
@@ -133,12 +138,7 @@ public class ServerDetector {
 	}
 
 	public static boolean isSupported(String serverType) {
-		if (serverType.equals(ServerDetector.GLASSFISH_ID) ||
-			serverType.equals(ServerDetector.JBOSS_ID) ||
-			serverType.equals(ServerDetector.JONAS_ID) ||
-			serverType.equals(ServerDetector.JETTY_ID) ||
-			serverType.equals(ServerDetector.OC4J_ID) ||
-			serverType.equals(ServerDetector.RESIN_ID) ||
+		if (serverType.equals(ServerDetector.JBOSS_ID) ||
 			serverType.equals(ServerDetector.TOMCAT_ID) ||
 			serverType.equals(ServerDetector.WEBLOGIC_ID) ||
 			serverType.equals(ServerDetector.WEBSPHERE_ID) ||
@@ -152,14 +152,6 @@ public class ServerDetector {
 
 	public static boolean isSupportsComet() {
 		return _SUPPORTS_COMET;
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	public static boolean isSupportsHotDeploy() {
-		return true;
 	}
 
 	public static boolean isTomcat() {
@@ -194,13 +186,6 @@ public class ServerDetector {
 		return false;
 	}
 
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	public static void setSupportsHotDeploy(boolean supportsHotDeploy) {
-	}
-
 	private static boolean _detect(String className) {
 		try {
 			ClassLoader systemClassLoader = ClassLoader.getSystemClassLoader();
@@ -209,13 +194,12 @@ public class ServerDetector {
 
 			return true;
 		}
-		catch (ClassNotFoundException cnfe) {
+		catch (ClassNotFoundException classNotFoundException) {
 			if (ServerDetector.class.getResource(className) != null) {
 				return true;
 			}
-			else {
-				return false;
-			}
+
+			return false;
 		}
 	}
 
@@ -276,9 +260,8 @@ public class ServerDetector {
 		if (value != null) {
 			return true;
 		}
-		else {
-			return false;
-		}
+
+		return false;
 	}
 
 	private static final boolean _SUPPORTS_COMET = false;
@@ -290,19 +273,31 @@ public class ServerDetector {
 	static {
 		_serverType = _detectServerType();
 
-		if (System.getProperty("external-properties") == null) {
+		if (!GetterUtil.getBoolean(
+				System.getProperty("server.detector.quiet")) &&
+			(System.getProperty("external-properties") == null)) {
+
 			if (_log.isInfoEnabled()) {
-				_log.info(
-					"Detected server " +
-						StringUtil.toLowerCase(_serverType.toString()));
+				_log.info("Detected server " + _serverType.getLowerCaseName());
 			}
 		}
 	}
 
 	private enum ServerType {
 
-		GLASSFISH, JBOSS, JETTY, JONAS, OC4J, RESIN, TOMCAT, UNKNOWN, WEBLOGIC,
-		WEBSPHERE, WILDFLY;
+		GLASSFISH("glassfish"), JBOSS("jboss"), JETTY("jetty"), JONAS("jonas"),
+		OC4J("oc4j"), RESIN("resin"), TOMCAT("tomcat"), UNKNOWN("unknown"),
+		WEBLOGIC("weblogic"), WEBSPHERE("websphere"), WILDFLY("wildfly");
+
+		public String getLowerCaseName() {
+			return _lowerCaseName;
+		}
+
+		private ServerType(String lowerCaseName) {
+			_lowerCaseName = lowerCaseName;
+		}
+
+		private final String _lowerCaseName;
 
 	}
 

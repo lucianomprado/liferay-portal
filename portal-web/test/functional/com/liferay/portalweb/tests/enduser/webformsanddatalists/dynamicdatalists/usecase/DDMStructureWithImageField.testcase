@@ -1,173 +1,151 @@
-<definition component-name="portal-web-forms-and-data-lists">
-	<property name="portal.release" value="true" />
-	<property name="portal.upstream" value="true" />
-	<property name="testray.main.component.name" value="Dynamic Data Lists" />
+@component-name = "portal-web-forms-and-data-lists"
+definition {
 
-	<set-up>
-		<execute macro="TestCase#setUpPortalInstance" />
+	property portal.release = "true";
+	property portal.upstream = "true";
+	property testray.main.component.name = "Dynamic Data Lists";
 
-		<execute macro="User#firstLoginPG" />
+	setUp {
+		TestCase.setUpPortalInstance();
 
-		<execute macro="ProductMenu#gotoSitesContent">
-			<var name="portlet" value="Web Content" />
-		</execute>
+		User.firstLoginPG();
 
-		<execute macro="WebContentNavigator#gotoManageStructures" />
+		ProductMenu.gotoPortlet(
+			category = "Content &amp; Data",
+			portlet = "Web Content");
 
-		<execute macro="WebContentStructures#addCP">
-			<var name="structureDescription" value="WC Structure Description" />
-			<var name="structureName" value="WC Structure Name" />
-		</execute>
+		Navigator.gotoNavItem(navItem = "Structures");
 
-		<execute macro="DynamicDataMapping#addField">
-			<var name="field" value="Image" />
-			<var name="fieldFieldLabel" value="Image" />
-			<var name="fieldName" value="image" />
-		</execute>
+		WebContentStructures.addCP(
+			structureDescription = "WC Structure Description",
+			structureName = "WC Structure Name");
 
-		<execute macro="WebContentStructures#saveCP">
-			<var name="structureName" value="WC Structure Name" />
-		</execute>
+		DataEngine.addField(
+			fieldFieldLabel = "Image",
+			fieldName = "Image");
 
-		<execute macro="ProductMenu#gotoSitesContent">
-			<var name="portlet" value="Web Content" />
-		</execute>
+		WebContentStructures.saveCP(structureName = "WC Structure Name");
 
-		<execute macro="WebContentNavigator#gotoManageTemplates" />
+		ProductMenu.gotoPortlet(
+			category = "Content &amp; Data",
+			portlet = "Web Content");
 
-		<execute macro="WebContentTemplates#addCP">
-			<var name="templateDescription" value="WC Template Description" />
-			<var name="templateLanguage" value="ftl" />
-			<var name="templateName" value="WC Template Name" />
-		</execute>
+		Navigator.gotoNavItem(navItem = "Templates");
 
-		<execute macro="WebContentTemplates#addStructure">
-			<var name="structureName" value="WC Structure Name" />
-			<var name="templateFieldNames" value="Image" />
-			<var name="templateLanguage" value="ftl" />
-		</execute>
+		WebContentTemplates.addCP(
+			structureName = "WC Structure Name",
+			templateDescription = "WC Template Description",
+			templateFieldNames = "Image",
+			templateName = "WC Template Name");
 
-		<execute macro="WebContentTemplates#save" />
+		ProductMenu.gotoPortlet(
+			category = "Content &amp; Data",
+			portlet = "Web Content");
+	}
 
-		<execute macro="ProductMenu#gotoSitesContent">
-			<var name="portlet" value="Web Content" />
-		</execute>
-	</set-up>
+	tearDown {
+		var testPortalInstance = PropsUtil.get("test.portal.instance");
 
-	<tear-down>
-		<var method="TestPropsUtil#get('test.portal.instance')" name="testPortalInstance" />
+		if ("${testPortalInstance}" == "true") {
+			PortalInstances.tearDownCP();
+		}
+		else {
+			User.logoutAndLoginPG(
+				userLoginEmailAddress = "test@liferay.com",
+				userLoginFullName = "Test Test");
 
-		<if>
-			<equals arg1="${testPortalInstance}" arg2="true" />
-			<then>
-				<execute macro="PortalInstances#tearDownCP" />
-			</then>
-			<else>
-				<execute macro="User#logoutAndLoginPG">
-					<var name="userLoginEmailAddress" value="test@liferay.com" />
-					<var name="userLoginFullName" value="Test Test" />
-				</execute>
+			Site.tearDownCP();
+		}
+	}
 
-				<execute macro="Site#tearDownCP" />
-			</else>
-		</if>
-	</tear-down>
+	@description = "This is a use case for LPS-69593 and LRQA-61632. Assert the selected image is kept in Image field under localized."
+	@priority = "4"
+	test ViewFieldTranslations {
+		property test.name.skip.portal.instance = "DDMStructureWithImageField#ViewFieldTranslations";
 
-	<command name="ViewFieldTranslations" priority="4">
-		<description message="This is a use case for LPS-69593." />
+		WebContentNavigator.gotoAddWithStructureCP(structureName = "WC Structure Name");
 
-		<property name="test.name.skip.portal.instance" value="DDMStructureWithImageField#ViewFieldTranslations" />
+		WebContent.addCP(webContentTitle = "English (United States) Title");
 
-		<execute macro="WebContentNavigator#gotoAddWithStructureCP">
-			<var name="structureName" value="WC Structure Name" />
-		</execute>
+		Click(locator1 = "WCEditWebContent#IMAGE_FIELD_SELECT");
 
-		<execute macro="WebContent#addCP">
-			<var name="webContentTitle" value="English (United States) Title" />
-		</execute>
+		ItemSelector.uploadFile(
+			navTab = "Web Content Images",
+			uploadFileName = "Document_3.png");
 
-		<execute macro="ItemSelector#gotoItemSelectorViaSelectButton" />
+		FormFields.editTextAlt(
+			fieldName = "Image",
+			fieldValue = "English (United States) Image Description");
 
-		<execute macro="ItemSelector#uploadFile">
-			<var name="navTab" value="Documents and Media" />
-			<var name="uploadFileName" value="Document_3.png" />
-		</execute>
+		PortletEntry.changeLocale(locale = "es-ES");
 
-		<execute macro="FormFields#editTextAlt">
-			<var name="fieldName" value="image" />
-			<var name="fieldValue" value="English (United States) Image Description" />
-		</execute>
+		FormFields.editText(
+			fieldName = "title",
+			fieldValue = "Spanish (Spain) Title");
 
-		<execute macro="WebContent#addLocale">
-			<var name="language" value="Spanish (Spain)" />
-			<var name="locale" value="es-ES" />
-		</execute>
+		FormFields.editTextAlt(
+			fieldName = "Image",
+			fieldValue = "Spanish (Spain) Image Description");
 
-		<execute macro="FormFields#editText">
-			<var name="fieldName" value="title" />
-			<var name="fieldValue" value="Spanish (Spain) Title" />
-		</execute>
+		PortletEntry.changeLocale(locale = "pt-BR");
 
-		<execute macro="FormFields#editTextAlt">
-			<var name="fieldName" value="image" />
-			<var name="fieldValue" value="Spanish (Spain) Image Description" />
-		</execute>
+		FormFields.editText(
+			fieldName = "title",
+			fieldValue = "Portuguese (Brazil) Title");
 
-		<execute macro="WebContent#addLocale">
-			<var name="language" value="Portuguese (Brazil)" />
-			<var name="locale" value="pt-BR" />
-		</execute>
+		FormFields.editTextAlt(
+			fieldName = "Image",
+			fieldValue = "Portuguese (Brazil) Image Description");
 
-		<execute macro="FormFields#editText">
-			<var name="fieldName" value="title" />
-			<var name="fieldValue" value="Portuguese (Brazil) Title" />
-		</execute>
+		PortletEntry.publish();
 
-		<execute macro="FormFields#editTextAlt">
-			<var name="fieldName" value="image" />
-			<var name="fieldValue" value="Portuguese (Brazil) Image Description" />
-		</execute>
+		WebContentAdmin.gotoEntry(entry = "English (United States) Title");
 
-		<execute macro="WebContent#selectLocale">
-			<var name="locale" value="en-US" />
-		</execute>
+		FormFields.viewTextValue(
+			fieldName = "title",
+			fieldValue = "English (United States) Title");
 
-		<execute macro="FormFields#viewTextValue">
-			<var name="fieldName" value="title" />
-			<var name="fieldValue" value="English (United States) Title" />
-		</execute>
+		AssertAttributeValue(
+			attribute1 = "value",
+			key_fieldFieldLabel = "Image",
+			locator1 = "TextInput#SELECTOR_INPUT",
+			value1 = "Document_3.png");
 
-		<execute macro="FormFields#viewTextValueAlt">
-			<var name="fieldName" value="image" />
-			<var name="fieldValue" value="English (United States) Image Description" />
-		</execute>
+		FormFields.viewTextValueAlt(
+			fieldName = "Image",
+			fieldValue = "English (United States) Image Description");
 
-		<execute macro="WebContent#selectLocale">
-			<var name="locale" value="es-ES" />
-		</execute>
+		PortletEntry.changeLocale(locale = "es-ES");
 
-		<execute macro="FormFields#viewTextValue">
-			<var name="fieldName" value="title" />
-			<var name="fieldValue" value="Spanish (Spain) Title" />
-		</execute>
+		FormFields.viewTextValue(
+			fieldName = "title",
+			fieldValue = "Spanish (Spain) Title");
 
-		<execute macro="FormFields#viewTextValueAlt">
-			<var name="fieldName" value="image" />
-			<var name="fieldValue" value="Spanish (Spain) Image Description" />
-		</execute>
+		AssertAttributeValue(
+			attribute1 = "value",
+			key_fieldFieldLabel = "Image",
+			locator1 = "TextInput#SELECTOR_INPUT",
+			value1 = "Document_3.png");
 
-		<execute macro="WebContent#selectLocale">
-			<var name="locale" value="pt-BR" />
-		</execute>
+		FormFields.viewTextValueAlt(
+			fieldName = "Image",
+			fieldValue = "Spanish (Spain) Image Description");
 
-		<execute macro="FormFields#viewTextValue">
-			<var name="fieldName" value="title" />
-			<var name="fieldValue" value="Portuguese (Brazil) Title" />
-		</execute>
+		PortletEntry.changeLocale(locale = "pt-BR");
 
-		<execute macro="FormFields#viewTextValueAlt">
-			<var name="fieldName" value="image" />
-			<var name="fieldValue" value="Portuguese (Brazil) Image Description" />
-		</execute>
-	</command>
-</definition>
+		FormFields.viewTextValue(
+			fieldName = "title",
+			fieldValue = "Portuguese (Brazil) Title");
+
+		AssertAttributeValue(
+			attribute1 = "value",
+			key_fieldFieldLabel = "Image",
+			locator1 = "TextInput#SELECTOR_INPUT",
+			value1 = "Document_3.png");
+
+		FormFields.viewTextValueAlt(
+			fieldName = "Image",
+			fieldValue = "Portuguese (Brazil) Image Description");
+	}
+
+}

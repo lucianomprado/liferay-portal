@@ -30,6 +30,9 @@ import com.liferay.portal.kernel.service.ResourceActionLocalServiceUtil;
 public class GroupSubscriptionCheckSubscriptionSender
 	extends SubscriptionSender {
 
+	public GroupSubscriptionCheckSubscriptionSender() {
+	}
+
 	public GroupSubscriptionCheckSubscriptionSender(String resourceName) {
 		_resourceName = resourceName;
 	}
@@ -55,12 +58,10 @@ public class GroupSubscriptionCheckSubscriptionSender
 				permissionChecker, _resourceName, subscription.getClassPK(),
 				ActionKeys.SUBSCRIBE);
 		}
-		else {
-			return super.hasSubscribePermission(
-				permissionChecker, subscription);
-		}
+
+		return super.hasSubscribePermission(permissionChecker, subscription);
 	}
 
-	private final String _resourceName;
+	private String _resourceName;
 
 }

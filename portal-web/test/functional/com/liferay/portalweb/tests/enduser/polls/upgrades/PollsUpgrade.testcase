@@ -1,56 +1,48 @@
-<definition component-name="portal-upgrades">
-	<property name="portal.release" value="true" />
-	<property name="portal.upstream" value="true" />
-	<property name="ignore.errors" value="Plugin security management is not enabled. Enable a security manager, then restart." />
-	<property name="testray.main.component.name" value="Upgrades FW" />
+@component-name = "portal-upgrades"
+definition {
 
-	<set-up>
-		<execute macro="SignIn#signIn" />
+	property database.types = "db2,mariadb,mysql,oracle,postgresql,sybase";
+	property portal.release = "true";
+	property portal.upstream = "true";
+	property testray.component.names = "Polls";
+	property testray.main.component.name = "Upgrades Forms";
 
-		<execute macro="Smoke#viewWelcomePage" />
+	setUp {
+		SignIn.signIn();
 
-		<execute macro="Upgrade#reindexSearches" />
-	</set-up>
+		Smoke.viewWelcomePage();
 
-	<command name="ViewPollsArchive6012" priority="5">
-		<property name="data.archive.type" value="data-archive-polls" />
-		<property name="portal.version" value="6.0.12" />
+		ApplicationsMenu.gotoPortlet(
+			category = "Configuration",
+			panel = "Control Panel",
+			portlet = "Search");
 
-		<execute macro="Upgrade#viewPolls" />
-	</command>
+		SearchAdministration.executeSearchActions(actionsDescription = "Reindex all search indexes.");
+	}
 
-	<command name="ViewPollsArchive612" priority="5">
-		<property name="data.archive.type" value="data-archive-polls" />
-		<property name="portal.version" value="6.1.2" />
+	@priority = "5"
+	test ViewPollsArchive625 {
+		property data.archive.type = "data-archive-polls";
+		property database.types = "mariadb,mysql,postgresql";
+		property portal.version = "6.2.5";
 
-		<execute macro="Upgrade#viewPolls" />
-	</command>
+		Upgrade.viewPolls();
+	}
 
-	<command name="ViewPollsArchive6130" priority="5">
-		<property name="data.archive.type" value="data-archive-polls" />
-		<property name="portal.version" value="6.1.30" />
+	@priority = "5"
+	test ViewPollsArchive621015 {
+		property data.archive.type = "data-archive-polls";
+		property portal.version = "6.2.10.15";
 
-		<execute macro="Upgrade#viewPolls" />
-	</command>
+		Upgrade.viewPolls();
+	}
 
-	<command name="ViewPollsArchive621015" priority="5">
-		<property name="data.archive.type" value="data-archive-polls" />
-		<property name="portal.version" value="6.2.10.15" />
+	@priority = "5"
+	test ViewPollsArchive621021 {
+		property data.archive.type = "data-archive-polls";
+		property portal.version = "6.2.10.21";
 
-		<execute macro="Upgrade#viewPolls" />
-	</command>
+		Upgrade.viewPolls();
+	}
 
-	<command name="ViewPollsArchive623" priority="5">
-		<property name="data.archive.type" value="data-archive-polls" />
-		<property name="portal.version" value="6.2.3" />
-
-		<execute macro="Upgrade#viewPolls" />
-	</command>
-
-	<command name="ViewPollsArchive625" priority="5">
-		<property name="data.archive.type" value="data-archive-polls" />
-		<property name="portal.version" value="6.2.5" />
-
-		<execute macro="Upgrade#viewPolls" />
-	</command>
-</definition>
+}

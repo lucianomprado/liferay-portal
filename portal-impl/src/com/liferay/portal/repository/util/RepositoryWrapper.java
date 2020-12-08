@@ -14,6 +14,7 @@
 
 package com.liferay.portal.repository.util;
 
+import com.liferay.document.library.kernel.model.DLVersionNumberIncrease;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.lock.Lock;
 import com.liferay.portal.kernel.repository.Repository;
@@ -41,7 +42,7 @@ import java.util.List;
 public class RepositoryWrapper implements Repository {
 
 	public RepositoryWrapper(Repository repository) {
-		_repository = repository;
+		setRepository(repository);
 	}
 
 	@Override
@@ -59,52 +60,13 @@ public class RepositoryWrapper implements Repository {
 	@Override
 	public FileEntry addFileEntry(
 			long userId, long folderId, String sourceFileName, String mimeType,
-			String title, String description, String changeLog, InputStream is,
-			long size, ServiceContext serviceContext)
+			String title, String description, String changeLog,
+			InputStream inputStream, long size, ServiceContext serviceContext)
 		throws PortalException {
 
 		return _repository.addFileEntry(
 			userId, folderId, sourceFileName, mimeType, title, description,
-			changeLog, is, size, serviceContext);
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, see {@link #addFileEntry(long, long, String,
-	 *             String, String, String, String, File, ServiceContext)}
-	 */
-	@Deprecated
-	@Override
-	public FileEntry addFileEntry(
-			long folderId, String sourceFileName, String mimeType, String title,
-			String description, String changeLog, File file,
-			ServiceContext serviceContext)
-		throws PortalException {
-
-		return _repository.addFileEntry(
-			com.liferay.portal.kernel.repository.util.RepositoryUserUtil.
-				getUserId(),
-			folderId, sourceFileName, mimeType, title, description, changeLog,
-			file, serviceContext);
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, see {@link #addFileEntry(long, long, String,
-	 *             String, String, String, String, InputStream, long,
-	 *             ServiceContext)}
-	 */
-	@Deprecated
-	@Override
-	public FileEntry addFileEntry(
-			long folderId, String sourceFileName, String mimeType, String title,
-			String description, String changeLog, InputStream is, long size,
-			ServiceContext serviceContext)
-		throws PortalException {
-
-		return _repository.addFileEntry(
-			com.liferay.portal.kernel.repository.util.RepositoryUserUtil.
-				getUserId(),
-			folderId, sourceFileName, mimeType, title, description, changeLog,
-			is, size, serviceContext);
+			changeLog, inputStream, size, serviceContext);
 	}
 
 	@Override
@@ -127,53 +89,21 @@ public class RepositoryWrapper implements Repository {
 			userId, parentFolderId, name, description, serviceContext);
 	}
 
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link #addFolder(long, long,
-	 *             String, String, ServiceContext)}
-	 */
-	@Deprecated
-	@Override
-	public Folder addFolder(
-			long parentFolderId, String name, String description,
-			ServiceContext serviceContext)
-		throws PortalException {
-
-		return _repository.addFolder(
-			com.liferay.portal.kernel.repository.util.RepositoryUserUtil.
-				getUserId(),
-			parentFolderId, name, description, serviceContext);
-	}
-
 	@Override
 	public FileVersion cancelCheckOut(long fileEntryId) throws PortalException {
 		return _repository.cancelCheckOut(fileEntryId);
 	}
 
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link #checkInFileEntry(long, long,
-	 *             boolean, String, ServiceContext)}
-	 */
-	@Deprecated
 	@Override
 	public void checkInFileEntry(
-			long fileEntryId, boolean majorVersion, String changeLog,
+			long userId, long fileEntryId,
+			DLVersionNumberIncrease dlVersionNumberIncrease, String changeLog,
 			ServiceContext serviceContext)
 		throws PortalException {
 
 		_repository.checkInFileEntry(
-			com.liferay.portal.kernel.repository.util.RepositoryUserUtil.
-				getUserId(),
-			fileEntryId, majorVersion, changeLog, serviceContext);
-	}
-
-	@Override
-	public void checkInFileEntry(
-			long userId, long fileEntryId, boolean majorVersion,
-			String changeLog, ServiceContext serviceContext)
-		throws PortalException {
-
-		_repository.checkInFileEntry(
-			userId, fileEntryId, majorVersion, changeLog, serviceContext);
+			userId, fileEntryId, dlVersionNumberIncrease, changeLog,
+			serviceContext);
 	}
 
 	@Override
@@ -184,22 +114,6 @@ public class RepositoryWrapper implements Repository {
 
 		_repository.checkInFileEntry(
 			userId, fileEntryId, lockUuid, serviceContext);
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link #checkInFileEntry(long, long,
-	 *             String, ServiceContext)}
-	 */
-	@Deprecated
-	@Override
-	public void checkInFileEntry(
-			long fileEntryId, String lockUuid, ServiceContext serviceContext)
-		throws PortalException {
-
-		_repository.checkInFileEntry(
-			com.liferay.portal.kernel.repository.util.RepositoryUserUtil.
-				getUserId(),
-			fileEntryId, lockUuid, serviceContext);
 	}
 
 	@Override
@@ -230,23 +144,6 @@ public class RepositoryWrapper implements Repository {
 			userId, groupId, fileEntryId, destFolderId, serviceContext);
 	}
 
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link #copyFileEntry(long, long,
-	 *             long, long, ServiceContext)}
-	 */
-	@Deprecated
-	@Override
-	public FileEntry copyFileEntry(
-			long groupId, long fileEntryId, long destFolderId,
-			ServiceContext serviceContext)
-		throws PortalException {
-
-		return _repository.copyFileEntry(
-			com.liferay.portal.kernel.repository.util.RepositoryUserUtil.
-				getUserId(),
-			groupId, fileEntryId, destFolderId, serviceContext);
-	}
-
 	@Override
 	public void deleteAll() throws PortalException {
 		_repository.deleteAll();
@@ -272,6 +169,11 @@ public class RepositoryWrapper implements Repository {
 	@Override
 	public void deleteFileShortcuts(long toFileEntryId) throws PortalException {
 		_repository.deleteFileShortcuts(toFileEntryId);
+	}
+
+	@Override
+	public void deleteFileVersion(long fileVersionId) throws PortalException {
+		_repository.deleteFileVersion(fileVersionId);
 	}
 
 	@Override
@@ -301,47 +203,51 @@ public class RepositoryWrapper implements Repository {
 	@Override
 	public List<FileEntry> getFileEntries(
 			long folderId, int status, int start, int end,
-			OrderByComparator<FileEntry> obc)
+			OrderByComparator<FileEntry> orderByComparator)
 		throws PortalException {
 
-		return _repository.getFileEntries(folderId, status, start, end, obc);
+		return _repository.getFileEntries(
+			folderId, status, start, end, orderByComparator);
 	}
 
 	@Override
 	public List<FileEntry> getFileEntries(
-			long folderId, int start, int end, OrderByComparator<FileEntry> obc)
+			long folderId, int start, int end,
+			OrderByComparator<FileEntry> orderByComparator)
 		throws PortalException {
 
-		return _repository.getFileEntries(folderId, start, end, obc);
+		return _repository.getFileEntries(
+			folderId, start, end, orderByComparator);
 	}
 
 	@Override
 	public List<FileEntry> getFileEntries(
 			long folderId, long fileEntryTypeId, int start, int end,
-			OrderByComparator<FileEntry> obc)
+			OrderByComparator<FileEntry> orderByComparator)
 		throws PortalException {
 
 		return _repository.getFileEntries(
-			folderId, fileEntryTypeId, start, end, obc);
+			folderId, fileEntryTypeId, start, end, orderByComparator);
 	}
 
 	@Override
 	public List<FileEntry> getFileEntries(
 			long folderId, String[] mimeTypes, int status, int start, int end,
-			OrderByComparator<FileEntry> obc)
+			OrderByComparator<FileEntry> orderByComparator)
 		throws PortalException {
 
 		return _repository.getFileEntries(
-			folderId, mimeTypes, status, start, end, obc);
+			folderId, mimeTypes, status, start, end, orderByComparator);
 	}
 
 	@Override
 	public List<FileEntry> getFileEntries(
 			long folderId, String[] mimeTypes, int start, int end,
-			OrderByComparator<FileEntry> obc)
+			OrderByComparator<FileEntry> orderByComparator)
 		throws PortalException {
 
-		return _repository.getFileEntries(folderId, mimeTypes, start, end, obc);
+		return _repository.getFileEntries(
+			folderId, mimeTypes, start, end, orderByComparator);
 	}
 
 	@Override
@@ -417,6 +323,13 @@ public class RepositoryWrapper implements Repository {
 	}
 
 	@Override
+	public FileEntry getFileEntryByFileName(long folderId, String fileName)
+		throws PortalException {
+
+		return _repository.getFileEntryByFileName(folderId, fileName);
+	}
+
+	@Override
 	public FileEntry getFileEntryByUuid(String uuid) throws PortalException {
 		return _repository.getFileEntryByUuid(uuid);
 	}
@@ -450,42 +363,57 @@ public class RepositoryWrapper implements Repository {
 	@Override
 	public List<Folder> getFolders(
 			long parentFolderId, boolean includeMountFolders, int start,
-			int end, OrderByComparator<Folder> obc)
+			int end, OrderByComparator<Folder> orderByComparator)
 		throws PortalException {
 
 		return _repository.getFolders(
-			parentFolderId, includeMountFolders, start, end, obc);
+			parentFolderId, includeMountFolders, start, end, orderByComparator);
 	}
 
 	@Override
 	public List<Folder> getFolders(
 			long parentFolderId, int status, boolean includeMountFolders,
-			int start, int end, OrderByComparator<Folder> obc)
+			int start, int end, OrderByComparator<Folder> orderByComparator)
 		throws PortalException {
 
 		return _repository.getFolders(
-			parentFolderId, status, includeMountFolders, start, end, obc);
+			parentFolderId, status, includeMountFolders, start, end,
+			orderByComparator);
 	}
 
 	@Override
 	public List<RepositoryEntry> getFoldersAndFileEntriesAndFileShortcuts(
 			long folderId, int status, boolean includeMountFolders, int start,
-			int end, OrderByComparator<?> obc)
+			int end, OrderByComparator<?> orderByComparator)
 		throws PortalException {
 
 		return _repository.getFoldersAndFileEntriesAndFileShortcuts(
-			folderId, status, includeMountFolders, start, end, obc);
+			folderId, status, includeMountFolders, start, end,
+			orderByComparator);
 	}
 
 	@Override
 	public List<RepositoryEntry> getFoldersAndFileEntriesAndFileShortcuts(
-			long folderId, int status, String[] mimetypes,
-			boolean includeMountFolders, int start, int end,
-			OrderByComparator<?> obc)
+			long folderId, int status, String[] mimeTypes,
+			boolean includeMountFolders, boolean includeOwner, int start,
+			int end, OrderByComparator<?> orderByComparator)
 		throws PortalException {
 
 		return _repository.getFoldersAndFileEntriesAndFileShortcuts(
-			folderId, status, mimetypes, includeMountFolders, start, end, obc);
+			folderId, status, mimeTypes, includeMountFolders, includeOwner,
+			start, end, orderByComparator);
+	}
+
+	@Override
+	public List<RepositoryEntry> getFoldersAndFileEntriesAndFileShortcuts(
+			long folderId, int status, String[] mimeTypes,
+			boolean includeMountFolders, int start, int end,
+			OrderByComparator<?> orderByComparator)
+		throws PortalException {
+
+		return _repository.getFoldersAndFileEntriesAndFileShortcuts(
+			folderId, status, mimeTypes, includeMountFolders, start, end,
+			orderByComparator);
 	}
 
 	@Override
@@ -499,12 +427,22 @@ public class RepositoryWrapper implements Repository {
 
 	@Override
 	public int getFoldersAndFileEntriesAndFileShortcutsCount(
-			long folderId, int status, String[] mimetypes,
+			long folderId, int status, String[] mimeTypes,
 			boolean includeMountFolders)
 		throws PortalException {
 
 		return _repository.getFoldersAndFileEntriesAndFileShortcutsCount(
-			folderId, status, mimetypes, includeMountFolders);
+			folderId, status, mimeTypes, includeMountFolders);
+	}
+
+	@Override
+	public int getFoldersAndFileEntriesAndFileShortcutsCount(
+			long folderId, int status, String[] mimeTypes,
+			boolean includeMountFolders, boolean includeOwner)
+		throws PortalException {
+
+		return _repository.getFoldersAndFileEntriesAndFileShortcutsCount(
+			folderId, status, mimeTypes, includeMountFolders, includeOwner);
 	}
 
 	@Override
@@ -533,10 +471,11 @@ public class RepositoryWrapper implements Repository {
 	@Override
 	public List<Folder> getMountFolders(
 			long parentFolderId, int start, int end,
-			OrderByComparator<Folder> obc)
+			OrderByComparator<Folder> orderByComparator)
 		throws PortalException {
 
-		return _repository.getMountFolders(parentFolderId, start, end, obc);
+		return _repository.getMountFolders(
+			parentFolderId, start, end, orderByComparator);
 	}
 
 	@Override
@@ -549,21 +488,22 @@ public class RepositoryWrapper implements Repository {
 	@Override
 	public List<FileEntry> getRepositoryFileEntries(
 			long userId, long rootFolderId, int start, int end,
-			OrderByComparator<FileEntry> obc)
+			OrderByComparator<FileEntry> orderByComparator)
 		throws PortalException {
 
 		return _repository.getRepositoryFileEntries(
-			userId, rootFolderId, start, end, obc);
+			userId, rootFolderId, start, end, orderByComparator);
 	}
 
 	@Override
 	public List<FileEntry> getRepositoryFileEntries(
 			long userId, long rootFolderId, String[] mimeTypes, int status,
-			int start, int end, OrderByComparator<FileEntry> obc)
+			int start, int end, OrderByComparator<FileEntry> orderByComparator)
 		throws PortalException {
 
 		return _repository.getRepositoryFileEntries(
-			userId, rootFolderId, mimeTypes, status, start, end, obc);
+			userId, rootFolderId, mimeTypes, status, start, end,
+			orderByComparator);
 	}
 
 	@Override
@@ -633,22 +573,6 @@ public class RepositoryWrapper implements Repository {
 			userId, fileEntryId, newFolderId, serviceContext);
 	}
 
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link #moveFileEntry(long, long,
-	 *             long, ServiceContext)}
-	 */
-	@Deprecated
-	@Override
-	public FileEntry moveFileEntry(
-			long fileEntryId, long newFolderId, ServiceContext serviceContext)
-		throws PortalException {
-
-		return _repository.moveFileEntry(
-			com.liferay.portal.kernel.repository.util.RepositoryUserUtil.
-				getUserId(),
-			fileEntryId, newFolderId, serviceContext);
-	}
-
 	@Override
 	public Folder moveFolder(
 			long userId, long folderId, long parentFolderId,
@@ -657,23 +581,6 @@ public class RepositoryWrapper implements Repository {
 
 		return _repository.moveFolder(
 			userId, folderId, parentFolderId, serviceContext);
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link #moveFolder(long, long, long,
-	 *             ServiceContext)}
-	 */
-	@Deprecated
-	@Override
-	public Folder moveFolder(
-			long folderId, long newParentFolderId,
-			ServiceContext serviceContext)
-		throws PortalException {
-
-		return _repository.moveFolder(
-			com.liferay.portal.kernel.repository.util.RepositoryUserUtil.
-				getUserId(),
-			newParentFolderId, serviceContext);
 	}
 
 	@Override
@@ -702,22 +609,6 @@ public class RepositoryWrapper implements Repository {
 
 		_repository.revertFileEntry(
 			userId, fileEntryId, version, serviceContext);
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link #revertFileEntry(long, long,
-	 *             String, ServiceContext)}
-	 */
-	@Deprecated
-	@Override
-	public void revertFileEntry(
-			long fileEntryId, String version, ServiceContext serviceContext)
-		throws PortalException {
-
-		_repository.revertFileEntry(
-			com.liferay.portal.kernel.repository.util.RepositoryUserUtil.
-				getUserId(),
-			fileEntryId, version, serviceContext);
 	}
 
 	@Override
@@ -749,6 +640,10 @@ public class RepositoryWrapper implements Repository {
 		return _repository.search(searchContext, query);
 	}
 
+	public void setRepository(Repository repository) {
+		_repository = repository;
+	}
+
 	@Override
 	public void unlockFolder(long folderId, String lockUuid)
 		throws PortalException {
@@ -767,66 +662,27 @@ public class RepositoryWrapper implements Repository {
 	public FileEntry updateFileEntry(
 			long userId, long fileEntryId, String sourceFileName,
 			String mimeType, String title, String description, String changeLog,
-			boolean majorVersion, File file, ServiceContext serviceContext)
+			DLVersionNumberIncrease dlVersionNumberIncrease, File file,
+			ServiceContext serviceContext)
 		throws PortalException {
 
 		return _repository.updateFileEntry(
 			userId, fileEntryId, sourceFileName, mimeType, title, description,
-			changeLog, majorVersion, file, serviceContext);
+			changeLog, dlVersionNumberIncrease, file, serviceContext);
 	}
 
 	@Override
 	public FileEntry updateFileEntry(
 			long userId, long fileEntryId, String sourceFileName,
 			String mimeType, String title, String description, String changeLog,
-			boolean majorVersion, InputStream is, long size,
-			ServiceContext serviceContext)
+			DLVersionNumberIncrease dlVersionNumberIncrease,
+			InputStream inputStream, long size, ServiceContext serviceContext)
 		throws PortalException {
 
 		return _repository.updateFileEntry(
 			userId, fileEntryId, sourceFileName, mimeType, title, description,
-			changeLog, majorVersion, is, size, serviceContext);
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link #updateFileEntry(long, long,
-	 *             String, String, String, String, String, boolean, File,
-	 *             ServiceContext)}
-	 */
-	@Deprecated
-	@Override
-	public FileEntry updateFileEntry(
-			long fileEntryId, String sourceFileName, String mimeType,
-			String title, String description, String changeLog,
-			boolean majorVersion, File file, ServiceContext serviceContext)
-		throws PortalException {
-
-		return _repository.updateFileEntry(
-			com.liferay.portal.kernel.repository.util.RepositoryUserUtil.
-				getUserId(),
-			fileEntryId, sourceFileName, mimeType, title, description,
-			changeLog, majorVersion, file, serviceContext);
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link #updateFileEntry(long, long,
-	 *             String, String, String, String, String, boolean, InputStream,
-	 *             long, ServiceContext)}
-	 */
-	@Deprecated
-	@Override
-	public FileEntry updateFileEntry(
-			long fileEntryId, String sourceFileName, String mimeType,
-			String title, String description, String changeLog,
-			boolean majorVersion, InputStream is, long size,
-			ServiceContext serviceContext)
-		throws PortalException {
-
-		return _repository.updateFileEntry(
-			com.liferay.portal.kernel.repository.util.RepositoryUserUtil.
-				getUserId(),
-			fileEntryId, sourceFileName, mimeType, title, description,
-			changeLog, majorVersion, is, size, serviceContext);
+			changeLog, dlVersionNumberIncrease, inputStream, size,
+			serviceContext);
 	}
 
 	@Override
@@ -888,6 +744,6 @@ public class RepositoryWrapper implements Repository {
 		return _repository.verifyInheritableLock(folderId, lockUuid);
 	}
 
-	private final Repository _repository;
+	private volatile Repository _repository;
 
 }

@@ -14,10 +14,9 @@
 
 package com.liferay.portal.kernel.model.dao;
 
-import com.liferay.portal.kernel.dao.db.DB;
-import com.liferay.portal.kernel.dao.db.DBManagerUtil;
+import com.liferay.counter.kernel.service.CounterLocalServiceUtil;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.model.ReleaseConstants;
-import com.liferay.portal.kernel.util.StringBundler;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -41,10 +40,10 @@ public class ReleaseDAO {
 
 		StringBundler sb = new StringBundler(4);
 
-		sb.append("insert into Release_ (mvccVersion, releaseId, ");
-		sb.append("createDate, modifiedDate, servletContextName, ");
-		sb.append("schemaVersion, buildNumber, buildDate, verified, state_, ");
-		sb.append("testString) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+		sb.append("insert into Release_ (mvccVersion, releaseId, createDate, ");
+		sb.append("modifiedDate, servletContextName, schemaVersion, ");
+		sb.append("buildNumber, buildDate, verified, state_, testString) ");
+		sb.append("values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
 		try (PreparedStatement ps = connection.prepareStatement(
 				sb.toString())) {
@@ -81,9 +80,7 @@ public class ReleaseDAO {
 	}
 
 	protected long increment() {
-		DB db = DBManagerUtil.getDB();
-
-		return db.increment();
+		return CounterLocalServiceUtil.increment();
 	}
 
 }

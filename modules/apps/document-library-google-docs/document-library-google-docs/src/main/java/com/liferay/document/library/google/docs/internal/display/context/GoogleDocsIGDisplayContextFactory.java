@@ -46,33 +46,31 @@ public class GoogleDocsIGDisplayContextFactory
 	@Override
 	public IGViewFileVersionDisplayContext getIGViewFileVersionDisplayContext(
 		IGViewFileVersionDisplayContext parentIGViewFileVersionDisplayContext,
-		HttpServletRequest request, HttpServletResponse response,
-		FileShortcut fileShortcut) {
+		HttpServletRequest httpServletRequest,
+		HttpServletResponse httpServletResponse, FileShortcut fileShortcut) {
 
 		try {
 			long fileEntryId = fileShortcut.getToFileEntryId();
 
 			FileEntry fileEntry = _dlAppService.getFileEntry(fileEntryId);
 
-			FileVersion fileVersion = fileEntry.getFileVersion();
-
 			return getIGViewFileVersionDisplayContext(
-				parentIGViewFileVersionDisplayContext, request, response,
-				fileVersion);
+				parentIGViewFileVersionDisplayContext, httpServletRequest,
+				httpServletResponse, fileEntry.getFileVersion());
 		}
-		catch (PortalException pe) {
+		catch (PortalException portalException) {
 			throw new SystemException(
 				"Unable to build GoogleDocsDLViewFileVersionDisplayContext " +
 					"for shortcut " + fileShortcut.getPrimaryKey(),
-				pe);
+				portalException);
 		}
 	}
 
 	@Override
 	public IGViewFileVersionDisplayContext getIGViewFileVersionDisplayContext(
 		IGViewFileVersionDisplayContext parentIGViewFileVersionDisplayContext,
-		HttpServletRequest request, HttpServletResponse response,
-		FileVersion fileVersion) {
+		HttpServletRequest httpServletRequest,
+		HttpServletResponse httpServletResponse, FileVersion fileVersion) {
 
 		GoogleDocsMetadataHelper googleDocsMetadataHelper =
 			new GoogleDocsMetadataHelper(
@@ -83,56 +81,29 @@ public class GoogleDocsIGDisplayContextFactory
 
 		if (googleDocsMetadataHelper.isGoogleDocs()) {
 			return new GoogleDocsIGViewFileVersionDisplayContext(
-				parentIGViewFileVersionDisplayContext, request, response,
-				fileVersion, googleDocsMetadataHelper);
+				parentIGViewFileVersionDisplayContext, httpServletRequest,
+				httpServletResponse, fileVersion, googleDocsMetadataHelper);
 		}
 
 		return parentIGViewFileVersionDisplayContext;
 	}
 
-	@Reference(unbind = "-")
-	public void setDDMFormValuesToFieldsConverter(
-		DDMFormValuesToFieldsConverter ddmFormValuesToFieldsConverter) {
-
-		_ddmFormValuesToFieldsConverter = ddmFormValuesToFieldsConverter;
-	}
-
-	@Reference(unbind = "-")
-	public void setDDMStructureLocalService(
-		DDMStructureLocalService ddmStructureLocalService) {
-
-		_ddmStructureLocalService = ddmStructureLocalService;
-	}
-
-	@Reference(unbind = "-")
-	public void setDLAppService(DLAppService dlAppService) {
-		_dlAppService = dlAppService;
-	}
-
-	@Reference(unbind = "-")
-	public void setDLFileEntryMetadataLocalService(
-		DLFileEntryMetadataLocalService dlFileEntryMetadataLocalService) {
-
-		_dlFileEntryMetadataLocalService = dlFileEntryMetadataLocalService;
-	}
-
-	@Reference(unbind = "-")
-	public void setFieldsToDDMFormValuesConverter(
-		FieldsToDDMFormValuesConverter fieldsToDDMFormValuesConverter) {
-
-		_fieldsToDDMFormValuesConverter = fieldsToDDMFormValuesConverter;
-	}
-
-	@Reference(unbind = "-")
-	public void setStorageEngine(StorageEngine storageEngine) {
-		_storageEngine = storageEngine;
-	}
-
+	@Reference
 	private DDMFormValuesToFieldsConverter _ddmFormValuesToFieldsConverter;
+
+	@Reference
 	private DDMStructureLocalService _ddmStructureLocalService;
+
+	@Reference
 	private DLAppService _dlAppService;
+
+	@Reference
 	private DLFileEntryMetadataLocalService _dlFileEntryMetadataLocalService;
+
+	@Reference
 	private FieldsToDDMFormValuesConverter _fieldsToDDMFormValuesConverter;
+
+	@Reference
 	private StorageEngine _storageEngine;
 
 }

@@ -1,33 +1,37 @@
-<definition>
-	<command name="addNewPG">
-		<execute function="Click#clickAt" locator1="ControlMenu#ADD" />
+definition {
 
-		<execute function="AssertElementPresent" locator1="ControlMenuAddPanel#CONTENT_ACCORDION_PANEL_TITLE" />
-		<execute function="AssertVisible" locator1="ControlMenuAddPanel#CONTENT_ACCORDION_PANEL_TITLE" value1="Content" />
+	macro addNewPG {
+		Click.clickAt(locator1 = "ControlMenu#ADD");
 
-		<execute macro="Panel#expandSidebarContentPanel" />
+		AssertElementPresent(locator1 = "ControlMenuAddPanel#SIDEBAR_HEADER");
 
-		<execute function="AssertClick" locator1="ControlMenuAddPanel#ADD_NEW_DROPDOWN" value1="Add New" />
+		Navigator.gotoNavTab(navTab = "Content");
 
-		<execute function="AssertClick" locator1="MenuItem#ANY_MENU_ITEM" value1="${assetType}">
-			<var name="key_menuItem" value="${assetType}" />
-		</execute>
-	</command>
+		AssertClick.assertPartialTextClickAt(
+			locator1 = "ControlMenuAddPanel#ADD_NEW_DROPDOWN",
+			value1 = "Add New");
 
-	<command name="addPG">
-		<execute function="Click#clickAt" locator1="ControlMenu#ADD" />
+		Click(
+			key_assetItem = "${assetType}",
+			locator1 = "ControlMenuAddPanel#ASSET_ITEM");
+	}
 
-		<execute function="AssertElementPresent" locator1="ControlMenuAddPanel#CONTENT_ACCORDION_PANEL_TITLE" />
-		<execute function="AssertVisible" locator1="ControlMenuAddPanel#CONTENT_ACCORDION_PANEL_TITLE" value1="Content" />
+	macro addPG {
+		Click.clickAt(locator1 = "ControlMenu#ADD");
 
-		<execute macro="Panel#expandSidebarContentPanel" />
+		AssertElementPresent(locator1 = "ControlMenuAddPanel#SIDEBAR_HEADER");
 
-		<var name="key_assetTitle" value="${assetTitle}" />
+		Navigator.gotoNavTab(navTab = "Content");
 
-		<execute function="Type" locator1="NavBar#CONTENT_SEARCH_FIELD" value1="${assetTitle}" />
+		var key_assetTitle = "${assetTitle}";
 
-		<execute function="AssertTextEquals" locator1="ControlMenuAddPanel#CONTENT_TITLE" value1="${assetTitle}" />
+		Type(
+			locator1 = "NavBar#APPLICATION_SEARCH_FIELD",
+			value1 = "${assetTitle}");
 
-		<execute function="DragAndDrop" locator1="ControlMenuAddPanel#CONTENT_TITLE" locator2="Home#PAGE_COLUMN_1" value1="${assetTitle}" />
-	</command>
-</definition>
+		Click.clickNoWaitForVisible(
+			key_portletName = "${assetTitle}",
+			locator1 = "ControlMenuAddPanel#ADD_PORTLET_LINK");
+	}
+
+}

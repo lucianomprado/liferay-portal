@@ -14,21 +14,23 @@
 
 package com.liferay.portal.xuggler;
 
+import com.liferay.petra.log4j.Log4JUtil;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
-import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.xuggler.Xuggler;
 import com.liferay.portal.kernel.xuggler.XugglerInstallException;
 import com.liferay.portal.util.JarUtil;
 import com.liferay.portal.util.PrefsPropsUtil;
 import com.liferay.portal.util.PropsValues;
-import com.liferay.util.log4j.Log4JUtil;
 
 import com.xuggle.ferry.JNILibraryLoader;
 import com.xuggle.xuggler.IContainer;
 
 import java.net.URL;
+
+import java.nio.file.Paths;
 
 /**
  * @author Alexander Chow
@@ -40,12 +42,12 @@ public class XugglerImpl implements Xuggler {
 		try {
 			JarUtil.downloadAndInstallJar(
 				new URL(PropsValues.XUGGLER_JAR_URL + name),
-				PropsValues.LIFERAY_LIB_PORTAL_DIR, name);
+				Paths.get(PropsValues.LIFERAY_LIB_PORTAL_DIR, name));
 
 			_nativeLibraryCopied = true;
 		}
-		catch (Exception e) {
-			throw new XugglerInstallException.MustInstallJar(name, e);
+		catch (Exception exception) {
+			throw new XugglerInstallException.MustInstallJar(name, exception);
 		}
 	}
 
@@ -62,9 +64,9 @@ public class XugglerImpl implements Xuggler {
 			enabled = PrefsPropsUtil.getBoolean(
 				PropsKeys.XUGGLER_ENABLED, PropsValues.XUGGLER_ENABLED);
 		}
-		catch (Exception e) {
+		catch (Exception exception) {
 			if (_log.isWarnEnabled()) {
-				_log.warn(e, e);
+				_log.warn(exception, exception);
 			}
 		}
 
@@ -108,15 +110,14 @@ public class XugglerImpl implements Xuggler {
 		}
 		finally {
 			Log4JUtil.setLevel(
-				JNILibraryLoader.class.getName(), originalLevel.toString(),
-				false);
+				JNILibraryLoader.class.getName(), originalLevel, false);
 		}
 
 		return _nativeLibraryInstalled;
 	}
 
 	protected void informAdministrator(String errorMessage) {
-		if (!_informAdministrator) {
+		if (!_informAdministrator || !_log.isWarnEnabled()) {
 			return;
 		}
 
@@ -128,11 +129,11 @@ public class XugglerImpl implements Xuggler {
 		sb.append("installed. In order to generate video and audio previews, ");
 		sb.append("please follow the instructions for Xuggler in the Server ");
 		sb.append("Administration section of the Control Panel at: ");
-		sb.append("http://<server>/group/control_panel/manage/-/server/");
-		sb.append("external-services. Error message is: ");
+		sb.append("http://<server>/group/control_panel/manage/-/server");
+		sb.append("/external-services. Warning: ");
 		sb.append(errorMessage);
 
-		_log.error(sb.toString());
+		_log.warn(sb.toString());
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(XugglerImpl.class);

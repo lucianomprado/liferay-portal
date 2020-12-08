@@ -14,8 +14,6 @@
 
 package com.liferay.portlet.social.model.impl;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.social.kernel.model.SocialActivityCounter;
 import com.liferay.social.kernel.service.SocialActivityCounterLocalServiceUtil;
 
@@ -31,21 +29,24 @@ import com.liferay.social.kernel.service.SocialActivityCounterLocalServiceUtil;
  * @see SocialActivityCounter
  * @generated
  */
-@ProviderType
 public abstract class SocialActivityCounterBaseImpl
 	extends SocialActivityCounterModelImpl implements SocialActivityCounter {
+
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. All methods that expect a social activity counter model instance should use the {@link SocialActivityCounter} interface instead.
+	 * Never modify or reference this class directly. All methods that expect a social activity counter model instance should use the <code>SocialActivityCounter</code> interface instead.
 	 */
 	@Override
 	public void persist() {
 		if (this.isNew()) {
-			SocialActivityCounterLocalServiceUtil.addSocialActivityCounter(this);
+			SocialActivityCounterLocalServiceUtil.addSocialActivityCounter(
+				this);
 		}
 		else {
-			SocialActivityCounterLocalServiceUtil.updateSocialActivityCounter(this);
+			SocialActivityCounterLocalServiceUtil.updateSocialActivityCounter(
+				this);
 		}
 	}
+
 }

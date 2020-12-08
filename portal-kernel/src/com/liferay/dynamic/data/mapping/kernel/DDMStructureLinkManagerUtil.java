@@ -14,8 +14,6 @@
 
 package com.liferay.dynamic.data.mapping.kernel;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.util.ServiceProxyFactory;
 
@@ -24,7 +22,6 @@ import java.util.List;
 /**
  * @author Rafael Praxedes
  */
-@ProviderType
 public class DDMStructureLinkManagerUtil {
 
 	public static DDMStructureLink addStructureLink(
@@ -46,10 +43,18 @@ public class DDMStructureLinkManagerUtil {
 		_ddmStructureLinkManager.deleteStructureLinks(classNameId, classPK);
 	}
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
+	 */
+	@Deprecated
 	public static List<DDMStructureLink> getClassNameStructureLinks(
 		long classNameId) {
 
 		return _ddmStructureLinkManager.getClassNameStructureLinks(classNameId);
+	}
+
+	public static List<DDMStructureLink> getStructureLinks(long structureId) {
+		return _ddmStructureLinkManager.getStructureLinks(structureId);
 	}
 
 	public static List<DDMStructureLink> getStructureLinks(

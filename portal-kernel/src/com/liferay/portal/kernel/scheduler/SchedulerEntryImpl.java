@@ -14,22 +14,13 @@
 
 package com.liferay.portal.kernel.scheduler;
 
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 
 /**
  * @author Shuyang Zhou
  */
 public class SchedulerEntryImpl implements SchedulerEntry {
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link
-	 *             #SchedulerEntryImpl(String, Trigger, String)}
-	 */
-	@Deprecated
-	public SchedulerEntryImpl() {
-		this(StringPool.BLANK, null, StringPool.BLANK);
-	}
 
 	public SchedulerEntryImpl(String eventListenerClass, Trigger trigger) {
 		this(eventListenerClass, trigger, StringPool.BLANK);
@@ -56,30 +47,6 @@ public class SchedulerEntryImpl implements SchedulerEntry {
 	@Override
 	public Trigger getTrigger() {
 		return _trigger;
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	public void setDescription(String description) {
-		_description = description;
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	public void setEventListenerClass(String eventListenerClass) {
-		_eventListenerClass = eventListenerClass;
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	public void setTrigger(Trigger trigger) {
-		_trigger = trigger;
 	}
 
 	@Override

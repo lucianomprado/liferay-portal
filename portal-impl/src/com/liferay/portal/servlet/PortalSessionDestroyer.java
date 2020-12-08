@@ -28,13 +28,13 @@ import com.liferay.portal.kernel.security.auth.AuthenticatedUserUUIDStoreUtil;
 import com.liferay.portal.kernel.service.CompanyLocalServiceUtil;
 import com.liferay.portal.kernel.servlet.PortalSessionContext;
 import com.liferay.portal.kernel.util.BasePortalLifecycle;
+import com.liferay.portal.kernel.util.CookieKeys;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.util.PropsValues;
 
 import javax.servlet.http.HttpSession;
-import javax.servlet.http.HttpSessionEvent;
 
 /**
  * @author Michael Young
@@ -45,15 +45,6 @@ public class PortalSessionDestroyer extends BasePortalLifecycle {
 		_httpSession = httpSession;
 
 		registerPortalLifecycle(METHOD_INIT);
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link
-	 *             #PortalSessionDestroyer(HttpSession)}
-	 */
-	@Deprecated
-	public PortalSessionDestroyer(HttpSessionEvent httpSessionEvent) {
-		this(httpSessionEvent.getSession());
 	}
 
 	@Override
@@ -101,10 +92,13 @@ public class PortalSessionDestroyer extends BasePortalLifecycle {
 				long companyId = CompanyLocalServiceUtil.getCompanyIdByUserId(
 					userId);
 
-				jsonObject.put("companyId", companyId);
-
-				jsonObject.put("sessionId", _httpSession.getId());
-				jsonObject.put("userId", userId);
+				jsonObject.put(
+					"companyId", companyId
+				).put(
+					"sessionId", _httpSession.getId()
+				).put(
+					"userId", userId
+				);
 
 				MessageBusUtil.sendMessage(
 					DestinationNames.LIVE_USERS, jsonObject.toString());
@@ -112,21 +106,21 @@ public class PortalSessionDestroyer extends BasePortalLifecycle {
 
 			if (PropsValues.AUTH_USER_UUID_STORE_ENABLED) {
 				String userUUID = (String)_httpSession.getAttribute(
-					WebKeys.USER_UUID);
+					CookieKeys.USER_UUID);
 
 				if (Validator.isNotNull(userUUID)) {
 					AuthenticatedUserUUIDStoreUtil.unregister(userUUID);
 				}
 			}
 		}
-		catch (IllegalStateException ise) {
+		catch (IllegalStateException illegalStateException) {
 			if (_log.isWarnEnabled()) {
 				_log.warn(
 					"Please upgrade to a Servlet 2.4 compliant container");
 			}
 		}
-		catch (Exception e) {
-			_log.error(e, e);
+		catch (Exception exception) {
+			_log.error(exception, exception);
 		}
 
 		// Process session destroyed events
@@ -136,8 +130,8 @@ public class PortalSessionDestroyer extends BasePortalLifecycle {
 				PropsKeys.SERVLET_SESSION_DESTROY_EVENTS,
 				PropsValues.SERVLET_SESSION_DESTROY_EVENTS, _httpSession);
 		}
-		catch (ActionException ae) {
-			_log.error(ae, ae);
+		catch (ActionException actionException) {
+			_log.error(actionException, actionException);
 		}
 	}
 

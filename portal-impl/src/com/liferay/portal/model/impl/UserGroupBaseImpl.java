@@ -14,8 +14,6 @@
 
 package com.liferay.portal.model.impl;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.portal.kernel.model.UserGroup;
 import com.liferay.portal.kernel.service.UserGroupLocalServiceUtil;
 
@@ -31,13 +29,13 @@ import com.liferay.portal.kernel.service.UserGroupLocalServiceUtil;
  * @see UserGroup
  * @generated
  */
-@ProviderType
-public abstract class UserGroupBaseImpl extends UserGroupModelImpl
-	implements UserGroup {
+public abstract class UserGroupBaseImpl
+	extends UserGroupModelImpl implements UserGroup {
+
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. All methods that expect a user group model instance should use the {@link UserGroup} interface instead.
+	 * Never modify or reference this class directly. All methods that expect a user group model instance should use the <code>UserGroup</code> interface instead.
 	 */
 	@Override
 	public void persist() {
@@ -48,4 +46,5 @@ public abstract class UserGroupBaseImpl extends UserGroupModelImpl
 			UserGroupLocalServiceUtil.updateUserGroup(this);
 		}
 	}
+
 }

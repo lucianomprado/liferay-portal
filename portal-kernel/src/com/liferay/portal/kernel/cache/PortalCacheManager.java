@@ -14,8 +14,6 @@
 
 package com.liferay.portal.kernel.cache;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.portal.kernel.nio.intraband.proxy.annotation.Proxy;
 
 import java.io.Serializable;
@@ -23,6 +21,8 @@ import java.io.Serializable;
 import java.net.URL;
 
 import java.util.Set;
+
+import org.osgi.annotation.versioning.ProviderType;
 
 /**
  * @author Joseph Shum
@@ -41,9 +41,16 @@ public interface PortalCacheManager<K extends Serializable, V> {
 
 	public void destroy();
 
+	public PortalCache<K, V> fetchPortalCache(String portalCacheName);
+
 	public PortalCache<K, V> getPortalCache(String portalCacheName)
 		throws PortalCacheException;
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *             #getPortalCache(String)}
+	 */
+	@Deprecated
 	public PortalCache<K, V> getPortalCache(
 			String portalCacheName, boolean blocking)
 		throws PortalCacheException;
@@ -58,8 +65,17 @@ public interface PortalCacheManager<K extends Serializable, V> {
 
 	public boolean isClusterAware();
 
+	/**
+	 * @deprecated As of Mueller (7.2.x), replaced by {@link
+	 *             #reconfigurePortalCaches(URL, ClassLoader)}
+	 */
+	@Deprecated
 	@Proxy
 	public void reconfigurePortalCaches(URL configurationURL);
+
+	@Proxy
+	public void reconfigurePortalCaches(
+		URL configurationURL, ClassLoader classLoader);
 
 	public boolean registerPortalCacheManagerListener(
 		PortalCacheManagerListener portalCacheManagerListener);

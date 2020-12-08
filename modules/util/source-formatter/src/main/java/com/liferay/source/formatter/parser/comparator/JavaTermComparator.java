@@ -14,19 +14,15 @@
 
 package com.liferay.source.formatter.parser.comparator;
 
-import com.liferay.portal.kernel.util.CharPool;
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.NaturalOrderStringComparator;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.source.formatter.parser.JavaClass;
-import com.liferay.source.formatter.parser.JavaConstructor;
-import com.liferay.source.formatter.parser.JavaMethod;
 import com.liferay.source.formatter.parser.JavaParameter;
 import com.liferay.source.formatter.parser.JavaSignature;
-import com.liferay.source.formatter.parser.JavaStaticBlock;
 import com.liferay.source.formatter.parser.JavaTerm;
-import com.liferay.source.formatter.parser.JavaVariable;
 
 import java.util.Comparator;
 import java.util.List;
@@ -58,7 +54,7 @@ public class JavaTermComparator implements Comparator<JavaTerm> {
 		String name1 = javaTerm1.getName();
 		String name2 = javaTerm2.getName();
 
-		if (javaTerm1 instanceof JavaVariable) {
+		if (javaTerm1.isJavaVariable()) {
 			if (StringUtil.isUpperCase(name1) &&
 				!StringUtil.isLowerCase(name1) &&
 				!StringUtil.isUpperCase(name2)) {
@@ -73,23 +69,19 @@ public class JavaTermComparator implements Comparator<JavaTerm> {
 				return 1;
 			}
 
-			if (javaTerm1.isStatic()) {
-				String accessModifier = javaTerm1.getAccessModifier();
+			if (javaTerm1.isPrivate() && javaTerm1.isStatic()) {
+				if (name2.equals("_log") || name2.equals("_logger")) {
+					return 1;
+				}
 
-				if (accessModifier.equals(JavaTerm.ACCESS_MODIFIER_PRIVATE)) {
-					if (name2.equals("_log") || name2.equals("_logger")) {
-						return 1;
-					}
+				if (name1.equals("_instance") || name1.equals("_log") ||
+					name1.equals("_logger")) {
 
-					if (name1.equals("_instance") || name1.equals("_log") ||
-						name1.equals("_logger")) {
+					return -1;
+				}
 
-						return -1;
-					}
-
-					if (name2.equals("_instance")) {
-						return 1;
-					}
+				if (name2.equals("_instance")) {
+					return 1;
 				}
 			}
 		}
@@ -181,11 +173,12 @@ public class JavaTermComparator implements Comparator<JavaTerm> {
 
 	private int _compareParameterTypes(JavaTerm javaTerm1, JavaTerm javaTerm2) {
 		JavaSignature javaSignature1 = javaTerm1.getSignature();
-		JavaSignature javaSignature2 = javaTerm2.getSignature();
 
 		if ((javaSignature1 == null) || (javaSignature1 == null)) {
 			return 0;
 		}
+
+		JavaSignature javaSignature2 = javaTerm2.getSignature();
 
 		List<JavaParameter> parameters1 = javaSignature1.getParameters();
 		List<JavaParameter> parameters2 = javaSignature2.getParameters();
@@ -267,106 +260,104 @@ public class JavaTermComparator implements Comparator<JavaTerm> {
 	}
 
 	private int _getType(JavaTerm javaTerm) {
-		if (javaTerm instanceof JavaStaticBlock) {
+		if (javaTerm.isJavaStaticBlock()) {
 			return -1;
 		}
 
-		String accessModifier = javaTerm.getAccessModifier();
-
-		if (accessModifier.equals(JavaTerm.ACCESS_MODIFIER_PUBLIC)) {
+		if (javaTerm.isPublic()) {
 			if (javaTerm.isStatic()) {
-				if (javaTerm instanceof JavaVariable) {
+				if (javaTerm.isJavaVariable()) {
 					return 1;
 				}
 
-				if (javaTerm instanceof JavaMethod) {
+				if (javaTerm.isJavaMethod()) {
 					return 2;
 				}
 
-				if (javaTerm instanceof JavaClass) {
+				if (javaTerm.isJavaClass()) {
 					return 6;
 				}
 			}
 			else {
-				if (javaTerm instanceof JavaConstructor) {
+				if (javaTerm.isJavaConstructor()) {
 					return 3;
 				}
 
-				if (javaTerm instanceof JavaMethod) {
+				if (javaTerm.isJavaMethod()) {
 					return 4;
 				}
 
-				if (javaTerm instanceof JavaVariable) {
+				if (javaTerm.isJavaVariable()) {
 					return 5;
 				}
 
-				if (javaTerm instanceof JavaClass) {
+				if (javaTerm.isJavaClass()) {
 					return 7;
 				}
 			}
 		}
 
-		if (accessModifier.equals(JavaTerm.ACCESS_MODIFIER_PROTECTED)) {
+		if (javaTerm.isProtected()) {
 			if (javaTerm.isStatic()) {
-				if (javaTerm instanceof JavaMethod) {
+				if (javaTerm.isJavaMethod()) {
 					return 8;
 				}
 
-				if (javaTerm instanceof JavaVariable) {
+				if (javaTerm.isJavaVariable()) {
 					return 11;
 				}
 
-				if (javaTerm instanceof JavaClass) {
+				if (javaTerm.isJavaClass()) {
 					return 13;
 				}
 			}
 			else {
-				if (javaTerm instanceof JavaConstructor) {
+				if (javaTerm.isJavaConstructor()) {
 					return 9;
 				}
 
-				if (javaTerm instanceof JavaMethod) {
+				if (javaTerm.isJavaMethod()) {
 					return 10;
 				}
 
-				if (javaTerm instanceof JavaVariable) {
+				if (javaTerm.isJavaVariable()) {
 					return 12;
 				}
 
-				if (javaTerm instanceof JavaClass) {
+				if (javaTerm.isJavaClass()) {
 					return 14;
 				}
 			}
 		}
 
-		if (accessModifier.equals(JavaTerm.ACCESS_MODIFIER_PRIVATE)) {
+		if (javaTerm.isPrivate()) {
 			if (javaTerm.isStatic()) {
-				if (javaTerm instanceof JavaMethod) {
+				if (javaTerm.isJavaMethod()) {
 					return 15;
 				}
 
-				if (javaTerm instanceof JavaVariable) {
+				if (javaTerm.isJavaVariable()) {
 					return 18;
 				}
 
-				if (javaTerm instanceof JavaClass) {
+				if (javaTerm.isJavaClass()) {
 					return 20;
 				}
 			}
 			else {
-				if (javaTerm instanceof JavaConstructor) {
+				if (javaTerm.isJavaConstructor()) {
 					return 16;
 				}
 
-				if (javaTerm instanceof JavaMethod) {
+				if (javaTerm.isJavaMethod()) {
 					return 17;
 				}
 
-				if (javaTerm instanceof JavaVariable) {
+				if (javaTerm.isJavaVariable()) {
 					return 19;
 				}
 
-				if (javaTerm instanceof JavaClass) {
+				if (javaTerm.isJavaClass()) {
 					return 21;
 				}
 			}
@@ -375,10 +366,11 @@ public class JavaTermComparator implements Comparator<JavaTerm> {
 		return -1;
 	}
 
-	private final String _customSQLContent;
-	private final Pattern _finderPattern = Pattern.compile(
+	private static final Pattern _finderPattern = Pattern.compile(
 		"((COUNT|FIND|JOIN)_|(do|filter)?([Cc]ount|[Ff]ind)).*");
-	private final Pattern _sqlKeyPattern = Pattern.compile(
+	private static final Pattern _sqlKeyPattern = Pattern.compile(
 		"\"\\.([^\"]+)\";\n");
+
+	private final String _customSQLContent;
 
 }

@@ -1,6 +1,8 @@
 <html>
 	<head>
 		<title>Liferay Portal ${releaseInfoVersion} Properties</title>
+
+		<meta charset="UTF-8" />
 	</head>
 
 	<body>

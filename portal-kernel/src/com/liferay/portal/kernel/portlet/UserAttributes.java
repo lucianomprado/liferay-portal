@@ -14,6 +14,7 @@
 
 package com.liferay.portal.kernel.portlet;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -23,7 +24,6 @@ import com.liferay.portal.kernel.model.ListType;
 import com.liferay.portal.kernel.model.Phone;
 import com.liferay.portal.kernel.model.Region;
 import com.liferay.portal.kernel.model.User;
-import com.liferay.portal.kernel.util.StringPool;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -81,7 +81,14 @@ public class UserAttributes {
 
 	public static final String USER_NAME_SUFFIX = "user.name.suffix";
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *             #USER_NAME_NICK_NAME}
+	 */
+	@Deprecated
 	public static final String USER_NAME_NICKNAME = "user.name.nickName";
+
+	public static final String USER_NAME_NICK_NAME = "user.name.nickName";
 
 	public static final String USER_HOME_INFO_POSTAL_NAME =
 		"user.home-info.postal.name";
@@ -311,8 +318,8 @@ public class UserAttributes {
 				}
 			}
 		}
-		catch (Exception e) {
-			_log.error(e, e);
+		catch (Exception exception) {
+			_log.error(exception, exception);
 		}
 
 		_businessAddress = businessAddress;
@@ -756,9 +763,8 @@ public class UserAttributes {
 		else if (name.equals(USER_BUSINESS_INFO_ONLINE_URI)) {
 			return StringPool.BLANK;
 		}
-		else {
-			return null;
-		}
+
+		return null;
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(UserAttributes.class);

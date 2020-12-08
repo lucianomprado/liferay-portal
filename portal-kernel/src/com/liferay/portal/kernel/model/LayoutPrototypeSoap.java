@@ -14,8 +14,6 @@
 
 package com.liferay.portal.kernel.model;
 
-import aQute.bnd.annotation.ProviderType;
-
 import java.io.Serializable;
 
 import java.util.ArrayList;
@@ -26,11 +24,12 @@ import java.util.List;
  * This class is used by SOAP remote services, specifically {@link com.liferay.portal.service.http.LayoutPrototypeServiceSoap}.
  *
  * @author Brian Wing Shun Chan
- * @see com.liferay.portal.service.http.LayoutPrototypeServiceSoap
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
-@ProviderType
+@Deprecated
 public class LayoutPrototypeSoap implements Serializable {
+
 	public static LayoutPrototypeSoap toSoapModel(LayoutPrototype model) {
 		LayoutPrototypeSoap soapModel = new LayoutPrototypeSoap();
 
@@ -45,13 +44,14 @@ public class LayoutPrototypeSoap implements Serializable {
 		soapModel.setName(model.getName());
 		soapModel.setDescription(model.getDescription());
 		soapModel.setSettings(model.getSettings());
-		soapModel.setActive(model.getActive());
+		soapModel.setActive(model.isActive());
 
 		return soapModel;
 	}
 
 	public static LayoutPrototypeSoap[] toSoapModels(LayoutPrototype[] models) {
-		LayoutPrototypeSoap[] soapModels = new LayoutPrototypeSoap[models.length];
+		LayoutPrototypeSoap[] soapModels =
+			new LayoutPrototypeSoap[models.length];
 
 		for (int i = 0; i < models.length; i++) {
 			soapModels[i] = toSoapModel(models[i]);
@@ -62,10 +62,12 @@ public class LayoutPrototypeSoap implements Serializable {
 
 	public static LayoutPrototypeSoap[][] toSoapModels(
 		LayoutPrototype[][] models) {
+
 		LayoutPrototypeSoap[][] soapModels = null;
 
 		if (models.length > 0) {
-			soapModels = new LayoutPrototypeSoap[models.length][models[0].length];
+			soapModels =
+				new LayoutPrototypeSoap[models.length][models[0].length];
 		}
 		else {
 			soapModels = new LayoutPrototypeSoap[0][0];
@@ -80,7 +82,9 @@ public class LayoutPrototypeSoap implements Serializable {
 
 	public static LayoutPrototypeSoap[] toSoapModels(
 		List<LayoutPrototype> models) {
-		List<LayoutPrototypeSoap> soapModels = new ArrayList<LayoutPrototypeSoap>(models.size());
+
+		List<LayoutPrototypeSoap> soapModels =
+			new ArrayList<LayoutPrototypeSoap>(models.size());
 
 		for (LayoutPrototype model : models) {
 			soapModels.add(toSoapModel(model));
@@ -212,4 +216,5 @@ public class LayoutPrototypeSoap implements Serializable {
 	private String _description;
 	private String _settings;
 	private boolean _active;
+
 }

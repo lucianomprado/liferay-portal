@@ -14,14 +14,12 @@
 
 package com.liferay.portal.service.base;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.exportimport.kernel.lar.ExportImportHelperUtil;
 import com.liferay.exportimport.kernel.lar.ManifestSummary;
 import com.liferay.exportimport.kernel.lar.PortletDataContext;
 import com.liferay.exportimport.kernel.lar.StagedModelDataHandlerUtil;
 import com.liferay.exportimport.kernel.lar.StagedModelType;
-
+import com.liferay.petra.sql.dsl.query.DSLQuery;
 import com.liferay.portal.kernel.bean.BeanReference;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
@@ -47,11 +45,13 @@ import com.liferay.portal.kernel.service.AddressLocalService;
 import com.liferay.portal.kernel.service.BaseLocalServiceImpl;
 import com.liferay.portal.kernel.service.PersistedModelLocalServiceRegistry;
 import com.liferay.portal.kernel.service.persistence.AddressPersistence;
+import com.liferay.portal.kernel.service.persistence.BasePersistence;
 import com.liferay.portal.kernel.service.persistence.ClassNamePersistence;
 import com.liferay.portal.kernel.service.persistence.CountryPersistence;
 import com.liferay.portal.kernel.service.persistence.ListTypePersistence;
 import com.liferay.portal.kernel.service.persistence.UserFinder;
 import com.liferay.portal.kernel.service.persistence.UserPersistence;
+import com.liferay.portal.kernel.transaction.Transactional;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.PortalUtil;
 
@@ -70,20 +70,24 @@ import javax.sql.DataSource;
  *
  * @author Brian Wing Shun Chan
  * @see com.liferay.portal.service.impl.AddressLocalServiceImpl
- * @see com.liferay.portal.kernel.service.AddressLocalServiceUtil
  * @generated
  */
-@ProviderType
-public abstract class AddressLocalServiceBaseImpl extends BaseLocalServiceImpl
+public abstract class AddressLocalServiceBaseImpl
+	extends BaseLocalServiceImpl
 	implements AddressLocalService, IdentifiableOSGiService {
+
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. Always use {@link com.liferay.portal.kernel.service.AddressLocalServiceUtil} to access the address local service.
+	 * Never modify or reference this class directly. Use <code>AddressLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>com.liferay.portal.kernel.service.AddressLocalServiceUtil</code>.
 	 */
 
 	/**
 	 * Adds the address to the database. Also notifies the appropriate model listeners.
+	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect AddressLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
 	 *
 	 * @param address the address
 	 * @return the address that was added
@@ -103,12 +107,17 @@ public abstract class AddressLocalServiceBaseImpl extends BaseLocalServiceImpl
 	 * @return the new address
 	 */
 	@Override
+	@Transactional(enabled = false)
 	public Address createAddress(long addressId) {
 		return addressPersistence.create(addressId);
 	}
 
 	/**
 	 * Deletes the address with the primary key from the database. Also notifies the appropriate model listeners.
+	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect AddressLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
 	 *
 	 * @param addressId the primary key of the address
 	 * @return the address that was removed
@@ -123,6 +132,10 @@ public abstract class AddressLocalServiceBaseImpl extends BaseLocalServiceImpl
 	/**
 	 * Deletes the address from the database. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect AddressLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param address the address
 	 * @return the address that was removed
 	 */
@@ -133,11 +146,16 @@ public abstract class AddressLocalServiceBaseImpl extends BaseLocalServiceImpl
 	}
 
 	@Override
+	public <T> T dslQuery(DSLQuery dslQuery) {
+		return addressPersistence.dslQuery(dslQuery);
+	}
+
+	@Override
 	public DynamicQuery dynamicQuery() {
 		Class<?> clazz = getClass();
 
-		return DynamicQueryFactoryUtil.forClass(Address.class,
-			clazz.getClassLoader());
+		return DynamicQueryFactoryUtil.forClass(
+			Address.class, clazz.getClassLoader());
 	}
 
 	/**
@@ -155,7 +173,7 @@ public abstract class AddressLocalServiceBaseImpl extends BaseLocalServiceImpl
 	 * Performs a dynamic query on the database and returns a range of the matching rows.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portal.model.impl.AddressModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>com.liferay.portal.model.impl.AddressModelImpl</code>.
 	 * </p>
 	 *
 	 * @param dynamicQuery the dynamic query
@@ -164,16 +182,18 @@ public abstract class AddressLocalServiceBaseImpl extends BaseLocalServiceImpl
 	 * @return the range of matching rows
 	 */
 	@Override
-	public <T> List<T> dynamicQuery(DynamicQuery dynamicQuery, int start,
-		int end) {
-		return addressPersistence.findWithDynamicQuery(dynamicQuery, start, end);
+	public <T> List<T> dynamicQuery(
+		DynamicQuery dynamicQuery, int start, int end) {
+
+		return addressPersistence.findWithDynamicQuery(
+			dynamicQuery, start, end);
 	}
 
 	/**
 	 * Performs a dynamic query on the database and returns an ordered range of the matching rows.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portal.model.impl.AddressModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>com.liferay.portal.model.impl.AddressModelImpl</code>.
 	 * </p>
 	 *
 	 * @param dynamicQuery the dynamic query
@@ -183,10 +203,12 @@ public abstract class AddressLocalServiceBaseImpl extends BaseLocalServiceImpl
 	 * @return the ordered range of matching rows
 	 */
 	@Override
-	public <T> List<T> dynamicQuery(DynamicQuery dynamicQuery, int start,
-		int end, OrderByComparator<T> orderByComparator) {
-		return addressPersistence.findWithDynamicQuery(dynamicQuery, start,
-			end, orderByComparator);
+	public <T> List<T> dynamicQuery(
+		DynamicQuery dynamicQuery, int start, int end,
+		OrderByComparator<T> orderByComparator) {
+
+		return addressPersistence.findWithDynamicQuery(
+			dynamicQuery, start, end, orderByComparator);
 	}
 
 	/**
@@ -208,9 +230,11 @@ public abstract class AddressLocalServiceBaseImpl extends BaseLocalServiceImpl
 	 * @return the number of rows matching the dynamic query
 	 */
 	@Override
-	public long dynamicQueryCount(DynamicQuery dynamicQuery,
-		Projection projection) {
-		return addressPersistence.countWithDynamicQuery(dynamicQuery, projection);
+	public long dynamicQueryCount(
+		DynamicQuery dynamicQuery, Projection projection) {
+
+		return addressPersistence.countWithDynamicQuery(
+			dynamicQuery, projection);
 	}
 
 	@Override
@@ -231,6 +255,21 @@ public abstract class AddressLocalServiceBaseImpl extends BaseLocalServiceImpl
 	}
 
 	/**
+	 * Returns the address with the matching external reference code and company.
+	 *
+	 * @param companyId the primary key of the company
+	 * @param externalReferenceCode the address's external reference code
+	 * @return the matching address, or <code>null</code> if a matching address could not be found
+	 */
+	@Override
+	public Address fetchAddressByReferenceCode(
+		long companyId, String externalReferenceCode) {
+
+		return addressPersistence.fetchByC_ERC(
+			companyId, externalReferenceCode);
+	}
+
+	/**
 	 * Returns the address with the primary key.
 	 *
 	 * @param addressId the primary key of the address
@@ -244,7 +283,8 @@ public abstract class AddressLocalServiceBaseImpl extends BaseLocalServiceImpl
 
 	@Override
 	public ActionableDynamicQuery getActionableDynamicQuery() {
-		ActionableDynamicQuery actionableDynamicQuery = new DefaultActionableDynamicQuery();
+		ActionableDynamicQuery actionableDynamicQuery =
+			new DefaultActionableDynamicQuery();
 
 		actionableDynamicQuery.setBaseLocalService(addressLocalService);
 		actionableDynamicQuery.setClassLoader(getClassLoader());
@@ -256,10 +296,14 @@ public abstract class AddressLocalServiceBaseImpl extends BaseLocalServiceImpl
 	}
 
 	@Override
-	public IndexableActionableDynamicQuery getIndexableActionableDynamicQuery() {
-		IndexableActionableDynamicQuery indexableActionableDynamicQuery = new IndexableActionableDynamicQuery();
+	public IndexableActionableDynamicQuery
+		getIndexableActionableDynamicQuery() {
 
-		indexableActionableDynamicQuery.setBaseLocalService(addressLocalService);
+		IndexableActionableDynamicQuery indexableActionableDynamicQuery =
+			new IndexableActionableDynamicQuery();
+
+		indexableActionableDynamicQuery.setBaseLocalService(
+			addressLocalService);
 		indexableActionableDynamicQuery.setClassLoader(getClassLoader());
 		indexableActionableDynamicQuery.setModelClass(Address.class);
 
@@ -270,6 +314,7 @@ public abstract class AddressLocalServiceBaseImpl extends BaseLocalServiceImpl
 
 	protected void initActionableDynamicQuery(
 		ActionableDynamicQuery actionableDynamicQuery) {
+
 		actionableDynamicQuery.setBaseLocalService(addressLocalService);
 		actionableDynamicQuery.setClassLoader(getClassLoader());
 		actionableDynamicQuery.setModelClass(Address.class);
@@ -280,65 +325,88 @@ public abstract class AddressLocalServiceBaseImpl extends BaseLocalServiceImpl
 	@Override
 	public ExportActionableDynamicQuery getExportActionableDynamicQuery(
 		final PortletDataContext portletDataContext) {
-		final ExportActionableDynamicQuery exportActionableDynamicQuery = new ExportActionableDynamicQuery() {
+
+		final ExportActionableDynamicQuery exportActionableDynamicQuery =
+			new ExportActionableDynamicQuery() {
+
 				@Override
 				public long performCount() throws PortalException {
-					ManifestSummary manifestSummary = portletDataContext.getManifestSummary();
+					ManifestSummary manifestSummary =
+						portletDataContext.getManifestSummary();
 
 					StagedModelType stagedModelType = getStagedModelType();
 
 					long modelAdditionCount = super.performCount();
 
-					manifestSummary.addModelAdditionCount(stagedModelType,
-						modelAdditionCount);
+					manifestSummary.addModelAdditionCount(
+						stagedModelType, modelAdditionCount);
 
-					long modelDeletionCount = ExportImportHelperUtil.getModelDeletionCount(portletDataContext,
-							stagedModelType);
+					long modelDeletionCount =
+						ExportImportHelperUtil.getModelDeletionCount(
+							portletDataContext, stagedModelType);
 
-					manifestSummary.addModelDeletionCount(stagedModelType,
-						modelDeletionCount);
+					manifestSummary.addModelDeletionCount(
+						stagedModelType, modelDeletionCount);
 
 					return modelAdditionCount;
 				}
+
 			};
 
 		initActionableDynamicQuery(exportActionableDynamicQuery);
 
-		exportActionableDynamicQuery.setAddCriteriaMethod(new ActionableDynamicQuery.AddCriteriaMethod() {
+		exportActionableDynamicQuery.setAddCriteriaMethod(
+			new ActionableDynamicQuery.AddCriteriaMethod() {
+
 				@Override
 				public void addCriteria(DynamicQuery dynamicQuery) {
-					portletDataContext.addDateRangeCriteria(dynamicQuery,
-						"modifiedDate");
+					portletDataContext.addDateRangeCriteria(
+						dynamicQuery, "modifiedDate");
 
-					StagedModelType stagedModelType = exportActionableDynamicQuery.getStagedModelType();
+					StagedModelType stagedModelType =
+						exportActionableDynamicQuery.getStagedModelType();
 
-					long referrerClassNameId = stagedModelType.getReferrerClassNameId();
+					long referrerClassNameId =
+						stagedModelType.getReferrerClassNameId();
 
 					Property classNameIdProperty = PropertyFactoryUtil.forName(
-							"classNameId");
+						"classNameId");
 
-					if ((referrerClassNameId != StagedModelType.REFERRER_CLASS_NAME_ID_ALL) &&
-							(referrerClassNameId != StagedModelType.REFERRER_CLASS_NAME_ID_ANY)) {
-						dynamicQuery.add(classNameIdProperty.eq(
+					if ((referrerClassNameId !=
+							StagedModelType.REFERRER_CLASS_NAME_ID_ALL) &&
+						(referrerClassNameId !=
+							StagedModelType.REFERRER_CLASS_NAME_ID_ANY)) {
+
+						dynamicQuery.add(
+							classNameIdProperty.eq(
 								stagedModelType.getReferrerClassNameId()));
 					}
-					else if (referrerClassNameId == StagedModelType.REFERRER_CLASS_NAME_ID_ANY) {
+					else if (referrerClassNameId ==
+								StagedModelType.REFERRER_CLASS_NAME_ID_ANY) {
+
 						dynamicQuery.add(classNameIdProperty.isNotNull());
 					}
 				}
+
 			});
 
-		exportActionableDynamicQuery.setCompanyId(portletDataContext.getCompanyId());
+		exportActionableDynamicQuery.setCompanyId(
+			portletDataContext.getCompanyId());
 
-		exportActionableDynamicQuery.setPerformActionMethod(new ActionableDynamicQuery.PerformActionMethod<Address>() {
+		exportActionableDynamicQuery.setPerformActionMethod(
+			new ActionableDynamicQuery.PerformActionMethod<Address>() {
+
 				@Override
 				public void performAction(Address address)
 					throws PortalException {
-					StagedModelDataHandlerUtil.exportStagedModel(portletDataContext,
-						address);
+
+					StagedModelDataHandlerUtil.exportStagedModel(
+						portletDataContext, address);
 				}
+
 			});
-		exportActionableDynamicQuery.setStagedModelType(new StagedModelType(
+		exportActionableDynamicQuery.setStagedModelType(
+			new StagedModelType(
 				PortalUtil.getClassNameId(Address.class.getName()),
 				StagedModelType.REFERRER_CLASS_NAME_ID_ALL));
 
@@ -349,14 +417,34 @@ public abstract class AddressLocalServiceBaseImpl extends BaseLocalServiceImpl
 	 * @throws PortalException
 	 */
 	@Override
+	public PersistedModel createPersistedModel(Serializable primaryKeyObj)
+		throws PortalException {
+
+		return addressPersistence.create(((Long)primaryKeyObj).longValue());
+	}
+
+	/**
+	 * @throws PortalException
+	 */
+	@Override
 	public PersistedModel deletePersistedModel(PersistedModel persistedModel)
 		throws PortalException {
+
 		return addressLocalService.deleteAddress((Address)persistedModel);
 	}
 
 	@Override
+	public BasePersistence<Address> getBasePersistence() {
+		return addressPersistence;
+	}
+
+	/**
+	 * @throws PortalException
+	 */
+	@Override
 	public PersistedModel getPersistedModel(Serializable primaryKeyObj)
 		throws PortalException {
+
 		return addressPersistence.findByPrimaryKey(primaryKeyObj);
 	}
 
@@ -371,6 +459,7 @@ public abstract class AddressLocalServiceBaseImpl extends BaseLocalServiceImpl
 	@Override
 	public Address getAddressByUuidAndCompanyId(String uuid, long companyId)
 		throws PortalException {
+
 		return addressPersistence.findByUuid_C_First(uuid, companyId, null);
 	}
 
@@ -378,7 +467,7 @@ public abstract class AddressLocalServiceBaseImpl extends BaseLocalServiceImpl
 	 * Returns a range of all the addresses.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portal.model.impl.AddressModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>com.liferay.portal.model.impl.AddressModelImpl</code>.
 	 * </p>
 	 *
 	 * @param start the lower bound of the range of addresses
@@ -403,6 +492,10 @@ public abstract class AddressLocalServiceBaseImpl extends BaseLocalServiceImpl
 	/**
 	 * Updates the address in the database or adds it if it does not yet exist. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect AddressLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param address the address
 	 * @return the address that was updated
 	 */
@@ -426,7 +519,9 @@ public abstract class AddressLocalServiceBaseImpl extends BaseLocalServiceImpl
 	 *
 	 * @param addressLocalService the address local service
 	 */
-	public void setAddressLocalService(AddressLocalService addressLocalService) {
+	public void setAddressLocalService(
+		AddressLocalService addressLocalService) {
+
 		this.addressLocalService = addressLocalService;
 	}
 
@@ -453,7 +548,9 @@ public abstract class AddressLocalServiceBaseImpl extends BaseLocalServiceImpl
 	 *
 	 * @return the counter local service
 	 */
-	public com.liferay.counter.kernel.service.CounterLocalService getCounterLocalService() {
+	public com.liferay.counter.kernel.service.CounterLocalService
+		getCounterLocalService() {
+
 		return counterLocalService;
 	}
 
@@ -463,7 +560,9 @@ public abstract class AddressLocalServiceBaseImpl extends BaseLocalServiceImpl
 	 * @param counterLocalService the counter local service
 	 */
 	public void setCounterLocalService(
-		com.liferay.counter.kernel.service.CounterLocalService counterLocalService) {
+		com.liferay.counter.kernel.service.CounterLocalService
+			counterLocalService) {
+
 		this.counterLocalService = counterLocalService;
 	}
 
@@ -472,7 +571,9 @@ public abstract class AddressLocalServiceBaseImpl extends BaseLocalServiceImpl
 	 *
 	 * @return the class name local service
 	 */
-	public com.liferay.portal.kernel.service.ClassNameLocalService getClassNameLocalService() {
+	public com.liferay.portal.kernel.service.ClassNameLocalService
+		getClassNameLocalService() {
+
 		return classNameLocalService;
 	}
 
@@ -482,7 +583,9 @@ public abstract class AddressLocalServiceBaseImpl extends BaseLocalServiceImpl
 	 * @param classNameLocalService the class name local service
 	 */
 	public void setClassNameLocalService(
-		com.liferay.portal.kernel.service.ClassNameLocalService classNameLocalService) {
+		com.liferay.portal.kernel.service.ClassNameLocalService
+			classNameLocalService) {
+
 		this.classNameLocalService = classNameLocalService;
 	}
 
@@ -502,7 +605,31 @@ public abstract class AddressLocalServiceBaseImpl extends BaseLocalServiceImpl
 	 */
 	public void setClassNamePersistence(
 		ClassNamePersistence classNamePersistence) {
+
 		this.classNamePersistence = classNamePersistence;
+	}
+
+	/**
+	 * Returns the country local service.
+	 *
+	 * @return the country local service
+	 */
+	public com.liferay.portal.kernel.service.CountryLocalService
+		getCountryLocalService() {
+
+		return countryLocalService;
+	}
+
+	/**
+	 * Sets the country local service.
+	 *
+	 * @param countryLocalService the country local service
+	 */
+	public void setCountryLocalService(
+		com.liferay.portal.kernel.service.CountryLocalService
+			countryLocalService) {
+
+		this.countryLocalService = countryLocalService;
 	}
 
 	/**
@@ -528,7 +655,9 @@ public abstract class AddressLocalServiceBaseImpl extends BaseLocalServiceImpl
 	 *
 	 * @return the list type local service
 	 */
-	public com.liferay.portal.kernel.service.ListTypeLocalService getListTypeLocalService() {
+	public com.liferay.portal.kernel.service.ListTypeLocalService
+		getListTypeLocalService() {
+
 		return listTypeLocalService;
 	}
 
@@ -538,7 +667,9 @@ public abstract class AddressLocalServiceBaseImpl extends BaseLocalServiceImpl
 	 * @param listTypeLocalService the list type local service
 	 */
 	public void setListTypeLocalService(
-		com.liferay.portal.kernel.service.ListTypeLocalService listTypeLocalService) {
+		com.liferay.portal.kernel.service.ListTypeLocalService
+			listTypeLocalService) {
+
 		this.listTypeLocalService = listTypeLocalService;
 	}
 
@@ -556,7 +687,9 @@ public abstract class AddressLocalServiceBaseImpl extends BaseLocalServiceImpl
 	 *
 	 * @param listTypePersistence the list type persistence
 	 */
-	public void setListTypePersistence(ListTypePersistence listTypePersistence) {
+	public void setListTypePersistence(
+		ListTypePersistence listTypePersistence) {
+
 		this.listTypePersistence = listTypePersistence;
 	}
 
@@ -565,7 +698,9 @@ public abstract class AddressLocalServiceBaseImpl extends BaseLocalServiceImpl
 	 *
 	 * @return the user local service
 	 */
-	public com.liferay.portal.kernel.service.UserLocalService getUserLocalService() {
+	public com.liferay.portal.kernel.service.UserLocalService
+		getUserLocalService() {
+
 		return userLocalService;
 	}
 
@@ -576,6 +711,7 @@ public abstract class AddressLocalServiceBaseImpl extends BaseLocalServiceImpl
 	 */
 	public void setUserLocalService(
 		com.liferay.portal.kernel.service.UserLocalService userLocalService) {
+
 		this.userLocalService = userLocalService;
 	}
 
@@ -616,8 +752,8 @@ public abstract class AddressLocalServiceBaseImpl extends BaseLocalServiceImpl
 	}
 
 	public void afterPropertiesSet() {
-		persistedModelLocalServiceRegistry.register("com.liferay.portal.kernel.model.Address",
-			addressLocalService);
+		persistedModelLocalServiceRegistry.register(
+			"com.liferay.portal.kernel.model.Address", addressLocalService);
 	}
 
 	public void destroy() {
@@ -657,38 +793,69 @@ public abstract class AddressLocalServiceBaseImpl extends BaseLocalServiceImpl
 			sql = db.buildSQL(sql);
 			sql = PortalUtil.transformSQL(sql);
 
-			SqlUpdate sqlUpdate = SqlUpdateFactoryUtil.getSqlUpdate(dataSource,
-					sql);
+			SqlUpdate sqlUpdate = SqlUpdateFactoryUtil.getSqlUpdate(
+				dataSource, sql);
 
 			sqlUpdate.update();
 		}
-		catch (Exception e) {
-			throw new SystemException(e);
+		catch (Exception exception) {
+			throw new SystemException(exception);
 		}
 	}
 
 	@BeanReference(type = AddressLocalService.class)
 	protected AddressLocalService addressLocalService;
+
 	@BeanReference(type = AddressPersistence.class)
 	protected AddressPersistence addressPersistence;
-	@BeanReference(type = com.liferay.counter.kernel.service.CounterLocalService.class)
-	protected com.liferay.counter.kernel.service.CounterLocalService counterLocalService;
-	@BeanReference(type = com.liferay.portal.kernel.service.ClassNameLocalService.class)
-	protected com.liferay.portal.kernel.service.ClassNameLocalService classNameLocalService;
+
+	@BeanReference(
+		type = com.liferay.counter.kernel.service.CounterLocalService.class
+	)
+	protected com.liferay.counter.kernel.service.CounterLocalService
+		counterLocalService;
+
+	@BeanReference(
+		type = com.liferay.portal.kernel.service.ClassNameLocalService.class
+	)
+	protected com.liferay.portal.kernel.service.ClassNameLocalService
+		classNameLocalService;
+
 	@BeanReference(type = ClassNamePersistence.class)
 	protected ClassNamePersistence classNamePersistence;
+
+	@BeanReference(
+		type = com.liferay.portal.kernel.service.CountryLocalService.class
+	)
+	protected com.liferay.portal.kernel.service.CountryLocalService
+		countryLocalService;
+
 	@BeanReference(type = CountryPersistence.class)
 	protected CountryPersistence countryPersistence;
-	@BeanReference(type = com.liferay.portal.kernel.service.ListTypeLocalService.class)
-	protected com.liferay.portal.kernel.service.ListTypeLocalService listTypeLocalService;
+
+	@BeanReference(
+		type = com.liferay.portal.kernel.service.ListTypeLocalService.class
+	)
+	protected com.liferay.portal.kernel.service.ListTypeLocalService
+		listTypeLocalService;
+
 	@BeanReference(type = ListTypePersistence.class)
 	protected ListTypePersistence listTypePersistence;
-	@BeanReference(type = com.liferay.portal.kernel.service.UserLocalService.class)
-	protected com.liferay.portal.kernel.service.UserLocalService userLocalService;
+
+	@BeanReference(
+		type = com.liferay.portal.kernel.service.UserLocalService.class
+	)
+	protected com.liferay.portal.kernel.service.UserLocalService
+		userLocalService;
+
 	@BeanReference(type = UserPersistence.class)
 	protected UserPersistence userPersistence;
+
 	@BeanReference(type = UserFinder.class)
 	protected UserFinder userFinder;
+
 	@BeanReference(type = PersistedModelLocalServiceRegistry.class)
-	protected PersistedModelLocalServiceRegistry persistedModelLocalServiceRegistry;
+	protected PersistedModelLocalServiceRegistry
+		persistedModelLocalServiceRegistry;
+
 }

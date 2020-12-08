@@ -17,6 +17,8 @@ package com.liferay.social.kernel.model;
 import com.liferay.asset.kernel.AssetRendererFactoryRegistryUtil;
 import com.liferay.asset.kernel.model.AssetRenderer;
 import com.liferay.asset.kernel.model.AssetRendererFactory;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONException;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
@@ -27,6 +29,7 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
+import com.liferay.portal.kernel.resource.bundle.ResourceBundleLoader;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.service.GroupLocalServiceUtil;
@@ -38,10 +41,6 @@ import com.liferay.portal.kernel.trash.TrashHandlerRegistryUtil;
 import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.HttpUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
-import com.liferay.portal.kernel.util.ResourceBundleLoader;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.social.kernel.service.SocialActivityLocalServiceUtil;
 import com.liferay.social.kernel.service.SocialActivitySetLocalServiceUtil;
@@ -83,8 +82,8 @@ public abstract class BaseSocialActivityInterpreter
 		try {
 			return doInterpret(activity, serviceContext);
 		}
-		catch (Exception e) {
-			_log.error("Unable to interpret activity", e);
+		catch (Exception exception) {
+			_log.error("Unable to interpret activity", exception);
 		}
 
 		return null;
@@ -97,8 +96,8 @@ public abstract class BaseSocialActivityInterpreter
 		try {
 			return doInterpret(activitySet, serviceContext);
 		}
-		catch (Exception e) {
-			_log.error("Unable to interpret activity set", e);
+		catch (Exception exception) {
+			_log.error("Unable to interpret activity set", exception);
 		}
 
 		return null;
@@ -124,6 +123,8 @@ public abstract class BaseSocialActivityInterpreter
 		}
 	}
 
+	protected abstract ResourceBundleLoader acquireResourceBundleLoader();
+
 	protected String addNoSuchEntryRedirect(
 			String url, String className, long classPK,
 			ServiceContext serviceContext)
@@ -132,8 +133,8 @@ public abstract class BaseSocialActivityInterpreter
 		String viewEntryURL = getViewEntryURL(
 			className, classPK, serviceContext);
 
-		if (Validator.isNotNull(viewEntryURL)) {
-			return viewEntryURL;
+		if (Validator.isNull(viewEntryURL)) {
+			return url;
 		}
 
 		return HttpUtil.setParameter(url, "noSuchEntryRedirect", viewEntryURL);
@@ -151,34 +152,15 @@ public abstract class BaseSocialActivityInterpreter
 		return sb.toString();
 	}
 
-	/**
-	 * @deprecated As of 6.2.0
-	 */
-	@Deprecated
-	protected String cleanContent(String content) {
-		return StringUtil.shorten(HtmlUtil.extractText(content), 200);
-	}
-
 	protected SocialActivityFeedEntry doInterpret(
 			SocialActivity activity, ServiceContext serviceContext)
 		throws Exception {
 
 		ThemeDisplay themeDisplay = serviceContext.getThemeDisplay();
 
-		SocialActivityFeedEntry socialActivityFeedEntry = doInterpret(
-			activity, themeDisplay);
-
-		if (socialActivityFeedEntry !=
-				_deprecatedMarkerSocialActivityFeedEntry) {
-
-			return socialActivityFeedEntry;
-		}
-
-		PermissionChecker permissionChecker =
-			themeDisplay.getPermissionChecker();
-
 		if (!hasPermissions(
-				permissionChecker, activity, ActionKeys.VIEW, serviceContext)) {
+				themeDisplay.getPermissionChecker(), activity, ActionKeys.VIEW,
+				serviceContext)) {
 
 			return null;
 		}
@@ -191,20 +173,8 @@ public abstract class BaseSocialActivityInterpreter
 			return null;
 		}
 
-		String body = getBody(activity, serviceContext);
-
-		return new SocialActivityFeedEntry(link, title, body);
-	}
-
-	/**
-	 * @deprecated As of 6.2.0
-	 */
-	@Deprecated
-	protected SocialActivityFeedEntry doInterpret(
-			SocialActivity activity, ThemeDisplay themeDisplay)
-		throws Exception {
-
-		return _deprecatedMarkerSocialActivityFeedEntry;
+		return new SocialActivityFeedEntry(
+			link, title, getBody(activity, serviceContext));
 	}
 
 	protected SocialActivityFeedEntry doInterpret(
@@ -270,55 +240,11 @@ public abstract class BaseSocialActivityInterpreter
 				return HtmlUtil.escape(groupName);
 			}
 
-			groupName =
-				"<a class=\"group\" href=\"" + groupDisplayURL + "\">" +
-					HtmlUtil.escape(groupName) + "</a>";
-
-			return groupName;
+			return StringBundler.concat(
+				"<a class=\"group\" href=\"", groupDisplayURL, "\">",
+				HtmlUtil.escape(groupName), "</a>");
 		}
-		catch (Exception e) {
-			return StringPool.BLANK;
-		}
-	}
-
-	/**
-	 * @deprecated As of 6.2.0, replaced by {@link #getGroupName(long,
-	 *             ServiceContext)}
-	 */
-	@Deprecated
-	protected String getGroupName(long groupId, ThemeDisplay themeDisplay) {
-		try {
-			if (groupId <= 0) {
-				return StringPool.BLANK;
-			}
-
-			Group group = GroupLocalServiceUtil.getGroup(groupId);
-
-			String groupName = group.getDescriptiveName();
-
-			if (group.getGroupId() == themeDisplay.getScopeGroupId()) {
-				return HtmlUtil.escape(groupName);
-			}
-
-			String groupDisplayURL = StringPool.BLANK;
-
-			if (group.hasPublicLayouts()) {
-				groupDisplayURL = group.getDisplayURL(themeDisplay, false);
-			}
-			else if (group.hasPrivateLayouts()) {
-				groupDisplayURL = group.getDisplayURL(themeDisplay, true);
-			}
-			else {
-				return HtmlUtil.escape(groupName);
-			}
-
-			groupName =
-				"<a class=\"group\" href=\"" + groupDisplayURL + "\">" +
-					HtmlUtil.escape(groupName) + "</a>";
-
-			return groupName;
-		}
-		catch (Exception e) {
+		catch (Exception exception) {
 			return StringPool.BLANK;
 		}
 	}
@@ -344,8 +270,9 @@ public abstract class BaseSocialActivityInterpreter
 				return value;
 			}
 		}
-		catch (JSONException jsone) {
-			_log.error("Unable to create a JSON object from " + json, jsone);
+		catch (JSONException jsonException) {
+			_log.error(
+				"Unable to create a JSON object from " + json, jsonException);
 		}
 
 		return defaultValue;
@@ -355,43 +282,51 @@ public abstract class BaseSocialActivityInterpreter
 			SocialActivity activity, ServiceContext serviceContext)
 		throws Exception {
 
-		String className = activity.getClassName();
-		long classPK = activity.getClassPK();
+		try {
+			String className = activity.getClassName();
+			long classPK = activity.getClassPK();
 
-		String viewEntryInTrashURL = getViewEntryInTrashURL(
-			className, classPK, serviceContext);
+			String viewEntryInTrashURL = getViewEntryInTrashURL(
+				className, classPK, serviceContext);
 
-		if (viewEntryInTrashURL != null) {
-			return viewEntryInTrashURL;
+			if (viewEntryInTrashURL != null) {
+				return viewEntryInTrashURL;
+			}
+
+			String path = getPath(activity, serviceContext);
+
+			if (Validator.isNull(path)) {
+				return null;
+			}
+
+			path = addNoSuchEntryRedirect(
+				path, className, classPK, serviceContext);
+
+			if (!path.startsWith(StringPool.SLASH)) {
+				return path;
+			}
+
+			StringBundler sb = new StringBundler(4);
+
+			sb.append(serviceContext.getPortalURL());
+
+			if (!path.startsWith(PortalUtil.getPathContext())) {
+				sb.append(PortalUtil.getPathContext());
+			}
+
+			if (!path.startsWith(serviceContext.getPathMain())) {
+				sb.append(serviceContext.getPathMain());
+			}
+
+			sb.append(path);
+
+			return sb.toString();
 		}
+		catch (PortalException portalException) {
+			_log.error(portalException, portalException);
 
-		String path = getPath(activity, serviceContext);
-
-		if (Validator.isNull(path)) {
 			return null;
 		}
-
-		path = addNoSuchEntryRedirect(path, className, classPK, serviceContext);
-
-		if (!path.startsWith(StringPool.SLASH)) {
-			return path;
-		}
-
-		StringBundler sb = new StringBundler(4);
-
-		sb.append(serviceContext.getPortalURL());
-
-		if (!path.startsWith(PortalUtil.getPathContext())) {
-			sb.append(PortalUtil.getPathContext());
-		}
-
-		if (!path.startsWith(serviceContext.getPathMain())) {
-			sb.append(serviceContext.getPathMain());
-		}
-
-		sb.append(path);
-
-		return sb.toString();
 	}
 
 	protected String getPath(
@@ -401,7 +336,19 @@ public abstract class BaseSocialActivityInterpreter
 		return StringPool.BLANK;
 	}
 
-	protected abstract ResourceBundleLoader getResourceBundleLoader();
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *             #acquireResourceBundleLoader}
+	 */
+	@Deprecated
+	protected com.liferay.portal.kernel.util.ResourceBundleLoader
+		getResourceBundleLoader() {
+
+		ResourceBundleLoader resourceBundleLoader =
+			acquireResourceBundleLoader();
+
+		return locale -> resourceBundleLoader.loadResourceBundle(locale);
+	}
 
 	protected String getTitle(
 			SocialActivity activity, ServiceContext serviceContext)
@@ -419,14 +366,12 @@ public abstract class BaseSocialActivityInterpreter
 			return null;
 		}
 
-		String link = getLink(activity, serviceContext);
-
-		String entryTitle = getEntryTitle(activity, serviceContext);
-
 		Object[] titleArguments = getTitleArguments(
-			groupName, activity, link, entryTitle, serviceContext);
+			groupName, activity, getLink(activity, serviceContext),
+			getEntryTitle(activity, serviceContext), serviceContext);
 
-		ResourceBundleLoader resourceBundleLoader = getResourceBundleLoader();
+		ResourceBundleLoader resourceBundleLoader =
+			acquireResourceBundleLoader();
 
 		if (resourceBundleLoader == null) {
 			return serviceContext.translate(titlePattern, titleArguments);
@@ -444,9 +389,10 @@ public abstract class BaseSocialActivityInterpreter
 			String title, ServiceContext serviceContext)
 		throws Exception {
 
-		String userName = getUserName(activity.getUserId(), serviceContext);
-
-		return new Object[] {groupName, userName, wrapLink(link, title)};
+		return new Object[] {
+			groupName, getUserName(activity.getUserId(), serviceContext),
+			wrapLink(link, title)
+		};
 	}
 
 	protected String getTitlePattern(String groupName, SocialActivity activity)
@@ -478,62 +424,13 @@ public abstract class BaseSocialActivityInterpreter
 			String userDisplayURL = user.getDisplayURL(
 				serviceContext.getThemeDisplay());
 
-			userName =
-				"<a class=\"user\" href=\"" + userDisplayURL + "\">" +
-					HtmlUtil.escape(userName) + "</a>";
-
-			return userName;
+			return StringBundler.concat(
+				"<a class=\"user\" href=\"", userDisplayURL, "\">",
+				HtmlUtil.escape(userName), "</a>");
 		}
-		catch (Exception e) {
+		catch (Exception exception) {
 			return StringPool.BLANK;
 		}
-	}
-
-	/**
-	 * @deprecated As of 6.2.0, replaced by {@link #getUserName(long,
-	 *             ServiceContext)}
-	 */
-	@Deprecated
-	protected String getUserName(long userId, ThemeDisplay themeDisplay) {
-		try {
-			if (userId <= 0) {
-				return StringPool.BLANK;
-			}
-
-			User user = UserLocalServiceUtil.getUserById(userId);
-
-			if (user.getUserId() == themeDisplay.getUserId()) {
-				return HtmlUtil.escape(user.getFirstName());
-			}
-
-			String userName = user.getFullName();
-
-			Group group = user.getGroup();
-
-			if (group.getGroupId() == themeDisplay.getScopeGroupId()) {
-				return HtmlUtil.escape(userName);
-			}
-
-			String userDisplayURL = user.getDisplayURL(themeDisplay);
-
-			userName =
-				"<a class=\"user\" href=\"" + userDisplayURL + "\">" +
-					HtmlUtil.escape(userName) + "</a>";
-
-			return userName;
-		}
-		catch (Exception e) {
-			return StringPool.BLANK;
-		}
-	}
-
-	/**
-	 * @deprecated As of 6.2.0, replaced by {@link #getJSONValue(String, String,
-	 *             String)}
-	 */
-	@Deprecated
-	protected String getValue(String json, String key, String defaultValue) {
-		return getJSONValue(json, key, defaultValue);
 	}
 
 	protected String getViewEntryInTrashURL(
@@ -615,7 +512,8 @@ public abstract class BaseSocialActivityInterpreter
 	protected String wrapLink(
 		String link, String key, ServiceContext serviceContext) {
 
-		ResourceBundleLoader resourceBundleLoader = getResourceBundleLoader();
+		ResourceBundleLoader resourceBundleLoader =
+			acquireResourceBundleLoader();
 
 		ResourceBundle resourceBundle = resourceBundleLoader.loadResourceBundle(
 			serviceContext.getLocale());
@@ -627,9 +525,5 @@ public abstract class BaseSocialActivityInterpreter
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		BaseSocialActivityInterpreter.class);
-
-	private final SocialActivityFeedEntry
-		_deprecatedMarkerSocialActivityFeedEntry = new SocialActivityFeedEntry(
-			StringPool.BLANK, StringPool.BLANK);
 
 }

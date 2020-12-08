@@ -14,6 +14,7 @@
 
 package com.liferay.portlet.ratings.service.impl;
 
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.log.Log;
@@ -22,8 +23,8 @@ import com.liferay.portlet.ratings.service.base.RatingsStatsLocalServiceBaseImpl
 import com.liferay.ratings.kernel.exception.NoSuchStatsException;
 import com.liferay.ratings.kernel.model.RatingsStats;
 
+import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -38,6 +39,11 @@ public class RatingsStatsLocalServiceImpl
 
 		RatingsStats stats = ratingsStatsPersistence.create(statsId);
 
+		Date now = new Date();
+
+		stats.setCreateDate(now);
+		stats.setModifiedDate(now);
+
 		stats.setClassNameId(classNameId);
 		stats.setClassPK(classPK);
 		stats.setTotalEntries(0);
@@ -45,20 +51,21 @@ public class RatingsStatsLocalServiceImpl
 		stats.setAverageScore(0.0);
 
 		try {
-			ratingsStatsPersistence.update(stats);
+			stats = ratingsStatsPersistence.update(stats);
 		}
-		catch (SystemException se) {
+		catch (SystemException systemException) {
 			if (_log.isWarnEnabled()) {
 				_log.warn(
-					"Add failed, fetch {classNameId=" + classNameId +
-						", classPK=" + classPK + "}");
+					StringBundler.concat(
+						"Add failed, fetch {classNameId=", classNameId,
+						", classPK=", classPK, "}"));
 			}
 
 			stats = ratingsStatsPersistence.fetchByC_C(
 				classNameId, classPK, false);
 
 			if (stats == null) {
-				throw se;
+				throw systemException;
 			}
 		}
 
@@ -72,9 +79,9 @@ public class RatingsStatsLocalServiceImpl
 		try {
 			ratingsStatsPersistence.removeByC_C(classNameId, classPK);
 		}
-		catch (NoSuchStatsException nsse) {
+		catch (NoSuchStatsException noSuchStatsException) {
 			if (_log.isWarnEnabled()) {
-				_log.warn(nsse);
+				_log.warn(noSuchStatsException, noSuchStatsException);
 			}
 		}
 
@@ -83,9 +90,8 @@ public class RatingsStatsLocalServiceImpl
 
 	@Override
 	public RatingsStats fetchStats(String className, long classPK) {
-		long classNameId = classNameLocalService.getClassNameId(className);
-
-		return ratingsStatsPersistence.fetchByC_C(classNameId, classPK);
+		return ratingsStatsPersistence.fetchByC_C(
+			classNameLocalService.getClassNameId(className), classPK);
 	}
 
 	@Override
@@ -93,24 +99,12 @@ public class RatingsStatsLocalServiceImpl
 		return ratingsStatsPersistence.findByPrimaryKey(statsId);
 	}
 
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	@Override
-	public List<RatingsStats> getStats(String className, List<Long> classPKs) {
-		long classNameId = classNameLocalService.getClassNameId(className);
-
-		return ratingsStatsFinder.findByC_C(classNameId, classPKs);
-	}
-
 	@Override
 	public RatingsStats getStats(String className, long classPK)
 		throws PortalException {
 
-		long classNameId = classNameLocalService.getClassNameId(className);
-
-		return ratingsStatsPersistence.findByC_C(classNameId, classPK);
+		return ratingsStatsPersistence.findByC_C(
+			classNameLocalService.getClassNameId(className), classPK);
 	}
 
 	@Override
@@ -119,8 +113,8 @@ public class RatingsStatsLocalServiceImpl
 
 		Map<Long, RatingsStats> ratingsStats = new HashMap<>();
 
-		for (RatingsStats stats : ratingsStatsPersistence.findByC_C(
-				classNameId, classPKs)) {
+		for (RatingsStats stats :
+				ratingsStatsPersistence.findByC_C(classNameId, classPKs)) {
 
 			ratingsStats.put(stats.getClassPK(), stats);
 		}

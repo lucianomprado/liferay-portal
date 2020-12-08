@@ -14,13 +14,11 @@
 
 package com.liferay.portal.model.impl;
 
-import aQute.bnd.annotation.ProviderType;
-
+import com.liferay.petra.lang.HashUtil;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.model.CacheModel;
 import com.liferay.portal.kernel.model.MVCCModel;
 import com.liferay.portal.kernel.model.RecentLayoutBranch;
-import com.liferay.portal.kernel.util.HashUtil;
-import com.liferay.portal.kernel.util.StringBundler;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -31,26 +29,28 @@ import java.io.ObjectOutput;
  * The cache model class for representing RecentLayoutBranch in entity cache.
  *
  * @author Brian Wing Shun Chan
- * @see RecentLayoutBranch
  * @generated
  */
-@ProviderType
-public class RecentLayoutBranchCacheModel implements CacheModel<RecentLayoutBranch>,
-	Externalizable, MVCCModel {
+public class RecentLayoutBranchCacheModel
+	implements CacheModel<RecentLayoutBranch>, Externalizable, MVCCModel {
+
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
+	public boolean equals(Object object) {
+		if (this == object) {
 			return true;
 		}
 
-		if (!(obj instanceof RecentLayoutBranchCacheModel)) {
+		if (!(object instanceof RecentLayoutBranchCacheModel)) {
 			return false;
 		}
 
-		RecentLayoutBranchCacheModel recentLayoutBranchCacheModel = (RecentLayoutBranchCacheModel)obj;
+		RecentLayoutBranchCacheModel recentLayoutBranchCacheModel =
+			(RecentLayoutBranchCacheModel)object;
 
-		if ((recentLayoutBranchId == recentLayoutBranchCacheModel.recentLayoutBranchId) &&
-				(mvccVersion == recentLayoutBranchCacheModel.mvccVersion)) {
+		if ((recentLayoutBranchId ==
+				recentLayoutBranchCacheModel.recentLayoutBranchId) &&
+			(mvccVersion == recentLayoutBranchCacheModel.mvccVersion)) {
+
 			return true;
 		}
 
@@ -101,7 +101,8 @@ public class RecentLayoutBranchCacheModel implements CacheModel<RecentLayoutBran
 
 	@Override
 	public RecentLayoutBranch toEntityModel() {
-		RecentLayoutBranchImpl recentLayoutBranchImpl = new RecentLayoutBranchImpl();
+		RecentLayoutBranchImpl recentLayoutBranchImpl =
+			new RecentLayoutBranchImpl();
 
 		recentLayoutBranchImpl.setMvccVersion(mvccVersion);
 		recentLayoutBranchImpl.setRecentLayoutBranchId(recentLayoutBranchId);
@@ -137,8 +138,7 @@ public class RecentLayoutBranchCacheModel implements CacheModel<RecentLayoutBran
 	}
 
 	@Override
-	public void writeExternal(ObjectOutput objectOutput)
-		throws IOException {
+	public void writeExternal(ObjectOutput objectOutput) throws IOException {
 		objectOutput.writeLong(mvccVersion);
 
 		objectOutput.writeLong(recentLayoutBranchId);
@@ -164,4 +164,5 @@ public class RecentLayoutBranchCacheModel implements CacheModel<RecentLayoutBran
 	public long layoutBranchId;
 	public long layoutSetBranchId;
 	public long plid;
+
 }

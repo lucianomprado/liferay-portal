@@ -15,6 +15,7 @@
 package com.liferay.my.subscriptions.web.internal.portlet;
 
 import com.liferay.my.subscriptions.web.internal.constants.MySubscriptionsPortletKeys;
+import com.liferay.portal.kernel.model.Release;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCPortlet;
 import com.liferay.portal.kernel.security.auth.PrincipalException;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
@@ -45,12 +46,11 @@ import org.osgi.service.component.annotations.Reference;
 		"com.liferay.portlet.preferences-owned-by-group=true",
 		"com.liferay.portlet.private-request-attributes=false",
 		"com.liferay.portlet.private-session-attributes=false",
-		"com.liferay.portlet.remoteable=true",
 		"com.liferay.portlet.render-weight=0",
 		"javax.portlet.display-name=My Subscriptions",
 		"javax.portlet.expiration-cache=0",
 		"javax.portlet.init-param.copy-request-parameters=true",
-		"javax.portlet.init-param.template-path=/",
+		"javax.portlet.init-param.template-path=/META-INF/resources/",
 		"javax.portlet.init-param.view-template=/view.jsp",
 		"javax.portlet.name=" + MySubscriptionsPortletKeys.MY_SUBSCRIPTIONS,
 		"javax.portlet.portlet-info.keywords=My Subscriptions",
@@ -91,6 +91,13 @@ public class MySubscriptionsPortlet extends MVCPortlet {
 
 			_subscriptionLocalService.deleteSubscription(subscription);
 		}
+	}
+
+	@Reference(
+		target = "(&(release.bundle.symbolic.name=com.liferay.my.subscriptions.web)(&(release.schema.version>=1.0.0)(!(release.schema.version>=2.0.0))))",
+		unbind = "-"
+	)
+	protected void setRelease(Release release) {
 	}
 
 	@Reference

@@ -46,6 +46,7 @@ import org.apache.maven.artifact.repository.metadata.Versioning;
 import org.apache.maven.artifact.repository.metadata.io.xpp3.MetadataXpp3Writer;
 import org.apache.maven.artifact.versioning.ComparableVersion;
 
+import org.gradle.internal.hash.HashCode;
 import org.gradle.internal.hash.HashUtil;
 import org.gradle.internal.hash.HashValue;
 import org.gradle.internal.resource.metadata.DefaultExternalResourceMetaData;
@@ -85,7 +86,8 @@ public class LiferayHttpResourceAccessor extends HttpResourceAccessor {
 
 		return new DefaultExternalResourceMetaData(
 			uri, cachedArtifactFile.lastModified(), cachedArtifactFile.length(),
-			null, hashValue.asHexString(), hashValue);
+			null, hashValue.asHexString(),
+			HashCode.fromBytes(hashValue.asByteArray()));
 	}
 
 	@Override
@@ -113,8 +115,8 @@ public class LiferayHttpResourceAccessor extends HttpResourceAccessor {
 				httpResponseResource = _getSHA1ResponseResource(uri, location);
 			}
 		}
-		catch (Exception e) {
-			_logger.error(e.getMessage(), e);
+		catch (Exception exception) {
+			_logger.error(exception.getMessage(), exception);
 		}
 
 		if (httpResponseResource == null) {
@@ -314,8 +316,11 @@ public class LiferayHttpResourceAccessor extends HttpResourceAccessor {
 			HttpHeaders.CONTENT_LENGTH,
 			String.valueOf(byteArrayOutputStream.size()));
 
-		return new HttpResponseResource(
+		HttpClientResponse httpClientResponse = new HttpClientResponse(
 			HttpGet.METHOD_NAME, uri, closeableHttpResponse);
+
+		return new HttpResponseResource(
+			HttpGet.METHOD_NAME, uri, httpClientResponse);
 	}
 
 	private String _getModuleLatestVersion(
@@ -336,8 +341,7 @@ public class LiferayHttpResourceAccessor extends HttpResourceAccessor {
 	private SortedSet<ComparableVersion> _getModuleVersions(
 		File moduleDir, boolean excludeSnapshots) {
 
-		SortedSet<ComparableVersion> moduleVersions =
-			new TreeSet<ComparableVersion>();
+		SortedSet<ComparableVersion> moduleVersions = new TreeSet<>();
 
 		String[] versions = moduleDir.list(DirectoryFileFilter.DIRECTORY);
 
@@ -382,8 +386,11 @@ public class LiferayHttpResourceAccessor extends HttpResourceAccessor {
 			HttpHeaders.LAST_MODIFIED,
 			String.valueOf(cachedArtifactFile.lastModified()));
 
-		return new HttpResponseResource(
+		HttpClientResponse httpClientResponse = new HttpClientResponse(
 			HttpGet.METHOD_NAME, uri, closeableHttpResponse);
+
+		return new HttpResponseResource(
+			HttpGet.METHOD_NAME, uri, httpClientResponse);
 	}
 
 	private boolean _isForcedCacheEnabled() {
@@ -393,14 +400,18 @@ public class LiferayHttpResourceAccessor extends HttpResourceAccessor {
 	private static final String _FILES_CACHE_DIR_NAME =
 		"caches/modules-2/files-2.1";
 
-	private static final String[] _REPOSITORY_URL_PROPERTY_KEYS =
-		{"repository.private.url", "repository.url"};
+	private static final String[] _REPOSITORY_URL_PROPERTY_KEYS = {
+		"repository.private.url", "repository.url"
+	};
 
 	private static final String[] _REPOSITORY_URLS = {
 		"http://cdn.repository.liferay.com/nexus/content/groups/public/",
 		"http://repository.liferay.com/nexus/content/groups/public/",
+		"http://repository-cdn.liferay.com/nexus/content/groups/public/",
 		"https://cdn.lfrs.sl/repository.liferay.com/nexus/content/groups" +
-			"/public/"
+			"/public/",
+		"https://repository.liferay.com/nexus/content/groups/public/",
+		"https://repository-cdn.liferay.com/nexus/content/groups/public/"
 	};
 
 	private static final Logger _logger = LoggerFactory.getLogger(

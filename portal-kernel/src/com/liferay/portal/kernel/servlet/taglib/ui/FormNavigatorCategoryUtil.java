@@ -33,14 +33,18 @@ import java.util.Locale;
 
 /**
  * @author Sergio González
+ * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+ *             com.liferay.frontend.taglib.form.navigator.FormNavigatorCategoryUtil}
  */
+@Deprecated
 public class FormNavigatorCategoryUtil {
 
 	public static List<FormNavigatorCategory> getFormNavigatorCategories(
 		String formNavigatorId) {
 
 		List<FormNavigatorCategory> formNavigatorCategories =
-			_instance._formNavigatorCategories.getService(formNavigatorId);
+			_formNavigatorCategoryUtil._formNavigatorCategories.getService(
+				formNavigatorId);
 
 		if (formNavigatorCategories != null) {
 			return formNavigatorCategories;
@@ -50,14 +54,14 @@ public class FormNavigatorCategoryUtil {
 	}
 
 	public static String[] getKeys(String formNavigatorId) {
-		List<String> keys = new ArrayList<>();
-
 		List<FormNavigatorCategory> formNavigatorCategories =
 			getFormNavigatorCategories(formNavigatorId);
 
 		if (ListUtil.isEmpty(formNavigatorCategories)) {
 			return new String[] {""};
 		}
+
+		List<String> keys = new ArrayList<>();
 
 		for (FormNavigatorCategory formNavigatorCategory :
 				formNavigatorCategories) {
@@ -69,18 +73,18 @@ public class FormNavigatorCategoryUtil {
 			}
 		}
 
-		return keys.toArray(new String[keys.size()]);
+		return keys.toArray(new String[0]);
 	}
 
 	public static String[] getLabels(String formNavigatorId, Locale locale) {
-		List<String> labels = new ArrayList<>();
-
 		List<FormNavigatorCategory> formNavigatorCategories =
 			getFormNavigatorCategories(formNavigatorId);
 
 		if (ListUtil.isEmpty(formNavigatorCategories)) {
 			return new String[] {""};
 		}
+
+		List<String> labels = new ArrayList<>();
 
 		for (FormNavigatorCategory formNavigatorCategory :
 				formNavigatorCategories) {
@@ -92,7 +96,7 @@ public class FormNavigatorCategoryUtil {
 			}
 		}
 
-		return labels.toArray(new String[labels.size()]);
+		return labels.toArray(new String[0]);
 	}
 
 	private FormNavigatorCategoryUtil() {
@@ -120,7 +124,7 @@ public class FormNavigatorCategoryUtil {
 				"form.navigator.category.order"));
 	}
 
-	private static final FormNavigatorCategoryUtil _instance =
+	private static final FormNavigatorCategoryUtil _formNavigatorCategoryUtil =
 		new FormNavigatorCategoryUtil();
 
 	private final ServiceTrackerMap<String, List<FormNavigatorCategory>>
@@ -145,9 +149,8 @@ public class FormNavigatorCategoryUtil {
 				if (serviceReference2 == null) {
 					return 0;
 				}
-				else {
-					return 1;
-				}
+
+				return 1;
 			}
 			else if (serviceReference2 == null) {
 				return -1;
@@ -160,9 +163,8 @@ public class FormNavigatorCategoryUtil {
 				if (propertyValue2 == null) {
 					return 0;
 				}
-				else {
-					return 1;
-				}
+
+				return 1;
 			}
 			else if (propertyValue2 == null) {
 				return -1;

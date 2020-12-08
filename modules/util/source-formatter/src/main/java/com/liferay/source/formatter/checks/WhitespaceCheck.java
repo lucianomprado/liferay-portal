@@ -14,15 +14,17 @@
 
 package com.liferay.source.formatter.checks;
 
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.io.unsync.UnsyncBufferedReader;
 import com.liferay.portal.kernel.io.unsync.UnsyncStringReader;
-import com.liferay.portal.kernel.util.CharPool;
-import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.tools.ToolsUtil;
 
+import java.io.IOException;
+
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -31,18 +33,18 @@ import java.util.regex.Pattern;
  */
 public class WhitespaceCheck extends BaseFileCheck {
 
-	public void setAllowLeadingSpaces(String allowLeadingSpaces) {
-		_allowLeadingSpaces = GetterUtil.getBoolean(allowLeadingSpaces);
-	}
-
 	@Override
 	protected String doProcess(
 			String fileName, String absolutePath, String content)
-		throws Exception {
+		throws IOException {
 
-		content = _trimContent(fileName, content);
+		content = _trimContent(fileName, absolutePath, content);
 
 		content = StringUtil.replace(content, "\n\n\n", "\n\n");
+
+		if (content.startsWith(StringPool.NEW_LINE)) {
+			content = content.substring(1);
+		}
 
 		if (content.endsWith(StringPool.RETURN)) {
 			content = content.substring(0, content.length() - 1);
@@ -51,27 +53,42 @@ public class WhitespaceCheck extends BaseFileCheck {
 		return content;
 	}
 
+	protected String formatDoubleSpace(String line) {
+		String trimmedLine = StringUtil.trim(line);
+
+		int x = -1;
+
+		while (true) {
+			x = trimmedLine.indexOf(StringPool.DOUBLE_SPACE, x + 1);
+
+			if (x == -1) {
+				return line;
+			}
+
+			if (!ToolsUtil.isInsideQuotes(trimmedLine, x)) {
+				return StringUtil.replace(
+					line, trimmedLine,
+					StringUtil.replaceFirst(
+						trimmedLine, StringPool.DOUBLE_SPACE, StringPool.SPACE,
+						x));
+			}
+		}
+	}
+
 	protected String formatIncorrectSyntax(String line, String regex) {
 		Pattern pattern = Pattern.compile(regex);
 
 		Matcher matcher = pattern.matcher(line);
 
-		if (!matcher.find()) {
-			return line;
+		while (matcher.find()) {
+			int x = matcher.start(1);
+
+			if (!ToolsUtil.isInsideQuotes(line, x)) {
+				return StringUtil.insert(line, StringPool.SPACE, x);
+			}
 		}
 
-		if (ToolsUtil.isInsideQuotes(line, matcher.start(1))) {
-			return line;
-		}
-
-		String whitespace = matcher.group(2);
-
-		if (whitespace.length() > 0) {
-			return line;
-		}
-
-		return line.substring(0, matcher.start(2)) + StringPool.SPACE +
-			line.substring(matcher.start(2));
+		return line;
 	}
 
 	protected String formatIncorrectSyntax(
@@ -101,6 +118,51 @@ public class WhitespaceCheck extends BaseFileCheck {
 		}
 	}
 
+	protected String formatSelfClosingTags(String line) {
+		Matcher matcher = _selfClosingTagsPattern.matcher(line);
+
+		while (matcher.find()) {
+			int level = 1;
+
+			for (int x = matcher.end(); x < line.length(); x++) {
+				if (ToolsUtil.isInsideQuotes(line, x)) {
+					continue;
+				}
+
+				char c = line.charAt(x);
+
+				if (c == CharPool.LESS_THAN) {
+					level++;
+				}
+				else if (c == CharPool.GREATER_THAN) {
+					level--;
+				}
+
+				if (level != 0) {
+					continue;
+				}
+
+				if (Objects.equals(line.substring(x - 2, x), " /")) {
+					break;
+				}
+
+				char previousChar = line.charAt(x - 1);
+
+				if (previousChar == CharPool.SPACE) {
+					return StringUtil.insert(line, StringPool.SLASH, x);
+				}
+
+				if (previousChar == CharPool.SLASH) {
+					return StringUtil.insert(line, StringPool.SPACE, x - 1);
+				}
+
+				return StringUtil.insert(line, " /", x);
+			}
+		}
+
+		return line;
+	}
+
 	protected String formatWhitespace(
 		String line, String linePart, boolean javaSource) {
 
@@ -112,8 +174,11 @@ public class WhitespaceCheck extends BaseFileCheck {
 			linePart, "else if(", "else if (", true);
 		linePart = formatIncorrectSyntax(linePart, "for(", "for (", true);
 		linePart = formatIncorrectSyntax(linePart, "if(", "if (", true);
+		linePart = formatIncorrectSyntax(linePart, "task(", "task (", true);
 		linePart = formatIncorrectSyntax(linePart, "while(", "while (", true);
 		linePart = formatIncorrectSyntax(linePart, "List <", "List<", false);
+		linePart = formatIncorrectSyntax(linePart, "}else", "}\nelse", true);
+		linePart = formatIncorrectSyntax(linePart, "} else", "}\nelse", true);
 
 		if (javaSource) {
 			linePart = formatIncorrectSyntax(linePart, " ...", "...", false);
@@ -124,27 +189,17 @@ public class WhitespaceCheck extends BaseFileCheck {
 			linePart = formatIncorrectSyntax(linePart, "( ", "(", false);
 			linePart = formatIncorrectSyntax(linePart, "){", ") {", false);
 			linePart = formatIncorrectSyntax(linePart, "]{", "] {", false);
-			linePart = formatIncorrectSyntax(linePart, "\\w(( ?)=)");
-			linePart = formatIncorrectSyntax(linePart, "(=( ?))\\w");
-			linePart = formatIncorrectSyntax(linePart, "for \\(.*(( ?):)");
-			linePart = formatIncorrectSyntax(linePart, "for \\(.*(:( ?)).+");
-		}
-
-		if (!linePart.startsWith("##")) {
-			for (int x = 0;;) {
-				x = linePart.indexOf(StringPool.DOUBLE_SPACE, x + 1);
-
-				if (x == -1) {
-					break;
-				}
-
-				if (ToolsUtil.isInsideQuotes(linePart, x)) {
-					continue;
-				}
-
-				linePart = StringUtil.replaceFirst(
-					linePart, StringPool.DOUBLE_SPACE, StringPool.SPACE, x);
-			}
+			linePart = formatIncorrectSyntax(linePart, "[^\"'\\s](\\|\\|)");
+			linePart = formatIncorrectSyntax(linePart, "\\|\\|([^\"'\\s])");
+			linePart = formatIncorrectSyntax(linePart, "[^\"'\\s](\\&\\&)");
+			linePart = formatIncorrectSyntax(linePart, "\\&\\&([^\"'\\s])");
+			linePart = formatIncorrectSyntax(linePart, "\\.\\.\\.(\\w)");
+			linePart = formatIncorrectSyntax(linePart, "\\w(=)");
+			linePart = formatIncorrectSyntax(linePart, "=(\\w)");
+			linePart = formatIncorrectSyntax(
+				linePart, "for \\([^:]*[^:\"'\\s](:)");
+			linePart = formatIncorrectSyntax(
+				linePart, "for \\([^:]*:([^:\"'\\s])");
 		}
 
 		if (!javaSource) {
@@ -157,7 +212,7 @@ public class WhitespaceCheck extends BaseFileCheck {
 		if (!line.contains(StringPool.DOUBLE_SLASH)) {
 			while (linePart.contains(StringPool.TAB)) {
 				linePart = StringUtil.replaceLast(
-					linePart, StringPool.TAB, StringPool.SPACE);
+					linePart, CharPool.TAB, CharPool.SPACE);
 			}
 		}
 
@@ -233,8 +288,8 @@ public class WhitespaceCheck extends BaseFileCheck {
 				char previousChar = linePart.charAt(x - 1);
 
 				if (previousChar == CharPool.SPACE) {
-					linePart = linePart.substring(0, x - 1).concat(
-						linePart.substring(x));
+					linePart =
+						linePart.substring(0, x - 1) + linePart.substring(x);
 				}
 			}
 		}
@@ -245,18 +300,46 @@ public class WhitespaceCheck extends BaseFileCheck {
 			line, StringPool.SPACE + StringPool.TAB, StringPool.TAB, false);
 	}
 
-	protected boolean isAllowLeadingSpaces(String fileName) {
-		return _allowLeadingSpaces;
+	protected boolean isAllowLeadingSpaces(
+		String fileName, String absolutePath) {
+
+		return isAttributeValue(_ALLOW_LEADING_SPACES_KEY, absolutePath);
 	}
 
-	protected String trimLine(String fileName, String line) {
-		if (line.trim().length() == 0) {
+	protected boolean isAllowTrailingEmptyLines(
+		String fileName, String absolutePath) {
+
+		return isAttributeValue(_ALLOW_TRAILING_EMPTY_LINES, absolutePath);
+	}
+
+	protected boolean isAllowTrailingSpaces(String line) {
+		return false;
+	}
+
+	protected String trimLine(
+		String fileName, String absolutePath, String line) {
+
+		String trimmedTrailingLine = StringUtil.trimTrailing(line);
+
+		if (trimmedTrailingLine.length() == 0) {
 			return StringPool.BLANK;
 		}
 
-		line = StringUtil.trimTrailing(line);
+		if (!isAllowTrailingSpaces(line) &&
+			(!isAttributeValue(
+				_ALLOW_TRAILING_DOUBLE_SPACE_KEY, absolutePath) ||
+			 !line.endsWith(StringPool.DOUBLE_SPACE))) {
 
-		if (isAllowLeadingSpaces(fileName) || line.startsWith(" *")) {
+			line = trimmedTrailingLine;
+		}
+
+		if (!isAttributeValue(_ALLOW_DOUBLE_SPACE_KEY, absolutePath)) {
+			line = formatDoubleSpace(line);
+		}
+
+		if (isAllowLeadingSpaces(fileName, absolutePath) ||
+			line.startsWith(" *")) {
+
 			return line;
 		}
 
@@ -273,8 +356,9 @@ public class WhitespaceCheck extends BaseFileCheck {
 		return line;
 	}
 
-	private String _trimContent(String fileName, String content)
-		throws Exception {
+	private String _trimContent(
+			String fileName, String absolutePath, String content)
+		throws IOException {
 
 		StringBundler sb = new StringBundler();
 
@@ -284,9 +368,15 @@ public class WhitespaceCheck extends BaseFileCheck {
 			String line = null;
 
 			while ((line = unsyncBufferedReader.readLine()) != null) {
-				sb.append(trimLine(fileName, line));
+				sb.append(trimLine(fileName, absolutePath, line));
 				sb.append("\n");
 			}
+		}
+
+		if (isAllowTrailingEmptyLines(fileName, absolutePath) &&
+			content.endsWith("\n")) {
+
+			return sb.toString();
 		}
 
 		content = sb.toString();
@@ -298,6 +388,19 @@ public class WhitespaceCheck extends BaseFileCheck {
 		return content;
 	}
 
-	private boolean _allowLeadingSpaces;
+	private static final String _ALLOW_DOUBLE_SPACE_KEY = "allowDoubleSpace";
+
+	private static final String _ALLOW_LEADING_SPACES_KEY =
+		"allowLeadingSpaces";
+
+	private static final String _ALLOW_TRAILING_DOUBLE_SPACE_KEY =
+		"allowTrailingDoubleSpace";
+
+	private static final String _ALLOW_TRAILING_EMPTY_LINES =
+		"allowTrailingEmptyLines";
+
+	private static final Pattern _selfClosingTagsPattern = Pattern.compile(
+		"<(area|base|br|col|command|embed|hr|img|input|keygen|link|meta|" +
+			"param|source|track|wbr)(?!( />|\\w))");
 
 }

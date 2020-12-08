@@ -14,7 +14,6 @@
 
 package com.liferay.portal.kernel.cluster;
 
-import com.liferay.portal.kernel.security.pacl.permission.PortalRuntimePermission;
 import com.liferay.portal.kernel.util.ServiceProxyFactory;
 
 import java.util.List;
@@ -35,14 +34,6 @@ public class ClusterExecutorUtil {
 		ClusterRequest clusterRequest) {
 
 		return _getClusterExecutor().execute(clusterRequest);
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link #_getClusterExecutor()}
-	 */
-	@Deprecated
-	public static ClusterExecutor getClusterExecutor() {
-		return _getClusterExecutor();
 	}
 
 	public static List<ClusterNode> getClusterNodes() {
@@ -68,8 +59,6 @@ public class ClusterExecutorUtil {
 	}
 
 	private static ClusterExecutor _getClusterExecutor() {
-		PortalRuntimePermission.checkGetBeanProperty(ClusterExecutorUtil.class);
-
 		return _clusterExecutor;
 	}
 

@@ -14,8 +14,8 @@
 
 package com.liferay.portal.webdav;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.model.Group;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.webdav.BaseResourceImpl;
 import com.liferay.portal.kernel.webdav.BaseWebDAVStorageImpl;
 import com.liferay.portal.kernel.webdav.Resource;
@@ -65,9 +65,8 @@ public class GroupWebDAVStorageImpl extends BaseWebDAVStorageImpl {
 		String path = webDAVRequest.getPath();
 
 		try {
-			long userId = webDAVRequest.getUserId();
-
-			List<Group> groups = WebDAVUtil.getGroups(userId);
+			List<Group> groups = WebDAVUtil.getGroups(
+				webDAVRequest.getUserId());
 
 			for (Group group : groups) {
 				if (path.equals(group.getFriendlyURL())) {
@@ -75,7 +74,7 @@ public class GroupWebDAVStorageImpl extends BaseWebDAVStorageImpl {
 				}
 			}
 		}
-		catch (Exception e) {
+		catch (Exception exception) {
 		}
 
 		throw new WebDAVException(

@@ -18,6 +18,7 @@ import com.liferay.expando.kernel.model.ExpandoBridge;
 import com.liferay.exportimport.kernel.lar.StagedModelType;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.ModelWrapper;
+import com.liferay.portal.kernel.repository.capabilities.Capability;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
 
 import java.io.Serializable;
@@ -50,16 +51,16 @@ public class FolderWrapper implements Folder, ModelWrapper<Folder> {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
+	public boolean equals(Object object) {
+		if (this == object) {
 			return true;
 		}
 
-		if (!(obj instanceof FolderWrapper)) {
+		if (!(object instanceof FolderWrapper)) {
 			return false;
 		}
 
-		FolderWrapper folderWrapper = (FolderWrapper)obj;
+		FolderWrapper folderWrapper = (FolderWrapper)object;
 
 		if (Objects.equals(_folder, folderWrapper._folder)) {
 			return true;
@@ -176,6 +177,13 @@ public class FolderWrapper implements Folder, ModelWrapper<Folder> {
 	}
 
 	@Override
+	public <T extends Capability> T getRepositoryCapability(
+		Class<T> capabilityClass) {
+
+		return _folder.getRepositoryCapability(capabilityClass);
+	}
+
+	@Override
 	public long getRepositoryId() {
 		return _folder.getRepositoryId();
 	}
@@ -243,6 +251,13 @@ public class FolderWrapper implements Folder, ModelWrapper<Folder> {
 	@Override
 	public boolean isMountPoint() {
 		return _folder.isMountPoint();
+	}
+
+	@Override
+	public <T extends Capability> boolean isRepositoryCapabilityProvided(
+		Class<T> capabilityClass) {
+
+		return _folder.isRepositoryCapabilityProvided(capabilityClass);
 	}
 
 	@Override

@@ -26,8 +26,11 @@ import com.liferay.registry.collections.ServiceTrackerMap;
 import java.util.Date;
 
 /**
- * @author Adolfo Pérez
+ * @author     Adolfo Pérez
+ * @deprecated As of Athanasius (7.3.x), replaced by {@link
+ *             com.liferay.social.activity.internal.manager.SocialActivityManagerImpl}
  */
+@Deprecated
 public class SocialActivityManagerImpl<T extends ClassedModel & GroupedModel>
 	implements SocialActivityManager<T> {
 
@@ -113,8 +116,8 @@ public class SocialActivityManagerImpl<T extends ClassedModel & GroupedModel>
 
 	private final ServiceTrackerMap<String, SocialActivityManager<T>>
 		_serviceTrackerMap = ServiceTrackerCollections.openSingleValueMap(
-			(Class<SocialActivityManager<T>>)(Class<?>)
-				SocialActivityManager.class,
+			(Class<SocialActivityManager<T>>)
+				(Class<?>)SocialActivityManager.class,
 			"(model.class.name=*)",
 			new ServiceReferenceMapper<String, SocialActivityManager<T>>() {
 

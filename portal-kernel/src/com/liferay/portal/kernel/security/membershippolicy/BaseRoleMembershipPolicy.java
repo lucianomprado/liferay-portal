@@ -26,14 +26,13 @@ import com.liferay.portal.kernel.service.RoleLocalServiceUtil;
 public abstract class BaseRoleMembershipPolicy implements RoleMembershipPolicy {
 
 	@Override
-	@SuppressWarnings("unused")
 	public boolean isRoleAllowed(long userId, long roleId)
 		throws PortalException {
 
 		try {
 			checkRoles(new long[] {userId}, new long[] {roleId}, null);
 		}
-		catch (Exception e) {
+		catch (Exception exception) {
 			return false;
 		}
 
@@ -41,14 +40,13 @@ public abstract class BaseRoleMembershipPolicy implements RoleMembershipPolicy {
 	}
 
 	@Override
-	@SuppressWarnings("unused")
 	public boolean isRoleRequired(long userId, long roleId)
 		throws PortalException {
 
 		try {
 			checkRoles(new long[] {userId}, null, new long[] {roleId});
 		}
-		catch (Exception e) {
+		catch (Exception exception) {
 			return true;
 		}
 
@@ -61,14 +59,7 @@ public abstract class BaseRoleMembershipPolicy implements RoleMembershipPolicy {
 			RoleLocalServiceUtil.getActionableDynamicQuery();
 
 		actionableDynamicQuery.setPerformActionMethod(
-			new ActionableDynamicQuery.PerformActionMethod<Role>() {
-
-				@Override
-				public void performAction(Role role) throws PortalException {
-					verifyPolicy(role);
-				}
-
-			});
+			(Role role) -> verifyPolicy(role));
 
 		actionableDynamicQuery.performActions();
 	}

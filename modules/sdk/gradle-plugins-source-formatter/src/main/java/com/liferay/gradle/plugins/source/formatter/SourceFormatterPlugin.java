@@ -91,9 +91,11 @@ public class SourceFormatterPlugin implements Plugin<Project> {
 		formatSourceTask.setAutoFix(false);
 		formatSourceTask.setDescription(
 			"Checks the source formatting of this project.");
+		formatSourceTask.setFailOnAutoFix(true);
+		formatSourceTask.setFailOnHasWarning(true);
 		formatSourceTask.setGroup(LifecycleBasePlugin.VERIFICATION_GROUP);
 		formatSourceTask.setPrintErrors(true);
-		formatSourceTask.setThrowException(true);
+		formatSourceTask.setShowStatusUpdates(false);
 
 		return formatSourceTask;
 	}
@@ -106,6 +108,7 @@ public class SourceFormatterPlugin implements Plugin<Project> {
 		formatSourceTask.setDescription(
 			"Runs Liferay Source Formatter to format the project files.");
 		formatSourceTask.setGroup("formatting");
+		formatSourceTask.setShowStatusUpdates(true);
 
 		return formatSourceTask;
 	}
@@ -114,6 +117,20 @@ public class SourceFormatterPlugin implements Plugin<Project> {
 		FormatSourceTask formatSourceTask, FileCollection classpath) {
 
 		formatSourceTask.setClasspath(classpath);
+
+		String fileExtensions = GradleUtil.getTaskPrefixedProperty(
+			formatSourceTask, "file.extensions");
+
+		if (Validator.isNotNull(fileExtensions)) {
+			formatSourceTask.setFileExtensions(fileExtensions.split(","));
+		}
+
+		String fileNames = GradleUtil.getTaskPrefixedProperty(
+			formatSourceTask, "file.names");
+
+		if (Validator.isNotNull(fileNames)) {
+			formatSourceTask.setFileNames(fileNames.split(","));
+		}
 
 		String formatCurrentBranch = GradleUtil.getTaskPrefixedProperty(
 			formatSourceTask, "format.current.branch");

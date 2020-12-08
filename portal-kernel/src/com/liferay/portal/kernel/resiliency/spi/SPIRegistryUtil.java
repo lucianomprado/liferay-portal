@@ -14,15 +14,15 @@
 
 package com.liferay.portal.kernel.resiliency.spi;
 
-import com.liferay.portal.kernel.security.pacl.permission.PortalRuntimePermission;
-
 import java.rmi.RemoteException;
 
 import java.util.Set;
 
 /**
- * @author Shuyang Zhou
+ * @author     Shuyang Zhou
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  */
+@Deprecated
 public class SPIRegistryUtil {
 
 	public static void addExcludedPortletId(String portletId) {
@@ -46,8 +46,6 @@ public class SPIRegistryUtil {
 	}
 
 	public static SPIRegistry getSPIRegistry() {
-		PortalRuntimePermission.checkGetBeanProperty(SPIRegistryUtil.class);
-
 		return _spiRegistry;
 	}
 
@@ -70,8 +68,6 @@ public class SPIRegistryUtil {
 	}
 
 	public void setSPIRegistry(SPIRegistry spiRegistry) {
-		PortalRuntimePermission.checkSetBeanProperty(SPIRegistryUtil.class);
-
 		_spiRegistry = spiRegistry;
 	}
 

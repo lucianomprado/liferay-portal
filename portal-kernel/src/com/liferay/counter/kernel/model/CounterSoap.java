@@ -14,8 +14,6 @@
 
 package com.liferay.counter.kernel.model;
 
-import aQute.bnd.annotation.ProviderType;
-
 import java.io.Serializable;
 
 import java.util.ArrayList;
@@ -25,10 +23,12 @@ import java.util.List;
  * This class is used by SOAP remote services.
  *
  * @author Brian Wing Shun Chan
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
-@ProviderType
+@Deprecated
 public class CounterSoap implements Serializable {
+
 	public static CounterSoap toSoapModel(Counter model) {
 		CounterSoap soapModel = new CounterSoap();
 
@@ -66,7 +66,8 @@ public class CounterSoap implements Serializable {
 	}
 
 	public static CounterSoap[] toSoapModels(List<Counter> models) {
-		List<CounterSoap> soapModels = new ArrayList<CounterSoap>(models.size());
+		List<CounterSoap> soapModels = new ArrayList<CounterSoap>(
+			models.size());
 
 		for (Counter model : models) {
 			soapModels.add(toSoapModel(model));
@@ -104,4 +105,5 @@ public class CounterSoap implements Serializable {
 
 	private String _name;
 	private long _currentId;
+
 }

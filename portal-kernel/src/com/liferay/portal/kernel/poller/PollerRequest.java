@@ -14,7 +14,7 @@
 
 package com.liferay.portal.kernel.poller;
 
-import com.liferay.portal.kernel.util.StringBundler;
+import com.liferay.petra.string.StringBundler;
 
 import java.io.Serializable;
 
@@ -44,16 +44,16 @@ public class PollerRequest implements Serializable {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
+	public boolean equals(Object object) {
+		if (this == object) {
 			return true;
 		}
 
-		if (!(obj instanceof PollerRequest)) {
+		if (!(object instanceof PollerRequest)) {
 			return false;
 		}
 
-		PollerRequest portletRequest = (PollerRequest)obj;
+		PollerRequest portletRequest = (PollerRequest)object;
 
 		if (Objects.equals(_portletId, portletRequest._portletId)) {
 			return true;
@@ -105,9 +105,8 @@ public class PollerRequest implements Serializable {
 		if (_portletId != null) {
 			return _portletId.hashCode();
 		}
-		else {
-			return 0;
-		}
+
+		return 0;
 	}
 
 	public boolean isInitialRequest() {

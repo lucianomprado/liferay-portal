@@ -1,7 +1,22 @@
-<definition default="isNotChecked">
-	<command name="isNotChecked">
-		<execute function="WaitForSPARefresh" />
+@default = "isNotChecked"
+definition {
 
-		<execute selenium="isNotChecked" />
-	</command>
-</definition>
+	function isNotChecked {
+		WaitForSPARefresh();
+
+		selenium.waitForElementPresent();
+
+		selenium.waitForVisible();
+
+		selenium.isNotChecked();
+	}
+
+	function isNotCheckedNotVisible {
+		WaitForSPARefresh();
+
+		selenium.waitForElementPresent();
+
+		selenium.isNotChecked();
+	}
+
+}

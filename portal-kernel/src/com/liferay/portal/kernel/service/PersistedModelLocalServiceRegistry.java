@@ -27,8 +27,6 @@ public interface PersistedModelLocalServiceRegistry {
 
 	public List<PersistedModelLocalService> getPersistedModelLocalServices();
 
-	public boolean isPermissionedModelLocalService(String className);
-
 	public void register(
 		String className,
 		PersistedModelLocalService persistedModelLocalService);

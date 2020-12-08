@@ -22,35 +22,12 @@ import com.liferay.portal.kernel.model.Company;
  */
 public class SendPasswordException extends PortalException {
 
-	/**
-	 * @deprecated As of 7.0.0, replaced by the inner classes
-	 */
-	@Deprecated
-	public SendPasswordException() {
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by the inner classes
-	 */
-	@Deprecated
-	public SendPasswordException(String msg, Throwable cause) {
-		super(msg, cause);
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by the inner classes
-	 */
-	@Deprecated
-	public SendPasswordException(Throwable cause) {
-		super(cause);
-	}
-
 	public static class MustBeEnabled extends SendPasswordException {
 
 		public MustBeEnabled(Company company) {
 			super(
 				String.format(
-					"The Forgot Password notification must be enabled for " +
+					"Password Reset Link notification must be enabled for " +
 						"company %s",
 					company));
 

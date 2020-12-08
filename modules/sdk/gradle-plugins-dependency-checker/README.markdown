@@ -6,7 +6,7 @@ repository. The plugin eventually fails the build if the dependency age (the
 difference between the timestamp of the current version and the latest version)
 is above a predetermined threshold.
 
-The plugin has been successfully tested with Gradle 2.5 up to 3.3.
+The plugin has been successfully tested with Gradle 5.6.4 and 6.6.1.
 
 ## Usage
 
@@ -15,12 +15,12 @@ To use the plugin, include it in your build script:
 ```gradle
 buildscript {
 	dependencies {
-		classpath group: "com.liferay", name: "com.liferay.gradle.plugins.dependency.checker", version: "1.0.0"
+		classpath group: "com.liferay", name: "com.liferay.gradle.plugins.dependency.checker", version: "1.0.5"
 	}
 
 	repositories {
 		maven {
-			url "https://cdn.lfrs.sl/repository.liferay.com/nexus/content/groups/public"
+			url "https://repository-cdn.liferay.com/nexus/content/groups/public"
 		}
 	}
 }

@@ -14,6 +14,8 @@
 
 package com.liferay.source.formatter;
 
+import java.io.IOException;
+
 import java.util.List;
 
 /**
@@ -22,16 +24,17 @@ import java.util.List;
 public class CSSSourceProcessor extends BaseSourceProcessor {
 
 	@Override
-	protected List<String> doGetFileNames() throws Exception {
-		String[] excludes = {
-			"**/.ivy/**", "**/.sass-cache/**", "**/__MACOSX/**",
-			"**/_partial.scss", "**/_unstyled/css/**", "**/aui/**",
-			"**/aui_deprecated.css", "**/bourbon/**",
-			"**/converter/dependencies/**", "**/expected/**",
-			"**/frontend-editors-web/**", "**/tools/node**"
-		};
-
-		return getFileNames(excludes, getIncludes());
+	protected List<String> doGetFileNames() throws IOException {
+		return getFileNames(
+			new String[] {
+				"**/.ivy/**", "**/.sass-cache/**", "**/__MACOSX/**",
+				"**/_partial.scss", "**/_styled/css/compat/third_party/**",
+				"**/_unstyled/css/**", "**/aui/**", "**/aui_deprecated.css",
+				"**/bourbon/**", "**/converter/dependencies/**",
+				"**/expected/**", "**/frontend-editors-web/**",
+				"**/tools/node**"
+			},
+			getIncludes());
 	}
 
 	@Override

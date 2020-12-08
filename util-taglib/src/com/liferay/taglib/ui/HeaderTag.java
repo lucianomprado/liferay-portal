@@ -19,6 +19,8 @@ import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.taglib.util.IncludeTag;
 
+import java.util.Objects;
+
 import javax.servlet.http.HttpServletRequest;
 
 /**
@@ -26,11 +28,43 @@ import javax.servlet.http.HttpServletRequest;
  */
 public class HeaderTag extends IncludeTag {
 
+	public String getBackLabel() {
+		return _backLabel;
+	}
+
+	public String getBackURL() {
+		return _backURL;
+	}
+
+	public String getCssClass() {
+		return _cssClass;
+	}
+
+	public String getTitle() {
+		return _title;
+	}
+
+	public boolean isEscapeXml() {
+		return _escapeXml;
+	}
+
+	public boolean isLocalizeTitle() {
+		return _localizeTitle;
+	}
+
+	public boolean isShowBackURL() {
+		return _showBackURL;
+	}
+
 	public void setBackLabel(String backLabel) {
 		_backLabel = backLabel;
 	}
 
 	public void setBackURL(String backURL) {
+		if (Objects.equals(backURL, "javascript:history.go(-1)")) {
+			backURL += ";";
+		}
+
 		_backURL = backURL;
 	}
 
@@ -56,6 +90,8 @@ public class HeaderTag extends IncludeTag {
 
 	@Override
 	protected void cleanUp() {
+		super.cleanUp();
+
 		_backLabel = null;
 		_backURL = null;
 		_cssClass = null;
@@ -76,27 +112,38 @@ public class HeaderTag extends IncludeTag {
 	}
 
 	@Override
-	protected void setAttributes(HttpServletRequest request) {
-		request.setAttribute("liferay-ui:header:backLabel", _backLabel);
+	protected void setAttributes(HttpServletRequest httpServletRequest) {
+		httpServletRequest.setAttribute(
+			"liferay-ui:header:backLabel", _backLabel);
 
 		String redirect = PortalUtil.escapeRedirect(
-			ParamUtil.getString(request, "redirect"));
+			ParamUtil.getString(httpServletRequest, "redirect"));
 
 		if (Validator.isNull(_backURL) && Validator.isNotNull(redirect)) {
-			request.setAttribute("liferay-ui:header:backURL", redirect);
+			httpServletRequest.setAttribute(
+				"liferay-ui:header:backURL", redirect);
+		}
+		else if (Validator.isNotNull(_backURL) &&
+				 !_backURL.equals("javascript:history.go(-1);")) {
+
+			httpServletRequest.setAttribute(
+				"liferay-ui:header:backURL",
+				PortalUtil.escapeRedirect(_backURL));
 		}
 		else {
-			request.setAttribute("liferay-ui:header:backURL", _backURL);
+			httpServletRequest.setAttribute(
+				"liferay-ui:header:backURL", _backURL);
 		}
 
-		request.setAttribute("liferay-ui:header:cssClass", _cssClass);
-		request.setAttribute(
+		httpServletRequest.setAttribute(
+			"liferay-ui:header:cssClass", _cssClass);
+		httpServletRequest.setAttribute(
 			"liferay-ui:header:escapeXml", String.valueOf(_escapeXml));
-		request.setAttribute(
+		httpServletRequest.setAttribute(
 			"liferay-ui:header:localizeTitle", String.valueOf(_localizeTitle));
-		request.setAttribute(
+		httpServletRequest.setAttribute(
 			"liferay-ui:header:showBackURL", String.valueOf(_showBackURL));
-		request.setAttribute("liferay-ui:header:title", _title);
+		httpServletRequest.setAttribute("liferay-ui:header:title", _title);
 	}
 
 	private static final boolean _CLEAN_UP_SET_ATTRIBUTES = true;

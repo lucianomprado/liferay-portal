@@ -16,14 +16,18 @@ package com.liferay.gradle.plugins.maven.plugin.builder.tasks;
 
 import com.liferay.gradle.plugins.maven.plugin.builder.internal.util.GradleUtil;
 import com.liferay.gradle.plugins.maven.plugin.builder.internal.util.XMLUtil;
+import com.liferay.gradle.util.FileUtil;
 import com.liferay.gradle.util.Validator;
 
 import java.io.File;
 
 import org.gradle.api.DefaultTask;
+import org.gradle.api.tasks.CacheableTask;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.OutputFile;
+import org.gradle.api.tasks.PathSensitive;
+import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.TaskAction;
 
 import org.w3c.dom.Document;
@@ -32,10 +36,12 @@ import org.w3c.dom.Element;
 /**
  * @author Andrea Di Giorgi
  */
+@CacheableTask
 public class WriteMavenSettingsTask extends DefaultTask {
 
 	@Input
 	@Optional
+	@PathSensitive(PathSensitivity.RELATIVE)
 	public File getLocalRepositoryDir() {
 		return GradleUtil.toFile(getProject(), _localRepositoryDir);
 	}
@@ -127,7 +133,7 @@ public class WriteMavenSettingsTask extends DefaultTask {
 		if (localRepositoryDir != null) {
 			XMLUtil.appendElement(
 				document, settingsElement, "localRepository",
-				localRepositoryDir.getAbsolutePath());
+				FileUtil.getAbsolutePath(localRepositoryDir));
 		}
 
 		String repositoryUrl = getRepositoryUrl();
@@ -162,18 +168,18 @@ public class WriteMavenSettingsTask extends DefaultTask {
 			XMLUtil.appendElement(
 				document, proxyElement, "port", proxyPort.toString());
 
-			_appendNonNullElement(
+			_appendNonnullElement(
 				document, proxyElement, "username", getProxyUser());
-			_appendNonNullElement(
+			_appendNonnullElement(
 				document, proxyElement, "password", getProxyPassword());
-			_appendNonNullElement(
+			_appendNonnullElement(
 				document, proxyElement, "nonProxyHosts", getNonProxyHosts());
 		}
 
 		XMLUtil.write(document, getOutputFile());
 	}
 
-	private static void _appendNonNullElement(
+	private void _appendNonnullElement(
 		Document document, Element parentElement, String name, String text) {
 
 		if (Validator.isNull(text)) {

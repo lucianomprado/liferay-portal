@@ -14,11 +14,14 @@
 
 package com.liferay.exportimport.kernel.lifecycle;
 
-import aQute.bnd.annotation.ProviderType;
+import org.osgi.annotation.versioning.ProviderType;
 
 /**
- * @author Daniel Kocsis
+ * @author     Daniel Kocsis
+ * @deprecated As of Athanasius (7.3.x), replaced by {@link
+ *             com.liferay.exportimport.kernel.lifecycle.constants.ExportImportLifecycleConstants}
  */
+@Deprecated
 @ProviderType
 public interface ExportImportLifecycleConstants {
 
@@ -63,6 +66,12 @@ public interface ExportImportLifecycleConstants {
 	public static final int EVENT_PUBLICATION_PORTLET_LOCAL_STARTED = 21;
 
 	public static final int EVENT_PUBLICATION_PORTLET_LOCAL_SUCCEEDED = 20;
+
+	public static final int EVENT_PUBLICATION_PORTLET_REMOTE_FAILED = 37;
+
+	public static final int EVENT_PUBLICATION_PORTLET_REMOTE_STARTED = 38;
+
+	public static final int EVENT_PUBLICATION_PORTLET_REMOTE_SUCCEEDED = 39;
 
 	public static final int EVENT_STAGED_MODEL_EXPORT_FAILED = 22;
 

@@ -18,6 +18,7 @@ import com.liferay.source.formatter.checks.comparator.ElementComparator;
 import com.liferay.source.formatter.checks.util.SourceUtil;
 
 import org.dom4j.Document;
+import org.dom4j.DocumentException;
 import org.dom4j.Element;
 
 /**
@@ -26,14 +27,14 @@ import org.dom4j.Element;
 public class XMLStrutsConfigFileCheck extends BaseFileCheck {
 
 	@Override
-	public boolean isPortalCheck() {
+	public boolean isLiferaySourceCheck() {
 		return true;
 	}
 
 	@Override
 	protected String doProcess(
 			String fileName, String absolutePath, String content)
-		throws Exception {
+		throws DocumentException {
 
 		if (fileName.endsWith("/struts-config.xml")) {
 			_checkStrutsConfigXML(fileName, content);
@@ -43,7 +44,7 @@ public class XMLStrutsConfigFileCheck extends BaseFileCheck {
 	}
 
 	private void _checkStrutsConfigXML(String fileName, String content)
-		throws Exception {
+		throws DocumentException {
 
 		Document document = SourceUtil.readXML(content);
 

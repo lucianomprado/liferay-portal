@@ -53,11 +53,26 @@ portletURL.setParameter("delta", String.valueOf(delta));
 				orderColumns='<%= new String[] {"build", "last-seen", "name", "type"} %>'
 				portletURL="<%= PortletURLUtil.clone(portletURL, liferayPortletResponse) %>"
 			/>
+
+			<%
+			PortletURL searchURL = renderResponse.createRenderURL();
+
+			searchURL.setParameter("tabs1", tabs1);
+			%>
+
+			<li>
+				<aui:form action="<%= searchURL.toString() %>" name="searchFm">
+					<liferay-ui:input-search
+						markupView="lexicon"
+						placeholder='<%= LanguageUtil.get(request, "search") %>'
+					/>
+				</aui:form>
+			</li>
 		</liferay-frontend:management-bar-filters>
 	</c:if>
 </liferay-frontend:management-bar>
 
-<div class="container-fluid-1280">
+<clay:container-fluid>
 	<aui:form method="post" name="fm">
 		<aui:input name="redirect" type="hidden" value="<%= currentURL %>" />
 
@@ -69,7 +84,7 @@ portletURL.setParameter("delta", String.valueOf(delta));
 			<%
 			List<SyncDevice> syncDevices = new ArrayList<>();
 
-			OrderByComparator orderByComparator = null;
+			OrderByComparator<SyncDevice> orderByComparator = null;
 
 			if (orderByCol.equals("name")) {
 				orderByComparator = OrderByComparatorFactoryUtil.create("SyncDevice", "userName", orderByType.equals("asc"));
@@ -81,12 +96,12 @@ portletURL.setParameter("delta", String.valueOf(delta));
 				orderByComparator = OrderByComparatorFactoryUtil.create("SyncDevice", "modifiedDate", orderByType.equals("asc"));
 			}
 			else {
-				OrderByComparatorFactoryUtil.create("SyncDevice", orderByCol, orderByType.equals("asc"));
+				orderByComparator = OrderByComparatorFactoryUtil.create("SyncDevice", orderByCol, orderByType.equals("asc"));
 			}
 
 			String portletId = (String)request.getAttribute(WebKeys.PORTLET_ID);
 
-			if (portletId.equals(SyncAdminPortletKeys.SYNC_ADMIN_PORTLET)) {
+			if (portletId.equals(SyncPortletKeys.SYNC_ADMIN_PORTLET)) {
 				syncDevices = SyncDeviceLocalServiceUtil.search(themeDisplay.getCompanyId(), keywords, searchContainer.getStart(), searchContainer.getEnd(), orderByComparator);
 			}
 			else {
@@ -110,25 +125,9 @@ portletURL.setParameter("delta", String.valueOf(delta));
 					property="userName"
 				/>
 
-				<%
-				String location = syncDevice.getHostname();
-
-				IPGeocoder ipGeocoder = (IPGeocoder)request.getAttribute(SyncWebKeys.IP_GEOCODER);
-
-				IPInfo ipInfo = ipGeocoder.getIPInfo(location);
-
-				if (ipInfo != null) {
-					String city = ipInfo.getCity();
-
-					if (city != null) {
-						location = city + " " + location;
-					}
-				}
-				%>
-
 				<liferay-ui:search-container-column-text
 					name="location"
-					value="<%= location %>"
+					value="<%= syncDevice.getHostname() %>"
 				/>
 
 				<liferay-ui:search-container-column-text
@@ -159,7 +158,9 @@ portletURL.setParameter("delta", String.valueOf(delta));
 				/>
 			</liferay-ui:search-container-row>
 
-			<liferay-ui:search-iterator markupView="lexicon" />
+			<liferay-ui:search-iterator
+				markupView="lexicon"
+			/>
 		</liferay-ui:search-container>
 	</aui:form>
-</div>
+</clay:container-fluid>

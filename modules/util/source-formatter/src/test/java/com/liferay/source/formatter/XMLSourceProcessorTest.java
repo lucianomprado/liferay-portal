@@ -22,35 +22,9 @@ import org.junit.Test;
 public class XMLSourceProcessorTest extends BaseSourceProcessorTestCase {
 
 	@Test
-	public void testCharactersAfterDefinitionTag() throws Exception {
-		test(
-			"CharactersAfterDefinitionTag1.testmacro",
-			"Characters found after definition element");
-		test(
-			"CharactersAfterDefinitionTag2.testmacro",
-			"Characters found after definition element");
-		test(
-			"CharactersAfterDefinitionTag3.testmacro",
-			"Characters found after definition element");
-		test(
-			"CharactersAfterDefinitionTag4.testmacro",
-			"Characters found after definition element");
-	}
-
-	@Test
-	public void testCharactersBeforeDefinitionTag() throws Exception {
-		test(
-			"CharactersBeforeDefinitionTag1.testmacro",
-			"Characters found before definition element");
-		test(
-			"CharactersBeforeDefinitionTag2.testmacro",
-			"Characters found before definition element");
-		test(
-			"CharactersBeforeDefinitionTag3.testmacro",
-			"Characters found before definition element");
-		test(
-			"CharactersBeforeDefinitionTag4.testmacro",
-			"Characters found before definition element");
+	public void testIncorrectEmptyLines() throws Exception {
+		test("IncorrectEmptyLines1.testxml");
+		test("IncorrectEmptyLines2.testxml");
 	}
 
 	@Test
@@ -58,6 +32,11 @@ public class XMLSourceProcessorTest extends BaseSourceProcessorTestCase {
 		test("IncorrectTabs1.testaction");
 		test("IncorrectTabs2.testaction");
 		test("IncorrectTabs3.testaction");
+	}
+
+	@Test
+	public void testIncorrectXMLStyling() throws Exception {
+		test("IncorrectXMLStyling.testxml");
 	}
 
 }

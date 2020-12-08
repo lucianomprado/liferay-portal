@@ -14,8 +14,10 @@
 
 package com.liferay.portal.service.permission;
 
+import com.liferay.petra.lang.HashUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.Group;
+import com.liferay.portal.kernel.model.GroupConstants;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.security.auth.PrincipalException;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
@@ -27,7 +29,6 @@ import com.liferay.portal.kernel.service.permission.GroupPermission;
 import com.liferay.portal.kernel.service.permission.PortalPermissionUtil;
 import com.liferay.portal.kernel.service.permission.UserPermissionUtil;
 import com.liferay.portal.kernel.spring.osgi.OSGiBeanProperties;
-import com.liferay.portal.kernel.util.HashUtil;
 import com.liferay.portal.util.PropsValues;
 
 import java.util.Map;
@@ -38,7 +39,7 @@ import java.util.Objects;
  * @author Raymond Augé
  */
 @OSGiBeanProperties(
-	property = {"model.class.name=com.liferay.portal.kernel.model.Group"}
+	property = "model.class.name=com.liferay.portal.kernel.model.Group"
 )
 public class GroupPermissionImpl
 	implements BaseModelPermissionChecker, GroupPermission {
@@ -114,13 +115,12 @@ public class GroupPermissionImpl
 		throws PortalException {
 
 		if (groupId > 0) {
-			Group group = GroupLocalServiceUtil.getGroup(groupId);
+			return contains(
+				permissionChecker, GroupLocalServiceUtil.getGroup(groupId),
+				actionId);
+		}
 
-			return contains(permissionChecker, group, actionId);
-		}
-		else {
-			return false;
-		}
+		return false;
 	}
 
 	@Override
@@ -196,12 +196,15 @@ public class GroupPermissionImpl
 			return true;
 		}
 		else if (actionId.equals(ActionKeys.VIEW) &&
-				 (permissionChecker.hasPermission(
-					 originalGroup, Group.class.getName(), groupId,
-					 ActionKeys.ASSIGN_USER_ROLES) ||
+				 ((originalGroup.getType() == GroupConstants.TYPE_SITE_OPEN) ||
 				  permissionChecker.hasPermission(
-					 originalGroup, Group.class.getName(), groupId,
-					 ActionKeys.MANAGE_LAYOUTS))) {
+					  originalGroup, Group.class.getName(), groupId,
+					  ActionKeys.ASSIGN_USER_ROLES) ||
+				  permissionChecker.hasPermission(
+					  originalGroup, Group.class.getName(), groupId,
+					  ActionKeys.MANAGE_LAYOUTS) ||
+				  permissionChecker.isGroupMember(
+					  originalGroup.getGroupId()))) {
 
 			return true;
 		}
@@ -210,14 +213,14 @@ public class GroupPermissionImpl
 					 originalGroup, Group.class.getName(), groupId,
 					 ActionKeys.MANAGE_LAYOUTS) ||
 				  permissionChecker.hasPermission(
-					 originalGroup, Group.class.getName(), groupId,
-					 ActionKeys.MANAGE_STAGING) ||
+					  originalGroup, Group.class.getName(), groupId,
+					  ActionKeys.MANAGE_STAGING) ||
 				  permissionChecker.hasPermission(
-					 originalGroup, Group.class.getName(), groupId,
-					 ActionKeys.PUBLISH_STAGING) ||
+					  originalGroup, Group.class.getName(), groupId,
+					  ActionKeys.PUBLISH_STAGING) ||
 				  permissionChecker.hasPermission(
-					 originalGroup, Group.class.getName(), groupId,
-					 ActionKeys.UPDATE))) {
+					  originalGroup, Group.class.getName(), groupId,
+					  ActionKeys.UPDATE))) {
 
 			return true;
 		}
@@ -247,16 +250,16 @@ public class GroupPermissionImpl
 	private static class CacheKey {
 
 		@Override
-		public boolean equals(Object obj) {
-			if (this == obj) {
+		public boolean equals(Object object) {
+			if (this == object) {
 				return true;
 			}
 
-			if (!(obj instanceof CacheKey)) {
+			if (!(object instanceof CacheKey)) {
 				return false;
 			}
 
-			CacheKey cacheKey = (CacheKey)obj;
+			CacheKey cacheKey = (CacheKey)object;
 
 			if ((_groupId == cacheKey._groupId) &&
 				(_mvccVersion == cacheKey._mvccVersion) &&

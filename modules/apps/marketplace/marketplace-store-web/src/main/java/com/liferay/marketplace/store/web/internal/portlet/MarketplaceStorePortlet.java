@@ -14,26 +14,26 @@
 
 package com.liferay.marketplace.store.web.internal.portlet;
 
+import com.liferay.marketplace.constants.MarketplaceStorePortletKeys;
 import com.liferay.marketplace.model.App;
 import com.liferay.marketplace.service.AppLocalService;
 import com.liferay.marketplace.service.AppService;
-import com.liferay.marketplace.store.web.constants.MarketplaceConstants;
-import com.liferay.marketplace.store.web.constants.MarketplaceStorePortletKeys;
-import com.liferay.marketplace.store.web.constants.MarketplaceStoreWebKeys;
 import com.liferay.marketplace.store.web.internal.configuration.MarketplaceStoreWebConfigurationValues;
+import com.liferay.marketplace.store.web.internal.constants.MarketplaceConstants;
+import com.liferay.marketplace.store.web.internal.constants.MarketplaceStoreWebKeys;
 import com.liferay.marketplace.store.web.internal.oauth.util.OAuthManager;
 import com.liferay.marketplace.store.web.internal.util.MarketplaceLicenseUtil;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.patcher.PatcherUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.ReleaseInfo;
-import com.liferay.portal.kernel.util.ServerDetector;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 
@@ -82,14 +82,13 @@ import org.scribe.model.Verb;
 		"com.liferay.portlet.use-default-template=true",
 		"javax.portlet.description=", "javax.portlet.display-name=Store",
 		"javax.portlet.init-param.add-process-action-success-action=false",
-		"javax.portlet.init-param.template-path=/",
+		"javax.portlet.init-param.template-path=/META-INF/resources/",
 		"javax.portlet.init-param.view-template=/view.jsp",
 		"javax.portlet.name=" + MarketplaceStorePortletKeys.MARKETPLACE_STORE,
 		"javax.portlet.resource-bundle=content.Language",
-		"javax.portlet.security-role-ref=administrator,guest,power-user,user",
-		"javax.portlet.supports.mime-type=text/html"
+		"javax.portlet.security-role-ref=administrator"
 	},
-	service = {Portlet.class}
+	service = Portlet.class
 )
 public class MarketplaceStorePortlet extends RemoteMVCPortlet {
 
@@ -112,8 +111,11 @@ public class MarketplaceStorePortlet extends RemoteMVCPortlet {
 
 			JSONObject jsonObject = getAppJSONObject(app.getRemoteAppId());
 
-			jsonObject.put("cmd", "downloadApp");
-			jsonObject.put("message", "success");
+			jsonObject.put(
+				"cmd", "downloadApp"
+			).put(
+				"message", "success"
+			);
 
 			writeJSON(actionRequest, actionResponse, jsonObject);
 		}
@@ -132,8 +134,11 @@ public class MarketplaceStorePortlet extends RemoteMVCPortlet {
 
 		JSONObject jsonObject = getAppJSONObject(remoteAppId);
 
-		jsonObject.put("cmd", "getApp");
-		jsonObject.put("message", "success");
+		jsonObject.put(
+			"cmd", "getApp"
+		).put(
+			"message", "success"
+		);
 
 		writeJSON(actionRequest, actionResponse, jsonObject);
 	}
@@ -142,13 +147,15 @@ public class MarketplaceStorePortlet extends RemoteMVCPortlet {
 			ActionRequest actionRequest, ActionResponse actionResponse)
 		throws Exception {
 
-		JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
-
-		jsonObject.put("apps", getInstalledAppsJSONArray());
-		jsonObject.put("cmd", "getInstalledApps");
-		jsonObject.put("message", "success");
-
-		writeJSON(actionRequest, actionResponse, jsonObject);
+		writeJSON(
+			actionRequest, actionResponse,
+			JSONUtil.put(
+				"apps", getInstalledAppsJSONArray()
+			).put(
+				"cmd", "getInstalledApps"
+			).put(
+				"message", "success"
+			));
 	}
 
 	public void getPrepackagedApps(
@@ -209,8 +216,11 @@ public class MarketplaceStorePortlet extends RemoteMVCPortlet {
 
 		JSONObject jsonObject = getAppJSONObject(remoteAppId);
 
-		jsonObject.put("cmd", "installApp");
-		jsonObject.put("message", "success");
+		jsonObject.put(
+			"cmd", "installApp"
+		).put(
+			"message", "success"
+		);
 
 		writeJSON(actionRequest, actionResponse, jsonObject);
 	}
@@ -223,7 +233,7 @@ public class MarketplaceStorePortlet extends RemoteMVCPortlet {
 		try {
 			super.render(renderRequest, renderResponse);
 		}
-		catch (PortletException pe) {
+		catch (PortletException portletException) {
 			include("/error.jsp", renderRequest, renderResponse);
 		}
 	}
@@ -238,8 +248,11 @@ public class MarketplaceStorePortlet extends RemoteMVCPortlet {
 
 		JSONObject jsonObject = getAppJSONObject(remoteAppId);
 
-		jsonObject.put("cmd", "uninstallApp");
-		jsonObject.put("message", "success");
+		jsonObject.put(
+			"cmd", "uninstallApp"
+		).put(
+			"message", "success"
+		);
 
 		writeJSON(actionRequest, actionResponse, jsonObject);
 	}
@@ -279,8 +292,11 @@ public class MarketplaceStorePortlet extends RemoteMVCPortlet {
 
 			JSONObject jsonObject = getAppJSONObject(app.getRemoteAppId());
 
-			jsonObject.put("cmd", "updateApp");
-			jsonObject.put("message", "success");
+			jsonObject.put(
+				"cmd", "updateApp"
+			).put(
+				"message", "success"
+			);
 
 			writeJSON(actionRequest, actionResponse, jsonObject);
 		}
@@ -299,9 +315,7 @@ public class MarketplaceStorePortlet extends RemoteMVCPortlet {
 		String productEntryName = ParamUtil.getString(
 			actionRequest, "productEntryName");
 
-		JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
-
-		jsonObject.put("cmd", "updateAppLicense");
+		JSONObject jsonObject = JSONUtil.put("cmd", "updateAppLicense");
 
 		if (Validator.isNull(orderUuid) &&
 			Validator.isNotNull(productEntryName)) {
@@ -325,10 +339,11 @@ public class MarketplaceStorePortlet extends RemoteMVCPortlet {
 			ActionRequest actionRequest, ActionResponse actionResponse)
 		throws Exception {
 
-		JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
-
-		jsonObject.put("cmd", "updateApps");
-		jsonObject.put("message", "success");
+		JSONObject jsonObject = JSONUtil.put(
+			"cmd", "updateApps"
+		).put(
+			"message", "success"
+		);
 
 		if (_reentrantLock.tryLock()) {
 			try {
@@ -353,7 +368,7 @@ public class MarketplaceStorePortlet extends RemoteMVCPortlet {
 
 						jsonArray.put(getAppJSONObject(app));
 					}
-					catch (Exception e) {
+					catch (Exception exception) {
 						jsonObject.put("message", "failed");
 					}
 					finally {
@@ -394,8 +409,8 @@ public class MarketplaceStorePortlet extends RemoteMVCPortlet {
 				return;
 			}
 		}
-		catch (PortalException pe) {
-			throw new PortletException(pe);
+		catch (PortalException portalException) {
+			throw new PortletException(portalException);
 		}
 
 		renderRequest.setAttribute(
@@ -439,14 +454,15 @@ public class MarketplaceStorePortlet extends RemoteMVCPortlet {
 	}
 
 	protected JSONObject getAppJSONObject(App app) throws Exception {
-		JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
-
-		jsonObject.put("appId", app.getRemoteAppId());
-		jsonObject.put("downloaded", app.isDownloaded());
-		jsonObject.put("installed", app.isInstalled());
-		jsonObject.put("version", app.getVersion());
-
-		return jsonObject;
+		return JSONUtil.put(
+			"appId", app.getRemoteAppId()
+		).put(
+			"downloaded", app.isDownloaded()
+		).put(
+			"installed", app.isInstalled()
+		).put(
+			"version", app.getVersion()
+		);
 	}
 
 	protected JSONObject getAppJSONObject(long remoteAppId) throws Exception {
@@ -456,14 +472,15 @@ public class MarketplaceStorePortlet extends RemoteMVCPortlet {
 			return getAppJSONObject(app);
 		}
 
-		JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
-
-		jsonObject.put("appId", remoteAppId);
-		jsonObject.put("downloaded", false);
-		jsonObject.put("installed", false);
-		jsonObject.put("version", StringPool.BLANK);
-
-		return jsonObject;
+		return JSONUtil.put(
+			"appId", remoteAppId
+		).put(
+			"downloaded", false
+		).put(
+			"installed", false
+		).put(
+			"version", StringPool.BLANK
+		);
 	}
 
 	@Override
@@ -513,10 +530,7 @@ public class MarketplaceStorePortlet extends RemoteMVCPortlet {
 
 		parameterMap.put("installedPatches", PatcherUtil.getInstalledPatches());
 		parameterMap.put(
-			"supportsHotDeploy",
-			new String[] {
-				String.valueOf(ServerDetector.isSupportsHotDeploy())
-			});
+			"supportsHotDeploy", new String[] {Boolean.TRUE.toString()});
 	}
 
 	@Reference(unbind = "-")

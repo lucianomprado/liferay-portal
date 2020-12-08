@@ -27,6 +27,54 @@ import javax.servlet.http.HttpServletRequest;
  */
 public class LogoSelectorTag extends IncludeTag {
 
+	public int getAspectRatio() {
+		return _aspectRatio;
+	}
+
+	public String getCurrentLogoURL() {
+		return _currentLogoURL;
+	}
+
+	public String getDefaultLogoURL() {
+		return _defaultLogoURL;
+	}
+
+	public String getEditLogoFn() {
+		return _editLogoFn;
+	}
+
+	public String getLogoDisplaySelector() {
+		return _logoDisplaySelector;
+	}
+
+	public long getMaxFileSize() {
+		return _maxFileSize;
+	}
+
+	public String getTempImageFileName() {
+		return _tempImageFileName;
+	}
+
+	public boolean isDefaultLogo() {
+		return _defaultLogo;
+	}
+
+	public boolean isPreserveRatio() {
+		return _preserveRatio;
+	}
+
+	public boolean isShowBackground() {
+		return _showBackground;
+	}
+
+	public boolean isShowButtons() {
+		return _showButtons;
+	}
+
+	public void setAspectRatio(int aspectRatio) {
+		_aspectRatio = aspectRatio;
+	}
+
 	public void setCurrentLogoURL(String currentLogoURL) {
 		_currentLogoURL = currentLogoURL;
 	}
@@ -51,6 +99,10 @@ public class LogoSelectorTag extends IncludeTag {
 		_maxFileSize = maxFileSize;
 	}
 
+	public void setPreserveRatio(boolean preserveRatio) {
+		_preserveRatio = preserveRatio;
+	}
+
 	public void setShowBackground(boolean showBackground) {
 		_showBackground = showBackground;
 	}
@@ -65,12 +117,16 @@ public class LogoSelectorTag extends IncludeTag {
 
 	@Override
 	protected void cleanUp() {
+		super.cleanUp();
+
+		_aspectRatio = 0;
 		_currentLogoURL = null;
 		_defaultLogo = false;
 		_defaultLogoURL = null;
 		_editLogoFn = null;
 		_logoDisplaySelector = null;
 		_maxFileSize = 0;
+		_preserveRatio = false;
 		_showBackground = true;
 		_showButtons = true;
 		_tempImageFileName = null;
@@ -82,17 +138,20 @@ public class LogoSelectorTag extends IncludeTag {
 	}
 
 	@Override
-	protected void setAttributes(HttpServletRequest request) {
-		request.setAttribute(
+	protected void setAttributes(HttpServletRequest httpServletRequest) {
+		httpServletRequest.setAttribute(
+			"liferay-ui:logo-selector:aspectRatio",
+			String.valueOf(_aspectRatio));
+		httpServletRequest.setAttribute(
 			"liferay-ui:logo-selector:currentLogoURL", _currentLogoURL);
-		request.setAttribute(
+		httpServletRequest.setAttribute(
 			"liferay-ui:logo-selector:defaultLogo",
 			String.valueOf(_defaultLogo));
-		request.setAttribute(
+		httpServletRequest.setAttribute(
 			"liferay-ui:logo-selector:defaultLogoURL", _defaultLogoURL);
-		request.setAttribute(
+		httpServletRequest.setAttribute(
 			"liferay-ui:logo-selector:editLogoFn", _editLogoFn);
-		request.setAttribute(
+		httpServletRequest.setAttribute(
 			"liferay-ui:logo-selector:logoDisplaySelector",
 			_logoDisplaySelector);
 
@@ -101,27 +160,29 @@ public class LogoSelectorTag extends IncludeTag {
 				_maxFileSize =
 					UploadServletRequestConfigurationHelperUtil.getMaxSize();
 			}
-			catch (SystemException se) {
+			catch (SystemException systemException) {
 
 				// LPS-52675
 
 				if (_log.isDebugEnabled()) {
-					_log.debug(se, se);
+					_log.debug(systemException, systemException);
 				}
 			}
 		}
 
-		request.setAttribute(
+		httpServletRequest.setAttribute(
 			"liferay-ui:logo-selector:maxFileSize",
 			String.valueOf(_maxFileSize));
-
-		request.setAttribute(
+		httpServletRequest.setAttribute(
+			"liferay-ui:logo-selector:preserveRatio",
+			String.valueOf(_preserveRatio));
+		httpServletRequest.setAttribute(
 			"liferay-ui:logo-selector:showBackground",
 			String.valueOf(_showBackground));
-		request.setAttribute(
+		httpServletRequest.setAttribute(
 			"liferay-ui:logo-selector:showButtons",
 			String.valueOf(_showButtons));
-		request.setAttribute(
+		httpServletRequest.setAttribute(
 			"liferay-ui:logo-selector:tempImageFileName", _tempImageFileName);
 	}
 
@@ -131,12 +192,14 @@ public class LogoSelectorTag extends IncludeTag {
 	private static final Log _log = LogFactoryUtil.getLog(
 		LogoSelectorTag.class);
 
+	private int _aspectRatio;
 	private String _currentLogoURL;
 	private boolean _defaultLogo;
 	private String _defaultLogoURL;
 	private String _editLogoFn;
 	private String _logoDisplaySelector;
 	private long _maxFileSize;
+	private boolean _preserveRatio;
 	private boolean _showBackground = true;
 	private boolean _showButtons = true;
 	private String _tempImageFileName;

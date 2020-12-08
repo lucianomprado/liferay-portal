@@ -14,14 +14,12 @@
 
 package com.liferay.source.formatter.checks;
 
-import com.liferay.portal.kernel.util.CharPool;
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.MapUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.source.formatter.parser.JavaClass;
-import com.liferay.source.formatter.parser.JavaMethod;
 import com.liferay.source.formatter.parser.JavaTerm;
-import com.liferay.source.formatter.parser.JavaVariable;
 
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -33,7 +31,7 @@ import java.util.regex.Pattern;
 public class JavaCleanUpMethodVariablesCheck extends BaseJavaTermCheck {
 
 	@Override
-	public boolean isPortalCheck() {
+	public boolean isLiferaySourceCheck() {
 		return true;
 	}
 
@@ -53,7 +51,14 @@ public class JavaCleanUpMethodVariablesCheck extends BaseJavaTermCheck {
 		String cleanUpMethodContent = _getCleanUpMethodContent(javaClass);
 
 		if (cleanUpMethodContent != null) {
-			_checkVariableValues(fileName, cleanUpMethodContent, javaClass);
+			String newCleanUpMethodContent = _formatVariables(
+				fileName, cleanUpMethodContent, javaClass);
+
+			if (!cleanUpMethodContent.equals(newCleanUpMethodContent)) {
+				return StringUtil.replace(
+					javaTerm.getContent(), cleanUpMethodContent,
+					newCleanUpMethodContent);
+			}
 		}
 
 		return javaTerm.getContent();
@@ -64,47 +69,63 @@ public class JavaCleanUpMethodVariablesCheck extends BaseJavaTermCheck {
 		return new String[] {JAVA_CLASS};
 	}
 
-	private void _checkVariableValues(
+	private String _formatVariables(
 		String fileName, String cleanUpMethodContent, JavaClass javaClass) {
 
+		int previousPos = -1;
+
 		for (JavaTerm javaTerm : javaClass.getChildJavaTerms()) {
-			if (!(javaTerm instanceof JavaVariable)) {
-				continue;
-			}
-
-			String accessModifier = javaTerm.getAccessModifier();
-
-			if (!accessModifier.equals(JavaTerm.ACCESS_MODIFIER_PRIVATE)) {
+			if (!javaTerm.isPrivate() || !javaTerm.isJavaVariable()) {
 				continue;
 			}
 
 			String variableName = javaTerm.getName();
 
-			if (!cleanUpMethodContent.contains(variableName + " =")) {
-				continue;
-			}
-
 			Pattern pattern = Pattern.compile(
-				"\t(private|protected|public)\\s+" +
-					"(((final|static|transient|volatile)( |\n))*)([\\s\\S]*?)" +
-						variableName);
+				"\tprivate\\s+(((final|static|transient|volatile)\\s+)*)" +
+					"([\\s\\S]*?)" + variableName);
 
 			String variableContent = javaTerm.getContent();
 
 			Matcher matcher = pattern.matcher(variableContent);
 
 			if (!matcher.find()) {
-				continue;
+				return cleanUpMethodContent;
 			}
 
 			String modifierDefinition = StringUtil.trim(
-				variableContent.substring(matcher.start(1), matcher.start(6)));
+				variableContent.substring(matcher.start(1), matcher.start(4)));
+
+			boolean isFinal = false;
 
 			if (modifierDefinition.contains("final")) {
+				isFinal = true;
+			}
+
+			int pos = cleanUpMethodContent.indexOf(variableName + " =");
+
+			if (pos == -1) {
+				if (!isFinal && !javaTerm.isStatic()) {
+					addMessage(
+						fileName,
+						"Variable '" + variableName +
+							"' is missing in method 'cleanUp'");
+				}
+
 				continue;
 			}
 
-			String javaFieldType = StringUtil.trim(matcher.group(6));
+			if (previousPos > pos) {
+				return _sortVariables(cleanUpMethodContent, previousPos, pos);
+			}
+
+			previousPos = pos;
+
+			if (isFinal) {
+				continue;
+			}
+
+			String javaFieldType = StringUtil.trim(matcher.group(4));
 
 			pattern = Pattern.compile(
 				javaTerm.getName() + " =\\s+[a-z]\\w*\\.");
@@ -117,11 +138,11 @@ public class JavaCleanUpMethodVariablesCheck extends BaseJavaTermCheck {
 
 			int x = variableContent.indexOf(javaTerm.getName());
 
-			String defaultValue = _getDefaultValue(javaFieldType);
-
 			String setVariableCommand = variableContent.substring(x);
 
 			if (!setVariableCommand.contains(" =")) {
+				String defaultValue = _getDefaultValue(javaFieldType);
+
 				setVariableCommand = StringUtil.replaceLast(
 					setVariableCommand, CharPool.SEMICOLON,
 					" = " + defaultValue + ";");
@@ -148,15 +169,16 @@ public class JavaCleanUpMethodVariablesCheck extends BaseJavaTermCheck {
 				addMessage(
 					fileName,
 					"Initial value for '" + variableName +
-						"' differs from value in cleanUp method",
-					"cleanup.markdown");
+						"' differs from value in cleanUp method");
 			}
 		}
+
+		return cleanUpMethodContent;
 	}
 
 	private String _getCleanUpMethodContent(JavaClass javaClass) {
 		for (JavaTerm javaTerm : javaClass.getChildJavaTerms()) {
-			if (!(javaTerm instanceof JavaMethod)) {
+			if (!javaTerm.isJavaMethod()) {
 				continue;
 			}
 
@@ -176,6 +198,34 @@ public class JavaCleanUpMethodVariablesCheck extends BaseJavaTermCheck {
 		}
 
 		return "null";
+	}
+
+	private String _sortVariables(
+		String cleanUpMethodContent, int previousPos, int pos) {
+
+		int semiColonPos = cleanUpMethodContent.indexOf(";\n", pos);
+
+		if ((semiColonPos == -1) || (semiColonPos > previousPos)) {
+			return cleanUpMethodContent;
+		}
+
+		int previousSemiColonPos = cleanUpMethodContent.indexOf(
+			";\n", previousPos);
+
+		if (previousSemiColonPos == -1) {
+			return cleanUpMethodContent;
+		}
+
+		String previousVariableSetter = cleanUpMethodContent.substring(
+			previousPos, previousSemiColonPos + 1);
+		String variableSetter = cleanUpMethodContent.substring(
+			pos, semiColonPos + 1);
+
+		String newCleanUpMethodContent = StringUtil.replaceFirst(
+			cleanUpMethodContent, variableSetter, previousVariableSetter);
+
+		return StringUtil.replaceLast(
+			newCleanUpMethodContent, previousVariableSetter, variableSetter);
 	}
 
 	private static final Map<String, String> _defaultPrimitiveValues =

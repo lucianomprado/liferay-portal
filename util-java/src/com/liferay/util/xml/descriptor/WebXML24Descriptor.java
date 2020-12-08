@@ -21,6 +21,7 @@ import java.util.Map;
 
 import org.dom4j.Document;
 import org.dom4j.Element;
+import org.dom4j.QName;
 
 /**
  * @author Jorge Ferrer
@@ -47,7 +48,9 @@ public class WebXML24Descriptor extends SimpleXMLDescriptor {
 
 	@Override
 	public String[] getChildrenOrder(Element parentElement) {
-		String parentName = parentElement.getQName().getName();
+		QName qName = parentElement.getQName();
+
+		String parentName = qName.getName();
 
 		String[] childrenOrder = orderedChildren.get(parentName);
 
@@ -100,8 +103,9 @@ public class WebXML24Descriptor extends SimpleXMLDescriptor {
 		new ElementIdentifier("ejb-local-ref", "ejb-ref-name")
 	};
 
-	private static final String[] _JOINABLE_ELEMENTS =
-		{"welcome-file-list", "jsp-config"};
+	private static final String[] _JOINABLE_ELEMENTS = {
+		"welcome-file-list", "jsp-config"
+	};
 
 	private static final String[] _ROOT_ORDERED_CHILDREN = {
 		"icon", "display-name", "description", "distributable", "context-param",

@@ -33,7 +33,8 @@ import javax.servlet.jsp.PageContext;
 public class PageContextFactoryUtil {
 
 	public static PageContext create(
-		final HttpServletRequest request, HttpServletResponse response) {
+		final HttpServletRequest httpServletRequest,
+		HttpServletResponse httpServletResponse) {
 
 		final ServletConfig servletConfig = new ServletConfig() {
 
@@ -49,7 +50,7 @@ public class PageContextFactoryUtil {
 
 			@Override
 			public ServletContext getServletContext() {
-				return request.getServletContext();
+				return httpServletRequest.getServletContext();
 			}
 
 			@Override
@@ -59,7 +60,7 @@ public class PageContextFactoryUtil {
 
 		};
 
-		return _jspFactory.getPageContext(
+		PageContext pageContext = _jspFactory.getPageContext(
 			new Servlet() {
 
 				@Override
@@ -82,11 +83,17 @@ public class PageContextFactoryUtil {
 
 				@Override
 				public void service(
-					ServletRequest request, ServletResponse response) {
+					ServletRequest httpServletRequest,
+					ServletResponse httpServletResponse) {
 				}
 
 			},
-			request, response, null, true, 0, false);
+			httpServletRequest, httpServletResponse, null, true, 0, false);
+
+		pageContext.removeAttribute(
+			AutoClosePageContextRegistry.AUTO_CLOSEABLE);
+
+		return pageContext;
 	}
 
 	private static final JspFactory _jspFactory =

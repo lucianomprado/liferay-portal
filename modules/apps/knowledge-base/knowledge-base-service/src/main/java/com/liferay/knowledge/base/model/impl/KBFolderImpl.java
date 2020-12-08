@@ -14,8 +14,6 @@
 
 package com.liferay.knowledge.base.model.impl;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.knowledge.base.constants.KBFolderConstants;
 import com.liferay.knowledge.base.model.KBFolder;
 import com.liferay.knowledge.base.service.KBArticleServiceUtil;
@@ -33,7 +31,6 @@ import java.util.Locale;
 /**
  * @author Brian Wing Shun Chan
  */
-@ProviderType
 public class KBFolderImpl extends KBFolderBaseImpl {
 
 	public KBFolderImpl() {
@@ -95,7 +92,7 @@ public class KBFolderImpl extends KBFolderBaseImpl {
 	@Override
 	public boolean isEmpty() throws PortalException {
 		int kbArticlesCount = KBArticleServiceUtil.getKBArticlesCount(
-			getGroupId(), getKbFolderId(), WorkflowConstants.STATUS_ANY);
+			getGroupId(), getKbFolderId(), WorkflowConstants.STATUS_APPROVED);
 
 		if (kbArticlesCount > 0) {
 			return false;

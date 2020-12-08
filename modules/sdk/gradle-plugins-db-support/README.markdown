@@ -7,7 +7,7 @@ following actions are available:
 - Cleans the Liferay database from the Service Builder tables and rows of a
 module.
 
-The plugin has been successfully tested with Gradle 2.5 up to 3.3.
+The plugin has been successfully tested with Gradle 5.6.4 and 6.6.1.
 
 ## Usage
 
@@ -16,12 +16,12 @@ To use the plugin, include it in your build script:
 ```gradle
 buildscript {
 	dependencies {
-		classpath group: "com.liferay", name: "com.liferay.gradle.plugins.db.support", version: "1.0.2"
+		classpath group: "com.liferay", name: "com.liferay.gradle.plugins.db.support", version: "1.0.8"
 	}
 
 	repositories {
 		maven {
-			url "https://cdn.lfrs.sl/repository.liferay.com/nexus/content/groups/public"
+			url "https://repository-cdn.liferay.com/nexus/content/groups/public"
 		}
 	}
 }
@@ -36,7 +36,7 @@ transitive dependencies. The Liferay CDN repository hosts them all:
 ```gradle
 repositories {
 	maven {
-		url "https://cdn.lfrs.sl/repository.liferay.com/nexus/content/groups/public"
+		url "https://repository-cdn.liferay.com/nexus/content/groups/public"
 	}
 }
 ```
@@ -55,7 +55,7 @@ plugin is applied:
 
 Property Name | Default Value
 ------------- | -------------
-[`servletContextName`](#servletcontextname) | <p>**If the `base` plugin is applied:**  The bundle symbolic name of the project inferred via the [`OsgiHelper`](https://github.com/gradle/gradle/blob/master/subprojects/osgi/src/main/java/org/gradle/api/internal/plugins/osgi/OsgiHelper.java) class.</p><p>**Otherwise:** `null`</p>
+[`servletContextName`](#servletcontextname) | <p>**If the `base` plugin is applied:** The bundle symbolic name of the project inferred via the [`OsgiHelper`](https://github.com/gradle/gradle/blob/master/subprojects/osgi/src/main/java/org/gradle/api/internal/plugins/osgi/OsgiHelper.java) class.</p><p>**Otherwise:** `null`</p>
 [`serviceXmlFile`](#servicexmlfile) | `"${project.projectDir}/service.xml"`
 
 ### CleanServiceBuilderTask
@@ -112,6 +112,6 @@ manually adding a dependency to the `dbSupportTool` configuration:
 
 ```gradle
 dependencies {
-	dbSupportTool group: "com.liferay", name: "com.liferay.portal.tools.db.support", version: "1.0.4"
+	dbSupportTool group: "com.liferay", name: "com.liferay.portal.tools.db.support", version: "1.0.8"
 }
 ```

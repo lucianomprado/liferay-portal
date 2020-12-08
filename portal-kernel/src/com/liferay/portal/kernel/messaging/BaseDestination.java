@@ -14,12 +14,12 @@
 
 package com.liferay.portal.kernel.messaging;
 
-import com.liferay.portal.kernel.concurrent.ConcurrentHashSet;
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.Validator;
 
 import java.util.Collections;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author Michael C. Han
@@ -85,6 +85,11 @@ public abstract class BaseDestination implements Destination {
 	}
 
 	@Override
+	public String getDestinationType() {
+		return _destinationType;
+	}
+
+	@Override
 	public int getMessageListenerCount() {
 		return messageListeners.size();
 	}
@@ -104,9 +109,8 @@ public abstract class BaseDestination implements Destination {
 		if (getMessageListenerCount() > 0) {
 			return true;
 		}
-		else {
-			return false;
-		}
+
+		return false;
 	}
 
 	@Override
@@ -123,10 +127,10 @@ public abstract class BaseDestination implements Destination {
 
 	@Override
 	public boolean register(
-		MessageListener messageListener, ClassLoader classloader) {
+		MessageListener messageListener, ClassLoader classLoader) {
 
 		InvokerMessageListener invokerMessageListener =
-			new InvokerMessageListener(messageListener, classloader);
+			new InvokerMessageListener(messageListener, classLoader);
 
 		return registerMessageListener(invokerMessageListener);
 	}
@@ -148,6 +152,10 @@ public abstract class BaseDestination implements Destination {
 		throw new UnsupportedOperationException();
 	}
 
+	public void setDestinationType(String destinationType) {
+		_destinationType = destinationType;
+	}
+
 	public void setName(String name) {
 		this.name = name;
 	}
@@ -161,10 +169,10 @@ public abstract class BaseDestination implements Destination {
 	}
 
 	public boolean unregister(
-		MessageListener messageListener, ClassLoader classloader) {
+		MessageListener messageListener, ClassLoader classLoader) {
 
 		InvokerMessageListener invokerMessageListener =
-			new InvokerMessageListener(messageListener, classloader);
+			new InvokerMessageListener(messageListener, classLoader);
 
 		return unregisterMessageListener(invokerMessageListener);
 	}
@@ -221,10 +229,12 @@ public abstract class BaseDestination implements Destination {
 		return unregistered;
 	}
 
-	protected Set<MessageListener> messageListeners = new ConcurrentHashSet<>();
+	protected Set<MessageListener> messageListeners = Collections.newSetFromMap(
+		new ConcurrentHashMap<>());
 	protected String name = StringPool.BLANK;
 
 	private final Set<DestinationEventListener> _destinationEventListeners =
-		new ConcurrentHashSet<>();
+		Collections.newSetFromMap(new ConcurrentHashMap<>());
+	private String _destinationType;
 
 }

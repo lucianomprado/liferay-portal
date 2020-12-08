@@ -30,6 +30,7 @@ import com.liferay.document.library.kernel.service.DLFolderService;
 import com.liferay.dynamic.data.mapping.kernel.DDMFormValues;
 import com.liferay.dynamic.data.mapping.kernel.DDMStructure;
 import com.liferay.dynamic.data.mapping.kernel.StorageEngineManagerUtil;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.repository.capabilities.Capability;
 import com.liferay.portal.kernel.repository.capabilities.CapabilityProvider;
@@ -39,7 +40,6 @@ import com.liferay.portal.kernel.service.ResourceLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.SortedArrayList;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 
 import java.util.ArrayList;
@@ -120,8 +120,6 @@ public abstract class LiferayRepositoryBase implements CapabilityProvider {
 		List<DDMStructure> ddmStructures = fileEntryType.getDDMStructures();
 
 		for (DDMStructure ddmStructure : ddmStructures) {
-			String namespace = String.valueOf(ddmStructure.getStructureId());
-
 			DDMFormValues ddmFormValues =
 				(DDMFormValues)serviceContext.getAttribute(
 					DDMFormValues.class.getName() + StringPool.POUND +
@@ -129,7 +127,9 @@ public abstract class LiferayRepositoryBase implements CapabilityProvider {
 
 			if (ddmFormValues == null) {
 				ddmFormValues = StorageEngineManagerUtil.getDDMFormValues(
-					ddmStructure.getStructureId(), namespace, serviceContext);
+					ddmStructure.getStructureId(),
+					String.valueOf(ddmStructure.getStructureId()),
+					serviceContext);
 			}
 
 			ddmFormValuesMap.put(ddmStructure.getStructureKey(), ddmFormValues);
@@ -176,18 +176,16 @@ public abstract class LiferayRepositoryBase implements CapabilityProvider {
 		if (_groupId == _repositoryId) {
 			return true;
 		}
-		else {
-			return false;
-		}
+
+		return false;
 	}
 
 	protected long toFolderId(long folderId) {
 		if (folderId == DLFolderConstants.DEFAULT_PARENT_FOLDER_ID) {
 			return _dlFolderId;
 		}
-		else {
-			return folderId;
-		}
+
+		return folderId;
 	}
 
 	protected List<Long> toFolderIds(List<Long> folderIds) {
@@ -215,7 +213,7 @@ public abstract class LiferayRepositoryBase implements CapabilityProvider {
 	protected ResourceLocalService resourceLocalService;
 
 	private final long _dlFolderId;
-	private long _groupId;
+	private final long _groupId;
 	private final long _repositoryId;
 
 }

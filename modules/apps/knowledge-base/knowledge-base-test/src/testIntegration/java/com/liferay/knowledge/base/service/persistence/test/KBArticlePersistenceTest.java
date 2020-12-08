@@ -15,19 +15,18 @@
 package com.liferay.knowledge.base.service.persistence.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
-
 import com.liferay.knowledge.base.exception.NoSuchArticleException;
 import com.liferay.knowledge.base.model.KBArticle;
 import com.liferay.knowledge.base.service.KBArticleLocalServiceUtil;
 import com.liferay.knowledge.base.service.persistence.KBArticlePersistence;
 import com.liferay.knowledge.base.service.persistence.KBArticleUtil;
-
 import com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery;
 import com.liferay.portal.kernel.dao.orm.DynamicQuery;
 import com.liferay.portal.kernel.dao.orm.DynamicQueryFactoryUtil;
 import com.liferay.portal.kernel.dao.orm.ProjectionFactoryUtil;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.dao.orm.RestrictionsFactoryUtil;
+import com.liferay.portal.kernel.dao.orm.Session;
 import com.liferay.portal.kernel.test.AssertUtils;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
@@ -36,20 +35,10 @@ import com.liferay.portal.kernel.transaction.Propagation;
 import com.liferay.portal.kernel.util.IntegerWrapper;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.OrderByComparatorFactoryUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Time;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PersistenceTestRule;
 import com.liferay.portal.test.rule.TransactionalTestRule;
-
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
-
-import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 
@@ -58,20 +47,29 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
+
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /**
  * @generated
  */
 @RunWith(Arquillian.class)
 public class KBArticlePersistenceTest {
+
 	@ClassRule
 	@Rule
-	public static final AggregateTestRule aggregateTestRule = new AggregateTestRule(new LiferayIntegrationTestRule(),
-			PersistenceTestRule.INSTANCE,
-			new TransactionalTestRule(Propagation.REQUIRED,
-				"com.liferay.knowledge.base.service"));
+	public static final AggregateTestRule aggregateTestRule =
+		new AggregateTestRule(
+			new LiferayIntegrationTestRule(), PersistenceTestRule.INSTANCE,
+			new TransactionalTestRule(
+				Propagation.REQUIRED, "com.liferay.knowledge.base.service"));
 
 	@Before
 	public void setUp() {
@@ -110,7 +108,8 @@ public class KBArticlePersistenceTest {
 
 		_persistence.remove(newKBArticle);
 
-		KBArticle existingKBArticle = _persistence.fetchByPrimaryKey(newKBArticle.getPrimaryKey());
+		KBArticle existingKBArticle = _persistence.fetchByPrimaryKey(
+			newKBArticle.getPrimaryKey());
 
 		Assert.assertNull(existingKBArticle);
 	}
@@ -125,6 +124,8 @@ public class KBArticlePersistenceTest {
 		long pk = RandomTestUtil.nextLong();
 
 		KBArticle newKBArticle = _persistence.create(pk);
+
+		newKBArticle.setMvccVersion(RandomTestUtil.nextLong());
 
 		newKBArticle.setUuid(RandomTestUtil.randomString());
 
@@ -164,8 +165,6 @@ public class KBArticlePersistenceTest {
 
 		newKBArticle.setSections(RandomTestUtil.randomString());
 
-		newKBArticle.setViewCount(RandomTestUtil.nextInt());
-
 		newKBArticle.setLatest(RandomTestUtil.randomBoolean());
 
 		newKBArticle.setMain(RandomTestUtil.randomBoolean());
@@ -184,67 +183,75 @@ public class KBArticlePersistenceTest {
 
 		_kbArticles.add(_persistence.update(newKBArticle));
 
-		KBArticle existingKBArticle = _persistence.findByPrimaryKey(newKBArticle.getPrimaryKey());
+		KBArticle existingKBArticle = _persistence.findByPrimaryKey(
+			newKBArticle.getPrimaryKey());
 
-		Assert.assertEquals(existingKBArticle.getUuid(), newKBArticle.getUuid());
-		Assert.assertEquals(existingKBArticle.getKbArticleId(),
-			newKBArticle.getKbArticleId());
-		Assert.assertEquals(existingKBArticle.getResourcePrimKey(),
+		Assert.assertEquals(
+			existingKBArticle.getMvccVersion(), newKBArticle.getMvccVersion());
+		Assert.assertEquals(
+			existingKBArticle.getUuid(), newKBArticle.getUuid());
+		Assert.assertEquals(
+			existingKBArticle.getKbArticleId(), newKBArticle.getKbArticleId());
+		Assert.assertEquals(
+			existingKBArticle.getResourcePrimKey(),
 			newKBArticle.getResourcePrimKey());
-		Assert.assertEquals(existingKBArticle.getGroupId(),
-			newKBArticle.getGroupId());
-		Assert.assertEquals(existingKBArticle.getCompanyId(),
-			newKBArticle.getCompanyId());
-		Assert.assertEquals(existingKBArticle.getUserId(),
-			newKBArticle.getUserId());
-		Assert.assertEquals(existingKBArticle.getUserName(),
-			newKBArticle.getUserName());
-		Assert.assertEquals(Time.getShortTimestamp(
-				existingKBArticle.getCreateDate()),
+		Assert.assertEquals(
+			existingKBArticle.getGroupId(), newKBArticle.getGroupId());
+		Assert.assertEquals(
+			existingKBArticle.getCompanyId(), newKBArticle.getCompanyId());
+		Assert.assertEquals(
+			existingKBArticle.getUserId(), newKBArticle.getUserId());
+		Assert.assertEquals(
+			existingKBArticle.getUserName(), newKBArticle.getUserName());
+		Assert.assertEquals(
+			Time.getShortTimestamp(existingKBArticle.getCreateDate()),
 			Time.getShortTimestamp(newKBArticle.getCreateDate()));
-		Assert.assertEquals(Time.getShortTimestamp(
-				existingKBArticle.getModifiedDate()),
+		Assert.assertEquals(
+			Time.getShortTimestamp(existingKBArticle.getModifiedDate()),
 			Time.getShortTimestamp(newKBArticle.getModifiedDate()));
-		Assert.assertEquals(existingKBArticle.getRootResourcePrimKey(),
+		Assert.assertEquals(
+			existingKBArticle.getRootResourcePrimKey(),
 			newKBArticle.getRootResourcePrimKey());
-		Assert.assertEquals(existingKBArticle.getParentResourceClassNameId(),
+		Assert.assertEquals(
+			existingKBArticle.getParentResourceClassNameId(),
 			newKBArticle.getParentResourceClassNameId());
-		Assert.assertEquals(existingKBArticle.getParentResourcePrimKey(),
+		Assert.assertEquals(
+			existingKBArticle.getParentResourcePrimKey(),
 			newKBArticle.getParentResourcePrimKey());
-		Assert.assertEquals(existingKBArticle.getKbFolderId(),
-			newKBArticle.getKbFolderId());
-		Assert.assertEquals(existingKBArticle.getVersion(),
-			newKBArticle.getVersion());
-		Assert.assertEquals(existingKBArticle.getTitle(),
-			newKBArticle.getTitle());
-		Assert.assertEquals(existingKBArticle.getUrlTitle(),
-			newKBArticle.getUrlTitle());
-		Assert.assertEquals(existingKBArticle.getContent(),
-			newKBArticle.getContent());
-		Assert.assertEquals(existingKBArticle.getDescription(),
-			newKBArticle.getDescription());
-		AssertUtils.assertEquals(existingKBArticle.getPriority(),
-			newKBArticle.getPriority());
-		Assert.assertEquals(existingKBArticle.getSections(),
-			newKBArticle.getSections());
-		Assert.assertEquals(existingKBArticle.getViewCount(),
-			newKBArticle.getViewCount());
-		Assert.assertEquals(existingKBArticle.getLatest(),
-			newKBArticle.getLatest());
-		Assert.assertEquals(existingKBArticle.getMain(), newKBArticle.getMain());
-		Assert.assertEquals(existingKBArticle.getSourceURL(),
-			newKBArticle.getSourceURL());
-		Assert.assertEquals(Time.getShortTimestamp(
-				existingKBArticle.getLastPublishDate()),
+		Assert.assertEquals(
+			existingKBArticle.getKbFolderId(), newKBArticle.getKbFolderId());
+		Assert.assertEquals(
+			existingKBArticle.getVersion(), newKBArticle.getVersion());
+		Assert.assertEquals(
+			existingKBArticle.getTitle(), newKBArticle.getTitle());
+		Assert.assertEquals(
+			existingKBArticle.getUrlTitle(), newKBArticle.getUrlTitle());
+		Assert.assertEquals(
+			existingKBArticle.getContent(), newKBArticle.getContent());
+		Assert.assertEquals(
+			existingKBArticle.getDescription(), newKBArticle.getDescription());
+		AssertUtils.assertEquals(
+			existingKBArticle.getPriority(), newKBArticle.getPriority());
+		Assert.assertEquals(
+			existingKBArticle.getSections(), newKBArticle.getSections());
+		Assert.assertEquals(
+			existingKBArticle.isLatest(), newKBArticle.isLatest());
+		Assert.assertEquals(existingKBArticle.isMain(), newKBArticle.isMain());
+		Assert.assertEquals(
+			existingKBArticle.getSourceURL(), newKBArticle.getSourceURL());
+		Assert.assertEquals(
+			Time.getShortTimestamp(existingKBArticle.getLastPublishDate()),
 			Time.getShortTimestamp(newKBArticle.getLastPublishDate()));
-		Assert.assertEquals(existingKBArticle.getStatus(),
-			newKBArticle.getStatus());
-		Assert.assertEquals(existingKBArticle.getStatusByUserId(),
+		Assert.assertEquals(
+			existingKBArticle.getStatus(), newKBArticle.getStatus());
+		Assert.assertEquals(
+			existingKBArticle.getStatusByUserId(),
 			newKBArticle.getStatusByUserId());
-		Assert.assertEquals(existingKBArticle.getStatusByUserName(),
+		Assert.assertEquals(
+			existingKBArticle.getStatusByUserName(),
 			newKBArticle.getStatusByUserName());
-		Assert.assertEquals(Time.getShortTimestamp(
-				existingKBArticle.getStatusDate()),
+		Assert.assertEquals(
+			Time.getShortTimestamp(existingKBArticle.getStatusDate()),
 			Time.getShortTimestamp(newKBArticle.getStatusDate()));
 	}
 
@@ -257,384 +264,425 @@ public class KBArticlePersistenceTest {
 
 	@Test
 	public void testCountByUuid() throws Exception {
-		_persistence.countByUuid(StringPool.BLANK);
+		_persistence.countByUuid("");
 
-		_persistence.countByUuid(StringPool.NULL);
+		_persistence.countByUuid("null");
 
 		_persistence.countByUuid((String)null);
 	}
 
 	@Test
 	public void testCountByUUID_G() throws Exception {
-		_persistence.countByUUID_G(StringPool.BLANK, RandomTestUtil.nextLong());
+		_persistence.countByUUID_G("", RandomTestUtil.nextLong());
 
-		_persistence.countByUUID_G(StringPool.NULL, 0L);
+		_persistence.countByUUID_G("null", 0L);
 
 		_persistence.countByUUID_G((String)null, 0L);
 	}
 
 	@Test
 	public void testCountByUuid_C() throws Exception {
-		_persistence.countByUuid_C(StringPool.BLANK, RandomTestUtil.nextLong());
+		_persistence.countByUuid_C("", RandomTestUtil.nextLong());
 
-		_persistence.countByUuid_C(StringPool.NULL, 0L);
+		_persistence.countByUuid_C("null", 0L);
 
 		_persistence.countByUuid_C((String)null, 0L);
 	}
 
 	@Test
 	public void testCountByR_G() throws Exception {
-		_persistence.countByR_G(RandomTestUtil.nextLong(),
-			RandomTestUtil.nextLong());
+		_persistence.countByR_G(
+			RandomTestUtil.nextLong(), RandomTestUtil.nextLong());
 
 		_persistence.countByR_G(0L, 0L);
 	}
 
 	@Test
 	public void testCountByR_V() throws Exception {
-		_persistence.countByR_V(RandomTestUtil.nextLong(),
-			RandomTestUtil.nextInt());
+		_persistence.countByR_V(
+			RandomTestUtil.nextLong(), RandomTestUtil.nextInt());
 
 		_persistence.countByR_V(0L, 0);
 	}
 
 	@Test
 	public void testCountByR_L() throws Exception {
-		_persistence.countByR_L(RandomTestUtil.nextLong(),
-			RandomTestUtil.randomBoolean());
+		_persistence.countByR_L(
+			RandomTestUtil.nextLong(), RandomTestUtil.randomBoolean());
 
 		_persistence.countByR_L(0L, RandomTestUtil.randomBoolean());
 	}
 
 	@Test
 	public void testCountByR_LArrayable() throws Exception {
-		_persistence.countByR_L(new long[] { RandomTestUtil.nextLong(), 0L },
+		_persistence.countByR_L(
+			new long[] {RandomTestUtil.nextLong(), 0L},
 			RandomTestUtil.randomBoolean());
 	}
 
 	@Test
 	public void testCountByR_M() throws Exception {
-		_persistence.countByR_M(RandomTestUtil.nextLong(),
-			RandomTestUtil.randomBoolean());
+		_persistence.countByR_M(
+			RandomTestUtil.nextLong(), RandomTestUtil.randomBoolean());
 
 		_persistence.countByR_M(0L, RandomTestUtil.randomBoolean());
 	}
 
 	@Test
 	public void testCountByR_MArrayable() throws Exception {
-		_persistence.countByR_M(new long[] { RandomTestUtil.nextLong(), 0L },
+		_persistence.countByR_M(
+			new long[] {RandomTestUtil.nextLong(), 0L},
 			RandomTestUtil.randomBoolean());
 	}
 
 	@Test
 	public void testCountByR_S() throws Exception {
-		_persistence.countByR_S(RandomTestUtil.nextLong(),
-			RandomTestUtil.nextInt());
+		_persistence.countByR_S(
+			RandomTestUtil.nextLong(), RandomTestUtil.nextInt());
 
 		_persistence.countByR_S(0L, 0);
 	}
 
 	@Test
 	public void testCountByR_SArrayable() throws Exception {
-		_persistence.countByR_S(new long[] { RandomTestUtil.nextLong(), 0L },
+		_persistence.countByR_S(
+			new long[] {RandomTestUtil.nextLong(), 0L},
 			RandomTestUtil.nextInt());
 	}
 
 	@Test
 	public void testCountByG_L() throws Exception {
-		_persistence.countByG_L(RandomTestUtil.nextLong(),
-			RandomTestUtil.randomBoolean());
+		_persistence.countByG_L(
+			RandomTestUtil.nextLong(), RandomTestUtil.randomBoolean());
 
 		_persistence.countByG_L(0L, RandomTestUtil.randomBoolean());
 	}
 
 	@Test
 	public void testCountByG_M() throws Exception {
-		_persistence.countByG_M(RandomTestUtil.nextLong(),
-			RandomTestUtil.randomBoolean());
+		_persistence.countByG_M(
+			RandomTestUtil.nextLong(), RandomTestUtil.randomBoolean());
 
 		_persistence.countByG_M(0L, RandomTestUtil.randomBoolean());
 	}
 
 	@Test
 	public void testCountByG_S() throws Exception {
-		_persistence.countByG_S(RandomTestUtil.nextLong(),
-			RandomTestUtil.nextInt());
+		_persistence.countByG_S(
+			RandomTestUtil.nextLong(), RandomTestUtil.nextInt());
 
 		_persistence.countByG_S(0L, 0);
 	}
 
 	@Test
 	public void testCountByC_L() throws Exception {
-		_persistence.countByC_L(RandomTestUtil.nextLong(),
-			RandomTestUtil.randomBoolean());
+		_persistence.countByC_L(
+			RandomTestUtil.nextLong(), RandomTestUtil.randomBoolean());
 
 		_persistence.countByC_L(0L, RandomTestUtil.randomBoolean());
 	}
 
 	@Test
 	public void testCountByC_M() throws Exception {
-		_persistence.countByC_M(RandomTestUtil.nextLong(),
-			RandomTestUtil.randomBoolean());
+		_persistence.countByC_M(
+			RandomTestUtil.nextLong(), RandomTestUtil.randomBoolean());
 
 		_persistence.countByC_M(0L, RandomTestUtil.randomBoolean());
 	}
 
 	@Test
 	public void testCountByC_S() throws Exception {
-		_persistence.countByC_S(RandomTestUtil.nextLong(),
-			RandomTestUtil.nextInt());
+		_persistence.countByC_S(
+			RandomTestUtil.nextLong(), RandomTestUtil.nextInt());
 
 		_persistence.countByC_S(0L, 0);
 	}
 
 	@Test
 	public void testCountByP_L() throws Exception {
-		_persistence.countByP_L(RandomTestUtil.nextLong(),
-			RandomTestUtil.randomBoolean());
+		_persistence.countByP_L(
+			RandomTestUtil.nextLong(), RandomTestUtil.randomBoolean());
 
 		_persistence.countByP_L(0L, RandomTestUtil.randomBoolean());
 	}
 
 	@Test
 	public void testCountByP_LArrayable() throws Exception {
-		_persistence.countByP_L(new long[] { RandomTestUtil.nextLong(), 0L },
+		_persistence.countByP_L(
+			new long[] {RandomTestUtil.nextLong(), 0L},
 			RandomTestUtil.randomBoolean());
 	}
 
 	@Test
 	public void testCountByP_M() throws Exception {
-		_persistence.countByP_M(RandomTestUtil.nextLong(),
-			RandomTestUtil.randomBoolean());
+		_persistence.countByP_M(
+			RandomTestUtil.nextLong(), RandomTestUtil.randomBoolean());
 
 		_persistence.countByP_M(0L, RandomTestUtil.randomBoolean());
 	}
 
 	@Test
 	public void testCountByP_MArrayable() throws Exception {
-		_persistence.countByP_M(new long[] { RandomTestUtil.nextLong(), 0L },
+		_persistence.countByP_M(
+			new long[] {RandomTestUtil.nextLong(), 0L},
 			RandomTestUtil.randomBoolean());
 	}
 
 	@Test
 	public void testCountByP_S() throws Exception {
-		_persistence.countByP_S(RandomTestUtil.nextLong(),
-			RandomTestUtil.nextInt());
+		_persistence.countByP_S(
+			RandomTestUtil.nextLong(), RandomTestUtil.nextInt());
 
 		_persistence.countByP_S(0L, 0);
 	}
 
 	@Test
 	public void testCountByP_SArrayable() throws Exception {
-		_persistence.countByP_S(new long[] { RandomTestUtil.nextLong(), 0L },
+		_persistence.countByP_S(
+			new long[] {RandomTestUtil.nextLong(), 0L},
 			RandomTestUtil.nextInt());
 	}
 
 	@Test
 	public void testCountByR_G_V() throws Exception {
-		_persistence.countByR_G_V(RandomTestUtil.nextLong(),
-			RandomTestUtil.nextLong(), RandomTestUtil.nextInt());
+		_persistence.countByR_G_V(
+			RandomTestUtil.nextLong(), RandomTestUtil.nextLong(),
+			RandomTestUtil.nextInt());
 
 		_persistence.countByR_G_V(0L, 0L, 0);
 	}
 
 	@Test
 	public void testCountByR_G_L() throws Exception {
-		_persistence.countByR_G_L(RandomTestUtil.nextLong(),
-			RandomTestUtil.nextLong(), RandomTestUtil.randomBoolean());
+		_persistence.countByR_G_L(
+			RandomTestUtil.nextLong(), RandomTestUtil.nextLong(),
+			RandomTestUtil.randomBoolean());
 
 		_persistence.countByR_G_L(0L, 0L, RandomTestUtil.randomBoolean());
 	}
 
 	@Test
 	public void testCountByR_G_LArrayable() throws Exception {
-		_persistence.countByR_G_L(new long[] { RandomTestUtil.nextLong(), 0L },
+		_persistence.countByR_G_L(
+			new long[] {RandomTestUtil.nextLong(), 0L},
 			RandomTestUtil.nextLong(), RandomTestUtil.randomBoolean());
 	}
 
 	@Test
 	public void testCountByR_G_M() throws Exception {
-		_persistence.countByR_G_M(RandomTestUtil.nextLong(),
-			RandomTestUtil.nextLong(), RandomTestUtil.randomBoolean());
+		_persistence.countByR_G_M(
+			RandomTestUtil.nextLong(), RandomTestUtil.nextLong(),
+			RandomTestUtil.randomBoolean());
 
 		_persistence.countByR_G_M(0L, 0L, RandomTestUtil.randomBoolean());
 	}
 
 	@Test
 	public void testCountByR_G_MArrayable() throws Exception {
-		_persistence.countByR_G_M(new long[] { RandomTestUtil.nextLong(), 0L },
+		_persistence.countByR_G_M(
+			new long[] {RandomTestUtil.nextLong(), 0L},
 			RandomTestUtil.nextLong(), RandomTestUtil.randomBoolean());
 	}
 
 	@Test
 	public void testCountByR_G_S() throws Exception {
-		_persistence.countByR_G_S(RandomTestUtil.nextLong(),
-			RandomTestUtil.nextLong(), RandomTestUtil.nextInt());
+		_persistence.countByR_G_S(
+			RandomTestUtil.nextLong(), RandomTestUtil.nextLong(),
+			RandomTestUtil.nextInt());
 
 		_persistence.countByR_G_S(0L, 0L, 0);
 	}
 
 	@Test
 	public void testCountByR_G_SArrayable() throws Exception {
-		_persistence.countByR_G_S(new long[] { RandomTestUtil.nextLong(), 0L },
+		_persistence.countByR_G_S(
+			new long[] {RandomTestUtil.nextLong(), 0L},
 			RandomTestUtil.nextLong(), RandomTestUtil.nextInt());
 	}
 
 	@Test
 	public void testCountByG_P_L() throws Exception {
-		_persistence.countByG_P_L(RandomTestUtil.nextLong(),
-			RandomTestUtil.nextLong(), RandomTestUtil.randomBoolean());
+		_persistence.countByG_P_L(
+			RandomTestUtil.nextLong(), RandomTestUtil.nextLong(),
+			RandomTestUtil.randomBoolean());
 
 		_persistence.countByG_P_L(0L, 0L, RandomTestUtil.randomBoolean());
 	}
 
 	@Test
 	public void testCountByG_P_LArrayable() throws Exception {
-		_persistence.countByG_P_L(RandomTestUtil.nextLong(),
-			new long[] { RandomTestUtil.nextLong(), 0L },
+		_persistence.countByG_P_L(
+			RandomTestUtil.nextLong(),
+			new long[] {RandomTestUtil.nextLong(), 0L},
 			RandomTestUtil.randomBoolean());
 	}
 
 	@Test
 	public void testCountByG_P_M() throws Exception {
-		_persistence.countByG_P_M(RandomTestUtil.nextLong(),
-			RandomTestUtil.nextLong(), RandomTestUtil.randomBoolean());
+		_persistence.countByG_P_M(
+			RandomTestUtil.nextLong(), RandomTestUtil.nextLong(),
+			RandomTestUtil.randomBoolean());
 
 		_persistence.countByG_P_M(0L, 0L, RandomTestUtil.randomBoolean());
 	}
 
 	@Test
 	public void testCountByG_P_MArrayable() throws Exception {
-		_persistence.countByG_P_M(RandomTestUtil.nextLong(),
-			new long[] { RandomTestUtil.nextLong(), 0L },
+		_persistence.countByG_P_M(
+			RandomTestUtil.nextLong(),
+			new long[] {RandomTestUtil.nextLong(), 0L},
 			RandomTestUtil.randomBoolean());
 	}
 
 	@Test
 	public void testCountByG_P_S() throws Exception {
-		_persistence.countByG_P_S(RandomTestUtil.nextLong(),
-			RandomTestUtil.nextLong(), RandomTestUtil.nextInt());
+		_persistence.countByG_P_S(
+			RandomTestUtil.nextLong(), RandomTestUtil.nextLong(),
+			RandomTestUtil.nextInt());
 
 		_persistence.countByG_P_S(0L, 0L, 0);
 	}
 
 	@Test
 	public void testCountByG_P_SArrayable() throws Exception {
-		_persistence.countByG_P_S(RandomTestUtil.nextLong(),
-			new long[] { RandomTestUtil.nextLong(), 0L },
+		_persistence.countByG_P_S(
+			RandomTestUtil.nextLong(),
+			new long[] {RandomTestUtil.nextLong(), 0L},
 			RandomTestUtil.nextInt());
 	}
 
 	@Test
 	public void testCountByG_KBFI_UT() throws Exception {
-		_persistence.countByG_KBFI_UT(RandomTestUtil.nextLong(),
-			RandomTestUtil.nextLong(), StringPool.BLANK);
+		_persistence.countByG_KBFI_UT(
+			RandomTestUtil.nextLong(), RandomTestUtil.nextLong(), "");
 
-		_persistence.countByG_KBFI_UT(0L, 0L, StringPool.NULL);
+		_persistence.countByG_KBFI_UT(0L, 0L, "null");
 
 		_persistence.countByG_KBFI_UT(0L, 0L, (String)null);
 	}
 
 	@Test
 	public void testCountByG_KBFI_L() throws Exception {
-		_persistence.countByG_KBFI_L(RandomTestUtil.nextLong(),
-			RandomTestUtil.nextLong(), RandomTestUtil.randomBoolean());
+		_persistence.countByG_KBFI_L(
+			RandomTestUtil.nextLong(), RandomTestUtil.nextLong(),
+			RandomTestUtil.randomBoolean());
 
 		_persistence.countByG_KBFI_L(0L, 0L, RandomTestUtil.randomBoolean());
 	}
 
 	@Test
 	public void testCountByG_KBFI_S() throws Exception {
-		_persistence.countByG_KBFI_S(RandomTestUtil.nextLong(),
-			RandomTestUtil.nextLong(), RandomTestUtil.nextInt());
+		_persistence.countByG_KBFI_S(
+			RandomTestUtil.nextLong(), RandomTestUtil.nextLong(),
+			RandomTestUtil.nextInt());
 
 		_persistence.countByG_KBFI_S(0L, 0L, 0);
 	}
 
 	@Test
 	public void testCountByG_S_L() throws Exception {
-		_persistence.countByG_S_L(RandomTestUtil.nextLong(), StringPool.BLANK,
-			RandomTestUtil.randomBoolean());
+		_persistence.countByG_S_L(
+			RandomTestUtil.nextLong(), "", RandomTestUtil.randomBoolean());
 
-		_persistence.countByG_S_L(0L, StringPool.NULL,
-			RandomTestUtil.randomBoolean());
+		_persistence.countByG_S_L(0L, "null", RandomTestUtil.randomBoolean());
 
-		_persistence.countByG_S_L(0L, (String)null,
-			RandomTestUtil.randomBoolean());
+		_persistence.countByG_S_L(
+			0L, (String)null, RandomTestUtil.randomBoolean());
 	}
 
 	@Test
 	public void testCountByG_S_LArrayable() throws Exception {
-		_persistence.countByG_S_L(RandomTestUtil.nextLong(),
+		_persistence.countByG_S_L(
+			RandomTestUtil.nextLong(),
 			new String[] {
-				RandomTestUtil.randomString(), StringPool.BLANK, StringPool.NULL,
-				null, null
-			}, RandomTestUtil.randomBoolean());
+				RandomTestUtil.randomString(), "", "null", null, null
+			},
+			RandomTestUtil.randomBoolean());
 	}
 
 	@Test
 	public void testCountByG_S_M() throws Exception {
-		_persistence.countByG_S_M(RandomTestUtil.nextLong(), StringPool.BLANK,
-			RandomTestUtil.randomBoolean());
+		_persistence.countByG_S_M(
+			RandomTestUtil.nextLong(), "", RandomTestUtil.randomBoolean());
 
-		_persistence.countByG_S_M(0L, StringPool.NULL,
-			RandomTestUtil.randomBoolean());
+		_persistence.countByG_S_M(0L, "null", RandomTestUtil.randomBoolean());
 
-		_persistence.countByG_S_M(0L, (String)null,
-			RandomTestUtil.randomBoolean());
+		_persistence.countByG_S_M(
+			0L, (String)null, RandomTestUtil.randomBoolean());
 	}
 
 	@Test
 	public void testCountByG_S_MArrayable() throws Exception {
-		_persistence.countByG_S_M(RandomTestUtil.nextLong(),
+		_persistence.countByG_S_M(
+			RandomTestUtil.nextLong(),
 			new String[] {
-				RandomTestUtil.randomString(), StringPool.BLANK, StringPool.NULL,
-				null, null
-			}, RandomTestUtil.randomBoolean());
+				RandomTestUtil.randomString(), "", "null", null, null
+			},
+			RandomTestUtil.randomBoolean());
 	}
 
 	@Test
 	public void testCountByG_S_S() throws Exception {
-		_persistence.countByG_S_S(RandomTestUtil.nextLong(), StringPool.BLANK,
-			RandomTestUtil.nextInt());
+		_persistence.countByG_S_S(
+			RandomTestUtil.nextLong(), "", RandomTestUtil.nextInt());
 
-		_persistence.countByG_S_S(0L, StringPool.NULL, 0);
+		_persistence.countByG_S_S(0L, "null", 0);
 
 		_persistence.countByG_S_S(0L, (String)null, 0);
 	}
 
 	@Test
 	public void testCountByG_S_SArrayable() throws Exception {
-		_persistence.countByG_S_S(RandomTestUtil.nextLong(),
+		_persistence.countByG_S_S(
+			RandomTestUtil.nextLong(),
 			new String[] {
-				RandomTestUtil.randomString(), StringPool.BLANK, StringPool.NULL,
-				null, null
-			}, RandomTestUtil.nextInt());
+				RandomTestUtil.randomString(), "", "null", null, null
+			},
+			RandomTestUtil.nextInt());
+	}
+
+	@Test
+	public void testCountByG_P_L_S() throws Exception {
+		_persistence.countByG_P_L_S(
+			RandomTestUtil.nextLong(), RandomTestUtil.nextLong(),
+			RandomTestUtil.randomBoolean(), RandomTestUtil.nextInt());
+
+		_persistence.countByG_P_L_S(0L, 0L, RandomTestUtil.randomBoolean(), 0);
+	}
+
+	@Test
+	public void testCountByG_P_L_SArrayable() throws Exception {
+		_persistence.countByG_P_L_S(
+			RandomTestUtil.nextLong(),
+			new long[] {RandomTestUtil.nextLong(), 0L},
+			RandomTestUtil.randomBoolean(), RandomTestUtil.nextInt());
 	}
 
 	@Test
 	public void testCountByG_KBFI_UT_ST() throws Exception {
-		_persistence.countByG_KBFI_UT_ST(RandomTestUtil.nextLong(),
-			RandomTestUtil.nextLong(), StringPool.BLANK,
+		_persistence.countByG_KBFI_UT_ST(
+			RandomTestUtil.nextLong(), RandomTestUtil.nextLong(), "",
 			RandomTestUtil.nextInt());
 
-		_persistence.countByG_KBFI_UT_ST(0L, 0L, StringPool.NULL, 0);
+		_persistence.countByG_KBFI_UT_ST(0L, 0L, "null", 0);
 
 		_persistence.countByG_KBFI_UT_ST(0L, 0L, (String)null, 0);
 	}
 
 	@Test
 	public void testCountByG_KBFI_UT_STArrayable() throws Exception {
-		_persistence.countByG_KBFI_UT_ST(RandomTestUtil.nextLong(),
-			RandomTestUtil.nextLong(), RandomTestUtil.randomString(),
-			new int[] { RandomTestUtil.nextInt(), 0 });
+		_persistence.countByG_KBFI_UT_ST(
+			RandomTestUtil.nextLong(), RandomTestUtil.nextLong(),
+			RandomTestUtil.randomString(),
+			new int[] {RandomTestUtil.nextInt(), 0});
 	}
 
 	@Test
 	public void testFindByPrimaryKeyExisting() throws Exception {
 		KBArticle newKBArticle = addKBArticle();
 
-		KBArticle existingKBArticle = _persistence.findByPrimaryKey(newKBArticle.getPrimaryKey());
+		KBArticle existingKBArticle = _persistence.findByPrimaryKey(
+			newKBArticle.getPrimaryKey());
 
 		Assert.assertEquals(existingKBArticle, newKBArticle);
 	}
@@ -648,28 +696,30 @@ public class KBArticlePersistenceTest {
 
 	@Test
 	public void testFindAll() throws Exception {
-		_persistence.findAll(QueryUtil.ALL_POS, QueryUtil.ALL_POS,
-			getOrderByComparator());
+		_persistence.findAll(
+			QueryUtil.ALL_POS, QueryUtil.ALL_POS, getOrderByComparator());
 	}
 
 	protected OrderByComparator<KBArticle> getOrderByComparator() {
-		return OrderByComparatorFactoryUtil.create("KBArticle", "uuid", true,
-			"kbArticleId", true, "resourcePrimKey", true, "groupId", true,
-			"companyId", true, "userId", true, "userName", true, "createDate",
-			true, "modifiedDate", true, "rootResourcePrimKey", true,
+		return OrderByComparatorFactoryUtil.create(
+			"KBArticle", "mvccVersion", true, "uuid", true, "kbArticleId", true,
+			"resourcePrimKey", true, "groupId", true, "companyId", true,
+			"userId", true, "userName", true, "createDate", true,
+			"modifiedDate", true, "rootResourcePrimKey", true,
 			"parentResourceClassNameId", true, "parentResourcePrimKey", true,
 			"kbFolderId", true, "version", true, "title", true, "urlTitle",
 			true, "description", true, "priority", true, "sections", true,
-			"viewCount", true, "latest", true, "main", true, "sourceURL", true,
-			"lastPublishDate", true, "status", true, "statusByUserId", true,
-			"statusByUserName", true, "statusDate", true);
+			"latest", true, "main", true, "sourceURL", true, "lastPublishDate",
+			true, "status", true, "statusByUserId", true, "statusByUserName",
+			true, "statusDate", true);
 	}
 
 	@Test
 	public void testFetchByPrimaryKeyExisting() throws Exception {
 		KBArticle newKBArticle = addKBArticle();
 
-		KBArticle existingKBArticle = _persistence.fetchByPrimaryKey(newKBArticle.getPrimaryKey());
+		KBArticle existingKBArticle = _persistence.fetchByPrimaryKey(
+			newKBArticle.getPrimaryKey());
 
 		Assert.assertEquals(existingKBArticle, newKBArticle);
 	}
@@ -686,6 +736,7 @@ public class KBArticlePersistenceTest {
 	@Test
 	public void testFetchByPrimaryKeysWithMultiplePrimaryKeysWhereAllPrimaryKeysExist()
 		throws Exception {
+
 		KBArticle newKBArticle1 = addKBArticle();
 		KBArticle newKBArticle2 = addKBArticle();
 
@@ -694,18 +745,20 @@ public class KBArticlePersistenceTest {
 		primaryKeys.add(newKBArticle1.getPrimaryKey());
 		primaryKeys.add(newKBArticle2.getPrimaryKey());
 
-		Map<Serializable, KBArticle> kbArticles = _persistence.fetchByPrimaryKeys(primaryKeys);
+		Map<Serializable, KBArticle> kbArticles =
+			_persistence.fetchByPrimaryKeys(primaryKeys);
 
 		Assert.assertEquals(2, kbArticles.size());
-		Assert.assertEquals(newKBArticle1,
-			kbArticles.get(newKBArticle1.getPrimaryKey()));
-		Assert.assertEquals(newKBArticle2,
-			kbArticles.get(newKBArticle2.getPrimaryKey()));
+		Assert.assertEquals(
+			newKBArticle1, kbArticles.get(newKBArticle1.getPrimaryKey()));
+		Assert.assertEquals(
+			newKBArticle2, kbArticles.get(newKBArticle2.getPrimaryKey()));
 	}
 
 	@Test
 	public void testFetchByPrimaryKeysWithMultiplePrimaryKeysWhereNoPrimaryKeysExist()
 		throws Exception {
+
 		long pk1 = RandomTestUtil.nextLong();
 
 		long pk2 = RandomTestUtil.nextLong();
@@ -715,7 +768,8 @@ public class KBArticlePersistenceTest {
 		primaryKeys.add(pk1);
 		primaryKeys.add(pk2);
 
-		Map<Serializable, KBArticle> kbArticles = _persistence.fetchByPrimaryKeys(primaryKeys);
+		Map<Serializable, KBArticle> kbArticles =
+			_persistence.fetchByPrimaryKeys(primaryKeys);
 
 		Assert.assertTrue(kbArticles.isEmpty());
 	}
@@ -723,6 +777,7 @@ public class KBArticlePersistenceTest {
 	@Test
 	public void testFetchByPrimaryKeysWithMultiplePrimaryKeysWhereSomePrimaryKeysExist()
 		throws Exception {
+
 		KBArticle newKBArticle = addKBArticle();
 
 		long pk = RandomTestUtil.nextLong();
@@ -732,52 +787,57 @@ public class KBArticlePersistenceTest {
 		primaryKeys.add(newKBArticle.getPrimaryKey());
 		primaryKeys.add(pk);
 
-		Map<Serializable, KBArticle> kbArticles = _persistence.fetchByPrimaryKeys(primaryKeys);
+		Map<Serializable, KBArticle> kbArticles =
+			_persistence.fetchByPrimaryKeys(primaryKeys);
 
 		Assert.assertEquals(1, kbArticles.size());
-		Assert.assertEquals(newKBArticle,
-			kbArticles.get(newKBArticle.getPrimaryKey()));
+		Assert.assertEquals(
+			newKBArticle, kbArticles.get(newKBArticle.getPrimaryKey()));
 	}
 
 	@Test
-	public void testFetchByPrimaryKeysWithNoPrimaryKeys()
-		throws Exception {
+	public void testFetchByPrimaryKeysWithNoPrimaryKeys() throws Exception {
 		Set<Serializable> primaryKeys = new HashSet<Serializable>();
 
-		Map<Serializable, KBArticle> kbArticles = _persistence.fetchByPrimaryKeys(primaryKeys);
+		Map<Serializable, KBArticle> kbArticles =
+			_persistence.fetchByPrimaryKeys(primaryKeys);
 
 		Assert.assertTrue(kbArticles.isEmpty());
 	}
 
 	@Test
-	public void testFetchByPrimaryKeysWithOnePrimaryKey()
-		throws Exception {
+	public void testFetchByPrimaryKeysWithOnePrimaryKey() throws Exception {
 		KBArticle newKBArticle = addKBArticle();
 
 		Set<Serializable> primaryKeys = new HashSet<Serializable>();
 
 		primaryKeys.add(newKBArticle.getPrimaryKey());
 
-		Map<Serializable, KBArticle> kbArticles = _persistence.fetchByPrimaryKeys(primaryKeys);
+		Map<Serializable, KBArticle> kbArticles =
+			_persistence.fetchByPrimaryKeys(primaryKeys);
 
 		Assert.assertEquals(1, kbArticles.size());
-		Assert.assertEquals(newKBArticle,
-			kbArticles.get(newKBArticle.getPrimaryKey()));
+		Assert.assertEquals(
+			newKBArticle, kbArticles.get(newKBArticle.getPrimaryKey()));
 	}
 
 	@Test
 	public void testActionableDynamicQuery() throws Exception {
 		final IntegerWrapper count = new IntegerWrapper();
 
-		ActionableDynamicQuery actionableDynamicQuery = KBArticleLocalServiceUtil.getActionableDynamicQuery();
+		ActionableDynamicQuery actionableDynamicQuery =
+			KBArticleLocalServiceUtil.getActionableDynamicQuery();
 
-		actionableDynamicQuery.setPerformActionMethod(new ActionableDynamicQuery.PerformActionMethod<KBArticle>() {
+		actionableDynamicQuery.setPerformActionMethod(
+			new ActionableDynamicQuery.PerformActionMethod<KBArticle>() {
+
 				@Override
 				public void performAction(KBArticle kbArticle) {
 					Assert.assertNotNull(kbArticle);
 
 					count.increment();
 				}
+
 			});
 
 		actionableDynamicQuery.performActions();
@@ -786,17 +846,18 @@ public class KBArticlePersistenceTest {
 	}
 
 	@Test
-	public void testDynamicQueryByPrimaryKeyExisting()
-		throws Exception {
+	public void testDynamicQueryByPrimaryKeyExisting() throws Exception {
 		KBArticle newKBArticle = addKBArticle();
 
-		DynamicQuery dynamicQuery = DynamicQueryFactoryUtil.forClass(KBArticle.class,
-				_dynamicQueryClassLoader);
+		DynamicQuery dynamicQuery = DynamicQueryFactoryUtil.forClass(
+			KBArticle.class, _dynamicQueryClassLoader);
 
-		dynamicQuery.add(RestrictionsFactoryUtil.eq("kbArticleId",
-				newKBArticle.getKbArticleId()));
+		dynamicQuery.add(
+			RestrictionsFactoryUtil.eq(
+				"kbArticleId", newKBArticle.getKbArticleId()));
 
-		List<KBArticle> result = _persistence.findWithDynamicQuery(dynamicQuery);
+		List<KBArticle> result = _persistence.findWithDynamicQuery(
+			dynamicQuery);
 
 		Assert.assertEquals(1, result.size());
 
@@ -807,31 +868,34 @@ public class KBArticlePersistenceTest {
 
 	@Test
 	public void testDynamicQueryByPrimaryKeyMissing() throws Exception {
-		DynamicQuery dynamicQuery = DynamicQueryFactoryUtil.forClass(KBArticle.class,
-				_dynamicQueryClassLoader);
+		DynamicQuery dynamicQuery = DynamicQueryFactoryUtil.forClass(
+			KBArticle.class, _dynamicQueryClassLoader);
 
-		dynamicQuery.add(RestrictionsFactoryUtil.eq("kbArticleId",
-				RandomTestUtil.nextLong()));
+		dynamicQuery.add(
+			RestrictionsFactoryUtil.eq(
+				"kbArticleId", RandomTestUtil.nextLong()));
 
-		List<KBArticle> result = _persistence.findWithDynamicQuery(dynamicQuery);
+		List<KBArticle> result = _persistence.findWithDynamicQuery(
+			dynamicQuery);
 
 		Assert.assertEquals(0, result.size());
 	}
 
 	@Test
-	public void testDynamicQueryByProjectionExisting()
-		throws Exception {
+	public void testDynamicQueryByProjectionExisting() throws Exception {
 		KBArticle newKBArticle = addKBArticle();
 
-		DynamicQuery dynamicQuery = DynamicQueryFactoryUtil.forClass(KBArticle.class,
-				_dynamicQueryClassLoader);
+		DynamicQuery dynamicQuery = DynamicQueryFactoryUtil.forClass(
+			KBArticle.class, _dynamicQueryClassLoader);
 
-		dynamicQuery.setProjection(ProjectionFactoryUtil.property("kbArticleId"));
+		dynamicQuery.setProjection(
+			ProjectionFactoryUtil.property("kbArticleId"));
 
 		Object newKbArticleId = newKBArticle.getKbArticleId();
 
-		dynamicQuery.add(RestrictionsFactoryUtil.in("kbArticleId",
-				new Object[] { newKbArticleId }));
+		dynamicQuery.add(
+			RestrictionsFactoryUtil.in(
+				"kbArticleId", new Object[] {newKbArticleId}));
 
 		List<Object> result = _persistence.findWithDynamicQuery(dynamicQuery);
 
@@ -844,13 +908,15 @@ public class KBArticlePersistenceTest {
 
 	@Test
 	public void testDynamicQueryByProjectionMissing() throws Exception {
-		DynamicQuery dynamicQuery = DynamicQueryFactoryUtil.forClass(KBArticle.class,
-				_dynamicQueryClassLoader);
+		DynamicQuery dynamicQuery = DynamicQueryFactoryUtil.forClass(
+			KBArticle.class, _dynamicQueryClassLoader);
 
-		dynamicQuery.setProjection(ProjectionFactoryUtil.property("kbArticleId"));
+		dynamicQuery.setProjection(
+			ProjectionFactoryUtil.property("kbArticleId"));
 
-		dynamicQuery.add(RestrictionsFactoryUtil.in("kbArticleId",
-				new Object[] { RandomTestUtil.nextLong() }));
+		dynamicQuery.add(
+			RestrictionsFactoryUtil.in(
+				"kbArticleId", new Object[] {RandomTestUtil.nextLong()}));
 
 		List<Object> result = _persistence.findWithDynamicQuery(dynamicQuery);
 
@@ -863,37 +929,96 @@ public class KBArticlePersistenceTest {
 
 		_persistence.clearCache();
 
-		KBArticle existingKBArticle = _persistence.findByPrimaryKey(newKBArticle.getPrimaryKey());
+		_assertOriginalValues(
+			_persistence.findByPrimaryKey(newKBArticle.getPrimaryKey()));
+	}
 
-		Assert.assertTrue(Objects.equals(existingKBArticle.getUuid(),
-				ReflectionTestUtil.invoke(existingKBArticle, "getOriginalUuid",
-					new Class<?>[0])));
-		Assert.assertEquals(Long.valueOf(existingKBArticle.getGroupId()),
-			ReflectionTestUtil.<Long>invoke(existingKBArticle,
-				"getOriginalGroupId", new Class<?>[0]));
+	@Test
+	public void testResetOriginalValuesWithDynamicQueryLoadFromDatabase()
+		throws Exception {
 
-		Assert.assertEquals(Long.valueOf(existingKBArticle.getResourcePrimKey()),
-			ReflectionTestUtil.<Long>invoke(existingKBArticle,
-				"getOriginalResourcePrimKey", new Class<?>[0]));
-		Assert.assertEquals(Integer.valueOf(existingKBArticle.getVersion()),
-			ReflectionTestUtil.<Integer>invoke(existingKBArticle,
-				"getOriginalVersion", new Class<?>[0]));
+		_testResetOriginalValuesWithDynamicQuery(true);
+	}
 
-		Assert.assertEquals(Long.valueOf(existingKBArticle.getResourcePrimKey()),
-			ReflectionTestUtil.<Long>invoke(existingKBArticle,
-				"getOriginalResourcePrimKey", new Class<?>[0]));
-		Assert.assertEquals(Long.valueOf(existingKBArticle.getGroupId()),
-			ReflectionTestUtil.<Long>invoke(existingKBArticle,
-				"getOriginalGroupId", new Class<?>[0]));
-		Assert.assertEquals(Integer.valueOf(existingKBArticle.getVersion()),
-			ReflectionTestUtil.<Integer>invoke(existingKBArticle,
-				"getOriginalVersion", new Class<?>[0]));
+	@Test
+	public void testResetOriginalValuesWithDynamicQueryLoadFromSession()
+		throws Exception {
+
+		_testResetOriginalValuesWithDynamicQuery(false);
+	}
+
+	private void _testResetOriginalValuesWithDynamicQuery(boolean clearSession)
+		throws Exception {
+
+		KBArticle newKBArticle = addKBArticle();
+
+		if (clearSession) {
+			Session session = _persistence.openSession();
+
+			session.flush();
+
+			session.clear();
+		}
+
+		DynamicQuery dynamicQuery = DynamicQueryFactoryUtil.forClass(
+			KBArticle.class, _dynamicQueryClassLoader);
+
+		dynamicQuery.add(
+			RestrictionsFactoryUtil.eq(
+				"kbArticleId", newKBArticle.getKbArticleId()));
+
+		List<KBArticle> result = _persistence.findWithDynamicQuery(
+			dynamicQuery);
+
+		_assertOriginalValues(result.get(0));
+	}
+
+	private void _assertOriginalValues(KBArticle kbArticle) {
+		Assert.assertEquals(
+			kbArticle.getUuid(),
+			ReflectionTestUtil.invoke(
+				kbArticle, "getColumnOriginalValue",
+				new Class<?>[] {String.class}, "uuid_"));
+		Assert.assertEquals(
+			Long.valueOf(kbArticle.getGroupId()),
+			ReflectionTestUtil.<Long>invoke(
+				kbArticle, "getColumnOriginalValue",
+				new Class<?>[] {String.class}, "groupId"));
+
+		Assert.assertEquals(
+			Long.valueOf(kbArticle.getResourcePrimKey()),
+			ReflectionTestUtil.<Long>invoke(
+				kbArticle, "getColumnOriginalValue",
+				new Class<?>[] {String.class}, "resourcePrimKey"));
+		Assert.assertEquals(
+			Integer.valueOf(kbArticle.getVersion()),
+			ReflectionTestUtil.<Integer>invoke(
+				kbArticle, "getColumnOriginalValue",
+				new Class<?>[] {String.class}, "version"));
+
+		Assert.assertEquals(
+			Long.valueOf(kbArticle.getResourcePrimKey()),
+			ReflectionTestUtil.<Long>invoke(
+				kbArticle, "getColumnOriginalValue",
+				new Class<?>[] {String.class}, "resourcePrimKey"));
+		Assert.assertEquals(
+			Long.valueOf(kbArticle.getGroupId()),
+			ReflectionTestUtil.<Long>invoke(
+				kbArticle, "getColumnOriginalValue",
+				new Class<?>[] {String.class}, "groupId"));
+		Assert.assertEquals(
+			Integer.valueOf(kbArticle.getVersion()),
+			ReflectionTestUtil.<Integer>invoke(
+				kbArticle, "getColumnOriginalValue",
+				new Class<?>[] {String.class}, "version"));
 	}
 
 	protected KBArticle addKBArticle() throws Exception {
 		long pk = RandomTestUtil.nextLong();
 
 		KBArticle kbArticle = _persistence.create(pk);
+
+		kbArticle.setMvccVersion(RandomTestUtil.nextLong());
 
 		kbArticle.setUuid(RandomTestUtil.randomString());
 
@@ -933,8 +1058,6 @@ public class KBArticlePersistenceTest {
 
 		kbArticle.setSections(RandomTestUtil.randomString());
 
-		kbArticle.setViewCount(RandomTestUtil.nextInt());
-
 		kbArticle.setLatest(RandomTestUtil.randomBoolean());
 
 		kbArticle.setMain(RandomTestUtil.randomBoolean());
@@ -959,4 +1082,5 @@ public class KBArticlePersistenceTest {
 	private List<KBArticle> _kbArticles = new ArrayList<KBArticle>();
 	private KBArticlePersistence _persistence;
 	private ClassLoader _dynamicQueryClassLoader;
+
 }

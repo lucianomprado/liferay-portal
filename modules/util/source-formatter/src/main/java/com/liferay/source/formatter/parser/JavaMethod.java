@@ -20,9 +20,12 @@ package com.liferay.source.formatter.parser;
 public class JavaMethod extends BaseJavaTerm {
 
 	public JavaMethod(
-		String name, String content, String accessModifier, boolean isStatic) {
+		String name, String content, String accessModifier, int lineNumber,
+		boolean isAbstract, boolean isFinal, boolean isStatic) {
 
-		super(name, content, accessModifier, isStatic);
+		super(
+			name, content, accessModifier, lineNumber, isAbstract, isFinal,
+			isStatic);
 	}
 
 	@Override

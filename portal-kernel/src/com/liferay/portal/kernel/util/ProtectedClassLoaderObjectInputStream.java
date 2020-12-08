@@ -14,6 +14,7 @@
 
 package com.liferay.portal.kernel.util;
 
+import com.liferay.petra.lang.ClassResolverUtil;
 import com.liferay.portal.kernel.io.ProtectedObjectInputStream;
 
 import java.io.IOException;
@@ -39,9 +40,8 @@ public class ProtectedClassLoaderObjectInputStream
 	protected Class<?> doResolveClass(ObjectStreamClass objectStreamClass)
 		throws ClassNotFoundException {
 
-		String name = objectStreamClass.getName();
-
-		return ClassResolverUtil.resolve(name, _classLoader);
+		return ClassResolverUtil.resolve(
+			objectStreamClass.getName(), _classLoader);
 	}
 
 	private final ClassLoader _classLoader;

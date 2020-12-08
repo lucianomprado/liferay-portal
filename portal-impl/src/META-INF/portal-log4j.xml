@@ -4,7 +4,7 @@
 <log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
 	<appender class="org.apache.log4j.ConsoleAppender" name="CONSOLE">
 		<layout class="org.apache.log4j.EnhancedPatternLayout">
-			<param name="ConversionPattern" value="%d{ABSOLUTE} %-5p [%t][%c{1}:%L] %m%n" />
+			<param name="ConversionPattern" value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5p [%t][%c{1}:%L] %m%n" />
 		</layout>
 	</appender>
 
@@ -14,7 +14,7 @@
 		</rollingPolicy>
 
 		<layout class="org.apache.log4j.EnhancedPatternLayout">
-			<param name="ConversionPattern" value="%d{ABSOLUTE} %-5p [%t][%c{1}:%L] %m%n" />
+			<param name="ConversionPattern" value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5p [%t][%c{1}:%L] %m%n" />
 		</layout>
 	</appender>
 
@@ -28,6 +28,10 @@
 		</layout>
 	</appender>
 
+	<category name="aQute.bnd.osgi">
+		<priority value="WARN" />
+	</category>
+
 	<category name="com.browseengine.bobo">
 		<priority value="ERROR" />
 	</category>
@@ -36,16 +40,20 @@
 		<priority value="ERROR" />
 	</category>
 
-	<category name="com.germinus.easyconf">
-		<priority value="ERROR" />
-	</category>
-
 	<category name="com.liferay">
 		<priority value="ERROR" />
 	</category>
 
+	<category name="com.liferay.bean.portlet">
+		<priority value="INFO" />
+	</category>
+
 	<category name="com.liferay.jdbc">
 		<priority value="ERROR" />
+	</category>
+
+	<category name="com.liferay.mail.messaging">
+		<priority value="WARN" />
 	</category>
 
 	<category name="com.liferay.mail.service.impl.MailServiceImpl">
@@ -68,6 +76,10 @@
 		<priority value="ERROR" />
 	</category>
 
+	<category name="com.liferay.petra.mail">
+		<priority value="WARN" />
+	</category>
+
 	<category name="com.liferay.portal.action.JSONServiceAction">
 		<priority value="INFO" />
 	</category>
@@ -81,7 +93,7 @@
 	</category>
 
 	<category name="com.liferay.portal.bootstrap.ModuleFrameworkImpl">
-		<priority value="WARN" />
+		<priority value="INFO" />
 	</category>
 
 	<category name="com.liferay.portal.captcha.CaptchaImpl">
@@ -108,15 +120,15 @@
 		<priority value="INFO" />
 	</category>
 
+	<category name="com.liferay.portal.dao.init.DBInitUtil">
+		<priority value="INFO" />
+	</category>
+
 	<category name="com.liferay.portal.dao.jdbc.DataSourceFactoryImpl">
 		<priority value="INFO" />
 	</category>
 
 	<category name="com.liferay.portal.dao.jdbc.aop">
-		<priority value="ERROR" />
-	</category>
-
-	<category name="com.liferay.portal.dao.jdbc.pacl.PACLDataSource">
 		<priority value="ERROR" />
 	</category>
 
@@ -142,10 +154,6 @@
 
 	<category name="com.liferay.portal.deploy.hot.HookHotDeployListener">
 		<priority value="INFO" />
-	</category>
-
-	<category name="com.liferay.portal.deploy.hot.PACLHotDeployListener">
-		<priority value="ERROR" />
 	</category>
 
 	<category name="com.liferay.portal.deploy.hot.PluginPackageHotDeployListener">
@@ -240,7 +248,7 @@
 		<priority value="INFO" />
 	</category>
 
-	<category name="com.liferay.portal.events.StartupHelper">
+	<category name="com.liferay.portal.events.StartupHelperUtil">
 		<priority value="INFO" />
 	</category>
 
@@ -260,12 +268,12 @@
 		<priority value="WARN" />
 	</category>
 
-	<category name="com.liferay.portal.jndi.pacl.PACLInitialContextFactory">
-		<priority value="ERROR" />
+	<category name="com.liferay.portal.internal.servlet.MainServlet">
+		<priority value="WARN" />
 	</category>
 
-	<category name="com.liferay.portal.jndi.pacl.PACLInitialContextFactoryBuilder">
-		<priority value="ERROR" />
+	<category name="com.liferay.portal.json.jabsorb.serializer.LiferayJSONDeserializationWhitelist">
+		<priority value="WARN" />
 	</category>
 
 	<category name="com.liferay.portal.jsonwebservice.JSONWebServiceActionsManagerImpl">
@@ -277,6 +285,10 @@
 	</category>
 
 	<category name="com.liferay.portal.kernel.cache.cluster.BasePortalCacheClusterChannel">
+		<priority value="WARN" />
+	</category>
+
+	<category name="com.liferay.portal.kernel.cluster">
 		<priority value="WARN" />
 	</category>
 
@@ -292,7 +304,7 @@
 		<priority value="ERROR" />
 	</category>
 
-	<category name="com.liferay.portal.kernel.messaging.config.AbstractMessagingConfigurator">
+	<category name="com.liferay.portal.kernel.messaging.config.BaseMessagingConfigurator">
 		<priority value="INFO" />
 	</category>
 
@@ -320,20 +332,8 @@
 		<priority value="INFO" />
 	</category>
 
-	<category name="com.liferay.portal.kernel.process.LoggingOutputProcessor">
-		<priority value="ERROR" />
-	</category>
-
-	<category name="com.liferay.portal.kernel.resiliency">
-		<priority value="INFO" />
-	</category>
-
 	<category name="com.liferay.portal.kernel.search.HitsOpenSearchImpl">
 		<priority value="WARN" />
-	</category>
-
-	<category name="com.liferay.portal.kernel.search.suggest.BaseSpellCheckIndexWriter">
-		<priority value="INFO" />
 	</category>
 
 	<category name="com.liferay.portal.kernel.servlet.PipingServletResponse">
@@ -397,6 +397,10 @@
 	</category>
 
 	<category name="com.liferay.portal.kernel.util.ServerDetector">
+		<priority value="INFO" />
+	</category>
+
+	<category name="com.liferay.portal.kernel.util.ServiceProxyFactory">
 		<priority value="INFO" />
 	</category>
 
@@ -468,10 +472,6 @@
 		<priority value="ERROR" />
 	</category>
 
-	<category name="com.liferay.portal.security.auth.LDAPAuth">
-		<priority value="WARN" />
-	</category>
-
 	<category name="com.liferay.portal.security.auth.PrincipalThreadLocal">
 		<priority value="ERROR" />
 	</category>
@@ -486,106 +486,6 @@
 
 	<category name="com.liferay.portal.security.auth.SiteMinderAutoLogin">
 		<priority value="WARN" />
-	</category>
-
-	<category name="com.liferay.portal.security.lang.PortalSecurityManager">
-		<priority value="INFO" />
-	</category>
-
-	<category name="com.liferay.portal.security.ldap">
-		<priority value="ERROR" />
-	</category>
-
-	<category name="com.liferay.portal.security.ldap.PortalLDAPUtil">
-		<priority value="ERROR" />
-	</category>
-
-	<category name="com.liferay.portal.security.pacl.BasePACLPolicy">
-		<priority value="ERROR" />
-	</category>
-
-	<category name="com.liferay.portal.security.pacl.GeneratingPACLPolicy">
-		<priority value="DEBUG" />
-	</category>
-
-	<category name="com.liferay.portal.security.pacl.PACLAdvice">
-		<priority value="ERROR" />
-	</category>
-
-	<category name="com.liferay.portal.security.pacl.PACLBeanHandler">
-		<priority value="ERROR" />
-	</category>
-
-	<category name="com.liferay.portal.security.pacl.PACLClassUtil">
-		<priority value="ERROR" />
-	</category>
-
-	<category name="com.liferay.portal.security.pacl.PACLPolicyManager">
-		<priority value="INFO" />
-	</category>
-
-	<category name="com.liferay.portal.security.pacl.checker.BaseChecker">
-		<priority value="ERROR" />
-	</category>
-
-	<category name="com.liferay.portal.security.pacl.checker.BaseReflectChecker">
-		<priority value="ERROR" />
-	</category>
-
-	<category name="com.liferay.portal.security.pacl.checker.DefaultAcceptChecker">
-		<priority value="INFO" />
-	</category>
-
-	<category name="com.liferay.portal.security.pacl.checker.DefaultRejectChecker">
-		<priority value="INFO" />
-	</category>
-
-	<category name="com.liferay.portal.security.pacl.checker.FileChecker">
-		<priority value="ERROR" />
-	</category>
-
-	<category name="com.liferay.portal.security.pacl.checker.MBeanChecker">
-		<priority value="ERROR" />
-	</category>
-
-	<category name="com.liferay.portal.security.pacl.checker.NetChecker">
-		<priority value="ERROR" />
-	</category>
-
-	<category name="com.liferay.portal.security.pacl.checker.PortalHookChecker">
-		<priority value="ERROR" />
-	</category>
-
-	<category name="com.liferay.portal.security.pacl.checker.PortalMessageBusChecker">
-		<priority value="ERROR" />
-	</category>
-
-	<category name="com.liferay.portal.security.pacl.checker.PortalRuntimeChecker">
-		<priority value="ERROR" />
-	</category>
-
-	<category name="com.liferay.portal.security.pacl.checker.PortalServiceChecker">
-		<priority value="ERROR" />
-	</category>
-
-	<category name="com.liferay.portal.security.pacl.checker.ReflectChecker">
-		<priority value="ERROR" />
-	</category>
-
-	<category name="com.liferay.portal.security.pacl.checker.RuntimeChecker">
-		<priority value="ERROR" />
-	</category>
-
-	<category name="com.liferay.portal.security.pacl.checker.SQLChecker">
-		<priority value="ERROR" />
-	</category>
-
-	<category name="com.liferay.portal.security.pacl.checker.SecurityChecker">
-		<priority value="ERROR" />
-	</category>
-
-	<category name="com.liferay.portal.security.pacl.checker.SocketChecker">
-		<priority value="ERROR" />
 	</category>
 
 	<category name="com.liferay.portal.security.permission.AdvancedPermissionChecker">
@@ -668,15 +568,7 @@
 		<priority value="ERROR" />
 	</category>
 
-	<category name="com.liferay.portal.servlet.FriendlyURLServlet">
-		<priority value="ERROR" />
-	</category>
-
 	<category name="com.liferay.portal.servlet.LanguageServlet">
-		<priority value="WARN" />
-	</category>
-
-	<category name="com.liferay.portal.servlet.MainServlet">
 		<priority value="WARN" />
 	</category>
 
@@ -772,8 +664,8 @@
 		<priority value="ERROR" />
 	</category>
 
-	<category name="com.liferay.portal.spring.context.PortletApplicationContext">
-		<priority value="ERROR" />
+	<category name="com.liferay.portal.spring.context.PortalContextLoaderListener">
+		<priority value="INFO" />
 	</category>
 
 	<category name="com.liferay.portal.spring.context.TunnelApplicationContext">
@@ -856,11 +748,11 @@
 		<priority value="INFO" />
 	</category>
 
-	<category name="com.liferay.portal.util">
-		<priority value="ERROR" />
+	<category name="com.liferay.portal.upload.UploadServletRequestImpl">
+		<priority value="WARN" />
 	</category>
 
-	<category name="com.liferay.portal.util.CookieKeys">
+	<category name="com.liferay.portal.util">
 		<priority value="ERROR" />
 	</category>
 
@@ -913,10 +805,6 @@
 	</category>
 
 	<category name="com.liferay.portal.verify">
-		<priority value="INFO" />
-	</category>
-
-	<category name="com.liferay.portal.verify.VerifyUser">
 		<priority value="INFO" />
 	</category>
 
@@ -996,28 +884,12 @@
 		<priority value="WARN" />
 	</category>
 
-	<category name="com.liferay.portlet.messageboards.service.impl.MBCategoryLocalServiceImpl">
-		<priority value="ERROR" />
-	</category>
-
-	<category name="com.liferay.portlet.messageboards.service.impl.MBMessageLocalServiceImpl">
-		<priority value="ERROR" />
-	</category>
-
-	<category name="com.liferay.portlet.messageboards.util.MBUtil">
-		<priority value="ERROR" />
-	</category>
-
 	<category name="com.liferay.portlet.portletconfiguration.action">
 		<priority value="ERROR" />
 	</category>
 
 	<category name="com.liferay.portlet.usersadmin.action.EditUserPortraitAction">
 		<priority value="ERROR" />
-	</category>
-
-	<category name="com.liferay.portlet.usersadmin.util.OrganizationIndexer">
-		<priority value="WARN" />
 	</category>
 
 	<category name="com.liferay.portlet.usersadmin.util.OrganizationSearchTerms">
@@ -1044,10 +916,6 @@
 		<priority value="INFO" />
 	</category>
 
-	<category name="com.liferay.util.Encryptor">
-		<priority value="WARN" />
-	</category>
-
 	<category name="com.liferay.util.JNDIUtil">
 		<priority value="ERROR" />
 	</category>
@@ -1057,18 +925,6 @@
 	</category>
 
 	<category name="com.liferay.util.dao.orm.CustomSQLUtil">
-		<priority value="INFO" />
-	</category>
-
-	<category name="com.liferay.util.mail">
-		<priority value="WARN" />
-	</category>
-
-	<category name="com.liferay.util.portlet.PortletRequestUtil">
-		<priority value="INFO" />
-	</category>
-
-	<category name="com.liferay.util.resiliency">
 		<priority value="INFO" />
 	</category>
 
@@ -1094,6 +950,10 @@
 
 	<category name="com.sun.faces">
 		<priority value="ERROR" />
+	</category>
+
+	<category name="com.zaxxer.hikari">
+		<priority value="WARN" />
 	</category>
 
 	<category name="de.hunsicker">
@@ -1132,6 +992,10 @@
 		<priority value="ERROR" />
 	</category>
 
+	<category name="org.apache.aries.jax.rs.whiteboard.activator.CxfJaxrsBundleActivator">
+		<priority value="WARN" />
+	</category>
+
 	<category name="org.apache.axis">
 		<priority value="INFO" />
 	</category>
@@ -1161,18 +1025,6 @@
 	</category>
 
 	<category name="org.apache.pdfbox">
-		<priority value="ERROR" />
-	</category>
-
-	<category name="org.apache.struts">
-		<priority value="ERROR" />
-	</category>
-
-	<category name="org.apache.struts.action.RequestProcessor">
-		<priority value="ERROR" />
-	</category>
-
-	<category name="org.apache.struts.tiles.TilesRequestProcessor">
 		<priority value="ERROR" />
 	</category>
 
@@ -1242,6 +1094,7 @@
 
 	<root>
 		<priority value="INFO" />
+
 		<appender-ref ref="CONSOLE" />
 		<appender-ref ref="TEXT_FILE" />
 		<appender-ref ref="XML_FILE" />

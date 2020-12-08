@@ -19,6 +19,8 @@ package com.liferay.source.formatter.parser;
  */
 public interface JavaTerm {
 
+	public static final String ACCESS_MODIFIER_DEFAULT = "default";
+
 	public static final String ACCESS_MODIFIER_PRIVATE = "private";
 
 	public static final String ACCESS_MODIFIER_PROTECTED = "protected";
@@ -26,13 +28,17 @@ public interface JavaTerm {
 	public static final String ACCESS_MODIFIER_PUBLIC = "public";
 
 	public static final String[] ACCESS_MODIFIERS = {
-		ACCESS_MODIFIER_PRIVATE, ACCESS_MODIFIER_PROTECTED,
-		ACCESS_MODIFIER_PUBLIC
+		ACCESS_MODIFIER_DEFAULT, ACCESS_MODIFIER_PRIVATE,
+		ACCESS_MODIFIER_PROTECTED, ACCESS_MODIFIER_PUBLIC
 	};
 
 	public String getAccessModifier();
 
 	public String getContent();
+
+	public int getLineNumber();
+
+	public int getLineNumber(int pos);
 
 	public String getName();
 
@@ -40,7 +46,29 @@ public interface JavaTerm {
 
 	public JavaSignature getSignature();
 
-	public boolean hasAnnotation(String annotation);
+	public boolean hasAnnotation(String... annotations);
+
+	public boolean isAbstract();
+
+	public boolean isDefault();
+
+	public boolean isFinal();
+
+	public boolean isJavaClass();
+
+	public boolean isJavaConstructor();
+
+	public boolean isJavaMethod();
+
+	public boolean isJavaStaticBlock();
+
+	public boolean isJavaVariable();
+
+	public boolean isPrivate();
+
+	public boolean isProtected();
+
+	public boolean isPublic();
 
 	public boolean isStatic();
 

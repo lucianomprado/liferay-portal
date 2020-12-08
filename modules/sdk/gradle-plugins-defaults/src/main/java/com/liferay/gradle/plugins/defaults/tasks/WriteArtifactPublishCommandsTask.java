@@ -19,6 +19,7 @@ import com.liferay.gradle.plugins.change.log.builder.BuildChangeLogTask;
 import com.liferay.gradle.plugins.change.log.builder.ChangeLogBuilderPlugin;
 import com.liferay.gradle.plugins.defaults.internal.util.FileUtil;
 import com.liferay.gradle.plugins.defaults.internal.util.GradleUtil;
+import com.liferay.gradle.util.GUtil;
 import com.liferay.gradle.util.Validator;
 
 import java.io.BufferedWriter;
@@ -45,16 +46,19 @@ import org.gradle.api.Project;
 import org.gradle.api.Task;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.plugins.BasePlugin;
+import org.gradle.api.tasks.CacheableTask;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.Optional;
+import org.gradle.api.tasks.PathSensitive;
+import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.TaskContainer;
-import org.gradle.util.GUtil;
 import org.gradle.util.VersionNumber;
 
 /**
  * @author Andrea Di Giorgi
  */
+@CacheableTask
 public class WriteArtifactPublishCommandsTask extends DefaultTask {
 
 	public static final String IGNORED_MESSAGE_PATTERN = "artifact:ignore";
@@ -83,6 +87,7 @@ public class WriteArtifactPublishCommandsTask extends DefaultTask {
 
 	@Input
 	@Optional
+	@PathSensitive(PathSensitivity.RELATIVE)
 	public File getArtifactPropertiesFile() {
 		return GradleUtil.toFile(getProject(), _artifactPropertiesFile);
 	}
@@ -94,6 +99,7 @@ public class WriteArtifactPublishCommandsTask extends DefaultTask {
 	}
 
 	@Input
+	@PathSensitive(PathSensitivity.RELATIVE)
 	public File getGradleDir() {
 		return GradleUtil.toFile(getProject(), _gradleDir);
 	}
@@ -104,6 +110,7 @@ public class WriteArtifactPublishCommandsTask extends DefaultTask {
 	}
 
 	@Input
+	@PathSensitive(PathSensitivity.RELATIVE)
 	public File getOutputDir() {
 		return GradleUtil.toFile(getProject(), _outputDir);
 	}
@@ -126,6 +133,7 @@ public class WriteArtifactPublishCommandsTask extends DefaultTask {
 	}
 
 	@Input
+	@PathSensitive(PathSensitivity.RELATIVE)
 	public FileCollection getPrepNextFiles() {
 		Project project = getProject();
 
@@ -348,9 +356,8 @@ public class WriteArtifactPublishCommandsTask extends DefaultTask {
 	}
 
 	private String _getGradleCommand(String taskName, String... arguments) {
-		Task task = GradleUtil.getTask(getProject(), taskName);
-
-		return _getGradleCommand(task, arguments);
+		return _getGradleCommand(
+			GradleUtil.getTask(getProject(), taskName), arguments);
 	}
 
 	private String _getGradleCommand(Task task, String... arguments) {
@@ -408,7 +415,17 @@ public class WriteArtifactPublishCommandsTask extends DefaultTask {
 
 		Project rootProject = project.getRootProject();
 
-		return rootProject.relativePath(file);
+		String relativePath = rootProject.relativePath(file);
+
+		if (File.separatorChar != '/') {
+			relativePath = relativePath.replace(File.separatorChar, '/');
+		}
+
+		if (relativePath.charAt(0) != '.') {
+			relativePath = "./" + relativePath;
+		}
+
+		return relativePath;
 	}
 
 	private Task _getTask(String name) {

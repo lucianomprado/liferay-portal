@@ -16,6 +16,7 @@ package com.liferay.ratings.kernel.display.context;
 
 import com.liferay.portal.kernel.service.PortletLocalServiceUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
+import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.PrefsParamUtil;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.ratings.kernel.RatingsType;
@@ -38,9 +39,9 @@ public class CompanyPortletRatingsDefinitionDisplayContext {
 
 	public CompanyPortletRatingsDefinitionDisplayContext(
 		PortletPreferences companyPortletPreferences,
-		HttpServletRequest request) {
+		HttpServletRequest httpServletRequest) {
 
-		_populateRatingsTypeMaps(companyPortletPreferences, request);
+		_populateRatingsTypeMaps(companyPortletPreferences, httpServletRequest);
 	}
 
 	public Map<String, Map<String, RatingsType>> getCompanyRatingsTypeMaps() {
@@ -56,7 +57,7 @@ public class CompanyPortletRatingsDefinitionDisplayContext {
 
 	private void _populateRatingsTypeMaps(
 		PortletPreferences companyPortletPreferences,
-		HttpServletRequest request) {
+		HttpServletRequest httpServletRequest) {
 
 		Map<String, PortletRatingsDefinitionValues>
 			portletRatingsDefinitionValuesMap =
@@ -75,8 +76,9 @@ public class CompanyPortletRatingsDefinitionDisplayContext {
 
 			String portletId = portletRatingsDefinitionValues.getPortletId();
 
-			ThemeDisplay themeDisplay = (ThemeDisplay)request.getAttribute(
-				WebKeys.THEME_DISPLAY);
+			ThemeDisplay themeDisplay =
+				(ThemeDisplay)httpServletRequest.getAttribute(
+					WebKeys.THEME_DISPLAY);
 
 			if (!PortletLocalServiceUtil.hasPortlet(
 					themeDisplay.getCompanyId(), portletId)) {
@@ -86,22 +88,25 @@ public class CompanyPortletRatingsDefinitionDisplayContext {
 
 			String className = entry.getKey();
 
-			Map<String, RatingsType> ratingsTypeMap = new HashMap<>();
+			_companyRatingsTypeMaps.put(
+				portletId,
+				HashMapBuilder.put(
+					className,
+					() -> {
+						String propertyKey =
+							RatingsDataTransformerUtil.getPropertyKey(
+								className);
 
-			String propertyKey = RatingsDataTransformerUtil.getPropertyKey(
-				className);
+						RatingsType ratingsType =
+							portletRatingsDefinitionValues.
+								getDefaultRatingsType();
 
-			RatingsType ratingsType =
-				portletRatingsDefinitionValues.getDefaultRatingsType();
-
-			String companyRatingsTypeString = PrefsParamUtil.getString(
-				companyPortletPreferences, request, propertyKey,
-				ratingsType.getValue());
-
-			ratingsTypeMap.put(
-				className, RatingsType.parse(companyRatingsTypeString));
-
-			_companyRatingsTypeMaps.put(portletId, ratingsTypeMap);
+						return RatingsType.parse(
+							PrefsParamUtil.getString(
+								companyPortletPreferences, httpServletRequest,
+								propertyKey, ratingsType.getValue()));
+					}
+				).build());
 		}
 	}
 

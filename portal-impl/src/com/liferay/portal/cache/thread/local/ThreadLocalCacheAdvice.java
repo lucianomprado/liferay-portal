@@ -14,45 +14,47 @@
 
 package com.liferay.portal.cache.thread.local;
 
-import com.liferay.portal.kernel.cache.thread.local.Lifecycle;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.aop.AopMethodInvocation;
+import com.liferay.portal.kernel.aop.ChainableMethodAdvice;
 import com.liferay.portal.kernel.cache.thread.local.ThreadLocalCachable;
 import com.liferay.portal.kernel.cache.thread.local.ThreadLocalCache;
 import com.liferay.portal.kernel.cache.thread.local.ThreadLocalCacheManager;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
-import com.liferay.portal.spring.aop.AnnotationChainableMethodAdvice;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
 
-import org.aopalliance.intercept.MethodInvocation;
+import java.util.Map;
 
 /**
  * @author Shuyang Zhou
  * @author Brian Wing Shun Chan
  */
-public class ThreadLocalCacheAdvice
-	extends AnnotationChainableMethodAdvice<ThreadLocalCachable> {
+public class ThreadLocalCacheAdvice extends ChainableMethodAdvice {
 
 	@Override
-	public ThreadLocalCachable getNullAnnotation() {
-		return _nullThreadLocalCacheable;
+	public Object createMethodContext(
+		Class<?> targetClass, Method method,
+		Map<Class<? extends Annotation>, Annotation> annotations) {
+
+		return annotations.get(ThreadLocalCachable.class);
 	}
 
 	@Override
-	public Object invoke(MethodInvocation methodInvocation) throws Throwable {
-		ThreadLocalCachable threadLocalCachable = findAnnotation(
-			methodInvocation);
+	public Object invoke(
+			AopMethodInvocation aopMethodInvocation, Object[] arguments)
+		throws Throwable {
 
-		if (threadLocalCachable == _nullThreadLocalCacheable) {
-			return methodInvocation.proceed();
-		}
+		ThreadLocalCachable threadLocalCachable =
+			aopMethodInvocation.getAdviceMethodContext();
 
 		ThreadLocalCache<Object> threadLocalCache =
 			ThreadLocalCacheManager.getThreadLocalCache(
-				threadLocalCachable.scope(), methodInvocation.getMethod());
+				threadLocalCachable.scope(), aopMethodInvocation.getMethod());
 
-		String cacheKey = _getCacheKey(methodInvocation.getArguments());
+		String cacheKey = _getCacheKey(arguments);
 
 		Object value = threadLocalCache.get(cacheKey);
 
@@ -64,7 +66,7 @@ public class ThreadLocalCacheAdvice
 			return value;
 		}
 
-		Object result = methodInvocation.proceed();
+		Object result = aopMethodInvocation.proceed(arguments);
 
 		if (result == null) {
 			threadLocalCache.put(cacheKey, nullResult);
@@ -81,7 +83,7 @@ public class ThreadLocalCacheAdvice
 			return StringUtil.toHexString(arguments[0]);
 		}
 
-		StringBundler sb = new StringBundler(arguments.length * 2 - 1);
+		StringBundler sb = new StringBundler((arguments.length * 2) - 1);
 
 		for (int i = 0; i < arguments.length; i++) {
 			sb.append(StringUtil.toHexString(arguments[i]));
@@ -93,20 +95,5 @@ public class ThreadLocalCacheAdvice
 
 		return sb.toString();
 	}
-
-	private static final ThreadLocalCachable _nullThreadLocalCacheable =
-		new ThreadLocalCachable() {
-
-			@Override
-			public Class<? extends Annotation> annotationType() {
-				return ThreadLocalCachable.class;
-			}
-
-			@Override
-			public Lifecycle scope() {
-				return null;
-			}
-
-		};
 
 }

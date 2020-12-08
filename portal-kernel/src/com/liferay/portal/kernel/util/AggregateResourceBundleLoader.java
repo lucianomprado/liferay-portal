@@ -14,6 +14,9 @@
 
 package com.liferay.portal.kernel.util;
 
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -22,7 +25,11 @@ import java.util.ResourceBundle;
 
 /**
  * @author Carlos Sierra Andrés
+ *
+ * @deprecated As of Athanasius (7.3.x), replaced by {@link
+ *             com.liferay.portal.kernel.resource.bundle.AggregateResourceBundleLoader}
  */
+@Deprecated
 public class AggregateResourceBundleLoader implements ResourceBundleLoader {
 
 	public AggregateResourceBundleLoader(
@@ -53,7 +60,7 @@ public class AggregateResourceBundleLoader implements ResourceBundleLoader {
 					resourceBundles.add(resourceBundle);
 				}
 			}
-			catch (Exception e) {
+			catch (Exception exception) {
 			}
 		}
 
@@ -61,8 +68,9 @@ public class AggregateResourceBundleLoader implements ResourceBundleLoader {
 			String languageId = LocaleUtil.toLanguageId(locale);
 
 			throw new MissingResourceException(
-				"Resource bundle loader " + this + " was unable to load " +
-					"resource bundle for " + languageId,
+				StringBundler.concat(
+					"Resource bundle loader ", this,
+					" was unable to load resource bundle for ", languageId),
 				StringPool.BLANK, languageId);
 		}
 
@@ -71,17 +79,7 @@ public class AggregateResourceBundleLoader implements ResourceBundleLoader {
 		}
 
 		return new AggregateResourceBundle(
-			resourceBundles.toArray(
-				new ResourceBundle[resourceBundles.size()]));
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link #loadResourceBundle(Locale)}
-	 */
-	@Deprecated
-	@Override
-	public ResourceBundle loadResourceBundle(String languageId) {
-		return loadResourceBundle(LocaleUtil.fromLanguageId(languageId));
+			resourceBundles.toArray(new ResourceBundle[0]));
 	}
 
 	private final ResourceBundleLoader[] _resourceBundleLoaders;

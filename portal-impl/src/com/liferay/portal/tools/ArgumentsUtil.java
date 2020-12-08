@@ -14,7 +14,10 @@
 
 package com.liferay.portal.tools;
 
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 
 import java.util.Map;
@@ -73,8 +76,8 @@ public class ArgumentsUtil {
 				throw new IllegalArgumentException("Bad argument " + arg);
 			}
 
-			String key = arg.substring(0, pos).trim();
-			String value = arg.substring(pos + 1).trim();
+			String key = StringUtil.trim(arg.substring(0, pos));
+			String value = StringUtil.trim(arg.substring(pos + 1));
 
 			if (key.startsWith("-D")) {
 				key = key.substring(2);
@@ -90,16 +93,18 @@ public class ArgumentsUtil {
 	}
 
 	public static void processMainException(
-			Map<String, String> arguments, Exception e)
+			Map<String, String> arguments, Exception exception)
 		throws Exception {
 
 		String throwMainException = arguments.get("tools.throw.main.exception");
 
 		if (GetterUtil.getBoolean(throwMainException, true)) {
-			throw e;
+			throw exception;
 		}
 
-		e.printStackTrace();
+		_log.error(exception, exception);
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(ArgumentsUtil.class);
 
 }

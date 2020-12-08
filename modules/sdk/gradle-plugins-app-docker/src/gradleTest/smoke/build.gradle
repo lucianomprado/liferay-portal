@@ -15,8 +15,22 @@ allprojects {
 	version = "1.0.0"
 
 	repositories {
+		File dir = rootProject.projectDir
+
+		while (dir != null) {
+			File tmpMavenRepositoryDir = new File(dir, ".m2-tmp")
+
+			if (tmpMavenRepositoryDir.exists()) {
+				maven {
+					url tmpMavenRepositoryDir
+				}
+			}
+
+			dir = dir.getParentFile();
+		}
+
 		maven {
-			url "https://cdn.lfrs.sl/repository.liferay.com/nexus/content/groups/public"
+			url "https://repository-cdn.liferay.com/nexus/content/groups/public"
 		}
 	}
 }
@@ -38,11 +52,12 @@ runGradleTest {
 
 		String[] inputDirFileNames = inputDir.list()
 
-		assert inputDirFileNames.length == 3
+		assert inputDirFileNames.length == 4
 
 		assert inputDirFileNames.contains("Dockerfile")
 		assert inputDirFileNames.contains("sample-api-1.0.0.jar")
 		assert inputDirFileNames.contains("sample-service-1.0.0.jar")
+		assert inputDirFileNames.contains("sample-war-1.0.0.war")
 	}
 
 	finalizedBy removeAppDockerImageTasks
@@ -80,7 +95,11 @@ project(":sample-service") {
 
 project(":sample-test") {
 	dependencies {
-		testCompile group: "junit", name: "junit", version: "4.12"
+		testCompile group: "junit", name: "junit", version: "4.13.1"
 		testCompile project(":sample-service")
 	}
+}
+
+project(":sample-war") {
+	apply plugin: "war"
 }

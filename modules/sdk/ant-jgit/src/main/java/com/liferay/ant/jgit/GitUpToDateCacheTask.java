@@ -37,7 +37,6 @@ import org.apache.tools.ant.Task;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.lib.RepositoryCache;
-import org.eclipse.jgit.lib.RepositoryCache.FileKey;
 import org.eclipse.jgit.util.FS;
 
 /**
@@ -64,9 +63,10 @@ public class GitUpToDateCacheTask extends Task {
 
 		File gitDir = PathUtil.getGitDir(_gitDir, getProject(), getLocation());
 
-		try (Repository repository = RepositoryCache.open(
-				FileKey.exact(gitDir, FS.DETECTED))) {
+		RepositoryCache.FileKey fileKey = RepositoryCache.FileKey.exact(
+			gitDir, FS.DETECTED);
 
+		try (Repository repository = fileKey.open(true)) {
 			Git git = new Git(repository);
 
 			for (Path path : paths) {
@@ -100,8 +100,8 @@ public class GitUpToDateCacheTask extends Task {
 				}
 			}
 		}
-		catch (Exception e) {
-			throw new BuildException(e);
+		catch (Exception exception) {
+			throw new BuildException(exception);
 		}
 	}
 
@@ -160,8 +160,8 @@ public class GitUpToDateCacheTask extends Task {
 
 				});
 		}
-		catch (IOException ioe) {
-			throw new BuildException(ioe);
+		catch (IOException ioException) {
+			throw new BuildException(ioException);
 		}
 
 		return paths;

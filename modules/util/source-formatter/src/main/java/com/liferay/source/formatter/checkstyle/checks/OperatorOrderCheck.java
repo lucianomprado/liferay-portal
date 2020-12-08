@@ -16,14 +16,13 @@ package com.liferay.source.formatter.checkstyle.checks;
 
 import com.liferay.portal.kernel.util.ArrayUtil;
 
-import com.puppycrawl.tools.checkstyle.api.AbstractCheck;
 import com.puppycrawl.tools.checkstyle.api.DetailAST;
 import com.puppycrawl.tools.checkstyle.api.TokenTypes;
 
 /**
  * @author Hugo Huijser
  */
-public class OperatorOrderCheck extends AbstractCheck {
+public class OperatorOrderCheck extends BaseCheck {
 
 	@Override
 	public int[] getDefaultTokens() {
@@ -34,25 +33,52 @@ public class OperatorOrderCheck extends AbstractCheck {
 	}
 
 	@Override
-	public void visitToken(DetailAST detailAST) {
-		DetailAST firstChild = detailAST.getFirstChild();
+	protected void doVisitToken(DetailAST detailAST) {
+		DetailAST firstChildDetailAST = detailAST.getFirstChild();
 
-		if (!ArrayUtil.contains(_LITERAL_OR_NUM_TYPES, firstChild.getType())) {
+		if (!ArrayUtil.contains(
+				_LITERAL_OR_NUM_TYPES, firstChildDetailAST.getType())) {
+
 			return;
 		}
 
-		DetailAST secondChild = firstChild.getNextSibling();
+		DetailAST firstGrandChildDetailAST =
+			firstChildDetailAST.getFirstChild();
 
-		if (!ArrayUtil.contains(_LITERAL_OR_NUM_TYPES, secondChild.getType())) {
-			log(
-				firstChild.getLineNo(), _MSG_LITERAL_OR_NUM_LEFT_ARGUMENT,
-				firstChild.getText());
+		if ((firstGrandChildDetailAST != null) &&
+			!ArrayUtil.contains(
+				_LITERAL_OR_NUM_TYPES, firstGrandChildDetailAST.getType())) {
+
+			return;
 		}
+
+		DetailAST secondChildDetailAST = firstChildDetailAST.getNextSibling();
+
+		if (!ArrayUtil.contains(
+				_LITERAL_OR_NUM_TYPES, secondChildDetailAST.getType())) {
+
+			log(
+				firstChildDetailAST, _MSG_LITERAL_OR_NUM_LEFT_ARGUMENT,
+				_getStringValue(firstChildDetailAST));
+		}
+	}
+
+	private String _getStringValue(DetailAST detailAST) {
+		if ((detailAST.getType() == TokenTypes.UNARY_MINUS) ||
+			(detailAST.getType() == TokenTypes.UNARY_PLUS)) {
+
+			DetailAST firstChildDetailAST = detailAST.getFirstChild();
+
+			return detailAST.getText() + firstChildDetailAST.getText();
+		}
+
+		return detailAST.getText();
 	}
 
 	private static final int[] _LITERAL_OR_NUM_TYPES = {
 		TokenTypes.NUM_DOUBLE, TokenTypes.NUM_FLOAT, TokenTypes.NUM_INT,
-		TokenTypes.NUM_LONG, TokenTypes.STRING_LITERAL
+		TokenTypes.NUM_LONG, TokenTypes.STRING_LITERAL, TokenTypes.UNARY_MINUS,
+		TokenTypes.UNARY_PLUS
 	};
 
 	private static final String _MSG_LITERAL_OR_NUM_LEFT_ARGUMENT =

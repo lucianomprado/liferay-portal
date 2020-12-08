@@ -14,7 +14,7 @@
 
 package com.liferay.trash.kernel.service.persistence;
 
-import aQute.bnd.annotation.ProviderType;
+import org.osgi.annotation.versioning.ProviderType;
 
 import com.liferay.portal.kernel.service.persistence.BasePersistence;
 
@@ -33,7 +33,7 @@ import java.util.Date;
  * @author Brian Wing Shun Chan
  * @see com.liferay.portlet.trash.service.persistence.impl.TrashEntryPersistenceImpl
  * @see TrashEntryUtil
- * @deprecated As of 7.0.0, replaced by {@link
+ * @deprecated As of Judson (7.1.x), replaced by {@link
 com.liferay.trash.model.impl.TrashEntryImpl}
  * @generated
  */

@@ -18,12 +18,11 @@ import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.portal.kernel.events.ActionException;
 import com.liferay.portal.kernel.events.LifecycleAction;
 import com.liferay.portal.kernel.events.LifecycleEvent;
+import com.liferay.portal.kernel.portlet.PortletURLFactoryUtil;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.util.HashMapDictionary;
+import com.liferay.portal.osgi.web.portlet.container.test.util.PortletContainerTestUtil;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
-import com.liferay.portal.util.test.PortletContainerTestUtil;
-import com.liferay.portal.util.test.PortletContainerTestUtil.Response;
-import com.liferay.portlet.PortletURLImpl;
 
 import java.io.IOException;
 
@@ -97,9 +96,10 @@ public class SharedSessionPortletContainerTest
 			public void processLifecycleEvent(LifecycleEvent lifecycleEvent)
 				throws ActionException {
 
-				HttpServletRequest request = lifecycleEvent.getRequest();
+				HttpServletRequest httpServletRequest =
+					lifecycleEvent.getRequest();
 
-				HttpSession session = request.getSession(true);
+				HttpSession session = httpServletRequest.getSession(true);
 
 				session.setAttribute(attributeKey, attributeValue);
 			}
@@ -112,15 +112,12 @@ public class SharedSessionPortletContainerTest
 
 		registerService(LifecycleAction.class, lifecycleAction, properties);
 
-		HttpServletRequest httpServletRequest =
-			PortletContainerTestUtil.getHttpServletRequest(group, layout);
+		PortletURL portletURL = PortletURLFactoryUtil.create(
+			PortletContainerTestUtil.getHttpServletRequest(group, layout),
+			TEST_PORTLET_ID, layout.getPlid(), PortletRequest.RENDER_PHASE);
 
-		PortletURL portletURL = new PortletURLImpl(
-			httpServletRequest, TEST_PORTLET_ID, layout.getPlid(),
-			PortletRequest.RENDER_PHASE);
-
-		Response response = PortletContainerTestUtil.request(
-			portletURL.toString());
+		PortletContainerTestUtil.Response response =
+			PortletContainerTestUtil.request(portletURL.toString());
 
 		Assert.assertEquals(200, response.getCode());
 
@@ -166,9 +163,10 @@ public class SharedSessionPortletContainerTest
 			public void processLifecycleEvent(LifecycleEvent lifecycleEvent)
 				throws ActionException {
 
-				HttpServletRequest request = lifecycleEvent.getRequest();
+				HttpServletRequest httpServletRequest =
+					lifecycleEvent.getRequest();
 
-				HttpSession session = request.getSession(true);
+				HttpSession session = httpServletRequest.getSession(true);
 
 				Object value = session.getAttribute(attributeKey);
 
@@ -183,15 +181,12 @@ public class SharedSessionPortletContainerTest
 
 		registerService(LifecycleAction.class, lifecycleAction, properties);
 
-		HttpServletRequest httpServletRequest =
-			PortletContainerTestUtil.getHttpServletRequest(group, layout);
+		PortletURL portletURL = PortletURLFactoryUtil.create(
+			PortletContainerTestUtil.getHttpServletRequest(group, layout),
+			TEST_PORTLET_ID, layout.getPlid(), PortletRequest.RENDER_PHASE);
 
-		PortletURL portletURL = new PortletURLImpl(
-			httpServletRequest, TEST_PORTLET_ID, layout.getPlid(),
-			PortletRequest.RENDER_PHASE);
-
-		Response response = PortletContainerTestUtil.request(
-			portletURL.toString());
+		PortletContainerTestUtil.Response response =
+			PortletContainerTestUtil.request(portletURL.toString());
 
 		Assert.assertEquals(200, response.getCode());
 
@@ -235,9 +230,10 @@ public class SharedSessionPortletContainerTest
 			public void processLifecycleEvent(LifecycleEvent lifecycleEvent)
 				throws ActionException {
 
-				HttpServletRequest request = lifecycleEvent.getRequest();
+				HttpServletRequest httpServletRequest =
+					lifecycleEvent.getRequest();
 
-				HttpSession session = request.getSession(true);
+				HttpSession session = httpServletRequest.getSession(true);
 
 				session.setAttribute(attributeKey, attributeValue);
 			}
@@ -250,15 +246,12 @@ public class SharedSessionPortletContainerTest
 
 		registerService(LifecycleAction.class, lifecycleAction, properties);
 
-		HttpServletRequest httpServletRequest =
-			PortletContainerTestUtil.getHttpServletRequest(group, layout);
+		PortletURL portletURL = PortletURLFactoryUtil.create(
+			PortletContainerTestUtil.getHttpServletRequest(group, layout),
+			TEST_PORTLET_ID, layout.getPlid(), PortletRequest.RENDER_PHASE);
 
-		PortletURL portletURL = new PortletURLImpl(
-			httpServletRequest, TEST_PORTLET_ID, layout.getPlid(),
-			PortletRequest.RENDER_PHASE);
-
-		Response response = PortletContainerTestUtil.request(
-			portletURL.toString());
+		PortletContainerTestUtil.Response response =
+			PortletContainerTestUtil.request(portletURL.toString());
 
 		Assert.assertEquals(200, response.getCode());
 
@@ -304,9 +297,10 @@ public class SharedSessionPortletContainerTest
 			public void processLifecycleEvent(LifecycleEvent lifecycleEvent)
 				throws ActionException {
 
-				HttpServletRequest request = lifecycleEvent.getRequest();
+				HttpServletRequest httpServletRequest =
+					lifecycleEvent.getRequest();
 
-				HttpSession session = request.getSession(true);
+				HttpSession session = httpServletRequest.getSession(true);
 
 				session.setAttribute(attributeKey, attributeValue);
 			}
@@ -319,15 +313,12 @@ public class SharedSessionPortletContainerTest
 
 		registerService(LifecycleAction.class, lifecycleAction, properties);
 
-		HttpServletRequest httpServletRequest =
-			PortletContainerTestUtil.getHttpServletRequest(group, layout);
+		PortletURL portletURL = PortletURLFactoryUtil.create(
+			PortletContainerTestUtil.getHttpServletRequest(group, layout),
+			TEST_PORTLET_ID, layout.getPlid(), PortletRequest.RENDER_PHASE);
 
-		PortletURL portletURL = new PortletURLImpl(
-			httpServletRequest, TEST_PORTLET_ID, layout.getPlid(),
-			PortletRequest.RENDER_PHASE);
-
-		Response response = PortletContainerTestUtil.request(
-			portletURL.toString());
+		PortletContainerTestUtil.Response response =
+			PortletContainerTestUtil.request(portletURL.toString());
 
 		Assert.assertEquals(200, response.getCode());
 
@@ -370,9 +361,10 @@ public class SharedSessionPortletContainerTest
 			public void processLifecycleEvent(LifecycleEvent lifecycleEvent)
 				throws ActionException {
 
-				HttpServletRequest request = lifecycleEvent.getRequest();
+				HttpServletRequest httpServletRequest =
+					lifecycleEvent.getRequest();
 
-				HttpSession session = request.getSession(true);
+				HttpSession session = httpServletRequest.getSession(true);
 
 				Object value = session.getAttribute(attributeKey);
 
@@ -387,15 +379,12 @@ public class SharedSessionPortletContainerTest
 
 		registerService(LifecycleAction.class, lifecycleAction, properties);
 
-		HttpServletRequest httpServletRequest =
-			PortletContainerTestUtil.getHttpServletRequest(group, layout);
+		PortletURL portletURL = PortletURLFactoryUtil.create(
+			PortletContainerTestUtil.getHttpServletRequest(group, layout),
+			TEST_PORTLET_ID, layout.getPlid(), PortletRequest.RENDER_PHASE);
 
-		PortletURL portletURL = new PortletURLImpl(
-			httpServletRequest, TEST_PORTLET_ID, layout.getPlid(),
-			PortletRequest.RENDER_PHASE);
-
-		Response response = PortletContainerTestUtil.request(
-			portletURL.toString());
+		PortletContainerTestUtil.Response response =
+			PortletContainerTestUtil.request(portletURL.toString());
 
 		Assert.assertEquals(200, response.getCode());
 

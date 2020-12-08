@@ -14,14 +14,13 @@
 
 package com.liferay.source.formatter.checks;
 
-import com.liferay.portal.kernel.util.CharPool;
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.util.PropertiesUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
-import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringUtil;
-import com.liferay.source.formatter.util.FileUtil;
 
-import java.io.File;
+import java.io.IOException;
 
 import java.util.Arrays;
 import java.util.Properties;
@@ -34,31 +33,31 @@ import java.util.TreeSet;
 public class XMLWebFileCheck extends BaseFileCheck {
 
 	@Override
-	public boolean isPortalCheck() {
+	public boolean isLiferaySourceCheck() {
 		return true;
 	}
 
 	@Override
 	protected String doProcess(
 			String fileName, String absolutePath, String content)
-		throws Exception {
+		throws IOException {
 
 		if (fileName.endsWith("portal-web/docroot/WEB-INF/web.xml")) {
-			content = _formatWebXML(content);
+			content = _formatWebXML(absolutePath, content);
 		}
 
 		return content;
 	}
 
-	private String _formatWebXML(String content) throws Exception {
+	private String _formatWebXML(String absolutePath, String content)
+		throws IOException {
+
 		Properties properties = new Properties();
 
-		File propertiesFile = new File(
-			getBaseDirName(), "portal-impl/src/portal.properties");
-
-		String propertiesContent = FileUtil.read(propertiesFile);
-
-		PropertiesUtil.load(properties, propertiesContent);
+		PropertiesUtil.load(
+			properties,
+			getPortalContent(
+				"portal-impl/src/portal.properties", absolutePath));
 
 		String[] locales = StringUtil.split(
 			properties.getProperty(PropsKeys.LOCALES));
@@ -75,6 +74,10 @@ public class XMLWebFileCheck extends BaseFileCheck {
 			urlPatterns.add(languageCode);
 
 			urlPatterns.add(locale);
+
+			urlPatterns.add(
+				StringUtil.replaceFirst(
+					locale, CharPool.UNDERLINE, CharPool.DASH));
 		}
 
 		StringBundler sb = new StringBundler(6 * urlPatterns.size());
@@ -112,7 +115,7 @@ public class XMLWebFileCheck extends BaseFileCheck {
 
 		y = newContent.lastIndexOf("</url-pattern>", y) + 15;
 
-		sb = new StringBundler(3 * urlPatterns.size() + 1);
+		sb = new StringBundler((3 * urlPatterns.size()) + 1);
 
 		sb.append("\t\t\t<url-pattern>/c/portal/protected</url-pattern>\n");
 
@@ -122,11 +125,8 @@ public class XMLWebFileCheck extends BaseFileCheck {
 			sb.append("/c/portal/protected</url-pattern>\n");
 		}
 
-		newContent =
-			newContent.substring(0, x) + sb.toString() +
-				newContent.substring(y);
-
-		return newContent;
+		return newContent.substring(0, x) + sb.toString() +
+			newContent.substring(y);
 	}
 
 }

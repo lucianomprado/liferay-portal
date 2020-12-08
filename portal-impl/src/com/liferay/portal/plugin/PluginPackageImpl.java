@@ -14,13 +14,13 @@
 
 package com.liferay.portal.plugin;
 
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.plugin.License;
 import com.liferay.portal.kernel.plugin.PluginPackage;
 import com.liferay.portal.kernel.plugin.RemotePluginPackageRepository;
 import com.liferay.portal.kernel.plugin.Screenshot;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
 
 import java.io.Serializable;
@@ -69,16 +69,16 @@ public class PluginPackageImpl
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
+	public boolean equals(Object object) {
+		if (this == object) {
 			return true;
 		}
 
-		if (!(obj instanceof PluginPackage)) {
+		if (!(object instanceof PluginPackage)) {
 			return false;
 		}
 
-		PluginPackage pluginPackage = (PluginPackage)obj;
+		PluginPackage pluginPackage = (PluginPackage)object;
 
 		EqualsBuilder equalsBuilder = new EqualsBuilder();
 
@@ -208,9 +208,8 @@ public class PluginPackageImpl
 		if (_repository != null) {
 			return _repository.getRepositoryURL();
 		}
-		else {
-			return RemotePluginPackageRepository.LOCAL_URL;
-		}
+
+		return RemotePluginPackageRepository.LOCAL_URL;
 	}
 
 	@Override

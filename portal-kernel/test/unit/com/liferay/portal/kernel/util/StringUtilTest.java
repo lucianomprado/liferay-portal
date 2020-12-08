@@ -14,12 +14,26 @@
 
 package com.liferay.portal.kernel.util;
 
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.test.randomizerbumpers.RandomizerBumper;
+import com.liferay.portal.kernel.test.rule.CodeCoverageAssertor;
+import com.liferay.portal.kernel.test.util.RandomTestUtil;
+
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+
+import java.lang.reflect.Method;
+
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
 import org.junit.Assert;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 /**
@@ -28,6 +42,30 @@ import org.junit.Test;
  * @author Hugo Huijser
  */
 public class StringUtilTest {
+
+	@ClassRule
+	public static final CodeCoverageAssertor codeCoverageAssertor =
+		new CodeCoverageAssertor() {
+
+			@Override
+			public void appendAssertClasses(List<Class<?>> assertClasses) {
+				assertClasses.clear();
+			}
+
+			@Override
+			public List<Method> getAssertMethods()
+				throws ReflectiveOperationException {
+
+				return Arrays.asList(
+					StringUtil.class.getDeclaredMethod(
+						"read", InputStream.class),
+					StringUtil.class.getDeclaredMethod(
+						"readLines", InputStream.class, Collection.class),
+					StringUtil.class.getDeclaredMethod(
+						"_read", InputStream.class));
+			}
+
+		};
 
 	@Test
 	public void testAppendParentheticalSuffixInteger() {
@@ -76,7 +114,7 @@ public class StringUtilTest {
 				hexString.charAt(i * 2),
 				StringUtil.HEX_DIGITS[(data[i] & 0xFF) >> 4]);
 			Assert.assertEquals(
-				hexString.charAt(i * 2 + 1),
+				hexString.charAt((i * 2) + 1),
 				StringUtil.HEX_DIGITS[data[i] & 0x0F]);
 		}
 	}
@@ -259,6 +297,8 @@ public class StringUtilTest {
 		Assert.assertEquals("1", StringUtil.merge(new int[] {1}));
 		Assert.assertEquals("1,2,3", StringUtil.merge(new long[] {1, 2, 3}));
 		Assert.assertEquals("1", StringUtil.merge(new long[] {1}));
+		Assert.assertEquals(
+			"123", StringUtil.merge(Arrays.asList("1", "2", "3"), ""));
 	}
 
 	@Test
@@ -268,6 +308,67 @@ public class StringUtilTest {
 		Assert.assertEquals("%PATH%", StringUtil.quote("PATH", '%'));
 		Assert.assertEquals(
 			"Hello World Hello", StringUtil.quote(" World ", "Hello"));
+	}
+
+	@Test
+	public void testRead() throws Exception {
+		Assert.assertEquals(
+			StringPool.BLANK,
+			StringUtil.read(new ByteArrayInputStream(new byte[0])));
+
+		Assert.assertEquals(
+			StringPool.BLANK,
+			StringUtil.read(new ByteArrayInputStream(new byte[0])));
+
+		Assert.assertEquals(
+			"A\nB",
+			StringUtil.read(new ByteArrayInputStream("A\rB".getBytes())));
+
+		Assert.assertEquals(
+			"A\nB",
+			StringUtil.read(new ByteArrayInputStream("A\r\nB".getBytes())));
+
+		Assert.assertEquals(
+			"Test",
+			StringUtil.read(new ByteArrayInputStream(" Test ".getBytes())));
+
+		String expected = RandomTestUtil.randomString(
+			8193,
+			(RandomizerBumper<String>)randomValue ->
+				(randomValue.indexOf(CharPool.RETURN) == -1) &&
+				!Character.isWhitespace(randomValue.charAt(0)) &&
+				!Character.isWhitespace(randomValue.charAt(8192)));
+
+		Assert.assertEquals(
+			expected,
+			StringUtil.read(new ByteArrayInputStream(expected.getBytes())));
+	}
+
+	@Test
+	public void testReadLines() throws Exception {
+		List<String> lines = new ArrayList<>();
+
+		StringUtil.readLines(new ByteArrayInputStream(new byte[0]), lines);
+
+		Assert.assertEquals(lines.toString(), 0, lines.size());
+
+		StringUtil.readLines(
+			new ByteArrayInputStream(StringPool.SPACE.getBytes()), lines);
+
+		Assert.assertEquals(lines.toString(), 1, lines.size());
+		Assert.assertEquals(StringPool.SPACE, lines.get(0));
+
+		StringUtil.readLines(
+			new ByteArrayInputStream(StringPool.RETURN.getBytes()), lines);
+
+		Assert.assertEquals(lines.toString(), 2, lines.size());
+		Assert.assertEquals(StringPool.BLANK, lines.get(1));
+
+		StringUtil.readLines(
+			new ByteArrayInputStream(" Test ".getBytes()), lines);
+
+		Assert.assertEquals(lines.toString(), 3, lines.size());
+		Assert.assertEquals(" Test ", lines.get(2));
 	}
 
 	@Test
@@ -429,10 +530,11 @@ public class StringUtilTest {
 
 	@Test(timeout = 1000)
 	public void testReplaceMap() {
-		Map<String, String> map = new HashMap<>();
-
-		map.put("Hallo", "Hello");
-		map.put("Wirld", "World");
+		Map<String, String> map = HashMapBuilder.put(
+			"Hallo", "Hello"
+		).put(
+			"Wirld", "World"
+		).build();
 
 		Assert.assertEquals(
 			"Hello World",
@@ -471,10 +573,12 @@ public class StringUtilTest {
 
 	@Test(timeout = 1000)
 	public void testReplaceWithStringBundle() {
-		Map<String, StringBundler> map = new HashMap<>();
-
-		map.put("Hallo", new StringBundler("Hello"));
-		map.put("Wirld", new StringBundler("World"));
+		Map<String, StringBundler> map =
+			HashMapBuilder.<String, StringBundler>put(
+				"Hallo", new StringBundler("Hello")
+			).put(
+				"Wirld", new StringBundler("World")
+			).build();
 
 		Assert.assertEquals(
 			"Hello World",
@@ -502,13 +606,16 @@ public class StringUtilTest {
 			StringUtil.shorten(
 				"HelloWorldHelloWorldHelloWorldHelloWorldHelloWorldHello", 20,
 				"... etc."));
+		Assert.assertEquals(
+			"abcdef\u00C1...",
+			StringUtil.shorten("abcdef\u0041\u0301vwxyz", 10));
 	}
 
 	@Test
 	public void testShortenStringWith4ByteChars() {
 		int space = CharPool.SPACE;
 
-		int[] codePoints = new int[] {
+		int[] codePoints = {
 			128515, 128516, space, 128517, 128518, 128519, 128520, 128521
 		};
 
@@ -616,19 +723,6 @@ public class StringUtilTest {
 	}
 
 	@Test
-	public void testStripChar() {
-		Assert.assertEquals("abcd", StringUtil.strip(" a b  c   d", ' '));
-	}
-
-	@Test
-	public void testStripCharArray() {
-		Assert.assertEquals(
-			"HeoWor",
-			StringUtil.strip(
-				"Hello World", new char[] {CharPool.SPACE, 'l', 'd'}));
-	}
-
-	@Test
 	public void testStripParentheticalSuffixInteger() {
 		Assert.assertEquals(
 			"Hello World",
@@ -673,7 +767,7 @@ public class StringUtilTest {
 	}
 
 	@Test
-	public void testToLowerCaseWithNonASCIICharacters() {
+	public void testToLowerCaseWithNonasciiCharacters() {
 		Assert.assertEquals("\u00F1", StringUtil.toLowerCase("\u00D1"));
 		Assert.assertEquals(
 			"hello world \u00F1", StringUtil.toLowerCase("hello world \u00D1"));
@@ -694,7 +788,7 @@ public class StringUtilTest {
 	}
 
 	@Test
-	public void testToUpperCaseWithNonASCIICharacters() {
+	public void testToUpperCaseWithNonasciiCharacters() {
 		Assert.assertEquals("\u00D1", StringUtil.toUpperCase("\u00F1"));
 		Assert.assertEquals(
 			"HELLO WORLD \u00D1", StringUtil.toUpperCase("hello world \u00F1"));
@@ -986,6 +1080,16 @@ public class StringUtilTest {
 		Assert.assertEquals(
 			"\t\r\n" + testString + " \t\r",
 			StringUtil.trim(surroundingSpacesString, exceptions));
+	}
+
+	@Test
+	public void testUnquote() {
+		Assert.assertEquals("", StringUtil.unquote(""));
+		Assert.assertEquals("Hello World", StringUtil.unquote("'Hello World'"));
+		Assert.assertEquals("'Hello World", StringUtil.unquote("'Hello World"));
+		Assert.assertEquals(
+			"Hello World", StringUtil.unquote("\"Hello World\""));
+		Assert.assertEquals("Hello World", StringUtil.unquote("Hello World"));
 	}
 
 	@Test

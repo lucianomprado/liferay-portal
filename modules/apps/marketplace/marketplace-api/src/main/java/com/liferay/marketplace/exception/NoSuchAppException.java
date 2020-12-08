@@ -14,14 +14,11 @@
 
 package com.liferay.marketplace.exception;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.portal.kernel.exception.NoSuchModelException;
 
 /**
  * @author Ryan Park
  */
-@ProviderType
 public class NoSuchAppException extends NoSuchModelException {
 
 	public NoSuchAppException() {
@@ -31,12 +28,12 @@ public class NoSuchAppException extends NoSuchModelException {
 		super(msg);
 	}
 
-	public NoSuchAppException(String msg, Throwable cause) {
-		super(msg, cause);
+	public NoSuchAppException(String msg, Throwable throwable) {
+		super(msg, throwable);
 	}
 
-	public NoSuchAppException(Throwable cause) {
-		super(cause);
+	public NoSuchAppException(Throwable throwable) {
+		super(throwable);
 	}
 
 }

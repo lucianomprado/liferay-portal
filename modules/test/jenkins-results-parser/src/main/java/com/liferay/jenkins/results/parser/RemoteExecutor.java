@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeoutException;
 
 /**
  * @author Peter Yoo
@@ -150,8 +151,8 @@ public class RemoteExecutor {
 					_handleError(null);
 				}
 			}
-			catch (Exception e) {
-				_handleError(e.getMessage());
+			catch (Exception exception) {
+				_handleError(exception.getMessage());
 			}
 			finally {
 				synchronized (_remoteExecutor) {
@@ -164,12 +165,11 @@ public class RemoteExecutor {
 			RemoteExecutor remoteExecutor, String targetSlave) {
 
 			_remoteExecutor = remoteExecutor;
-
 			_targetSlave = targetSlave;
 		}
 
 		private int _executeBashCommands()
-			throws InterruptedException, IOException {
+			throws IOException, TimeoutException {
 
 			StringBuffer sb = new StringBuffer(
 				"ssh -o NumberOfPasswordPrompts=0 ");

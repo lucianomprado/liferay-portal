@@ -16,13 +16,22 @@ package com.liferay.taglib.theme;
 
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Portlet;
+import com.liferay.taglib.util.IncludeTag;
 
 import javax.servlet.http.HttpServletRequest;
 
 /**
  * @author Miguel Pastor
  */
-public class PortletMessagesTag extends com.liferay.taglib.util.IncludeTag {
+public class PortletMessagesTag extends IncludeTag {
+
+	public Group getGroup() {
+		return _group;
+	}
+
+	public Portlet getPortlet() {
+		return _portlet;
+	}
 
 	public void setGroup(Group group) {
 		_group = group;
@@ -38,9 +47,10 @@ public class PortletMessagesTag extends com.liferay.taglib.util.IncludeTag {
 	}
 
 	@Override
-	protected void setAttributes(HttpServletRequest request) {
-		request.setAttribute("liferay-theme:portlet-messages:group", _group);
-		request.setAttribute(
+	protected void setAttributes(HttpServletRequest httpServletRequest) {
+		httpServletRequest.setAttribute(
+			"liferay-theme:portlet-messages:group", _group);
+		httpServletRequest.setAttribute(
 			"liferay-theme:portlet-messages:portlet", _portlet);
 	}
 

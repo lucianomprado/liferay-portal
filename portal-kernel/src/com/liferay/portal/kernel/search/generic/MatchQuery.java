@@ -14,9 +14,9 @@
 
 package com.liferay.portal.kernel.search.generic;
 
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.search.BaseQueryImpl;
 import com.liferay.portal.kernel.search.query.QueryVisitor;
-import com.liferay.portal.kernel.util.StringBundler;
 
 /**
  * @author Michael C. Han
@@ -195,7 +195,7 @@ public class MatchQuery extends BaseQueryImpl {
 	public enum RewriteMethod {
 
 		CONSTANT_SCORE_AUTO, CONSTANT_SCORE_BOOLEAN, CONSTANT_SCORE_FILTER,
-		SCORING_BOOLEAN, TOP_TERMS_N, TOP_TERMS_BOOST_N
+		SCORING_BOOLEAN, TOP_TERMS_BOOST_N, TOP_TERMS_N
 
 	}
 

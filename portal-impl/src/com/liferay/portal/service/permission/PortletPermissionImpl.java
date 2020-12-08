@@ -15,6 +15,8 @@
 package com.liferay.portal.service.permission;
 
 import com.liferay.exportimport.kernel.staging.permission.StagingPermissionUtil;
+import com.liferay.petra.lang.HashUtil;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -36,7 +38,6 @@ import com.liferay.portal.kernel.service.PortletLocalServiceUtil;
 import com.liferay.portal.kernel.service.permission.GroupPermissionUtil;
 import com.liferay.portal.kernel.service.permission.LayoutPermissionUtil;
 import com.liferay.portal.kernel.service.permission.PortletPermission;
-import com.liferay.portal.kernel.util.HashUtil;
 import com.liferay.portal.kernel.util.PortletCategoryKeys;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.sites.kernel.util.SitesUtil;
@@ -440,8 +441,8 @@ public class PortletPermissionImpl implements PortletPermission {
 
 	@Override
 	public String getPrimaryKey(long plid, String portletId) {
-		return String.valueOf(plid).concat(
-			PortletConstants.LAYOUT_SEPARATOR).concat(portletId);
+		return StringBundler.concat(
+			plid, PortletConstants.LAYOUT_SEPARATOR, portletId);
 	}
 
 	@Override
@@ -523,6 +524,10 @@ public class PortletPermissionImpl implements PortletPermission {
 			Portlet portlet)
 		throws PortalException {
 
+		if (portlet == null) {
+			return false;
+		}
+
 		Group group = GroupLocalServiceUtil.getGroup(scopeGroupId);
 
 		ControlPanelEntry controlPanelEntry =
@@ -532,9 +537,11 @@ public class PortletPermissionImpl implements PortletPermission {
 			return controlPanelEntry.hasAccessPermission(
 				permissionChecker, group, portlet);
 		}
-		catch (Exception e) {
+		catch (Exception exception) {
 			if (_log.isWarnEnabled()) {
-				_log.warn("Cannot process control panel access permission", e);
+				_log.warn(
+					"Cannot process control panel access permission",
+					exception);
 			}
 
 			return false;
@@ -566,8 +573,8 @@ public class PortletPermissionImpl implements PortletPermission {
 
 			return layoutManagerActions.contains(actionId);
 		}
-		catch (Exception e) {
-			_log.error(e, e);
+		catch (Exception exception) {
+			_log.error(exception, exception);
 
 			return false;
 		}
@@ -600,7 +607,10 @@ public class PortletPermissionImpl implements PortletPermission {
 			return false;
 		}
 
-		if (portlet.isPreferencesUniquePerLayout()) {
+		if (portlet.isPreferencesUniquePerLayout() &&
+			(layout.isTypeEmbedded() || layout.isTypePanel() ||
+			 layout.isTypePortlet())) {
+
 			return LayoutPermissionUtil.contains(
 				permissionChecker, layout, ActionKeys.CONFIGURE_PORTLETS);
 		}
@@ -608,24 +618,6 @@ public class PortletPermissionImpl implements PortletPermission {
 		return GroupPermissionUtil.contains(
 			permissionChecker, layout.getGroupId(),
 			ActionKeys.CONFIGURE_PORTLETS);
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link
-	 *             #hasConfigurePermission(
-	 *             PermissionChecker, Layout, Portlet, String)}
-	 */
-	@Deprecated
-	protected boolean hasConfigurePermission(
-			PermissionChecker permissionChecker, Layout layout,
-			String portletId, String actionId)
-		throws PortalException {
-
-		Portlet portlet = PortletLocalServiceUtil.getPortletById(
-			layout.getCompanyId(), portletId);
-
-		return hasConfigurePermission(
-			permissionChecker, layout, portlet, actionId);
 	}
 
 	protected boolean hasCustomizePermission(
@@ -656,24 +648,6 @@ public class PortletPermissionImpl implements PortletPermission {
 		return false;
 	}
 
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link
-	 *             #hasCustomizePermission(
-	 *             PermissionChecker, Layout, Portlet, String)}
-	 */
-	@Deprecated
-	protected boolean hasCustomizePermission(
-			PermissionChecker permissionChecker, Layout layout,
-			String portletId, String actionId)
-		throws PortalException {
-
-		Portlet portlet = PortletLocalServiceUtil.getPortletById(
-			layout.getCompanyId(), portletId);
-
-		return hasCustomizePermission(
-			permissionChecker, layout, portlet, actionId);
-	}
-
 	private boolean _contains(
 			PermissionChecker permissionChecker, long groupId, Layout layout,
 			Portlet portlet, String actionId, boolean strict,
@@ -682,15 +656,9 @@ public class PortletPermissionImpl implements PortletPermission {
 
 		String portletId = portlet.getPortletId();
 
-		String name = null;
-		String resourcePermissionPrimKey = null;
-
 		if (layout == null) {
-			name = portletId;
-			resourcePermissionPrimKey = portletId;
-
 			return permissionChecker.hasPermission(
-				groupId, name, resourcePermissionPrimKey, actionId);
+				groupId, portletId, portletId, actionId);
 		}
 
 		Group group = null;
@@ -746,7 +714,8 @@ public class PortletPermissionImpl implements PortletPermission {
 			}
 		}
 
-		resourcePermissionPrimKey = getPrimaryKey(layout.getPlid(), portletId);
+		String resourcePermissionPrimKey = getPrimaryKey(
+			layout.getPlid(), portletId);
 
 		if (strict) {
 			return permissionChecker.hasPermission(
@@ -775,16 +744,16 @@ public class PortletPermissionImpl implements PortletPermission {
 	private static class CacheKey {
 
 		@Override
-		public boolean equals(Object obj) {
-			if (this == obj) {
+		public boolean equals(Object object) {
+			if (this == object) {
 				return true;
 			}
 
-			if (!(obj instanceof CacheKey)) {
+			if (!(object instanceof CacheKey)) {
 				return false;
 			}
 
-			CacheKey cacheKey = (CacheKey)obj;
+			CacheKey cacheKey = (CacheKey)object;
 
 			if ((_groupId == cacheKey._groupId) && (_plid == cacheKey._plid) &&
 				(_layoutMvccVersion == cacheKey._layoutMvccVersion) &&

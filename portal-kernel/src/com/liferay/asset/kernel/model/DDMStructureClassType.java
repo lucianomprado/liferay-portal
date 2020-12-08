@@ -56,10 +56,7 @@ public class DDMStructureClassType implements ClassType {
 
 	@Override
 	public List<ClassTypeField> getClassTypeFields() throws PortalException {
-		List<ClassTypeField> classTypeFields = getClassTypeFields(
-			getClassTypeId());
-
-		return classTypeFields;
+		return getClassTypeFields(getClassTypeId());
 	}
 
 	@Override
@@ -96,7 +93,6 @@ public class DDMStructureClassType implements ClassType {
 
 		for (DDMFormField ddmFormField : ddmFormFields) {
 			String indexType = ddmFormField.getIndexType();
-			String name = ddmFormField.getName();
 
 			String type = ddmFormField.getType();
 
@@ -111,15 +107,16 @@ public class DDMStructureClassType implements ClassType {
 			classTypeFields.add(
 				new ClassTypeField(
 					label.getString(LocaleUtil.fromLanguageId(_languageId)),
-					name, type, ddmStructure.getStructureId()));
+					ddmFormField.getName(), type,
+					ddmStructure.getStructureId()));
 		}
 
 		return classTypeFields;
 	}
 
 	private static final String[] _SELECTABLE_DDM_STRUCTURE_FIELDS = {
-		"checkbox", "ddm-date", "ddm-decimal", "ddm-integer", "ddm-number",
-		"radio", "select", "text"
+		"checkbox", "ddm-date", "ddm-decimal", "ddm-image", "ddm-integer",
+		"ddm-number", "ddm-text-html", "radio", "select", "text", "textarea"
 	};
 
 	private final long _classTypeId;

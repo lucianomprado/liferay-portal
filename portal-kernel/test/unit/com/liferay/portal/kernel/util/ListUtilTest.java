@@ -14,6 +14,8 @@
 
 package com.liferay.portal.kernel.util;
 
+import com.liferay.petra.string.StringPool;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -33,17 +35,7 @@ public class ListUtilTest {
 	public void testCountEmptyList() {
 		List<String> list = new ArrayList<>();
 
-		PredicateFilter<String> predicateFilter =
-			new PredicateFilter<String>() {
-
-				@Override
-				public boolean filter(String string) {
-					return true;
-				}
-
-			};
-
-		Assert.assertEquals(0, ListUtil.count(list, predicateFilter));
+		Assert.assertEquals(0, ListUtil.count(list, s -> true));
 	}
 
 	@Test
@@ -54,62 +46,22 @@ public class ListUtilTest {
 		list.add("b");
 		list.add("c");
 
-		PredicateFilter<String> predicateFilter =
-			new PredicateFilter<String>() {
-
-				@Override
-				public boolean filter(String string) {
-					return string.equals("b");
-				}
-
-			};
-
-		Assert.assertEquals(1, ListUtil.count(list, predicateFilter));
-
-		predicateFilter = new PredicateFilter<String>() {
-
-			@Override
-			public boolean filter(String string) {
-				return string.equals("z");
-			}
-
-		};
-
-		Assert.assertEquals(0, ListUtil.count(list, predicateFilter));
+		Assert.assertEquals(1, ListUtil.count(list, s -> s.equals("b")));
+		Assert.assertEquals(0, ListUtil.count(list, s -> s.equals("z")));
 	}
 
 	@Test
 	public void testCountNullList() {
 		List<String> list = null;
 
-		PredicateFilter<String> predicateFilter =
-			new PredicateFilter<String>() {
-
-				@Override
-				public boolean filter(String string) {
-					return true;
-				}
-
-			};
-
-		Assert.assertEquals(0, ListUtil.count(list, predicateFilter));
+		Assert.assertEquals(0, ListUtil.count(list, s -> true));
 	}
 
 	@Test
 	public void testExistsEmptyList() {
 		List<String> list = new ArrayList<>();
 
-		PredicateFilter<String> predicateFilter =
-			new PredicateFilter<String>() {
-
-				@Override
-				public boolean filter(String string) {
-					return true;
-				}
-
-			};
-
-		Assert.assertFalse(ListUtil.exists(list, predicateFilter));
+		Assert.assertFalse(ListUtil.exists(list, s -> true));
 	}
 
 	@Test
@@ -120,49 +72,16 @@ public class ListUtilTest {
 		list.add("bb");
 		list.add("c");
 
-		PredicateFilter<String> predicateFilter =
-			new PredicateFilter<String>() {
+		Assert.assertTrue(ListUtil.exists(list, s -> s.length() == 2));
 
-				@Override
-				public boolean filter(String string) {
-					if (string.length() == 2) {
-						return true;
-					}
-
-					return false;
-				}
-
-			};
-
-		Assert.assertTrue(ListUtil.exists(list, predicateFilter));
-
-		predicateFilter = new PredicateFilter<String>() {
-
-			@Override
-			public boolean filter(String string) {
-				return string.equals("z");
-			}
-
-		};
-
-		Assert.assertFalse(ListUtil.exists(list, predicateFilter));
+		Assert.assertFalse(ListUtil.exists(list, s -> s.equals("z")));
 	}
 
 	@Test
 	public void testExistsNullList() {
 		List<String> list = null;
 
-		PredicateFilter<String> predicateFilter =
-			new PredicateFilter<String>() {
-
-				@Override
-				public boolean filter(String string) {
-					return true;
-				}
-
-			};
-
-		Assert.assertFalse(ListUtil.exists(list, predicateFilter));
+		Assert.assertFalse(ListUtil.exists(list, s -> true));
 	}
 
 	@Test
@@ -171,16 +90,6 @@ public class ListUtilTest {
 
 		expectedOutputList.add("b");
 
-		PredicateFilter<String> predicateFilter =
-			new PredicateFilter<String>() {
-
-				@Override
-				public boolean filter(String string) {
-					return string.equals("b");
-				}
-
-			};
-
 		List<String> inputList = new ArrayList<>();
 
 		inputList.add("a");
@@ -188,7 +97,7 @@ public class ListUtilTest {
 		inputList.add("c");
 
 		Collection<String> actualOutputList = ListUtil.filter(
-			inputList, predicateFilter);
+			inputList, s -> s.equals("b"));
 
 		Assert.assertEquals(expectedOutputList, actualOutputList);
 	}
@@ -210,18 +119,8 @@ public class ListUtilTest {
 
 		outputList.add("0");
 
-		PredicateFilter<String> predicateFilter =
-			new PredicateFilter<String>() {
-
-				@Override
-				public boolean filter(String string) {
-					return string.equals("b");
-				}
-
-			};
-
 		Collection<String> actualOutputList = ListUtil.filter(
-			inputList, outputList, predicateFilter);
+			inputList, outputList, s -> s.equals("b"));
 
 		Assert.assertSame(outputList, actualOutputList);
 		Assert.assertEquals(expectedOutputList, actualOutputList);
@@ -488,13 +387,13 @@ public class ListUtilTest {
 
 	@Test
 	public void testToList() throws Exception {
-		List<String> list = new ArrayList<>();
+		List<String> list1 = new ArrayList<>();
 
-		list.add("aaa");
-		list.add("bbb");
-		list.add("ccc");
+		list1.add("aaa");
+		list1.add("bbb");
+		list1.add("ccc");
 
-		List<Object> list2 = ListUtil.toList(list);
+		List<Object> list2 = ListUtil.toList(list1);
 
 		Assert.assertArrayEquals(
 			new Object[] {"aaa", "bbb", "ccc"}, list2.toArray());
@@ -510,7 +409,7 @@ public class ListUtilTest {
 
 				@Override
 				public Long get(String string) {
-					return Long.parseLong(string);
+					return GetterUtil.getLong(string);
 				}
 
 				@Override
@@ -538,7 +437,7 @@ public class ListUtilTest {
 
 				@Override
 				public Long get(String string) {
-					return Long.parseLong(string);
+					return GetterUtil.getLong(string);
 				}
 
 				@Override

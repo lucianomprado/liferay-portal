@@ -14,8 +14,6 @@
 
 package com.liferay.portal.kernel.deploy.auto;
 
-import com.liferay.portal.kernel.security.pacl.permission.PortalRuntimePermission;
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -31,9 +29,7 @@ public class AutoDeployUtil {
 	}
 
 	public static AutoDeployUtil getInstance() {
-		PortalRuntimePermission.checkGetBeanProperty(AutoDeployUtil.class);
-
-		return _instance;
+		return _autoDeployUtil;
 	}
 
 	public static void registerDir(AutoDeployDir autoDeployDir) {
@@ -66,7 +62,7 @@ public class AutoDeployUtil {
 		}
 	}
 
-	private static final AutoDeployUtil _instance = new AutoDeployUtil();
+	private static final AutoDeployUtil _autoDeployUtil = new AutoDeployUtil();
 
 	private final Map<String, AutoDeployDir> _autoDeployDirs;
 

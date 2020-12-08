@@ -22,8 +22,8 @@ import com.liferay.portal.kernel.model.Address;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.EmailAddress;
 import com.liferay.portal.kernel.model.Phone;
-import com.liferay.portal.kernel.model.RoleConstants;
 import com.liferay.portal.kernel.model.Website;
+import com.liferay.portal.kernel.model.role.RoleConstants;
 import com.liferay.portal.kernel.security.auth.PrincipalException;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.util.UnicodeProperties;
@@ -75,7 +75,7 @@ public class CompanyServiceImpl extends CompanyServiceBaseImpl {
 		}
 
 		return companyLocalService.addCompany(
-			webId, virtualHost, mx, system, maxUsers, active);
+			null, webId, virtualHost, mx, system, maxUsers, active);
 	}
 
 	@JSONWebService(mode = JSONWebServiceMode.IGNORE)
@@ -104,6 +104,16 @@ public class CompanyServiceImpl extends CompanyServiceBaseImpl {
 		}
 
 		companyLocalService.deleteLogo(companyId);
+	}
+
+	/**
+	 * Returns all the companies.
+	 *
+	 * @return the companies
+	 */
+	@Override
+	public List<Company> getCompanies() {
+		return companyLocalService.getCompanies();
 	}
 
 	/**
@@ -173,7 +183,6 @@ public class CompanyServiceImpl extends CompanyServiceBaseImpl {
 	 * @param companyId the primary key of the company
 	 * @param keys the company's preferences keys to be remove
 	 */
-	@JSONWebService(mode = JSONWebServiceMode.IGNORE)
 	@Override
 	public void removePreferences(long companyId, String[] keys)
 		throws PortalException {
@@ -221,7 +230,7 @@ public class CompanyServiceImpl extends CompanyServiceBaseImpl {
 	 * @param  virtualHost the company's virtual host name
 	 * @param  mx the company's mail domain
 	 * @param  homeURL the company's home URL (optionally <code>null</code>)
-	 * @param  logo whether to update the company's logo
+	 * @param  hasLogo if the company has a custom logo
 	 * @param  logoBytes the new logo image data
 	 * @param  name the company's account name (optionally <code>null</code>)
 	 * @param  legalName the company's account legal name (optionally
@@ -243,7 +252,7 @@ public class CompanyServiceImpl extends CompanyServiceBaseImpl {
 	@Override
 	public Company updateCompany(
 			long companyId, String virtualHost, String mx, String homeURL,
-			boolean logo, byte[] logoBytes, String name, String legalName,
+			boolean hasLogo, byte[] logoBytes, String name, String legalName,
 			String legalId, String legalType, String sicCode,
 			String tickerSymbol, String industry, String type, String size)
 		throws PortalException {
@@ -255,7 +264,7 @@ public class CompanyServiceImpl extends CompanyServiceBaseImpl {
 		}
 
 		return companyLocalService.updateCompany(
-			companyId, virtualHost, mx, homeURL, logo, logoBytes, name,
+			companyId, virtualHost, mx, homeURL, hasLogo, logoBytes, name,
 			legalName, legalId, legalType, sicCode, tickerSymbol, industry,
 			type, size);
 	}
@@ -267,7 +276,7 @@ public class CompanyServiceImpl extends CompanyServiceBaseImpl {
 	 * @param  virtualHost the company's virtual host name
 	 * @param  mx the company's mail domain
 	 * @param  homeURL the company's home URL (optionally <code>null</code>)
-	 * @param  logo if the company has a custom logo
+	 * @param  hasLogo if the company has a custom logo
 	 * @param  logoBytes the new logo image data
 	 * @param  name the company's account name (optionally <code>null</code>)
 	 * @param  legalName the company's account legal name (optionally
@@ -290,35 +299,35 @@ public class CompanyServiceImpl extends CompanyServiceBaseImpl {
 	 * @param  emailAddresses the company's email addresses
 	 * @param  phones the company's phone numbers
 	 * @param  websites the company's websites
-	 * @param  properties the company's properties
+	 * @param  unicodeProperties the company's properties
 	 * @return the company with the primary key
 	 */
 	@JSONWebService(mode = JSONWebServiceMode.IGNORE)
 	@Override
 	public Company updateCompany(
 			long companyId, String virtualHost, String mx, String homeURL,
-			boolean logo, byte[] logoBytes, String name, String legalName,
+			boolean hasLogo, byte[] logoBytes, String name, String legalName,
 			String legalId, String legalType, String sicCode,
 			String tickerSymbol, String industry, String type, String size,
 			String languageId, String timeZoneId, List<Address> addresses,
 			List<EmailAddress> emailAddresses, List<Phone> phones,
-			List<Website> websites, UnicodeProperties properties)
+			List<Website> websites, UnicodeProperties unicodeProperties)
 		throws PortalException {
 
 		PortletPreferences oldCompanyPortletPreferences =
 			PrefsPropsUtil.getPreferences(companyId);
 
 		Company company = updateCompany(
-			companyId, virtualHost, mx, homeURL, logo, logoBytes, name,
+			companyId, virtualHost, mx, homeURL, hasLogo, logoBytes, name,
 			legalName, legalId, legalType, sicCode, tickerSymbol, industry,
 			type, size);
 
 		updateDisplay(company.getCompanyId(), languageId, timeZoneId);
 
-		updatePreferences(company.getCompanyId(), properties);
+		updatePreferences(company.getCompanyId(), unicodeProperties);
 
 		RatingsDataTransformerUtil.transformCompanyRatingsData(
-			companyId, oldCompanyPortletPreferences, properties);
+			companyId, oldCompanyPortletPreferences, unicodeProperties);
 
 		UsersAdminUtil.updateAddresses(
 			Account.class.getName(), company.getAccountId(), addresses);
@@ -333,108 +342,6 @@ public class CompanyServiceImpl extends CompanyServiceBaseImpl {
 			Account.class.getName(), company.getAccountId(), websites);
 
 		return company;
-	}
-
-	/**
-	 * Updates the company with additional account information.
-	 *
-	 * @param      companyId the primary key of the company
-	 * @param      virtualHost the company's virtual host name
-	 * @param      mx the company's mail domain
-	 * @param      homeURL the company's home URL (optionally <code>null</code>)
-	 * @param      name the company's account name (optionally
-	 *             <code>null</code>)
-	 * @param      legalName the company's account legal name (optionally
-	 *             <code>null</code>)
-	 * @param      legalId the company's account legal ID (optionally
-	 *             <code>null</code>)
-	 * @param      legalType the company's account legal type (optionally
-	 *             <code>null</code>)
-	 * @param      sicCode the company's account SIC code (optionally
-	 *             <code>null</code>)
-	 * @param      tickerSymbol the company's account ticker symbol (optionally
-	 *             <code>null</code>)
-	 * @param      industry the the company's account industry (optionally
-	 *             <code>null</code>)
-	 * @param      type the company's account type (optionally
-	 *             <code>null</code>)
-	 * @param      size the company's account size (optionally
-	 *             <code>null</code>)
-	 * @return     the the company with the primary key
-	 * @deprecated As of 7.0.0, replaced by {@link #updateCompany(long, String,
-	 *             String, String, boolean, byte[], String, String, String,
-	 *             String, String, String, String, String, String)}
-	 */
-	@Deprecated
-	@Override
-	public Company updateCompany(
-			long companyId, String virtualHost, String mx, String homeURL,
-			String name, String legalName, String legalId, String legalType,
-			String sicCode, String tickerSymbol, String industry, String type,
-			String size)
-		throws PortalException {
-
-		return updateCompany(
-			companyId, virtualHost, mx, homeURL, true, null, name, legalName,
-			legalId, legalType, sicCode, tickerSymbol, industry, type, size);
-	}
-
-	/**
-	 * Updates the company with addition information.
-	 *
-	 * @param      companyId the primary key of the company
-	 * @param      virtualHost the company's virtual host name
-	 * @param      mx the company's mail domain
-	 * @param      homeURL the company's home URL (optionally <code>null</code>)
-	 * @param      name the company's account name (optionally
-	 *             <code>null</code>)
-	 * @param      legalName the company's account legal name (optionally
-	 *             <code>null</code>)
-	 * @param      legalId the company's accout legal ID (optionally
-	 *             <code>null</code>)
-	 * @param      legalType the company's account legal type (optionally
-	 *             <code>null</code>)
-	 * @param      sicCode the company's account SIC code (optionally
-	 *             <code>null</code>)
-	 * @param      tickerSymbol the company's account ticker symbol (optionally
-	 *             <code>null</code>)
-	 * @param      industry the the company's account industry (optionally
-	 *             <code>null</code>)
-	 * @param      type the company's account type (optionally
-	 *             <code>null</code>)
-	 * @param      size the company's account size (optionally
-	 *             <code>null</code>)
-	 * @param      languageId the ID of the company's default user's language
-	 * @param      timeZoneId the ID of the company's default user's time zone
-	 * @param      addresses the company's addresses
-	 * @param      emailAddresses the company's email addresses
-	 * @param      phones the company's phone numbers
-	 * @param      websites the company's websites
-	 * @param      properties the company's properties
-	 * @return     the company with the primary key
-	 * @deprecated As of 7.0.0, replaced by {@link #updateCompany(long, String,
-	 *             String, String, boolean, byte[], String, String, String,
-	 *             String, String, String, String, String, String, String,
-	 *             String, List, List, List, List, UnicodeProperties)}
-	 */
-	@Deprecated
-	@JSONWebService(mode = JSONWebServiceMode.IGNORE)
-	@Override
-	public Company updateCompany(
-			long companyId, String virtualHost, String mx, String homeURL,
-			String name, String legalName, String legalId, String legalType,
-			String sicCode, String tickerSymbol, String industry, String type,
-			String size, String languageId, String timeZoneId,
-			List<Address> addresses, List<EmailAddress> emailAddresses,
-			List<Phone> phones, List<Website> websites,
-			UnicodeProperties properties)
-		throws PortalException {
-
-		return updateCompany(
-			companyId, virtualHost, mx, homeURL, name, legalName, legalId,
-			legalType, sicCode, tickerSymbol, industry, type, size, languageId,
-			timeZoneId, addresses, emailAddresses, phones, websites,
-			properties);
 	}
 
 	/**
@@ -504,20 +411,24 @@ public class CompanyServiceImpl extends CompanyServiceBaseImpl {
 	 * found in portal.properties.
 	 *
 	 * @param companyId the primary key of the company
-	 * @param properties the company's properties. See {@link UnicodeProperties}
+	 * @param unicodeProperties the company's properties. See {@link
+	 *        UnicodeProperties}
 	 */
-	@JSONWebService(mode = JSONWebServiceMode.IGNORE)
 	@Override
-	public void updatePreferences(long companyId, UnicodeProperties properties)
+	public void updatePreferences(
+			long companyId, UnicodeProperties unicodeProperties)
 		throws PortalException {
 
-		if (!roleLocalService.hasUserRole(
-				getUserId(), companyId, RoleConstants.ADMINISTRATOR, true)) {
+		if (!(roleLocalService.hasUserRole(
+				getUserId(), companyId, RoleConstants.ADMINISTRATOR, true) ||
+			  roleLocalService.hasUserRole(
+				  getUserId(), companyId, RoleConstants.ANALYTICS_ADMINISTRATOR,
+				  true))) {
 
 			throw new PrincipalException();
 		}
 
-		companyLocalService.updatePreferences(companyId, properties);
+		companyLocalService.updatePreferences(companyId, unicodeProperties);
 	}
 
 	/**

@@ -14,12 +14,12 @@
 
 package com.liferay.portal.util;
 
-import com.liferay.portal.kernel.nio.charset.CharsetEncoderUtil;
-import com.liferay.portal.kernel.security.pacl.DoPrivileged;
+import com.liferay.petra.nio.CharsetEncoderUtil;
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.spring.osgi.OSGiBeanProperties;
-import com.liferay.portal.kernel.util.CharPool;
 import com.liferay.portal.kernel.util.FriendlyURLNormalizer;
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.portal.kernel.util.HttpUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.util.Normalizer;
@@ -29,59 +29,17 @@ import java.nio.CharBuffer;
 import java.nio.charset.CharsetEncoder;
 
 import java.util.Arrays;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * @author Brian Wing Shun Chan
  * @author Shuyang Zhou
  */
-@DoPrivileged
-@OSGiBeanProperties(property = {"service.ranking:Integer=100"})
+@OSGiBeanProperties(property = "service.ranking:Integer=100")
 public class FriendlyURLNormalizerImpl implements FriendlyURLNormalizer {
 
 	@Override
 	public String normalize(String friendlyURL) {
 		return normalize(friendlyURL, false);
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	@Override
-	public String normalize(String friendlyURL, Pattern friendlyURLPattern) {
-		if (Validator.isNull(friendlyURL)) {
-			return friendlyURL;
-		}
-
-		friendlyURL = StringUtil.toLowerCase(friendlyURL);
-		friendlyURL = Normalizer.normalizeToAscii(friendlyURL);
-
-		Matcher matcher = friendlyURLPattern.matcher(friendlyURL);
-
-		friendlyURL = matcher.replaceAll(StringPool.DASH);
-
-		StringBuilder sb = new StringBuilder(friendlyURL.length());
-
-		for (int i = 0; i < friendlyURL.length(); i++) {
-			char c = friendlyURL.charAt(i);
-
-			if (c == CharPool.DASH) {
-				if ((i == 0) || (CharPool.DASH != sb.charAt(sb.length() - 1))) {
-					sb.append(CharPool.DASH);
-				}
-			}
-			else {
-				sb.append(c);
-			}
-		}
-
-		if (sb.length() == friendlyURL.length()) {
-			return friendlyURL;
-		}
-
-		return sb.toString();
 	}
 
 	@Override
@@ -90,7 +48,15 @@ public class FriendlyURLNormalizerImpl implements FriendlyURLNormalizer {
 			return friendlyURL;
 		}
 
-		StringBuilder sb = new StringBuilder(friendlyURL.length());
+		String decodedFriendlyURL = HttpUtil.decodePath(friendlyURL);
+
+		if (Validator.isNull(decodedFriendlyURL)) {
+			decodedFriendlyURL = HttpUtil.decodePath(
+				StringUtil.replace(
+					friendlyURL, CharPool.PERCENT, CharPool.POUND));
+		}
+
+		StringBuilder sb = new StringBuilder(decodedFriendlyURL.length());
 
 		boolean modified = false;
 
@@ -99,8 +65,8 @@ public class FriendlyURLNormalizerImpl implements FriendlyURLNormalizer {
 
 		CharsetEncoder charsetEncoder = null;
 
-		for (int i = 0; i < friendlyURL.length(); i++) {
-			char c = friendlyURL.charAt(i);
+		for (int i = 0; i < decodedFriendlyURL.length(); i++) {
+			char c = decodedFriendlyURL.charAt(i);
 
 			if ((CharPool.UPPER_CASE_A <= c) && (c <= CharPool.UPPER_CASE_Z)) {
 				sb.append((char)(c + 32));
@@ -144,14 +110,14 @@ public class FriendlyURLNormalizerImpl implements FriendlyURLNormalizer {
 
 				boolean endOfInput = false;
 
-				if ((friendlyURL.length() - 1) == i) {
+				if ((decodedFriendlyURL.length() - 1) == i) {
 					endOfInput = true;
 				}
 
 				if (Character.isHighSurrogate(c) &&
-					(i + 1) < friendlyURL.length()) {
+					((i + 1) < decodedFriendlyURL.length())) {
 
-					c = friendlyURL.charAt(i + 1);
+					c = decodedFriendlyURL.charAt(i + 1);
 
 					if (Character.isLowSurrogate(c)) {
 						charBuffer.put(c);
@@ -256,7 +222,7 @@ public class FriendlyURLNormalizerImpl implements FriendlyURLNormalizer {
 	private static final char[] _REPLACE_CHARS;
 
 	static {
-		char[] replaceChars = new char[] {
+		char[] replaceChars = {
 			'-', ' ', ',', '\\', '\'', '\"', '(', ')', '[', ']', '{', '}', '?',
 			'#', '@', '+', '~', ';', '$', '!', '=', ':', '&', '\u00a3',
 			'\u2013', '\u2014', '\u2018', '\u2019', '\u201c', '\u201d'

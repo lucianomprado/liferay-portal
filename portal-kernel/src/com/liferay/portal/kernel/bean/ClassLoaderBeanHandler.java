@@ -58,16 +58,15 @@ public class ClassLoaderBeanHandler implements InvocationHandler {
 					if (proxy == arguments[0]) {
 						return true;
 					}
-					else {
-						return false;
-					}
+
+					return false;
 				}
 			}
 
 			return method.invoke(_bean, arguments);
 		}
-		catch (InvocationTargetException ite) {
-			throw ite.getTargetException();
+		catch (InvocationTargetException invocationTargetException) {
+			throw invocationTargetException.getTargetException();
 		}
 		finally {
 			if ((_classLoader != null) &&

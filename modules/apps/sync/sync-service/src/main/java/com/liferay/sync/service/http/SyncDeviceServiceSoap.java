@@ -14,30 +14,28 @@
 
 package com.liferay.sync.service.http;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-
 import com.liferay.sync.service.SyncDeviceServiceUtil;
 
 import java.rmi.RemoteException;
 
 /**
  * Provides the SOAP utility for the
- * {@link SyncDeviceServiceUtil} service utility. The
- * static methods of this class calls the same methods of the service utility.
- * However, the signatures are different because it is difficult for SOAP to
- * support certain types.
+ * <code>SyncDeviceServiceUtil</code> service
+ * utility. The static methods of this class call the same methods of the
+ * service utility. However, the signatures are different because it is
+ * difficult for SOAP to support certain types.
  *
  * <p>
  * ServiceBuilder follows certain rules in translating the methods. For example,
- * if the method in the service utility returns a {@link java.util.List}, that
- * is translated to an array of {@link com.liferay.sync.model.SyncDeviceSoap}.
- * If the method in the service utility returns a
- * {@link com.liferay.sync.model.SyncDevice}, that is translated to a
- * {@link com.liferay.sync.model.SyncDeviceSoap}. Methods that SOAP cannot
- * safely wire are skipped.
+ * if the method in the service utility returns a <code>java.util.List</code>,
+ * that is translated to an array of
+ * <code>com.liferay.sync.model.SyncDeviceSoap</code>. If the method in the
+ * service utility returns a
+ * <code>com.liferay.sync.model.SyncDevice</code>, that is translated to a
+ * <code>com.liferay.sync.model.SyncDeviceSoap</code>. Methods that SOAP
+ * cannot safely wire are skipped.
  * </p>
  *
  * <p>
@@ -59,39 +57,45 @@ import java.rmi.RemoteException;
  *
  * @author Brian Wing Shun Chan
  * @see SyncDeviceServiceHttp
- * @see com.liferay.sync.model.SyncDeviceSoap
- * @see SyncDeviceServiceUtil
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
-@ProviderType
+@Deprecated
 public class SyncDeviceServiceSoap {
+
 	public static com.liferay.sync.model.SyncDeviceSoap registerSyncDevice(
-		java.lang.String type, long buildNumber, int featureSet,
-		java.lang.String uuid) throws RemoteException {
+			String type, long buildNumber, int featureSet, String uuid)
+		throws RemoteException {
+
 		try {
-			com.liferay.sync.model.SyncDevice returnValue = SyncDeviceServiceUtil.registerSyncDevice(type,
-					buildNumber, featureSet, uuid);
+			com.liferay.sync.model.SyncDevice returnValue =
+				SyncDeviceServiceUtil.registerSyncDevice(
+					type, buildNumber, featureSet, uuid);
 
-			return com.liferay.sync.model.SyncDeviceSoap.toSoapModel(returnValue);
+			return com.liferay.sync.model.SyncDeviceSoap.toSoapModel(
+				returnValue);
 		}
-		catch (Exception e) {
-			_log.error(e, e);
+		catch (Exception exception) {
+			_log.error(exception, exception);
 
-			throw new RemoteException(e.getMessage());
+			throw new RemoteException(exception.getMessage());
 		}
 	}
 
-	public static void unregisterSyncDevice(java.lang.String uuid)
+	public static void unregisterSyncDevice(String uuid)
 		throws RemoteException {
+
 		try {
 			SyncDeviceServiceUtil.unregisterSyncDevice(uuid);
 		}
-		catch (Exception e) {
-			_log.error(e, e);
+		catch (Exception exception) {
+			_log.error(exception, exception);
 
-			throw new RemoteException(e.getMessage());
+			throw new RemoteException(exception.getMessage());
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(SyncDeviceServiceSoap.class);
+	private static Log _log = LogFactoryUtil.getLog(
+		SyncDeviceServiceSoap.class);
+
 }

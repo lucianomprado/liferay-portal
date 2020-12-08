@@ -23,7 +23,6 @@ import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -38,11 +37,6 @@ import org.powermock.modules.junit4.PowerMockRunner;
 @PrepareForTest(LanguageUtil.class)
 @RunWith(PowerMockRunner.class)
 public class LocaleUtilTest extends PowerMockito {
-
-	@After
-	public void tearDown() {
-		verifyStatic();
-	}
 
 	@Test
 	public void testFromLanguageId() {
@@ -74,6 +68,38 @@ public class LocaleUtilTest extends PowerMockito {
 			Assert.assertEquals(
 				"en is not a valid language id", logRecord.getMessage());
 		}
+	}
+
+	@Test
+	public void testFromLanguageIdBCP47() {
+		mockStatic(LanguageUtil.class);
+
+		when(
+			LanguageUtil.isAvailableLocale(Locale.US)
+		).thenReturn(
+			true
+		);
+
+		Assert.assertEquals(Locale.US, LocaleUtil.fromLanguageId("en-US"));
+
+		when(
+			LanguageUtil.isAvailableLocale(Locale.SIMPLIFIED_CHINESE)
+		).thenReturn(
+			true
+		);
+
+		Assert.assertEquals(
+			Locale.SIMPLIFIED_CHINESE, LocaleUtil.fromLanguageId("zh-Hans-CN"));
+
+		when(
+			LanguageUtil.isAvailableLocale(Locale.TRADITIONAL_CHINESE)
+		).thenReturn(
+			true
+		);
+
+		Assert.assertEquals(
+			Locale.TRADITIONAL_CHINESE,
+			LocaleUtil.fromLanguageId("zh-Hant-TW"));
 	}
 
 }

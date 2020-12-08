@@ -36,9 +36,9 @@ import com.liferay.portal.kernel.repository.model.Folder;
 import com.liferay.portal.kernel.repository.model.RepositoryModelOperation;
 import com.liferay.portal.kernel.security.auth.PrincipalThreadLocal;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
+import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
 import com.liferay.portal.kernel.util.ContentTypes;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portlet.documentlibrary.service.permission.DLFileEntryPermission;
+import com.liferay.portal.kernel.util.ServiceProxyFactory;
 import com.liferay.portlet.documentlibrary.util.RepositoryModelUtil;
 
 import java.io.InputStream;
@@ -58,8 +58,8 @@ public class LiferayFileEntry extends LiferayModel implements FileEntry {
 		this(dlFileEntry, dlFileEntry.isEscapedModel());
 	}
 
-	public LiferayFileEntry(DLFileEntry fileEntry, boolean escapedModel) {
-		_dlFileEntry = fileEntry;
+	public LiferayFileEntry(DLFileEntry dlFileEntry, boolean escapedModel) {
+		_dlFileEntry = dlFileEntry;
 		_escapedModel = escapedModel;
 	}
 
@@ -73,21 +73,21 @@ public class LiferayFileEntry extends LiferayModel implements FileEntry {
 			PermissionChecker permissionChecker, String actionId)
 		throws PortalException {
 
-		return DLFileEntryPermission.contains(
+		return _dlFileEntryModelResourcePermission.contains(
 			permissionChecker, _dlFileEntry, actionId);
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
+	public boolean equals(Object object) {
+		if (this == object) {
 			return true;
 		}
 
-		if (!(obj instanceof LiferayFileEntry)) {
+		if (!(object instanceof LiferayFileEntry)) {
 			return false;
 		}
 
-		LiferayFileEntry liferayFileEntry = (LiferayFileEntry)obj;
+		LiferayFileEntry liferayFileEntry = (LiferayFileEntry)object;
 
 		if (Objects.equals(_dlFileEntry, liferayFileEntry._dlFileEntry)) {
 			return true;
@@ -131,8 +131,8 @@ public class LiferayFileEntry extends LiferayModel implements FileEntry {
 			DLAppHelperLocalServiceUtil.getFileAsStream(
 				PrincipalThreadLocal.getUserId(), this, true);
 		}
-		catch (Exception e) {
-			_log.error("Unable to get content stream", e);
+		catch (Exception exception) {
+			_log.error("Unable to get content stream", exception);
 		}
 
 		return inputStream;
@@ -146,8 +146,8 @@ public class LiferayFileEntry extends LiferayModel implements FileEntry {
 			DLAppHelperLocalServiceUtil.getFileAsStream(
 				PrincipalThreadLocal.getUserId(), this, true);
 		}
-		catch (Exception e) {
-			_log.error("Error getting document stream", e);
+		catch (Exception exception) {
+			_log.error("Error getting document stream", exception);
 		}
 
 		return inputStream;
@@ -222,16 +222,16 @@ public class LiferayFileEntry extends LiferayModel implements FileEntry {
 
 	@Override
 	public Folder getFolder() {
-		Folder folder = null;
-
 		try {
-			folder = new LiferayFolder(_dlFileEntry.getFolder());
+			return new LiferayFolder(_dlFileEntry.getFolder());
 		}
-		catch (Exception e) {
+		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
+
 			return null;
 		}
-
-		return folder;
 	}
 
 	@Override
@@ -291,10 +291,13 @@ public class LiferayFileEntry extends LiferayModel implements FileEntry {
 
 			return dlFileVersion.getMimeType();
 		}
-		catch (Exception e) {
-		}
+		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
 
-		return ContentTypes.APPLICATION_OCTET_STREAM;
+			return ContentTypes.APPLICATION_OCTET_STREAM;
+		}
 	}
 
 	@Override
@@ -328,7 +331,7 @@ public class LiferayFileEntry extends LiferayModel implements FileEntry {
 	}
 
 	@Override
-	public int getReadCount() {
+	public long getReadCount() {
 		return _dlFileEntry.getReadCount();
 	}
 
@@ -386,66 +389,6 @@ public class LiferayFileEntry extends LiferayModel implements FileEntry {
 		return _dlFileEntry.getVersion();
 	}
 
-	/**
-	 * @deprecated As of 6.2.0, replaced by {@link DLFileVersion#getUserId()}
-	 */
-	@Deprecated
-	@Override
-	public long getVersionUserId() {
-		long versionUserId = 0;
-
-		try {
-			DLFileVersion dlFileVersion = _dlFileEntry.getFileVersion();
-
-			versionUserId = dlFileVersion.getUserId();
-		}
-		catch (Exception e) {
-			_log.error(e, e);
-		}
-
-		return versionUserId;
-	}
-
-	/**
-	 * @deprecated As of 6.2.0, replaced by {@link DLFileVersion#getUserName()}
-	 */
-	@Deprecated
-	@Override
-	public String getVersionUserName() {
-		String versionUserName = StringPool.BLANK;
-
-		try {
-			DLFileVersion dlFileVersion = _dlFileEntry.getFileVersion();
-
-			versionUserName = dlFileVersion.getUserName();
-		}
-		catch (Exception e) {
-			_log.error(e, e);
-		}
-
-		return versionUserName;
-	}
-
-	/**
-	 * @deprecated As of 6.2.0, replaced by {@link DLFileVersion#getUserUuid()}
-	 */
-	@Deprecated
-	@Override
-	public String getVersionUserUuid() {
-		String versionUserUuid = StringPool.BLANK;
-
-		try {
-			DLFileVersion dlFileVersion = _dlFileEntry.getFileVersion();
-
-			versionUserUuid = dlFileVersion.getUserUuid();
-		}
-		catch (Exception e) {
-			_log.error(e, e);
-		}
-
-		return versionUserUuid;
-	}
-
 	@Override
 	public int hashCode() {
 		return _dlFileEntry.hashCode();
@@ -466,9 +409,8 @@ public class LiferayFileEntry extends LiferayModel implements FileEntry {
 		if (_dlFileEntry.getGroupId() == _dlFileEntry.getRepositoryId()) {
 			return true;
 		}
-		else {
-			return false;
-		}
+
+		return false;
 	}
 
 	@Override
@@ -486,7 +428,11 @@ public class LiferayFileEntry extends LiferayModel implements FileEntry {
 		try {
 			return _dlFileEntry.isInTrashContainer();
 		}
-		catch (Exception e) {
+		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception, exception);
+			}
+
 			return false;
 		}
 	}
@@ -555,7 +501,7 @@ public class LiferayFileEntry extends LiferayModel implements FileEntry {
 
 	@Override
 	public void setPrimaryKeyObj(Serializable primaryKeyObj) {
-		setPrimaryKey(((Long)primaryKeyObj).longValue());
+		setPrimaryKey((Long)primaryKeyObj);
 	}
 
 	@Override
@@ -583,9 +529,8 @@ public class LiferayFileEntry extends LiferayModel implements FileEntry {
 		if (isEscapedModel()) {
 			return this;
 		}
-		else {
-			return new LiferayFileEntry(_dlFileEntry.toEscapedModel(), true);
-		}
+
+		return new LiferayFileEntry(_dlFileEntry.toEscapedModel(), true);
 	}
 
 	@Override
@@ -598,24 +543,30 @@ public class LiferayFileEntry extends LiferayModel implements FileEntry {
 		if (isEscapedModel()) {
 			return new LiferayFileEntry(_dlFileEntry.toUnescapedModel(), true);
 		}
-		else {
-			return this;
-		}
+
+		return this;
 	}
 
 	protected Repository getRepository() {
 		try {
 			return RepositoryProviderUtil.getRepository(getRepositoryId());
 		}
-		catch (PortalException pe) {
+		catch (PortalException portalException) {
 			throw new SystemException(
 				"Unable to get repository for file entry " + getFileEntryId(),
-				pe);
+				portalException);
 		}
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		LiferayFileEntry.class);
+
+	private static volatile ModelResourcePermission<DLFileEntry>
+		_dlFileEntryModelResourcePermission =
+			ServiceProxyFactory.newServiceTrackedInstance(
+				ModelResourcePermission.class, LiferayFileEntry.class,
+				"_dlFileEntryModelResourcePermission",
+				"(model.class.name=" + DLFileEntry.class.getName() + ")", true);
 
 	private final DLFileEntry _dlFileEntry;
 	private DLFileVersion _dlFileVersion;

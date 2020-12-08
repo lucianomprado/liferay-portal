@@ -14,8 +14,8 @@
 
 package com.liferay.portal.service.base;
 
-import aQute.bnd.annotation.ProviderType;
-
+import com.liferay.petra.function.UnsafeFunction;
+import com.liferay.petra.sql.dsl.query.DSLQuery;
 import com.liferay.portal.kernel.bean.BeanReference;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
@@ -37,15 +37,19 @@ import com.liferay.portal.kernel.search.IndexableType;
 import com.liferay.portal.kernel.service.BaseLocalServiceImpl;
 import com.liferay.portal.kernel.service.PersistedModelLocalServiceRegistry;
 import com.liferay.portal.kernel.service.PortletPreferencesLocalService;
+import com.liferay.portal.kernel.service.persistence.BasePersistence;
 import com.liferay.portal.kernel.service.persistence.LayoutFinder;
 import com.liferay.portal.kernel.service.persistence.LayoutPersistence;
 import com.liferay.portal.kernel.service.persistence.LayoutRevisionPersistence;
 import com.liferay.portal.kernel.service.persistence.PortletItemPersistence;
 import com.liferay.portal.kernel.service.persistence.PortletPersistence;
+import com.liferay.portal.kernel.service.persistence.PortletPreferenceValuePersistence;
 import com.liferay.portal.kernel.service.persistence.PortletPreferencesFinder;
 import com.liferay.portal.kernel.service.persistence.PortletPreferencesPersistence;
 import com.liferay.portal.kernel.service.persistence.UserFinder;
 import com.liferay.portal.kernel.service.persistence.UserPersistence;
+import com.liferay.portal.kernel.service.persistence.change.tracking.CTPersistence;
+import com.liferay.portal.kernel.transaction.Transactional;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.PortalUtil;
 
@@ -64,21 +68,24 @@ import javax.sql.DataSource;
  *
  * @author Brian Wing Shun Chan
  * @see com.liferay.portal.service.impl.PortletPreferencesLocalServiceImpl
- * @see com.liferay.portal.kernel.service.PortletPreferencesLocalServiceUtil
  * @generated
  */
-@ProviderType
 public abstract class PortletPreferencesLocalServiceBaseImpl
-	extends BaseLocalServiceImpl implements PortletPreferencesLocalService,
-		IdentifiableOSGiService {
+	extends BaseLocalServiceImpl
+	implements IdentifiableOSGiService, PortletPreferencesLocalService {
+
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. Always use {@link com.liferay.portal.kernel.service.PortletPreferencesLocalServiceUtil} to access the portlet preferences local service.
+	 * Never modify or reference this class directly. Use <code>PortletPreferencesLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>com.liferay.portal.kernel.service.PortletPreferencesLocalServiceUtil</code>.
 	 */
 
 	/**
 	 * Adds the portlet preferences to the database. Also notifies the appropriate model listeners.
+	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect PortletPreferencesLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
 	 *
 	 * @param portletPreferences the portlet preferences
 	 * @return the portlet preferences that was added
@@ -87,6 +94,7 @@ public abstract class PortletPreferencesLocalServiceBaseImpl
 	@Override
 	public PortletPreferences addPortletPreferences(
 		PortletPreferences portletPreferences) {
+
 		portletPreferences.setNew(true);
 
 		return portletPreferencesPersistence.update(portletPreferences);
@@ -99,13 +107,19 @@ public abstract class PortletPreferencesLocalServiceBaseImpl
 	 * @return the new portlet preferences
 	 */
 	@Override
+	@Transactional(enabled = false)
 	public PortletPreferences createPortletPreferences(
 		long portletPreferencesId) {
+
 		return portletPreferencesPersistence.create(portletPreferencesId);
 	}
 
 	/**
 	 * Deletes the portlet preferences with the primary key from the database. Also notifies the appropriate model listeners.
+	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect PortletPreferencesLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
 	 *
 	 * @param portletPreferencesId the primary key of the portlet preferences
 	 * @return the portlet preferences that was removed
@@ -114,12 +128,18 @@ public abstract class PortletPreferencesLocalServiceBaseImpl
 	@Indexable(type = IndexableType.DELETE)
 	@Override
 	public PortletPreferences deletePortletPreferences(
-		long portletPreferencesId) throws PortalException {
+			long portletPreferencesId)
+		throws PortalException {
+
 		return portletPreferencesPersistence.remove(portletPreferencesId);
 	}
 
 	/**
 	 * Deletes the portlet preferences from the database. Also notifies the appropriate model listeners.
+	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect PortletPreferencesLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
 	 *
 	 * @param portletPreferences the portlet preferences
 	 * @return the portlet preferences that was removed
@@ -128,15 +148,21 @@ public abstract class PortletPreferencesLocalServiceBaseImpl
 	@Override
 	public PortletPreferences deletePortletPreferences(
 		PortletPreferences portletPreferences) {
+
 		return portletPreferencesPersistence.remove(portletPreferences);
+	}
+
+	@Override
+	public <T> T dslQuery(DSLQuery dslQuery) {
+		return portletPreferencesPersistence.dslQuery(dslQuery);
 	}
 
 	@Override
 	public DynamicQuery dynamicQuery() {
 		Class<?> clazz = getClass();
 
-		return DynamicQueryFactoryUtil.forClass(PortletPreferences.class,
-			clazz.getClassLoader());
+		return DynamicQueryFactoryUtil.forClass(
+			PortletPreferences.class, clazz.getClassLoader());
 	}
 
 	/**
@@ -154,7 +180,7 @@ public abstract class PortletPreferencesLocalServiceBaseImpl
 	 * Performs a dynamic query on the database and returns a range of the matching rows.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portal.model.impl.PortletPreferencesModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>com.liferay.portal.model.impl.PortletPreferencesModelImpl</code>.
 	 * </p>
 	 *
 	 * @param dynamicQuery the dynamic query
@@ -163,17 +189,18 @@ public abstract class PortletPreferencesLocalServiceBaseImpl
 	 * @return the range of matching rows
 	 */
 	@Override
-	public <T> List<T> dynamicQuery(DynamicQuery dynamicQuery, int start,
-		int end) {
-		return portletPreferencesPersistence.findWithDynamicQuery(dynamicQuery,
-			start, end);
+	public <T> List<T> dynamicQuery(
+		DynamicQuery dynamicQuery, int start, int end) {
+
+		return portletPreferencesPersistence.findWithDynamicQuery(
+			dynamicQuery, start, end);
 	}
 
 	/**
 	 * Performs a dynamic query on the database and returns an ordered range of the matching rows.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portal.model.impl.PortletPreferencesModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>com.liferay.portal.model.impl.PortletPreferencesModelImpl</code>.
 	 * </p>
 	 *
 	 * @param dynamicQuery the dynamic query
@@ -183,10 +210,12 @@ public abstract class PortletPreferencesLocalServiceBaseImpl
 	 * @return the ordered range of matching rows
 	 */
 	@Override
-	public <T> List<T> dynamicQuery(DynamicQuery dynamicQuery, int start,
-		int end, OrderByComparator<T> orderByComparator) {
-		return portletPreferencesPersistence.findWithDynamicQuery(dynamicQuery,
-			start, end, orderByComparator);
+	public <T> List<T> dynamicQuery(
+		DynamicQuery dynamicQuery, int start, int end,
+		OrderByComparator<T> orderByComparator) {
+
+		return portletPreferencesPersistence.findWithDynamicQuery(
+			dynamicQuery, start, end, orderByComparator);
 	}
 
 	/**
@@ -197,7 +226,8 @@ public abstract class PortletPreferencesLocalServiceBaseImpl
 	 */
 	@Override
 	public long dynamicQueryCount(DynamicQuery dynamicQuery) {
-		return portletPreferencesPersistence.countWithDynamicQuery(dynamicQuery);
+		return portletPreferencesPersistence.countWithDynamicQuery(
+			dynamicQuery);
 	}
 
 	/**
@@ -208,15 +238,19 @@ public abstract class PortletPreferencesLocalServiceBaseImpl
 	 * @return the number of rows matching the dynamic query
 	 */
 	@Override
-	public long dynamicQueryCount(DynamicQuery dynamicQuery,
-		Projection projection) {
-		return portletPreferencesPersistence.countWithDynamicQuery(dynamicQuery,
-			projection);
+	public long dynamicQueryCount(
+		DynamicQuery dynamicQuery, Projection projection) {
+
+		return portletPreferencesPersistence.countWithDynamicQuery(
+			dynamicQuery, projection);
 	}
 
 	@Override
-	public PortletPreferences fetchPortletPreferences(long portletPreferencesId) {
-		return portletPreferencesPersistence.fetchByPrimaryKey(portletPreferencesId);
+	public PortletPreferences fetchPortletPreferences(
+		long portletPreferencesId) {
+
+		return portletPreferencesPersistence.fetchByPrimaryKey(
+			portletPreferencesId);
 	}
 
 	/**
@@ -229,27 +263,36 @@ public abstract class PortletPreferencesLocalServiceBaseImpl
 	@Override
 	public PortletPreferences getPortletPreferences(long portletPreferencesId)
 		throws PortalException {
-		return portletPreferencesPersistence.findByPrimaryKey(portletPreferencesId);
+
+		return portletPreferencesPersistence.findByPrimaryKey(
+			portletPreferencesId);
 	}
 
 	@Override
 	public ActionableDynamicQuery getActionableDynamicQuery() {
-		ActionableDynamicQuery actionableDynamicQuery = new DefaultActionableDynamicQuery();
+		ActionableDynamicQuery actionableDynamicQuery =
+			new DefaultActionableDynamicQuery();
 
-		actionableDynamicQuery.setBaseLocalService(portletPreferencesLocalService);
+		actionableDynamicQuery.setBaseLocalService(
+			portletPreferencesLocalService);
 		actionableDynamicQuery.setClassLoader(getClassLoader());
 		actionableDynamicQuery.setModelClass(PortletPreferences.class);
 
-		actionableDynamicQuery.setPrimaryKeyPropertyName("portletPreferencesId");
+		actionableDynamicQuery.setPrimaryKeyPropertyName(
+			"portletPreferencesId");
 
 		return actionableDynamicQuery;
 	}
 
 	@Override
-	public IndexableActionableDynamicQuery getIndexableActionableDynamicQuery() {
-		IndexableActionableDynamicQuery indexableActionableDynamicQuery = new IndexableActionableDynamicQuery();
+	public IndexableActionableDynamicQuery
+		getIndexableActionableDynamicQuery() {
 
-		indexableActionableDynamicQuery.setBaseLocalService(portletPreferencesLocalService);
+		IndexableActionableDynamicQuery indexableActionableDynamicQuery =
+			new IndexableActionableDynamicQuery();
+
+		indexableActionableDynamicQuery.setBaseLocalService(
+			portletPreferencesLocalService);
 		indexableActionableDynamicQuery.setClassLoader(getClassLoader());
 		indexableActionableDynamicQuery.setModelClass(PortletPreferences.class);
 
@@ -261,11 +304,25 @@ public abstract class PortletPreferencesLocalServiceBaseImpl
 
 	protected void initActionableDynamicQuery(
 		ActionableDynamicQuery actionableDynamicQuery) {
-		actionableDynamicQuery.setBaseLocalService(portletPreferencesLocalService);
+
+		actionableDynamicQuery.setBaseLocalService(
+			portletPreferencesLocalService);
 		actionableDynamicQuery.setClassLoader(getClassLoader());
 		actionableDynamicQuery.setModelClass(PortletPreferences.class);
 
-		actionableDynamicQuery.setPrimaryKeyPropertyName("portletPreferencesId");
+		actionableDynamicQuery.setPrimaryKeyPropertyName(
+			"portletPreferencesId");
+	}
+
+	/**
+	 * @throws PortalException
+	 */
+	@Override
+	public PersistedModel createPersistedModel(Serializable primaryKeyObj)
+		throws PortalException {
+
+		return portletPreferencesPersistence.create(
+			((Long)primaryKeyObj).longValue());
 	}
 
 	/**
@@ -274,12 +331,23 @@ public abstract class PortletPreferencesLocalServiceBaseImpl
 	@Override
 	public PersistedModel deletePersistedModel(PersistedModel persistedModel)
 		throws PortalException {
-		return portletPreferencesLocalService.deletePortletPreferences((PortletPreferences)persistedModel);
+
+		return portletPreferencesLocalService.deletePortletPreferences(
+			(PortletPreferences)persistedModel);
 	}
 
 	@Override
+	public BasePersistence<PortletPreferences> getBasePersistence() {
+		return portletPreferencesPersistence;
+	}
+
+	/**
+	 * @throws PortalException
+	 */
+	@Override
 	public PersistedModel getPersistedModel(Serializable primaryKeyObj)
 		throws PortalException {
+
 		return portletPreferencesPersistence.findByPrimaryKey(primaryKeyObj);
 	}
 
@@ -287,7 +355,7 @@ public abstract class PortletPreferencesLocalServiceBaseImpl
 	 * Returns a range of all the portlet preferenceses.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portal.model.impl.PortletPreferencesModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>com.liferay.portal.model.impl.PortletPreferencesModelImpl</code>.
 	 * </p>
 	 *
 	 * @param start the lower bound of the range of portlet preferenceses
@@ -295,7 +363,9 @@ public abstract class PortletPreferencesLocalServiceBaseImpl
 	 * @return the range of portlet preferenceses
 	 */
 	@Override
-	public List<PortletPreferences> getPortletPreferenceses(int start, int end) {
+	public List<PortletPreferences> getPortletPreferenceses(
+		int start, int end) {
+
 		return portletPreferencesPersistence.findAll(start, end);
 	}
 
@@ -312,6 +382,10 @@ public abstract class PortletPreferencesLocalServiceBaseImpl
 	/**
 	 * Updates the portlet preferences in the database or adds it if it does not yet exist. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect PortletPreferencesLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param portletPreferences the portlet preferences
 	 * @return the portlet preferences that was updated
 	 */
@@ -319,6 +393,7 @@ public abstract class PortletPreferencesLocalServiceBaseImpl
 	@Override
 	public PortletPreferences updatePortletPreferences(
 		PortletPreferences portletPreferences) {
+
 		return portletPreferencesPersistence.update(portletPreferences);
 	}
 
@@ -338,6 +413,7 @@ public abstract class PortletPreferencesLocalServiceBaseImpl
 	 */
 	public void setPortletPreferencesLocalService(
 		PortletPreferencesLocalService portletPreferencesLocalService) {
+
 		this.portletPreferencesLocalService = portletPreferencesLocalService;
 	}
 
@@ -357,6 +433,7 @@ public abstract class PortletPreferencesLocalServiceBaseImpl
 	 */
 	public void setPortletPreferencesPersistence(
 		PortletPreferencesPersistence portletPreferencesPersistence) {
+
 		this.portletPreferencesPersistence = portletPreferencesPersistence;
 	}
 
@@ -376,6 +453,7 @@ public abstract class PortletPreferencesLocalServiceBaseImpl
 	 */
 	public void setPortletPreferencesFinder(
 		PortletPreferencesFinder portletPreferencesFinder) {
+
 		this.portletPreferencesFinder = portletPreferencesFinder;
 	}
 
@@ -384,7 +462,9 @@ public abstract class PortletPreferencesLocalServiceBaseImpl
 	 *
 	 * @return the counter local service
 	 */
-	public com.liferay.counter.kernel.service.CounterLocalService getCounterLocalService() {
+	public com.liferay.counter.kernel.service.CounterLocalService
+		getCounterLocalService() {
+
 		return counterLocalService;
 	}
 
@@ -394,7 +474,9 @@ public abstract class PortletPreferencesLocalServiceBaseImpl
 	 * @param counterLocalService the counter local service
 	 */
 	public void setCounterLocalService(
-		com.liferay.counter.kernel.service.CounterLocalService counterLocalService) {
+		com.liferay.counter.kernel.service.CounterLocalService
+			counterLocalService) {
+
 		this.counterLocalService = counterLocalService;
 	}
 
@@ -403,7 +485,9 @@ public abstract class PortletPreferencesLocalServiceBaseImpl
 	 *
 	 * @return the layout local service
 	 */
-	public com.liferay.portal.kernel.service.LayoutLocalService getLayoutLocalService() {
+	public com.liferay.portal.kernel.service.LayoutLocalService
+		getLayoutLocalService() {
+
 		return layoutLocalService;
 	}
 
@@ -413,7 +497,9 @@ public abstract class PortletPreferencesLocalServiceBaseImpl
 	 * @param layoutLocalService the layout local service
 	 */
 	public void setLayoutLocalService(
-		com.liferay.portal.kernel.service.LayoutLocalService layoutLocalService) {
+		com.liferay.portal.kernel.service.LayoutLocalService
+			layoutLocalService) {
+
 		this.layoutLocalService = layoutLocalService;
 	}
 
@@ -458,7 +544,9 @@ public abstract class PortletPreferencesLocalServiceBaseImpl
 	 *
 	 * @return the layout revision local service
 	 */
-	public com.liferay.portal.kernel.service.LayoutRevisionLocalService getLayoutRevisionLocalService() {
+	public com.liferay.portal.kernel.service.LayoutRevisionLocalService
+		getLayoutRevisionLocalService() {
+
 		return layoutRevisionLocalService;
 	}
 
@@ -468,7 +556,9 @@ public abstract class PortletPreferencesLocalServiceBaseImpl
 	 * @param layoutRevisionLocalService the layout revision local service
 	 */
 	public void setLayoutRevisionLocalService(
-		com.liferay.portal.kernel.service.LayoutRevisionLocalService layoutRevisionLocalService) {
+		com.liferay.portal.kernel.service.LayoutRevisionLocalService
+			layoutRevisionLocalService) {
+
 		this.layoutRevisionLocalService = layoutRevisionLocalService;
 	}
 
@@ -488,6 +578,7 @@ public abstract class PortletPreferencesLocalServiceBaseImpl
 	 */
 	public void setLayoutRevisionPersistence(
 		LayoutRevisionPersistence layoutRevisionPersistence) {
+
 		this.layoutRevisionPersistence = layoutRevisionPersistence;
 	}
 
@@ -496,7 +587,9 @@ public abstract class PortletPreferencesLocalServiceBaseImpl
 	 *
 	 * @return the portlet local service
 	 */
-	public com.liferay.portal.kernel.service.PortletLocalService getPortletLocalService() {
+	public com.liferay.portal.kernel.service.PortletLocalService
+		getPortletLocalService() {
+
 		return portletLocalService;
 	}
 
@@ -506,7 +599,9 @@ public abstract class PortletPreferencesLocalServiceBaseImpl
 	 * @param portletLocalService the portlet local service
 	 */
 	public void setPortletLocalService(
-		com.liferay.portal.kernel.service.PortletLocalService portletLocalService) {
+		com.liferay.portal.kernel.service.PortletLocalService
+			portletLocalService) {
+
 		this.portletLocalService = portletLocalService;
 	}
 
@@ -533,7 +628,9 @@ public abstract class PortletPreferencesLocalServiceBaseImpl
 	 *
 	 * @return the portlet item local service
 	 */
-	public com.liferay.portal.kernel.service.PortletItemLocalService getPortletItemLocalService() {
+	public com.liferay.portal.kernel.service.PortletItemLocalService
+		getPortletItemLocalService() {
+
 		return portletItemLocalService;
 	}
 
@@ -543,7 +640,9 @@ public abstract class PortletPreferencesLocalServiceBaseImpl
 	 * @param portletItemLocalService the portlet item local service
 	 */
 	public void setPortletItemLocalService(
-		com.liferay.portal.kernel.service.PortletItemLocalService portletItemLocalService) {
+		com.liferay.portal.kernel.service.PortletItemLocalService
+			portletItemLocalService) {
+
 		this.portletItemLocalService = portletItemLocalService;
 	}
 
@@ -563,7 +662,55 @@ public abstract class PortletPreferencesLocalServiceBaseImpl
 	 */
 	public void setPortletItemPersistence(
 		PortletItemPersistence portletItemPersistence) {
+
 		this.portletItemPersistence = portletItemPersistence;
+	}
+
+	/**
+	 * Returns the portlet preference value local service.
+	 *
+	 * @return the portlet preference value local service
+	 */
+	public com.liferay.portal.kernel.service.PortletPreferenceValueLocalService
+		getPortletPreferenceValueLocalService() {
+
+		return portletPreferenceValueLocalService;
+	}
+
+	/**
+	 * Sets the portlet preference value local service.
+	 *
+	 * @param portletPreferenceValueLocalService the portlet preference value local service
+	 */
+	public void setPortletPreferenceValueLocalService(
+		com.liferay.portal.kernel.service.PortletPreferenceValueLocalService
+			portletPreferenceValueLocalService) {
+
+		this.portletPreferenceValueLocalService =
+			portletPreferenceValueLocalService;
+	}
+
+	/**
+	 * Returns the portlet preference value persistence.
+	 *
+	 * @return the portlet preference value persistence
+	 */
+	public PortletPreferenceValuePersistence
+		getPortletPreferenceValuePersistence() {
+
+		return portletPreferenceValuePersistence;
+	}
+
+	/**
+	 * Sets the portlet preference value persistence.
+	 *
+	 * @param portletPreferenceValuePersistence the portlet preference value persistence
+	 */
+	public void setPortletPreferenceValuePersistence(
+		PortletPreferenceValuePersistence portletPreferenceValuePersistence) {
+
+		this.portletPreferenceValuePersistence =
+			portletPreferenceValuePersistence;
 	}
 
 	/**
@@ -571,7 +718,9 @@ public abstract class PortletPreferencesLocalServiceBaseImpl
 	 *
 	 * @return the user local service
 	 */
-	public com.liferay.portal.kernel.service.UserLocalService getUserLocalService() {
+	public com.liferay.portal.kernel.service.UserLocalService
+		getUserLocalService() {
+
 		return userLocalService;
 	}
 
@@ -582,6 +731,7 @@ public abstract class PortletPreferencesLocalServiceBaseImpl
 	 */
 	public void setUserLocalService(
 		com.liferay.portal.kernel.service.UserLocalService userLocalService) {
+
 		this.userLocalService = userLocalService;
 	}
 
@@ -622,7 +772,8 @@ public abstract class PortletPreferencesLocalServiceBaseImpl
 	}
 
 	public void afterPropertiesSet() {
-		persistedModelLocalServiceRegistry.register("com.liferay.portal.kernel.model.PortletPreferences",
+		persistedModelLocalServiceRegistry.register(
+			"com.liferay.portal.kernel.model.PortletPreferences",
 			portletPreferencesLocalService);
 	}
 
@@ -641,8 +792,23 @@ public abstract class PortletPreferencesLocalServiceBaseImpl
 		return PortletPreferencesLocalService.class.getName();
 	}
 
-	protected Class<?> getModelClass() {
+	@Override
+	public CTPersistence<PortletPreferences> getCTPersistence() {
+		return portletPreferencesPersistence;
+	}
+
+	@Override
+	public Class<PortletPreferences> getModelClass() {
 		return PortletPreferences.class;
+	}
+
+	@Override
+	public <R, E extends Throwable> R updateWithUnsafeFunction(
+			UnsafeFunction<CTPersistence<PortletPreferences>, R, E>
+				updateUnsafeFunction)
+		throws E {
+
+		return updateUnsafeFunction.apply(portletPreferencesPersistence);
 	}
 
 	protected String getModelClassName() {
@@ -656,55 +822,103 @@ public abstract class PortletPreferencesLocalServiceBaseImpl
 	 */
 	protected void runSQL(String sql) {
 		try {
-			DataSource dataSource = portletPreferencesPersistence.getDataSource();
+			DataSource dataSource =
+				portletPreferencesPersistence.getDataSource();
 
 			DB db = DBManagerUtil.getDB();
 
 			sql = db.buildSQL(sql);
 			sql = PortalUtil.transformSQL(sql);
 
-			SqlUpdate sqlUpdate = SqlUpdateFactoryUtil.getSqlUpdate(dataSource,
-					sql);
+			SqlUpdate sqlUpdate = SqlUpdateFactoryUtil.getSqlUpdate(
+				dataSource, sql);
 
 			sqlUpdate.update();
 		}
-		catch (Exception e) {
-			throw new SystemException(e);
+		catch (Exception exception) {
+			throw new SystemException(exception);
 		}
 	}
 
 	@BeanReference(type = PortletPreferencesLocalService.class)
 	protected PortletPreferencesLocalService portletPreferencesLocalService;
+
 	@BeanReference(type = PortletPreferencesPersistence.class)
 	protected PortletPreferencesPersistence portletPreferencesPersistence;
+
 	@BeanReference(type = PortletPreferencesFinder.class)
 	protected PortletPreferencesFinder portletPreferencesFinder;
-	@BeanReference(type = com.liferay.counter.kernel.service.CounterLocalService.class)
-	protected com.liferay.counter.kernel.service.CounterLocalService counterLocalService;
-	@BeanReference(type = com.liferay.portal.kernel.service.LayoutLocalService.class)
-	protected com.liferay.portal.kernel.service.LayoutLocalService layoutLocalService;
+
+	@BeanReference(
+		type = com.liferay.counter.kernel.service.CounterLocalService.class
+	)
+	protected com.liferay.counter.kernel.service.CounterLocalService
+		counterLocalService;
+
+	@BeanReference(
+		type = com.liferay.portal.kernel.service.LayoutLocalService.class
+	)
+	protected com.liferay.portal.kernel.service.LayoutLocalService
+		layoutLocalService;
+
 	@BeanReference(type = LayoutPersistence.class)
 	protected LayoutPersistence layoutPersistence;
+
 	@BeanReference(type = LayoutFinder.class)
 	protected LayoutFinder layoutFinder;
-	@BeanReference(type = com.liferay.portal.kernel.service.LayoutRevisionLocalService.class)
-	protected com.liferay.portal.kernel.service.LayoutRevisionLocalService layoutRevisionLocalService;
+
+	@BeanReference(
+		type = com.liferay.portal.kernel.service.LayoutRevisionLocalService.class
+	)
+	protected com.liferay.portal.kernel.service.LayoutRevisionLocalService
+		layoutRevisionLocalService;
+
 	@BeanReference(type = LayoutRevisionPersistence.class)
 	protected LayoutRevisionPersistence layoutRevisionPersistence;
-	@BeanReference(type = com.liferay.portal.kernel.service.PortletLocalService.class)
-	protected com.liferay.portal.kernel.service.PortletLocalService portletLocalService;
+
+	@BeanReference(
+		type = com.liferay.portal.kernel.service.PortletLocalService.class
+	)
+	protected com.liferay.portal.kernel.service.PortletLocalService
+		portletLocalService;
+
 	@BeanReference(type = PortletPersistence.class)
 	protected PortletPersistence portletPersistence;
-	@BeanReference(type = com.liferay.portal.kernel.service.PortletItemLocalService.class)
-	protected com.liferay.portal.kernel.service.PortletItemLocalService portletItemLocalService;
+
+	@BeanReference(
+		type = com.liferay.portal.kernel.service.PortletItemLocalService.class
+	)
+	protected com.liferay.portal.kernel.service.PortletItemLocalService
+		portletItemLocalService;
+
 	@BeanReference(type = PortletItemPersistence.class)
 	protected PortletItemPersistence portletItemPersistence;
-	@BeanReference(type = com.liferay.portal.kernel.service.UserLocalService.class)
-	protected com.liferay.portal.kernel.service.UserLocalService userLocalService;
+
+	@BeanReference(
+		type = com.liferay.portal.kernel.service.PortletPreferenceValueLocalService.class
+	)
+	protected
+		com.liferay.portal.kernel.service.PortletPreferenceValueLocalService
+			portletPreferenceValueLocalService;
+
+	@BeanReference(type = PortletPreferenceValuePersistence.class)
+	protected PortletPreferenceValuePersistence
+		portletPreferenceValuePersistence;
+
+	@BeanReference(
+		type = com.liferay.portal.kernel.service.UserLocalService.class
+	)
+	protected com.liferay.portal.kernel.service.UserLocalService
+		userLocalService;
+
 	@BeanReference(type = UserPersistence.class)
 	protected UserPersistence userPersistence;
+
 	@BeanReference(type = UserFinder.class)
 	protected UserFinder userFinder;
+
 	@BeanReference(type = PersistedModelLocalServiceRegistry.class)
-	protected PersistedModelLocalServiceRegistry persistedModelLocalServiceRegistry;
+	protected PersistedModelLocalServiceRegistry
+		persistedModelLocalServiceRegistry;
+
 }

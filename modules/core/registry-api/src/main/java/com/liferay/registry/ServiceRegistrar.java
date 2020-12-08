@@ -43,9 +43,8 @@ public class ServiceRegistrar<T> {
 				ServiceReference<T> serviceReference =
 					serviceRegistration.getServiceReference();
 
-				T service = _registry.getService(serviceReference);
-
-				serviceFinalizer.finalize(serviceReference, service);
+				serviceFinalizer.finalize(
+					serviceReference, _registry.getService(serviceReference));
 			}
 
 			serviceRegistration.unregister();
@@ -155,7 +154,6 @@ public class ServiceRegistrar<T> {
 	private volatile boolean _destroyed;
 	private final Registry _registry;
 	private final Set<ServiceRegistration<T>> _serviceRegistrations =
-		Collections.newSetFromMap(
-			new ConcurrentHashMap<ServiceRegistration<T>, Boolean>());
+		Collections.newSetFromMap(new ConcurrentHashMap<>());
 
 }

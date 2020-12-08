@@ -48,12 +48,12 @@ import org.json.simple.JSONValue;
 
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -65,7 +65,7 @@ import org.w3c.dom.NodeList;
 @RunWith(Parameterized.class)
 public class ThemeBuilderCompareTest {
 
-	@Parameters(name = "{1}")
+	@Parameterized.Parameters(name = "{1}")
 	public static Iterable<Object[]> getTestThemes() throws Exception {
 		Properties properties = new Properties();
 
@@ -120,12 +120,14 @@ public class ThemeBuilderCompareTest {
 
 		_diffsDir = diffsDir;
 		_name = name;
-		_parentDir = _getParentDir(parentName);
 		_parentName = parentName;
 		_templateExtension = templateExtension;
 		_warFile = warFile;
+
+		_parentDir = _getParentDir(parentName);
 	}
 
+	@Ignore
 	@Test
 	public void testThemeBuilderCompare() throws Exception {
 		File outputDir = temporaryFolder.newFolder("output");
@@ -177,7 +179,66 @@ public class ThemeBuilderCompareTest {
 	@Rule
 	public final TemporaryFolder temporaryFolder = new TemporaryFolder();
 
-	private static Map<String, byte[]> _getFileNameDigests(
+	private static Object[] _getTestTheme(
+			String dirName, String warFileName,
+			DocumentBuilderFactory documentBuilderFactory)
+		throws Exception {
+
+		File dir = new File(dirName);
+
+		File diffsDir = new File(dir, "src");
+
+		JSONObject packageJSONObject;
+
+		try (FileReader fileReader = new FileReader(
+				new File(dir, "package.json"))) {
+
+			packageJSONObject = (JSONObject)JSONValue.parseWithException(
+				fileReader);
+		}
+
+		String name = (String)packageJSONObject.get("name");
+
+		JSONObject liferayThemeJSONObject = (JSONObject)packageJSONObject.get(
+			"liferayTheme");
+
+		String parentName = (String)liferayThemeJSONObject.get("baseTheme");
+
+		if (parentName.equals("styled")) {
+			parentName = ThemeBuilder.STYLED;
+		}
+		else if (parentName.equals("unstyled")) {
+			parentName = ThemeBuilder.UNSTYLED;
+		}
+		else {
+			throw new IllegalArgumentException(
+				"Unsupported base theme " + parentName);
+		}
+
+		documentBuilderFactory.setFeature(
+			"http://apache.org/xml/features/nonvalidating/load-external-dtd",
+			false);
+
+		DocumentBuilder documentBuilder =
+			documentBuilderFactory.newDocumentBuilder();
+
+		Document document = documentBuilder.parse(
+			new File(dir, "src/WEB-INF/liferay-look-and-feel.xml"));
+
+		NodeList nodeList = document.getElementsByTagName("template-extension");
+
+		Node node = nodeList.item(0);
+
+		String templateExtension = node.getTextContent();
+
+		File warFile = new File(warFileName);
+
+		return new Object[] {
+			diffsDir, name, parentName, templateExtension, warFile
+		};
+	}
+
+	private Map<String, byte[]> _getFileNameDigests(
 			final Path dirPath, String... excludePatterns)
 		throws Exception {
 
@@ -235,7 +296,7 @@ public class ThemeBuilderCompareTest {
 		return fileNameDigests;
 	}
 
-	private static File _getParentDir(String parentName) {
+	private File _getParentDir(String parentName) {
 		if (parentName.equals(ThemeBuilder.STYLED)) {
 			return _styledJarFile;
 		}
@@ -248,62 +309,7 @@ public class ThemeBuilderCompareTest {
 			"Unsupported parent name " + parentName);
 	}
 
-	private static Object[] _getTestTheme(
-			String dirName, String warFileName,
-			DocumentBuilderFactory documentBuilderFactory)
-		throws Exception {
-
-		File dir = new File(dirName);
-
-		File diffsDir = new File(dir, "src");
-
-		JSONObject packageJSONObject;
-
-		try (FileReader fileReader = new FileReader(
-				new File(dir, "package.json"))) {
-
-			packageJSONObject = (JSONObject)JSONValue.parseWithException(
-				fileReader);
-		}
-
-		String name = (String)packageJSONObject.get("name");
-
-		JSONObject liferayThemeJSONObject = (JSONObject)packageJSONObject.get(
-			"liferayTheme");
-
-		String parentName = (String)liferayThemeJSONObject.get("baseTheme");
-
-		if (parentName.equals("styled")) {
-			parentName = ThemeBuilder.STYLED;
-		}
-		else if (parentName.equals("unstyled")) {
-			parentName = ThemeBuilder.UNSTYLED;
-		}
-		else {
-			throw new IllegalArgumentException(
-				"Unsupported base theme " + parentName);
-		}
-
-		DocumentBuilder documentBuilder =
-			documentBuilderFactory.newDocumentBuilder();
-
-		Document document = documentBuilder.parse(
-			new File(dir, "src/WEB-INF/liferay-look-and-feel.xml"));
-
-		NodeList nodeList = document.getElementsByTagName("template-extension");
-
-		Node node = nodeList.item(0);
-
-		String templateExtension = node.getTextContent();
-
-		File warFile = new File(warFileName);
-
-		return new Object[] {
-			diffsDir, name, parentName, templateExtension, warFile
-		};
-	}
-
-	private static void _unzip(File file, File outputDir) throws IOException {
+	private void _unzip(File file, File outputDir) throws Exception {
 		Path outputDirPath = outputDir.toPath();
 
 		try (ZipFile zipFile = new ZipFile(file)) {

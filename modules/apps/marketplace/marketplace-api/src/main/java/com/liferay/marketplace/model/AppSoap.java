@@ -14,8 +14,6 @@
 
 package com.liferay.marketplace.model;
 
-import aQute.bnd.annotation.ProviderType;
-
 import java.io.Serializable;
 
 import java.util.ArrayList;
@@ -26,11 +24,12 @@ import java.util.List;
  * This class is used by SOAP remote services, specifically {@link com.liferay.marketplace.service.http.AppServiceSoap}.
  *
  * @author Ryan Park
- * @see com.liferay.marketplace.service.http.AppServiceSoap
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
-@ProviderType
+@Deprecated
 public class AppSoap implements Serializable {
+
 	public static AppSoap toSoapModel(App model) {
 		AppSoap soapModel = new AppSoap();
 
@@ -47,7 +46,7 @@ public class AppSoap implements Serializable {
 		soapModel.setCategory(model.getCategory());
 		soapModel.setIconURL(model.getIconURL());
 		soapModel.setVersion(model.getVersion());
-		soapModel.setRequired(model.getRequired());
+		soapModel.setRequired(model.isRequired());
 
 		return soapModel;
 	}
@@ -230,4 +229,5 @@ public class AppSoap implements Serializable {
 	private String _iconURL;
 	private String _version;
 	private boolean _required;
+
 }

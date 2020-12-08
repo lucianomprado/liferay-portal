@@ -15,7 +15,6 @@
 package com.liferay.portal.kernel.cluster;
 
 import com.liferay.portal.kernel.messaging.Message;
-import com.liferay.portal.kernel.security.pacl.permission.PortalRuntimePermission;
 import com.liferay.portal.kernel.util.ServiceProxyFactory;
 
 /**
@@ -26,14 +25,6 @@ public class ClusterLinkUtil {
 
 	public static Address getAddress(Message message) {
 		return (Address)message.get(_ADDRESS);
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link #_getClusterLink()}
-	 */
-	@Deprecated
-	public static ClusterLink getClusterLink() {
-		return _getClusterLink();
 	}
 
 	public static void sendMulticastMessage(
@@ -63,8 +54,6 @@ public class ClusterLinkUtil {
 	}
 
 	private static ClusterLink _getClusterLink() {
-		PortalRuntimePermission.checkGetBeanProperty(ClusterLinkUtil.class);
-
 		return _clusterLink;
 	}
 

@@ -14,9 +14,9 @@
 
 package com.liferay.portal.kernel.search;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.search.filter.BooleanFilter;
 import com.liferay.portal.kernel.util.ArrayUtil;
-import com.liferay.portal.kernel.util.StringPool;
 
 import java.util.Locale;
 
@@ -71,12 +71,12 @@ public abstract class BaseSearcher extends BaseIndexer<Object> {
 	}
 
 	@Override
-	protected void doDelete(Object obj) throws Exception {
+	protected void doDelete(Object object) throws Exception {
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	protected Document doGetDocument(Object obj) throws Exception {
+	protected Document doGetDocument(Object object) throws Exception {
 		throw new UnsupportedOperationException();
 	}
 
@@ -90,8 +90,8 @@ public abstract class BaseSearcher extends BaseIndexer<Object> {
 	}
 
 	/**
-	 * @deprecated As of 7.0.0, added strictly to support backwards
-	 *             compatibility of {@link
+	 * @deprecated As of Wilberforce (7.0.x), added strictly to support
+	 *             backwards compatibility of {@link
 	 *             Indexer#postProcessSearchQuery(BooleanQuery, SearchContext)}
 	 */
 	@Deprecated
@@ -103,7 +103,7 @@ public abstract class BaseSearcher extends BaseIndexer<Object> {
 	}
 
 	@Override
-	protected void doReindex(Object obj) throws Exception {
+	protected void doReindex(Object object) throws Exception {
 		throw new UnsupportedOperationException();
 	}
 

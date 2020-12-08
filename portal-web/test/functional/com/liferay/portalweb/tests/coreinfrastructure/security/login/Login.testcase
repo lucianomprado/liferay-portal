@@ -1,321 +1,666 @@
-<definition component-name="portal-security">
-	<property name="portal.release" value="true" />
-	<property name="portal.upstream" value="true" />
-	<property name="testray.main.component.name" value="Security" />
+@component-name = "portal-security"
+definition {
 
-	<set-up>
-		<execute macro="TestCase#setUpPortalInstance" />
-	</set-up>
+	property portal.release = "true";
+	property portal.upstream = "true";
+	property testray.main.component.name = "Login";
 
-	<command name="CASSmoke" priority="4">
-		<property name="test.name.skip.portal.instance" value="Login#CASSmoke" />
-		<property name="web.plugins.includes" value="cas-web" />
+	setUp {
+		TestCase.setUpPortalInstance();
+	}
 
-		<var method="TestPropsUtil#get('portal.url')" name="portalURL" />
+	@priority = "5"
+	test CASSSOSmoke {
+		property cas.enabled = "true";
+		property dummy.socket.proxy.disabled = "true";
+		property test.name.skip.portal.instance = "Login#CASSSOSmoke";
 
-		<var name="userEmailAddress" value="userea@liferay.com" />
-		<var name="userFirstName" value="userfn" />
-		<var name="userLastName" value="userln" />
-		<var name="userScreenName" value="usersn" />
+		User.firstLoginPG();
 
-		<execute macro="User#firstLoginPG" />
-
-		<execute macro="ProductMenu#gotoControlPanelUsers">
-			<var name="portlet" value="Users and Organizations" />
-		</execute>
-
-		<execute macro="User#addCP">
-			<var name="userEmailAddress" value="${userEmailAddress}" />
-			<var name="userFirstName" value="${userFirstName}" />
-			<var name="userLastName" value="${userLastName}" />
-			<var name="userScreenName" value="${userScreenName}" />
-		</execute>
+		var liferayHome = PropsUtil.get("liferay.home.dir.name");
+		var fileContent = FileUtil.read("${liferayHome}/tomcat-9.0.37/bin/cas.log");
 
-		<execute macro="ProductMenu#gotoControlPanelUsers">
-			<var name="portlet" value="Users and Organizations" />
-		</execute>
+		if (contains("${fileContent}", "org.jasig.cas")) {
+			echo("CAS server started.");
+		}
+		else {
+			fail("FAIL! CAS server didn't start.");
+		}
 
-		<execute macro="User#editPasswordCP">
-			<var name="userEmailAddress" value="${userEmailAddress}" />
-			<var name="userScreenName" value="${userScreenName}" />
-		</execute>
-
-		<execute macro="ProductMenu#gotoControlPanelConfiguration">
-			<var name="portlet" value="Instance Settings" />
-		</execute>
+		PortalSettings.gotoConfiguration(
+			configurationCategory = "SSO",
+			configurationName = "CAS Server",
+			configurationScope = "Virtual Instance Scope");
 
-		<execute macro="PortalSettings#editConfigurationAuthenticationGeneral">
-			<var name="authenticationMethod" value="By Screen Name" />
-		</execute>
+		PortalSettings.editConfigurationAuthenticationCAS();
 
-		<execute macro="PortalSettings#editConfigurationAuthenticationCAS">
-			<var name="casLoginURL" value="${portalURL}/cas-web/login" />
-			<var name="casLogoutURL" value="${portalURL}/cas-web/logout" />
-			<var name="casServerURL" value="${portalURL}/cas-web" />
-			<var name="casServiceURL" value="${portalURL}/c/portal/login" />
-		</execute>
+		PortalSettings.gotoConfiguration(
+			configurationCategory = "User Authentication",
+			configurationName = "General",
+			configurationScope = "Virtual Instance Scope");
 
-		<execute macro="User#logoutPG" />
+		PortalSettings.editConfigurationAuthenticationGeneral(authenticationMethod = "By Screen Name");
 
-		<execute macro="User#viewLoggedOutWithCASEnabledPG" />
+		User.logoutPG();
 
-		<execute macro="User#loginUserWithCASEnabledPG">
-			<var name="userScreenName" value="${userScreenName}" />
-		</execute>
+		User.loginUserWithCASEnabledPG(
+			userPassword = "test",
+			userScreenName = "test");
+	}
 
-		<execute macro="User#logoutPG" />
+	@priority = "5"
+	test DefaultPortalLandingPage {
+		property test.name.skip.portal.instance = "Login#DefaultPortalLandingPage";
 
-		<execute macro="User#loginUserWithCASEnabledPG">
-			<var name="userScreenName" value="test" />
-		</execute>
-	</command>
+		User.firstLoginPG();
 
-	<command name="FacebookSSOSmoke" priority="4">
-		<property name="test.name.skip.portal.instance" value="Login#FacebookSSOSmoke" />
+		PortalSettings.gotoConfiguration(
+			configurationCategory = "Instance Configuration",
+			configurationName = "General",
+			configurationScope = "Virtual Instance Scope");
 
-		<var method="TestPropsUtil#get('facebook.application.id')" name="facebookApplicationID" />
-		<var method="TestPropsUtil#get('facebook.application.secret')" name="facebookApplicationSecret" />
-		<var method="TestPropsUtil#get('facebook.email')" name="facebookEmail" />
-		<var method="TestPropsUtil#get('facebook.password')" name="facebookPassword" />
+		PortalSettings.editDefaultLandingPageCP(defaultLandingPage = "/web/guest/landing");
 
-		<execute macro="User#firstLoginPG" />
+		ApplicationsMenu.gotoPortlet(
+			category = "Sites",
+			panel = "Control Panel",
+			portlet = "Sites");
 
-		<execute macro="TestCase#getSiteName">
-			<return from="siteName" name="siteName" />
-			<var name="siteName" value="${siteName}" />
-		</execute>
+		var siteName = TestCase.getSiteName(siteName = "${siteName}");
 
-		<execute macro="ProductMenu#gotoControlPanelConfiguration">
-			<var name="portlet" value="Instance Settings" />
-		</execute>
+		Navigator.openSiteURL(siteName = "${siteName}");
 
-		<execute macro="Panel#expandPanel">
-			<var name="panelHeading" value="Authentication" />
-		</execute>
+		ProductMenu.gotoPortlet(
+			category = "Site Builder",
+			portlet = "Pages");
 
-		<execute macro="PortalSettingsNavigator#gotoAuthenticationFacebook" />
+		SitePages.addPublicPage(pageName = "landing");
 
-		<execute macro="PortalSettings#editConfigurationAuthenticationFacebook">
-			<var name="facebookApplicationID" value="${facebookApplicationID}" />
-			<var name="facebookApplicationSecret" value="${facebookApplicationSecret}" />
-		</execute>
+		User.logoutPG();
 
-		<execute macro="User#logoutPG" />
+		User.loginPG(
+			password = "test",
+			userEmailAddress = "test@liferay.com");
 
-		<execute macro="User#loginUserWithFacebookSSOEnabledPG">
-			<var name="facebookEmail" value="${facebookEmail}" />
-			<var name="facebookPassword" value="${facebookPassword}" />
-			<var name="siteName" value="${siteName}" />
-		</execute>
+		var portalURL = PropsUtil.get("portal.url");
 
-		<execute macro="User#logoutUserPG" />
+		AssertLocation(value1 = "${portalURL}/web/guest/landing");
+	}
 
-		<execute macro="User#loginPG">
-			<var name="password" value="test" />
-			<var name="userEmailAddress" value="test@liferay.com" />
-			<var name="userScreenName" value="usersn" />
-		</execute>
-	</command>
+	@description = "This is a use case for LPS-39744."
+	@priority = "5"
+	test DefaultPortalLandingPageSetByProperty {
+		property custom.properties = "default.landing.page.path=/web/guest/landing";
+		property test.name.skip.portal.instance = "Login#DefaultPortalLandingPageSetByProperty";
 
-	<command name="GoogleSSOSmoke" priority="4">
-		<property name="test.name.skip.portal.instance" value="Login#GoogleSSOSmoke" />
+		User.firstLoginPG();
 
-		<var method="TestPropsUtil#get('google.client.id')" name="googleClientID" />
-		<var method="TestPropsUtil#get('google.client.secret')" name="googleClientSecret" />
-		<var method="TestPropsUtil#get('email.address.1')" name="userEmailAddress" />
-		<var method="TestPropsUtil#get('email.password.1')" name="userPassword" />
+		ProductMenu.gotoPortlet(
+			category = "Site Builder",
+			portlet = "Pages");
 
-		<execute macro="User#firstLoginPG" />
+		SitePages.addPublicPage(pageName = "landing");
 
-		<execute macro="TestCase#getSiteName">
-			<return from="siteName" name="siteName" />
-			<var name="siteName" value="${siteName}" />
-		</execute>
+		User.logoutPG();
 
-		<execute macro="ProductMenu#gotoControlPanelConfiguration">
-			<var name="portlet" value="Instance Settings" />
-		</execute>
+		User.loginPG(
+			password = "test",
+			userEmailAddress = "test@liferay.com");
 
-		<execute macro="Panel#expandPanel">
-			<var name="panelHeading" value="Authentication" />
-		</execute>
+		var portalURL = PropsUtil.get("portal.url");
 
-		<execute macro="PortalSettingsNavigator#gotoAuthenticationGoogle" />
+		AssertLocation(value1 = "${portalURL}/web/guest/landing");
+	}
 
-		<execute macro="PortalSettings#enableGoogleSSOCP">
-			<var name="googleClientID" value="${googleClientID}" />
-			<var name="googleClientSecret" value="${googleClientSecret}" />
-		</execute>
+	@description = "This is a use case for LPS-105151."
+	@priority = "4"
+	test EnabledOpenIDConnectOnSystemLevel {
+		property dummy.socket.proxy.disabled = "true";
+		property test.name.skip.portal.instance = "Login#EnabledOpenIDConnectOnSystemLevel";
 
-		<execute macro="User#logoutPG" />
+		var openIDConnectClientID = PropsUtil.get("google.client.id.2");
+		var openIDConnectClientSecret = PropsUtil.get("google.client.secret.2");
+		var userEmailAddress = PropsUtil.get("email.address.2");
+		var userPassword = PropsUtil.get("email.password.2");
 
-		<execute macro="User#loginUserWithGoogleSSOEnabledPG">
-			<var name="siteName" value="${siteName}" />
-			<var name="userEmailAddress" value="${userEmailAddress}" />
-			<var name="userPassword" value="${userPassword}" />
-		</execute>
+		User.firstLoginPG();
 
-		<execute macro="User#logoutPG" />
+		ApplicationsMenu.gotoPortlet(
+			category = "System",
+			panel = "Control Panel",
+			portlet = "Virtual Instances");
 
-		<execute macro="User#loginUserPG">
-			<var name="password" value="test" />
-			<var name="userEmailAddress" value="test@liferay.com" />
-		</execute>
-	</command>
+		PortalInstances.addCP(
+			mailDomain = "www.able.com",
+			virtualHost = "www.able.com",
+			webId = "www.able.com");
 
-	<command name="Login" priority="4">
-		<property name="test.name.skip.portal.instance" value="Login#Login" />
+		PortalInstances.viewCP(virtualHost = "www.able.com");
 
-		<execute macro="User#firstLoginPG" />
+		Navigator.openSpecificURL(url = "http://www.able.com:8080/");
 
-		<execute macro="User#logoutPG" />
+		AssertClick(
+			locator1 = "UserBar#USER_SIGN_IN",
+			value1 = "Sign In");
 
-		<execute macro="User#loginPG" />
-	</command>
+		AssertElementNotPresent(locator1 = "Icon#OPENID_CONNECT");
 
-	<command name="LoginFirstTime" priority="4">
-		<execute macro="SignIn#signIn" />
+		Navigator.openURL();
 
-		<execute macro="SignIn#agreeToTermsOfUse" />
+		ApplicationsMenu.gotoPortlet(
+			category = "Configuration",
+			panel = "Control Panel",
+			portlet = "System Settings");
 
-		<execute macro="SignIn#setPasswordReminder" />
+		SystemSettings.gotoConfiguration(
+			configurationCategory = "SSO",
+			configurationName = "OpenID Connect",
+			configurationScope = "System Scope");
 
-		<execute macro="Smoke#viewWelcomePage" />
-	</command>
+		PortalSettings.enableOpenIDConnectCP(systemLevel = "true");
 
-	<command name="OpenIDSmoke" priority="4">
-		<property name="test.name.skip.portal.instance" value="Login#OpenIDSmoke" />
+		ApplicationsMenu.gotoPortlet(
+			category = "Configuration",
+			panel = "Control Panel",
+			portlet = "System Settings");
 
-		<var method="TestPropsUtil#get('openid.password')" name="openIDPassword" />
-		<var method="TestPropsUtil#get('openid.username')" name="openIDUsername" />
+		SystemSettings.gotoConfiguration(
+			configurationCategory = "SSO",
+			configurationName = "OpenID Connect Provider",
+			configurationScope = "Virtual Instance Scope");
 
-		<execute macro="User#firstLoginPG" />
+		OpenIDConnect.addProvider(
+			openIDConnectClientID = "${openIDConnectClientID}",
+			openIDConnectClientSecret = "${openIDConnectClientSecret}",
+			providerName = "Google");
 
-		<execute macro="ProductMenu#gotoControlPanelConfiguration">
-			<var name="portlet" value="Instance Settings" />
-		</execute>
+		Navigator.openSpecificURL(url = "http://www.able.com:8080/");
 
-		<execute macro="Panel#expandPanel">
-			<var name="panelHeading" value="Authentication" />
-		</execute>
+		AssertClick(
+			locator1 = "UserBar#USER_SIGN_IN",
+			value1 = "Sign In");
 
-		<execute macro="PortalSettingsNavigator#gotoAuthenticationOpenID" />
+		AssertElementPresent(locator1 = "Icon#OPENID_CONNECT");
+	}
 
-		<execute macro="PortalSettings#enableOpenIDCP" />
+	@priority = "4"
+	test FacebookSSOSmoke {
+		property dummy.socket.proxy.disabled = "true";
+		property test.name.skip.portal.instance = "Login#FacebookSSOSmoke";
 
-		<execute macro="User#logoutPG" />
+		var facebookApplicationID = PropsUtil.get("facebook.application.id");
+		var facebookApplicationSecret = PropsUtil.get("facebook.application.secret");
+		var facebookEmail = PropsUtil.get("facebook.email");
+		var facebookPassword = PropsUtil.get("facebook.password");
 
-		<execute macro="User#loginUserWithOpenIDEnabledPG">
-			<var name="openIDPassword" value="${openIDPassword}" />
-			<var name="openIDUsername" value="${openIDUsername}" />
-			<var name="password" value="test" />
-			<var name="userEmailAddress" value="userea2@liferay.com" />
-			<var name="userName" value="userfn2" />
-		</execute>
+		User.firstLoginPG();
 
-		<execute macro="User#logoutPG" />
+		var siteName = TestCase.getSiteName(siteName = "${siteName}");
 
-		<execute macro="User#loginUserPG">
-			<var name="password" value="test" />
-			<var name="userEmailAddress" value="test@liferay.com" />
-		</execute>
-	</command>
+		PortalSettings.gotoConfiguration(
+			configurationCategory = "SSO",
+			configurationName = "Facebook Connect",
+			configurationScope = "Virtual Instance Scope");
 
-	<command name="OpenSSOSmoke" priority="5">
-		<property name="openam.enabled" value="true" />
-		<property name="test.name.skip.portal.instance" value="Login#OpenSSOSmoke" />
+		PortalSettings.editConfigurationAuthenticationFacebook(
+			facebookApplicationID = "${facebookApplicationID}",
+			facebookApplicationSecret = "${facebookApplicationSecret}");
 
-		<execute macro="Navigator#openSpecificURL">
-			<var name="url" value="http://test.able.com:8080/openam" />
-		</execute>
+		User.logoutPG();
 
-		<execute function="AntCommand" locator1="build-test-authentication.xml" value1="run-openam-tools" />
+		User.loginUserWithFacebookSSOEnabledPG(
+			facebookEmail = "${facebookEmail}",
+			facebookPassword = "${facebookPassword}",
+			siteName = "${siteName}");
 
-		<var name="pauseCount" value="0" />
+		User.logoutUserPG();
 
-		<while>
-			<and>
-				<condition function="IsElementNotPresent" locator1="OpenAM#USER_NAME" />
-				<not>
-					<equals arg1="${pauseCount}" arg2="20" />
-				</not>
-			</and>
-			<then>
-				<execute function="Refresh" />
+		User.loginPG(
+			password = "test",
+			userEmailAddress = "test@liferay.com",
+			userScreenName = "usersn");
+	}
 
-				<execute function="Pause" locator1="30000" />
+	@priority = "4"
+	test GoogleSSOSmoke {
+		property dummy.socket.proxy.disabled = "true";
+		property osgi.app.includes = "portal-security-sso-google";
+		property test.name.skip.portal.instance = "Login#GoogleSSOSmoke";
 
-				<var method="MathUtil#sum('${pauseCount}', '1')" name="pauseCount" />
+		var googleClientID = PropsUtil.get("google.client.id.2");
+		var googleClientSecret = PropsUtil.get("google.client.secret.2");
+		var userEmailAddress = PropsUtil.get("email.address.2");
+		var userPassword = PropsUtil.get("email.password.2");
 
-				<echo>Pause count: ${pauseCount}</echo>
-			</then>
-		</while>
+		User.firstLoginPG();
 
-		<if>
-			<equals arg1="${pauseCount}" arg2="20" />
-			<then>
-				<fail message="OpenAM setup timed out after 10 minutes." />
-			</then>
-		</if>
+		PortalSettings.gotoConfiguration(
+			configurationCategory = "SSO",
+			configurationName = "Google Authorization",
+			configurationScope = "Virtual Instance Scope");
 
-		<execute macro="User#firstLoginPG" />
+		PortalSettings.enableGoogleSSOCP(
+			googleClientID = "${googleClientID}",
+			googleClientSecret = "${googleClientSecret}");
 
-		<execute macro="ProductMenu#gotoControlPanelConfiguration">
-			<var name="portlet" value="Instance Settings" />
-		</execute>
+		User.logoutPG();
 
-		<execute function="Pause" locator1="30000" />
+		User.loginUserWithGoogleSSOEnabledPG(
+			userEmailAddress = "${userEmailAddress}",
+			userPassword = "${userPassword}");
 
-		<execute macro="Panel#expandPanel">
-			<var name="panelHeading" value="Authentication" />
-		</execute>
+		User.logoutPG();
 
-		<execute macro="PortalSettingsNavigator#gotoAuthenticationOpenSSO" />
+		User.loginUserPG(
+			password = "test",
+			userEmailAddress = "test@liferay.com");
+	}
 
-		<execute macro="PortalSettings#configureOpenSSO">
-			<var name="OpenSSOLoginURL" value="http://test.able.com:8080/openam/UI/Login?goto=http://www.able.com:8080/c/portal/login" />
-			<var name="OpenSSOLogoutURL" value="http://test.able.com:8080/openam/UI/Logout?goto=http://www.able.com:8080/web/guest/home" />
-			<var name="OpenSSOServiceURL" value="http://test.able.com:8080/openam" />
-		</execute>
+	@description = "This is a use case for LPS-72398."
+	@priority = "5"
+	test LoginWithSpanishOnlyEnabledLocale {
+		property test.name.skip.portal.instance = "Login#LoginWithSpanishOnlyEnabledLocale";
 
-		<execute macro="PortalSettingsNavigator#gotoAuthenticationOpenSSO" />
+		User.firstLoginPG();
 
-		<execute macro="PortalSettings#testOpenSSOConnection" />
+		PortalSettings.gotoConfiguration(
+			configurationCategory = "Localization",
+			configurationName = "Language",
+			configurationScope = "Virtual Instance Scope");
 
-		<execute macro="User#logoutPG" />
+		PortalSettings.configureCurrentLanguagesCP(
+			currentPortalLanguages = "Spanish (Spain)",
+			defaultPortalLanguage = "Spanish (Spain)");
 
-		<execute macro="User#loginUserWithOpenSSOEnabledPG">
-			<var name="hostsURL" value="http://www.able.com:8080" />
-			<var name="password" value="password" />
-			<var name="userScreenName" value="test" />
-		</execute>
-	</command>
+		User.logoutPG();
 
-	<command name="TokenBasedSSOSmoke" priority="5">
-		<property name="test.name.skip.portal.instance" value="Login#TokenBasedSSOSmoke" />
+		Portlet.shutdownServer();
 
-		<execute macro="User#firstLoginPG" />
+		Portlet.startServer(deleteLiferayHome = "false");
 
-		<execute macro="ProductMenu#gotoControlPanelConfiguration">
-			<var name="portlet" value="System Settings" />
-		</execute>
+		Portlet.assertServerStartup();
 
-		<execute macro="SystemSettings#gotoCategory">
-			<var name="category" value="Foundation" />
-		</execute>
+		User.loginPG(
+			localization = "ES",
+			password = "test",
+			userEmailAddress = "test@liferay.com");
+	}
 
-		<execute macro="SystemSettings#viewConfiguration">
-			<var name="configurationName" value="Token Based SSO" />
-		</execute>
+	@description = "This is a use case for LPS-105151."
+	@priority = "4"
+	test MultipleOpenIDConnectProvider {
+		property dummy.socket.proxy.disabled = "true";
+		property test.name.skip.portal.instance = "Login#MultipleOpenIDConnectProvider";
 
-		<execute macro="SystemSettings#enableSetting">
-			<var name="checkboxSetting" value="ENABLED_CHECKBOX" />
-		</execute>
+		var openIDConnectClientID = PropsUtil.get("google.client.id.2");
+		var openIDConnectClientSecret = PropsUtil.get("google.client.secret.2");
+		var openIDConnectClientID1 = PropsUtil.get("google.client.id.3");
+		var openIDConnectClientSecret1 = PropsUtil.get("google.client.secret.3");
+		var userEmailAddress = PropsUtil.get("email.address.2");
+		var userPassword = PropsUtil.get("email.password.2");
 
-		<execute macro="PortletEntry#save" />
+		User.firstLoginPG();
 
-		<execute macro="User#logoutPG" />
+		ApplicationsMenu.gotoPortlet(
+			category = "System",
+			panel = "Control Panel",
+			portlet = "Virtual Instances");
 
-		<execute function="AntCommand" locator1="build-test-authentication.xml" value1="verify-token-based-login" />
-	</command>
-</definition>
+		PortalInstances.addCP(
+			mailDomain = "www.able.com",
+			virtualHost = "www.able.com",
+			webId = "www.able.com");
+
+		PortalInstances.viewCP(virtualHost = "www.able.com");
+
+		ApplicationsMenu.gotoPortlet(
+			category = "System",
+			panel = "Control Panel",
+			portlet = "Virtual Instances");
+
+		PortalInstances.addCP(
+			mailDomain = "www.baker.com",
+			virtualHost = "www.baker.com",
+			webId = "www.baker.com");
+
+		PortalInstances.viewCP(virtualHost = "www.baker.com");
+
+		Navigator.openURL();
+
+		ApplicationsMenu.gotoPortlet(
+			category = "Configuration",
+			panel = "Control Panel",
+			portlet = "System Settings");
+
+		SystemSettings.gotoConfiguration(
+			configurationCategory = "SSO",
+			configurationName = "OpenID Connect",
+			configurationScope = "System Scope");
+
+		PortalSettings.enableOpenIDConnectCP(systemLevel = "true");
+
+		ApplicationsMenu.gotoPortlet(
+			category = "Configuration",
+			panel = "Control Panel",
+			portlet = "System Settings");
+
+		SystemSettings.gotoConfiguration(
+			configurationCategory = "SSO",
+			configurationName = "OpenID Connect Provider",
+			configurationScope = "Virtual Instance Scope");
+
+		OpenIDConnect.addProvider(
+			openIDConnectClientID = "${openIDConnectClientID}",
+			openIDConnectClientSecret = "${openIDConnectClientSecret}",
+			providerName = "Google");
+
+		User.firstLoginPG(
+			password = "test",
+			userEmailAddress = "test@www.able.com",
+			virtualHostsURL = "http://www.able.com:8080");
+
+		ApplicationsMenu.gotoPortlet(
+			category = "Configuration",
+			panel = "Control Panel",
+			portlet = "Instance Settings");
+
+		SystemSettings.gotoConfiguration(
+			configurationCategory = "SSO",
+			configurationName = "OpenID Connect Provider",
+			configurationScope = "Virtual Instance Scope");
+
+		OpenIDConnect.addProvider(
+			openIDConnectClientID = "${openIDConnectClientID1}",
+			openIDConnectClientSecret = "${openIDConnectClientSecret1}",
+			providerName = "Test Google");
+
+		UserBar.signOut();
+
+		Navigator.openSpecificURL(url = "http://www.able.com:8080/");
+
+		OpenIDConnect.viewProvider();
+
+		AssertElementPresent(
+			key_providerNname = "Test Google",
+			locator1 = "OpenIDConnectLogin#OPENID_CONNECT_DROPDOWN_OPTION");
+
+		User.firstLoginPG(
+			password = "test",
+			userEmailAddress = "test@www.baker.com",
+			virtualHostsURL = "http://www.baker.com:8080");
+
+		UserBar.signOut();
+
+		Navigator.openSpecificURL(url = "http://www.baker.com:8080/");
+
+		OpenIDConnect.viewProvider();
+	}
+
+	@description = "This is a use case for LPS-105151."
+	@priority = "4"
+	test OpenIDConnectOnInstanceLevelSmoke {
+		property dummy.socket.proxy.disabled = "true";
+		property test.name.skip.portal.instance = "Login#OpenIDConnectOnInstanceLevelSmoke";
+
+		var openIDConnectClientID = PropsUtil.get("google.client.id.1");
+		var openIDConnectClientSecret = PropsUtil.get("google.client.secret.1");
+		var userEmailAddress = PropsUtil.get("email.address.2");
+		var userPassword = PropsUtil.get("email.password.2");
+
+		User.firstLoginPG();
+
+		ApplicationsMenu.gotoPortlet(
+			category = "System",
+			panel = "Control Panel",
+			portlet = "Virtual Instances");
+
+		PortalInstances.addCP(
+			mailDomain = "www.able.com",
+			virtualHost = "www.able.com",
+			webId = "www.able.com");
+
+		PortalInstances.viewCP(virtualHost = "www.able.com");
+
+		User.firstLoginPG(
+			password = "test",
+			userEmailAddress = "test@www.able.com",
+			virtualHostsURL = "http://www.able.com:8080");
+
+		ApplicationsMenu.gotoPortlet(
+			category = "Configuration",
+			panel = "Control Panel",
+			portlet = "Instance Settings");
+
+		PortalSettings.gotoConfiguration(
+			configurationCategory = "SSO",
+			configurationName = "OpenID Connect",
+			configurationScope = "Virtual Instance Scope");
+
+		PortalSettings.enableOpenIDConnectCP();
+
+		ApplicationsMenu.gotoPortlet(
+			category = "Configuration",
+			panel = "Control Panel",
+			portlet = "Instance Settings");
+
+		SystemSettings.gotoConfiguration(
+			configurationCategory = "SSO",
+			configurationName = "OpenID Connect Provider",
+			configurationScope = "Virtual Instance Scope");
+
+		OpenIDConnect.addProvider(
+			openIDConnectClientID = "${openIDConnectClientID}",
+			openIDConnectClientSecret = "${openIDConnectClientSecret}",
+			providerName = "Google");
+
+		UserBar.signOut();
+
+		OpenIDConnect.accountSignIn(
+			specificURL = "http://www.able.com:8080",
+			userEmailAddress = "${userEmailAddress}",
+			userPassword = "${userPassword}");
+
+		OpenIDConnect.acceptConditions();
+
+		AssertElementPresent(locator1 = "UserBar#USER_AVATAR_IMAGE");
+
+		UserBar.signOut();
+
+		User.loginPG(
+			password = "test",
+			specificURL = "http://www.able.com:8080",
+			userEmailAddress = "test@www.able.com");
+	}
+
+	@priority = "4"
+	test OpenIDConnectSmoke {
+		property dummy.socket.proxy.disabled = "true";
+		property test.name.skip.portal.instance = "Login#OpenIDConnectSmoke";
+
+		// LRQA-43729
+
+		var openIDConnectClientID = PropsUtil.get("google.client.id.3");
+		var openIDConnectClientSecret = PropsUtil.get("google.client.secret.3");
+		var userEmailAddress = PropsUtil.get("email.address.2");
+		var userPassword = PropsUtil.get("email.password.2");
+
+		User.firstLoginPG();
+
+		var siteName = TestCase.getSiteName(siteName = "${siteName}");
+
+		PortalSettings.gotoConfiguration(
+			configurationCategory = "SSO",
+			configurationName = "OpenID Connect",
+			configurationScope = "Virtual Instance Scope");
+
+		PortalSettings.enableOpenIDConnectCP();
+
+		ApplicationsMenu.gotoPortlet(
+			category = "Configuration",
+			panel = "Control Panel",
+			portlet = "System Settings");
+
+		SystemSettings.gotoConfiguration(
+			configurationCategory = "SSO",
+			configurationName = "OpenID Connect Provider",
+			configurationScope = "Virtual Instance Scope");
+
+		OpenIDConnect.addProvider(
+			openIDConnectClientID = "${openIDConnectClientID}",
+			openIDConnectClientSecret = "${openIDConnectClientSecret}",
+			providerName = "Google");
+
+		User.logoutPG();
+
+		User.loginUserWithOpenIDConnectEnabledPG(
+			siteName = "${siteName}",
+			userEmailAddress = "${userEmailAddress}",
+			userPassword = "${userPassword}");
+
+		User.logoutPG();
+
+		User.loginUserPG(
+			password = "test",
+			userEmailAddress = "test@liferay.com");
+	}
+
+	@ignore = "true"
+	@priority = "5"
+	test OpenSSOSmoke {
+		property dummy.socket.proxy.disabled = "true";
+		property openam.enabled = "true";
+		property test.name.skip.portal.instance = "Login#OpenSSOSmoke";
+
+		// LRQA-40534
+
+		Navigator.openSpecificURL(url = "http://test.able.com:8080/openam");
+
+		AntCommand(
+			locator1 = "build-test-authentication.xml",
+			value1 = "run-openam-tools");
+
+		var pauseCount = "0";
+
+		while ((IsElementNotPresent(locator1 = "TextInput#TEXT")) && ("${pauseCount}" != "20")) {
+			Refresh();
+
+			Pause(locator1 = "30000");
+
+			var pauseCount = ${pauseCount} + 1;
+
+			echo("Pause count: ${pauseCount}");
+		}
+
+		if ("${pauseCount}" == "20") {
+			fail("OpenAM setup timed out after 10 minutes.");
+		}
+
+		User.firstLoginPG();
+
+		Pause(locator1 = "30000");
+
+		PortalSettings.gotoConfiguration(
+			configurationCategory = "SSO",
+			configurationName = "OpenSSO",
+			configurationScope = "Virtual Instance Scope");
+
+		PortalSettings.configureOpenSSO(
+			OpenSSOLoginURL = "http://test.able.com:8080/openam/UI/Login?goto=http://www.able.com:8080/c/portal/login",
+			OpenSSOLogoutURL = "http://test.able.com:8080/openam/UI/Logout?goto=http://www.able.com:8080/web/guest/home",
+			OpenSSOServiceURL = "http://test.able.com:8080/openam");
+
+		PortalSettings.gotoConfiguration(
+			configurationCategory = "SSO",
+			configurationName = "OpenSSO",
+			configurationScope = "Virtual Instance Scope");
+
+		PortalSettings.testOpenSSOConnection();
+
+		User.logoutPG();
+
+		User.loginUserWithOpenSSOEnabledPG(
+			hostsURL = "http://www.able.com:8080",
+			password = "password",
+			userScreenName = "test");
+	}
+
+	@priority = "5"
+	test TokenBasedSSOSmoke {
+		property test.name.skip.portal.instance = "Login#TokenBasedSSOSmoke";
+
+		User.firstLoginPG();
+
+		ApplicationsMenu.gotoPortlet(
+			category = "Configuration",
+			panel = "Control Panel",
+			portlet = "System Settings");
+
+		SystemSettings.gotoConfiguration(
+			configurationCategory = "SSO",
+			configurationName = "Token Based SSO",
+			configurationScope = "System Scope");
+
+		FormFields.enableCheckbox(fieldName = "Enabled");
+
+		PortletEntry.save();
+
+		AntCommand(
+			locator1 = "build-test-authentication.xml",
+			value1 = "verify-token-based-login -Dportal.url=localhost:8080/web/guest -Duser.token=test@liferay.com");
+
+		FormFields.disableCheckbox(fieldName = "Enabled");
+
+		PortletEntry.update();
+
+		ApplicationsMenu.gotoPortlet(
+			category = "System",
+			panel = "Control Panel",
+			portlet = "Virtual Instances");
+
+		PortalInstances.addCP(
+			mailDomain = "www.able.com",
+			virtualHost = "www.able.com",
+			webId = "www.able.com");
+
+		User.firstLoginPG(
+			password = "test",
+			userEmailAddress = "test@www.able.com",
+			virtualHostsURL = "http://www.able.com:8080");
+
+		ApplicationsMenu.gotoPortlet(
+			category = "Configuration",
+			panel = "Control Panel",
+			portlet = "Instance Settings");
+
+		SystemSettings.gotoConfiguration(
+			configurationCategory = "SSO",
+			configurationName = "Token Based SSO",
+			configurationScope = "Virtual Instance Scope");
+
+		FormFields.enableCheckbox(fieldName = "enabled");
+
+		PortletEntry.save();
+
+		AntCommand(
+			locator1 = "build-test-authentication.xml",
+			value1 = "verify-token-based-login -Dportal.url=www.able.com:8080/web/guest -Duser.token=test@www.able.com");
+	}
+
+	@priority = "3"
+	test ViewInstanceSettingsAuthentication {
+		property osgi.app.includes = "portal-security-sso-google,portal-security-sso-ntlm,portal-security-sso-openid";
+
+		User.firstLoginPG();
+
+		PortalSettings.viewAuthenticationGeneralCP();
+
+		PortalSettings.viewAuthenticationLDAPCP();
+
+		PortalSettings.viewAuthenticationOpenSSOCP();
+
+		PortalSettings.viewAuthenticationCASCP();
+
+		PortalSettings.viewAuthenticationNTLMCP();
+	}
+
+}

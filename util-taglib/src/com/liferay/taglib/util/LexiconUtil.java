@@ -23,14 +23,15 @@ public class LexiconUtil {
 
 	public static String getUserColorCssClass(User user) {
 		if (user == null) {
-			return "user-icon-defaul";
+			return "user-icon-default";
 		}
 
 		return "user-icon-color-".concat(
 			_NUMBERS[(int)(user.getUserId() % 10)]);
 	}
 
-	private static final String[] _NUMBERS =
-		{"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"};
+	private static final String[] _NUMBERS = {
+		"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"
+	};
 
 }

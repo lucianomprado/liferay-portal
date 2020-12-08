@@ -14,22 +14,29 @@
 
 package com.liferay.taglib.ui;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.servlet.MultiSessionMessages;
 import com.liferay.portal.kernel.servlet.SessionMessages;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
+import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.JavaConstants;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
+import com.liferay.taglib.aui.ScriptTag;
 import com.liferay.taglib.util.IncludeTag;
 import com.liferay.taglib.util.TagResourceBundleUtil;
 
+import java.util.Map;
 import java.util.ResourceBundle;
 
 import javax.portlet.PortletRequest;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.JspException;
+import javax.servlet.jsp.JspWriter;
 import javax.servlet.jsp.tagext.BodyTag;
 
 /**
@@ -50,11 +57,14 @@ public class SuccessTag extends IncludeTag implements BodyTag {
 	public int doStartTag() throws JspException {
 		setAttributeNamespace(_ATTRIBUTE_NAMESPACE);
 
-		PortletRequest portletRequest = (PortletRequest)request.getAttribute(
-			JavaConstants.JAVAX_PORTLET_REQUEST);
+		HttpServletRequest httpServletRequest = getRequest();
+
+		PortletRequest portletRequest =
+			(PortletRequest)httpServletRequest.getAttribute(
+				JavaConstants.JAVAX_PORTLET_REQUEST);
 
 		if (portletRequest == null) {
-			if (SessionMessages.contains(request, _key)) {
+			if (SessionMessages.contains(httpServletRequest, _key)) {
 				_hasMessage = true;
 
 				return super.doStartTag();
@@ -69,6 +79,30 @@ public class SuccessTag extends IncludeTag implements BodyTag {
 		return SKIP_BODY;
 	}
 
+	public String getKey() {
+		return _key;
+	}
+
+	public String getMessage() {
+		return _message;
+	}
+
+	public String getTargetNode() {
+		return _targetNode;
+	}
+
+	public int getTimeout() {
+		return _timeout;
+	}
+
+	public boolean isEmbed() {
+		return _embed;
+	}
+
+	public boolean isTranslateMessage() {
+		return _translateMessage;
+	}
+
 	@Override
 	public int processEndTag() throws Exception {
 		String message = _message;
@@ -81,31 +115,53 @@ public class SuccessTag extends IncludeTag implements BodyTag {
 			bodyContentString = bodyContent.toString();
 		}
 
+		HttpServletRequest httpServletRequest = getRequest();
+
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)httpServletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
+
+		ResourceBundle resourceBundle = TagResourceBundleUtil.getResourceBundle(
+			httpServletRequest, themeDisplay.getLocale());
+
 		if (Validator.isNotNull(bodyContentString)) {
 			message = bodyContentString;
 		}
 		else if (_translateMessage) {
-			ThemeDisplay themeDisplay = (ThemeDisplay)request.getAttribute(
-				WebKeys.THEME_DISPLAY);
-
-			ResourceBundle resourceBundle =
-				TagResourceBundleUtil.getResourceBundle(
-					request, themeDisplay.getLocale());
-
 			message = LanguageUtil.get(resourceBundle, message);
 		}
 
-		AlertTag alertTag = new AlertTag();
+		Map<String, String> values = HashMapBuilder.put(
+			"title", LanguageUtil.get(resourceBundle, "success")
+		).build();
 
-		alertTag.setIcon("check");
-		alertTag.setMessage(message);
-		alertTag.setTargetNode(_targetNode);
-		alertTag.setTimeout(_timeout);
-		alertTag.setType("success");
+		if (_embed) {
+			values.put("message", HtmlUtil.escape(message));
 
-		alertTag.doTag(pageContext);
+			String result = StringUtil.replace(
+				_CONTENT_EMBED_TMPL, StringPool.DOLLAR, StringPool.DOLLAR,
+				values);
+
+			JspWriter jspWriter = pageContext.getOut();
+
+			jspWriter.write(result);
+		}
+		else {
+			values.put("message", HtmlUtil.escapeJS(message));
+
+			String result = StringUtil.replace(
+				_CONTENT_TOAST_TMPL, StringPool.DOLLAR, StringPool.DOLLAR,
+				values);
+
+			ScriptTag.doTag(
+				null, null, null, result, getBodyContent(), pageContext);
+		}
 
 		return EVAL_PAGE;
+	}
+
+	public void setEmbed(boolean embed) {
+		_embed = embed;
 	}
 
 	public void setKey(String key) {
@@ -130,6 +186,9 @@ public class SuccessTag extends IncludeTag implements BodyTag {
 
 	@Override
 	protected void cleanUp() {
+		super.cleanUp();
+
+		_embed = false;
 		_hasMessage = false;
 		_key = null;
 		_message = null;
@@ -145,7 +204,7 @@ public class SuccessTag extends IncludeTag implements BodyTag {
 
 	@Override
 	protected boolean isCleanUpSetAttributes() {
-		return _CLEAN_UP_SET_ATTRIBUTES;
+		return super.isCleanUpSetAttributes();
 	}
 
 	@Override
@@ -154,15 +213,20 @@ public class SuccessTag extends IncludeTag implements BodyTag {
 	}
 
 	@Override
-	protected void setAttributes(HttpServletRequest request) {
+	protected void setAttributes(HttpServletRequest httpServletRequest) {
 	}
 
 	private static final String _ATTRIBUTE_NAMESPACE = "liferay-ui:success:";
 
-	private static final boolean _CLEAN_UP_SET_ATTRIBUTES = true;
+	private static final String _CONTENT_EMBED_TMPL = StringUtil.read(
+		SuccessTag.class, "success/embed.tmpl");
+
+	private static final String _CONTENT_TOAST_TMPL = StringUtil.read(
+		SuccessTag.class, "success/toast.tmpl");
 
 	private static final String _PAGE = "/html/taglib/ui/success/page.jsp";
 
+	private boolean _embed;
 	private boolean _hasMessage;
 	private String _key;
 	private String _message;

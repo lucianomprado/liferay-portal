@@ -1,306 +1,340 @@
-<definition>
-	<command name="addAction">
-		<execute function="Click" locator1="FormRules#RULE_BUILDER_ADD_ACTION" />
-	</command>
-
-	<command name="addCondition">
-		<execute function="Click" locator1="FormRules#RULE_BUILDER_ADD_CONDITION" />
-	</command>
-
-	<command name="addRule">
-		<execute function="Click" locator1="FormRules#RULE_BUILDER_ADD_RULE_BUTTON" />
-
-		<execute macro="FormRules#viewInactiveSaveButton" />
-	</command>
-
-	<command name="chooseCalculateAdvancedOperator">
-		<execute function="Click" locator1="FormRules#RULE_BUILDER_CALCULATE_ELLIPSIS" />
-
-		<var name="key_calculateAdvancedOperator" value="${calculateAdvancedOperator}" />
-
-		<execute function="AssertClick" locator1="FormRules#RULE_BUILDER_CALCULATE_ADVANCED_OPERATOR" value1="${calculateAdvancedOperator}" />
-	</command>
-
-	<command name="chooseCalculateNumericValue">
-		<var name="key_calculateNumericValue" value="${calculateNumericValue}" />
-
-		<execute function="AssertClick" locator1="FormRules#RULE_BUILDER_CALCULATE_NUMERIC_VALUE" value1="${calculateNumericValue}" />
-	</command>
-
-	<command name="chooseCalculateOperator">
-		<var name="key_calculateOperator" value="${calculateOperator}" />
-
-		<execute function="AssertClick" locator1="FormRules#RULE_BUILDER_CALCULATE_OPERATOR" value1="${calculateOperator}" />
-	</command>
-
-	<command name="configureActionOptions">
-		<execute macro="FormRules#selectAction">
-			<var name="action" value="${action}" />
-			<var name="actionRowNumber" value="${actionRowNumber}" />
-		</execute>
-
-		<execute macro="FormRules#selectActionTarget">
-			<var name="action" value="${action}" />
-			<var name="actionRowNumber" value="${actionRowNumber}" />
-			<var name="actionTarget" value="${actionTarget}" />
-		</execute>
-	</command>
-
-	<command name="configureConditionOptions">
-		<execute macro="FormRules#selectConditionField">
-			<var name="conditionField" value="${conditionField}" />
-			<var name="conditionRowNumber" value="${conditionRowNumber}" />
-		</execute>
-
-		<execute macro="FormRules#selectConditionOperator">
-			<var name="conditionOperator" value="${conditionOperator}" />
-			<var name="conditionRowNumber" value="${conditionRowNumber}" />
-		</execute>
+definition {
 
-		<execute macro="FormRules#selectConditionValue">
-			<var name="conditionRowNumber" value="${conditionRowNumber}" />
-			<var name="conditionValueType" value="${conditionValueType}" />
-		</execute>
+	macro addAction {
+		WaitForElementPresent(locator1 = "FormRules#RULE_BUILDER_ADD_ACTION");
 
-		<execute macro="FormRules#defineConditionValue">
-			<var name="conditionFieldValue" value="${conditionFieldValue}" />
-			<var name="conditionRowNumber" value="${conditionRowNumber}" />
-			<var name="conditionValueField" value="${conditionValueField}" />
-			<var name="conditionValueType" value="${conditionValueType}" />
-		</execute>
-	</command>
+		Click(locator1 = "FormRules#RULE_BUILDER_ADD_ACTION");
+	}
 
-	<command name="defineConditionValue">
-		<if>
-			<isset var="conditionFieldValue" />
-			<then>
-				<var name="key_conditionRowNumber" value="${conditionRowNumber}" />
+	macro addCondition {
+		WaitForElementPresent(locator1 = "FormRules#RULE_BUILDER_ADD_CONDITION");
 
-				<execute function="Type" locator1="FormRules#RULE_BUILDER_CONDITION_VALUE_TEXT_FIELD" value1="${conditionFieldValue}" />
-			</then>
-		</if>
+		Click(locator1 = "FormRules#RULE_BUILDER_ADD_CONDITION");
+	}
 
-		<if>
-			<isset var="conditionValueField" />
-			<then>
-				<var name="key_conditionRowNumber" value="${conditionRowNumber}" />
-				<var name="key_conditionValueField" value="${conditionValueField}" />
+	macro addRule {
+		WaitForElementPresent(locator1 = "FormRules#RULE_BUILDER_ADD_RULE_BUTTON");
 
-				<execute function="Click" locator1="FormRules#RULE_BUILDER_CONDITION_VALUE_FIELD" />
+		Click(locator1 = "FormRules#RULE_BUILDER_ADD_RULE_BUTTON");
 
-				<execute function="AssertClick" locator1="FormRules#RULE_BUILDER_SELECT_CONDITION_VALUE_FIELD" value1="${conditionValueField}" />
-			</then>
-		</if>
-	</command>
+		FormRules.viewInactiveSaveButton();
 
-	<command name="gotoEdit">
-		<var name="key_ruleNumber" value="${ruleNumber}" />
+		AssertNotVisible(locator1 = "FormRules#RULE_BUILDER_ADD_RULE_BUTTON");
+	}
 
-		<execute function="Click#waitForMenuToggleJSClick" locator1="FormRules#RULE_BUILDER_ROW_VERTICAL_ELLIPSIS" />
+	macro chooseCalculateOperator {
+		var key_calculateOperator = "${calculateOperator}";
 
-		<execute function="AssertClick" locator1="MenuItem#ANY_MENU_ITEM" value1="Edit">
-			<var name="key_menuItem" value="Edit" />
-		</execute>
-	</command>
+		AssertClick(
+			locator1 = "FormRules#RULE_BUILDER_CALCULATE_OPERATOR",
+			value1 = "${calculateOperator}");
+	}
 
-	<command name="save">
-		<execute function="AssertClick" locator1="FormRules#RULE_BUILDER_SAVE_BUTTON" value1="Save" />
-	</command>
+	macro configureActionOptions {
+		FormRules.selectAction(
+			action = "${action}",
+			actionRowNumber = "${actionRowNumber}");
 
-	<command name="selectAction">
-		<var name="key_action" value="${action}" />
-		<var name="key_actionRowNumber" value="${actionRowNumber}" />
+		FormRules.selectActionTarget(
+			action = "${action}",
+			actionRowNumber = "${actionRowNumber}",
+			actionTarget = "${actionTarget}");
+	}
 
-		<execute function="Click" locator1="FormRules#RULE_BUILDER_ACTION_FIELD" />
+	macro configureConditionOptions {
+		FormRules.selectConditionField(
+			conditionField = "${conditionField}",
+			conditionRowNumber = "${conditionRowNumber}");
 
-		<execute function="AssertClick" locator1="FormRules#RULE_BUILDER_SELECT_ACTION" value1="${action}" />
-	</command>
+		FormRules.selectConditionOperator(
+			conditionOperator = "${conditionOperator}",
+			conditionRowNumber = "${conditionRowNumber}");
 
-	<command name="selectActionTarget">
-		<var name="key_actionRowNumber" value="${actionRowNumber}" />
-		<var name="key_actionTarget" value="${actionTarget}" />
+		FormRules.selectConditionValue(
+			conditionRowNumber = "${conditionRowNumber}",
+			conditionValueType = "${conditionValueType}");
 
-		<if>
-			<equals arg1="${action}" arg2="Jump to Page" />
-			<then>
-				<execute function="Click" locator1="FormRules#RULE_BUILDER_JUMP_TO_PAGE_ACTION_TARGET" />
-			</then>
-			<else>
-				<execute function="Click" locator1="FormRules#RULE_BUILDER_ACTION_TARGET_FIELD" />
-			</else>
-		</if>
+		FormRules.defineConditionValue(
+			conditionFieldValue = "${conditionFieldValue}",
+			conditionRowNumber = "${conditionRowNumber}",
+			conditionValueField = "${conditionValueField}",
+			conditionValueType = "${conditionValueType}");
+	}
 
-		<execute function="AssertClick" locator1="FormRules#RULE_BUILDER_SELECT_ACTION_TARGET" value1="${actionTarget}" />
-	</command>
+	macro defineConditionValue {
+		if (isSet(conditionFieldValue)) {
+			var key_conditionRowNumber = "${conditionRowNumber}";
+			var key_fieldColumnNumber = "4";
 
-	<command name="selectAutofillOutput">
-		<var name="key_dataProviderOutput" value="${dataProviderOutput}" />
+			Type(
+				locator1 = "FormRules#RULE_BUILDER_CONDITION_VALUE_TEXT_FIELD",
+				value1 = "${conditionFieldValue}");
+		}
 
-		<execute function="Click" locator1="FormRules#RULE_BUILDER_AUTOFILL_OUTPUT_FIELD" />
+		if (isSet(conditionValueField)) {
+			var key_conditionRowNumber = "${conditionRowNumber}";
+			var key_selectValue = "${conditionValueField}";
+			var key_fieldColumnNumber = "4";
 
-		<execute function="AssertClick" locator1="FormRules#RULE_BUILDER_AUTOFILL_SELECT_OUTPUT_FIELD" value1="${dataProviderOutput}" />
-	</command>
+			Click(locator1 = "FormRules#RULE_BUILDER_CONDITION_VALUE_FIELD");
 
-	<command name="selectCalculateField">
-		<execute function="AssertClick" locator1="FormRules#RULE_BUILDER_CALCULATE_ADD_FIELD_BUTTON" value1="Add Field" />
+			AssertClick(
+				locator1 = "FormRules#RULE_BUILDER_FIELD_SELECT_VALUE",
+				value1 = "${conditionValueField}");
+		}
+	}
 
-		<var name="key_calculateFieldOption" value="${calculateFieldOption}" />
+	macro gotoEdit {
+		var key_ruleNumber = "${ruleNumber}";
 
-		<execute function="AssertClick" locator1="FormRules#RULE_BUILDER_CALCULATE_ADD_FIELD_LIST" value1="${calculateFieldOption}" />
-	</command>
+		Click.waitForMenuToggleJSClick(locator1 = "FormRules#RULE_BUILDER_ROW_VERTICAL_ELLIPSIS");
 
-	<command name="selectCalculateResultField">
-		<execute function="Click" locator1="FormRules#RULE_BUILDER_CALCULATE_RESULT_FIELD" />
+		MenuItem.click(menuItem = "Edit");
+	}
 
-		<var name="key_calculateResultField" value="${calculateResultField}" />
+	macro save {
+		AssertClick(
+			locator1 = "FormRules#RULE_BUILDER_SAVE_BUTTON",
+			value1 = "Save");
+	}
 
-		<execute function="AssertClick" locator1="FormRules#RULE_BUILDER_CALCULATE_RESULT_FIELD_LIST" value1="${calculateResultField}" />
-	</command>
+	macro selectAction {
+		var key_selectValue = "${action}";
+		var key_actionRowNumber = "${actionRowNumber}";
+		var key_fieldColumnNumber = "1";
 
-	<command name="selectConditionField">
-		<var name="key_conditionField" value="${conditionField}" />
-		<var name="key_conditionRowNumber" value="${conditionRowNumber}" />
+		Click(locator1 = "FormRules#RULE_BUILDER_ACTION_FIELD");
 
-		<execute function="Click" locator1="FormRules#RULE_BUILDER_CONDITION_FIELD" />
+		AssertClick(
+			locator1 = "FormRules#RULE_BUILDER_FIELD_SELECT_VALUE",
+			value1 = "${action}");
+	}
 
-		<execute function="AssertClick" locator1="FormRules#RULE_BUILDER_SELECT_CONDITION_FIELD" value1="${conditionField}" />
-	</command>
+	macro selectActionTarget {
+		var key_actionRowNumber = "${actionRowNumber}";
+		var key_selectValue = "${actionTarget}";
+		var key_fieldColumnNumber = "2";
 
-	<command name="selectConditionOperator">
-		<var name="key_conditionOperator" value="${conditionOperator}" />
-		<var name="key_conditionRowNumber" value="${conditionRowNumber}" />
+		Click(locator1 = "FormRules#RULE_BUILDER_ACTION_FIELD");
 
-		<execute function="Click" locator1="FormRules#RULE_BUILDER_CONDITION_OPERATOR_FIELD" />
+		AssertClick(
+			locator1 = "FormRules#RULE_BUILDER_FIELD_SELECT_VALUE",
+			value1 = "${actionTarget}");
+	}
 
-		<execute function="AssertClick" locator1="FormRules#RULE_BUILDER_SELECT_CONDITION_OPERATOR" value1="${conditionOperator}" />
-	</command>
+	macro selectAutofillOutput {
+		var key_dataProviderOutput = "${dataProviderOutput}";
 
-	<command name="selectConditionValue">
-		<var name="key_conditionRowNumber" value="${conditionRowNumber}" />
+		Click(locator1 = "FormRules#RULE_BUILDER_AUTOFILL_OUTPUT_FIELD");
 
-		<if>
-			<isset var="conditionValueType" />
-			<then>
-				<execute function="Click" locator1="FormRules#RULE_BUILDER_CONDITION_VALUE_TYPE_FIELD" />
+		AssertClick(
+			locator1 = "FormRules#RULE_BUILDER_AUTOFILL_SELECT_OUTPUT_FIELD",
+			value1 = "${dataProviderOutput}");
+	}
 
-				<var name="key_conditionValueType" value="${conditionValueType}" />
+	macro selectCalculateField {
+		AssertClick(
+			locator1 = "FormRules#RULE_BUILDER_CALCULATE_ADD_FIELD_BUTTON",
+			value1 = "Add Field");
 
-				<execute function="AssertClick" locator1="FormRules#RULE_BUILDER_SELECT_CONDITION_VALUE_TYPE" value1="${conditionValueType}" />
-			</then>
-		</if>
-	</command>
+		var key_calculateFieldOption = "${calculateFieldOption}";
 
-	<command name="selectRuleCondition">
-		<var name="key_condition" value="${condition}" />
-
-		<var method="StringUtil#upperCase('${condition}')" name="condition" />
-
-		<execute function="Click" locator1="FormRules#RULE_BUILDER_RULE_CONDITION_DROPDOWN" />
-
-		<execute function="AssertClick" locator1="MenuItem#ANY_MENU_ITEM" value1="${condition}">
-			<var name="key_menuItem" value="${condition}" />
-		</execute>
-	</command>
-
-	<command name="viewActionSummary">
-		<var name="key_action" value="${action}" />
-		<var name="key_ruleNumber" value="${ruleNumber}" />
-
-		<execute function="AssertTextEquals#assertPartialText" locator1="FormRules#RULE_BUILDER_SUMMARY_ACTION" value1="${action}" />
-	</command>
-
-	<command name="viewActionTargetSummary">
-		<var name="key_action" value="${action}" />
-		<var name="key_actionTarget" value="${actionTarget}" />
-		<var name="key_ruleNumber" value="${ruleNumber}" />
-
-		<execute function="AssertTextEquals" locator1="FormRules#RULE_BUILDER_SUMMARY_ACTION_TARGET" value1="${actionTarget}" />
-	</command>
-
-	<command name="viewConditionFieldConstantSummary">
-		<var name="key_conditionFieldConstant" value="${conditionFieldConstant}" />
-		<var name="key_ruleNumber" value="${ruleNumber}" />
-
-		<execute function="AssertTextEquals" locator1="FormRules#RULE_BUILDER_SUMMARY_CONDITION_FIELD_CONSTANT" value1="${conditionFieldConstant}" />
-	</command>
-
-	<command name="viewConditionFieldSummary">
-		<var name="key_conditionField" value="${conditionField}" />
-		<var name="key_ruleNumber" value="${ruleNumber}" />
-
-		<execute function="AssertTextEquals" locator1="FormRules#RULE_BUILDER_SUMMARY_CONDITION_FIELD" value1="${conditionField}" />
-	</command>
-
-	<command name="viewConditionOperatorOptionsIsPresent">
-		<var name="key_conditionRowNumber" value="${conditionRowNumber}" />
-
-		<execute function="Click" locator1="FormRules#RULE_BUILDER_CONDITION_OPERATOR_FIELD" />
-
-		<for list="Is equal to,Is not equal to,Contains,Does not contain" param="conditionOperator">
-			<var name="key_conditionOperator" value="${conditionOperator}" />
-
-			<execute function="AssertElementPresent" locator1="FormRules#RULE_BUILDER_SELECT_CONDITION_OPERATOR" value1="${conditionOperator}" />
-		</for>
-	</command>
-
-	<command name="viewConditionOperatorOptionsNotPresent">
-		<var name="key_conditionOperator" value="${conditionOperator}" />
-		<var name="key_conditionRowNumber" value="${conditionRowNumber}" />
-
-		<execute function="Click" locator1="FormRules#RULE_BUILDER_CONDITION_OPERATOR_FIELD" />
-
-		<for list="Is equal to,Is not equal to,Contains,Does not contain" param="conditionOperator">
-			<var name="key_conditionOperator" value="${conditionOperator}" />
-
-			<execute function="AssertElementNotPresent" locator1="FormRules#RULE_BUILDER_SELECT_CONDITION_OPERATOR" value1="${conditionOperator}" />
-		</for>
-	</command>
-
-	<command name="viewConditionOperatorSummary">
-		<var name="key_conditionOperator" value="${conditionOperator}" />
-		<var name="key_ruleNumber" value="${ruleNumber}" />
-
-		<var method="StringUtil#lowerCase('${conditionOperator}')" name="conditionOperator" />
-
-		<execute function="AssertTextEquals#assertPartialText" locator1="FormRules#RULE_BUILDER_SUMMARY_CONDITION_OPERATOR" value1="${conditionOperator}" />
-	</command>
-
-	<command name="viewInactiveSaveButton">
-		<execute function="AssertElementPresent" locator1="FormRules#RULE_BUILDER_SAVE_BUTTON_DISABLED" />
-	</command>
-
-	<command name="viewRuleCondition">
-		<var name="key_condition" value="${condition}" />
-		<var name="key_conditonRowNumber" value="${conditonRowNumber}" />
-
-		<execute function="AssertTextEquals" locator1="FormRules#RULE_BUILDER_TIMELINE_RULE_CONDITION" value1="${condition}" />
-	</command>
-
-	<command name="viewSummary">
-		<execute macro="FormRules#viewConditionFieldSummary">
-			<var name="conditionField" value="${conditionField}" />
-			<var name="ruleNumber" value="${ruleNumber}" />
-		</execute>
-
-		<execute macro="FormRules#viewConditionOperatorSummary">
-			<var name="conditionOperator" value="${conditionOperator}" />
-			<var name="ruleNumber" value="${ruleNumber}" />
-		</execute>
-
-		<execute macro="FormRules#viewConditionFieldConstantSummary">
-			<var name="conditionFieldConstant" value="${conditionFieldConstant}" />
-			<var name="ruleNumber" value="${ruleNumber}" />
-		</execute>
-
-		<execute macro="FormRules#viewActionSummary">
-			<var name="action" value="${action}" />
-			<var name="ruleNumber" value="${ruleNumber}" />
-		</execute>
-
-		<execute macro="FormRules#viewActionTargetSummary">
-			<var name="action" value="${action}" />
-			<var name="actionTarget" value="${actionTarget}" />
-			<var name="ruleNumber" value="${ruleNumber}" />
-		</execute>
-	</command>
-</definition>
+		ScrollBy(value1 = "0, 230");
+
+		Click(locator1 = "FormRules#RULE_BUILDER_CALCULATE_ADD_FIELD_LIST");
+	}
+
+	macro selectCalculateFieldByFieldReference {
+		AssertClick(
+			locator1 = "FormRules#RULE_BUILDER_CALCULATE_ADD_FIELD_BUTTON",
+			value1 = "Add Field");
+
+		var key_calculateFieldOption = "Field Reference: ${calculateFieldOption}";
+
+		ScrollBy(value1 = "0, 230");
+
+		Click(locator1 = "FormRules#RULE_BUILDER_CALCULATE_ADD_FIELD_LIST");
+	}
+
+	macro selectConditionField {
+		var key_selectValue = "${conditionField}";
+		var key_conditionRowNumber = "${conditionRowNumber}";
+		var key_fieldColumnNumber = "1";
+
+		ScrollBy(value1 = "0, 230");
+
+		Click(locator1 = "FormRules#RULE_BUILDER_CONDITION_FIELD");
+
+		AssertClick(
+			locator1 = "FormRules#RULE_BUILDER_FIELD_SELECT_VALUE",
+			value1 = "${conditionField}");
+	}
+
+	macro selectConditionOperator {
+		var key_selectValue = "${conditionOperator}";
+		var key_conditionRowNumber = "${conditionRowNumber}";
+		var key_fieldColumnNumber = "2";
+
+		Click(locator1 = "FormRules#RULE_BUILDER_CONDITION_FIELD");
+
+		AssertClick(
+			locator1 = "FormRules#RULE_BUILDER_FIELD_SELECT_VALUE",
+			value1 = "${conditionOperator}");
+	}
+
+	macro selectConditionValue {
+		var key_conditionRowNumber = "${conditionRowNumber}";
+		var key_fieldColumnNumber = "3";
+
+		if (isSet(conditionValueType)) {
+			Click(locator1 = "FormRules#RULE_BUILDER_CONDITION_FIELD");
+
+			var key_selectValue = "${conditionValueType}";
+
+			AssertClick(
+				locator1 = "FormRules#RULE_BUILDER_FIELD_SELECT_VALUE",
+				value1 = "${conditionValueType}");
+		}
+	}
+
+	macro selectRuleCondition {
+		var key_condition = "${condition}";
+		var condition = StringUtil.upperCase("${condition}");
+
+		Click(locator1 = "FormRules#RULE_BUILDER_RULE_CONDITION_DROPDOWN");
+
+		MenuItem.click(menuItem = "${condition}");
+	}
+
+	macro viewActionSummary {
+		AssertTextEquals.assertPartialText(
+			key_action = "${action}",
+			key_ruleNumber = "${ruleNumber}",
+			locator1 = "FormRules#RULE_BUILDER_SUMMARY_ACTION",
+			value1 = "${action}");
+	}
+
+	macro viewActionTargetSummary {
+		AssertTextEquals(
+			key_action = "${action}",
+			key_actionTarget = "${actionTarget}",
+			key_ruleNumber = "${ruleNumber}",
+			locator1 = "FormRules#RULE_BUILDER_SUMMARY_ACTION_TARGET",
+			value1 = "${actionTarget}");
+	}
+
+	macro viewBrokenRule {
+		AssertElementPresent(
+			key_ruleNumber = "${ruleNumber}",
+			locator1 = "FormRules#RULE_BUILDER_BROKEN");
+	}
+
+	macro viewCalculatorExpression {
+		AssertTextEquals(
+			key_calculatorExpression = "${calculatorExpression}",
+			locator1 = "FormRules#RULE_BUILDER_CALCULATE_RESULT_EXPRESSION",
+			value1 = "${calculatorExpression}");
+	}
+
+	macro viewConditionFieldConstantSummary {
+		AssertTextEquals(
+			key_conditionFieldConstant = "${conditionFieldConstant}",
+			key_ruleNumber = "${ruleNumber}",
+			locator1 = "FormRules#RULE_BUILDER_SUMMARY_CONDITION_FIELD_CONSTANT",
+			value1 = "${conditionFieldConstant}");
+	}
+
+	macro viewConditionFieldSummary {
+		AssertTextEquals(
+			key_conditionField = "${conditionField}",
+			key_ruleNumber = "${ruleNumber}",
+			locator1 = "FormRules#RULE_BUILDER_SUMMARY_CONDITION_FIELD",
+			value1 = "${conditionField}");
+	}
+
+	macro viewConditionOperatorOptionsIsPresent {
+		Click(
+			key_conditionRowNumber = "${conditionRowNumber}",
+			key_fieldColumnNumber = "2",
+			locator1 = "FormRules#RULE_BUILDER_CONDITION_FIELD");
+
+		for (var conditionOperator : list "Is equal to,Is not equal to,Contains,Does not contain") {
+			AssertElementPresent(
+				key_selectValue = "${conditionOperator}",
+				locator1 = "FormRules#RULE_BUILDER_FIELD_SELECT_VALUE");
+		}
+	}
+
+	macro viewConditionOperatorOptionsNotPresent {
+		Click(
+			key_conditionRowNumber = "${conditionRowNumber}",
+			key_fieldColumnNumber = "2",
+			locator1 = "FormRules#RULE_BUILDER_CONDITION_FIELD");
+
+		for (var conditionOperator : list "Is equal to,Is not equal to,Contains,Does not contain") {
+			AssertElementNotPresent(
+				key_selectValue = "${conditionOperator}",
+				locator1 = "FormRules#RULE_BUILDER_FIELD_SELECT_VALUE");
+		}
+	}
+
+	macro viewConditionOperatorSummary {
+		var conditionOperatorLowerCase = StringUtil.lowerCase("${conditionOperator}");
+
+		AssertTextEquals.assertPartialText(
+			key_conditionOperator = "${conditionOperator}",
+			key_ruleNumber = "${ruleNumber}",
+			locator1 = "FormRules#RULE_BUILDER_SUMMARY_CONDITION_OPERATOR",
+			value1 = "${conditionOperatorLowerCase}");
+	}
+
+	macro viewInactiveSaveButton {
+		AssertElementPresent(locator1 = "FormRules#RULE_BUILDER_SAVE_BUTTON_DISABLED");
+	}
+
+	macro viewNoRules {
+		AssertTextEquals(
+			locator1 = "Message#EMPTY_INFO",
+			value1 = "There are no rules yet. Click on plus icon below to add the first.");
+	}
+
+	macro viewRuleCondition {
+		AssertTextEquals(
+			key_condition = "${condition}",
+			key_conditonRowNumber = "${conditonRowNumber}",
+			locator1 = "FormRules#RULE_BUILDER_TIMELINE_RULE_CONDITION",
+			value1 = "${condition}");
+	}
+
+	macro viewRuleConditionDropdownDisabled {
+		AssertNotEditable(locator1 = "FormRules#RULE_BUILDER_RULE_CONDITION_DROPDOWN");
+	}
+
+	macro viewRuleConditionDropdownEnabled {
+		AssertEditable(locator1 = "FormRules#RULE_BUILDER_RULE_CONDITION_DROPDOWN");
+	}
+
+	macro viewSummary {
+		FormRules.viewConditionFieldSummary(
+			conditionField = "${conditionField}",
+			ruleNumber = "${ruleNumber}");
+
+		FormRules.viewConditionOperatorSummary(
+			conditionOperator = "${conditionOperator}",
+			ruleNumber = "${ruleNumber}");
+
+		FormRules.viewConditionFieldConstantSummary(
+			conditionFieldConstant = "${conditionFieldConstant}",
+			ruleNumber = "${ruleNumber}");
+
+		FormRules.viewActionSummary(
+			action = "${action}",
+			ruleNumber = "${ruleNumber}");
+
+		FormRules.viewActionTargetSummary(
+			action = "${action}",
+			actionTarget = "${actionTarget}",
+			ruleNumber = "${ruleNumber}");
+	}
+
+}

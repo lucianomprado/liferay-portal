@@ -20,7 +20,7 @@ package com.liferay.source.formatter.checks;
 public class ResourceBundleCheck extends BaseFileCheck {
 
 	@Override
-	public boolean isPortalCheck() {
+	public boolean isLiferaySourceCheck() {
 		return true;
 	}
 
@@ -38,8 +38,8 @@ public class ResourceBundleCheck extends BaseFileCheck {
 			addMessage(
 				fileName,
 				"Use ResourceBundleUtil.getBundle instead of " +
-					"ResourceBundle.getBundle, see LPS-58529",
-				getLineCount(content, pos));
+					"ResourceBundle.getBundle",
+				getLineNumber(content, pos));
 		}
 
 		pos = content.indexOf("resourceBundle.getString(");
@@ -48,8 +48,8 @@ public class ResourceBundleCheck extends BaseFileCheck {
 			addMessage(
 				fileName,
 				"Use ResourceBundleUtil.getString instead of " +
-					"resourceBundle.getString, see LPS-58529",
-				getLineCount(content, pos));
+					"resourceBundle.getString",
+				getLineNumber(content, pos));
 		}
 
 		return content;

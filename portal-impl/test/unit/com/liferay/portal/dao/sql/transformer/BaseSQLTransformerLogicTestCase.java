@@ -14,8 +14,8 @@
 
 package com.liferay.portal.dao.sql.transformer;
 
+import com.liferay.petra.string.CharPool;
 import com.liferay.portal.kernel.dao.db.DB;
-import com.liferay.portal.kernel.util.CharPool;
 import com.liferay.portal.kernel.util.StringUtil;
 
 import java.util.function.Function;
@@ -75,6 +75,13 @@ public abstract class BaseSQLTransformerLogicTestCase {
 		Assert.assertEquals(
 			getCrossJoinTransformedSQL(),
 			sqlTransformer.transform(getCrossJoinOriginalSQL()));
+	}
+
+	@Test
+	public void testReplaceDropTableIfExistsText() {
+		Assert.assertEquals(
+			getDropTableIfExistsTextTransformedSQL(),
+			sqlTransformer.transform(getDropTableIfExistsTextOriginalSQL()));
 	}
 
 	@Test
@@ -201,6 +208,14 @@ public abstract class BaseSQLTransformerLogicTestCase {
 
 	protected String getCrossJoinTransformedSQL() {
 		return getCrossJoinOriginalSQL();
+	}
+
+	protected String getDropTableIfExistsTextOriginalSQL() {
+		return "DROP_TABLE_IF_EXISTS(Foo)";
+	}
+
+	protected String getDropTableIfExistsTextTransformedSQL() {
+		return getDropTableIfExistsTextOriginalSQL();
 	}
 
 	protected String getInstrOriginalSQL() {

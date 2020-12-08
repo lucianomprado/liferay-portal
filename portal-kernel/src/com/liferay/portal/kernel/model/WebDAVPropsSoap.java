@@ -14,8 +14,6 @@
 
 package com.liferay.portal.kernel.model;
 
-import aQute.bnd.annotation.ProviderType;
-
 import java.io.Serializable;
 
 import java.util.ArrayList;
@@ -26,10 +24,12 @@ import java.util.List;
  * This class is used by SOAP remote services.
  *
  * @author Brian Wing Shun Chan
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
-@ProviderType
+@Deprecated
 public class WebDAVPropsSoap implements Serializable {
+
 	public static WebDAVPropsSoap toSoapModel(WebDAVProps model) {
 		WebDAVPropsSoap soapModel = new WebDAVPropsSoap();
 
@@ -73,7 +73,8 @@ public class WebDAVPropsSoap implements Serializable {
 	}
 
 	public static WebDAVPropsSoap[] toSoapModels(List<WebDAVProps> models) {
-		List<WebDAVPropsSoap> soapModels = new ArrayList<WebDAVPropsSoap>(models.size());
+		List<WebDAVPropsSoap> soapModels = new ArrayList<WebDAVPropsSoap>(
+			models.size());
 
 		for (WebDAVProps model : models) {
 			soapModels.add(toSoapModel(model));
@@ -165,4 +166,5 @@ public class WebDAVPropsSoap implements Serializable {
 	private long _classNameId;
 	private long _classPK;
 	private String _props;
+
 }

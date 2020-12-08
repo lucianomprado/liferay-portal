@@ -14,6 +14,9 @@
 
 package com.liferay.registry.internal.test;
 
+import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
+import com.liferay.portal.kernel.test.rule.AggregateTestRule;
+import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.registry.Filter;
 import com.liferay.registry.Registry;
 import com.liferay.registry.RegistryUtil;
@@ -34,18 +37,16 @@ import java.util.SortedMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.arquillian.test.api.ArquillianResource;
-
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
-import org.osgi.framework.BundleException;
+import org.osgi.framework.FrameworkUtil;
 
 /**
  * @author Raymond Augé
@@ -54,16 +55,58 @@ import org.osgi.framework.BundleException;
 @RunWith(Arquillian.class)
 public class RegistryTest {
 
+	@ClassRule
+	@Rule
+	public static final AggregateTestRule aggregateTestRule =
+		new LiferayIntegrationTestRule();
+
 	@Before
-	public void setUp() throws BundleException {
-		_bundle.start();
+	public void setUp() {
+		Bundle bundle = FrameworkUtil.getBundle(RegistryTest.class);
+
+		_bundleContext = bundle.getBundleContext();
 
 		_registry = RegistryUtil.getRegistry();
 	}
 
-	@After
-	public void tearDown() throws BundleException {
-		_bundle.stop();
+	@Test
+	public void testCallServiceByClass() {
+		InterfaceOne interfaceOne = getInstance();
+
+		ServiceRegistration<InterfaceOne> serviceRegistration =
+			_registry.registerService(InterfaceOne.class, interfaceOne);
+
+		Assert.assertNotNull(serviceRegistration);
+
+		_registry.callService(
+			InterfaceOne.class,
+			registeredInterfaceOne -> {
+				Assert.assertEquals(interfaceOne, registeredInterfaceOne);
+
+				return null;
+			});
+
+		serviceRegistration.unregister();
+	}
+
+	@Test
+	public void testCallServiceByClassName() {
+		InterfaceOne interfaceOne = getInstance();
+
+		ServiceRegistration<InterfaceOne> serviceRegistration =
+			_registry.registerService(InterfaceOne.class, interfaceOne);
+
+		Assert.assertNotNull(serviceRegistration);
+
+		_registry.callService(
+			InterfaceOne.class.getName(),
+			registeredInterfaceOne -> {
+				Assert.assertEquals(interfaceOne, registeredInterfaceOne);
+
+				return null;
+			});
+
+		serviceRegistration.unregister();
 	}
 
 	@Test
@@ -77,24 +120,6 @@ public class RegistryTest {
 	}
 
 	@Test
-	public void testGetRegistryService() {
-		org.osgi.framework.ServiceReference<Registry> serviceReference =
-			_bundleContext.getServiceReference(Registry.class);
-
-		Registry registry = _bundleContext.getService(serviceReference);
-
-		Assert.assertNotNull(registry);
-	}
-
-	@Test
-	public void testGetRegistryServiceReference() {
-		org.osgi.framework.ServiceReference<Registry> serviceReference =
-			_bundleContext.getServiceReference(Registry.class);
-
-		Assert.assertNotNull(serviceReference);
-	}
-
-	@Test
 	public void testGetServiceByClass() {
 		InterfaceOne interfaceOne = getInstance();
 
@@ -104,7 +129,7 @@ public class RegistryTest {
 		Assert.assertNotNull(serviceRegistration);
 
 		InterfaceOne registeredInterfaceOne = _registry.getService(
-			InterfaceOne.class);
+			_registry.getServiceReference(InterfaceOne.class));
 
 		Assert.assertEquals(interfaceOne, registeredInterfaceOne);
 
@@ -121,7 +146,7 @@ public class RegistryTest {
 		Assert.assertNotNull(serviceRegistration);
 
 		InterfaceOne registeredInterfaceOne = _registry.getService(
-			InterfaceOne.class.getName());
+			_registry.getServiceReference(InterfaceOne.class.getName()));
 
 		Assert.assertEquals(interfaceOne, registeredInterfaceOne);
 
@@ -492,7 +517,8 @@ public class RegistryTest {
 
 	@Test
 	public void testRegisterServiceByClassNames() {
-		InterfaceBoth interfaceOne = new InterfaceBoth() {};
+		InterfaceBoth interfaceOne = new InterfaceBoth() {
+		};
 
 		ServiceRegistration<?> serviceRegistration = _registry.registerService(
 			new String[] {
@@ -531,7 +557,9 @@ public class RegistryTest {
 			new String[] {
 				InterfaceOne.class.getName(), InterfaceTwo.class.getName()
 			},
-			new InterfaceBoth() {}, properties);
+			new InterfaceBoth() {
+			},
+			properties);
 
 		Assert.assertNotNull(serviceRegistration);
 
@@ -691,9 +719,8 @@ public class RegistryTest {
 			public ServiceTracker<InterfaceOne, InterfaceOne>
 				getServiceTracker() {
 
-				Filter filter = _registry.getFilter("(a.property=G)");
-
-				return _registry.trackServices(filter);
+				return _registry.trackServices(
+					_registry.getFilter("(a.property=G)"));
 			}
 
 		};
@@ -727,15 +754,11 @@ public class RegistryTest {
 	}
 
 	protected InterfaceOne getInstance() {
-		return new InterfaceOne() {};
+		return new InterfaceOne() {
+		};
 	}
 
-	@ArquillianResource
-	private Bundle _bundle;
-
-	@ArquillianResource
 	private BundleContext _bundleContext;
-
 	private Registry _registry;
 
 	private class MockServiceTrackerCustomizer

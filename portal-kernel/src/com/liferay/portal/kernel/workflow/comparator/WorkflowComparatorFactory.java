@@ -22,11 +22,17 @@ import com.liferay.portal.kernel.workflow.WorkflowInstance;
 import com.liferay.portal.kernel.workflow.WorkflowLog;
 import com.liferay.portal.kernel.workflow.WorkflowTask;
 
+import org.osgi.annotation.versioning.ProviderType;
+
 /**
  * @author Michael C. Han
  */
 @MessagingProxy(mode = ProxyMode.SYNC)
+@ProviderType
 public interface WorkflowComparatorFactory {
+
+	public OrderByComparator<WorkflowDefinition>
+		getDefinitionModifiedDateComparator(boolean ascending);
 
 	public OrderByComparator<WorkflowDefinition> getDefinitionNameComparator(
 		boolean ascending);
@@ -57,6 +63,18 @@ public interface WorkflowComparatorFactory {
 
 	public OrderByComparator<WorkflowTask> getTaskDueDateComparator(
 		boolean ascending);
+
+	public default OrderByComparator<WorkflowTask> getTaskInstanceIdComparator(
+		boolean ascending) {
+
+		throw new UnsupportedOperationException();
+	}
+
+	public default OrderByComparator<WorkflowTask>
+		getTaskModifiedDateComparator(boolean ascending) {
+
+		throw new UnsupportedOperationException();
+	}
 
 	public OrderByComparator<WorkflowTask> getTaskNameComparator(
 		boolean ascending);

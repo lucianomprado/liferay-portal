@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0"?>
 
 <custom-sql>
 	<sql id="com.liferay.sync.service.persistence.SyncDLObjectFinder.findByModifiedTime">
@@ -15,7 +15,7 @@
 				(SyncDLObject.treePath LIKE ?) AND
 				(SyncDLObject.type_ = ?)
 			ORDER BY
-				modifiedTime asc
+				modifiedTime ASC
 		]]>
 	</sql>
 	<sql id="com.liferay.sync.service.persistence.SyncDLObjectFinder.findByTypePKs">

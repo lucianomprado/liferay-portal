@@ -15,6 +15,7 @@
 package com.liferay.gradle.util.tasks;
 
 import com.liferay.gradle.util.FileUtil;
+import com.liferay.gradle.util.GUtil;
 import com.liferay.gradle.util.GradleUtil;
 
 import java.io.File;
@@ -26,14 +27,17 @@ import java.util.List;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.Project;
 import org.gradle.api.file.FileCollection;
+import org.gradle.api.tasks.CacheableTask;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.OutputFile;
+import org.gradle.api.tasks.PathSensitive;
+import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.TaskAction;
-import org.gradle.util.GUtil;
 
 /**
  * @author Andrea Di Giorgi
  */
+@CacheableTask
 public class ConcatenateTask extends DefaultTask {
 
 	@TaskAction
@@ -47,6 +51,7 @@ public class ConcatenateTask extends DefaultTask {
 	}
 
 	@InputFiles
+	@PathSensitive(PathSensitivity.RELATIVE)
 	public FileCollection getSourceFiles() {
 		Project project = getProject();
 

@@ -1,284 +1,288 @@
-<definition>
-	<var name="formDescription" value="Created Form Description" />
-	<var name="formName" value="Created Form Name" />
-
-	<command name="deleteForm">
-		<var name="key_rowEntry" value="${formName}" />
-
-		<execute function="Click#waitForMenuToggleJSClick" locator1="Icon#ROW_VERTICAL_ELLIPSIS" />
-
-		<execute function="AssertClickNoError" locator1="MenuItem#ANY_MENU_ITEM" value1="Delete">
-			<var name="key_menuItem" value="Delete" />
-		</execute>
-
-		<execute function="Confirm" value1="Are you sure you want to delete this? It will be deleted immediately." />
-
-		<execute macro="Alert#viewSuccessMessage" />
-	</command>
-
-	<command name="editDataProvider">
-		<execute macro="FormFields#editText">
-			<var name="fieldName" value="DataProviderPortlet_name" />
-			<var name="fieldValue" value="${name}" />
-		</execute>
-
-		<execute macro="FormFields#editText">
-			<var name="fieldName" value="$url" />
-			<var name="fieldValue" value="${url}" />
-		</execute>
-
-		<execute macro="FormFields#editText">
-			<var name="fieldName" value="$username" />
-			<var name="fieldValue" value="${username}" />
-		</execute>
-
-		<var name="key_fieldName" value="$password" />
-
-		<if>
-			<condition function="IsElementPresent" locator1="FormFields#PASSWORD_FIELD" />
-			<then>
-				<execute macro="FormFields#editPassword">
-					<var name="fieldName" value="$password" />
-					<var name="fieldValue" value="${password}" />
-				</execute>
-			</then>
-			<else>
-				<execute macro="FormFields#editText">
-					<var name="fieldName" value="$password" />
-					<var name="fieldValue" value="${password}" />
-				</execute>
-			</else>
-		</if>
-
-		<execute macro="FormsAdmin#editDataProviderOutputParameter">
-			<var name="outputParameterLabel" value="${outputParameterLabel}" />
-			<var name="outputParameterLabel2" value="${outputParameterLabel2}" />
-			<var name="outputParameterName" value="${outputParameterName}" />
-			<var name="outputParameterName2" value="${outputParameterName2}" />
-			<var name="outputParameterPath" value="${outputParameterPath}" />
-			<var name="outputParameterPath2" value="${outputParameterPath2}" />
-			<var name="outputParameterType" value="${outputParameterType}" />
-			<var name="outputParameterType2" value="${outputParameterType2}" />
-		</execute>
-	</command>
+definition {
+
+	var formDescription = "Created Form Description";
+	var formName = "Created Form Name";
 
-	<command name="editDataProviderOutputParameter">
-		<execute function="Type" locator1="Form#DATA_PROVIDER_OUTPUT_PARAMETER_PATH_FIELD" value1="${outputParameterPath}" />
+	macro deleteFormEntry {
+		LexiconEntry.gotoEntryMenuItemNoError(
+			menuItem = "Delete",
+			rowEntry = "${formEntryValue}");
+
+		AssertConfirm(value1 = "Are you sure you want to delete this? It will be deleted immediately.");
 
-		<execute function="Type" locator1="Form#DATA_PROVIDER_OUTPUT_PARAMETER_LABEL_FIELD" value1="${outputParameterLabel}" />
+		Alert.viewSuccessMessage();
+	}
 
-		<execute macro="FormFields#selectDataProviderOutputType">
-			<var name="outputParameterType" value="${outputParameterType}" />
-		</execute>
+	macro editDataProvider {
+		FormFields.editText(
+			fieldName = "DataProviderPortlet_name",
+			fieldValue = "${name}");
 
-		<if>
-			<isset var="outputParameterPath2" />
-			<then>
-				<execute function="Click" locator1="Form#DATA_PROVIDER_OUTPUT_PARAMETER_REPEAT_ICON" />
+		FormFields.editText(
+			fieldName = "$url",
+			fieldValue = "${url}");
 
-				<execute function="Type" locator1="Form#DATA_PROVIDER_OUTPUT_PARAMETER_PATH_FIELD_2" value1="${outputParameterPath2}" />
+		FormFields.editText(
+			fieldName = "$username",
+			fieldValue = "${username}");
 
-				<execute function="Type" locator1="Form#DATA_PROVIDER_OUTPUT_PARAMETER_LABEL_FIELD_2" value1="${outputParameterLabel2}" />
+		var key_fieldName = "$password";
+
+		if (IsElementPresent(locator1 = "FormFields#PASSWORD_FIELD")) {
+			FormFields.editPassword(
+				fieldName = "$password",
+				fieldValue = "${password}");
+		}
+		else {
+			FormFields.editText(
+				fieldName = "$password",
+				fieldValue = "${password}");
+		}
 
-				<execute function="Click" locator1="Form#DATA_PROVIDER_OUTPUT_PARAMETER_TYPE_FIELD_2" />
+		FormsAdmin.editDataProviderOutputParameter(
+			outputParameterLabel = "${outputParameterLabel}",
+			outputParameterLabel2 = "${outputParameterLabel2}",
+			outputParameterName = "${outputParameterName}",
+			outputParameterName2 = "${outputParameterName2}",
+			outputParameterPath = "${outputParameterPath}",
+			outputParameterPath2 = "${outputParameterPath2}",
+			outputParameterType = "${outputParameterType}",
+			outputParameterType2 = "${outputParameterType2}");
+	}
 
-				<var name="key_outputParameterType" value="${outputParameterType2}" />
+	macro editDataProviderOutputParameter {
+		Type(
+			locator1 = "Form#DATA_PROVIDER_OUTPUT_PARAMETER_PATH_FIELD",
+			value1 = "${outputParameterPath}");
 
-				<execute function="AssertClick" locator1="Form#DATA_PROVIDER_OUTPUT_PARAMETER_TYPE_FIELD_OPTIONS_LIST_2" value1="${outputParameterType2}" />
-			</then>
-		</if>
-	</command>
+		Type(
+			locator1 = "Form#DATA_PROVIDER_OUTPUT_PARAMETER_LABEL_FIELD",
+			value1 = "${outputParameterLabel}");
 
-	<command name="saveDataProvider">
-		<execute macro="Button#clickSave" />
+		FormFields.selectDataProviderOutputType(outputParameterType = "${outputParameterType}");
 
-		<execute macro="Alert#viewSuccessMessage" />
-	</command>
+		if (isSet(outputParameterPath2)) {
+			Click(locator1 = "Form#DATA_PROVIDER_OUTPUT_PARAMETER_REPEAT_ICON");
 
-	<command name="searchFormEntry">
-		<execute function="Type" locator1="NavBar#BASIC_SEARCH_FIELD" value1="${searchTerm}" />
+			Type(
+				locator1 = "Form#DATA_PROVIDER_OUTPUT_PARAMETER_PATH_FIELD_2",
+				value1 = "${outputParameterPath2}");
 
-		<execute function="Click" locator1="Icon#BASIC_SEARCH" />
-	</command>
+			Type(
+				locator1 = "Form#DATA_PROVIDER_OUTPUT_PARAMETER_LABEL_FIELD_2",
+				value1 = "${outputParameterLabel2}");
 
-	<command name="teardownForms">
-		<while>
-			<condition function="IsElementPresent" locator1="Icon#BODY_VERTICAL_ELLIPSIS" />
-			<then>
-				<execute function="Click#waitForMenuToggleJSClick" locator1="Icon#BODY_VERTICAL_ELLIPSIS" />
+			Click(locator1 = "Form#DATA_PROVIDER_OUTPUT_PARAMETER_TYPE_FIELD_2");
 
-				<execute function="AssertClickNoError" locator1="MenuItem#ANY_MENU_ITEM" value1="Delete">
-					<var name="key_menuItem" value="Delete" />
-				</execute>
+			var key_outputParameterType = "${outputParameterType2}";
 
-				<execute function="Confirm" value1="Are you sure you want to delete this? It will be deleted immediately." />
+			AssertClick(
+				locator1 = "Form#DATA_PROVIDER_OUTPUT_PARAMETER_TYPE_FIELD_OPTIONS_LIST_2",
+				value1 = "${outputParameterType2}");
+		}
+	}
 
-				<execute macro="Alert#viewSuccessMessage" />
-			</then>
-		</while>
-	</command>
+	macro saveDataProvider {
+		PortletEntry.save();
 
-	<command name="viewCannotEditFormEntries">
-		<execute function="AssertElementNotPresent" locator1="Button#SUBMIT" value1="Submit" />
-		<execute function="AssertElementNotPresent" locator1="FormFields#FIELD_ADD" />
-	</command>
+		Pause(locator1 = "5000");
+	}
 
-	<command name="viewCheckboxEntry">
-		<execute macro="FormsAdmin#viewCannotEditFormEntries" />
+	macro teardownDataProviders {
+		while (IsElementPresent(locator1 = "Icon#BODY_VERTICAL_ELLIPSIS")) {
+			LexiconEntry.gotoEllipsisMenuItemNoError(menuItem = "Delete");
 
-		<var name="key_fieldName" value="${fieldName}" />
+			AssertConfirm(value1 = "Are you sure you want to delete this? It will be deleted immediately.");
 
-		<execute macro="FormFields#viewCheckboxLabel">
-			<var name="fieldLabel" value="${fieldLabel}" />
-			<var name="fieldName" value="${fieldName}" />
-		</execute>
+			Alert.viewSuccessMessage();
+		}
+	}
 
-		<execute function="AssertElementPresent" locator1="FormFields#CHECKBOX" />
-	</command>
+	macro teardownElementSets {
+		while (IsElementPresent(locator1 = "Icon#BODY_VERTICAL_ELLIPSIS")) {
+			LexiconEntry.gotoEllipsisMenuItemNoError(menuItem = "Delete");
 
-	<command name="viewDateEntry">
-		<execute macro="FormsAdmin#viewCannotEditFormEntries" />
+			AssertConfirm(value1 = "Are you sure you want to delete this? It will be deleted immediately.");
 
-		<execute macro="FormFields#viewDateLabel">
-			<var name="fieldLabel" value="${fieldLabel}" />
-			<var name="fieldName" value="${fieldName}" />
-		</execute>
+			Alert.viewSuccessMessage();
+		}
+	}
 
-		<execute macro="FormFields#viewDateValue">
-			<var name="fieldLabel" value="${fieldLabel}" />
-			<var name="fieldName" value="${fieldName}" />
-			<var name="fieldValue" value="${fieldValue}" />
-		</execute>
-	</command>
+	macro teardownForms {
+		while (IsElementPresent(locator1 = "Icon#BODY_VERTICAL_ELLIPSIS")) {
+			LexiconEntry.gotoEllipsisMenuItemNoError(menuItem = "Delete");
 
-	<command name="viewForm">
-		<var name="key_formName" value="${formName}" />
+			AssertConfirm(value1 = "Are you sure you want to delete this? It will be deleted immediately.");
 
-		<execute function="AssertTextEquals" locator1="FormsAdmin#FORMS_TABLE_NAME" value1="${formName}" />
+			Alert.viewSuccessMessage();
+		}
+	}
 
-		<var name="key_formDescription" value="${formDescription}" />
+	macro viewCannotEditFormEntries {
+		if ("${onSitePage}" == "true") {
+			AssertElementNotPresent(locator1 = "FormFields#FIELD_ADD");
+		}
+		else {
+			AssertElementNotPresent(locator1 = "Button#SUBMIT");
 
-		<execute function="AssertTextEquals" locator1="FormsAdmin#FORMS_TABLE_DESCRIPTION" value1="${formDescription}" />
+			AssertElementNotPresent(locator1 = "FormFields#FIELD_ADD");
+		}
+	}
 
-		<var name="key_rowEntry" value="${formName}" />
+	macro viewCheckboxEntry {
+		FormsAdmin.viewCannotEditFormEntries();
 
-		<execute function="AssertElementPresent" locator1="Icon#ROW_VERTICAL_ELLIPSIS" />
-	</command>
+		var key_fieldName = "${fieldName}";
+		var key_fieldValue = "${fieldValue}";
 
-	<command name="viewFormGridFieldTableEntry">
-		<var name="key_fieldLabel" value="${fieldLabel}" />
+		FormFields.viewCheckboxEntry(
+			fieldName = "${fieldName}",
+			fieldValue = "${fieldValue}");
 
-		<var method="StringUtil#lowerCase('${key_fieldLabel}')" name="key_fieldLabel" />
-		<var method="StringUtil#replace('${key_fieldLabel}', ' ', '-')" name="key_fieldLabel" />
+		AssertElementPresent(locator1 = "FormFields#CHECKBOX");
+	}
 
-		<execute function="AssertTextEquals#assertPartialText" locator1="FormsAdmin#GRID_FIELD_FORM_ENTRY_TABLE_ENTRY" value1="${optionRowLabel}: ${categoryColumnLabel}" />
-	</command>
+	macro viewDateEntry {
+		FormsAdmin.viewCannotEditFormEntries();
 
-	<command name="viewFormIcon">
-		<var name="key_formName" value="${formName}" />
+		FormFields.viewDateLabel(
+			fieldLabel = "${fieldLabel}",
+			fieldName = "${fieldName}");
 
-		<execute function="AssertElementPresent" locator1="FormsAdmin#FORM_ICON_DISPLAY_THUMBNAIL" />
+		FormFields.viewDateValue(
+			fieldLabel = "${fieldLabel}",
+			fieldName = "${fieldName}",
+			fieldValue = "${fieldValue}");
+	}
 
-		<execute function="AssertTextEquals" locator1="FormsAdmin#FORM_ICON_DISPLAY_NAME" value1="${formName}" />
-	</command>
+	macro viewForm {
+		var key_formName = "${formName}";
 
-	<command name="viewFormTableEntry">
-		<var name="key_fieldLabel" value="${fieldLabel}" />
-		<var name="key_fieldValue" value="${fieldValue}" />
+		AssertTextEquals(
+			locator1 = "FormsAdmin#FORMS_TABLE_NAME",
+			value1 = "${formName}");
 
-		<execute function="AssertTextEquals" locator1="FormsAdmin#FORM_ENTRY_TABLE_ENTRY" value1="${fieldValue}" />
-	</command>
+		var key_formDescription = "${formDescription}";
 
-	<command name="viewFormTableEntryNotPresent">
-		<var name="key_fieldLabel" value="${fieldLabel}" />
-		<var name="key_fieldValue" value="${fieldValue}" />
+		if (IsVisible(locator1 = "FormsAdmin#FORMS_TABLE_DESCRIPTION")) {
+			AssertTextEquals(
+				locator1 = "FormsAdmin#FORMS_TABLE_DESCRIPTION",
+				value1 = "${formDescription}");
+		}
 
-		<execute function="AssertElementNotPresent" locator1="FormsAdmin#FORM_ENTRY_TABLE_ENTRY" />
-	</command>
+		var key_rowEntry = "${formName}";
 
-	<command name="viewMultilineTextEntry">
-		<execute macro="FormsAdmin#viewCannotEditFormEntries" />
+		AssertElementPresent(locator1 = "Icon#ROW_VERTICAL_ELLIPSIS");
+	}
 
-		<execute macro="FormFields#viewTextLabel">
-			<var name="fieldLabel" value="${fieldLabel}" />
-			<var name="fieldName" value="${fieldName}" />
-		</execute>
+	macro viewFormTableEntry {
+		var key_fieldLabel = "${fieldLabel}";
+		var key_fieldValue = "${fieldValue}";
 
-		<execute macro="FormFields#viewMultilineTextValue">
-			<var name="fieldName" value="${fieldName}" />
-			<var name="fieldValue" value="${fieldValue}" />
-		</execute>
-	</command>
+		AssertTextEquals(
+			locator1 = "FormsAdmin#FORM_ENTRY_TABLE_ENTRY",
+			value1 = "${fieldValue}");
+	}
 
-	<command name="viewNoDuplicateForms">
-		<var name="key_formName" value="${formName}" />
+	macro viewFormTableEntryNotPresent {
+		var key_fieldLabel = "${fieldLabel}";
+		var key_fieldValue = "${fieldValue}";
 
-		<execute function="AssertElementNotPresent" locator1="FormsAdmin#FORMS_TABLE_NAME_2" value1="${formName}" />
-	</command>
+		AssertElementNotPresent(locator1 = "FormsAdmin#FORM_ENTRY_TABLE_ENTRY");
+	}
 
-	<command name="viewNoFormEntries">
-		<execute function="AssertTextEquals" locator1="Message#EMPTY_INFO" value1="No entries were found." />
-	</command>
+	macro viewImageTableEntry {
+		AssertElementPresent(locator1 = "FormFields#IMAGE_TABLE_ENTRY");
+	}
 
-	<command name="viewNoForms">
-		<execute function="AssertTextEquals" locator1="Message#EMPTY_INFO" value1="There are no forms. Click on the plus button to add the first one." />
-	</command>
+	macro viewMultilineTextEntry {
+		FormsAdmin.viewCannotEditFormEntries();
 
-	<command name="viewParagraphEntry">
-		<execute macro="FormsAdmin#viewCannotEditFormEntries" />
+		FormFields.viewTextLabel(
+			fieldLabel = "${fieldLabel}",
+			fieldName = "${fieldName}");
 
-		<execute macro="FormFields#viewParagraphField">
-			<var name="fieldName" value="${fieldName}" />
-			<var name="fieldTitle" value="${fieldTitle}" />
-			<var name="fieldValue" value="${fieldValue}" />
-		</execute>
-	</command>
+		FormFields.viewMultilineTextValue(
+			fieldName = "${fieldName}",
+			fieldValue = "${fieldValue}");
+	}
 
-	<command name="viewRadioEntry">
-		<execute macro="FormsAdmin#viewCannotEditFormEntries" />
+	macro viewNoDuplicateForms {
+		var key_formName = "${formName}";
 
-		<execute macro="FormFields#viewRadioLabel">
-			<var name="fieldLabel" value="${fieldLabel}" />
-			<var name="fieldName" value="${fieldName}" />
-		</execute>
+		AssertElementNotPresent(locator1 = "FormsAdmin#FORMS_TABLE_NAME_2");
+	}
 
-		<execute macro="FormFields#viewRadioValue">
-			<var name="fieldName" value="${fieldName}" />
-			<var name="fieldValue" value="${fieldValue}" />
-		</execute>
-	</command>
+	macro viewNoFormEntries {
+		AssertTextEquals(
+			locator1 = "Message#EMPTY_INFO",
+			value1 = "There are no entries.");
+	}
 
-	<command name="viewSelectEntry">
-		<execute macro="FormsAdmin#viewCannotEditFormEntries" />
+	macro viewNoFormEntriesFound {
+		AssertTextEquals(
+			locator1 = "Message#EMPTY_INFO",
+			value1 = "No entries were found.");
+	}
 
-		<execute macro="FormFields#viewSelectLabel">
-			<var name="fieldLabel" value="${fieldLabel}" />
-			<var name="fieldName" value="${fieldName}" />
-		</execute>
+	macro viewNoForms {
+		AssertElementPresent(locator1 = "Message#EMPTY_INFO_TAGLIB");
+	}
 
-		<execute macro="FormFields#viewSelectValue">
-			<var name="fieldName" value="${fieldName}" />
-		</execute>
-	</command>
+	macro viewRadioEntry {
+		FormsAdmin.viewCannotEditFormEntries(onSitePage = "${onSitePage}");
 
-	<command name="viewTableEntryNotPresent">
-		<var name="key_fieldLabel" value="${fieldLabel}" />
-		<var name="key_fieldValue" value="${fieldValue}" />
+		FormFields.viewRadioLabel(
+			fieldLabel = "${fieldLabel}",
+			fieldName = "${fieldName}");
 
-		<execute function="AssertElementNotPresent" locator1="FormsAdmin#FORM_ENTRY_TABLE_ENTRY" value1="${fieldValue}" />
-	</command>
+		FormFields.viewRadioValue(
+			fieldName = "${fieldName}",
+			fieldValue = "${fieldValue}");
+	}
 
-	<command name="viewTextEntry">
-		<execute macro="FormsAdmin#viewCannotEditFormEntries" />
+	macro viewSelectEntry {
+		FormsAdmin.viewCannotEditFormEntries(onSitePage = "${onSitePage}");
 
-		<execute macro="FormFields#viewTextLabel">
-			<var name="fieldLabel" value="${fieldLabel}" />
-			<var name="fieldName" value="${fieldName}" />
-		</execute>
+		FormFields.viewSelectLabel(
+			fieldLabel = "${fieldLabel}",
+			fieldName = "${fieldName}");
 
-		<execute macro="FormFields#viewTextValue">
-			<var name="fieldName" value="${fieldName}" />
-			<var name="fieldValue" value="${fieldValue}" />
-		</execute>
-	</command>
-</definition>
+		FormFields.viewSelectValue(fieldName = "${fieldName}");
+	}
+
+	macro viewTableEntryNotPresent {
+		AssertElementNotPresent(
+			key_fieldLabel = "${fieldLabel}",
+			key_fieldValue = "${fieldValue}",
+			locator1 = "FormsAdmin#FORM_ENTRY_TABLE_ENTRY");
+	}
+
+	macro viewTextEntry {
+		FormsAdmin.viewCannotEditFormEntries(onSitePage = "${onSitePage}");
+
+		FormFields.viewTextLabel(
+			fieldLabel = "${fieldLabel}",
+			fieldName = "${fieldName}");
+
+		FormFields.viewTextValue(
+			fieldName = "${fieldName}",
+			fieldValue = "${fieldValue}");
+	}
+
+	macro viewUploadFile {
+		FormFields.viewUploadLabel(
+			fieldLabel = "${fieldLabel}",
+			fieldName = "${fieldName}");
+
+		var key_fieldName = "${fieldName}";
+		var key_uploadFileName = "${uploadFileName}";
+
+		AssertTextEquals(
+			locator1 = "FormFields#UPLOAD_FILE_NAME",
+			value1 = "${uploadFileName}");
+
+		AssertElementPresent(locator1 = "FormFields#UPLOAD_DOWNLOAD_ICON");
+	}
+
+}

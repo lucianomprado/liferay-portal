@@ -37,7 +37,7 @@ import javax.servlet.http.HttpServletResponse;
 public class DynamicIncludeUtil {
 
 	public static List<DynamicInclude> getDynamicIncludes(String key) {
-		return _instance._dynamicIncludes.getService(key);
+		return _dynamicIncludeUtil._dynamicIncludes.getService(key);
 	}
 
 	public static boolean hasDynamicInclude(String key) {
@@ -51,7 +51,8 @@ public class DynamicIncludeUtil {
 	}
 
 	public static void include(
-		HttpServletRequest request, HttpServletResponse response, String key,
+		HttpServletRequest httpServletRequest,
+		HttpServletResponse httpServletResponse, String key,
 		boolean ascendingPriority) {
 
 		List<DynamicInclude> dynamicIncludes = getDynamicIncludes(key);
@@ -73,10 +74,11 @@ public class DynamicIncludeUtil {
 			DynamicInclude dynamicInclude = iterator.next();
 
 			try {
-				dynamicInclude.include(request, response, key);
+				dynamicInclude.include(
+					httpServletRequest, httpServletResponse, key);
 			}
-			catch (Exception e) {
-				_log.error(e, e);
+			catch (Exception exception) {
+				_log.error(exception, exception);
 			}
 		}
 	}
@@ -115,7 +117,7 @@ public class DynamicIncludeUtil {
 	private static final Log _log = LogFactoryUtil.getLog(
 		DynamicIncludeUtil.class);
 
-	private static final DynamicIncludeUtil _instance =
+	private static final DynamicIncludeUtil _dynamicIncludeUtil =
 		new DynamicIncludeUtil();
 
 	private final ServiceTrackerMap<String, List<DynamicInclude>>

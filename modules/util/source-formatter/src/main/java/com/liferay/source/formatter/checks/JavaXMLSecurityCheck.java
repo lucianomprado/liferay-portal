@@ -14,7 +14,7 @@
 
 package com.liferay.source.formatter.checks;
 
-import com.liferay.portal.kernel.util.StringBundler;
+import com.liferay.petra.string.StringBundler;
 
 /**
  * @author Hugo Huijser
@@ -22,7 +22,7 @@ import com.liferay.portal.kernel.util.StringBundler;
 public class JavaXMLSecurityCheck extends BaseFileCheck {
 
 	@Override
-	public boolean isPortalCheck() {
+	public boolean isLiferaySourceCheck() {
 		return true;
 	}
 
@@ -44,7 +44,7 @@ public class JavaXMLSecurityCheck extends BaseFileCheck {
 	private void _checkXMLSecurity(
 		String fileName, String absolutePath, String content) {
 
-		String[] xmlVulnerabitilies = new String[] {
+		String[] xmlVulnerabitilies = {
 			"DocumentBuilderFactory.newInstance",
 			"new javax.xml.parsers.SAXParser",
 			"new org.apache.xerces.parsers.SAXParser",

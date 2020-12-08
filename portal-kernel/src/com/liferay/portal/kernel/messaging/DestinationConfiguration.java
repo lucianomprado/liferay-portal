@@ -14,12 +14,12 @@
 
 package com.liferay.portal.kernel.messaging;
 
-import com.liferay.portal.kernel.concurrent.RejectedExecutionHandler;
-import com.liferay.portal.kernel.util.StringBundler;
+import com.liferay.petra.string.StringBundler;
 
 import java.io.Serializable;
 
 import java.util.Objects;
+import java.util.concurrent.RejectedExecutionHandler;
 
 /**
  * @author Michael C. Han

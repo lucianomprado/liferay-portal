@@ -14,9 +14,13 @@
 
 package com.liferay.portal.kernel.util;
 
+import com.liferay.petra.lang.CentralizedThreadLocal;
+
 /**
- * @author Preston Crary
+ * @author     Preston Crary
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  */
+@Deprecated
 public class VerifyThreadLocal {
 
 	public static boolean isVerifyInProgress() {
@@ -28,7 +32,7 @@ public class VerifyThreadLocal {
 	}
 
 	private static final ThreadLocal<Boolean> _verifyInProgress =
-		new AutoResetThreadLocal<>(
+		new CentralizedThreadLocal<>(
 			VerifyThreadLocal.class + "._verifyInProgress",
 			() -> Boolean.FALSE);
 

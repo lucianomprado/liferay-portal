@@ -16,7 +16,6 @@ package com.liferay.portal.kernel.portlet;
 
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.Group;
-import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.PortalUtil;
 
 import javax.portlet.PortletRequest;
@@ -30,27 +29,20 @@ import javax.servlet.http.HttpServletRequest;
 public abstract class BasePortletProvider implements PortletProvider {
 
 	@Override
-	public PortletURL getPortletURL(HttpServletRequest request)
+	public PortletURL getPortletURL(HttpServletRequest httpServletRequest)
 		throws PortalException {
 
-		return getPortletURL(request, null);
+		return getPortletURL(httpServletRequest, null);
 	}
 
 	@Override
-	public PortletURL getPortletURL(HttpServletRequest request, Group group)
+	public PortletURL getPortletURL(
+			HttpServletRequest httpServletRequest, Group group)
 		throws PortalException {
 
 		return PortalUtil.getControlPanelPortletURL(
-			request, group, getPortletName(), 0, 0,
+			httpServletRequest, group, getPortletName(), 0, 0,
 			PortletRequest.RENDER_PHASE);
-	}
-
-	/**
-	 * @deprecated As of 7.0.0
-	 */
-	@Deprecated
-	protected long getPlid(ThemeDisplay themeDisplay) throws PortalException {
-		return PortalUtil.getControlPanelPlid(themeDisplay.getCompanyId());
 	}
 
 }

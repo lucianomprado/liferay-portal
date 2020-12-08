@@ -1,183 +1,632 @@
-<definition>
-	<command name="addFromURL">
-		<var name="key_imageSourceURL" value="${imageSourceURL}" />
+definition {
+
+	macro addFromURL {
+		var key_imageSourceURL = "${imageSourceURL}";
+		var key_navTab = "${navTab}";
+
+		SelectFrame(locator1 = "ItemSelector#ITEM_SELECTOR_IFRAME");
+
+		if (isSet(wikiAdmin)) {
+			AssertElementNotPresent(locator1 = "ItemSelector#NAVIGATION_SPECIFIC_TAB");
+		}
+		else {
+			AssertClick(
+				locator1 = "ItemSelector#NAVIGATION_SPECIFIC_TAB",
+				value1 = "URL");
+		}
+
+		AssertElementPresent(locator1 = "ItemSelector#URL_LABEL");
+		AssertElementNotPresent(locator1 = "ItemSelector#URL_IMAGE_PREVIEW");
+
+		AssertVisible(
+			key_text = "Add",
+			locator1 = "Button#ANY_DISABLED");
+
+		if (isSet(embedVideo)) {
+			Type(
+				locator1 = "TextInput#VIDEO_URL",
+				value1 = "${embedVideo}");
+		}
+		else {
+			Type(
+				locator1 = "TextInput#URL",
+				value1 = "${imageSourceURL}");
+
+			AssertTextEquals(
+				locator1 = "TextInput#URL",
+				value1 = "${imageSourceURL}");
+		}
+
+		if (("${type}" == "Audio") || ("${type}" == "Video")) {
+			AssertElementPresent.pauseAssertVisible(
+				key_text = "Add",
+				locator1 = "Button#ANY_ENABLED");
+
+			Button.clickAdd();
+		}
+		else {
+			AssertElementPresent.pauseAssertVisible(locator1 = "ItemSelector#URL_IMAGE_SOURCE");
 
-		<execute function="SelectFrame" locator1="ItemSelector#ITEM_SELECTOR_IFRAME" />
+			if (IsElementPresent(locator1 = "ItemSelector#URL_IMAGE_EXAMPLE")) {
+				Click(locator1 = "ItemSelector#URL_IMAGE_EXAMPLE");
+			}
 
-		<execute function="AssertClick" locator1="ItemSelector#NAVIGATION_URL" value1="URL" />
+			MouseOver(
+				key_text = "Add",
+				locator1 = "Button#ANY");
 
-		<execute function="AssertElementPresent" locator1="ItemSelector#URL_LABEL" />
+			Button.clickAdd();
+		}
 
-		<execute function="Type#typeAceEditor" locator1="TextInput#URL" value1="${imageSourceURL}" />
+		SelectFrameTop(value1 = "relative=top");
+	}
 
-		<execute function="AssertClick" locator1="Button#ENTER" value1="Enter" />
+	macro changeWorkspaces {
+		if (!(isSet(customImage))) {
+			SelectFrame(locator1 = "ItemSelector#ITEM_SELECTOR_IFRAME");
+		}
 
-		<execute function="AssertElementPresent" locator1="ItemSelector#URL_IMAGE_SOURCE" value1="${imageSourceURL}" />
+		if (isSet(navTab)) {
+			AssertClick(
+				key_navTab = "${navTab}",
+				locator1 = "ItemSelector#NAVIGATION_SPECIFIC_TAB",
+				value1 = "${navTab}");
+		}
 
-		<execute function="SelectFrameTop" value1="relative=top" />
+		AssertClick(
+			key_breadcrumbName = "Sites and Libraries",
+			locator1 = "Breadcrumb#BREADCRUMB_ENTRY",
+			value1 = "Sites and Libraries");
 
-		<execute function="AssertClick" locator1="ItemSelector#ADD_BUTTON" value1="Add" />
-	</command>
+		AssertClick(
+			key_groupTab = "${workspacesType}",
+			locator1 = "ItemSelector#NAVIGATION_GROUP_TAB",
+			value1 = "${workspacesType}");
+	}
 
-	<command name="gotoItemSelectorViaAlloyEditor">
-		<execute function="Click" locator1="AlloyEditor#CONTENT_FIELD" />
+	macro clearFilterResults {
+		Click(locator1 = "Link#CLEAR");
 
-		<execute function="Click" locator1="AlloyEditor#CONTENT_ADD_BUTTON" />
+		AssertElementNotPresent(locator1 = "Search#SEARCH_INFO");
 
-		<execute function="Click" locator1="AlloyEditor#CONTENT_ADD_MENUBAR_IMAGE" />
-	</command>
+		AssertVisible(
+			key_rowEntry = "${currentSiteWebContentTitle}",
+			locator1 = "ContentRow#ENTRY_CONTENT_ENTRY_NAME");
 
-	<command name="gotoItemSelectorViaSelectButton">
-		<execute function="Click" locator1="Button#SELECT" />
-	</command>
+		AssertElementNotPresent(
+			key_rowEntry = "${webContentTitle}",
+			locator1 = "ContentRow#ENTRY_CONTENT_ENTRY_NAME");
+	}
 
-	<command name="searchBlogImages">
-		<var name="key_imageFileName" value="${imageFileName}" />
+	macro configureFilterViaSelectFile {
+		SelectFrame(locator1 = "ItemSelector#ITEM_SELECTOR_IFRAME");
 
-		<execute function="SelectFrame" locator1="ItemSelector#ITEM_SELECTOR_IFRAME" />
+		AssertClick(
+			key_navTab = "${navTab}",
+			locator1 = "ItemSelector#NAVIGATION_SPECIFIC_TAB",
+			value1 = "${navTab}");
 
-		<execute function="AssertClick" locator1="ItemSelector#NAVIGATION_DOCUMENTS_AND_MEDIA" value1="Documents and Media" />
+		ManagementBar.setFilterAndOrder(filterBy = "${filterBy}");
+	}
 
-		<execute function="AssertElementNotPresent" locator1="ItemSelector#SELECT_FILE_IMAGE_PREVIEW" value1="${imageFileName}" />
+	macro gotoItemSelectorViaAlloyEditor {
+		AlloyEditor.clickContentField();
 
-		<execute function="AssertClick" locator1="ItemSelector#NAVIGATION_BLOG_IMAGES" value1="Blog Images" />
+		Click(locator1 = "AlloyEditor#CONTENT_ADD_BUTTON");
 
-		<execute function="Type" locator1="Search#SEARCH_FIELD" value1="${imageFileName}" />
+		Click.clickNoMouseOver(locator1 = "AlloyEditor#CONTENT_ADD_MENUBAR_IMAGE");
+	}
 
-		<execute function="KeyPress" locator1="Search#SEARCH_FIELD" value1="\RETURN" />
+	macro gotoItemSelectorViaCKEditor {
+		Click(locator1 = "CKEditor#TOOLBAR_IMAGE_BUTTON");
 
-		<execute function="AssertTextEquals" locator1="Search#SEARCH_INFO" value1="Searched for ${imageFileName} in Blog Images" />
+		SelectFrame(value1 = "relative=top");
+	}
 
-		<execute function="AssertElementPresent" locator1="ItemSelector#SELECT_FILE_IMAGE_PREVIEW" value1="${imageFileName}" />
+	macro gotoItemSelectorViaSelectButton {
+		Click(locator1 = "FormFields#SELECT_UPLOAD_FIELD");
+	}
 
-		<execute function="SelectFrameTop" value1="relative=top" />
-	</command>
+	macro gotoPreviewViaSelectFile {
+		SelectFrame(locator1 = "ItemSelector#ITEM_SELECTOR_IFRAME");
 
-	<command name="searchDMImages">
-		<var name="key_imageFileName" value="${imageFileName}" />
-		<var name="key_uploadFileName" value="${imageFileName}" />
+		AssertClick(
+			key_navTab = "${navTab}",
+			locator1 = "ItemSelector#NAVIGATION_SPECIFIC_TAB",
+			value1 = "${navTab}");
 
-		<execute function="SelectFrame" locator1="ItemSelector#ITEM_SELECTOR_IFRAME" />
+		Click(locator1 = "Icon#EYE_PREVIEW");
+	}
 
-		<execute function="AssertClick" locator1="ItemSelector#NAVIGATION_BLOG_IMAGES" value1="Blog Images" />
+	macro searchBlogImages {
+		var key_imageFileName = "${imageFileName}";
 
-		<execute function="AssertElementNotPresent" locator1="ItemSelector#SELECT_FILE_IMAGE_PREVIEW" value1="${imageFileName}" />
+		SelectFrame(locator1 = "ItemSelector#ITEM_SELECTOR_IFRAME");
 
-		<execute function="AssertClick" locator1="ItemSelector#NAVIGATION_DOCUMENTS_AND_MEDIA" value1="Documents and Media" />
+		var key_navTab = "Documents and Media";
 
-		<execute function="Type" locator1="Search#SEARCH_FIELD" value1="${imageFileName}" />
+		AssertClick(
+			locator1 = "ItemSelector#NAVIGATION_SPECIFIC_TAB",
+			value1 = "Documents and Media");
 
-		<execute function="KeyPress" locator1="Search#SEARCH_FIELD" value1="\RETURN" />
+		AssertElementNotPresent(locator1 = "ItemSelector#SELECT_FILE_IMAGE_CARD");
 
-		<execute function="AssertTextEquals" locator1="Search#SEARCH_INFO" value1="Searched for ${imageFileName} everywhere." />
+		var key_navTab = "Blog Images";
 
-		<execute function="AssertElementPresent" locator1="ItemSelector#SELECT_FILE_IMAGE_PREVIEW" value1="${imageFileName}" />
+		AssertClick(
+			locator1 = "ItemSelector#NAVIGATION_SPECIFIC_TAB",
+			value1 = "Blog Images");
 
-		<execute function="SelectFrameTop" value1="relative=top" />
-	</command>
+		Type(
+			locator1 = "TextInput#SEARCH",
+			value1 = "${imageFileName}");
 
-	<command name="selectBlogImage">
-		<var name="key_imageFileName" value="${imageFileName}" />
-		<var name="key_uploadFileName" value="${imageFileName}" />
+		KeyPress(
+			locator1 = "TextInput#SEARCH",
+			value1 = "\RETURN");
 
-		<execute function="SelectFrame" locator1="ItemSelector#ITEM_SELECTOR_IFRAME" />
+		AssertTextEquals(
+			locator1 = "Search#SEARCH_INFO",
+			value1 = "1 Results for ${imageFileName}");
 
-		<execute function="AssertClick" locator1="ItemSelector#NAVIGATION_BLOG_IMAGES" value1="Blog Images" />
+		AssertElementPresent(locator1 = "ItemSelector#SELECT_FILE_IMAGE_CARD");
 
-		<execute function="Click" locator1="ItemSelector#SELECT_FILE_IMAGE_PREVIEW" />
+		SelectFrameTop(value1 = "relative=top");
+	}
 
-		<execute function="AssertTextEquals" locator1="ItemSelector#CAPTION" value1="${imageFileName}" />
+	macro searchDMImages {
+		var key_imageFileName = "${imageFileName}";
+		var key_uploadFileName = "${imageFileName}";
 
-		<execute function="SelectFrameTop" value1="relative=top" />
+		SelectFrame(locator1 = "ItemSelector#ITEM_SELECTOR_IFRAME");
 
-		<execute function="AssertClick" locator1="ItemSelector#ADD_BUTTON" value1="Add" />
-	</command>
+		var key_navTab = "Blog Images";
 
-	<command name="selectDMImage">
-		<var name="key_uploadFileName" value="${imageFileName}" />
+		AssertClick(
+			locator1 = "ItemSelector#NAVIGATION_SPECIFIC_TAB",
+			value1 = "Blog Images");
 
-		<execute function="SelectFrame" locator1="ItemSelector#ITEM_SELECTOR_IFRAME" />
+		LexiconCard.viewCardNotPresent(card = "${imageFileName}");
 
-		<execute function="AssertClick" locator1="ItemSelector#NAVIGATION_DOCUMENTS_AND_MEDIA" value1="Documents and Media" />
+		var key_navTab = "Documents and Media";
 
-		<if>
-			<isset var="dmFolderName" />
-			<then>
-				<var name="key_dmFolderName" value="${dmFolderName}" />
+		AssertClick(
+			locator1 = "ItemSelector#NAVIGATION_SPECIFIC_TAB",
+			value1 = "Documents and Media");
 
-				<execute function="AssertClick" locator1="DocumentsAndMedia#ICON_FOLDER_TITLE" value1="${dmFolderName}" />
-			</then>
-		</if>
+		Type(
+			locator1 = "TextInput#SEARCH",
+			value1 = "${imageFileName}");
 
-		<if>
-			<isset var="dmSubFolderName" />
-			<then>
-				<var name="key_dmFolderName" value="${dmSubFolderName}" />
+		KeyPress(
+			locator1 = "TextInput#SEARCH",
+			value1 = "\RETURN");
 
-				<execute function="AssertClick" locator1="DocumentsAndMedia#ICON_FOLDER_TITLE" value1="${dmSubFolderName}" />
-			</then>
-		</if>
+		AssertTextEquals(
+			locator1 = "Search#SEARCH_INFO",
+			value1 = "1 Results for ${imageFileName}");
 
-		<var method="StringUtil#replace('${imageFileName}', ' ', '+')" name="key_imageFileName" />
+		LexiconCard.viewCardPresent(card = "${imageFileName}");
 
-		<execute function="Click" locator1="ItemSelector#SELECT_FILE_IMAGE_PREVIEW" />
+		SelectFrameTop(value1 = "relative=top");
+	}
 
-		<execute function="AssertTextEquals#assertPartialText" locator1="ItemSelector#CAPTION" value1="${imageFileName}" />
+	macro selectBlogImage {
+		var key_imageFileName = "${imageFileName}";
+		var key_navTab = "${navTab}";
+		var key_uploadFileName = "${imageFileName}";
 
-		<execute function="SelectFrameTop" value1="relative=top" />
+		SelectFrame(locator1 = "ItemSelector#ITEM_SELECTOR_IFRAME");
 
-		<execute function="Click" locator1="Button#ADD" />
-	</command>
+		AssertClick(
+			locator1 = "ItemSelector#NAVIGATION_SPECIFIC_TAB",
+			value1 = "Blog Images");
 
-	<command name="uploadFile">
-		<var name="key_navTab" value="${navTab}" />
-		<var name="key_uploadFileName" value="${uploadFileName}" />
+		Click(locator1 = "ItemSelector#SELECT_FILE_IMAGE_VIEW_BUTTON");
 
-		<execute function="SelectFrame" locator1="ItemSelector#ITEM_SELECTOR_IFRAME" />
+		AssertTextEquals(
+			locator1 = "ItemSelector#FOOTER",
+			value1 = "${imageFileName}");
 
-		<execute function="AssertClick" locator1="ItemSelector#NAVIGATION_SPECIFIC_TAB" value1="${navTab}" />
+		AssertClick(
+			locator1 = "ItemSelector#ADD_BUTTON",
+			value1 = "Add");
+	}
 
-		<execute function="AssertClick" locator1="ItemSelector#SELECT_FILE_UPLOAD_IMAGE" value1="Select File" />
+	macro selectDMImage {
+		var key_navTab = "${navTab}";
+		var key_uploadFileName = "${imageFileName}";
 
-		<execute function="SikuliUploadCommonFile" locator1="OS#FILE_DIALOG_BOX_FILE_NAME_FIELD_PNG" value1="${uploadFileName}" />
+		SelectFrame(locator1 = "ItemSelector#ITEM_SELECTOR_IFRAME");
 
-		<execute function="AssertTextEquals" locator1="ItemSelector#CAPTION" value1="${uploadFileName}" />
+		if (IsElementPresent(locator1 = "ItemSelector#NAVIGATION_SPECIFIC_TAB")) {
+			AssertClick(
+				locator1 = "ItemSelector#NAVIGATION_SPECIFIC_TAB",
+				value1 = "${navTab}");
+		}
 
-		<execute function="SelectFrame" locator1="ItemSelector#ITEM_SELECTOR_MODAL_FOOTER" />
+		if (isSet(dmFolderName)) {
+			var key_dmFolderName = "${dmFolderName}";
 
-		<execute function="AssertClick" locator1="ItemSelector#ADD_BUTTON" value1="Add" />
+			AssertClick(
+				locator1 = "DocumentsAndMedia#ICON_FOLDER_TITLE",
+				value1 = "${dmFolderName}");
+		}
 
-		<execute function="SelectFrameTop" value1="relative=top" />
-	</command>
+		if (isSet(dmSubFolderName)) {
+			var key_dmFolderName = "${dmSubFolderName}";
 
-	<command name="viewBlogImageDetails">
-		<var name="key_imageFileName" value="${imageFileName}" />
-		<var name="key_uploadFileName" value="${uploadFileName}" />
+			AssertClick(
+				locator1 = "DocumentsAndMedia#ICON_FOLDER_TITLE",
+				value1 = "${dmSubFolderName}");
+		}
 
-		<execute function="SelectFrame" locator1="ItemSelector#ITEM_SELECTOR_IFRAME" />
+		var key_imageFileName = StringUtil.replace("${imageFileName}", " ", "+");
 
-		<execute function="Click" locator1="ItemSelector#SELECT_FILE_IMAGE_PREVIEW" value1="${imageFileName}" />
+		LexiconCard.clickCard(card = "${imageFileName}");
+	}
 
-		<execute function="AssertElementPresent" locator1="ItemSelector#SELECT_IMAGE_PREVIEW" />
-		<execute function="AssertTextEquals" locator1="ItemSelector#CAPTION" value1="${uploadFileName}" />
+	macro selectRepositoryImage {
+		var key_imageFileName = "${imageFileName}";
 
-		<execute function="Click" locator1="ItemSelector#FILE_INFO_ICON" />
+		ItemSelector.changeWorkspaces(
+			customImage = "${customImage}",
+			navTab = "${navTab}",
+			workspacesType = "Asset Library");
 
-		<execute function="AssertElementPresent" locator1="NavTab#FILE_INFO" />
-		<execute function="AssertElementPresent" locator1="NavTab#VERSION" />
+		LexiconCard.clickCard(card = "${depotName}");
 
-		<execute function="AssertClick" locator1="NavTab#FILE_INFO" value1="File Info" />
+		if (isSet(folderName)) {
+			LexiconCard.clickCard(card = "${folderName}");
+		}
 
-		<execute function="AssertTextEquals" locator1="ItemSelector#SIDEBAR_FILE_INFO_FORMAT" value1="${imageFormat}" />
-		<execute function="AssertTextEquals" locator1="ItemSelector#SIDEBAR_FILE_INFO_SIZE" value1="${imageSize}" />
-		<execute function="AssertTextEquals" locator1="ItemSelector#SIDEBAR_FILE_INFO_NAME" value1="${uploadFileName}" />
-		<execute function="AssertTextEquals#assertPartialText" locator1="ItemSelector#SIDEBAR_FILE_INFO_MODIFIED" value1="${lastModifiedBy}" />
+		Click(locator1 = "ItemSelector#SELECT_FILE_IMAGE_CARD");
+	}
 
-		<execute function="AssertClick" locator1="NavTab#VERSION" value1="Version" />
+	macro uploadFile {
+		var key_navTab = "${navTab}";
+		var key_uploadFileName = "${uploadFileName}";
 
-		<execute function="AssertTextEquals" locator1="ItemSelector#SIDEBAR_VERSION_VERSION" value1="${versionNumber}" />
-		<execute function="AssertTextEquals" locator1="ItemSelector#SIDEBAR_VERSION_STATUS" value1="${imageStatus}" />
+		SelectFrame(locator1 = "ItemSelector#ITEM_SELECTOR_IFRAME");
 
-		<execute function="SelectFrameTop" value1="relative=top" />
-	</command>
-</definition>
+		if (IsElementPresent(locator1 = "ItemSelector#NAVIGATION_SPECIFIC_TAB")) {
+			AssertClick(
+				locator1 = "ItemSelector#NAVIGATION_SPECIFIC_TAB",
+				value1 = "${navTab}");
+		}
+
+		AssertElementPresent(locator1 = "ItemSelector#SELECT_FILE_UPLOAD_IMAGE");
+
+		UploadCommonFile.uploadCommonFileHiddenNoMouseOver(
+			locator1 = "TextInput#FILE",
+			value1 = "${uploadFileName}");
+
+		Pause(locator1 = "5000");
+
+		AssertElementPresent.pauseAssertVisible(
+			locator1 = "ItemSelector#ADD_BUTTON",
+			value1 = "Add");
+
+		AssertClick(
+			locator1 = "ItemSelector#ADD_BUTTON",
+			value1 = "Add");
+	}
+
+	macro viewBlogImageDetails {
+		var key_imageFileName = "${imageFileName}";
+		var key_uploadFileName = "${uploadFileName}";
+
+		SelectFrame(locator1 = "ItemSelector#ITEM_SELECTOR_IFRAME");
+
+		AssertElementPresent(locator1 = "ItemSelector#SELECT_FILE_IMAGE_CARD");
+
+		Click(locator1 = "Icon#EYE_PREVIEW");
+
+		AssertElementPresent.assertVisible(locator1 = "ItemSelector#VIEWER_INFO");
+
+		Click(locator1 = "ItemSelector#VIEWER_INFO");
+
+		AssertElementPresent(
+			key_tab = "File Info",
+			locator1 = "NavTab#TAB_LINK");
+
+		AssertElementPresent(
+			key_tab = "Version",
+			locator1 = "NavTab#TAB_LINK");
+
+		AssertTextEquals(
+			locator1 = "ItemSelector#SIDEBAR_FILE_INFO_FORMAT",
+			value1 = "${imageFormat}");
+
+		AssertTextEquals(
+			locator1 = "ItemSelector#SIDEBAR_FILE_INFO_SIZE",
+			value1 = "${imageSize}");
+
+		AssertTextEquals(
+			locator1 = "ItemSelector#SIDEBAR_FILE_INFO_NAME",
+			value1 = "${uploadFileName}");
+
+		AssertTextEquals.assertPartialText(
+			locator1 = "ItemSelector#SIDEBAR_FILE_INFO_MODIFIED",
+			value1 = "${lastModifiedBy}");
+
+		var key_tab = "Version";
+
+		AssertClick(
+			locator1 = "NavTab#TAB_LINK",
+			value1 = "Version");
+
+		AssertTextEquals(
+			locator1 = "ItemSelector#SIDEBAR_VERSION_VERSION",
+			value1 = "${versionNumber}");
+
+		AssertTextEquals(
+			locator1 = "ItemSelector#SIDEBAR_VERSION_STATUS",
+			value1 = "${imageStatus}");
+
+		SelectFrameTop(value1 = "relative=top");
+	}
+
+	macro viewCurrentSiteFilterResults {
+		SelectFrame(locator1 = "ItemSelector#ITEM_SELECTOR_IFRAME");
+
+		if (isSet(navTab)) {
+			AssertClick(
+				key_navTab = "${navTab}",
+				locator1 = "ItemSelector#NAVIGATION_SPECIFIC_TAB",
+				value1 = "${navTab}");
+		}
+
+		LexiconEntry.changeDisplayStyle(displayStyle = "cards");
+
+		AssertVisible(
+			key_imageFileName = "${imageFileName}",
+			locator1 = "ItemSelector#SELECT_FILE_IMAGE_CARD");
+
+		AssertElementNotPresent(
+			key_imageFileName = "${noImageFileName}",
+			locator1 = "ItemSelector#SELECT_FILE_IMAGE_CARD");
+
+		ManagementBar.setFilterAndOrder(filterBy = "Current Site");
+
+		AssertVisible(
+			key_imageFileName = "${imageFileName}",
+			locator1 = "ItemSelector#SELECT_FILE_IMAGE_CARD");
+
+		AssertElementNotPresent(
+			key_imageFileName = "${noImageFileName}",
+			locator1 = "ItemSelector#SELECT_FILE_IMAGE_CARD");
+
+		if (isSet(viewNoLocationInfo)) {
+			AssertElementNotPresent(
+				key_locationName = "${viewNoLocationInfo}",
+				key_title = "${imageFileName}",
+				locator1 = "ItemSelector#LOCATION_INFO_CARDS",
+				value1 = "${viewNoLocationInfo}");
+		}
+
+		AssertElementNotPresent(locator1 = "Search#SEARCH_INFO");
+
+		AssertVisible(
+			key_imageFileName = "${imageFileName}",
+			locator1 = "ItemSelector#SELECT_FILE_IMAGE_CARD");
+	}
+
+	macro viewEverywhereFilterResults {
+		SelectFrame(locator1 = "ItemSelector#ITEM_SELECTOR_IFRAME");
+
+		if (isSet(navTab)) {
+			AssertClick(
+				key_navTab = "${navTab}",
+				locator1 = "ItemSelector#NAVIGATION_SPECIFIC_TAB",
+				value1 = "${navTab}");
+		}
+
+		ManagementBar.setFilterAndOrder(filterBy = "Everywhere");
+
+		LexiconEntry.changeDisplayStyle(displayStyle = "cards");
+
+		if (isSet(dmFolderName)) {
+			Click(
+				key_card = "${dmFolderName}",
+				locator1 = "Card#CARD_TITLE");
+		}
+
+		AssertVisible(
+			key_imageFileName = "${imageFileName}",
+			locator1 = "ItemSelector#SELECT_FILE_IMAGE_CARD");
+	}
+
+	macro viewLocationInfoViaBlogs {
+		SelectFrame(locator1 = "ItemSelector#ITEM_SELECTOR_IFRAME");
+
+		if (isSet(navTab)) {
+			AssertClick(
+				key_navTab = "${navTab}",
+				locator1 = "ItemSelector#NAVIGATION_SPECIFIC_TAB",
+				value1 = "${navTab}");
+		}
+
+		ManagementBar.setFilterAndOrder(filterBy = "Everywhere");
+
+		LexiconEntry.changeDisplayStyle(displayStyle = "cards");
+
+		for (var title : list "${titleList}") {
+			AssertTextEquals(
+				key_locationName = "${locationName}",
+				key_title = "${title}",
+				locator1 = "ItemSelector#LOCATION_INFO_CARDS",
+				value1 = "${locationName}");
+		}
+
+		LexiconEntry.changeDisplayStyle(displayStyle = "list");
+
+		for (var title : list "${titleList}") {
+			AssertTextEquals(
+				key_locationName = "${locationName}",
+				key_title = "${title}",
+				locator1 = "ItemSelector#LOCATION_INFO_LIST",
+				value1 = "${locationName}");
+		}
+
+		LexiconEntry.changeDisplayStyle(displayStyle = "table");
+
+		for (var title : list "${titleList}") {
+			AssertTextEquals(
+				key_locationName = "${locationName}",
+				key_title = "${title}",
+				locator1 = "ItemSelector#LOCATION_INFO_TABLE",
+				value1 = "${locationName}");
+		}
+	}
+
+	macro viewLocationInfoViaWCD {
+		Portlet.gotoPortletOptions(
+			portletName = "Web Content Display",
+			portletOption = "Configuration");
+
+		SelectFrame.selectFrameNoLoading(locator1 = "IFrame#MODAL_BODY");
+
+		AssertClick(
+			locator1 = "WCDConfiguration#SELECT_WEB_CONTENT_BUTTON",
+			value1 = "Select");
+
+		WaitForElementPresent(locator1 = "IFrame#MODAL_BODY");
+
+		SelectFrame.selectFrameNoLoading(locator1 = "IFrame#MODAL_BODY");
+
+		ManagementBar.setFilterAndOrder(filterBy = "Everywhere");
+
+		LexiconEntry.changeDisplayStyle(displayStyle = "cards");
+
+		for (var title : list "${titleList}") {
+			AssertTextEquals(
+				key_locationName = "${locationName}",
+				key_title = "${title}",
+				locator1 = "ItemSelector#LOCATION_INFO_CARDS_2",
+				value1 = "${locationName}");
+		}
+
+		LexiconEntry.changeDisplayStyle(displayStyle = "list");
+
+		for (var title : list "${titleList}") {
+			AssertTextEquals(
+				key_locationName = "${locationName}",
+				key_title = "${title}",
+				locator1 = "ItemSelector#LOCATION_INFO_LIST",
+				value1 = "${locationName}");
+		}
+
+		LexiconEntry.changeDisplayStyle(displayStyle = "table");
+
+		for (var title : list "${titleList}") {
+			AssertTextEquals(
+				key_locationName = "${locationName}",
+				key_title = "${title}",
+				locator1 = "ItemSelector#LOCATION_INFO_TABLE",
+				value1 = "${locationName}");
+		}
+	}
+
+	macro viewPreview {
+		AssertElementPresent(
+			key_footer = "${footer}",
+			locator1 = "ItemSelector#VIEWER_FOOTER");
+
+		AssertElementPresent(
+			key_imageFileName = "${imageFileName}",
+			locator1 = "ItemSelector#VIEWER_FOOTER_IMAGE");
+	}
+
+	macro viewWCCurrentSiteFilterResults {
+		LexiconEntry.changeDisplayStyle(displayStyle = "list");
+
+		AssertVisible(
+			key_rowEntry = "${webContentTitle}",
+			locator1 = "ContentRow#ENTRY_CONTENT_ENTRY_NAME");
+
+		AssertElementNotPresent(
+			key_rowEntry = "${noWebContentTitle}",
+			locator1 = "ContentRow#ENTRY_CONTENT_ENTRY_NAME");
+
+		ManagementBar.setFilterAndOrder(filterBy = "Current Site");
+
+		AssertVisible(
+			key_rowEntry = "${webContentTitle}",
+			locator1 = "ContentRow#ENTRY_CONTENT_ENTRY_NAME");
+
+		AssertElementNotPresent(
+			key_rowEntry = "${noWebContentTitle}",
+			locator1 = "ContentRow#ENTRY_CONTENT_ENTRY_NAME");
+
+		if (isSet(viewNoLocationInfo)) {
+			AssertElementNotPresent(
+				key_locationName = "${viewNoLocationInfo}",
+				key_title = "${webContentTitle}",
+				locator1 = "ItemSelector#LOCATION_INFO_CARDS_2",
+				value1 = "${viewNoLocationInfo}");
+		}
+
+		AssertElementNotPresent(locator1 = "Search#SEARCH_INFO");
+
+		AssertVisible(
+			key_rowEntry = "${webContentTitle}",
+			locator1 = "ContentRow#ENTRY_CONTENT_ENTRY_NAME");
+	}
+
+	macro viewWCEverywhereFilterResults {
+		SelectFrame(locator1 = "ItemSelector#ITEM_SELECTOR_IFRAME");
+
+		ManagementBar.setFilterAndOrder(filterBy = "Everywhere");
+
+		LexiconEntry.changeDisplayStyle(displayStyle = "list");
+
+		if (isSet(draft)) {
+			AssertElementNotPresent(
+				key_rowEntry = "${webContentTitle}",
+				locator1 = "ContentRow#ENTRY_CONTENT_ENTRY_NAME");
+
+			AssertTextEquals(
+				locator1 = "Message#EMPTY_INFO",
+				value1 = "No web content was found.");
+		}
+		else {
+			for (var webContentTitle : list "${webContentTitle}") {
+				AssertVisible(
+					key_rowEntry = "${webContentTitle}",
+					locator1 = "ContentRow#ENTRY_CONTENT_ENTRY_NAME");
+			}
+		}
+
+		if (isSet(viewFolderWC)) {
+			Click(
+				key_rowEntry = "${wcFolderName}",
+				locator1 = "ContentRow#ENTRY_CONTENT_ENTRY_NAME");
+
+			AssertVisible(
+				key_breadcrumbName = "${siteName}",
+				locator1 = "Breadcrumb#BREADCRUMB_ENTRY");
+
+			Breadcrumb.viewActiveEntry(breadcrumbName = "${wcFolderName}");
+
+			AssertVisible(
+				key_rowEntry = "${folderWebContentTitle}",
+				locator1 = "ContentRow#ENTRY_CONTENT_ENTRY_NAME");
+		}
+	}
+
+	macro viewWikiAttachment {
+		var key_imageFileName = "${imageFileName}";
+
+		ItemSelector.gotoItemSelectorViaCKEditor();
+
+		SelectFrame(locator1 = "ItemSelector#ITEM_SELECTOR_IFRAME");
+
+		LexiconEntry.changeDisplayStyle(displayStyle = "cards");
+
+		AssertElementPresent(
+			key_imageFileName = "${imageFileName}",
+			locator1 = "ItemSelector#SELECT_FILE_IMAGE_CARD");
+	}
+
+}

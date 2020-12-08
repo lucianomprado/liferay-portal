@@ -14,8 +14,6 @@
 
 package com.liferay.portal.kernel.model;
 
-import aQute.bnd.annotation.ProviderType;
-
 import java.io.Serializable;
 
 import java.util.ArrayList;
@@ -26,10 +24,12 @@ import java.util.List;
  * This class is used by SOAP remote services.
  *
  * @author Brian Wing Shun Chan
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
-@ProviderType
+@Deprecated
 public class ReleaseSoap implements Serializable {
+
 	public static ReleaseSoap toSoapModel(Release model) {
 		ReleaseSoap soapModel = new ReleaseSoap();
 
@@ -41,7 +41,7 @@ public class ReleaseSoap implements Serializable {
 		soapModel.setSchemaVersion(model.getSchemaVersion());
 		soapModel.setBuildNumber(model.getBuildNumber());
 		soapModel.setBuildDate(model.getBuildDate());
-		soapModel.setVerified(model.getVerified());
+		soapModel.setVerified(model.isVerified());
 		soapModel.setState(model.getState());
 		soapModel.setTestString(model.getTestString());
 
@@ -76,7 +76,8 @@ public class ReleaseSoap implements Serializable {
 	}
 
 	public static ReleaseSoap[] toSoapModels(List<Release> models) {
-		List<ReleaseSoap> soapModels = new ArrayList<ReleaseSoap>(models.size());
+		List<ReleaseSoap> soapModels = new ArrayList<ReleaseSoap>(
+			models.size());
 
 		for (Release model : models) {
 			soapModels.add(toSoapModel(model));
@@ -199,4 +200,5 @@ public class ReleaseSoap implements Serializable {
 	private boolean _verified;
 	private int _state;
 	private String _testString;
+
 }

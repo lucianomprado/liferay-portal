@@ -14,6 +14,8 @@
 
 package com.liferay.source.formatter;
 
+import java.io.IOException;
+
 import java.util.List;
 
 /**
@@ -22,14 +24,14 @@ import java.util.List;
 public class JSSourceProcessor extends BaseSourceProcessor {
 
 	@Override
-	protected List<String> doGetFileNames() throws Exception {
-		String[] excludes = {
-			"**/*.min.js", "**/*.nocsf.js", "**/*.soy.js", "**/aui/**",
-			"**/jquery/**", "**/lodash/**", "**/misc/**", "**/r2.js",
-			"**/tools/**"
-		};
-
-		return getFileNames(excludes, getIncludes());
+	protected List<String> doGetFileNames() throws IOException {
+		return getFileNames(
+			new String[] {
+				"**/*.es.js", "**/*.min.js", "**/*.nocsf.js", "**/*.soy.js",
+				"**/aui/**", "**/jquery/**", "**/lodash/**", "**/misc/**",
+				"**/r2.js", "**/tools/**"
+			},
+			getIncludes());
 	}
 
 	@Override
@@ -37,6 +39,6 @@ public class JSSourceProcessor extends BaseSourceProcessor {
 		return _INCLUDES;
 	}
 
-	private static final String[] _INCLUDES = {"**/*.js"};
+	private static final String[] _INCLUDES = {"**/*.js", "**/*.jsx"};
 
 }

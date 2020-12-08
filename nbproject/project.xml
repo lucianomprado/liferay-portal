@@ -1,4 +1,5 @@
 <?xml version="1.0"?>
+
 <project xmlns="http://www.netbeans.org/ns/project/1">
 	<type>org.netbeans.modules.ant.freeform</type>
 	<configuration>
@@ -20,6 +21,114 @@
 					<encoding>UTF-8</encoding>
 				</source-folder>
 				<source-folder>
+					<label>modules\apps\petra\petra-content\src\main\java</label>
+					<type>java</type>
+					<location>modules/apps/petra/petra-content/src/main/java</location>
+					<encoding>UTF-8</encoding>
+				</source-folder>
+				<source-folder>
+					<label>modules\apps\petra\petra-encryptor\src\main\java</label>
+					<type>java</type>
+					<location>modules/apps/petra/petra-encryptor/src/main/java</location>
+					<encoding>UTF-8</encoding>
+				</source-folder>
+				<source-folder>
+					<label>modules\apps\petra\petra-log4j\src\main\java</label>
+					<type>java</type>
+					<location>modules/apps/petra/petra-log4j/src/main/java</location>
+					<encoding>UTF-8</encoding>
+				</source-folder>
+				<source-folder>
+					<label>modules\apps\petra\petra-mail\src\main\java</label>
+					<type>java</type>
+					<location>modules/apps/petra/petra-mail/src/main/java</location>
+					<encoding>UTF-8</encoding>
+				</source-folder>
+				<source-folder>
+					<label>modules\apps\petra\petra-xml\src\main\java</label>
+					<type>java</type>
+					<location>modules/apps/petra/petra-xml/src/main/java</location>
+					<encoding>UTF-8</encoding>
+				</source-folder>
+				<source-folder>
+					<label>modules\core\petra\petra-concurrent\src\main\java</label>
+					<type>java</type>
+					<location>modules/core/petra/petra-concurrent/src/main/java</location>
+					<encoding>UTF-8</encoding>
+				</source-folder>
+				<source-folder>
+					<label>modules\core\petra\petra-executor\src\main\java</label>
+					<type>java</type>
+					<location>modules/core/petra/petra-executor/src/main/java</location>
+					<encoding>UTF-8</encoding>
+				</source-folder>
+				<source-folder>
+					<label>modules\core\petra\petra-function\src\main\java</label>
+					<type>java</type>
+					<location>modules/core/petra/petra-function/src/main/java</location>
+					<encoding>UTF-8</encoding>
+				</source-folder>
+				<source-folder>
+					<label>modules\core\petra\petra-io\src\main\java</label>
+					<type>java</type>
+					<location>modules/core/petra/petra-io/src/main/java</location>
+					<encoding>UTF-8</encoding>
+				</source-folder>
+				<source-folder>
+					<label>modules\core\petra\petra-lang\src\main\java</label>
+					<type>java</type>
+					<location>modules/core/petra/petra-lang/src/main/java</location>
+					<encoding>UTF-8</encoding>
+				</source-folder>
+				<source-folder>
+					<label>modules\core\petra\petra-memory\src\main\java</label>
+					<type>java</type>
+					<location>modules/core/petra/petra-memory/src/main/java</location>
+					<encoding>UTF-8</encoding>
+				</source-folder>
+				<source-folder>
+					<label>modules\core\petra\petra-nio\src\main\java</label>
+					<type>java</type>
+					<location>modules/core/petra/petra-nio/src/main/java</location>
+					<encoding>UTF-8</encoding>
+				</source-folder>
+				<source-folder>
+					<label>modules\core\petra\petra-process\src\main\java</label>
+					<type>java</type>
+					<location>modules/core/petra/petra-process/src/main/java</location>
+					<encoding>UTF-8</encoding>
+				</source-folder>
+				<source-folder>
+					<label>modules\core\petra\petra-reflect\src\main\java</label>
+					<type>java</type>
+					<location>modules/core/petra/petra-reflect/src/main/java</location>
+					<encoding>UTF-8</encoding>
+				</source-folder>
+				<source-folder>
+					<label>modules\core\petra\petra-sql-dsl-api\src\main\java</label>
+					<type>java</type>
+					<location>modules/core/petra/petra-sql-dsl-api/src/main/java</location>
+					<encoding>UTF-8</encoding>
+				</source-folder>
+				<source-folder>
+					<label>modules\core\petra\petra-sql-dsl-spi\src\main\java</label>
+					<type>java</type>
+					<location>modules/core/petra/petra-sql-dsl-spi/src/main/java</location>
+					<encoding>UTF-8</encoding>
+				</source-folder>
+				<source-folder>
+					<label>modules\core\petra\petra-string\src\main\java</label>
+					<type>java</type>
+					<location>modules/core/petra/petra-string/src/main/java</location>
+					<encoding>UTF-8</encoding>
+				</source-folder>
+				<source-folder>
+					<label>modules\core\petra\petra-url-pattern-mapper\src\main\java</label>
+					<type>java</type>
+					<location>modules/core/petra/petra-url-pattern-mapper/src/main/java</location>
+					<encoding>UTF-8</encoding>
+				</source-folder>
+				<source-folder>
 					<label>modules\core\registry-api\src\main\java</label>
 					<type>java</type>
 					<location>modules/core/registry-api/src/main/java</location>
@@ -29,12 +138,6 @@
 					<label>portal-impl\src</label>
 					<type>java</type>
 					<location>portal-impl/src</location>
-					<encoding>UTF-8</encoding>
-				</source-folder>
-				<source-folder>
-					<label>portal-impl\test\integration</label>
-					<type>java</type>
-					<location>portal-impl/test/integration</location>
 					<encoding>UTF-8</encoding>
 				</source-folder>
 				<source-folder>
@@ -49,12 +152,6 @@
 					<location>portal-kernel/src</location>
 					<encoding>UTF-8</encoding>
 				</source-folder>
-				<!--<source-folder>
-					<label>portal-kernel\test\integration</label>
-					<type>java</type>
-					<location>portal-kernel/test/integration</location>
-					<encoding>UTF-8</encoding>
-				</source-folder>-->
 				<source-folder>
 					<label>portal-kernel\test\unit</label>
 					<type>java</type>
@@ -65,12 +162,6 @@
 					<label>portal-test\src</label>
 					<type>java</type>
 					<location>portal-test/src</location>
-					<encoding>UTF-8</encoding>
-				</source-folder>
-				<source-folder>
-					<label>portal-test-integration\src</label>
-					<type>java</type>
-					<location>portal-test-integration/src</location>
 					<encoding>UTF-8</encoding>
 				</source-folder>
 				<source-folder>
@@ -97,12 +188,6 @@
 					<location>util-java/src</location>
 					<encoding>UTF-8</encoding>
 				</source-folder>
-				<!--<source-folder>
-					<label>util-java\test\integration</label>
-					<type>java</type>
-					<location>util-java/test/integration</location>
-					<encoding>UTF-8</encoding>
-				</source-folder-->
 				<source-folder>
 					<label>util-java\test\unit</label>
 					<type>java</type>
@@ -152,16 +237,72 @@
 			<view>
 				<items>
 					<source-folder style="packages">
+						<label>modules\apps\petra\petra-content\src</label>
+						<location>modules/apps/petra/petra-content/src</location>
+					</source-folder>
+					<source-folder style="packages">
+						<label>modules\apps\petra\petra-encryptor\src</label>
+						<location>modules/apps/petra/petra-encryptor/src</location>
+					</source-folder>
+					<source-folder style="packages">
+						<label>modules\apps\petra\petra-log4j\src</label>
+						<location>modules/apps/petra/petra-log4j/src</location>
+					</source-folder>
+					<source-folder style="packages">
+						<label>modules\apps\petra\petra-mail\src</label>
+						<location>modules/apps/petra/petra-mail/src</location>
+					</source-folder>
+					<source-folder style="packages">
+						<label>modules\apps\petra\petra-xml\src</label>
+						<location>modules/apps/petra/petra-xml/src</location>
+					</source-folder>
+					<source-folder style="packages">
+						<label>modules\core\petra\petra-concurrent\src</label>
+						<location>modules/core/petra/petra-concurrent/src</location>
+					</source-folder>
+					<source-folder style="packages">
+						<label>modules\core\petra\petra-executor\src</label>
+						<location>modules/core/petra/petra-executor/src</location>
+					</source-folder>
+					<source-folder style="packages">
+						<label>modules\core\petra\petra-function\src</label>
+						<location>modules/core/petra/petra-function/src</location>
+					</source-folder>
+					<source-folder style="packages">
+						<label>modules\core\petra\petra-io\src</label>
+						<location>modules/core/petra/petra-io/src</location>
+					</source-folder>
+					<source-folder style="packages">
+						<label>modules\core\petra\petra-lang\src</label>
+						<location>modules/core/petra/petra-lang/src</location>
+					</source-folder>
+					<source-folder style="packages">
+						<label>modules\core\petra\petra-memory\src</label>
+						<location>modules/core/petra/petra-memory/src</location>
+					</source-folder>
+					<source-folder style="packages">
+						<label>modules\core\petra\petra-nio\src</label>
+						<location>modules/core/petra/petra-nio/src</location>
+					</source-folder>
+					<source-folder style="packages">
+						<label>modules\core\petra\petra-process\src</label>
+						<location>modules/core/petra/petra-process/src</location>
+					</source-folder>
+					<source-folder style="packages">
+						<label>modules\core\petra\petra-reflect\src</label>
+						<location>modules/core/petra/petra-reflect/src</location>
+					</source-folder>
+					<source-folder style="packages">
+						<label>modules\core\petra\petra-string\src</label>
+						<location>modules/core/petra/petra-string/src</location>
+					</source-folder>
+					<source-folder style="packages">
 						<label>modules\core\registry\registry-api\src</label>
 						<location>modules/core/registry/registry-api/src</location>
 					</source-folder>
 					<source-folder style="packages">
 						<label>portal-impl\src</label>
 						<location>portal-impl/src</location>
-					</source-folder>
-					<source-folder style="packages">
-						<label>portal-impl\test\integration</label>
-						<location>portal-impl/test/integration</location>
 					</source-folder>
 					<source-folder style="packages">
 						<label>portal-impl\test\unit</label>
@@ -171,10 +312,6 @@
 						<label>portal-kernel\src</label>
 						<location>portal-kernel/src</location>
 					</source-folder>
-					<!--<source-folder style="packages">
-						<label>portal-kernel\test\integration</label>
-						<location>portal-kernel/test/integration</location>
-					</source-folder>-->
 					<source-folder style="packages">
 						<label>portal-kernel\test\unit</label>
 						<location>portal-kernel/test/unit</location>
@@ -199,10 +336,6 @@
 						<label>util-java\src</label>
 						<location>util-java/src</location>
 					</source-folder>
-					<!--<source-folder style="packages">
-						<label>util-java\test\integration</label>
-						<location>util-java/test/integration</location>
-					</source-folder>-->
 					<source-folder style="packages">
 						<label>util-java\test\unit</label>
 						<location>util-java/test/unit</location>
@@ -234,14 +367,29 @@
 		</general-data>
 		<java-data xmlns="http://www.netbeans.org/ns/freeform-project-java/4">
 			<compilation-unit>
+				<package-root>modules/apps/petra/petra-content/src/main/java</package-root>
+				<package-root>modules/apps/petra/petra-encryptor/src/main/java</package-root>
+				<package-root>modules/apps/petra/petra-log4j/src/main/java</package-root>
+				<package-root>modules/apps/petra/petra-mail/src/main/java</package-root>
+				<package-root>modules/apps/petra/petra-xml/src/main/java</package-root>
+				<package-root>modules/core/petra/petra-concurrent/src/main/java</package-root>
+				<package-root>modules/core/petra/petra-executor/src/main/java</package-root>
+				<package-root>modules/core/petra/petra-function/src/main/java</package-root>
+				<package-root>modules/core/petra/petra-io/src/main/java</package-root>
+				<package-root>modules/core/petra/petra-lang/src/main/java</package-root>
+				<package-root>modules/core/petra/petra-memory/src/main/java</package-root>
+				<package-root>modules/core/petra/petra-nio/src/main/java</package-root>
+				<package-root>modules/core/petra/petra-process/src/main/java</package-root>
+				<package-root>modules/core/petra/petra-reflect/src/main/java</package-root>
+				<package-root>modules/core/petra/petra-sql-dsl-api/src/main/java</package-root>
+				<package-root>modules/core/petra/petra-sql-dsl-spi/src/main/java</package-root>
+				<package-root>modules/core/petra/petra-string/src/main/java</package-root>
 				<package-root>modules/core/registry-api/src/main/java</package-root>
 				<package-root>portal-impl/src</package-root>
-				<package-root>portal-impl/test/integration</package-root>
 				<package-root>portal-impl/test/unit</package-root>
 				<package-root>portal-kernel/src</package-root>
 				<package-root>portal-kernel/test/unit</package-root>
 				<package-root>portal-test/src</package-root>
-				<package-root>portal-test-integration/src</package-root>
 				<package-root>portal-web/test/functional</package-root>
 				<package-root>support-tomcat/src</package-root>
 				<package-root>util-bridges/src</package-root>

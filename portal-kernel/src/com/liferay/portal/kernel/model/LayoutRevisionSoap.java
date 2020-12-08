@@ -14,8 +14,6 @@
 
 package com.liferay.portal.kernel.model;
 
-import aQute.bnd.annotation.ProviderType;
-
 import java.io.Serializable;
 
 import java.util.ArrayList;
@@ -26,11 +24,12 @@ import java.util.List;
  * This class is used by SOAP remote services, specifically {@link com.liferay.portal.service.http.LayoutRevisionServiceSoap}.
  *
  * @author Brian Wing Shun Chan
- * @see com.liferay.portal.service.http.LayoutRevisionServiceSoap
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
-@ProviderType
+@Deprecated
 public class LayoutRevisionSoap implements Serializable {
+
 	public static LayoutRevisionSoap toSoapModel(LayoutRevision model) {
 		LayoutRevisionSoap soapModel = new LayoutRevisionSoap();
 
@@ -45,10 +44,10 @@ public class LayoutRevisionSoap implements Serializable {
 		soapModel.setLayoutSetBranchId(model.getLayoutSetBranchId());
 		soapModel.setLayoutBranchId(model.getLayoutBranchId());
 		soapModel.setParentLayoutRevisionId(model.getParentLayoutRevisionId());
-		soapModel.setHead(model.getHead());
-		soapModel.setMajor(model.getMajor());
+		soapModel.setHead(model.isHead());
+		soapModel.setMajor(model.isMajor());
 		soapModel.setPlid(model.getPlid());
-		soapModel.setPrivateLayout(model.getPrivateLayout());
+		soapModel.setPrivateLayout(model.isPrivateLayout());
 		soapModel.setName(model.getName());
 		soapModel.setTitle(model.getTitle());
 		soapModel.setDescription(model.getDescription());
@@ -77,11 +76,14 @@ public class LayoutRevisionSoap implements Serializable {
 		return soapModels;
 	}
 
-	public static LayoutRevisionSoap[][] toSoapModels(LayoutRevision[][] models) {
+	public static LayoutRevisionSoap[][] toSoapModels(
+		LayoutRevision[][] models) {
+
 		LayoutRevisionSoap[][] soapModels = null;
 
 		if (models.length > 0) {
-			soapModels = new LayoutRevisionSoap[models.length][models[0].length];
+			soapModels =
+				new LayoutRevisionSoap[models.length][models[0].length];
 		}
 		else {
 			soapModels = new LayoutRevisionSoap[0][0];
@@ -94,8 +96,11 @@ public class LayoutRevisionSoap implements Serializable {
 		return soapModels;
 	}
 
-	public static LayoutRevisionSoap[] toSoapModels(List<LayoutRevision> models) {
-		List<LayoutRevisionSoap> soapModels = new ArrayList<LayoutRevisionSoap>(models.size());
+	public static LayoutRevisionSoap[] toSoapModels(
+		List<LayoutRevision> models) {
+
+		List<LayoutRevisionSoap> soapModels = new ArrayList<LayoutRevisionSoap>(
+			models.size());
 
 		for (LayoutRevision model : models) {
 			soapModels.add(toSoapModel(model));
@@ -388,4 +393,5 @@ public class LayoutRevisionSoap implements Serializable {
 	private long _statusByUserId;
 	private String _statusByUserName;
 	private Date _statusDate;
+
 }

@@ -16,12 +16,12 @@ package com.liferay.knowledge.base.internal.upgrade.v1_1_0.util;
 
 import com.liferay.document.library.kernel.store.DLStoreUtil;
 import com.liferay.knowledge.base.model.KBArticle;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.CompanyConstants;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.util.FileUtil;
-import com.liferay.portal.kernel.util.StringPool;
 
 /**
  * @author Peter Shin
@@ -44,8 +44,8 @@ public class KBArticleAttachmentsUtil {
 			DLStoreUtil.deleteDirectory(
 				companyId, CompanyConstants.SYSTEM, "knowledgebase/articles");
 		}
-		catch (Exception e) {
-			_log.error(e.getMessage());
+		catch (Exception exception) {
+			_log.error(exception.getMessage());
 		}
 	}
 
@@ -54,10 +54,8 @@ public class KBArticleAttachmentsUtil {
 			long folderId = kbArticle.getClassPK();
 
 			String oldDirName = "knowledgebase/articles/" + folderId;
-			String newDirName = "knowledgebase/kbarticles/" + folderId;
 
-			DLStoreUtil.addDirectory(
-				kbArticle.getCompanyId(), CompanyConstants.SYSTEM, newDirName);
+			String newDirName = "knowledgebase/kbarticles/" + folderId;
 
 			String[] fileNames = DLStoreUtil.getFileNames(
 				kbArticle.getCompanyId(), CompanyConstants.SYSTEM, oldDirName);
@@ -85,8 +83,8 @@ public class KBArticleAttachmentsUtil {
 				_log.info("Added attachments for " + folderId);
 			}
 		}
-		catch (Exception e) {
-			_log.error(e.getMessage());
+		catch (Exception exception) {
+			_log.error(exception.getMessage());
 		}
 	}
 

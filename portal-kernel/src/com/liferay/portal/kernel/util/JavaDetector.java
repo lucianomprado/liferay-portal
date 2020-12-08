@@ -26,43 +26,43 @@ import java.util.Objects;
 public class JavaDetector {
 
 	public static String getJavaClassPath() {
-		return _instance._javaClassPath;
+		return _javaDetector._javaClassPath;
 	}
 
 	public static double getJavaClassVersion() {
-		return _instance._javaClassVersion;
+		return _javaDetector._javaClassVersion;
 	}
 
 	public static String getJavaRuntimeName() {
-		return _instance._javaRuntimeName;
+		return _javaDetector._javaRuntimeName;
 	}
 
 	public static String getJavaRuntimeVersion() {
-		return _instance._javaRuntimeVersion;
+		return _javaDetector._javaRuntimeVersion;
 	}
 
 	public static double getJavaSpecificationVersion() {
-		return _instance._javaSpecificationVersion;
+		return _javaDetector._javaSpecificationVersion;
 	}
 
 	public static String getJavaVendor() {
-		return _instance._javaVendor;
+		return _javaDetector._javaVendor;
 	}
 
 	public static String getJavaVersion() {
-		return _instance._javaVersion;
+		return _javaDetector._javaVersion;
 	}
 
 	public static String getJavaVmVersion() {
-		return _instance._javaVmVersion;
+		return _javaDetector._javaVmVersion;
 	}
 
 	public static boolean is64bit() {
-		return _instance._64bit;
+		return _javaDetector._64bit;
 	}
 
 	public static boolean isIBM() {
-		return _instance._ibm;
+		return _javaDetector._ibm;
 	}
 
 	public static boolean isJDK7() {
@@ -71,9 +71,8 @@ public class JavaDetector {
 		if (javaVersion.startsWith(_JAVA_VERSION_JDK_7)) {
 			return true;
 		}
-		else {
-			return false;
-		}
+
+		return false;
 	}
 
 	public static boolean isJDK8() {
@@ -82,17 +81,26 @@ public class JavaDetector {
 		if (javaVersion.startsWith(_JAVA_VERSION_JDK_8)) {
 			return true;
 		}
-		else {
-			return false;
+
+		return false;
+	}
+
+	public static boolean isJDK11() {
+		String javaVersion = getJavaVersion();
+
+		if (javaVersion.startsWith(_JAVA_VERSION_JDK_11)) {
+			return true;
 		}
+
+		return false;
 	}
 
 	public static boolean isOpenJDK() {
-		return _instance._openJDK;
+		return _javaDetector._openJDK;
 	}
 
 	public static boolean isOracle() {
-		return _instance._oracle;
+		return _javaDetector._oracle;
 	}
 
 	protected JavaDetector() {
@@ -108,7 +116,7 @@ public class JavaDetector {
 		_javaVmVersion = System.getProperty("java.vm.version");
 
 		_64bit = Objects.equals(
-			"64", System.getProperty("sun.arch.data.model"));
+			System.getProperty("sun.arch.data.model"), "64");
 
 		boolean oracle = false;
 
@@ -135,7 +143,7 @@ public class JavaDetector {
 		}
 
 		if (_log.isDebugEnabled()) {
-			LogUtil.debug(_log, new SortedProperties(System.getProperties()));
+			LogUtil.debug(_log, System.getProperties());
 		}
 	}
 
@@ -143,9 +151,11 @@ public class JavaDetector {
 
 	private static final String _JAVA_VERSION_JDK_8 = "1.8.";
 
+	private static final String _JAVA_VERSION_JDK_11 = "11";
+
 	private static final Log _log = LogFactoryUtil.getLog(JavaDetector.class);
 
-	private static final JavaDetector _instance = new JavaDetector();
+	private static final JavaDetector _javaDetector = new JavaDetector();
 
 	private final boolean _64bit;
 	private final boolean _ibm;

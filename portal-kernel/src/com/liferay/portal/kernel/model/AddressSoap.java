@@ -14,8 +14,6 @@
 
 package com.liferay.portal.kernel.model;
 
-import aQute.bnd.annotation.ProviderType;
-
 import java.io.Serializable;
 
 import java.util.ArrayList;
@@ -26,16 +24,18 @@ import java.util.List;
  * This class is used by SOAP remote services, specifically {@link com.liferay.portal.service.http.AddressServiceSoap}.
  *
  * @author Brian Wing Shun Chan
- * @see com.liferay.portal.service.http.AddressServiceSoap
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
-@ProviderType
+@Deprecated
 public class AddressSoap implements Serializable {
+
 	public static AddressSoap toSoapModel(Address model) {
 		AddressSoap soapModel = new AddressSoap();
 
 		soapModel.setMvccVersion(model.getMvccVersion());
 		soapModel.setUuid(model.getUuid());
+		soapModel.setExternalReferenceCode(model.getExternalReferenceCode());
 		soapModel.setAddressId(model.getAddressId());
 		soapModel.setCompanyId(model.getCompanyId());
 		soapModel.setUserId(model.getUserId());
@@ -44,6 +44,8 @@ public class AddressSoap implements Serializable {
 		soapModel.setModifiedDate(model.getModifiedDate());
 		soapModel.setClassNameId(model.getClassNameId());
 		soapModel.setClassPK(model.getClassPK());
+		soapModel.setName(model.getName());
+		soapModel.setDescription(model.getDescription());
 		soapModel.setStreet1(model.getStreet1());
 		soapModel.setStreet2(model.getStreet2());
 		soapModel.setStreet3(model.getStreet3());
@@ -51,9 +53,11 @@ public class AddressSoap implements Serializable {
 		soapModel.setZip(model.getZip());
 		soapModel.setRegionId(model.getRegionId());
 		soapModel.setCountryId(model.getCountryId());
+		soapModel.setLatitude(model.getLatitude());
+		soapModel.setLongitude(model.getLongitude());
 		soapModel.setTypeId(model.getTypeId());
-		soapModel.setMailing(model.getMailing());
-		soapModel.setPrimary(model.getPrimary());
+		soapModel.setMailing(model.isMailing());
+		soapModel.setPrimary(model.isPrimary());
 
 		return soapModel;
 	}
@@ -86,7 +90,8 @@ public class AddressSoap implements Serializable {
 	}
 
 	public static AddressSoap[] toSoapModels(List<Address> models) {
-		List<AddressSoap> soapModels = new ArrayList<AddressSoap>(models.size());
+		List<AddressSoap> soapModels = new ArrayList<AddressSoap>(
+			models.size());
 
 		for (Address model : models) {
 			soapModels.add(toSoapModel(model));
@@ -120,6 +125,14 @@ public class AddressSoap implements Serializable {
 
 	public void setUuid(String uuid) {
 		_uuid = uuid;
+	}
+
+	public String getExternalReferenceCode() {
+		return _externalReferenceCode;
+	}
+
+	public void setExternalReferenceCode(String externalReferenceCode) {
+		_externalReferenceCode = externalReferenceCode;
 	}
 
 	public long getAddressId() {
@@ -186,6 +199,22 @@ public class AddressSoap implements Serializable {
 		_classPK = classPK;
 	}
 
+	public String getName() {
+		return _name;
+	}
+
+	public void setName(String name) {
+		_name = name;
+	}
+
+	public String getDescription() {
+		return _description;
+	}
+
+	public void setDescription(String description) {
+		_description = description;
+	}
+
 	public String getStreet1() {
 		return _street1;
 	}
@@ -242,6 +271,22 @@ public class AddressSoap implements Serializable {
 		_countryId = countryId;
 	}
 
+	public double getLatitude() {
+		return _latitude;
+	}
+
+	public void setLatitude(double latitude) {
+		_latitude = latitude;
+	}
+
+	public double getLongitude() {
+		return _longitude;
+	}
+
+	public void setLongitude(double longitude) {
+		_longitude = longitude;
+	}
+
 	public long getTypeId() {
 		return _typeId;
 	}
@@ -276,6 +321,7 @@ public class AddressSoap implements Serializable {
 
 	private long _mvccVersion;
 	private String _uuid;
+	private String _externalReferenceCode;
 	private long _addressId;
 	private long _companyId;
 	private long _userId;
@@ -284,6 +330,8 @@ public class AddressSoap implements Serializable {
 	private Date _modifiedDate;
 	private long _classNameId;
 	private long _classPK;
+	private String _name;
+	private String _description;
 	private String _street1;
 	private String _street2;
 	private String _street3;
@@ -291,7 +339,10 @@ public class AddressSoap implements Serializable {
 	private String _zip;
 	private long _regionId;
 	private long _countryId;
+	private double _latitude;
+	private double _longitude;
 	private long _typeId;
 	private boolean _mailing;
 	private boolean _primary;
+
 }

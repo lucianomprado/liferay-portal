@@ -14,12 +14,12 @@
 
 package com.liferay.portal.kernel.portlet;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.portal.kernel.util.StringParser;
 
 import java.util.Map;
 import java.util.Set;
+
+import org.osgi.annotation.versioning.ProviderType;
 
 /**
  * Represents a single friendly URL pattern and provides the ability to either
@@ -67,8 +67,7 @@ public interface Route {
 	 * 	&lt;generated-parameter name=&quot;jspPage&quot;&gt;{jspPageName}.jsp&lt;/generated-parameter&gt;
 	 * &lt;/route&gt;
 	 * </code>
-	 * </pre>
-	 * </p>
+	 * </pre></p>
 	 *
 	 * @param name the name of the generated parameter
 	 * @param pattern the pattern string of the generated parameter
@@ -120,8 +119,7 @@ public interface Route {
 	 * 	&lt;implicit-parameter name=&quot;jspPage&quot;&gt;view_profile.jsp&lt;/implicit-parameter&gt;
 	 * &lt;/route&gt;
 	 * </code>
-	 * </pre>
-	 * </p>
+	 * </pre></p>
 	 *
 	 * <p>
 	 * Since the jspPage is specified with a implicit-parameter, this route will

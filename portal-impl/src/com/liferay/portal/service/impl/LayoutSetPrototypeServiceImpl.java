@@ -54,27 +54,6 @@ public class LayoutSetPrototypeServiceImpl
 			active, layoutsUpdateable, serviceContext);
 	}
 
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link #addLayoutSetPrototype(Map,
-	 *             Map, boolean, boolean, ServiceContext)}
-	 */
-	@Deprecated
-	@Override
-	public LayoutSetPrototype addLayoutSetPrototype(
-			Map<Locale, String> nameMap, String description, boolean active,
-			boolean layoutsUpdateable, ServiceContext serviceContext)
-		throws PortalException {
-
-		PortalPermissionUtil.check(
-			getPermissionChecker(), ActionKeys.ADD_LAYOUT_PROTOTYPE);
-
-		User user = getUser();
-
-		return layoutSetPrototypeLocalService.addLayoutSetPrototype(
-			user.getUserId(), user.getCompanyId(), nameMap, description, active,
-			layoutsUpdateable, serviceContext);
-	}
-
 	@Override
 	public void deleteLayoutSetPrototype(long layoutSetPrototypeId)
 		throws PortalException {
@@ -111,7 +90,7 @@ public class LayoutSetPrototypeServiceImpl
 	@Override
 	public List<LayoutSetPrototype> search(
 			long companyId, Boolean active,
-			OrderByComparator<LayoutSetPrototype> obc)
+			OrderByComparator<LayoutSetPrototype> orderByComparator)
 		throws PortalException {
 
 		List<LayoutSetPrototype> filteredLayoutSetPrototypes =
@@ -119,7 +98,8 @@ public class LayoutSetPrototypeServiceImpl
 
 		List<LayoutSetPrototype> layoutSetPrototypes =
 			layoutSetPrototypeLocalService.search(
-				companyId, active, QueryUtil.ALL_POS, QueryUtil.ALL_POS, obc);
+				companyId, active, QueryUtil.ALL_POS, QueryUtil.ALL_POS,
+				orderByComparator);
 
 		for (LayoutSetPrototype layoutSetPrototype : layoutSetPrototypes) {
 			if (LayoutSetPrototypePermissionUtil.contains(
@@ -146,27 +126,6 @@ public class LayoutSetPrototypeServiceImpl
 
 		return layoutSetPrototypeLocalService.updateLayoutSetPrototype(
 			layoutSetPrototypeId, nameMap, descriptionMap, active,
-			layoutsUpdateable, serviceContext);
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link
-	 *             #updateLayoutSetPrototype(long, Map, Map, boolean, boolean,
-	 *             ServiceContext)}
-	 */
-	@Deprecated
-	@Override
-	public LayoutSetPrototype updateLayoutSetPrototype(
-			long layoutSetPrototypeId, Map<Locale, String> nameMap,
-			String description, boolean active, boolean layoutsUpdateable,
-			ServiceContext serviceContext)
-		throws PortalException {
-
-		LayoutSetPrototypePermissionUtil.check(
-			getPermissionChecker(), layoutSetPrototypeId, ActionKeys.UPDATE);
-
-		return layoutSetPrototypeLocalService.updateLayoutSetPrototype(
-			layoutSetPrototypeId, nameMap, description, active,
 			layoutsUpdateable, serviceContext);
 	}
 

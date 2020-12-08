@@ -24,7 +24,8 @@ import com.liferay.portal.kernel.repository.model.FileVersion;
 import com.liferay.portal.kernel.repository.model.Folder;
 import com.liferay.portal.kernel.repository.model.RepositoryModelOperation;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
-import com.liferay.portlet.documentlibrary.service.permission.DLFileShortcutPermission;
+import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
+import com.liferay.portal.kernel.util.ServiceProxyFactory;
 
 import java.io.Serializable;
 
@@ -39,7 +40,7 @@ import java.util.Objects;
 public class LiferayFileShortcut extends LiferayModel implements FileShortcut {
 
 	public LiferayFileShortcut(DLFileShortcut dlFileShortcut) {
-		this (dlFileShortcut, dlFileShortcut.isEscapedModel());
+		this(dlFileShortcut, dlFileShortcut.isEscapedModel());
 	}
 
 	public LiferayFileShortcut(
@@ -56,23 +57,24 @@ public class LiferayFileShortcut extends LiferayModel implements FileShortcut {
 
 	@Override
 	public boolean containsPermission(
-		PermissionChecker permissionChecker, String actionId) {
+			PermissionChecker permissionChecker, String actionId)
+		throws PortalException {
 
-		return DLFileShortcutPermission.contains(
+		return _dlFileShortcutModelResourcePermission.contains(
 			permissionChecker, _dlFileShortcut, actionId);
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
+	public boolean equals(Object object) {
+		if (this == object) {
 			return true;
 		}
 
-		if (!(obj instanceof LiferayFileShortcut)) {
+		if (!(object instanceof LiferayFileShortcut)) {
 			return false;
 		}
 
-		LiferayFileShortcut liferayFileShortcut = (LiferayFileShortcut)obj;
+		LiferayFileShortcut liferayFileShortcut = (LiferayFileShortcut)object;
 
 		if (Objects.equals(
 				_dlFileShortcut, liferayFileShortcut._dlFileShortcut)) {
@@ -253,7 +255,7 @@ public class LiferayFileShortcut extends LiferayModel implements FileShortcut {
 
 	@Override
 	public void setPrimaryKeyObj(Serializable primaryKeyObj) {
-		setPrimaryKey(((Long)primaryKeyObj).longValue());
+		setPrimaryKey((Long)primaryKeyObj);
 	}
 
 	@Override
@@ -281,10 +283,8 @@ public class LiferayFileShortcut extends LiferayModel implements FileShortcut {
 		if (isEscapedModel()) {
 			return this;
 		}
-		else {
-			return new LiferayFileShortcut(
-				_dlFileShortcut.toEscapedModel(), true);
-		}
+
+		return new LiferayFileShortcut(_dlFileShortcut.toEscapedModel(), true);
 	}
 
 	@Override
@@ -293,10 +293,17 @@ public class LiferayFileShortcut extends LiferayModel implements FileShortcut {
 			return new LiferayFileShortcut(
 				_dlFileShortcut.toUnescapedModel(), true);
 		}
-		else {
-			return this;
-		}
+
+		return this;
 	}
+
+	private static volatile ModelResourcePermission<DLFileShortcut>
+		_dlFileShortcutModelResourcePermission =
+			ServiceProxyFactory.newServiceTrackedInstance(
+				ModelResourcePermission.class, LiferayFileShortcut.class,
+				"_dlFileShortcutModelResourcePermission",
+				"(model.class.name=" + DLFileShortcut.class.getName() + ")",
+				true);
 
 	private final DLFileShortcut _dlFileShortcut;
 	private final boolean _escapedModel;

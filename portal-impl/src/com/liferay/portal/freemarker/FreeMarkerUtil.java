@@ -14,8 +14,8 @@
 
 package com.liferay.portal.freemarker;
 
-import com.liferay.portal.kernel.io.unsync.UnsyncStringWriter;
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.petra.io.unsync.UnsyncStringWriter;
+import com.liferay.petra.string.StringPool;
 
 import freemarker.cache.ClassTemplateLoader;
 

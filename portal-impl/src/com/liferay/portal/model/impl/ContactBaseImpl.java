@@ -14,8 +14,6 @@
 
 package com.liferay.portal.model.impl;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.portal.kernel.model.Contact;
 import com.liferay.portal.kernel.service.ContactLocalServiceUtil;
 
@@ -31,13 +29,13 @@ import com.liferay.portal.kernel.service.ContactLocalServiceUtil;
  * @see Contact
  * @generated
  */
-@ProviderType
-public abstract class ContactBaseImpl extends ContactModelImpl
-	implements Contact {
+public abstract class ContactBaseImpl
+	extends ContactModelImpl implements Contact {
+
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. All methods that expect a contact model instance should use the {@link Contact} interface instead.
+	 * Never modify or reference this class directly. All methods that expect a contact model instance should use the <code>Contact</code> interface instead.
 	 */
 	@Override
 	public void persist() {
@@ -48,4 +46,5 @@ public abstract class ContactBaseImpl extends ContactModelImpl
 			ContactLocalServiceUtil.updateContact(this);
 		}
 	}
+
 }

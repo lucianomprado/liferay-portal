@@ -14,7 +14,6 @@
 
 package com.liferay.source.formatter.checks;
 
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 
 import java.util.regex.Matcher;
@@ -34,8 +33,8 @@ public class JavaIOExceptionCheck extends BaseFileCheck {
 		while (matcher.find()) {
 			String match = matcher.group();
 
-			String replacement = StringUtil.replace(
-				match, ".getMessage()", StringPool.BLANK);
+			String replacement = StringUtil.removeSubstring(
+				match, ".getMessage()");
 
 			content = StringUtil.replace(content, match, replacement);
 		}
@@ -43,7 +42,7 @@ public class JavaIOExceptionCheck extends BaseFileCheck {
 		return content;
 	}
 
-	private final Pattern _ioExceptionPattern = Pattern.compile(
+	private static final Pattern _ioExceptionPattern = Pattern.compile(
 		"\tthrow new IOException\\([\\s\\S]*?;\n");
 
 }

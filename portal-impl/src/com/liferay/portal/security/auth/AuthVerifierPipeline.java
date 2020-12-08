@@ -14,9 +14,12 @@
 
 package com.liferay.portal.security.auth;
 
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.security.auth.AccessControlContext;
 import com.liferay.portal.kernel.security.auth.verifier.AuthVerifier;
 import com.liferay.portal.kernel.security.auth.verifier.AuthVerifierConfiguration;
@@ -24,7 +27,6 @@ import com.liferay.portal.kernel.security.auth.verifier.AuthVerifierResult;
 import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.registry.Filter;
 import com.liferay.registry.Registry;
@@ -58,15 +60,15 @@ public class AuthVerifierPipeline {
 		String simpleClassName = StringUtil.extractLast(
 			className, StringPool.PERIOD);
 
-		return PropsKeys.AUTH_VERIFIER.concat(simpleClassName).concat(
-			StringPool.PERIOD);
+		return StringBundler.concat(
+			PropsKeys.AUTH_VERIFIER, simpleClassName, StringPool.PERIOD);
 	}
 
 	public static AuthVerifierResult verifyRequest(
 			AccessControlContext accessControlContext)
 		throws PortalException {
 
-		return _instance._verifyRequest(accessControlContext);
+		return _authVerifierPipeline._verifyRequest(accessControlContext);
 	}
 
 	private AuthVerifierPipeline() {
@@ -87,13 +89,13 @@ public class AuthVerifierPipeline {
 
 		AuthVerifierResult authVerifierResult = new AuthVerifierResult();
 
-		authVerifierResult.setState(AuthVerifierResult.State.SUCCESS);
+		authVerifierResult.setState(AuthVerifierResult.State.UNSUCCESSFUL);
 
-		HttpServletRequest request = accessControlContext.getRequest();
+		HttpServletRequest httpServletRequest =
+			accessControlContext.getRequest();
 
-		long companyId = PortalUtil.getCompanyId(request);
-
-		long defaultUserId = UserLocalServiceUtil.getDefaultUserId(companyId);
+		long defaultUserId = UserLocalServiceUtil.getDefaultUserId(
+			PortalUtil.getCompanyId(httpServletRequest));
 
 		authVerifierResult.setUserId(defaultUserId);
 
@@ -103,22 +105,25 @@ public class AuthVerifierPipeline {
 	private List<AuthVerifierConfiguration> _getAuthVerifierConfigurations(
 		AccessControlContext accessControlContext) {
 
-		HttpServletRequest request = accessControlContext.getRequest();
+		HttpServletRequest httpServletRequest =
+			accessControlContext.getRequest();
 
 		List<AuthVerifierConfiguration> authVerifierConfigurations =
 			new ArrayList<>();
 
-		String requestURI = request.getRequestURI();
+		String requestURI = httpServletRequest.getRequestURI();
 
-		String contextPath = request.getContextPath();
+		String contextPath = httpServletRequest.getContextPath();
 
-		requestURI = requestURI.substring(contextPath.length());
+		if (requestURI.equals(contextPath)) {
+			requestURI += "/";
+		}
 
 		for (AuthVerifierConfiguration authVerifierConfiguration :
 				_authVerifierConfigurations) {
 
 			authVerifierConfiguration = _mergeAuthVerifierConfiguration(
-				authVerifierConfiguration, accessControlContext);
+				authVerifierConfiguration, accessControlContext, contextPath);
 
 			if (_isMatchingRequestURI(authVerifierConfiguration, requestURI)) {
 				authVerifierConfigurations.add(authVerifierConfiguration);
@@ -159,7 +164,7 @@ public class AuthVerifierPipeline {
 
 	private AuthVerifierConfiguration _mergeAuthVerifierConfiguration(
 		AuthVerifierConfiguration authVerifierConfiguration,
-		AccessControlContext accessControlContext) {
+		AccessControlContext accessControlContext, String contextPath) {
 
 		Map<String, Object> settings = accessControlContext.getSettings();
 
@@ -175,10 +180,10 @@ public class AuthVerifierPipeline {
 		while (iterator.hasNext() && !merge) {
 			String settingsKey = iterator.next();
 
-			if (settingsKey.startsWith(authVerifierSettingsKey)) {
-				if (settings.get(settingsKey) instanceof String) {
-					merge = true;
-				}
+			if (settingsKey.startsWith(authVerifierSettingsKey) &&
+				(settings.get(settingsKey) instanceof String)) {
+
+				merge = true;
 			}
 		}
 
@@ -198,13 +203,29 @@ public class AuthVerifierPipeline {
 		for (Map.Entry<String, Object> entry : settings.entrySet()) {
 			String settingsKey = entry.getKey();
 
-			if (settingsKey.startsWith(authVerifierSettingsKey)) {
-				Object settingsValue = entry.getValue();
+			if (!settingsKey.startsWith(authVerifierSettingsKey)) {
+				continue;
+			}
 
-				if (settingsValue instanceof String) {
-					String propertiesKey = settingsKey.substring(
-						authVerifierSettingsKey.length());
+			Object settingsValue = entry.getValue();
 
+			if (settingsValue instanceof String) {
+				String propertiesKey = settingsKey.substring(
+					authVerifierSettingsKey.length());
+
+				if (propertiesKey.equals("urls.includes") ||
+					propertiesKey.equals("urls.excludes")) {
+
+					String settingsValueString = (String)settingsValue;
+
+					if (settingsValueString.charAt(0) != '/') {
+						settingsValueString = "/" + settingsValueString;
+					}
+
+					mergedProperties.setProperty(
+						propertiesKey, contextPath + settingsValueString);
+				}
+				else {
 					mergedProperties.setProperty(
 						propertiesKey, (String)settingsValue);
 				}
@@ -256,11 +277,12 @@ public class AuthVerifierPipeline {
 				authVerifierResult = authVerifier.verify(
 					accessControlContext, properties);
 			}
-			catch (Exception e) {
+			catch (Exception exception) {
 				if (_log.isDebugEnabled()) {
 					Class<?> authVerifierClass = authVerifier.getClass();
 
-					_log.debug("Skipping " + authVerifierClass.getName(), e);
+					_log.debug(
+						"Skipping " + authVerifierClass.getName(), exception);
 				}
 
 				continue;
@@ -276,18 +298,46 @@ public class AuthVerifierPipeline {
 				continue;
 			}
 
-			if (authVerifierResult.getState() !=
+			if (authVerifierResult.getState() ==
 					AuthVerifierResult.State.NOT_APPLICABLE) {
 
-				Map<String, Object> settings = _mergeSettings(
-					properties, authVerifierResult.getSettings());
-
-				settings.put(AUTH_TYPE, authVerifier.getAuthType());
-
-				authVerifierResult.setSettings(settings);
-
-				return authVerifierResult;
+				continue;
 			}
+
+			User user = UserLocalServiceUtil.fetchUser(
+				authVerifierResult.getUserId());
+
+			if ((user == null) || !user.isActive()) {
+				if (_log.isDebugEnabled()) {
+					Class<?> authVerifierClass = authVerifier.getClass();
+
+					if (user == null) {
+						_log.debug(
+							StringBundler.concat(
+								"Auth verifier ", authVerifierClass.getName(),
+								" returned null user",
+								authVerifierResult.getUserId()));
+					}
+					else {
+						_log.debug(
+							StringBundler.concat(
+								"Auth verifier ", authVerifierClass.getName(),
+								" returned inactive user",
+								authVerifierResult.getUserId()));
+					}
+				}
+
+				continue;
+			}
+
+			Map<String, Object> settings = _mergeSettings(
+				properties, authVerifierResult.getSettings());
+
+			settings.put(AUTH_TYPE, authVerifier.getAuthType());
+
+			authVerifierResult.setSettings(settings);
+
+			return authVerifierResult;
 		}
 
 		return _createGuestVerificationResult(accessControlContext);
@@ -296,7 +346,7 @@ public class AuthVerifierPipeline {
 	private static final Log _log = LogFactoryUtil.getLog(
 		AuthVerifierPipeline.class);
 
-	private static final AuthVerifierPipeline _instance =
+	private static final AuthVerifierPipeline _authVerifierPipeline =
 		new AuthVerifierPipeline();
 
 	private final List<AuthVerifierConfiguration> _authVerifierConfigurations =
@@ -305,8 +355,8 @@ public class AuthVerifierPipeline {
 		_serviceTracker;
 
 	private class AuthVerifierTrackerCustomizer
-		implements
-			ServiceTrackerCustomizer<AuthVerifier, AuthVerifierConfiguration> {
+		implements ServiceTrackerCustomizer
+			<AuthVerifier, AuthVerifierConfiguration> {
 
 		@Override
 		public AuthVerifierConfiguration addingService(
@@ -390,9 +440,7 @@ public class AuthVerifierPipeline {
 					key = key.substring(authVerifierPropertyName.length());
 				}
 
-				Object value = entry.getValue();
-
-				properties.setProperty(key, String.valueOf(value));
+				properties.setProperty(key, String.valueOf(entry.getValue()));
 			}
 
 			return properties;

@@ -15,8 +15,18 @@
 	<td></td>
 </tr>
 <tr>
-	<td>RESOURCE_TABLE_CUSTOM_FIELDS_LINK_GENERIC</td>
-	<td>//tr/td[2]//a[.!='']</td>
+	<td>CUSTOM_FIELD_TYPE</td>
+	<td>//a[contains(.,'${key_customFieldType}')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>CUSTOM_INPUT_FIELD</td>
+	<td>//div[label[contains(.,'${key_fieldLabel}')]]//input[@type='text']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>CUSTOM_INPUT_FIELD_DATA_TYPE</td>
+	<td>//select[contains(@id,'dataType')]</td>
 	<td></td>
 </tr>
 </tbody>

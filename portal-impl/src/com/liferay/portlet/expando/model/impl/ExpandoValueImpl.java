@@ -18,15 +18,15 @@ import com.liferay.expando.kernel.exception.ValueDataException;
 import com.liferay.expando.kernel.model.ExpandoColumn;
 import com.liferay.expando.kernel.model.ExpandoColumnConstants;
 import com.liferay.expando.kernel.service.ExpandoColumnLocalServiceUtil;
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
-import com.liferay.portal.kernel.util.CharPool;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.LocalizationUtil;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 
@@ -266,9 +266,8 @@ public class ExpandoValueImpl extends ExpandoValueBaseImpl {
 		else if (type == ExpandoColumnConstants.STRING_LOCALIZED) {
 			return (Serializable)getStringMap();
 		}
-		else {
-			return getData();
-		}
+
+		return getData();
 	}
 
 	@Override
@@ -324,7 +323,7 @@ public class ExpandoValueImpl extends ExpandoValueBaseImpl {
 		Map<Locale, String> stringMap = LocalizationUtil.getLocalizationMap(
 			getData());
 
-		Map<Locale, String[]> stringArrayMap = new HashMap<>(stringMap.size());
+		Map<Locale, String[]> stringArrayMap = new HashMap<>();
 
 		for (Map.Entry<Locale, String> entry : stringMap.entrySet()) {
 			stringArrayMap.put(entry.getKey(), split(entry.getValue()));
@@ -418,12 +417,12 @@ public class ExpandoValueImpl extends ExpandoValueBaseImpl {
 	}
 
 	@Override
-	public void setGeolocationJSONObject(JSONObject data)
+	public void setGeolocationJSONObject(JSONObject dataJSONObject)
 		throws PortalException {
 
 		validate(ExpandoColumnConstants.GEOLOCATION);
 
-		setData(data.toJSONString());
+		setData(dataJSONObject.toJSONString());
 	}
 
 	@Override
@@ -544,9 +543,10 @@ public class ExpandoValueImpl extends ExpandoValueBaseImpl {
 		String data, Locale locale, Locale defaultLocale) {
 
 		String languageId = LocaleUtil.toLanguageId(locale);
-		String defaultLanguageId = LocaleUtil.toLanguageId(defaultLocale);
 
 		if (Validator.isNotNull(data)) {
+			String defaultLanguageId = LocaleUtil.toLanguageId(defaultLocale);
+
 			data = LocalizationUtil.updateLocalization(
 				getData(), "Data", data, languageId, defaultLanguageId);
 		}

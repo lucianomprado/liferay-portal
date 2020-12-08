@@ -14,7 +14,8 @@
 
 package com.liferay.portal.kernel.jsonwebservice;
 
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.util.StringUtil;
 
 import java.lang.reflect.Method;
 
@@ -30,13 +31,13 @@ public class JSONWebServiceMappingResolver {
 	}
 
 	public String resolveHttpMethod(Method method) {
-		JSONWebService jsonWebServiceAnnotation = method.getAnnotation(
+		JSONWebService annotationJSONWebService = method.getAnnotation(
 			JSONWebService.class);
 
 		String httpMethod = null;
 
-		if (jsonWebServiceAnnotation != null) {
-			httpMethod = jsonWebServiceAnnotation.method().trim();
+		if (annotationJSONWebService != null) {
+			httpMethod = StringUtil.trim(annotationJSONWebService.method());
 		}
 
 		if ((httpMethod != null) && (httpMethod.length() != 0)) {
@@ -47,13 +48,13 @@ public class JSONWebServiceMappingResolver {
 	}
 
 	public String resolvePath(Class<?> clazz, Method method) {
-		JSONWebService jsonWebServiceAnnotation = method.getAnnotation(
+		JSONWebService annotationJSONWebService = method.getAnnotation(
 			JSONWebService.class);
 
 		String path = null;
 
-		if (jsonWebServiceAnnotation != null) {
-			path = jsonWebServiceAnnotation.value().trim();
+		if (annotationJSONWebService != null) {
+			path = StringUtil.trim(annotationJSONWebService.value());
 		}
 
 		if ((path == null) || (path.length() == 0)) {
@@ -68,10 +69,10 @@ public class JSONWebServiceMappingResolver {
 
 		String pathFromClass = null;
 
-		jsonWebServiceAnnotation = clazz.getAnnotation(JSONWebService.class);
+		annotationJSONWebService = clazz.getAnnotation(JSONWebService.class);
 
-		if (jsonWebServiceAnnotation != null) {
-			pathFromClass = jsonWebServiceAnnotation.value().trim();
+		if (annotationJSONWebService != null) {
+			pathFromClass = StringUtil.trim(annotationJSONWebService.value());
 		}
 
 		if ((pathFromClass == null) || (pathFromClass.length() == 0)) {

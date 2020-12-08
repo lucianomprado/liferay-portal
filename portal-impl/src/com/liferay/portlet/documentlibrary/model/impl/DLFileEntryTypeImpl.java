@@ -24,6 +24,7 @@ import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.service.GroupLocalServiceUtil;
+import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 
@@ -33,7 +34,7 @@ import java.util.Locale;
 
 /**
  * @author Alexander Chow
- * @author Mate Thurzo
+ * @author Máté Thurzó
  */
 public class DLFileEntryTypeImpl extends DLFileEntryTypeBaseImpl {
 
@@ -44,7 +45,25 @@ public class DLFileEntryTypeImpl extends DLFileEntryTypeBaseImpl {
 				PortalUtil.getClassNameId(DLFileEntryType.class),
 				getFileEntryTypeId());
 
-		return getDDMStructures(ddmStructureLinks);
+		List<DDMStructure> ddmStructures = getDDMStructures(ddmStructureLinks);
+
+		// See LPS-104152
+
+		if (ListUtil.isEmpty(ddmStructures) ||
+			!ListUtil.exists(
+				ddmStructures,
+				ddmStructure ->
+					ddmStructure.getStructureId() == getDataDefinitionId())) {
+
+			DDMStructure ddmStructure = DDMStructureManagerUtil.fetchStructure(
+				getDataDefinitionId());
+
+			if (ddmStructure != null) {
+				ddmStructures.add(0, ddmStructure);
+			}
+		}
+
+		return ddmStructures;
 	}
 
 	@Override

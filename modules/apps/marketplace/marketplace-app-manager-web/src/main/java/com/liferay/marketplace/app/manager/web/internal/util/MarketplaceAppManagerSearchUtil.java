@@ -14,19 +14,19 @@
 
 package com.liferay.marketplace.app.manager.web.internal.util;
 
-import com.liferay.marketplace.app.manager.web.internal.constants.BundleConstants;
 import com.liferay.marketplace.app.manager.web.internal.constants.BundleStateConstants;
-import com.liferay.portal.kernel.util.CharPool;
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 
 import java.util.ArrayList;
 import java.util.Dictionary;
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.osgi.framework.Bundle;
+import org.osgi.framework.Constants;
 
 /**
  * @author Ryan Park
@@ -34,7 +34,7 @@ import org.osgi.framework.Bundle;
 public class MarketplaceAppManagerSearchUtil {
 
 	public static List<Object> getResults(
-		List<Bundle> bundles, String keywords) {
+		List<Bundle> bundles, String keywords, Locale locale) {
 
 		List<Object> results = new ArrayList<>();
 
@@ -43,7 +43,7 @@ public class MarketplaceAppManagerSearchUtil {
 		// App display
 
 		List<AppDisplay> appDisplays = AppDisplayFactoryUtil.getAppDisplays(
-			bundles, StringPool.BLANK, BundleStateConstants.ANY);
+			bundles, StringPool.BLANK, BundleStateConstants.ANY, locale);
 
 		for (AppDisplay appDisplay : appDisplays) {
 			if (hasAppDisplayKeywordsMatch(appDisplay, keywordsRegex)) {
@@ -56,24 +56,6 @@ public class MarketplaceAppManagerSearchUtil {
 		for (Bundle bundle : bundles) {
 			if (hasBundleKeywordsMatch(bundle, keywordsRegex)) {
 				results.add(bundle);
-			}
-		}
-
-		// Module group display
-
-		List<ModuleGroupDisplay> moduleGroupDisplays = new ArrayList<>();
-
-		for (AppDisplay appDisplay : appDisplays) {
-			if (appDisplay.hasModuleGroups()) {
-				moduleGroupDisplays.addAll(appDisplay.getModuleGroupDisplays());
-			}
-		}
-
-		for (ModuleGroupDisplay moduleGroupDisplay : moduleGroupDisplays) {
-			if (hasModuleGroupDisplayKeywordsMatch(
-					moduleGroupDisplay, keywordsRegex)) {
-
-				results.add(moduleGroupDisplay);
 			}
 		}
 
@@ -92,13 +74,17 @@ public class MarketplaceAppManagerSearchUtil {
 		if (matcher.find()) {
 			return true;
 		}
-		else {
-			return false;
-		}
+
+		return false;
 	}
 
 	protected static String getKeywordsRegex(String keywords) {
-		keywords = StringUtil.replace(keywords, CharPool.SPACE, CharPool.PIPE);
+		keywords = StringUtil.replace(
+			keywords,
+			new String[] {
+				StringPool.SPACE, StringPool.APOSTROPHE, StringPool.QUOTE
+			},
+			new String[] {StringPool.PIPE, StringPool.BLANK, StringPool.BLANK});
 
 		return StringPool.OPEN_PARENTHESIS + keywords +
 			StringPool.CLOSE_PARENTHESIS;
@@ -107,14 +93,13 @@ public class MarketplaceAppManagerSearchUtil {
 	protected static boolean hasAppDisplayKeywordsMatch(
 		AppDisplay appDisplay, String keywordsRegex) {
 
-		if (containsMatches(keywordsRegex, appDisplay.getTitle()) ||
+		if (containsMatches(keywordsRegex, appDisplay.getDisplayTitle()) ||
 			containsMatches(keywordsRegex, appDisplay.getDescription())) {
 
 			return true;
 		}
-		else {
-			return false;
-		}
+
+		return false;
 	}
 
 	protected static boolean hasBundleKeywordsMatch(
@@ -124,36 +109,22 @@ public class MarketplaceAppManagerSearchUtil {
 			return true;
 		}
 
-		Dictionary<String, String> headers = bundle.getHeaders();
+		Dictionary<String, String> headers = bundle.getHeaders(
+			StringPool.BLANK);
 
-		String bundleDescription = headers.get(
-			BundleConstants.BUNDLE_DESCRIPTION);
+		String bundleDescription = headers.get(Constants.BUNDLE_DESCRIPTION);
 
 		if (containsMatches(keywordsRegex, bundleDescription)) {
 			return true;
 		}
 
-		String bundleName = headers.get(BundleConstants.BUNDLE_NAME);
+		String bundleName = headers.get(Constants.BUNDLE_NAME);
 
 		if (containsMatches(keywordsRegex, bundleName)) {
 			return true;
 		}
 
 		return false;
-	}
-
-	protected static boolean hasModuleGroupDisplayKeywordsMatch(
-		ModuleGroupDisplay moduleGroupDisplay, String keywordsRegex) {
-
-		if (containsMatches(keywordsRegex, moduleGroupDisplay.getTitle()) ||
-			containsMatches(
-				keywordsRegex, moduleGroupDisplay.getDescription())) {
-
-			return true;
-		}
-		else {
-			return false;
-		}
 	}
 
 }

@@ -1,29 +1,37 @@
-<definition>
-	<command name="configureUserProfile">
-		<execute function="AssertClick" locator1="Link#CONFIGURE_TWITTER" value1="Please configure your Twitter screen name." />
+definition {
 
-		<execute function="SelectFrame" locator1="IFrame#DIALOG" />
+	macro configureUserProfile {
+		AssertClick(
+			locator1 = "Link#CONFIGURE_TWITTER",
+			value1 = "Please configure your Twitter screen name.");
 
-		<execute function="AssertClick" locator1="NavTab#IDENTIFICATION" value1="Identification" />
+		SelectFrame(locator1 = "IFrame#MODAL_BODY");
 
-		<execute macro="Panel#expandPanel">
-			<var name="panelHeading" value="Social Network" />
-		</execute>
+		Navigator.gotoNavTab(navTab = "Identification");
 
-		<execute function="Type" locator1="TextInput#TWITTER" value1="${twitterProfileName}" />
+		Panel.expandPanel(panel = "Social Network");
 
-		<execute macro="PortletEntry#save" />
+		Type(
+			locator1 = "TextInput#TWITTER",
+			value1 = "${twitterProfileName}");
 
-		<execute macro="IFrame#closeFrame" />
-	</command>
+		PortletEntry.save();
 
-	<command name="viewConfiguredScreenName">
-		<var name="key_portletName" value="Twitter" />
+		IFrame.closeFrame();
+	}
 
-		<execute function="AssertTextEquals" locator1="Portlet#BODY" value1="Your Twitter screen name is ${twitterProfileName}. Your tweets will appear as activities." />
-	</command>
+	macro viewConfiguredScreenName {
+		var key_portletName = "Twitter";
 
-	<command name="viewFeedEntry">
-		<execute function="AssertTextEquals" locator1="Activities#ENTRY_CONTENT" value1="${entryContent}" />
-	</command>
-</definition>
+		AssertTextEquals(
+			locator1 = "Portlet#BODY",
+			value1 = "Your Twitter screen name is ${twitterProfileName}. Your tweets will appear as activities.");
+	}
+
+	macro viewFeedEntry {
+		AssertTextEquals(
+			locator1 = "Activities#ENTRY_CONTENT",
+			value1 = "${entryContent}");
+	}
+
+}

@@ -14,7 +14,7 @@
 
 package com.liferay.source.formatter.checks;
 
-import com.liferay.portal.kernel.util.CharPool;
+import com.liferay.petra.string.CharPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.source.formatter.checks.util.JavaSourceUtil;
@@ -79,7 +79,7 @@ public class JavaAssertEqualsCheck extends BaseFileCheck {
 		return content;
 	}
 
-	private final Pattern _assertEqualsPattern = Pattern.compile(
+	private static final Pattern _assertEqualsPattern = Pattern.compile(
 		"Assert\\.assertEquals\\((.*?)\\);\n", Pattern.DOTALL);
 
 }

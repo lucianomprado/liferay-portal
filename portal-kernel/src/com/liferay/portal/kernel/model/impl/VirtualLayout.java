@@ -14,6 +14,8 @@
 
 package com.liferay.portal.kernel.model.impl;
 
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -28,8 +30,6 @@ import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.LayoutTypePortletFactoryUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.PropsUtil;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.WebKeys;
 
 import java.util.List;
@@ -75,8 +75,8 @@ public class VirtualLayout extends LayoutWrapper {
 
 			sb.append(group.getFriendlyURL());
 		}
-		catch (Exception e) {
-			_log.error(e, e);
+		catch (Exception exception) {
+			_log.error(exception, exception);
 		}
 
 		if (locale == null) {
@@ -127,37 +127,41 @@ public class VirtualLayout extends LayoutWrapper {
 	}
 
 	@Override
-	public String getRegularURL(HttpServletRequest request)
+	public String getRegularURL(HttpServletRequest httpServletRequest)
 		throws PortalException {
 
-		String layoutURL = _sourceLayout.getRegularURL(request);
+		String layoutURL = _sourceLayout.getRegularURL(httpServletRequest);
 
-		ThemeDisplay themeDisplay = (ThemeDisplay)request.getAttribute(
-			WebKeys.THEME_DISPLAY);
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)httpServletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
 
 		return injectVirtualGroupURL(layoutURL, themeDisplay.getLocale());
 	}
 
 	@Override
-	public String getResetLayoutURL(HttpServletRequest request)
+	public String getResetLayoutURL(HttpServletRequest httpServletRequest)
 		throws PortalException {
 
-		String layoutURL = _sourceLayout.getResetLayoutURL(request);
+		String layoutURL = _sourceLayout.getResetLayoutURL(httpServletRequest);
 
-		ThemeDisplay themeDisplay = (ThemeDisplay)request.getAttribute(
-			WebKeys.THEME_DISPLAY);
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)httpServletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
 
 		return injectVirtualGroupURL(layoutURL, themeDisplay.getLocale());
 	}
 
 	@Override
-	public String getResetMaxStateURL(HttpServletRequest request)
+	public String getResetMaxStateURL(HttpServletRequest httpServletRequest)
 		throws PortalException {
 
-		String layoutURL = _sourceLayout.getResetMaxStateURL(request);
+		String layoutURL = _sourceLayout.getResetMaxStateURL(
+			httpServletRequest);
 
-		ThemeDisplay themeDisplay = (ThemeDisplay)request.getAttribute(
-			WebKeys.THEME_DISPLAY);
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)httpServletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
 
 		return injectVirtualGroupURL(layoutURL, themeDisplay.getLocale());
 	}
@@ -219,8 +223,8 @@ public class VirtualLayout extends LayoutWrapper {
 
 			return sb.toString();
 		}
-		catch (Exception e) {
-			throw new IllegalStateException(e);
+		catch (Exception exception) {
+			throw new IllegalStateException(exception);
 		}
 	}
 

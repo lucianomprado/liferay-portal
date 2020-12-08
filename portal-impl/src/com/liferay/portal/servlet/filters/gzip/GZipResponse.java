@@ -42,18 +42,18 @@ import javax.servlet.http.HttpServletResponseWrapper;
  */
 public class GZipResponse extends HttpServletResponseWrapper {
 
-	public GZipResponse(HttpServletResponse response) {
-		super(response);
+	public GZipResponse(HttpServletResponse httpServletResponse) {
+		super(httpServletResponse);
 
 		// Clear previous content length setting. GZip response does not buffer
 		// output to get final content length. The response will be chunked
 		// unless an outer filter calculates the content length.
 
-		response.setContentLength(-1);
+		httpServletResponse.setContentLength(-1);
 
 		// Setting the header after finishResponse is too late
 
-		response.addHeader(HttpHeaders.CONTENT_ENCODING, _GZIP);
+		httpServletResponse.addHeader(HttpHeaders.CONTENT_ENCODING, _GZIP);
 	}
 
 	public void finishResponse() throws IOException {
@@ -116,6 +116,13 @@ public class GZipResponse extends HttpServletResponseWrapper {
 	}
 
 	@Override
+	public void setContentLengthLong(long contentLengthLong) {
+		if (contentLengthLong == 0) {
+			super.setContentLengthLong(0);
+		}
+	}
+
+	@Override
 	public void setHeader(String name, String value) {
 		if (HttpHeaders.CONTENT_LENGTH.equals(name)) {
 			if (Objects.equals("0", value)) {
@@ -145,7 +152,6 @@ public class GZipResponse extends HttpServletResponseWrapper {
 			{
 				def.setLevel(PropsValues.GZIP_COMPRESSION_LEVEL);
 			}
-
 		};
 
 		return new ServletOutputStreamAdapter(gzipOutputStream) {
@@ -179,12 +185,11 @@ public class GZipResponse extends HttpServletResponseWrapper {
 	private boolean _isGZipContentType() {
 		String contentType = getContentType();
 
-		if (contentType != null) {
-			if (contentType.equals(ContentTypes.APPLICATION_GZIP) ||
-				contentType.equals(ContentTypes.APPLICATION_X_GZIP)) {
+		if ((contentType != null) &&
+			(contentType.equals(ContentTypes.APPLICATION_GZIP) ||
+			 contentType.equals(ContentTypes.APPLICATION_X_GZIP))) {
 
-				return true;
-			}
+			return true;
 		}
 
 		return false;
@@ -198,23 +203,23 @@ public class GZipResponse extends HttpServletResponseWrapper {
 
 	static {
 		try {
-			UnsyncByteArrayOutputStream ubaos =
+			UnsyncByteArrayOutputStream unsyncByteArrayOutputStream =
 				new UnsyncByteArrayOutputStream();
 
-			GZIPOutputStream gzipOutputStream = new GZIPOutputStream(ubaos) {
+			GZIPOutputStream gzipOutputStream = new GZIPOutputStream(
+				unsyncByteArrayOutputStream) {
 
 				{
 					def.setLevel(PropsValues.GZIP_COMPRESSION_LEVEL);
 				}
-
 			};
 
 			gzipOutputStream.close();
 
-			_EMPTY_GZIP_OUTPUT_SIZE = ubaos.size();
+			_EMPTY_GZIP_OUTPUT_SIZE = unsyncByteArrayOutputStream.size();
 		}
-		catch (IOException ioe) {
-			throw new ExceptionInInitializerError(ioe);
+		catch (IOException ioException) {
+			throw new ExceptionInInitializerError(ioException);
 		}
 	}
 

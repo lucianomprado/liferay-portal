@@ -16,7 +16,6 @@ package com.liferay.sync.web.internal.upgrade;
 
 import com.liferay.portal.kernel.upgrade.BaseUpgradePortletId;
 import com.liferay.portal.upgrade.registry.UpgradeStepRegistrator;
-import com.liferay.sync.constants.SyncAdminPortletKeys;
 import com.liferay.sync.constants.SyncPortletKeys;
 
 import org.osgi.service.component.annotations.Component;
@@ -33,18 +32,20 @@ public class SyncWebUpgrade implements UpgradeStepRegistrator {
 	@Override
 	public void register(Registry registry) {
 		registry.register(
-			"com.liferay.sync.web", "0.0.0", "1.0.0",
+			"0.0.0", "1.0.0",
 			new BaseUpgradePortletId() {
 
 				@Override
 				protected String[][] getRenamePortletIdsArray() {
 					return new String[][] {
-						new String[] {
-							SyncAdminPortletKeys.SYNC_ADMIN_PORTLET,
+						{
+							"com_liferay_sync_connector_web_portlet_" +
+								"SyncAdminPortlet",
 							SyncPortletKeys.SYNC_ADMIN_PORTLET
 						},
-						new String[] {
-							SyncAdminPortletKeys.SYNC_DEVICES_PORTLET,
+						{
+							"com_liferay_sync_connector_web_portlet_" +
+								"SyncDevicesPortlet",
 							SyncPortletKeys.SYNC_DEVICES_PORTLET
 						}
 					};

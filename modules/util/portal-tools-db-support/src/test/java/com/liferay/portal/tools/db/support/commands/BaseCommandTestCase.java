@@ -24,7 +24,6 @@ import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
 
 /**
  * @author Andrea Di Giorgi
@@ -32,7 +31,7 @@ import org.junit.runners.Parameterized.Parameters;
 @RunWith(Parameterized.class)
 public abstract class BaseCommandTestCase {
 
-	@Parameters(name = "{0}")
+	@Parameterized.Parameters(name = "{0}")
 	public static String[] getModes() {
 		return new String[] {
 			"DB2", "Derby", "HSQLDB", "MSSQLServer", "MySQL", "Oracle",
@@ -89,8 +88,8 @@ public abstract class BaseCommandTestCase {
 
 			dependenciesDir = new File(url.toURI());
 		}
-		catch (Exception e) {
-			throw new ExceptionInInitializerError(e);
+		catch (Exception exception) {
+			throw new ExceptionInInitializerError(exception);
 		}
 	}
 

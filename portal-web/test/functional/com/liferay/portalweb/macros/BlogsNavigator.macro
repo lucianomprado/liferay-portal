@@ -1,260 +1,202 @@
-<definition>
-	<command name="gotoAbstractField">
-		<execute macro="Panel#expandPanel">
-			<var name="panelHeading" value="Configuration" />
-		</execute>
-	</command>
+definition {
 
-	<command name="gotoAddEntry">
-		<if>
-			<condition function="IsElementPresent" locator1="Blogs#ADD_BLOGS_ENTRY" />
-			<then>
-				<execute function="AssertClick" locator1="Blogs#ADD_BLOGS_ENTRY" value1="Add Blog Entry" />
-			</then>
-			<else>
-				<execute function="Click" locator1="Button#PLUS" />
-			</else>
-		</if>
+	macro gotoAddEntry {
+		if (IsElementPresent(locator1 = "Blogs#ADD_BLOGS_ENTRY")) {
+			Click(locator1 = "Blogs#ADD_BLOGS_ENTRY");
+		}
+		else {
+			var key_text = "New Entry";
 
-		<execute function="AssertVisible" locator1="BlogsEntry#ENTRY_COVER_IMAGE_SELECT_FILE" />
-	</command>
+			AssertClick(
+				locator1 = "Button#ANY",
+				value1 = "New Entry");
+		}
 
-	<command name="gotoBlogsEntriesPermissionsCP">
-		<execute function="Click" locator1="Icon#HEADER_VERTICAL_ELLIPSIS" />
+		AssertVisible(locator1 = "BlogsEntry#ENTRY_COVER_IMAGE_SELECT_FILE");
+	}
 
-		<execute function="AssertClick" locator1="MenuItem#ANY_MENU_ITEM" value1="Entries Permissions">
-			<var name="key_menuItem" value="Entries Permissions" />
-		</execute>
+	macro gotoBlogsEntriesPermissionsCP {
+		LexiconEntry.gotoHeaderMenuItem(menuItem = "Entries Permissions");
 
-		<execute function="SelectFrame" locator1="IFrame#DIALOG" />
-	</command>
+		SelectFrame(locator1 = "IFrame#MODAL_BODY");
+	}
 
-	<command name="gotoBlogsEntryPermissionsCP">
-		<var name="key_rowEntry" value="${entryTitle}" />
+	macro gotoBlogsEntryPermissionsCP {
+		Pause(locator = "1000");
 
-		<execute function="Click#waitForMenuToggleJSClick" locator1="Icon#ROW_VERTICAL_ELLIPSIS" />
+		LexiconCard.clickEllipsisItem(
+			card = "${entryTitle}",
+			item = "Permissions");
 
-		<execute function="AssertClick" locator1="MenuItem#ANY_MENU_ITEM" value1="Permissions">
-			<var name="key_menuItem" value="Permissions" />
-		</execute>
+		SelectFrame(locator1 = "IFrame#MODAL_BODY");
+	}
 
-		<execute function="SelectFrame" locator1="IFrame#DIALOG" />
-	</command>
+	macro gotoBlogsEntryPermissionsPG {
+		Portlet.mouseOverPortletTitle(portletTitleName = "Blogs");
 
-	<command name="gotoBlogsEntryPermissionsPG">
-		<execute function="Click#waitForMenuToggleJSClick" locator1="Icon#BODY_VERTICAL_ELLIPSIS" />
+		Blogs.clickEllipsisItemPG(
+			entryTitle = "${entryTitle}",
+			item = "Permissions");
 
-		<execute function="AssertClick" locator1="MenuItem#ANY_MENU_ITEM" value1="Permissions">
-			<var name="key_menuItem" value="Permissions" />
-		</execute>
+		SelectFrame(locator1 = "IFrame#MODAL_BODY");
+	}
 
-		<execute function="SelectFrame" locator1="IFrame#DIALOG" />
-	</command>
+	macro gotoBrowseImage {
+		Click(locator1 = "Button#BROWSE_IMAGE");
+	}
 
-	<command name="gotoBrowseImage">
-		<execute function="Click" locator1="Button#BROWSE_IMAGE" />
-	</command>
+	macro gotoConfigurationScopePG {
+		Navigator.gotoNavItem(navItem = "Scope");
+	}
 
-	<command name="gotoConfigurationPermissionsPG">
-		<execute function="AssertClick" locator1="NavBar#PERMISSIONS" value1="Permissions" />
-	</command>
+	macro gotoConfigurationSetupPG {
+		Portlet.gotoPortletOptions(portletOption = "Configuration");
 
-	<command name="gotoConfigurationScopePG">
-		<execute function="AssertClick" locator1="NavBar#SCOPE" value1="Scope" />
-	</command>
+		SelectFrame(locator1 = "IFrame#MODAL_BODY");
+	}
 
-	<command name="gotoConfigurationSetupPG">
-		<execute macro="Portlet#gotoPortletOptions">
-			<var name="portletOption" value="Configuration" />
-		</execute>
+	macro gotoEditCP {
+		LexiconEntry.changeDisplayStyle(displayStyle = "list");
 
-		<execute function="SelectFrame" locator1="IFrame#DIALOG" />
-	</command>
+		var key_entryTitle = "${entryTitle}";
 
-	<command name="gotoConfigurationSetupRSSPG">
-		<execute function="AssertClick" locator1="Configuration#NAVIGATION_RSS" value1="RSS" />
-	</command>
+		Blogs.viewEntryTitle(entryTitle = "${entryTitle}");
 
-	<command name="gotoDraftCP">
-		<execute macro="Portlet#changeDisplayStyle">
-			<var name="displayStyle" value="Descriptive" />
-		</execute>
+		Click(
+			key_listEntry = "${entryTitle}",
+			locator1 = "LexiconList#LIST_ENTRY_ELLIPSIS");
 
-		<var name="key_entryTitle" value="${entryTitle}" />
+		MenuItem.click(menuItem = "Edit");
 
-		<execute function="AssertTextEquals" locator1="Blogs#DESCRIPTIVE_VIEW_ENTRY_STATUS" value1="Draft" />
+		AssertElementPresent(locator1 = "Icon#BACK");
 
-		<execute function="AssertClick" locator1="Blogs#DESCRIPTIVE_VIEW_ENTRY_TITLE" value1="${entryTitle}" />
-	</command>
+		AssertVisible(
+			key_text = "Title",
+			locator1 = "TextArea#ANY");
+	}
 
-	<command name="gotoDraftEditPG">
-		<var name="key_entryTitle" value="${entryTitle}" />
+	macro gotoEditPG {
+		var key_entryTitle = "${entryTitle}";
 
-		<execute function="AssertTextEquals" locator1="BlogsEntry#TITLE" value1="${entryTitle}" />
+		AssertTextEquals(
+			locator1 = "BlogsEntry#TITLE",
+			value1 = "${entryTitle}");
 
-		<execute function="AssertClick" locator1="Link#EDIT" value1="Edit" />
-	</command>
+		if (IsElementPresent(locator1 = "Button#EDIT_PENCIL")) {
+			Click(locator1 = "Button#EDIT_PENCIL");
+		}
+		else {
+			Portlet.mouseOverPortletTitle(portletTitleName = "Blogs");
 
-	<command name="gotoEditCP">
-		<execute macro="Portlet#changeDisplayStyle">
-			<var name="displayStyle" value="Descriptive" />
-		</execute>
+			Blogs.clickEllipsisItemPG(
+				entryTitle = "${entryTitle}",
+				item = "Edit");
+		}
 
-		<var name="key_entryTitle" value="${entryTitle}" />
+		AssertVisible(locator1 = "BlogsEntry#ENTRY_COVER_IMAGE_SELECT_FILE");
+	}
 
-		<execute function="AssertTextEquals" locator1="Blogs#DESCRIPTIVE_VIEW_ENTRY_TITLE" value1="${entryTitle}" />
+	macro gotoEntryCP {
+		LexiconEntry.changeDisplayStyle(displayStyle = "list");
 
-		<execute function="Click" locator1="Blogs#DESCRIPTIVE_VIEW_ENTRY_OPTIONS_DROPDOWN" />
+		var key_entryTitle = "${entryTitle}";
 
-		<execute function="AssertClick" locator1="MenuItem#ANY_MENU_ITEM" value1="Edit">
-			<var name="key_menuItem" value="Edit" />
-		</execute>
+		if (isSet(entryStatus)) {
+			AssertTextEquals(
+				locator1 = "Blogs#DESCRIPTIVE_VIEW_ENTRY_STATUS",
+				value1 = "${entryStatus}");
+		}
 
-		<execute function="AssertElementPresent" locator1="Icon#BACK" />
-		<execute function="AssertVisible" locator1="AlloyEditor#TITLE_FIELD" />
-	</command>
+		LexiconList.clickListEntryTitle(listEntry = "${entryTitle}");
+	}
 
-	<command name="gotoEditPG">
-		<var name="key_entryTitle" value="${entryTitle}" />
+	macro gotoEntryPG {
+		var key_entryContent = "${entryContent}";
+		var key_entryTitle = "${entryTitle}";
 
-		<execute function="AssertTextEquals" locator1="BlogsEntry#TITLE" value1="${entryTitle}" />
+		AssertTextEquals(
+			locator1 = "BlogsEntry#TITLE",
+			value1 = "${entryTitle}");
 
-		<if>
-			<condition function="IsElementPresent" locator1="Button#EDIT_PENCIL" />
-			<then>
-				<execute function="Click" locator1="Button#EDIT_PENCIL" />
-			</then>
-			<else>
-				<execute macro="PortletEntry#clickEditFromEllipsis" />
-			</else>
-		</if>
+		AssertTextEquals(
+			locator1 = "BlogsEntry#CONTENT",
+			value1 = "${entryContent}");
 
-		<execute function="AssertVisible" locator1="BlogsEntry#ENTRY_COVER_IMAGE_SELECT_FILE" />
-	</command>
+		AssertClick.assertTextClickAt(
+			locator1 = "BlogsEntry#TITLE_LINK",
+			value1 = "${entryTitle}");
+	}
 
-	<command name="gotoEntryCP">
-		<execute macro="Portlet#changeDisplayStyle">
-			<var name="displayStyle" value="Descriptive" />
-		</execute>
+	macro gotoEntryWithAbstractPG {
+		var key_entryAbstractDescription = "${entryAbstractDescription}";
+		var key_entryTitle = "${entryTitle}";
 
-		<var name="key_entryTitle" value="${entryTitle}" />
+		AssertTextEquals(
+			locator1 = "BlogsEntry#TITLE",
+			value1 = "${entryTitle}");
 
-		<if>
-			<isset var="entryStatus" />
-			<then>
-				<execute function="AssertTextEquals" locator1="Blogs#DESCRIPTIVE_VIEW_ENTRY_STATUS" value1="${entryStatus}" />
-			</then>
-		</if>
+		AssertTextEquals.assertPartialText(
+			locator1 = "BlogsEntry#CONTENT_ABSTRACT",
+			value1 = "${entryAbstractDescription}");
 
-		<execute function="AssertClick" locator1="Blogs#DESCRIPTIVE_VIEW_ENTRY_TITLE" value1="${entryTitle}" />
-	</command>
+		AssertClick(
+			locator1 = "BlogsEntry#TITLE_LINK",
+			value1 = "${entryTitle}");
+	}
 
-	<command name="gotoEntryPG">
-		<var name="key_entryContent" value="${entryContent}" />
-		<var name="key_entryTitle" value="${entryTitle}" />
+	macro gotoPG {
+		var key_entryTitle = "${entryTitle}";
 
-		<execute function="AssertTextEquals" locator1="BlogsEntry#TITLE" value1="${entryTitle}" />
-		<execute function="AssertTextEquals" locator1="BlogsEntry#CONTENT" value1="${entryContent}" />
+		if (isSet(blogEntryURL)) {
+			AssertLocation(value1 = "${blogEntryURL}");
+		}
+		else {
+			Click(
+				locator1 = "BlogsEntry#TITLE_LINK",
+				value1 = "${entryTitle}");
+		}
 
-		<execute function="AssertClick#assertTextClickAt" locator1="BlogsEntry#TITLE_LINK" value1="${entryTitle}" />
-	</command>
+		AssertTextEquals(
+			locator1 = "BlogsEntry#TITLE",
+			value1 = "${entryTitle}");
+	}
 
-	<command name="gotoEntryWithAbstractPG">
-		<var name="key_entryAbstractDescription" value="${entryAbstractDescription}" />
-		<var name="key_entryTitle" value="${entryTitle}" />
+	macro gotoSelectFile {
+		Pause(locator1 = "5000");
 
-		<execute function="AssertTextEquals" locator1="BlogsEntry#TITLE" value1="${entryTitle}" />
-		<execute function="AssertTextEquals#assertPartialText" locator1="BlogsEntry#CONTENT_ABSTRACT" value1="${entryAbstractDescription}" />
+		AssertClick(
+			locator1 = "BlogsEntry#ENTRY_COVER_IMAGE_SELECT_FILE",
+			value1 = "Select File");
+	}
 
-		<execute function="AssertClick" locator1="BlogsEntry#TITLE_LINK" value1="${entryTitle}" />
-	</command>
+	macro gotoShare {
+		WaitForLiferayEvent.initializeLiferayEventLog();
 
-	<command name="gotoPG">
-		<var name="key_entryTitle" value="${entryTitle}" />
+		LexiconEntry.gotoEntryMenuItem(
+			menuItem = "Share",
+			rowEntry = "${entryTitle}");
+	}
 
-		<if>
-			<isset var="blogEntryURL" />
-			<then>
-				<execute function="AssertLocation" value1="${blogEntryURL}" />
-			</then>
-			<else>
-				<execute function="Click" locator1="BlogsEntry#TITLE_LINK" value1="${entryTitle}" />
-			</else>
-		</if>
+	macro moveToRecycleBinCP {
+		LexiconEntry.changeDisplayStyle(displayStyle = "list");
 
-		<execute function="AssertTextEquals" locator1="BlogsEntry#TITLE" value1="${entryTitle}" />
-	</command>
+		var key_entryTitle = "${entryTitle}";
 
-	<command name="moveToRecycleBinCP">
-		<execute macro="Portlet#changeDisplayStyle">
-			<var name="displayStyle" value="Descriptive" />
-		</execute>
+		Blogs.viewEntryTitle(entryTitle = "${entryTitle}");
 
-		<var name="key_entryTitle" value="${entryTitle}" />
+		Click(
+			key_listEntry = "${entryTitle}",
+			locator1 = "LexiconList#LIST_ENTRY_ELLIPSIS");
 
-		<execute function="AssertTextEquals" locator1="Blogs#DESCRIPTIVE_VIEW_ENTRY_TITLE" value1="${entryTitle}" />
+		ClickNoError(
+			key_menuItem = "Move to Recycle Bin",
+			locator1 = "MenuItem#DROPDOWN_MENU_ITEM");
 
-		<execute function="Click" locator1="Blogs#DESCRIPTIVE_VIEW_ENTRY_OPTIONS_DROPDOWN" />
+		VerifyElementPresent(locator1 = "Message#SUCCESS");
+	}
 
-		<execute macro="PortletEntry#clickMoveToRecycleBin" />
+	macro openBlogsAdmin {
+		Navigator.openWithAppendToBaseURL(urlAppend = "group/${siteURLKey}/~/control_panel/manage?p_p_id=com_liferay_blogs_web_portlet_BlogsAdminPortlet");
+	}
 
-		<execute function="AssertElementPresent" locator1="Message#SUCCESS" />
-	</command>
-
-	<command name="moveToRecycleBinDraftCP">
-		<var name="key_entryTitle" value="${entryTitle}" />
-
-		<execute function="AssertTextEquals" locator1="Blogs#ENTRY_TABLE_TITLE" value1="${entryTitle}" />
-		<execute function="AssertTextEquals" locator1="Blogs#ENTRY_TABLE_STATUS" value1="Draft" />
-
-		<execute function="Click" locator1="Blogs#ENTRY_TABLE_ACTIONS" />
-
-		<execute macro="PortletEntry#clickMoveToRecycleBin" />
-
-		<execute function="AssertElementPresent" locator1="Message#SUCCESS" />
-	</command>
-
-	<command name="viewEditLinkPG">
-		<var name="key_entryTitle" value="${entryTitle}" />
-
-		<execute function="AssertTextEquals" locator1="BlogsEntry#TITLE" value1="${entryTitle}" />
-		<execute function="AssertTextEquals" locator1="BlogsEntry#CONTENT" value1="${entryContent}" />
-		<execute function="AssertElementPresent" locator1="Link#EDIT" />
-	</command>
-
-	<command name="viewNextEntryNavigation">
-		<execute function="AssertTextEquals" locator1="BlogsEntry#PREVIOUS_ENTRY_TITLE" value1="${nextEntryTitle}" />
-
-		<if>
-			<isset var="nextEntrySubtitle" />
-			<then>
-				<execute function="AssertTextEquals" locator1="BlogsEntry#NEXT_ENTRY_SUBTITLE" value1="${nextEntrySubtitle}" />
-			</then>
-		</if>
-
-		<if>
-			<isset var="nextEntryAuthor" />
-			<then>
-				<execute function="AssertTextEquals" locator1="BlogsEntry#NEXT_ENTRY_AUTHOR" value1="${nextEntryAuthor}" />
-			</then>
-		</if>
-	</command>
-
-	<command name="viewPreviousEntryNavigation">
-		<execute function="AssertTextEquals" locator1="BlogsEntry#NEXT_ENTRY_TITLE" value1="${previousEntryTitle}" />
-
-		<if>
-			<isset var="previousEntrySubtitle" />
-			<then>
-				<execute function="AssertTextEquals" locator1="BlogsEntry#PREVIOUS_ENTRY_SUBTITLE" value1="${previousEntrySubtitle}" />
-			</then>
-		</if>
-
-		<if>
-			<isset var="previousEntryAuthor" />
-			<then>
-				<execute function="AssertTextEquals" locator1="BlogsEntry#PREVIOUS_ENTRY_AUTHOR" value1="${previousEntryAuthor}" />
-			</then>
-		</if>
-	</command>
-</definition>
+}

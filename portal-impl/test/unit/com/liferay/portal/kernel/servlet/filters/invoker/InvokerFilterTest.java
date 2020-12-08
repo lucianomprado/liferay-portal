@@ -21,6 +21,7 @@ import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HttpUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.PropsUtil;
+import com.liferay.portal.tools.ToolDependencies;
 import com.liferay.portal.util.HttpImpl;
 import com.liferay.portal.util.PropsImpl;
 
@@ -33,11 +34,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import org.springframework.mock.web.MockFilterChain;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -46,12 +42,12 @@ import org.springframework.mock.web.MockHttpServletResponse;
 /**
  * @author Mika Koivisto
  */
-@PowerMockIgnore("javax.net.ssl.*")
-@RunWith(PowerMockRunner.class)
-public class InvokerFilterTest extends PowerMockito {
+public class InvokerFilterTest {
 
 	@Before
 	public void setUp() {
+		ToolDependencies.wireCaches();
+
 		HttpUtil httpUtil = new HttpUtil();
 
 		httpUtil.setHttp(new HttpImpl());
@@ -63,42 +59,36 @@ public class InvokerFilterTest extends PowerMockito {
 	public void testGetURIWithDoubleSlash() {
 		InvokerFilter invokerFilter = new InvokerFilter();
 
-		MockHttpServletRequest mockHttpServletRequest =
-			new MockHttpServletRequest(
-				HttpMethods.GET,
-				"/c///portal/%2e/login;jsessionid=ae01b0f2af.worker1");
-
-		String originalURI = invokerFilter.getOriginalRequestURI(
-			mockHttpServletRequest);
+		Assert.assertEquals(
+			"/c/portal/login",
+			invokerFilter.getURI(
+				invokerFilter.getOriginalRequestURI(
+					new MockHttpServletRequest(
+						HttpMethods.GET,
+						"/c///portal/%2e/login;jsessionid=ae01b0f2af." +
+							"worker1"))));
 
 		Assert.assertEquals(
 			"/c/portal/login",
-			invokerFilter.getURI(mockHttpServletRequest, originalURI));
-
-		mockHttpServletRequest = new MockHttpServletRequest(
-			HttpMethods.GET,
-			"/c///portal/%2e/../login;jsessionid=ae01b0f2af.worker1");
-
-		Assert.assertEquals(
-			"/c/portal/login",
-			invokerFilter.getURI(mockHttpServletRequest, originalURI));
+			invokerFilter.getURI(
+				invokerFilter.getOriginalRequestURI(
+					new MockHttpServletRequest(
+						HttpMethods.GET,
+						"/c///portal/%2e/../login;jsessionid=ae01b0f2af." +
+							"worker1"))));
 	}
 
 	@Test
 	public void testGetURIWithJSessionId() {
 		InvokerFilter invokerFilter = new InvokerFilter();
 
-		MockHttpServletRequest mockHttpServletRequest =
-			new MockHttpServletRequest(
-				HttpMethods.GET,
-				"/c/portal/login;jsessionid=ae01b0f2af.worker1");
-
-		String originalURI = invokerFilter.getOriginalRequestURI(
-			mockHttpServletRequest);
-
 		Assert.assertEquals(
 			"/c/portal/login",
-			invokerFilter.getURI(mockHttpServletRequest, originalURI));
+			invokerFilter.getURI(
+				invokerFilter.getOriginalRequestURI(
+					new MockHttpServletRequest(
+						HttpMethods.GET,
+						"/c/portal/login;jsessionid=ae01b0f2af.worker1"))));
 	}
 
 	@Test
@@ -146,10 +136,9 @@ public class InvokerFilterTest extends PowerMockito {
 				mockHttpServletRequest, mockHttpServletResponse,
 				mockFilterChain);
 
-			int status = mockHttpServletResponse.getStatus();
-
 			Assert.assertEquals(
-				HttpServletResponse.SC_REQUEST_URI_TOO_LONG, status);
+				HttpServletResponse.SC_REQUEST_URI_TOO_LONG,
+				mockHttpServletResponse.getStatus());
 
 			List<LogRecord> logRecords = captureHandler.getLogRecords();
 
@@ -157,8 +146,9 @@ public class InvokerFilterTest extends PowerMockito {
 
 			LogRecord logRecord = logRecords.get(0);
 
-			Assert.assertTrue(
-				logRecord.getMessage().startsWith("Rejected " + urlPrefix));
+			String message = logRecord.getMessage();
+
+			Assert.assertTrue(message.startsWith("Rejected " + urlPrefix));
 		}
 	}
 

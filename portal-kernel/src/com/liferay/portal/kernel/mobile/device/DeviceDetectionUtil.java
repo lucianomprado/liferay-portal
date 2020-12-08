@@ -14,12 +14,8 @@
 
 package com.liferay.portal.kernel.mobile.device;
 
-import aQute.bnd.annotation.ProviderType;
-
-import com.liferay.portal.kernel.security.pacl.permission.PortalRuntimePermission;
 import com.liferay.portal.kernel.util.ServiceProxyFactory;
 
-import java.util.Map;
 import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
@@ -28,10 +24,9 @@ import javax.servlet.http.HttpServletRequest;
  * @author Milen Dyankov
  * @author Raymond Augé
  */
-@ProviderType
 public class DeviceDetectionUtil {
 
-	public static Device detectDevice(HttpServletRequest request) {
+	public static Device detectDevice(HttpServletRequest httpServletRequest) {
 		DeviceRecognitionProvider deviceRecognitionProvider =
 			_deviceRecognitionProvider;
 
@@ -39,12 +34,10 @@ public class DeviceDetectionUtil {
 			return UnknownDevice.getInstance();
 		}
 
-		return deviceRecognitionProvider.detectDevice(request);
+		return deviceRecognitionProvider.detectDevice(httpServletRequest);
 	}
 
 	public static DeviceRecognitionProvider getDeviceRecognitionProvider() {
-		PortalRuntimePermission.checkGetBeanProperty(DeviceDetectionUtil.class);
-
 		return _deviceRecognitionProvider;
 	}
 
@@ -58,20 +51,6 @@ public class DeviceDetectionUtil {
 		KnownDevices knownDevices = getKnownDevices();
 
 		return knownDevices.getBrowsers();
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	public static Set<String> getKnownDeviceIdsByCapability(
-		Capability capability) {
-
-		KnownDevices knownDevices = getKnownDevices();
-
-		Map<Capability, Set<String>> deviceIds = knownDevices.getDeviceIds();
-
-		return deviceIds.get(capability);
 	}
 
 	public static Set<VersionableName> getKnownOperatingSystems() {

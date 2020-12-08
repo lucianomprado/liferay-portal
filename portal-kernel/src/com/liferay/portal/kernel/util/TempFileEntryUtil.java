@@ -16,6 +16,10 @@ package com.liferay.portal.kernel.util;
 
 import com.liferay.document.library.kernel.model.DLFolderConstants;
 import com.liferay.document.library.kernel.util.DLAppHelperThreadLocal;
+import com.liferay.petra.lang.SafeClosable;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.change.tracking.CTCollectionThreadLocal;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Repository;
@@ -33,7 +37,7 @@ import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 
 import java.util.ArrayList;
@@ -55,19 +59,12 @@ public class TempFileEntryUtil {
 			File file, String mimeType)
 		throws PortalException {
 
-		InputStream inputStream = null;
-
-		try {
-			inputStream = new FileInputStream(file);
-
+		try (InputStream inputStream = new FileInputStream(file)) {
 			return addTempFileEntry(
 				groupId, userId, folderName, fileName, inputStream, mimeType);
 		}
-		catch (FileNotFoundException fnfe) {
-			throw new PortalException(fnfe);
-		}
-		finally {
-			StreamUtil.cleanUp(inputStream);
+		catch (IOException ioException) {
+			throw new PortalException(ioException);
 		}
 	}
 
@@ -213,18 +210,22 @@ public class TempFileEntryUtil {
 			"com.liferay.portal.repository.temporaryrepository." +
 				"TemporaryFileEntryRepository");
 
-		UnicodeProperties typeSettingsProperties = new UnicodeProperties();
+		UnicodeProperties typeSettingsUnicodeProperties =
+			new UnicodeProperties();
 
 		boolean dlAppHelperEnabled = DLAppHelperThreadLocal.isEnabled();
 
-		try {
+		try (SafeClosable safeClosable =
+				CTCollectionThreadLocal.setCTCollectionId(0)) {
+
 			DLAppHelperThreadLocal.setEnabled(false);
 
 			repository = RepositoryLocalServiceUtil.addRepository(
 				user.getUserId(), groupId, classNameId,
 				DLFolderConstants.DEFAULT_PARENT_FOLDER_ID,
 				TempFileEntryUtil.class.getName(), StringPool.BLANK,
-				StringPool.BLANK, typeSettingsProperties, true, serviceContext);
+				StringPool.BLANK, typeSettingsUnicodeProperties, true,
+				serviceContext);
 
 			return RepositoryProviderUtil.getLocalRepository(
 				repository.getRepositoryId());

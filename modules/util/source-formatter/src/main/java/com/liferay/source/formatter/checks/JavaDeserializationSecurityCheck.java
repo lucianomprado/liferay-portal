@@ -14,7 +14,7 @@
 
 package com.liferay.source.formatter.checks;
 
-import com.liferay.portal.kernel.util.StringBundler;
+import com.liferay.petra.string.StringBundler;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -28,8 +28,8 @@ public class JavaDeserializationSecurityCheck extends BaseFileCheck {
 	protected String doProcess(
 		String fileName, String absolutePath, String content) {
 
-		if (fileName.contains("/test/") ||
-			fileName.contains("/testIntegration/")) {
+		if (absolutePath.contains("/test/") ||
+			absolutePath.contains("/testIntegration/")) {
 
 			return content;
 		}
@@ -67,12 +67,11 @@ public class JavaDeserializationSecurityCheck extends BaseFileCheck {
 		}
 	}
 
-	private final Pattern[] _javaSerializationVulnerabilityPatterns =
-		new Pattern[] {
-			Pattern.compile(
-				".*(new [a-z\\.\\s]*ObjectInputStream).*", Pattern.DOTALL),
-			Pattern.compile(
-				".*(extends [a-z\\.\\s]*ObjectInputStream).*", Pattern.DOTALL)
-		};
+	private static final Pattern[] _javaSerializationVulnerabilityPatterns = {
+		Pattern.compile(
+			".*(new [a-z\\.\\s]*ObjectInputStream).*", Pattern.DOTALL),
+		Pattern.compile(
+			".*(extends [a-z\\.\\s]*ObjectInputStream).*", Pattern.DOTALL)
+	};
 
 }

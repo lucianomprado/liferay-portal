@@ -14,10 +14,7 @@
 
 package com.liferay.knowledge.base.service.http;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.knowledge.base.service.KBTemplateServiceUtil;
-
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 
@@ -25,19 +22,20 @@ import java.rmi.RemoteException;
 
 /**
  * Provides the SOAP utility for the
- * {@link KBTemplateServiceUtil} service utility. The
- * static methods of this class calls the same methods of the service utility.
- * However, the signatures are different because it is difficult for SOAP to
- * support certain types.
+ * <code>KBTemplateServiceUtil</code> service
+ * utility. The static methods of this class call the same methods of the
+ * service utility. However, the signatures are different because it is
+ * difficult for SOAP to support certain types.
  *
  * <p>
  * ServiceBuilder follows certain rules in translating the methods. For example,
- * if the method in the service utility returns a {@link java.util.List}, that
- * is translated to an array of {@link com.liferay.knowledge.base.model.KBTemplateSoap}.
- * If the method in the service utility returns a
- * {@link com.liferay.knowledge.base.model.KBTemplate}, that is translated to a
- * {@link com.liferay.knowledge.base.model.KBTemplateSoap}. Methods that SOAP cannot
- * safely wire are skipped.
+ * if the method in the service utility returns a <code>java.util.List</code>,
+ * that is translated to an array of
+ * <code>com.liferay.knowledge.base.model.KBTemplateSoap</code>. If the method in the
+ * service utility returns a
+ * <code>com.liferay.knowledge.base.model.KBTemplate</code>, that is translated to a
+ * <code>com.liferay.knowledge.base.model.KBTemplateSoap</code>. Methods that SOAP
+ * cannot safely wire are skipped.
  * </p>
  *
  * <p>
@@ -59,139 +57,167 @@ import java.rmi.RemoteException;
  *
  * @author Brian Wing Shun Chan
  * @see KBTemplateServiceHttp
- * @see com.liferay.knowledge.base.model.KBTemplateSoap
- * @see KBTemplateServiceUtil
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
-@ProviderType
+@Deprecated
 public class KBTemplateServiceSoap {
+
 	public static com.liferay.knowledge.base.model.KBTemplateSoap addKBTemplate(
-		java.lang.String portletId, java.lang.String title,
-		java.lang.String content,
-		com.liferay.portal.kernel.service.ServiceContext serviceContext)
+			String portletId, String title, String content,
+			com.liferay.portal.kernel.service.ServiceContext serviceContext)
 		throws RemoteException {
+
 		try {
-			com.liferay.knowledge.base.model.KBTemplate returnValue = KBTemplateServiceUtil.addKBTemplate(portletId,
-					title, content, serviceContext);
+			com.liferay.knowledge.base.model.KBTemplate returnValue =
+				KBTemplateServiceUtil.addKBTemplate(
+					portletId, title, content, serviceContext);
 
-			return com.liferay.knowledge.base.model.KBTemplateSoap.toSoapModel(returnValue);
+			return com.liferay.knowledge.base.model.KBTemplateSoap.toSoapModel(
+				returnValue);
 		}
-		catch (Exception e) {
-			_log.error(e, e);
+		catch (Exception exception) {
+			_log.error(exception, exception);
 
-			throw new RemoteException(e.getMessage());
+			throw new RemoteException(exception.getMessage());
 		}
 	}
 
-	public static com.liferay.knowledge.base.model.KBTemplateSoap deleteKBTemplate(
-		long kbTemplateId) throws RemoteException {
+	public static com.liferay.knowledge.base.model.KBTemplateSoap
+			deleteKBTemplate(long kbTemplateId)
+		throws RemoteException {
+
 		try {
-			com.liferay.knowledge.base.model.KBTemplate returnValue = KBTemplateServiceUtil.deleteKBTemplate(kbTemplateId);
+			com.liferay.knowledge.base.model.KBTemplate returnValue =
+				KBTemplateServiceUtil.deleteKBTemplate(kbTemplateId);
 
-			return com.liferay.knowledge.base.model.KBTemplateSoap.toSoapModel(returnValue);
+			return com.liferay.knowledge.base.model.KBTemplateSoap.toSoapModel(
+				returnValue);
 		}
-		catch (Exception e) {
-			_log.error(e, e);
+		catch (Exception exception) {
+			_log.error(exception, exception);
 
-			throw new RemoteException(e.getMessage());
+			throw new RemoteException(exception.getMessage());
 		}
 	}
 
 	public static void deleteKBTemplates(long groupId, long[] kbTemplateIds)
 		throws RemoteException {
+
 		try {
 			KBTemplateServiceUtil.deleteKBTemplates(groupId, kbTemplateIds);
 		}
-		catch (Exception e) {
-			_log.error(e, e);
+		catch (Exception exception) {
+			_log.error(exception, exception);
 
-			throw new RemoteException(e.getMessage());
+			throw new RemoteException(exception.getMessage());
 		}
 	}
 
-	public static com.liferay.knowledge.base.model.KBTemplateSoap[] getGroupKBTemplates(
-		long groupId, int start, int end,
-		com.liferay.portal.kernel.util.OrderByComparator<com.liferay.knowledge.base.model.KBTemplate> orderByComparator)
+	public static com.liferay.knowledge.base.model.KBTemplateSoap[]
+			getGroupKBTemplates(
+				long groupId, int start, int end,
+				com.liferay.portal.kernel.util.OrderByComparator
+					<com.liferay.knowledge.base.model.KBTemplate>
+						orderByComparator)
 		throws RemoteException {
+
 		try {
-			java.util.List<com.liferay.knowledge.base.model.KBTemplate> returnValue =
-				KBTemplateServiceUtil.getGroupKBTemplates(groupId, start, end,
-					orderByComparator);
+			java.util.List<com.liferay.knowledge.base.model.KBTemplate>
+				returnValue = KBTemplateServiceUtil.getGroupKBTemplates(
+					groupId, start, end, orderByComparator);
 
-			return com.liferay.knowledge.base.model.KBTemplateSoap.toSoapModels(returnValue);
+			return com.liferay.knowledge.base.model.KBTemplateSoap.toSoapModels(
+				returnValue);
 		}
-		catch (Exception e) {
-			_log.error(e, e);
+		catch (Exception exception) {
+			_log.error(exception, exception);
 
-			throw new RemoteException(e.getMessage());
+			throw new RemoteException(exception.getMessage());
 		}
 	}
 
 	public static int getGroupKBTemplatesCount(long groupId)
 		throws RemoteException {
+
 		try {
-			int returnValue = KBTemplateServiceUtil.getGroupKBTemplatesCount(groupId);
+			int returnValue = KBTemplateServiceUtil.getGroupKBTemplatesCount(
+				groupId);
 
 			return returnValue;
 		}
-		catch (Exception e) {
-			_log.error(e, e);
+		catch (Exception exception) {
+			_log.error(exception, exception);
 
-			throw new RemoteException(e.getMessage());
+			throw new RemoteException(exception.getMessage());
 		}
 	}
 
 	public static com.liferay.knowledge.base.model.KBTemplateSoap getKBTemplate(
-		long kbTemplateId) throws RemoteException {
+			long kbTemplateId)
+		throws RemoteException {
+
 		try {
-			com.liferay.knowledge.base.model.KBTemplate returnValue = KBTemplateServiceUtil.getKBTemplate(kbTemplateId);
+			com.liferay.knowledge.base.model.KBTemplate returnValue =
+				KBTemplateServiceUtil.getKBTemplate(kbTemplateId);
 
-			return com.liferay.knowledge.base.model.KBTemplateSoap.toSoapModel(returnValue);
+			return com.liferay.knowledge.base.model.KBTemplateSoap.toSoapModel(
+				returnValue);
 		}
-		catch (Exception e) {
-			_log.error(e, e);
+		catch (Exception exception) {
+			_log.error(exception, exception);
 
-			throw new RemoteException(e.getMessage());
+			throw new RemoteException(exception.getMessage());
 		}
 	}
 
-	public static com.liferay.knowledge.base.model.KBTemplateSearchDisplay getKBTemplateSearchDisplay(
-		long groupId, java.lang.String title, java.lang.String content,
-		java.util.Date startDate, java.util.Date endDate, boolean andOperator,
-		int[] curStartValues, int cur, int delta,
-		com.liferay.portal.kernel.util.OrderByComparator<com.liferay.knowledge.base.model.KBTemplate> orderByComparator)
+	public static com.liferay.knowledge.base.model.KBTemplateSearchDisplay
+			getKBTemplateSearchDisplay(
+				long groupId, String title, String content,
+				java.util.Date startDate, java.util.Date endDate,
+				boolean andOperator, int[] curStartValues, int cur, int delta,
+				com.liferay.portal.kernel.util.OrderByComparator
+					<com.liferay.knowledge.base.model.KBTemplate>
+						orderByComparator)
 		throws RemoteException {
+
 		try {
-			com.liferay.knowledge.base.model.KBTemplateSearchDisplay returnValue =
-				KBTemplateServiceUtil.getKBTemplateSearchDisplay(groupId,
-					title, content, startDate, endDate, andOperator,
+			com.liferay.knowledge.base.model.KBTemplateSearchDisplay
+				returnValue = KBTemplateServiceUtil.getKBTemplateSearchDisplay(
+					groupId, title, content, startDate, endDate, andOperator,
 					curStartValues, cur, delta, orderByComparator);
 
 			return returnValue;
 		}
-		catch (Exception e) {
-			_log.error(e, e);
+		catch (Exception exception) {
+			_log.error(exception, exception);
 
-			throw new RemoteException(e.getMessage());
+			throw new RemoteException(exception.getMessage());
 		}
 	}
 
-	public static com.liferay.knowledge.base.model.KBTemplateSoap updateKBTemplate(
-		long kbTemplateId, java.lang.String title, java.lang.String content,
-		com.liferay.portal.kernel.service.ServiceContext serviceContext)
+	public static com.liferay.knowledge.base.model.KBTemplateSoap
+			updateKBTemplate(
+				long kbTemplateId, String title, String content,
+				com.liferay.portal.kernel.service.ServiceContext serviceContext)
 		throws RemoteException {
+
 		try {
-			com.liferay.knowledge.base.model.KBTemplate returnValue = KBTemplateServiceUtil.updateKBTemplate(kbTemplateId,
-					title, content, serviceContext);
+			com.liferay.knowledge.base.model.KBTemplate returnValue =
+				KBTemplateServiceUtil.updateKBTemplate(
+					kbTemplateId, title, content, serviceContext);
 
-			return com.liferay.knowledge.base.model.KBTemplateSoap.toSoapModel(returnValue);
+			return com.liferay.knowledge.base.model.KBTemplateSoap.toSoapModel(
+				returnValue);
 		}
-		catch (Exception e) {
-			_log.error(e, e);
+		catch (Exception exception) {
+			_log.error(exception, exception);
 
-			throw new RemoteException(e.getMessage());
+			throw new RemoteException(exception.getMessage());
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(KBTemplateServiceSoap.class);
+	private static Log _log = LogFactoryUtil.getLog(
+		KBTemplateServiceSoap.class);
+
 }

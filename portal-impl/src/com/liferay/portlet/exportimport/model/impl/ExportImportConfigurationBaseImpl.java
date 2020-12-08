@@ -14,8 +14,6 @@
 
 package com.liferay.portlet.exportimport.model.impl;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.exportimport.kernel.model.ExportImportConfiguration;
 import com.liferay.exportimport.kernel.service.ExportImportConfigurationLocalServiceUtil;
 
@@ -31,22 +29,25 @@ import com.liferay.exportimport.kernel.service.ExportImportConfigurationLocalSer
  * @see ExportImportConfiguration
  * @generated
  */
-@ProviderType
 public abstract class ExportImportConfigurationBaseImpl
 	extends ExportImportConfigurationModelImpl
 	implements ExportImportConfiguration {
+
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. All methods that expect a export import configuration model instance should use the {@link ExportImportConfiguration} interface instead.
+	 * Never modify or reference this class directly. All methods that expect a export import configuration model instance should use the <code>ExportImportConfiguration</code> interface instead.
 	 */
 	@Override
 	public void persist() {
 		if (this.isNew()) {
-			ExportImportConfigurationLocalServiceUtil.addExportImportConfiguration(this);
+			ExportImportConfigurationLocalServiceUtil.
+				addExportImportConfiguration(this);
 		}
 		else {
-			ExportImportConfigurationLocalServiceUtil.updateExportImportConfiguration(this);
+			ExportImportConfigurationLocalServiceUtil.
+				updateExportImportConfiguration(this);
 		}
 	}
+
 }

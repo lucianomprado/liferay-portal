@@ -14,15 +14,21 @@
 
 package com.liferay.source.formatter.checks.configuration;
 
-import com.liferay.portal.kernel.util.CharPool;
+import com.liferay.petra.string.CharPool;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.source.formatter.checks.util.SourceUtil;
+import com.liferay.source.formatter.util.CheckType;
 import com.liferay.source.formatter.util.FileUtil;
 
 import java.io.File;
+import java.io.IOException;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 import org.dom4j.Document;
+import org.dom4j.DocumentException;
 import org.dom4j.Element;
 
 /**
@@ -30,42 +36,115 @@ import org.dom4j.Element;
  */
 public class SuppressionsLoader {
 
-	public static SourceChecksSuppressions loadSuppressions(List<File> files)
-		throws Exception {
+	public static SourceFormatterSuppressions loadSuppressions(
+			String baseDirName, List<File> files,
+			Map<String, Properties> propertiesMap)
+		throws DocumentException, IOException {
 
-		SourceChecksSuppressions sourceChecksSuppressions =
-			new SourceChecksSuppressions();
+		SourceFormatterSuppressions sourceFormatterSuppressions =
+			new SourceFormatterSuppressions();
 
 		for (File file : files) {
-			String suppressionsFileLocation = _getFileLocation(file);
-
 			String content = FileUtil.read(file);
 
 			Document document = SourceUtil.readXML(content);
 
 			Element rootElement = document.getRootElement();
 
-			for (Element suppressElement :
-					(List<Element>)rootElement.elements("suppress")) {
+			String absolutePath = SourceUtil.getAbsolutePath(file);
 
-				String sourceCheckName = suppressElement.attributeValue(
-					"checks");
-				String fileName = suppressElement.attributeValue("files");
+			sourceFormatterSuppressions = _loadCheckstyleSuppressions(
+				sourceFormatterSuppressions,
+				rootElement.element(_CHECKSTYLE_ATTRIBUTE_NAME), absolutePath);
+			sourceFormatterSuppressions = _loadSourceChecksSuppressions(
+				sourceFormatterSuppressions,
+				rootElement.element(_SOURCE_CHECK_ATTRIBUTE_NAME),
+				absolutePath);
+		}
 
-				sourceChecksSuppressions.addSuppression(
-					suppressionsFileLocation, sourceCheckName, fileName);
+		for (Map.Entry<String, Properties> mapEntry :
+				propertiesMap.entrySet()) {
+
+			Properties properties = mapEntry.getValue();
+
+			for (Map.Entry<Object, Object> propertiesEntry :
+					properties.entrySet()) {
+
+				String key = (String)propertiesEntry.getKey();
+
+				if (key.startsWith("checkstyle.") && key.endsWith(".enabled") &&
+					!GetterUtil.getBoolean(propertiesEntry.getValue())) {
+
+					sourceFormatterSuppressions.addSuppression(
+						CheckType.CHECKSTYLE, mapEntry.getKey() + "/",
+						key.substring(11, key.length() - 8), null);
+				}
 			}
 		}
 
-		return sourceChecksSuppressions;
+		return sourceFormatterSuppressions;
 	}
 
-	private static String _getFileLocation(File file) {
-		String absolutePath = SourceUtil.getAbsolutePath(file);
-
+	private static String _getFileLocation(String absolutePath) {
 		int pos = absolutePath.lastIndexOf(CharPool.SLASH);
 
 		return absolutePath.substring(0, pos + 1);
 	}
+
+	private static SourceFormatterSuppressions _loadCheckstyleSuppressions(
+			SourceFormatterSuppressions sourceFormatterSuppressions,
+			Element suppressionsElement, String absolutePath)
+		throws DocumentException, IOException {
+
+		if (suppressionsElement == null) {
+			return sourceFormatterSuppressions;
+		}
+
+		List<Element> suppressElements =
+			(List<Element>)suppressionsElement.elements("suppress");
+
+		String suppressionsFileLocation = _getFileLocation(absolutePath);
+
+		for (Element suppressElement : suppressElements) {
+			sourceFormatterSuppressions.addSuppression(
+				CheckType.CHECKSTYLE, suppressionsFileLocation,
+				suppressElement.attributeValue(_CHECK_ATTRIBUTE_NAME),
+				suppressElement.attributeValue(_FILE_REGEX_ATTRIBUTE_NAME));
+		}
+
+		return sourceFormatterSuppressions;
+	}
+
+	private static SourceFormatterSuppressions _loadSourceChecksSuppressions(
+			SourceFormatterSuppressions sourceFormatterSuppressions,
+			Element suppressionsElement, String absolutePath)
+		throws DocumentException, IOException {
+
+		if (suppressionsElement == null) {
+			return sourceFormatterSuppressions;
+		}
+
+		List<Element> suppressElements =
+			(List<Element>)suppressionsElement.elements("suppress");
+
+		String suppressionsFileLocation = _getFileLocation(absolutePath);
+
+		for (Element suppressElement : suppressElements) {
+			sourceFormatterSuppressions.addSuppression(
+				CheckType.SOURCE_CHECK, suppressionsFileLocation,
+				suppressElement.attributeValue(_CHECK_ATTRIBUTE_NAME),
+				suppressElement.attributeValue(_FILE_REGEX_ATTRIBUTE_NAME));
+		}
+
+		return sourceFormatterSuppressions;
+	}
+
+	private static final String _CHECK_ATTRIBUTE_NAME = "checks";
+
+	private static final String _CHECKSTYLE_ATTRIBUTE_NAME = "checkstyle";
+
+	private static final String _FILE_REGEX_ATTRIBUTE_NAME = "files";
+
+	private static final String _SOURCE_CHECK_ATTRIBUTE_NAME = "source-check";
 
 }

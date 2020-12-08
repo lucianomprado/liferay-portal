@@ -37,7 +37,7 @@ public class PortletResourcesUtil {
 
 	public static ServletContext getPathServletContext(String path) {
 		for (ServletContext servletContext :
-				_instance._servletContexts.values()) {
+				_portletResourcesUtil._servletContexts.values()) {
 
 			if (path.startsWith(servletContext.getContextPath())) {
 				return servletContext;
@@ -48,6 +48,10 @@ public class PortletResourcesUtil {
 	}
 
 	public static URL getResource(ServletContext servletContext, String path) {
+		if (servletContext == null) {
+			return null;
+		}
+
 		path = PortalWebResourcesUtil.stripContextPath(servletContext, path);
 
 		try {
@@ -57,7 +61,7 @@ public class PortletResourcesUtil {
 				return url;
 			}
 		}
-		catch (MalformedURLException murle) {
+		catch (MalformedURLException malformedURLException) {
 		}
 
 		return null;
@@ -82,7 +86,7 @@ public class PortletResourcesUtil {
 		_serviceTracker.open();
 	}
 
-	private static final PortletResourcesUtil _instance =
+	private static final PortletResourcesUtil _portletResourcesUtil =
 		new PortletResourcesUtil();
 
 	private final ServiceTracker<Portlet, Portlet> _serviceTracker;
@@ -102,10 +106,9 @@ public class PortletResourcesUtil {
 
 			PortletApp portletApp = portlet.getPortletApp();
 
-			ServletContext servletContext = portletApp.getServletContext();
-
 			if (portletApp.isWARFile()) {
-				_servletContexts.put(serviceReference, servletContext);
+				_servletContexts.put(
+					serviceReference, portletApp.getServletContext());
 			}
 
 			return portlet;

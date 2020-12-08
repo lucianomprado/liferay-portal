@@ -14,6 +14,9 @@
 
 package com.liferay.portal.service.impl;
 
+import com.liferay.petra.io.StreamUtil;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.io.DummyWriter;
 import com.liferay.portal.kernel.log.Log;
@@ -22,17 +25,14 @@ import com.liferay.portal.kernel.model.LayoutTemplate;
 import com.liferay.portal.kernel.model.LayoutTemplateConstants;
 import com.liferay.portal.kernel.model.PluginSetting;
 import com.liferay.portal.kernel.plugin.PluginPackage;
-import com.liferay.portal.kernel.spring.aop.Skip;
 import com.liferay.portal.kernel.template.StringTemplateResource;
 import com.liferay.portal.kernel.template.Template;
 import com.liferay.portal.kernel.template.TemplateConstants;
 import com.liferay.portal.kernel.template.TemplateManagerUtil;
 import com.liferay.portal.kernel.template.TemplateResourceLoaderUtil;
+import com.liferay.portal.kernel.transaction.Transactional;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.HttpUtil;
 import com.liferay.portal.kernel.util.ListUtil;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.xml.Document;
 import com.liferay.portal.kernel.xml.Element;
@@ -45,6 +45,7 @@ import com.liferay.portal.util.PropsValues;
 import java.io.IOException;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -61,9 +62,13 @@ import javax.servlet.ServletContext;
  * @author Brian Wing Shun Chan
  * @author Raymond Augé
  */
-@Skip
+@Transactional(enabled = false)
 public class LayoutTemplateLocalServiceImpl
 	extends LayoutTemplateLocalServiceBaseImpl {
+
+	public static final Set<String> supportedLangTypes = new HashSet<>(
+		Arrays.asList(
+			TemplateConstants.LANG_TYPE_VM, TemplateConstants.LANG_TYPE_FTL));
 
 	@Override
 	public String getContent(
@@ -103,9 +108,23 @@ public class LayoutTemplateLocalServiceImpl
 		try {
 			return layoutTemplate.getUncachedContent();
 		}
-		catch (IOException ioe) {
-			throw new SystemException(ioe);
+		catch (IOException ioException) {
+			throw new SystemException(ioException);
 		}
+	}
+
+	@Override
+	public String getLangType(
+		String layoutTemplateId, boolean standard, String themeId) {
+
+		LayoutTemplate layoutTemplate = getLayoutTemplate(
+			layoutTemplateId, standard, themeId);
+
+		if (layoutTemplate == null) {
+			return TemplateConstants.LANG_TYPE_VM;
+		}
+
+		return _getSupportedLangType(layoutTemplate);
 	}
 
 	@Override
@@ -120,12 +139,16 @@ public class LayoutTemplateLocalServiceImpl
 
 		if (themeId != null) {
 			if (standard) {
-				layoutTemplate = _getThemesStandard(themeId).get(
-					layoutTemplateId);
+				Map<String, LayoutTemplate> themesStandard = _getThemesStandard(
+					themeId);
+
+				layoutTemplate = themesStandard.get(layoutTemplateId);
 			}
 			else {
-				layoutTemplate = _getThemesCustom(themeId).get(
-					layoutTemplateId);
+				Map<String, LayoutTemplate> themesCustom = _getThemesCustom(
+					themeId);
+
+				layoutTemplate = themesCustom.get(layoutTemplateId);
 			}
 
 			if (layoutTemplate != null) {
@@ -173,7 +196,6 @@ public class LayoutTemplateLocalServiceImpl
 				_portalCustom.entrySet()) {
 
 			String layoutTemplateId = entry.getKey();
-			LayoutTemplate layoutTemplate = entry.getValue();
 
 			LayoutTemplate themeCustomLayoutTemplate = themesCustom.get(
 				layoutTemplateId);
@@ -189,7 +211,7 @@ public class LayoutTemplateLocalServiceImpl
 					customLayoutTemplates.add(warCustomLayoutTemplate);
 				}
 				else {
-					customLayoutTemplates.add(layoutTemplate);
+					customLayoutTemplates.add(entry.getValue());
 				}
 			}
 		}
@@ -242,8 +264,8 @@ public class LayoutTemplateLocalServiceImpl
 						pluginPackage));
 			}
 		}
-		catch (Exception e) {
-			_log.error(e, e);
+		catch (Exception exception) {
+			_log.error(exception, exception);
 		}
 
 		return new ArrayList<>(layoutTemplates);
@@ -331,15 +353,16 @@ public class LayoutTemplateLocalServiceImpl
 			String content = null;
 
 			try {
-				content = HttpUtil.URLtoString(
-					servletContext.getResource(
+				content = StreamUtil.toString(
+					servletContext.getResourceAsStream(
 						layoutTemplateModel.getTemplatePath()));
 			}
-			catch (Exception e) {
+			catch (Exception exception) {
 				_log.error(
-					"Unable to get content at template path " +
-						layoutTemplateModel.getTemplatePath() + ": " +
-							e.getMessage());
+					StringBundler.concat(
+						"Unable to get content at template path ",
+						layoutTemplateModel.getTemplatePath(), ": ",
+						exception.getMessage()));
 			}
 
 			if (Validator.isNull(content)) {
@@ -365,7 +388,9 @@ public class LayoutTemplateLocalServiceImpl
 
 				layoutTemplateModel.setContent(content);
 				layoutTemplateModel.setColumns(
-					_getColumns(velocityTemplateId, content));
+					_getColumns(
+						velocityTemplateId, content,
+						_getSupportedLangType(layoutTemplateModel)));
 			}
 
 			Element rolesElement = layoutTemplateElement.element("roles");
@@ -393,6 +418,9 @@ public class LayoutTemplateLocalServiceImpl
 
 		String templateId = null;
 
+		LayoutTemplate layoutTemplate = getLayoutTemplate(
+			layoutTemplateId, standard, null);
+
 		try {
 			if (standard) {
 				templateId =
@@ -400,7 +428,7 @@ public class LayoutTemplateLocalServiceImpl
 						layoutTemplateId;
 
 				TemplateResourceLoaderUtil.clearCache(
-					TemplateConstants.LANG_TYPE_VM, templateId);
+					_getSupportedLangType(layoutTemplate), templateId);
 
 				_warStandard.remove(layoutTemplateId);
 			}
@@ -410,14 +438,15 @@ public class LayoutTemplateLocalServiceImpl
 						layoutTemplateId;
 
 				TemplateResourceLoaderUtil.clearCache(
-					TemplateConstants.LANG_TYPE_VM, templateId);
+					_getSupportedLangType(layoutTemplate), templateId);
 
 				_warCustom.remove(layoutTemplateId);
 			}
 		}
-		catch (Exception e) {
+		catch (Exception exception) {
 			_log.error(
-				"Unable to uninstall layout template " + layoutTemplateId, e);
+				"Unable to uninstall layout template " + layoutTemplateId,
+				exception);
 		}
 	}
 
@@ -437,13 +466,13 @@ public class LayoutTemplateLocalServiceImpl
 
 			try {
 				TemplateResourceLoaderUtil.clearCache(
-					TemplateConstants.LANG_TYPE_VM, templateId);
+					_getSupportedLangType(layoutTemplate), templateId);
 			}
-			catch (Exception e) {
+			catch (Exception exception) {
 				_log.error(
 					"Unable to uninstall layout template " +
 						layoutTemplate.getLayoutTemplateId(),
-					e);
+					exception);
 			}
 		}
 
@@ -462,13 +491,13 @@ public class LayoutTemplateLocalServiceImpl
 
 			try {
 				TemplateResourceLoaderUtil.clearCache(
-					TemplateConstants.LANG_TYPE_VM, templateId);
+					_getSupportedLangType(layoutTemplate), templateId);
 			}
-			catch (Exception e) {
+			catch (Exception exception) {
 				_log.error(
 					"Unable to uninstall layout template " +
 						layoutTemplate.getLayoutTemplateId(),
-					e);
+					exception);
 			}
 		}
 
@@ -476,16 +505,14 @@ public class LayoutTemplateLocalServiceImpl
 	}
 
 	private List<String> _getColumns(
-		String velocityTemplateId, String velocityTemplateContent) {
+		String templateId, String templateContent, String langType) {
 
 		try {
 			InitColumnProcessor processor = new InitColumnProcessor();
 
 			Template template = TemplateManagerUtil.getTemplate(
-				TemplateConstants.LANG_TYPE_VM,
-				new StringTemplateResource(
-					velocityTemplateId, velocityTemplateContent),
-				false);
+				langType,
+				new StringTemplateResource(templateId, templateContent), false);
 
 			template.put("processor", processor);
 
@@ -493,11 +520,27 @@ public class LayoutTemplateLocalServiceImpl
 
 			return ListUtil.sort(processor.getColumns());
 		}
-		catch (Exception e) {
-			_log.error("Unable to get layout template columns", e);
+		catch (Exception exception) {
+			_log.error("Unable to get layout template columns", exception);
 
 			return new ArrayList<>();
 		}
+	}
+
+	private String _getSupportedLangType(LayoutTemplate layoutTemplate) {
+		String templatePath = layoutTemplate.getTemplatePath();
+
+		int index = templatePath.lastIndexOf(StringPool.PERIOD);
+
+		if (index != -1) {
+			String langType = templatePath.substring(index + 1);
+
+			if (supportedLangTypes.contains(langType)) {
+				return langType;
+			}
+		}
+
+		return TemplateConstants.LANG_TYPE_VM;
 	}
 
 	private Map<String, LayoutTemplate> _getThemesCustom(String themeId) {

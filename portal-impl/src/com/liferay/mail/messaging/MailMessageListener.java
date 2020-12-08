@@ -16,6 +16,8 @@ package com.liferay.mail.messaging;
 
 import com.liferay.mail.kernel.model.MailMessage;
 import com.liferay.mail.util.HookFactory;
+import com.liferay.petra.mail.MailEngine;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.messaging.BaseMessageListener;
@@ -23,12 +25,15 @@ import com.liferay.portal.kernel.messaging.Message;
 import com.liferay.portal.kernel.security.auth.EmailAddressGenerator;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.MethodHandler;
+import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.security.auth.EmailAddressGeneratorFactory;
 import com.liferay.portal.util.PropsValues;
-import com.liferay.util.mail.MailEngine;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.mail.internet.InternetAddress;
 
@@ -119,7 +124,20 @@ public class MailMessageListener extends BaseMessageListener {
 		EmailAddressGenerator emailAddressGenerator =
 			EmailAddressGeneratorFactory.getInstance();
 
-		if (emailAddressGenerator.isFake(internetAddress.getAddress())) {
+		String emailAddress = internetAddress.getAddress();
+
+		if (emailAddressGenerator.isFake(emailAddress)) {
+			return null;
+		}
+
+		if (_mailSendBlacklist.contains(emailAddress)) {
+			if (_log.isWarnEnabled()) {
+				_log.warn(
+					StringBundler.concat(
+						"Email ", emailAddress, " will be ignored because it ",
+						"is included in ", PropsKeys.MAIL_SEND_BLACKLIST));
+			}
+
 			return null;
 		}
 
@@ -145,11 +163,13 @@ public class MailMessageListener extends BaseMessageListener {
 			}
 		}
 
-		return filteredInternetAddresses.toArray(
-			new InternetAddress[filteredInternetAddresses.size()]);
+		return filteredInternetAddresses.toArray(new InternetAddress[0]);
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		MailMessageListener.class);
+
+	private static final Set<String> _mailSendBlacklist = new HashSet<>(
+		Arrays.asList(PropsValues.MAIL_SEND_BLACKLIST));
 
 }

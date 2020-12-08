@@ -14,6 +14,7 @@
 
 package com.liferay.portal.kernel.util;
 
+import com.liferay.petra.reflect.ReflectionUtil;
 import com.liferay.portal.kernel.io.unsync.UnsyncFilterInputStream;
 import com.liferay.portal.kernel.io.unsync.UnsyncFilterOutputStream;
 import com.liferay.portal.kernel.log.Log;
@@ -41,41 +42,37 @@ public class StreamUtil {
 	public static final boolean FORCE_TIO = GetterUtil.getBoolean(
 		System.getProperty(StreamUtil.class.getName() + ".force.tio"));
 
-	public static void cleanUp(boolean quite, Closeable... closeables) {
-		IOException ioException = null;
+	public static void cleanUp(boolean quiet, Closeable... closeables) {
+		IOException ioException1 = null;
 
 		for (Closeable closeable : closeables) {
 			if (closeable != null) {
 				try {
 					closeable.close();
 				}
-				catch (IOException ioe) {
-					if (ioException == null) {
-						ioException = ioe;
+				catch (IOException ioException2) {
+					if (ioException1 == null) {
+						ioException1 = ioException2;
 					}
 					else {
-						ioException.addSuppressed(ioe);
+						ioException1.addSuppressed(ioException2);
 					}
 				}
 			}
 		}
 
-		if (ioException == null) {
+		if (ioException1 == null) {
 			return;
 		}
 
-		if (quite) {
+		if (quiet) {
 			if (_log.isWarnEnabled()) {
-				_log.warn(ioException, ioException);
+				_log.warn(ioException1, ioException1);
 			}
 		}
 		else {
-			ReflectionUtil.throwException(ioException);
+			ReflectionUtil.throwException(ioException1);
 		}
-	}
-
-	public static void cleanUp(Closeable... closeables) {
-		cleanUp(true, closeables);
 	}
 
 	public static void transfer(

@@ -14,22 +14,29 @@
 
 package com.liferay.portal.util;
 
-import com.liferay.portal.kernel.nio.charset.CharsetEncoderUtil;
-import com.liferay.portal.kernel.util.StringPool;
-
-import java.io.UnsupportedEncodingException;
+import com.liferay.petra.nio.CharsetEncoderUtil;
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.util.HttpUtil;
 
 import java.net.URLEncoder;
 
 import java.nio.charset.CharsetEncoder;
 
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
  * @author Julio Camarero
  */
 public class FriendlyURLNormalizerImplTest {
+
+	@BeforeClass
+	public static void setUpClass() {
+		HttpUtil httpUtil = new HttpUtil();
+
+		httpUtil.setHttp(new HttpImpl());
+	}
 
 	@Test
 	public void testNormalizeBlank() {
@@ -41,6 +48,28 @@ public class FriendlyURLNormalizerImplTest {
 	@Test
 	public void testNormalizeNull() {
 		Assert.assertEquals(null, _friendlyURLNormalizerImpl.normalize(null));
+	}
+
+	@Test
+	public void testNormalizePercentageWithEncoding() throws Exception {
+		Assert.assertEquals(
+			StringPool.DASH,
+			_friendlyURLNormalizerImpl.normalizeWithEncoding("%"));
+		Assert.assertEquals(
+			"0-", _friendlyURLNormalizerImpl.normalizeWithEncoding("0%"));
+		Assert.assertEquals(
+			"company-grew-100-last-year",
+			_friendlyURLNormalizerImpl.normalizeWithEncoding(
+				"Company grew 100% last year"));
+		Assert.assertEquals(
+			"sample-web-content-title",
+			_friendlyURLNormalizerImpl.normalizeWithEncoding(
+				"Sample Web % Content Title"));
+		Assert.assertEquals(
+			"%5E_%5E", _friendlyURLNormalizerImpl.normalizeWithEncoding("^_^"));
+		Assert.assertEquals(
+			"%5E_%5E",
+			_friendlyURLNormalizerImpl.normalizeWithEncoding("%5E_%5E"));
 	}
 
 	@Test
@@ -158,14 +187,12 @@ public class FriendlyURLNormalizerImplTest {
 	}
 
 	@Test
-	public void testNormalizeWordWithNonASCIICharacters() {
+	public void testNormalizeWordWithNonasciiCharacters() {
 		Assert.assertEquals(
 			"wordnc", _friendlyURLNormalizerImpl.normalize("word\u00F1\u00C7"));
 	}
 
-	private void _testNormalizeWithEncodingUnicode(String s)
-		throws UnsupportedEncodingException {
-
+	private void _testNormalizeWithEncodingUnicode(String s) throws Exception {
 		Assert.assertEquals(
 			URLEncoder.encode(s, StringPool.UTF8),
 			_friendlyURLNormalizerImpl.normalizeWithEncoding(s));

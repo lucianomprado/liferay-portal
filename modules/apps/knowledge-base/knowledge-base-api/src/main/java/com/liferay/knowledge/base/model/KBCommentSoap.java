@@ -14,8 +14,6 @@
 
 package com.liferay.knowledge.base.model;
 
-import aQute.bnd.annotation.ProviderType;
-
 import java.io.Serializable;
 
 import java.util.ArrayList;
@@ -26,14 +24,16 @@ import java.util.List;
  * This class is used by SOAP remote services, specifically {@link com.liferay.knowledge.base.service.http.KBCommentServiceSoap}.
  *
  * @author Brian Wing Shun Chan
- * @see com.liferay.knowledge.base.service.http.KBCommentServiceSoap
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
-@ProviderType
+@Deprecated
 public class KBCommentSoap implements Serializable {
+
 	public static KBCommentSoap toSoapModel(KBComment model) {
 		KBCommentSoap soapModel = new KBCommentSoap();
 
+		soapModel.setMvccVersion(model.getMvccVersion());
 		soapModel.setUuid(model.getUuid());
 		soapModel.setKbCommentId(model.getKbCommentId());
 		soapModel.setGroupId(model.getGroupId());
@@ -80,7 +80,8 @@ public class KBCommentSoap implements Serializable {
 	}
 
 	public static KBCommentSoap[] toSoapModels(List<KBComment> models) {
-		List<KBCommentSoap> soapModels = new ArrayList<KBCommentSoap>(models.size());
+		List<KBCommentSoap> soapModels = new ArrayList<KBCommentSoap>(
+			models.size());
 
 		for (KBComment model : models) {
 			soapModels.add(toSoapModel(model));
@@ -98,6 +99,14 @@ public class KBCommentSoap implements Serializable {
 
 	public void setPrimaryKey(long pk) {
 		setKbCommentId(pk);
+	}
+
+	public long getMvccVersion() {
+		return _mvccVersion;
+	}
+
+	public void setMvccVersion(long mvccVersion) {
+		_mvccVersion = mvccVersion;
 	}
 
 	public String getUuid() {
@@ -212,6 +221,7 @@ public class KBCommentSoap implements Serializable {
 		_status = status;
 	}
 
+	private long _mvccVersion;
 	private String _uuid;
 	private long _kbCommentId;
 	private long _groupId;
@@ -226,4 +236,5 @@ public class KBCommentSoap implements Serializable {
 	private int _userRating;
 	private Date _lastPublishDate;
 	private int _status;
+
 }

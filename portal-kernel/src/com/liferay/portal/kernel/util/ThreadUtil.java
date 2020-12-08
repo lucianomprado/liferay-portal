@@ -14,10 +14,13 @@
 
 package com.liferay.portal.kernel.util;
 
-import com.liferay.portal.kernel.concurrent.NoticeableFuture;
+import com.liferay.petra.concurrent.NoticeableFuture;
+import com.liferay.petra.process.CollectorOutputProcessor;
+import com.liferay.petra.process.ProcessUtil;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.process.ProcessUtil;
 
 import java.util.Date;
 import java.util.Map;
@@ -75,22 +78,21 @@ public class ThreadUtil {
 		}
 
 		try {
-			NoticeableFuture<ObjectValuePair<byte[], byte[]>> noticeableFuture =
+			NoticeableFuture<Map.Entry<byte[], byte[]>> noticeableFuture =
 				ProcessUtil.execute(
-					ProcessUtil.COLLECTOR_OUTPUT_PROCESSOR, "jstack", "-l",
+					CollectorOutputProcessor.INSTANCE, "jstack", "-l",
 					String.valueOf(HeapUtil.getProcessId()));
 
-			ObjectValuePair<byte[], byte[]> objectValuePair =
-				noticeableFuture.get();
+			Map.Entry<byte[], byte[]> entry = noticeableFuture.get();
 
-			return new String(objectValuePair.getKey());
+			return new String(entry.getKey());
 		}
-		catch (Exception e) {
+		catch (Exception exception) {
 			if (_log.isWarnEnabled()) {
 				_log.warn(
 					"Unable to use jstack to get thread dump for process " +
 						HeapUtil.getProcessId(),
-					e);
+					exception);
 			}
 
 			return StringPool.BLANK;
@@ -103,8 +105,8 @@ public class ThreadUtil {
 				System.getProperty("java.vm.version");
 
 		StringBundler sb = new StringBundler(
-			"Full thread dump of " + jvm + " on " + String.valueOf(new Date()) +
-				"\n\n");
+			StringBundler.concat(
+				"Full thread dump of ", jvm, " on ", new Date(), "\n\n"));
 
 		Map<Thread, StackTraceElement[]> stackTraces =
 			Thread.getAllStackTraces();
@@ -122,7 +124,11 @@ public class ThreadUtil {
 			if (thread.getThreadGroup() != null) {
 				sb.append(StringPool.SPACE);
 				sb.append(StringPool.OPEN_PARENTHESIS);
-				sb.append(thread.getThreadGroup().getName());
+
+				ThreadGroup threadGroup = thread.getThreadGroup();
+
+				sb.append(threadGroup.getName());
+
 				sb.append(StringPool.CLOSE_PARENTHESIS);
 			}
 
@@ -134,9 +140,9 @@ public class ThreadUtil {
 			sb.append(thread.getState());
 			sb.append("\n");
 
-			for (int i = 0; i < elements.length; i++) {
+			for (StackTraceElement element : elements) {
 				sb.append("\t");
-				sb.append(elements[i]);
+				sb.append(element);
 				sb.append("\n");
 			}
 

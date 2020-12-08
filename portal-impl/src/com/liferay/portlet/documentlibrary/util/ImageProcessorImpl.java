@@ -20,6 +20,8 @@ import com.liferay.document.library.kernel.store.DLStoreUtil;
 import com.liferay.document.library.kernel.util.DLPreviewableProcessor;
 import com.liferay.document.library.kernel.util.ImageProcessor;
 import com.liferay.exportimport.kernel.lar.PortletDataContext;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.image.ImageBag;
 import com.liferay.portal.kernel.image.ImageTool;
@@ -27,14 +29,13 @@ import com.liferay.portal.kernel.image.ImageToolUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.messaging.DestinationNames;
+import com.liferay.portal.kernel.repository.event.FileVersionPreviewEventListener;
 import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.repository.model.FileVersion;
 import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.FileUtil;
+import com.liferay.portal.kernel.util.ServiceProxyFactory;
 import com.liferay.portal.kernel.util.SetUtil;
-import com.liferay.portal.kernel.util.StreamUtil;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.xml.Element;
 import com.liferay.portal.util.PropsValues;
@@ -164,8 +165,8 @@ public class ImageProcessorImpl
 				_queueGeneration(null, fileVersion);
 			}
 		}
-		catch (Exception e) {
-			_log.error(e, e);
+		catch (Exception exception) {
+			_log.error(exception, exception);
 		}
 
 		return hasImages;
@@ -189,13 +190,13 @@ public class ImageProcessorImpl
 	@Override
 	public void storeThumbnail(
 			long companyId, long groupId, long fileEntryId, long fileVersionId,
-			long custom1ImageId, long custom2ImageId, InputStream is,
+			long custom1ImageId, long custom2ImageId, InputStream inputStream,
 			String type)
 		throws Exception {
 
 		_storeThumbnail(
 			companyId, groupId, fileEntryId, fileVersionId, custom1ImageId,
-			custom2ImageId, is, type);
+			custom2ImageId, inputStream, type);
 	}
 
 	@Override
@@ -268,8 +269,6 @@ public class ImageProcessorImpl
 			FileVersion sourceFileVersion, FileVersion destinationFileVersion)
 		throws Exception {
 
-		InputStream inputStream = null;
-
 		try {
 			if (sourceFileVersion != null) {
 				copy(sourceFileVersion, destinationFileVersion);
@@ -283,56 +282,68 @@ public class ImageProcessorImpl
 				return;
 			}
 
-			inputStream = destinationFileVersion.getContentStream(false);
+			try (InputStream inputStream =
+					destinationFileVersion.getContentStream(false)) {
 
-			byte[] bytes = FileUtil.getBytes(inputStream);
+				byte[] bytes = FileUtil.getBytes(inputStream);
 
-			ImageBag imageBag = ImageToolUtil.read(bytes);
+				ImageBag imageBag = ImageToolUtil.read(bytes);
 
-			RenderedImage renderedImage = imageBag.getRenderedImage();
+				RenderedImage renderedImage = imageBag.getRenderedImage();
 
-			if (renderedImage == null) {
-				return;
-			}
+				if (renderedImage == null) {
+					_fileVersionPreviewEventListener.onFailure(
+						destinationFileVersion);
 
-			ColorModel colorModel = renderedImage.getColorModel();
-
-			if (colorModel.getNumColorComponents() == 4) {
-				Future<RenderedImage> future = ImageToolUtil.convertCMYKtoRGB(
-					bytes, imageBag.getType());
-
-				if (future == null) {
 					return;
 				}
 
-				String processIdentity = String.valueOf(
-					destinationFileVersion.getFileVersionId());
+				ColorModel colorModel = renderedImage.getColorModel();
 
-				futures.put(processIdentity, future);
+				if (colorModel.getNumColorComponents() == 4) {
+					Future<RenderedImage> future =
+						ImageToolUtil.convertCMYKtoRGB(
+							bytes, imageBag.getType());
 
-				RenderedImage convertedRenderedImage = future.get();
+					if (future == null) {
+						_fileVersionPreviewEventListener.onFailure(
+							destinationFileVersion);
 
-				if (convertedRenderedImage != null) {
-					renderedImage = convertedRenderedImage;
+						return;
+					}
+
+					String processIdentity = String.valueOf(
+						destinationFileVersion.getFileVersionId());
+
+					futures.put(processIdentity, future);
+
+					RenderedImage convertedRenderedImage = future.get();
+
+					if (convertedRenderedImage != null) {
+						renderedImage = convertedRenderedImage;
+					}
 				}
-			}
 
-			if (!_hasPreview(destinationFileVersion)) {
-				_storePreviewImage(destinationFileVersion, renderedImage);
-			}
+				if (!_hasPreview(destinationFileVersion)) {
+					_storePreviewImage(destinationFileVersion, renderedImage);
+				}
 
-			if (!hasThumbnails(destinationFileVersion)) {
-				storeThumbnailImages(destinationFileVersion, renderedImage);
+				if (!hasThumbnails(destinationFileVersion)) {
+					storeThumbnailImages(destinationFileVersion, renderedImage);
+				}
+
+				_fileVersionPreviewEventListener.onSuccess(
+					destinationFileVersion);
 			}
 		}
-		catch (NoSuchFileEntryException nsfee) {
+		catch (NoSuchFileEntryException noSuchFileEntryException) {
 			if (_log.isDebugEnabled()) {
-				_log.debug(nsfee, nsfee);
+				_log.debug(noSuchFileEntryException, noSuchFileEntryException);
 			}
+
+			_fileVersionPreviewEventListener.onFailure(destinationFileVersion);
 		}
 		finally {
-			StreamUtil.cleanUp(inputStream);
-
 			_fileVersionIds.remove(destinationFileVersion.getFileVersionId());
 		}
 	}
@@ -373,11 +384,9 @@ public class ImageProcessorImpl
 
 			String type = getPreviewType(fileVersion);
 
-			String previewFilePath = getPreviewFilePath(fileVersion, type);
-
 			if (!DLStoreUtil.hasFile(
 					fileVersion.getCompanyId(), REPOSITORY_ID,
-					previewFilePath)) {
+					getPreviewFilePath(fileVersion, type))) {
 
 				return false;
 			}
@@ -392,9 +401,8 @@ public class ImageProcessorImpl
 		if (mimeType.contains("tiff") || mimeType.contains("tif")) {
 			return true;
 		}
-		else {
-			return false;
-		}
+
+		return false;
 	}
 
 	private void _queueGeneration(
@@ -440,7 +448,7 @@ public class ImageProcessorImpl
 
 	private void _storeThumbnail(
 			long companyId, long groupId, long fileEntryId, long fileVersionId,
-			long custom1ImageId, long custom2ImageId, InputStream is,
+			long custom1ImageId, long custom2ImageId, InputStream inputStream,
 			String type)
 		throws Exception {
 
@@ -467,7 +475,7 @@ public class ImageProcessorImpl
 		File file = null;
 
 		try {
-			file = FileUtil.createTempFile(is);
+			file = FileUtil.createTempFile(inputStream);
 
 			addFileToStore(companyId, THUMBNAIL_PATH, filePath, file);
 		}
@@ -478,6 +486,12 @@ public class ImageProcessorImpl
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		ImageProcessorImpl.class);
+
+	private static volatile FileVersionPreviewEventListener
+		_fileVersionPreviewEventListener =
+			ServiceProxyFactory.newServiceTrackedInstance(
+				FileVersionPreviewEventListener.class, ImageProcessorImpl.class,
+				"_fileVersionPreviewEventListener", false, false);
 
 	private final List<Long> _fileVersionIds = new Vector<>();
 	private final Set<String> _imageMimeTypes = SetUtil.fromArray(

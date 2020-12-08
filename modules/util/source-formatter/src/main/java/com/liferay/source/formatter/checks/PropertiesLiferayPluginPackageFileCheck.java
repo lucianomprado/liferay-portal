@@ -14,7 +14,8 @@
 
 package com.liferay.source.formatter.checks;
 
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 
 import java.util.regex.Matcher;
@@ -26,14 +27,8 @@ import java.util.regex.Pattern;
 public class PropertiesLiferayPluginPackageFileCheck extends BaseFileCheck {
 
 	@Override
-	public void init() throws Exception {
-		_projectPathPrefix = getProjectPathPrefix();
-	}
-
-	@Override
 	protected String doProcess(
-			String fileName, String absolutePath, String content)
-		throws Exception {
+		String fileName, String absolutePath, String content) {
 
 		if (fileName.endsWith("/liferay-plugin-package.properties")) {
 			return _formatPluginPackageProperties(absolutePath, content);
@@ -43,7 +38,7 @@ public class PropertiesLiferayPluginPackageFileCheck extends BaseFileCheck {
 	}
 
 	private String _fixIncorrectLicenses(String absolutePath, String content) {
-		if (!isModulesApp(absolutePath, _projectPathPrefix, false)) {
+		if (!isModulesApp(absolutePath, false)) {
 			return content;
 		}
 
@@ -57,7 +52,7 @@ public class PropertiesLiferayPluginPackageFileCheck extends BaseFileCheck {
 
 		String expectedLicenses = "LGPL";
 
-		if (isModulesApp(absolutePath, _projectPathPrefix, true)) {
+		if (isModulesApp(absolutePath, true)) {
 			expectedLicenses = "DXP";
 		}
 
@@ -76,7 +71,7 @@ public class PropertiesLiferayPluginPackageFileCheck extends BaseFileCheck {
 		content = StringUtil.replace(content, "\n\n", "\n");
 
 		content = StringUtil.replace(
-			content, StringPool.TAB, StringPool.FOUR_SPACES);
+			content, CharPool.TAB, StringPool.FOUR_SPACES);
 
 		Matcher matcher = _singleValueOnMultipleLinesPattern.matcher(content);
 
@@ -88,10 +83,9 @@ public class PropertiesLiferayPluginPackageFileCheck extends BaseFileCheck {
 		return _fixIncorrectLicenses(absolutePath, content);
 	}
 
-	private final Pattern _licensesPattern = Pattern.compile(
+	private static final Pattern _licensesPattern = Pattern.compile(
 		"\nlicenses=(\\w+)\n");
-	private String _projectPathPrefix;
-	private final Pattern _singleValueOnMultipleLinesPattern = Pattern.compile(
-		"\n.*=(\\\\\n *).*(\n[^ ]|\\Z)");
+	private static final Pattern _singleValueOnMultipleLinesPattern =
+		Pattern.compile("\n.*=(\\\\\n *).*(\n[^ ]|\\Z)");
 
 }

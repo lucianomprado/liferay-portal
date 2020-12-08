@@ -14,48 +14,38 @@
 
 package com.liferay.portlet;
 
+import com.liferay.portal.kernel.portlet.LiferayResourceResponse;
+import com.liferay.portlet.internal.ResourceRequestImpl;
+import com.liferay.portlet.internal.ResourceResponseImpl;
+
+import javax.portlet.ResourceRequest;
+import javax.portlet.filter.ResourceRequestWrapper;
+
 import javax.servlet.http.HttpServletResponse;
 
 /**
  * @author Brian Wing Shun Chan
+ * @author Neil Griffin
  */
 public class ResourceResponseFactory {
 
-	public static ResourceResponseImpl create(
-		ResourceRequestImpl resourceRequestImpl, HttpServletResponse response) {
+	public static LiferayResourceResponse create(
+		ResourceRequest resourceRequest,
+		HttpServletResponse httpServletResponse) {
+
+		while (resourceRequest instanceof ResourceRequestWrapper) {
+			ResourceRequestWrapper resourceRequestWrapper =
+				(ResourceRequestWrapper)resourceRequest;
+
+			resourceRequest = resourceRequestWrapper.getRequest();
+		}
 
 		ResourceResponseImpl resourceResponseImpl = new ResourceResponseImpl();
 
-		resourceResponseImpl.init(resourceRequestImpl, response);
+		resourceResponseImpl.init(
+			(ResourceRequestImpl)resourceRequest, httpServletResponse);
 
 		return resourceResponseImpl;
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link
-	 *             #create(ResourceRequestImpl, HttpServletResponse)}
-	 */
-	@Deprecated
-	public static ResourceResponseImpl create(
-			ResourceRequestImpl resourceRequestImpl,
-			HttpServletResponse response, String portletName, long companyId)
-		throws Exception {
-
-		return create(resourceRequestImpl, response);
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link
-	 *             #create(ResourceRequestImpl, HttpServletResponse)}
-	 */
-	@Deprecated
-	public static ResourceResponseImpl create(
-			ResourceRequestImpl resourceRequestImpl,
-			HttpServletResponse response, String portletName, long companyId,
-			long plid)
-		throws Exception {
-
-		return create(resourceRequestImpl, response);
 	}
 
 }

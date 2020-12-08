@@ -19,12 +19,12 @@ import com.liferay.mail.kernel.model.Filter;
 import com.liferay.mail.kernel.model.MailMessage;
 import com.liferay.mail.kernel.service.MailService;
 import com.liferay.mail.kernel.util.Hook;
+import com.liferay.portal.kernel.cluster.Clusterable;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.messaging.DestinationNames;
 import com.liferay.portal.kernel.messaging.MessageBusUtil;
 import com.liferay.portal.kernel.module.framework.service.IdentifiableOSGiService;
-import com.liferay.portal.kernel.security.pacl.DoPrivileged;
 import com.liferay.portal.kernel.util.InfrastructureUtil;
 import com.liferay.portal.kernel.util.MethodHandler;
 import com.liferay.portal.kernel.util.MethodKey;
@@ -40,13 +40,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import javax.mail.Authenticator;
+import javax.mail.PasswordAuthentication;
 import javax.mail.Session;
 
 /**
  * @author Brian Wing Shun Chan
  */
-@DoPrivileged
-public class MailServiceImpl implements MailService, IdentifiableOSGiService {
+public class MailServiceImpl implements IdentifiableOSGiService, MailService {
 
 	@Override
 	public void addForward(
@@ -96,6 +97,7 @@ public class MailServiceImpl implements MailService, IdentifiableOSGiService {
 		MessageBusUtil.sendMessage(DestinationNames.MAIL, methodHandler);
 	}
 
+	@Clusterable
 	@Override
 	public void clearSession() {
 		_session = null;
@@ -138,7 +140,9 @@ public class MailServiceImpl implements MailService, IdentifiableOSGiService {
 
 		Session session = InfrastructureUtil.getMailSession();
 
-		if (!PrefsPropsUtil.getBoolean(PropsKeys.MAIL_SESSION_MAIL)) {
+		if (!PrefsPropsUtil.getBoolean(
+				PropsKeys.MAIL_SESSION_MAIL, PropsValues.MAIL_SESSION_MAIL)) {
+
 			_session = session;
 
 			return _session;
@@ -168,6 +172,9 @@ public class MailServiceImpl implements MailService, IdentifiableOSGiService {
 		int smtpPort = PrefsPropsUtil.getInteger(
 			PropsKeys.MAIL_SESSION_MAIL_SMTP_PORT,
 			PropsValues.MAIL_SESSION_MAIL_SMTP_PORT);
+		boolean smtpStartTLSEnable = PrefsPropsUtil.getBoolean(
+			PropsKeys.MAIL_SESSION_MAIL_SMTP_STARTTLS_ENABLE,
+			PropsValues.MAIL_SESSION_MAIL_SMTP_STARTTLS_ENABLE);
 		String smtpUser = PrefsPropsUtil.getString(
 			PropsKeys.MAIL_SESSION_MAIL_SMTP_USER,
 			PropsValues.MAIL_SESSION_MAIL_SMTP_USER);
@@ -219,6 +226,9 @@ public class MailServiceImpl implements MailService, IdentifiableOSGiService {
 		properties.setProperty(transportPrefix + "password", smtpPassword);
 		properties.setProperty(
 			transportPrefix + "port", String.valueOf(smtpPort));
+		properties.setProperty(
+			transportPrefix + "starttls.enable",
+			String.valueOf(smtpStartTLSEnable));
 		properties.setProperty(transportPrefix + "user", smtpUser);
 
 		// Advanced
@@ -238,13 +248,29 @@ public class MailServiceImpl implements MailService, IdentifiableOSGiService {
 				}
 			}
 		}
-		catch (IOException ioe) {
+		catch (IOException ioException) {
 			if (_log.isWarnEnabled()) {
-				_log.warn(ioe, ioe);
+				_log.warn(ioException, ioException);
 			}
 		}
 
-		_session = Session.getInstance(properties);
+		if (smtpAuth) {
+			_session = Session.getInstance(
+				properties,
+				new Authenticator() {
+
+					protected PasswordAuthentication
+						getPasswordAuthentication() {
+
+						return new PasswordAuthentication(
+							smtpUser, smtpPassword);
+					}
+
+				});
+		}
+		else {
+			_session = Session.getInstance(properties);
+		}
 
 		return _session;
 	}

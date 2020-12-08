@@ -14,10 +14,15 @@
 
 package com.liferay.portal.template;
 
+import com.liferay.petra.lang.ClassLoaderPool;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.template.TemplateConstants;
 import com.liferay.portal.kernel.test.CaptureHandler;
 import com.liferay.portal.kernel.test.JDKLoggerTestUtil;
 import com.liferay.portal.kernel.test.rule.CodeCoverageAssertor;
+
+import java.net.MalformedURLException;
+import java.net.URL;
 
 import java.util.List;
 import java.util.logging.Level;
@@ -36,15 +41,11 @@ public class ClassLoaderResourceParserTest {
 	public static final CodeCoverageAssertor codeCoverageAssertor =
 		CodeCoverageAssertor.INSTANCE;
 
-	@SuppressWarnings("deprecation")
 	@Test
-	public void testGetURL() {
+	public void testGetURL() throws MalformedURLException {
 		ClassLoaderResourceParser classLoaderResourceParser =
 			new ClassLoaderResourceParser();
 
-		Assert.assertNull(
-			classLoaderResourceParser.getURL(
-				TemplateConstants.JOURNAL_SEPARATOR));
 		Assert.assertNull(
 			classLoaderResourceParser.getURL(
 				TemplateConstants.SERVLET_SEPARATOR));
@@ -54,11 +55,6 @@ public class ClassLoaderResourceParserTest {
 		Assert.assertNull(
 			classLoaderResourceParser.getURL(
 				TemplateConstants.THEME_LOADER_SEPARATOR));
-
-		Class<?> clazz = getClass();
-
-		classLoaderResourceParser = new ClassLoaderResourceParser(
-			clazz.getClassLoader());
 
 		String templateId = "DummyFile";
 
@@ -79,6 +75,32 @@ public class ClassLoaderResourceParserTest {
 			Assert.assertEquals(
 				"Loading " + templateId, logRecord.getMessage());
 		}
+
+		String contextName = "test-context";
+
+		URL dummyURL = new URL("file://");
+
+		ClassLoaderPool.register(
+			contextName,
+			new ClassLoader() {
+
+				@Override
+				public URL getResource(String name) {
+					if (name.equals(templateId)) {
+						return dummyURL;
+					}
+
+					return null;
+				}
+
+			});
+
+		Assert.assertSame(
+			dummyURL,
+			classLoaderResourceParser.getURL(
+				StringBundler.concat(
+					contextName, TemplateConstants.CLASS_LOADER_SEPARATOR,
+					templateId)));
 	}
 
 }

@@ -19,15 +19,18 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.io.Writer;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
 import org.dom4j.Attribute;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
+import org.dom4j.DocumentHelper;
 import org.dom4j.Element;
 import org.dom4j.Node;
 import org.dom4j.Text;
+import org.dom4j.XPath;
 import org.dom4j.io.OutputFormat;
 import org.dom4j.io.SAXReader;
 import org.dom4j.io.XMLWriter;
@@ -38,16 +41,40 @@ import org.dom4j.tree.DefaultElement;
  */
 public class Dom4JUtil {
 
-	public static void addToElement(Element element, Object... items) {
-		for (int i = 0; i < items.length; i++) {
-			Object item = items[i];
+	public static void addRawXMLToElement(Element element, String xml)
+		throws DocumentException {
 
+		Document document = parse("<div>" + xml + "</div>");
+
+		Element rootElement = document.getRootElement();
+
+		List<Element> elements = new ArrayList<>();
+
+		for (Element childElement : rootElement.elements()) {
+			rootElement.remove(childElement);
+
+			elements.add(childElement);
+		}
+
+		addToElement(element, elements.toArray());
+	}
+
+	public static void addToElement(Element element, Object... items) {
+		for (Object item : items) {
 			if (item == null) {
 				continue;
 			}
 
 			if (item instanceof Element) {
 				element.add((Element)item);
+
+				continue;
+			}
+
+			if (item instanceof Element[]) {
+				for (Element itemElement : (Element[])item) {
+					element.add(itemElement);
+				}
 
 				continue;
 			}
@@ -60,6 +87,16 @@ public class Dom4JUtil {
 
 			throw new IllegalArgumentException(
 				"Only elements and strings may be added");
+		}
+	}
+
+	public static void detach(Object... items) {
+		for (Object item : items) {
+			if (item instanceof Node) {
+				Node node = (Node)item;
+
+				node.detach();
+			}
 		}
 	}
 
@@ -97,13 +134,9 @@ public class Dom4JUtil {
 			return null;
 		}
 
-		Element anchorElement = null;
-
-		anchorElement = getNewElement("a", parentElement);
+		Element anchorElement = getNewElement("a", parentElement, items);
 
 		anchorElement.addAttribute("href", href);
-
-		addToElement(anchorElement, items);
 
 		return anchorElement;
 	}
@@ -130,6 +163,24 @@ public class Dom4JUtil {
 		}
 
 		return childElement;
+	}
+
+	public static Node getNodeByXPath(Document document, String xpathString) {
+		List<Node> nodes = getNodesByXPath(document, xpathString);
+
+		if (nodes.isEmpty()) {
+			return null;
+		}
+
+		return nodes.get(0);
+	}
+
+	public static List<Node> getNodesByXPath(
+		Document document, String xpathString) {
+
+		XPath xPath = DocumentHelper.createXPath(xpathString);
+
+		return xPath.selectNodes(document);
 	}
 
 	public static Element getOrderedListElement(
@@ -169,6 +220,60 @@ public class Dom4JUtil {
 		return getOrderedListElement(itemElements, null, maxItems);
 	}
 
+	public static void insertElementAfter(
+		Element parentElement, Element targetElement, Element newElement) {
+
+		List<Element> elements = parentElement.elements();
+
+		int targetElementIndex = -1;
+
+		if (targetElement != null) {
+			if (!elements.contains(targetElement)) {
+				try {
+					throw new IllegalArgumentException(
+						"Invalid target element\n" + format(targetElement));
+				}
+				catch (IOException ioException) {
+					throw new IllegalArgumentException(
+						"Invalid target element");
+				}
+			}
+
+			targetElementIndex = elements.indexOf(targetElement);
+		}
+
+		elements.add(targetElementIndex + 1, newElement);
+
+		setElements(parentElement, elements);
+	}
+
+	public static void insertElementBefore(
+		Element parentElement, Element targetElement, Element newElement) {
+
+		List<Element> elements = parentElement.elements();
+
+		int targetElementIndex = elements.size();
+
+		if (targetElement != null) {
+			if (!elements.contains(targetElement)) {
+				try {
+					throw new IllegalArgumentException(
+						"Invalid target element\n" + format(targetElement));
+				}
+				catch (IOException ioException) {
+					throw new IllegalArgumentException(
+						"Invalid target element");
+				}
+			}
+
+			targetElementIndex = elements.indexOf(targetElement);
+		}
+
+		elements.add(targetElementIndex, newElement);
+
+		setElements(parentElement, elements);
+	}
+
 	public static Document parse(String xml) throws DocumentException {
 		SAXReader saxReader = new SAXReader();
 
@@ -179,20 +284,16 @@ public class Dom4JUtil {
 		Element element, boolean cascade, String replacementText,
 		String targetText) {
 
-		Iterator<?> attributeIterator = element.attributeIterator();
-
-		while (attributeIterator.hasNext()) {
-			Attribute attribute = (Attribute)attributeIterator.next();
-
+		for (Attribute attribute : element.attributes()) {
 			String text = attribute.getValue();
 
 			attribute.setValue(text.replace(targetText, replacementText));
 		}
 
-		Iterator<?> nodeIterator = element.nodeIterator();
+		Iterator<? extends Node> nodeIterator = element.nodeIterator();
 
 		while (nodeIterator.hasNext()) {
-			Node node = (Node)nodeIterator.next();
+			Node node = nodeIterator.next();
 
 			if (node instanceof Text) {
 				Text textNode = (Text)node;
@@ -204,15 +305,26 @@ public class Dom4JUtil {
 
 					textNode.setText(text);
 				}
-
-				continue;
 			}
-
-			if (node instanceof Element && cascade) {
+			else if ((node instanceof Element) && cascade) {
 				replace((Element)node, cascade, replacementText, targetText);
-
-				continue;
 			}
+		}
+	}
+
+	public static void setElements(
+		Element parentElement, List<Element> elements) {
+
+		if (parentElement == null) {
+			throw new IllegalArgumentException("Parent is null");
+		}
+
+		for (Element element : parentElement.elements()) {
+			parentElement.remove(element);
+		}
+
+		for (Element element : elements) {
+			parentElement.add(element);
 		}
 	}
 
@@ -221,6 +333,27 @@ public class Dom4JUtil {
 			"pre", null,
 			getNewElement(
 				"code", null, JenkinsResultsParserUtil.redact(content)));
+	}
+
+	public static void truncateElement(Element element, int size) {
+		List<Node> nodes = new ArrayList<>();
+
+		nodes.add(element);
+		nodes.addAll(element.attributes());
+
+		for (Node node : nodes) {
+			String nodeText = node.getText();
+
+			if ((nodeText != null) && (nodeText.length() > size)) {
+				node.setText(nodeText.substring(0, size));
+			}
+		}
+
+		for (Iterator<Element> iterator = element.elementIterator();
+			 iterator.hasNext();) {
+
+			truncateElement(iterator.next(), size);
+		}
 	}
 
 }

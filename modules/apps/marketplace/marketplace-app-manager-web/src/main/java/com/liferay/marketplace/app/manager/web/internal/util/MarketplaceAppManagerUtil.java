@@ -16,13 +16,13 @@ package com.liferay.marketplace.app.manager.web.internal.util;
 
 import com.liferay.marketplace.app.manager.web.internal.constants.BundleConstants;
 import com.liferay.marketplace.model.App;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 
@@ -36,6 +36,7 @@ import javax.portlet.RenderResponse;
 import javax.servlet.http.HttpServletRequest;
 
 import org.osgi.framework.Bundle;
+import org.osgi.framework.Constants;
 
 /**
  * @author Ryan Park
@@ -43,76 +44,47 @@ import org.osgi.framework.Bundle;
 public class MarketplaceAppManagerUtil {
 
 	public static void addPortletBreadcrumbEntry(
-		AppDisplay appDisplay, HttpServletRequest request,
-		RenderResponse renderResponse) {
+		AppDisplay appDisplay, Bundle bundle,
+		HttpServletRequest httpServletRequest, RenderResponse renderResponse) {
 
 		PortletURL portletURL = renderResponse.createRenderURL();
 
 		portletURL.setParameter("mvcPath", "/view.jsp");
 
 		PortalUtil.addPortletBreadcrumbEntry(
-			request, LanguageUtil.get(request, "app-manager"),
+			httpServletRequest,
+			LanguageUtil.get(httpServletRequest, "app-manager"),
 			portletURL.toString());
 
 		PortalUtil.addPortletBreadcrumbEntry(
-			request, appDisplay.getTitle(), null);
-	}
-
-	public static void addPortletBreadcrumbEntry(
-		AppDisplay appDisplay, ModuleGroupDisplay moduleGroupDisplay,
-		Bundle bundle, HttpServletRequest request,
-		RenderResponse renderResponse) {
-
-		PortletURL portletURL = renderResponse.createRenderURL();
-
-		portletURL.setParameter("mvcPath", "/view.jsp");
-
-		PortalUtil.addPortletBreadcrumbEntry(
-			request, LanguageUtil.get(request, "app-manager"),
-			portletURL.toString());
-
-		PortalUtil.addPortletBreadcrumbEntry(
-			request, appDisplay.getTitle(),
+			httpServletRequest, appDisplay.getDisplayTitle(),
 			appDisplay.getDisplayURL(renderResponse));
 
-		if (moduleGroupDisplay != null) {
-			PortalUtil.addPortletBreadcrumbEntry(
-				request, moduleGroupDisplay.getTitle(),
-				moduleGroupDisplay.getDisplayURL(renderResponse));
-		}
-
-		Dictionary<String, String> headers = bundle.getHeaders();
+		Dictionary<String, String> headers = bundle.getHeaders(
+			StringPool.BLANK);
 
 		String bundleName = GetterUtil.getString(
-			headers.get(BundleConstants.BUNDLE_NAME));
+			headers.get(Constants.BUNDLE_NAME));
 
-		PortalUtil.addPortletBreadcrumbEntry(request, bundleName, null);
+		PortalUtil.addPortletBreadcrumbEntry(
+			httpServletRequest, bundleName, null);
 	}
 
 	public static void addPortletBreadcrumbEntry(
-		AppDisplay appDisplay, ModuleGroupDisplay moduleGroupDisplay,
-		HttpServletRequest request, RenderResponse renderResponse) {
-
-		if (moduleGroupDisplay == null) {
-			addPortletBreadcrumbEntry(appDisplay, request, renderResponse);
-
-			return;
-		}
+		AppDisplay appDisplay, HttpServletRequest httpServletRequest,
+		RenderResponse renderResponse) {
 
 		PortletURL portletURL = renderResponse.createRenderURL();
 
 		portletURL.setParameter("mvcPath", "/view.jsp");
 
 		PortalUtil.addPortletBreadcrumbEntry(
-			request, LanguageUtil.get(request, "app-manager"),
+			httpServletRequest,
+			LanguageUtil.get(httpServletRequest, "app-manager"),
 			portletURL.toString());
 
 		PortalUtil.addPortletBreadcrumbEntry(
-			request, appDisplay.getTitle(),
-			appDisplay.getDisplayURL(renderResponse));
-
-		PortalUtil.addPortletBreadcrumbEntry(
-			request, moduleGroupDisplay.getTitle(), null);
+			httpServletRequest, appDisplay.getDisplayTitle(), null);
 	}
 
 	public static String[] getCategories(List<App> apps, List<Bundle> bundles) {
@@ -159,7 +131,8 @@ public class MarketplaceAppManagerUtil {
 		List<String> categories = new ArrayList<>();
 
 		for (Bundle bundle : bundles) {
-			Dictionary<String, String> headers = bundle.getHeaders();
+			Dictionary<String, String> headers = bundle.getHeaders(
+				StringPool.BLANK);
 
 			String[] categoriesArray = StringUtil.split(
 				headers.get(BundleConstants.LIFERAY_RELENG_CATEGORY));

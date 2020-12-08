@@ -17,7 +17,6 @@ package com.liferay.portal.kernel.scheduler;
 import com.liferay.portal.kernel.messaging.Message;
 import com.liferay.portal.kernel.messaging.MessageListener;
 import com.liferay.portal.kernel.scheduler.messaging.SchedulerResponse;
-import com.liferay.portal.kernel.security.pacl.permission.PortalRuntimePermission;
 import com.liferay.portal.kernel.util.ObjectValuePair;
 import com.liferay.portal.kernel.util.ServiceProxyFactory;
 
@@ -192,14 +191,6 @@ public class SchedulerEngineHelperUtil {
 			groupName, storageType);
 	}
 
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link #_getSchedulerEngineHelper()}
-	 */
-	@Deprecated
-	public static SchedulerEngineHelper getSchedulerEngineHelper() {
-		return _getSchedulerEngineHelper();
-	}
-
 	public static Date getStartTime(SchedulerResponse schedulerResponse) {
 		return _getSchedulerEngineHelper().getStartTime(schedulerResponse);
 	}
@@ -324,15 +315,12 @@ public class SchedulerEngineHelperUtil {
 	}
 
 	private static SchedulerEngineHelper _getSchedulerEngineHelper() {
-		PortalRuntimePermission.checkGetBeanProperty(
-			SchedulerEngineHelperUtil.class);
-
-		return _instance;
+		return _schedulerEngineHelper;
 	}
 
-	private static volatile SchedulerEngineHelper _instance =
+	private static volatile SchedulerEngineHelper _schedulerEngineHelper =
 		ServiceProxyFactory.newServiceTrackedInstance(
 			SchedulerEngineHelper.class, SchedulerEngineHelperUtil.class,
-			"_instance", false);
+			"_schedulerEngineHelper", false);
 
 }

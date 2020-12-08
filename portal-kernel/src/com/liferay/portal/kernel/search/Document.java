@@ -14,8 +14,6 @@
 
 package com.liferay.portal.kernel.search;
 
-import aQute.bnd.annotation.ProviderType;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,6 +26,8 @@ import java.text.ParseException;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
+
+import org.osgi.annotation.versioning.ProviderType;
 
 /**
  * @author Brian Wing Shun Chan
@@ -52,11 +52,12 @@ public interface Document extends Cloneable, Serializable {
 	public void addFile(String name, File file, String fileExt)
 		throws IOException;
 
-	public void addFile(String name, InputStream is, String fileExt)
+	public void addFile(String name, InputStream inputStream, String fileExt)
 		throws IOException;
 
 	public void addFile(
-			String name, InputStream is, String fileExt, int maxStringLength)
+			String name, InputStream inputStream, String fileExt,
+			int maxStringLength)
 		throws IOException;
 
 	public void addGeoLocation(double latitude, double longitude);

@@ -14,8 +14,6 @@
 
 package com.liferay.social.kernel.model;
 
-import aQute.bnd.annotation.ProviderType;
-
 import java.io.Serializable;
 
 import java.util.ArrayList;
@@ -25,13 +23,17 @@ import java.util.List;
  * This class is used by SOAP remote services.
  *
  * @author Brian Wing Shun Chan
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
-@ProviderType
+@Deprecated
 public class SocialRelationSoap implements Serializable {
+
 	public static SocialRelationSoap toSoapModel(SocialRelation model) {
 		SocialRelationSoap soapModel = new SocialRelationSoap();
 
+		soapModel.setMvccVersion(model.getMvccVersion());
+		soapModel.setCtCollectionId(model.getCtCollectionId());
 		soapModel.setUuid(model.getUuid());
 		soapModel.setRelationId(model.getRelationId());
 		soapModel.setCompanyId(model.getCompanyId());
@@ -53,11 +55,14 @@ public class SocialRelationSoap implements Serializable {
 		return soapModels;
 	}
 
-	public static SocialRelationSoap[][] toSoapModels(SocialRelation[][] models) {
+	public static SocialRelationSoap[][] toSoapModels(
+		SocialRelation[][] models) {
+
 		SocialRelationSoap[][] soapModels = null;
 
 		if (models.length > 0) {
-			soapModels = new SocialRelationSoap[models.length][models[0].length];
+			soapModels =
+				new SocialRelationSoap[models.length][models[0].length];
 		}
 		else {
 			soapModels = new SocialRelationSoap[0][0];
@@ -70,8 +75,11 @@ public class SocialRelationSoap implements Serializable {
 		return soapModels;
 	}
 
-	public static SocialRelationSoap[] toSoapModels(List<SocialRelation> models) {
-		List<SocialRelationSoap> soapModels = new ArrayList<SocialRelationSoap>(models.size());
+	public static SocialRelationSoap[] toSoapModels(
+		List<SocialRelation> models) {
+
+		List<SocialRelationSoap> soapModels = new ArrayList<SocialRelationSoap>(
+			models.size());
 
 		for (SocialRelation model : models) {
 			soapModels.add(toSoapModel(model));
@@ -89,6 +97,22 @@ public class SocialRelationSoap implements Serializable {
 
 	public void setPrimaryKey(long pk) {
 		setRelationId(pk);
+	}
+
+	public long getMvccVersion() {
+		return _mvccVersion;
+	}
+
+	public void setMvccVersion(long mvccVersion) {
+		_mvccVersion = mvccVersion;
+	}
+
+	public long getCtCollectionId() {
+		return _ctCollectionId;
+	}
+
+	public void setCtCollectionId(long ctCollectionId) {
+		_ctCollectionId = ctCollectionId;
 	}
 
 	public String getUuid() {
@@ -147,6 +171,8 @@ public class SocialRelationSoap implements Serializable {
 		_type = type;
 	}
 
+	private long _mvccVersion;
+	private long _ctCollectionId;
 	private String _uuid;
 	private long _relationId;
 	private long _companyId;
@@ -154,4 +180,5 @@ public class SocialRelationSoap implements Serializable {
 	private long _userId1;
 	private long _userId2;
 	private int _type;
+
 }

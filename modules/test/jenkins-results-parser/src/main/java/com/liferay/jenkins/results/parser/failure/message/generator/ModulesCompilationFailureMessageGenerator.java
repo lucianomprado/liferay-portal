@@ -16,8 +16,6 @@ package com.liferay.jenkins.results.parser.failure.message.generator;
 
 import com.liferay.jenkins.results.parser.Build;
 
-import java.util.Hashtable;
-
 import org.dom4j.Element;
 
 /**
@@ -27,30 +25,18 @@ public class ModulesCompilationFailureMessageGenerator
 	extends BaseFailureMessageGenerator {
 
 	@Override
-	public String getMessage(
-		String buildURL, String consoleOutput, Hashtable<?, ?> properties) {
+	public Element getMessageElement(Build build) {
+		String jobName = build.getJobName();
 
-		if (!consoleOutput.contains(_TOKEN_COULD_NOT_RESOLVE_CONFIG)) {
+		if (!jobName.contains("modules-compile")) {
 			return null;
 		}
 
-		int end = consoleOutput.indexOf(_TOKEN_MERGE_TEST_RESULTS);
-
-		end = consoleOutput.lastIndexOf(_TOKEN_TRY, end);
-
-		end = consoleOutput.lastIndexOf("\n", end);
-
-		int start = consoleOutput.lastIndexOf(_TOKEN_WHAT_WENT_WRONG, end);
-
-		start = consoleOutput.lastIndexOf("\n", start);
-
-		return getConsoleOutputSnippet(consoleOutput, true, start, end);
+		return getMessageElement(build.getConsoleText());
 	}
 
 	@Override
-	public Element getMessageElement(Build build) {
-		String consoleText = build.getConsoleText();
-
+	public Element getMessageElement(String consoleText) {
 		if (!consoleText.contains(_TOKEN_COULD_NOT_RESOLVE_CONFIG)) {
 			return null;
 		}
@@ -65,7 +51,7 @@ public class ModulesCompilationFailureMessageGenerator
 
 		start = consoleText.lastIndexOf("\n", start);
 
-		return getConsoleOutputSnippetElement(consoleText, true, start, end);
+		return getConsoleTextSnippetElement(consoleText, true, start, end);
 	}
 
 	private static final String _TOKEN_COULD_NOT_RESOLVE_CONFIG =

@@ -14,7 +14,8 @@
 
 package com.liferay.portal.modules.util;
 
-import aQute.bnd.version.Version;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 
 /**
  * @author Andrea Di Giorgi
@@ -23,7 +24,7 @@ public class GradleDependency {
 
 	public GradleDependency(
 		String dependency, String configuration, String moduleGroup,
-		String moduleName, String moduleVersion) {
+		String moduleName, String moduleVersion, boolean projectDependency) {
 
 		_dependency = dependency;
 		_configuration = configuration;
@@ -31,10 +32,21 @@ public class GradleDependency {
 		_moduleName = moduleName;
 
 		if (moduleVersion.equals(_VERSION_DEFAULT)) {
-			_moduleVersion = Version.HIGHEST;
+			StringBundler sb = new StringBundler(5);
+
+			sb.append(Integer.MAX_VALUE);
+			sb.append(StringPool.PERIOD);
+			sb.append(Integer.MAX_VALUE);
+			sb.append(StringPool.PERIOD);
+			sb.append(Integer.MAX_VALUE);
+
+			_moduleVersion = sb.toString();
+
+			_projectDependency = true;
 		}
 		else {
-			_moduleVersion = Version.parseVersion(moduleVersion);
+			_moduleVersion = moduleVersion;
+			_projectDependency = projectDependency;
 		}
 	}
 
@@ -50,8 +62,12 @@ public class GradleDependency {
 		return _moduleName;
 	}
 
-	public Version getModuleVersion() {
+	public String getModuleVersion() {
 		return _moduleVersion;
+	}
+
+	public boolean isProjectDependency() {
+		return _projectDependency;
 	}
 
 	@Override
@@ -65,6 +81,7 @@ public class GradleDependency {
 	private final String _dependency;
 	private final String _moduleGroup;
 	private final String _moduleName;
-	private final Version _moduleVersion;
+	private final String _moduleVersion;
+	private final boolean _projectDependency;
 
 }

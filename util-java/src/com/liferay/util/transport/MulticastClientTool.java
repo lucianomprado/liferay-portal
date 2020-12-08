@@ -32,8 +32,8 @@ public class MulticastClientTool {
 		try {
 			new MulticastClientTool(args);
 		}
-		catch (Exception e) {
-			e.printStackTrace();
+		catch (Exception exception) {
+			exception.printStackTrace();
 
 			StringBuilder sb = new StringBuilder(3);
 
@@ -52,6 +52,7 @@ public class MulticastClientTool {
 
 		Integer port = (Integer)argsMap.get("port");
 		String host = (String)argsMap.get("host");
+
 		Boolean gzipData = (Boolean)argsMap.get("gzip");
 		Boolean shortData = (Boolean)argsMap.get("short");
 

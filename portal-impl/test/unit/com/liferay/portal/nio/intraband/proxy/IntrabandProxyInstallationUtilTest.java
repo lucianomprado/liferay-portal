@@ -14,10 +14,11 @@
 
 package com.liferay.portal.nio.intraband.proxy;
 
+import com.liferay.petra.executor.PortalExecutorManager;
 import com.liferay.portal.kernel.io.Deserializer;
 import com.liferay.portal.kernel.io.Serializer;
 import com.liferay.portal.kernel.nio.intraband.Datagram;
-import com.liferay.portal.kernel.nio.intraband.PortalExecutorManagerUtilAdvice;
+import com.liferay.portal.kernel.nio.intraband.PortalExecutorManagerInvocationHandler;
 import com.liferay.portal.kernel.nio.intraband.proxy.AsyncIntrabandProxySkeleton;
 import com.liferay.portal.kernel.nio.intraband.proxy.IntrabandProxySkeleton;
 import com.liferay.portal.kernel.nio.intraband.proxy.IntrabandProxySkeletonRegistryUtil;
@@ -29,14 +30,12 @@ import com.liferay.portal.kernel.nio.intraband.test.MockIntraband;
 import com.liferay.portal.kernel.nio.intraband.test.MockRegistrationReference;
 import com.liferay.portal.kernel.process.ProcessCallable;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
-import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.CodeCoverageAssertor;
-import com.liferay.portal.kernel.test.rule.NewEnv;
 import com.liferay.portal.kernel.util.FileUtil;
-import com.liferay.portal.test.rule.AdviseWith;
-import com.liferay.portal.test.rule.AspectJNewEnvTestRule;
+import com.liferay.portal.kernel.util.ProxyUtil;
 import com.liferay.portal.util.FileImpl;
 import com.liferay.registry.BasicRegistryImpl;
+import com.liferay.registry.Registry;
 import com.liferay.registry.RegistryUtil;
 
 import java.io.Serializable;
@@ -53,14 +52,12 @@ import org.junit.Test;
 /**
  * @author Shuyang Zhou
  */
-@NewEnv(type = NewEnv.Type.CLASSLOADER)
 public class IntrabandProxyInstallationUtilTest {
 
 	@ClassRule
 	@Rule
-	public static final AggregateTestRule aggregateTestRule =
-		new AggregateTestRule(
-			AspectJNewEnvTestRule.INSTANCE, CodeCoverageAssertor.INSTANCE);
+	public static final CodeCoverageAssertor codeCoverageAssertor =
+		CodeCoverageAssertor.INSTANCE;
 
 	@Before
 	public void setUp() {
@@ -87,8 +84,8 @@ public class IntrabandProxyInstallationUtilTest {
 					serializer.writeObject(
 						new RPCResponse(processCallable.call()));
 				}
-				catch (Exception e) {
-					serializer.writeObject(new RPCResponse(e));
+				catch (Exception exception) {
+					serializer.writeObject(new RPCResponse(exception));
 				}
 
 				return Datagram.createResponseDatagram(
@@ -105,15 +102,22 @@ public class IntrabandProxyInstallationUtilTest {
 				IntrabandProxyUtil.getStubClass(TestClass.class, "skeletonId"));
 
 		RegistryUtil.setRegistry(new BasicRegistryImpl());
+
+		Registry registry = RegistryUtil.getRegistry();
+
+		registry.registerService(
+			PortalExecutorManager.class,
+			(PortalExecutorManager)ProxyUtil.newProxyInstance(
+				IntrabandProxyInstallationUtilTest.class.getClassLoader(),
+				new Class<?>[] {PortalExecutorManager.class},
+				new PortalExecutorManagerInvocationHandler()));
 	}
 
-	@NewEnv(type = NewEnv.Type.NONE)
 	@Test
 	public void testConstructor() {
 		new IntrabandProxyInstallationUtil();
 	}
 
-	@AdviseWith(adviceClasses = {PortalExecutorManagerUtilAdvice.class})
 	@Test
 	public void testInstallSkeletonLocally() {
 		IntrabandProxyInstallationUtil.checkProxyMethodSignatures(
@@ -142,8 +146,8 @@ public class IntrabandProxyInstallationUtilTest {
 
 			Assert.fail();
 		}
-		catch (RuntimeException re) {
-			Throwable throwable = re.getCause();
+		catch (RuntimeException runtimeException) {
+			Throwable throwable = runtimeException.getCause();
 
 			throwable = throwable.getCause();
 
@@ -160,16 +164,15 @@ public class IntrabandProxyInstallationUtilTest {
 
 			Assert.fail();
 		}
-		catch (IllegalStateException ise) {
+		catch (IllegalStateException illegalStateException) {
 			Assert.assertEquals(
 				"Skeleton and stub proxy method signatures do not match. " +
 					"Skeleton is [doStuff-()Ljava/lang/Object;]. Stub is " +
 						"[doStuffX-()Ljava/lang/Object;].",
-				ise.getMessage());
+				illegalStateException.getMessage());
 		}
 	}
 
-	@AdviseWith(adviceClasses = {PortalExecutorManagerUtilAdvice.class})
 	@Test
 	public void testInstallSkeletonRemotely() throws Exception {
 		Future<String[]> skeletonProxyMethodSignaturesFuture =
@@ -207,8 +210,8 @@ public class IntrabandProxyInstallationUtilTest {
 
 			Assert.fail();
 		}
-		catch (ExecutionException ee) {
-			Throwable throwable = ee.getCause();
+		catch (ExecutionException executionException) {
+			Throwable throwable = executionException.getCause();
 
 			throwable = throwable.getCause();
 			throwable = throwable.getCause();
@@ -234,12 +237,12 @@ public class IntrabandProxyInstallationUtilTest {
 
 			Assert.fail();
 		}
-		catch (IllegalStateException ise) {
+		catch (IllegalStateException illegalStateException) {
 			Assert.assertEquals(
 				"Skeleton and stub proxy method signatures do not match. " +
 					"Skeleton is [doStuff-()Ljava/lang/Object;]. Stub is " +
 						"[doStuffX-()Ljava/lang/Object;].",
-				ise.getMessage());
+				illegalStateException.getMessage());
 		}
 	}
 
@@ -258,9 +261,9 @@ public class IntrabandProxyInstallationUtilTest {
 		}
 
 		@Override
-		public boolean equals(Object obj) {
+		public boolean equals(Object object) {
 			TestGenerateTargetLocator testGenerateTargetLocator =
-				(TestGenerateTargetLocator)obj;
+				(TestGenerateTargetLocator)object;
 
 			return _clazz.equals(testGenerateTargetLocator._clazz);
 		}

@@ -14,19 +14,26 @@
 
 package com.liferay.source.formatter.checks;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.io.unsync.UnsyncBufferedReader;
 import com.liferay.portal.kernel.io.unsync.UnsyncStringReader;
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.source.formatter.checks.util.JSPSourceUtil;
+
+import java.io.IOException;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author Hugo Huijser
  */
-public class JSPLineBreakCheck extends LineBreakCheck {
+public class JSPLineBreakCheck extends BaseLineBreakCheck {
 
 	@Override
 	protected String doProcess(
 			String fileName, String absolutePath, String content)
-		throws Exception {
+		throws IOException {
 
 		try (UnsyncBufferedReader unsyncBufferedReader =
 				new UnsyncBufferedReader(new UnsyncStringReader(content))) {
@@ -34,18 +41,69 @@ public class JSPLineBreakCheck extends LineBreakCheck {
 			String line = null;
 			String previousLine = StringPool.BLANK;
 
-			int lineCount = 0;
+			boolean javaSource = false;
+			boolean jsSource = false;
+
+			int lineNumber = 0;
 
 			while ((line = unsyncBufferedReader.readLine()) != null) {
-				lineCount++;
+				lineNumber++;
 
-				checkLineBreaks(line, previousLine, fileName, lineCount);
+				String trimmedLine = StringUtil.trimLeading(line);
+
+				if (trimmedLine.equals("<%") || trimmedLine.equals("<%!")) {
+					javaSource = true;
+				}
+				else if (trimmedLine.equals("%>")) {
+					javaSource = false;
+				}
+				else if (trimmedLine.equals("<aui:script>") ||
+						 trimmedLine.startsWith("<aui:script ") ||
+						 trimmedLine.equals("<script>") ||
+						 trimmedLine.startsWith("<script ")) {
+
+					jsSource = true;
+				}
+				else if (trimmedLine.equals("</aui:script>") ||
+						 trimmedLine.equals("</script>")) {
+
+					jsSource = false;
+				}
+
+				if (!line.startsWith(StringPool.POUND) &&
+					(!jsSource || javaSource)) {
+
+					checkLineBreaks(line, previousLine, fileName, lineNumber);
+				}
 
 				previousLine = line;
 			}
 		}
 
-		return fixRedundantCommaInsideArray(content);
+		Matcher matcher = _missingLineBreakPattern.matcher(content);
+
+		content = matcher.replaceAll("$1\n$3");
+
+		return _fixRedundantCommaInsideArray(content);
 	}
+
+	private String _fixRedundantCommaInsideArray(String content) {
+		Matcher matcher = _redundantCommaPattern.matcher(content);
+
+		while (matcher.find()) {
+			if (JSPSourceUtil.isJavaSource(content, matcher.start())) {
+				return StringUtil.replaceFirst(
+					content, StringPool.COMMA, StringPool.BLANK,
+					matcher.start());
+			}
+		}
+
+		return content;
+	}
+
+	private static final Pattern _missingLineBreakPattern = Pattern.compile(
+		"([\n\t]((?!<%)[^\n\t])+?) *(%>[\"']\n)");
+	private static final Pattern _redundantCommaPattern = Pattern.compile(
+		",\n\t*\\}");
 
 }

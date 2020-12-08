@@ -1,696 +1,603 @@
-<definition component-name="portal-document-management-ee">
-	<property name="cmis.repository.type" value="sharepoint2010" />
-	<property name="custom.properties" value="session.store.password=true${line.separator}company.security.auth.type=screenName" />
-	<property name="osgi.app.includes" value="sharepoint" />
-	<property name="portal.release" value="true" />
-	<property name="portal.upstream" value="true" />
-	<property name="test.run.environment" value="EE" />
-	<property name="testray.main.component.name" value="Documents Management" />
-
-	<set-up>
-		<execute macro="TestCase#setUpPortalInstance" />
-
-		<var method="TestPropsUtil#get('cmis.repository.vm.host.name')" name="sharepointVMHostName" />
-
-		<execute function="AntCommand" locator1="build-test-sharepoint.xml" value1="clean-sharepoint-repository -Dssh.host=${sharepointVMHostName}" />
-
-		<execute macro="User#loginPG">
-			<var name="authenticationMethod" value="By Screen Name" />
-			<var name="userScreenName" value="test" />
-		</execute>
-
-		<execute macro="Page#gotoMyAccount">
-			<var name="portletName" value="Account Settings" />
-		</execute>
+@component-name = "portal-document-management-ee"
+definition {
 
-		<execute macro="User#editDetailsViaMyAccount">
-			<var name="userScreenNameEdit" value="administrator" />
-		</execute>
+	property cmis.repository.type = "sharepoint2010";
+	property custom.properties = "session.store.password=true${line.separator}company.security.auth.type=screenName";
+	property dummy.socket.proxy.disabled = "true";
+	property osgi.app.includes = "sharepoint-soap";
+	property portal.release = "false";
+	property portal.upstream = "true";
+	property test.run.environment = "EE";
+	property testray.main.component.name = "Sharepoint";
 
-		<execute macro="Page#gotoMyAccount">
-			<var name="portletName" value="Account Settings" />
-		</execute>
+	setUp {
+		TestCase.setUpPortalInstance();
 
-		<execute macro="User#editPasswordViaMyAccount">
-			<var name="currentPassword" value="test" />
-			<var name="newPassword" value="password" />
-		</execute>
-
-		<execute macro="User#logoutPG" />
+		var sharepointVMHostName = PropsUtil.get("cmis.repository.vm.host.name");
 
-		<execute macro="User#loginPG">
-			<var name="authenticationMethod" value="By Screen Name" />
-			<var name="password" value="password" />
-			<var name="userScreenName" value="administrator" />
-		</execute>
-
-		<execute macro="Navigator#openURL" />
+		AntCommand(
+			locator1 = "build-test-sharepoint.xml",
+			value1 = "clean-sharepoint-repository -Dssh.host=${sharepointVMHostName}");
 
-		<execute macro="ProductMenu#gotoSitesContent">
-			<var name="portlet" value="Documents and Media" />
-		</execute>
+		User.loginPG(
+			authenticationMethod = "By Screen Name",
+			userScreenName = "test");
 
-		<execute macro="DMPortlet#setDescriptiveView" />
+		Navigator.openURL();
 
-		<execute macro="DMNavigator#gotoAddRepositoryCP" />
+		Navigator.gotoAccountSettings();
 
-		<execute macro="DMRepository#edit">
-			<var name="dmRepositoryName" value="Sharepoint Repository Name" />
-		</execute>
+		User.editUserInformation(userScreenNameEdit = "administrator");
 
-		<execute macro="DMRepository#addSharepoint">
-			<var name="dmRepositoryLibraryName" value="Documents" />
-			<var name="dmRepositorySiteURL" value="http://${sharepointVMHostName}" />
-		</execute>
+		Navigator.openURL();
 
-		<execute macro="PortletEntry#save" />
-	</set-up>
+		Navigator.gotoAccountSettings();
 
-	<tear-down>
-		<var method="TestPropsUtil#get('test.portal.instance')" name="testPortalInstance" />
+		User.editPasswordViaMyAccount(
+			currentPassword = "test",
+			newPassword = "password");
 
-		<if>
-			<equals arg1="${testPortalInstance}" arg2="true" />
-			<then>
-				<execute macro="PortalInstances#tearDownCP" />
-			</then>
-			<else>
-				<execute macro="DMRepository#tearDownCP" />
+		User.logoutPG();
 
-				<execute macro="DMDocument#tearDownCP" />
+		User.loginPG(
+			authenticationMethod = "By Screen Name",
+			password = "password",
+			userScreenName = "administrator");
 
-				<execute macro="Page#gotoMyAccount">
-					<var name="portletName" value="Account Settings" />
-				</execute>
+		Navigator.openURL();
 
-				<execute macro="User#editDetailsViaMyAccount">
-					<var name="userScreenNameEdit" value="test" />
-				</execute>
+		ProductMenu.gotoPortlet(
+			category = "Content &amp; Data",
+			portlet = "Documents and Media");
 
-				<execute macro="Page#gotoMyAccount">
-					<var name="portletName" value="Account Settings" />
-				</execute>
+		DMNavigator.gotoAddRepositoryCP();
 
-				<execute macro="User#editPasswordViaMyAccount">
-					<var name="currentPassword" value="password" />
-					<var name="newPassword" value="test" />
-				</execute>
+		DMRepository.edit(dmRepositoryName = "Sharepoint Repository Name");
 
-				<execute macro="User#logoutPG" />
+		DMRepository.addSharepoint(
+			dmRepositoryLibraryName = "Documents",
+			dmRepositoryName = "Sharepoint",
+			dmRepositorySiteURL = "http://${sharepointVMHostName}");
 
-				<execute macro="User#loginPG">
-					<var name="authenticationMethod" value="By Screen Name" />
-					<var name="password" value="test" />
-					<var name="userScreenName" value="test" />
-				</execute>
-			</else>
-		</if>
-	</tear-down>
+		PortletEntry.save();
+	}
 
-	<command name="CheckinDocument" priority="4">
-		<property name="test.name.skip.portal.instance" value="CPSharepoint#CheckinDocument" />
+	tearDown {
+		var testPortalInstance = PropsUtil.get("test.portal.instance");
 
-		<execute macro="DMRepository#gotoCP">
-			<var name="dmRepositoryName" value="Sharepoint Repository Name" />
-		</execute>
+		if ("${testPortalInstance}" == "true") {
+			PortalInstances.tearDownCP();
+		}
+		else {
+			DMRepository.tearDownCP();
 
-		<execute macro="DMDocument#addCP">
-			<var name="dmDocumentFile" value="Document_3.txt" />
-			<var name="dmDocumentTitle" value="Document_3.txt" />
-		</execute>
+			DMDocument.tearDownCP();
 
-		<execute function="Pause" locator1="5000" />
+			Navigator.openURL();
 
-		<execute macro="DMDocument#checkoutCP">
-			<var name="dmDocumentTitle" value="Document_3.txt" />
-			<var name="dmRepositoryName" value="true" />
-		</execute>
+			UserBar.gotoDropdownItem(dropdownItem = "Account Settings");
 
-		<execute macro="Navigator#openURL" />
+			User.editUserInformation(userScreenNameEdit = "test");
 
-		<execute macro="ProductMenu#gotoSitesContent">
-			<var name="portlet" value="Documents and Media" />
-		</execute>
+			Navigator.openURL();
 
-		<execute macro="DMRepository#gotoCP">
-			<var name="dmRepositoryName" value="Sharepoint Repository Name" />
-		</execute>
+			UserBar.gotoDropdownItem(dropdownItem = "Account Settings");
 
-		<execute macro="DMDocument#viewIconLockedCP">
-			<var name="dmDocumentTitle" value="Document_3.txt" />
-		</execute>
+			User.editPasswordViaMyAccount(
+				currentPassword = "password",
+				newPassword = "test");
 
-		<execute macro="DMNavigator#gotoDocumentCP">
-			<var name="dmDocumentTitle" value="Document_3.txt" />
-		</execute>
+			User.logoutPG();
 
-		<execute function="Pause" locator1="5000" />
+			User.loginPG(
+				authenticationMethod = "By Screen Name",
+				password = "test",
+				userScreenName = "test");
+		}
+	}
 
-		<execute macro="DMDocument#viewCheckedoutCP" >
-			<var name="dmRepositoryName" value="true" />
-		</execute>
+	@priority = "4"
+	test CheckinDocument {
+		property test.name.skip.portal.instance = "CPSharepoint#CheckinDocument";
 
-		<execute macro="DMDocument#checkinCP">
-			<var name="dmRepositoryName" value="true" />
-		</execute>
+		DMRepository.gotoCP(dmRepositoryName = "Sharepoint Repository Name");
 
-		<execute macro="Navigator#openURL" />
+		DMDocument.addCP(
+			dmDocumentFile = "Document_3.txt",
+			dmDocumentTitle = "Document_3.txt");
 
-		<execute macro="ProductMenu#gotoSitesContent">
-			<var name="portlet" value="Documents and Media" />
-		</execute>
+		Pause(locator1 = "5000");
 
-		<execute macro="DMRepository#gotoCP">
-			<var name="dmRepositoryName" value="Sharepoint Repository Name" />
-		</execute>
+		DMDocument.checkoutCP(
+			dmDocumentTitle = "Document_3.txt",
+			dmRepositoryName = "true");
 
-		<var name="key_dmDocumentTitle" value="Document_3.txt" />
+		Navigator.openURL();
 
-		<execute function="AssertElementNotPresent" locator1="DocumentsAndMedia#ICON_DOCUMENT_ICON_NOT_LOCKED" />
+		ProductMenu.gotoPortlet(
+			category = "Content &amp; Data",
+			portlet = "Documents and Media");
 
-		<execute macro="DMNavigator#gotoDocumentCP">
-			<var name="dmDocumentTitle" value="Document_3.txt" />
-		</execute>
+		DMRepository.gotoCP(dmRepositoryName = "Sharepoint Repository Name");
 
-		<execute macro="DMDocument#viewCheckedinCP" >
-			<var name="dmDocumentVersionNumber" value="2.0" />
-			<var name="dmRepositoryName" value="true" />
-		</execute>
-	</command>
+		DMDocument.viewIconLockedCP(dmDocumentTitle = "Document_3.txt");
 
-	<command name="DeleteDocumentInSubfolder" priority="4">
-		<execute macro="DMRepository#gotoCP">
-			<var name="dmRepositoryName" value="Sharepoint Repository Name" />
-		</execute>
+		DMNavigator.gotoDocumentCP(dmDocumentTitle = "Document_3.txt");
 
-		<execute macro="DMFolder#addSubfolderCP">
-			<var name="dmSubFolderName" value="DM Folder3 Name" />
-		</execute>
+		Pause(locator1 = "5000");
 
-		<execute macro="DMFolder#viewCP">
-			<var name="dmFolderName" value="DM Folder3 Name" />
-		</execute>
+		DMDocument.viewCheckedoutCP(dmRepositoryName = "true");
 
-		<execute macro="DMNavigator#gotoFolder">
-			<var name="dmFolderName" value="DM Folder3 Name" />
-		</execute>
+		DMDocument.checkinCP(dmRepositoryName = "true");
 
-		<execute macro="DMDocument#addCP">
-			<var name="dmDocumentFile" value="Document_2.doc" />
-			<var name="dmDocumentTitle" value="Document_2.doc" />
-		</execute>
+		Navigator.openURL();
 
-		<execute macro="Navigator#openURL" />
+		ProductMenu.gotoPortlet(
+			category = "Content &amp; Data",
+			portlet = "Documents and Media");
 
-		<execute macro="ProductMenu#gotoSitesContent">
-			<var name="portlet" value="Documents and Media" />
-		</execute>
+		DMRepository.gotoCP(dmRepositoryName = "Sharepoint Repository Name");
 
-		<execute macro="DMRepository#gotoCP">
-			<var name="dmRepositoryName" value="Sharepoint Repository Name" />
-		</execute>
+		Pause(locator1 = "5000");
 
-		<execute macro="DMNavigator#gotoFolder">
-			<var name="dmFolderName" value="DM Folder3 Name" />
-		</execute>
+		var key_dmDocumentTitle = "Document_3.txt";
 
-		<execute macro="DMNavigator#gotoDocumentCP">
-			<var name="dmDocumentTitle" value="Document_2.doc" />
-		</execute>
+		AssertElementNotPresent(locator1 = "DocumentsAndMedia#ICON_DOCUMENT_ICON_NOT_LOCKED");
 
-		<execute macro="DMDocument#viewCP">
-			<var name="dmDocumentTitle" value="Document_2.doc" />
-		</execute>
+		DMNavigator.gotoDocumentCP(dmDocumentTitle = "Document_3.txt");
 
-		<execute macro="Navigator#openURL" />
+		DMDocument.viewCheckedinCP(
+			dmDocumentVersionNumber = "2.0",
+			dmRepositoryName = "true");
+	}
 
-		<execute macro="ProductMenu#gotoSitesContent">
-			<var name="portlet" value="Documents and Media" />
-		</execute>
+	@priority = "4"
+	test DeleteDocumentInSubfolder {
+		DMRepository.gotoCP(dmRepositoryName = "Sharepoint Repository Name");
 
-		<execute macro="DMRepository#gotoCP">
-			<var name="dmRepositoryName" value="Sharepoint Repository Name" />
-		</execute>
+		DMFolder.addCP(dmFolderName = "DM Folder3 Name");
 
-		<execute macro="DMNavigator#gotoFolder">
-			<var name="dmFolderName" value="DM Folder3 Name" />
-		</execute>
+		DMFolder.viewCP(dmFolderName = "DM Folder3 Name");
 
-		<execute macro="DMDocument#deleteCP">
-			<var name="dmDocumentTitle" value="Document_2.doc" />
-			<var name="recycleBinDisabled" value="true" />
-		</execute>
+		DMDocument.addCP(
+			dmDocumentFile = "Document_2.doc",
+			dmDocumentTitle = "Document_2.doc");
 
-		<execute macro="Navigator#openURL" />
+		Navigator.openURL();
 
-		<execute macro="ProductMenu#gotoSitesContent">
-			<var name="portlet" value="Documents and Media" />
-		</execute>
+		ProductMenu.gotoPortlet(
+			category = "Content &amp; Data",
+			portlet = "Documents and Media");
 
-		<execute macro="DMRepository#gotoCP">
-			<var name="dmRepositoryName" value="Sharepoint Repository Name" />
-		</execute>
+		DMRepository.gotoCP(dmRepositoryName = "Sharepoint Repository Name");
 
-		<execute macro="DMNavigator#gotoFolder">
-			<var name="dmFolderName" value="DM Folder3 Name" />
-		</execute>
+		DMNavigator.gotoFolder(dmFolderName = "DM Folder3 Name");
 
-		<execute macro="DMDocument#cannotViewCP">
-			<var name="dmDocumentTitle" value="Document_2.doc" />
-		</execute>
+		DMNavigator.gotoDocumentCP(dmDocumentTitle = "Document_2.doc");
 
-		<execute macro="DMDocument#viewDefaultCP" />
-	</command>
+		DMDocument.viewCP(dmDocumentTitle = "Document_2.doc");
 
-	<command name="DeleteSubfolder" priority="4">
-		<property name="test.name.skip.portal.instance" value="CPSharepoint#DeleteSubfolder" />
+		Navigator.openURL();
 
-		<execute macro="DMRepository#gotoCP">
-			<var name="dmRepositoryName" value="Sharepoint Repository Name" />
-		</execute>
+		ProductMenu.gotoPortlet(
+			category = "Content &amp; Data",
+			portlet = "Documents and Media");
 
-		<execute macro="DMFolder#addSubfolderCP">
-			<var name="dmSubFolderName" value="DM Folder Name" />
-		</execute>
+		DMRepository.gotoCP(dmRepositoryName = "Sharepoint Repository Name");
 
-		<execute macro="DMFolder#deleteCP">
-			<var name="dmFolderName" value="DM Folder Name" />
-			<var name="recycleBinDisabled" value="true" />
-		</execute>
+		DMNavigator.gotoFolder(dmFolderName = "DM Folder3 Name");
 
-		<execute macro="Navigator#openURL" />
+		DMDocument.deleteCP(
+			dmDocumentTitle = "Document_2.doc",
+			recycleBinDisabled = "true");
 
-		<execute macro="ProductMenu#gotoSitesContent">
-			<var name="portlet" value="Documents and Media" />
-		</execute>
+		Navigator.openURL();
 
-		<execute macro="DMRepository#gotoCP">
-			<var name="dmRepositoryName" value="Sharepoint Repository Name" />
-		</execute>
+		ProductMenu.gotoPortlet(
+			category = "Content &amp; Data",
+			portlet = "Documents and Media");
 
-		<execute macro="DMFolder#cannotViewCP">
-			<var name="dmFolderName" value="DM Folder Name" />
-		</execute>
+		DMRepository.gotoCP(dmRepositoryName = "Sharepoint Repository Name");
 
-		<execute macro="DMFolder#viewDefaultCP" />
-	</command>
+		DMNavigator.gotoFolder(dmFolderName = "DM Folder3 Name");
 
-	<command name="EditDocumentFile" priority="4">
-		<property name="test.name.skip.portal.instance" value="CPSharepoint#EditDocumentFile" />
+		DMDocument.cannotViewCP(dmDocumentTitle = "Document_2.doc");
 
-		<execute macro="DMRepository#gotoCP">
-			<var name="dmRepositoryName" value="Sharepoint Repository Name" />
-		</execute>
+		DMDocument.viewDefaultCP();
+	}
 
-		<execute macro="DMDocument#addCP">
-			<var name="dmDocumentFile" value="Document_3.doc" />
-			<var name="dmDocumentTitle" value="Document_3.doc" />
-		</execute>
+	@priority = "4"
+	test DeleteSubfolder {
+		property test.name.skip.portal.instance = "CPSharepoint#DeleteSubfolder";
 
-		<execute macro="DMNavigator#gotoDocumentCP">
-			<var name="dmDocumentTitle" value="Document_3.doc" />
-		</execute>
+		DMRepository.gotoCP(dmRepositoryName = "Sharepoint Repository Name");
 
-		<execute macro="DMDocument#viewCP">
-			<var name="dmDocumentSize" value="24KB" />
-			<var name="dmDocumentTitle" value="DM Document Title" />
-		</execute>
+		DMFolder.addCP(dmFolderName = "DM Folder Name");
 
-		<execute macro="DMDocument#editCP">
-			<var name="dmDocumentFileEdit" value="Document_2.jpg" />
-			<var name="dmDocumentTitle" value="Document_3.doc" />
-		</execute>
+		DMFolder.deleteCP(
+			dmFolderName = "DM Folder Name",
+			recycleBinDisabled = "true");
 
-		<execute macro="Navigator#openURL" />
+		Navigator.openURL();
 
-		<execute macro="ProductMenu#gotoSitesContent">
-			<var name="portlet" value="Documents and Media" />
-		</execute>
+		ProductMenu.gotoPortlet(
+			category = "Content &amp; Data",
+			portlet = "Documents and Media");
 
-		<execute macro="DMRepository#gotoCP">
-			<var name="dmRepositoryName" value="Sharepoint Repository Name" />
-		</execute>
+		DMRepository.gotoCP(dmRepositoryName = "Sharepoint Repository Name");
 
-		<execute macro="DMNavigator#gotoDocumentCP">
-			<var name="dmDocumentTitle" value="Document_3.doc" />
-		</execute>
+		DMFolder.cannotViewCP(dmFolderName = "DM Folder Name");
 
-		<execute macro="DMDocument#viewCP">
-			<var name="dmDocumentSize" value="30KB" />
-			<var name="dmDocumentTitle" value="Document_3.doc" />
-		</execute>
+		DMFolder.viewDefaultCP();
+	}
 
-		<execute macro="DMDocument#viewDocumentMetadataCP">
-			<var name="metadataData" value="image/jpeg" />
-			<var name="metadataLabel" value="Content Type" />
-		</execute>
+	@priority = "4"
+	test EditDocumentFile {
+		property test.name.skip.portal.instance = "CPSharepoint#EditDocumentFile";
 
-		<execute macro="DMDocument#cannotViewDocumentMetadataCP">
-			<var name="metadataData" value="ISO-8859-1" />
-			<var name="metadataLabel" value="Content Encoding" />
-		</execute>
-	</command>
+		DMRepository.gotoCP(dmRepositoryName = "Sharepoint Repository Name");
 
-	<command name="MoveCheckedoutDocumentToFolder" priority="4">
-		<property name="test.name.skip.portal.instance" value="CPSharepoint#MoveCheckedoutDocumentToFolder" />
+		DMDocument.addCP(
+			dmDocumentFile = "Document_3.doc",
+			dmDocumentTitle = "Document_3.doc");
 
-		<execute macro="Navigator#openURL" />
+		DMNavigator.gotoDocumentCP(dmDocumentTitle = "Document_3.doc");
 
-		<execute macro="ProductMenu#gotoSitesContent">
-			<var name="portlet" value="Documents and Media" />
-		</execute>
+		DMDocument.viewCP(
+			dmDocumentSize = "32 KB",
+			dmDocumentTitle = "Document_3.doc");
 
-		<execute macro="DMRepository#gotoCP">
-			<var name="dmRepositoryName" value="Sharepoint Repository Name" />
-		</execute>
+		Navigator.openURL();
 
-		<execute macro="DMFolder#addSubfolderCP">
-			<var name="dmSubFolderName" value="Sharepoint Subfolder" />
-		</execute>
+		ProductMenu.gotoPortlet(
+			category = "Content &amp; Data",
+			portlet = "Documents and Media");
 
-		<execute macro="DMFolder#viewCP">
-			<var name="dmFolderName" value="Sharepoint Subfolder" />
-		</execute>
+		DMRepository.gotoCP(dmRepositoryName = "Sharepoint Repository Name");
 
-		<execute macro="Navigator#openURL" />
+		DMDocument.editCP(
+			dmDocumentFileEdit = "Document_2.jpg",
+			dmDocumentTitle = "Document_3.doc");
 
-		<execute macro="ProductMenu#gotoSitesContent">
-			<var name="portlet" value="Documents and Media" />
-		</execute>
+		Navigator.openURL();
 
-		<execute macro="DMRepository#gotoCP">
-			<var name="dmRepositoryName" value="Sharepoint Repository Name" />
-		</execute>
+		ProductMenu.gotoPortlet(
+			category = "Content &amp; Data",
+			portlet = "Documents and Media");
 
-		<execute macro="DMDocument#addCP">
-			<var name="dmDocumentFile" value="Document_1.txt" />
-			<var name="dmDocumentTitle" value="Document_1.txt" />
-		</execute>
+		DMRepository.gotoCP(dmRepositoryName = "Sharepoint Repository Name");
 
-		<execute macro="DMDocument#checkoutCP">
-			<var name="dmDocumentTitle" value="Document_1.txt" />
-			<var name="dmRepositoryName" value="true" />
-		</execute>
+		DMNavigator.gotoDocumentCP(dmDocumentTitle = "Document_3.doc");
 
-		<execute macro="Navigator#openURL" />
+		DMDocument.viewCP(
+			dmDocumentSize = "30 KB",
+			dmDocumentTitle = "Document_3.doc");
 
-		<execute macro="ProductMenu#gotoSitesContent">
-			<var name="portlet" value="Documents and Media" />
-		</execute>
+		DMDocument.cannotViewDocumentMetadataCP(
+			metadataData = "image/jpeg",
+			metadataLabel = "Content Type");
 
-		<execute macro="DMRepository#gotoCP">
-			<var name="dmRepositoryName" value="Sharepoint Repository Name" />
-		</execute>
+		DMDocument.cannotViewDocumentMetadataCP(
+			metadataData = "ISO-8859-1",
+			metadataLabel = "Content Encoding");
+	}
 
-		<execute macro="DMDocument#viewIconLockedCP">
-			<var name="dmDocumentTitle" value="Document_1.txt" />
-		</execute>
+	@priority = "4"
+	test EditRepository {
+		property test.name.skip.portal.instance = "CPSharepoint#EditRepository";
 
-		<execute macro="DMNavigator#gotoDocumentCP">
-			<var name="dmDocumentTitle" value="Document_1.txt" />
-		</execute>
+		Navigator.openURL();
 
-		<execute macro="DMDocument#viewCheckedoutCP" >
-			<var name="dmRepositoryName" value="true" />
-		</execute>
+		ProductMenu.gotoPortlet(
+			category = "Content &amp; Data",
+			portlet = "Documents and Media");
 
-		<execute macro="Navigator#openURL" />
+		DMRepository.gotoCP(dmRepositoryName = "Sharepoint Repository Name");
 
-		<execute macro="ProductMenu#gotoSitesContent">
-			<var name="portlet" value="Documents and Media" />
-		</execute>
+		DMRepository.viewBreadcrumb(dmRepositoryName = "Sharepoint Repository Name");
 
-		<execute macro="DMRepository#gotoCP">
-			<var name="dmRepositoryName" value="Sharepoint Repository Name" />
-		</execute>
+		DMDocument.expandInfo();
 
-		<execute macro="DMPortlet#setIconView" />
+		Click(locator1 = "Icon#BODY_VERTICAL_ELLIPSIS");
 
-		<execute macro="DMDocument#moveToSubFolderCP">
-			<var name="dmDocumentTitle" value="Document_1.txt" />
-			<var name="dmFolderName" value="Sharepoint Repository Name" />
-			<var name="dmSubFolderName" value="Sharepoint Subfolder" />
-		</execute>
+		AssertElementNotPresent(
+			key_menuItem = "Download",
+			locator1 = "DocumentsAndMedia#SIDEBAR_MENU_ITEM");
+		AssertElementNotPresent(
+			key_menuItem = "Move",
+			locator1 = "DocumentsAndMedia#SIDEBAR_MENU_ITEM");
+		AssertElementPresent(
+			key_menuItem = "Add Folder",
+			locator1 = "DocumentsAndMedia#SIDEBAR_MENU_ITEM");
+		AssertElementPresent(
+			key_menuItem = "Delete",
+			locator1 = "DocumentsAndMedia#SIDEBAR_MENU_ITEM");
+		AssertElementPresent(
+			key_menuItem = "Edit",
+			locator1 = "DocumentsAndMedia#SIDEBAR_MENU_ITEM");
 
-		<execute macro="DMDocument#viewMovedToFolderCP">
-			<var name="dmDocumentTitle" value="Document_1.txt" />
-			<var name="dmFolderName" value="Sharepoint Subfolder" />
-		</execute>
+		DMNavigator.openDocumentsAndMediaAdmin(siteURLKey = "guest");
 
-		<execute macro="DMDocument#viewIconLockedCP">
-			<var name="dmDocumentTitle" value="Document_1.txt" />
-		</execute>
+		DMRepository.gotoCP(dmRepositoryName = "Sharepoint Repository Name");
 
-		<execute macro="DMNavigator#gotoDocumentCP">
-			<var name="dmDocumentTitle" value="Document_1.txt" />
-		</execute>
+		Click(locator1 = "Icon#HEADER_VERTICAL_ELLIPSIS");
 
-		<execute macro="DMDocument#viewCheckedoutCP" >
-			<var name="dmRepositoryName" value="true" />
-		</execute>
-	</command>
+		MenuItem.viewNotPresent(menuItem = "Download");
+		MenuItem.viewNotPresent(menuItem = "Move");
+		MenuItem.viewPresent(menuItem = "Delete");
+		MenuItem.viewPresent(menuItem = "Edit");
 
-	<command name="MoveDocumentToHome" priority="4">
-		<property name="test.name.skip.portal.instance" value="CPSharepoint#MoveDocumentToHome" />
+		MenuItem.click(menuItem = "Edit");
 
-		<execute macro="DMRepository#gotoCP">
-			<var name="dmRepositoryName" value="Sharepoint Repository Name" />
-		</execute>
+		DMRepository.edit(dmRepositoryName = "Sharepoint Repository Name Edit");
 
-		<execute macro="DMDocument#addCP">
-			<var name="dmDocumentFile" value="Document_1.odt" />
-			<var name="dmDocumentTitle" value="Document_1.odt" />
-		</execute>
+		PortletEntry.save();
 
-		<execute macro="DMDocument#moveToFolderCP">
-			<var name="dmDocumentTitle" value="Document_1.odt" />
-			<var name="dmFolderName" value="Home" />
-		</execute>
+		ProductMenu.gotoPortlet(
+			category = "Content &amp; Data",
+			portlet = "Documents and Media");
 
-		<execute macro="Navigator#openURL" />
+		AssertTextEquals(
+			key_dmRepositoryName = "Sharepoint Repository Name Edit",
+			locator1 = "DocumentsAndMedia#REPOSITORY_FOLDER_NAME_DESCRIPTIVE_VIEW",
+			value1 = "Sharepoint Repository Name Edit");
+	}
 
-		<execute macro="ProductMenu#gotoSitesContent">
-			<var name="portlet" value="Documents and Media" />
-		</execute>
+	@priority = "4"
+	test MoveCheckedoutDocumentToFolder {
+		property test.name.skip.portal.instance = "CPSharepoint#MoveCheckedoutDocumentToFolder";
 
-		<execute macro="DMNavigator#gotoDocumentCP">
-			<var name="dmDocumentTitle" value="Document_1.odt" />
-		</execute>
+		Navigator.openURL();
 
-		<execute macro="DMDocument#viewCP">
-			<var name="dmDocumentTitle" value="Document_1.odt" />
-		</execute>
+		ProductMenu.gotoPortlet(
+			category = "Content &amp; Data",
+			portlet = "Documents and Media");
 
-		<execute macro="Navigator#openURL" />
+		DMRepository.gotoCP(dmRepositoryName = "Sharepoint Repository Name");
 
-		<execute macro="ProductMenu#gotoSitesContent">
-			<var name="portlet" value="Documents and Media" />
-		</execute>
+		DMFolder.addCP(dmFolderName = "Sharepoint Subfolder");
 
-		<execute macro="DMRepository#gotoCP">
-			<var name="dmRepositoryName" value="Sharepoint Repository Name" />
-		</execute>
+		DMFolder.viewCP(dmFolderName = "Sharepoint Subfolder");
 
-		<execute macro="DMDocument#cannotViewCP">
-			<var name="dmDocumentTitle" value="Document_1.odt" />
-		</execute>
-	</command>
+		Navigator.openURL();
 
-	<command name="SearchDocumentViaHome" priority="4">
-		<property name="test.name.skip.portal.instance" value="CPSharepoint#SearchDocumentViaHome" />
+		ProductMenu.gotoPortlet(
+			category = "Content &amp; Data",
+			portlet = "Documents and Media");
 
-		<execute macro="DMRepository#gotoCP">
-			<var name="dmRepositoryName" value="Sharepoint Repository Name" />
-		</execute>
+		DMRepository.gotoCP(dmRepositoryName = "Sharepoint Repository Name");
 
-		<execute macro="DMDocument#addCP">
-			<var name="dmDocumentFile" value="Document_3.odt" />
-			<var name="dmDocumentTitle" value="Document_3.odt" />
-		</execute>
+		DMDocument.addCP(
+			dmDocumentFile = "Document_1.txt",
+			dmDocumentTitle = "Document_1.txt");
 
-		<execute macro="Navigator#openURL" />
+		DMDocument.checkoutCP(
+			dmDocumentTitle = "Document_1.txt",
+			dmRepositoryName = "true");
 
-		<execute macro="ProductMenu#gotoSitesContent">
-			<var name="portlet" value="Documents and Media" />
-		</execute>
+		Navigator.openURL();
 
-		<execute macro="DMDocument#searchCP">
-			<var name="dmDocumentKeyword" value="Document_3.odt" />
-		</execute>
+		ProductMenu.gotoPortlet(
+			category = "Content &amp; Data",
+			portlet = "Documents and Media");
 
-		<execute macro="DMDocument#viewSearchResultsCP">
-			<var name="dmDocumentTitle" value="Document_3.odt" />
-			<var name="dmRepositoryName" value="Sharepoint Repository Name" />
-		</execute>
-	</command>
+		DMRepository.gotoCP(dmRepositoryName = "Sharepoint Repository Name");
 
-	<command name="ViewEditedCheckedoutDocument" priority="4">
-		<property name="test.name.skip.portal.instance" value="CPSharepoint#ViewEditedCheckedoutDocument" />
+		DMDocument.viewIconLockedCP(dmDocumentTitle = "Document_1.txt");
 
-		<execute macro="DMRepository#gotoCP">
-			<var name="dmRepositoryName" value="Sharepoint Repository Name" />
-		</execute>
+		DMNavigator.gotoDocumentCP(dmDocumentTitle = "Document_1.txt");
 
-		<execute macro="DMDocument#addCP">
-			<var name="dmDocumentFile" value="Document_1.xls" />
-			<var name="dmDocumentTitle" value="Document_1.xls" />
-		</execute>
+		DMDocument.viewCheckedoutCP(dmRepositoryName = "true");
 
-		<execute macro="DMDocument#checkoutCP">
-			<var name="dmDocumentTitle" value="Document_1.xls" />
-			<var name="dmRepositoryName" value="true" />
-		</execute>
+		Navigator.openURL();
 
-		<execute macro="Navigator#openURL" />
+		ProductMenu.gotoPortlet(
+			category = "Content &amp; Data",
+			portlet = "Documents and Media");
 
-		<execute macro="ProductMenu#gotoSitesContent">
-			<var name="portlet" value="Documents and Media" />
-		</execute>
+		DMRepository.gotoCP(dmRepositoryName = "Sharepoint Repository Name");
 
-		<execute macro="DMRepository#gotoCP">
-			<var name="dmRepositoryName" value="Sharepoint Repository Name" />
-		</execute>
+		DMDocument.moveToSubFolderCP(
+			dmDocumentTitle = "Document_1.txt",
+			dmFolderName = "Sharepoint Repository Name",
+			dmSubFolderName = "Sharepoint Subfolder");
 
-		<execute macro="DMNavigator#gotoEditDocument">
-			<var name="dmDocumentTitle" value="Document_1.xls" />
-		</execute>
+		DMDocument.viewMovedToFolderCP(
+			dmDocumentTitle = "Document_1.txt",
+			dmFolderName = "Sharepoint Subfolder");
 
-		<execute macro="DMDocument#editCmd">
-			<var name="dmDocumentTitleEdit" value="Document_1_Edit.xls" />
-		</execute>
+		DMDocument.viewIconLockedCP(dmDocumentTitle = "Document_1.txt");
 
-		<execute function="AssertClick" locator1="Button#SAVE" value1="Save" />
+		DMNavigator.gotoDocumentCP(dmDocumentTitle = "Document_1.txt");
 
-		<execute macro="Alert#viewSuccessMessage" />
+		DMDocument.viewCheckedoutCP(dmRepositoryName = "true");
+	}
 
-		<execute macro="Navigator#openURL" />
+	@priority = "4"
+	test MoveDocumentToHome {
+		property test.name.skip.portal.instance = "CPSharepoint#MoveDocumentToHome";
 
-		<execute macro="ProductMenu#gotoSitesContent">
-			<var name="portlet" value="Documents and Media" />
-		</execute>
+		DMRepository.gotoCP(dmRepositoryName = "Sharepoint Repository Name");
 
-		<execute macro="DMRepository#gotoCP">
-			<var name="dmRepositoryName" value="Sharepoint Repository Name" />
-		</execute>
+		DMDocument.addCP(
+			dmDocumentFile = "Document_1.odt",
+			dmDocumentTitle = "Document_1.odt");
 
-		<execute macro="DMDocument#viewIconLockedCP">
-			<var name="dmDocumentTitle" value="Document_1_Edit.xls" />
-		</execute>
+		DMDocument.moveToFolderCP(
+			dmDocumentTitle = "Document_1.odt",
+			dmFolderName = "Home");
 
-		<execute macro="DMNavigator#gotoDocumentCP">
-			<var name="dmDocumentTitle" value="Document_1_Edit.xls" />
-		</execute>
+		Navigator.openURL();
 
-		<execute macro="DMDocument#viewCheckedoutCP" >
-			<var name="dmRepositoryName" value="true" />
-		</execute>
-	</command>
+		ProductMenu.gotoPortlet(
+			category = "Content &amp; Data",
+			portlet = "Documents and Media");
 
-	<command name="ViewOriginalFileExtensionAfterUnsuccessfulExtensionChange" priority="4">
-		<property name="test.name.skip.portal.instance" value="CPSharepoint#ViewOriginalFileExtensionAfterUnsuccessfulExtensionChange" />
+		DMNavigator.gotoDocumentCP(dmDocumentTitle = "Document_1.odt");
 
-		<execute macro="DMRepository#gotoCP">
-			<var name="dmRepositoryName" value="Sharepoint Repository Name" />
-		</execute>
+		DMDocument.viewCP(dmDocumentTitle = "Document_1.odt");
 
-		<execute macro="DMDocument#addCP">
-			<var name="dmDocumentFile" value="Document_1.docx" />
-			<var name="dmDocumentTitle" value="Document_1.docx" />
-		</execute>
+		Navigator.openURL();
 
-		<execute macro="DMNavigator#gotoEditDocument">
-			<var name="dmDocumentTitle" value="Document_1.docx" />
-		</execute>
+		ProductMenu.gotoPortlet(
+			category = "Content &amp; Data",
+			portlet = "Documents and Media");
 
-		<execute macro="DMDocument#editCmd">
-			<var name="dmDocumentTitleEdit" value="Document_1.jpg" />
-		</execute>
+		DMRepository.gotoCP(dmRepositoryName = "Sharepoint Repository Name");
 
-		<execute function="Click" locator1="Button#PUBLISH" />
+		DMDocument.cannotViewCP(dmDocumentTitle = "Document_1.odt");
+	}
 
-		<execute macro="Alert#viewRequestFailedToComplete" />
+	@priority = "4"
+	test SearchDocumentViaHome {
+		property test.name.skip.portal.instance = "CPSharepoint#SearchDocumentViaHome";
 
-		<execute function="AssertTextEquals#assertPartialText" locator1="Message#ERROR_2" value1="The source file does not have the same extension as the original file." />
+		DMRepository.gotoCP(dmRepositoryName = "Sharepoint Repository Name");
 
-		<execute macro="Navigator#openURL" />
+		DMDocument.addCP(
+			dmDocumentFile = "Document_3.odt",
+			dmDocumentTitle = "Document_3.odt");
 
-		<execute macro="ProductMenu#gotoSitesContent">
-			<var name="portlet" value="Documents and Media" />
-		</execute>
+		Navigator.openURL();
 
-		<execute macro="DMRepository#gotoCP">
-			<var name="dmRepositoryName" value="Sharepoint Repository Name" />
-		</execute>
+		ProductMenu.gotoPortlet(
+			category = "Content &amp; Data",
+			portlet = "Documents and Media");
 
-		<execute macro="DMNavigator#gotoDocumentCP">
-			<var name="dmDocumentTitle" value="Document_1.docx" />
-		</execute>
+		Search.searchCP(searchTerm = "Document_3.odt");
 
-		<execute macro="DMDocument#viewCP">
-			<var name="dmDocumentTitle" value="Document_1.docx" />
-		</execute>
-	</command>
+		DMDocument.viewSearchResultsCP(
+			dmDocumentTitle = "Document_3.odt",
+			dmRepositoryName = "Sharepoint Repository Name");
+	}
 
-	<command name="ViewOriginalFileExtensionAfterUnsuccessfulExtensionRemoval" priority="4">
-		<property name="test.name.skip.portal.instance" value="CPSharepoint#ViewOriginalFileExtensionAfterUnsuccessfulExtensionRemoval" />
+	@priority = "4"
+	test ViewEditedCheckedoutDocument {
+		property test.name.skip.portal.instance = "CPSharepoint#ViewEditedCheckedoutDocument";
 
-		<execute macro="DMRepository#gotoCP">
-			<var name="dmRepositoryName" value="Sharepoint Repository Name" />
-		</execute>
+		DMRepository.gotoCP(dmRepositoryName = "Sharepoint Repository Name");
 
-		<execute macro="DMDocument#addCP">
-			<var name="dmDocumentFile" value="Document_3.docx" />
-			<var name="dmDocumentTitle" value="Document_3.docx" />
-		</execute>
+		DMDocument.addCP(
+			dmDocumentFile = "Document_1.xls",
+			dmDocumentTitle = "Document_1.xls");
 
-		<execute macro="DMNavigator#gotoEditDocument">
-			<var name="dmDocumentTitle" value="Document_3.docx" />
-		</execute>
+		DMDocument.checkoutCP(
+			dmDocumentTitle = "Document_1.xls",
+			dmRepositoryName = "true");
 
-		<execute macro="DMDocument#editCmd">
-			<var name="dmDocumentTitleEdit" value="Document_3" />
-		</execute>
+		Navigator.openURL();
 
-		<execute function="Click" locator1="Button#PUBLISH" />
+		ProductMenu.gotoPortlet(
+			category = "Content &amp; Data",
+			portlet = "Documents and Media");
 
-		<execute macro="Alert#viewRequestFailedToComplete" />
+		DMRepository.gotoCP(dmRepositoryName = "Sharepoint Repository Name");
 
-		<execute function="AssertTextEquals#assertPartialText" locator1="Message#ERROR_2" value1="The source file does not have the same extension as the original file." />
+		LexiconEntry.gotoEntryMenuItem(
+			menuItem = "Edit",
+			rowEntry = "Document_1.xls");
 
-		<execute macro="Navigator#openURL" />
+		DMDocument.editCmd(dmDocumentTitleEdit = "Document_1_Edit.xls");
 
-		<execute macro="ProductMenu#gotoSitesContent">
-			<var name="portlet" value="Documents and Media" />
-		</execute>
+		AssertClick(
+			locator1 = "Button#SAVE",
+			value1 = "Save");
 
-		<execute macro="DMRepository#gotoCP">
-			<var name="dmRepositoryName" value="Sharepoint Repository Name" />
-		</execute>
+		Alert.viewSuccessMessage();
 
-		<execute macro="DMNavigator#gotoDocumentCP">
-			<var name="dmDocumentTitle" value="Document_3.docx" />
-		</execute>
+		Navigator.openURL();
 
-		<execute macro="DMDocument#viewCP">
-			<var name="dmDocumentTitle" value="Document_3.docx" />
-		</execute>
-	</command>
+		ProductMenu.gotoPortlet(
+			category = "Content &amp; Data",
+			portlet = "Documents and Media");
 
-	<command name="ViewRepository" priority="4">
-		<property name="test.name.skip.portal.instance" value="CPSharepoint#ViewRepository" />
+		DMRepository.gotoCP(dmRepositoryName = "Sharepoint Repository Name");
 
-		<execute macro="Navigator#openURL" />
+		DMDocument.viewIconLockedCP(dmDocumentTitle = "Document_1_Edit.xls");
 
-		<execute macro="ProductMenu#gotoSitesContent">
-			<var name="portlet" value="Documents and Media" />
-		</execute>
+		DMNavigator.gotoDocumentCP(dmDocumentTitle = "Document_1_Edit.xls");
 
-		<execute macro="DMRepository#gotoCP">
-			<var name="dmRepositoryName" value="Sharepoint Repository Name" />
-		</execute>
+		DMDocument.viewCheckedoutCP(dmRepositoryName = "true");
+	}
 
-		<execute macro="DMRepository#viewBreadcrumb">
-			<var name="dmRepositoryName" value="Sharepoint Repository Name" />
-		</execute>
-	</command>
-</definition>
+	@priority = "4"
+	test ViewOriginalFileExtensionAfterUnsuccessfulExtensionChange {
+		property test.name.skip.portal.instance = "CPSharepoint#ViewOriginalFileExtensionAfterUnsuccessfulExtensionChange";
+
+		DMRepository.gotoCP(dmRepositoryName = "Sharepoint Repository Name");
+
+		DMDocument.addCP(
+			dmDocumentFile = "Document_1.docx",
+			dmDocumentTitle = "Document_1.docx");
+
+		LexiconEntry.gotoEntryMenuItem(
+			menuItem = "Edit",
+			rowEntry = "Document_1.docx");
+
+		DMDocument.editCmd(dmDocumentTitleEdit = "Document_1.jpg");
+
+		Click(locator1 = "Button#PUBLISH");
+
+		Alert.viewRequestFailedToComplete();
+
+		AssertTextEquals.assertPartialText(
+			locator1 = "Message#ERROR_PUBLISH_UNSUCCESSFUL_EXTENSION",
+			value1 = "The source file does not have the same extension as the original file.");
+
+		Navigator.openURL();
+
+		ProductMenu.gotoPortlet(
+			category = "Content &amp; Data",
+			portlet = "Documents and Media");
+
+		DMRepository.gotoCP(dmRepositoryName = "Sharepoint Repository Name");
+
+		DMNavigator.gotoDocumentCP(dmDocumentTitle = "Document_1.docx");
+
+		DMDocument.viewCP(dmDocumentTitle = "Document_1.docx");
+	}
+
+	@priority = "4"
+	test ViewOriginalFileExtensionAfterUnsuccessfulExtensionRemoval {
+		property test.name.skip.portal.instance = "CPSharepoint#ViewOriginalFileExtensionAfterUnsuccessfulExtensionRemoval";
+
+		Navigator.openURL();
+
+		ProductMenu.gotoPortlet(
+			category = "Content &amp; Data",
+			portlet = "Documents and Media");
+
+		DMRepository.gotoCP(dmRepositoryName = "Sharepoint Repository Name");
+
+		DMDocument.addCP(
+			dmDocumentFile = "Document_3.docx",
+			dmDocumentTitle = "Document_3.docx");
+
+		LexiconEntry.gotoEntryMenuItem(
+			menuItem = "Edit",
+			rowEntry = "Document_3.docx");
+
+		DMDocument.editCmd(dmDocumentTitleEdit = "Document_3");
+
+		Click(locator1 = "Button#PUBLISH");
+
+		Alert.viewRequestFailedToComplete();
+
+		AssertTextEquals.assertPartialText(
+			locator1 = "Message#ERROR_PUBLISH_UNSUCCESSFUL_EXTENSION",
+			value1 = "The source file does not have the same extension as the original file.");
+
+		Navigator.openURL();
+
+		ProductMenu.gotoPortlet(
+			category = "Content &amp; Data",
+			portlet = "Documents and Media");
+
+		DMRepository.gotoCP(dmRepositoryName = "Sharepoint Repository Name");
+
+		DMNavigator.gotoDocumentCP(dmDocumentTitle = "Document_3.docx");
+
+		DMDocument.viewCP(dmDocumentTitle = "Document_3.docx");
+	}
+
+}

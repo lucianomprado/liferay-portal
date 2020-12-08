@@ -14,21 +14,22 @@
 
 package com.liferay.portal.kernel.jsonwebservice;
 
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.annotation.ImplementationClassName;
 import com.liferay.portal.kernel.servlet.HttpMethods;
 import com.liferay.portal.kernel.util.CamelCaseUtil;
-import com.liferay.portal.kernel.util.MethodParameter;
-import com.liferay.portal.kernel.util.MethodParametersResolverUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.kernel.util.SetUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 
 import java.io.InputStream;
 import java.io.OutputStream;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 
 import java.util.Set;
 
@@ -40,9 +41,7 @@ public class JSONWebServiceNaming {
 	public String convertMethodToHttpMethod(Method method) {
 		String methodName = method.getName();
 
-		String methodNamePrefix = getMethodNamePrefix(methodName);
-
-		if (prefixes.contains(methodNamePrefix)) {
+		if (prefixes.contains(getMethodNamePrefix(methodName))) {
 			return HttpMethods.GET;
 		}
 
@@ -54,6 +53,13 @@ public class JSONWebServiceNaming {
 	}
 
 	public String convertModelClassToImplClassName(Class<?> clazz) {
+		ImplementationClassName implementationClassName = clazz.getAnnotation(
+			ImplementationClassName.class);
+
+		if (implementationClassName != null) {
+			return implementationClassName.value();
+		}
+
 		String className = clazz.getName();
 
 		className = StringUtil.replace(className, ".kernel.", ".");
@@ -72,8 +78,12 @@ public class JSONWebServiceNaming {
 	public String convertServiceClassToSimpleName(Class<?> clazz) {
 		String className = clazz.getSimpleName();
 
-		className = StringUtil.replace(className, "Impl", StringPool.BLANK);
-		className = StringUtil.replace(className, "Service", StringPool.BLANK);
+		if (className.endsWith("ServiceImpl")) {
+			className = className.substring(0, className.length() - 11);
+		}
+		else if (className.endsWith("Service")) {
+			className = className.substring(0, className.length() - 7);
+		}
 
 		return className;
 	}
@@ -114,13 +124,12 @@ public class JSONWebServiceNaming {
 			}
 		}
 
-		MethodParameter[] methodParameters =
-			MethodParametersResolverUtil.resolveMethodParameters(method);
+		Type[] types = method.getGenericParameterTypes();
 
 		Class<?>[] parameterTypes = method.getParameterTypes();
 
 		for (int i = 0; i < parameterTypes.length; i++) {
-			MethodParameter methodParameter = methodParameters[i];
+			Type type = types[i];
 
 			Class<?> parameterType = parameterTypes[i];
 
@@ -135,15 +144,19 @@ public class JSONWebServiceNaming {
 					return false;
 				}
 
-				Class<?>[] genericTypes = methodParameter.getGenericTypes();
+				if (!(type instanceof ParameterizedType)) {
+					continue;
+				}
 
-				if (genericTypes != null) {
-					for (Class<?> genericType : genericTypes) {
-						String genericName = genericType.getName();
+				ParameterizedType parameterizedType = (ParameterizedType)type;
 
-						if (genericName.startsWith(excludedTypesName)) {
-							return false;
-						}
+				for (Type actualTypeArgument :
+						parameterizedType.getActualTypeArguments()) {
+
+					String typeName = actualTypeArgument.getTypeName();
+
+					if (typeName.startsWith(excludedTypesName)) {
+						return false;
 					}
 				}
 			}
@@ -208,8 +221,9 @@ public class JSONWebServiceNaming {
 		PropsUtil.getArray(PropsKeys.JSON_SERVICE_INVALID_METHOD_NAMES));
 	protected String[] excludedPaths = PropsUtil.getArray(
 		PropsKeys.JSONWS_WEB_SERVICE_PATHS_EXCLUDES);
-	protected String[] excludedTypesNames =
-		{InputStream.class.getName(), OutputStream.class.getName(), "javax."};
+	protected String[] excludedTypesNames = {
+		InputStream.class.getName(), OutputStream.class.getName(), "javax."
+	};
 	protected String[] includedPaths = PropsUtil.getArray(
 		PropsKeys.JSONWS_WEB_SERVICE_PATHS_INCLUDES);
 	protected Set<String> invalidHttpMethods = SetUtil.fromArray(

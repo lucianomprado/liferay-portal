@@ -14,16 +14,13 @@
 
 package com.liferay.exportimport.kernel.lar;
 
-import aQute.bnd.annotation.ProviderType;
-
-import com.liferay.portal.kernel.model.ClassedModel;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.model.Portlet;
 import com.liferay.portal.kernel.model.StagedModel;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.LongWrapper;
 import com.liferay.portal.kernel.util.MapUtil;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
 
 import java.io.Serializable;
@@ -38,11 +35,10 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * @author Mate Thurzo
+ * @author Máté Thurzó
  * @author Zsolt Berentey
  * @author Daniel Kocsis
  */
-@ProviderType
 public class ManifestSummary implements Serializable {
 
 	public static String getManifestSummaryKey(
@@ -188,27 +184,6 @@ public class ManifestSummary implements Serializable {
 		return _manifestSummaryKeys;
 	}
 
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link
-	 *             #getModelAdditionCount(StagedModel)}
-	 */
-	@Deprecated
-	public long getModelAdditionCount(Class<? extends ClassedModel> clazz) {
-		return getModelAdditionCount(new StagedModelType(clazz));
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link
-	 *             #getModelAdditionCount(StagedModelType)}
-	 */
-	@Deprecated
-	public long getModelAdditionCount(
-		Class<? extends ClassedModel> clazz,
-		Class<? extends ClassedModel> referrerClass) {
-
-		return getModelAdditionCount(clazz.getName(), referrerClass.getName());
-	}
-
 	public long getModelAdditionCount(StagedModel stagedModel) {
 		return getModelAdditionCount(stagedModel.getStagedModelType());
 	}
@@ -232,23 +207,6 @@ public class ManifestSummary implements Serializable {
 
 	public Map<String, LongWrapper> getModelAdditionCounters() {
 		return _modelAdditionCounters;
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link #getAllModelDeletionCounts()}
-	 */
-	@Deprecated
-	public long getModelDeletionCount() {
-		return getAllModelDeletionCounts();
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link
-	 *             #getModelDeletionCount(StagedModel)}
-	 */
-	@Deprecated
-	public long getModelDeletionCount(Class<? extends ClassedModel> clazz) {
-		return getModelDeletionCount(new StagedModelType(clazz));
 	}
 
 	public long getModelDeletionCount(StagedModel stagedModel) {
@@ -367,7 +325,8 @@ public class ManifestSummary implements Serializable {
 			return modelName;
 		}
 
-		return modelName.concat(StringPool.POUND).concat(referrerModelName);
+		return StringBundler.concat(
+			modelName, StringPool.POUND, referrerModelName);
 	}
 
 	protected long getModelAdditionCount(

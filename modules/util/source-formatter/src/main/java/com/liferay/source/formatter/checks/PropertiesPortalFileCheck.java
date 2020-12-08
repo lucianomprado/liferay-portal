@@ -14,18 +14,23 @@
 
 package com.liferay.source.formatter.checks;
 
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.io.unsync.UnsyncBufferedReader;
 import com.liferay.portal.kernel.io.unsync.UnsyncStringReader;
-import com.liferay.portal.kernel.util.CharPool;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
-import com.liferay.portal.tools.ToolsUtil;
+import com.liferay.portal.kernel.util.Validator;
 import com.liferay.source.formatter.PropertiesSourceProcessor;
-import com.liferay.source.formatter.util.FileUtil;
 
-import java.io.File;
+import java.io.IOException;
 
 import java.net.URL;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.io.IOUtils;
 
@@ -35,40 +40,246 @@ import org.apache.commons.io.IOUtils;
 public class PropertiesPortalFileCheck extends BaseFileCheck {
 
 	@Override
-	public void init() throws Exception {
-		_portalPortalPropertiesContent = _getPortalPortalPropertiesContent();
-	}
-
-	@Override
 	protected String doProcess(
 			String fileName, String absolutePath, String content)
-		throws Exception {
+		throws IOException {
 
 		if (((isPortalSource() || isSubrepository()) &&
-			 fileName.matches(".*portal-legacy-.*\\.properties")) ||
+			 fileName.matches(".*/portal(-[^-/]+)*\\.properties")) ||
 			(!isPortalSource() && !isSubrepository() &&
 			 fileName.endsWith("portal.properties"))) {
 
-			_checkPortalProperties(fileName, content);
+			content = _sortPortalProperties(absolutePath, content);
+
+			content = _formatPortalProperties(absolutePath, content);
 		}
 
 		return content;
 	}
 
-	private void _checkPortalProperties(String fileName, String content)
-		throws Exception {
+	private String _formatPortalProperties(String absolutePath, String content)
+		throws IOException {
+
+		List<String> allowedSingleLinePropertyKeys = getAttributeValues(
+			_ALLOWED_SINGLE_LINE_PROPERTY_KEYS, absolutePath);
+
+		StringBundler sb = new StringBundler();
 
 		try (UnsyncBufferedReader unsyncBufferedReader =
 				new UnsyncBufferedReader(new UnsyncStringReader(content))) {
 
-			int lineCount = 0;
+			String line = null;
+
+			while ((line = unsyncBufferedReader.readLine()) != null) {
+				if (line.matches(
+						StringPool.FOUR_SPACES +
+							"[^# ]+?=[^,]+(,[^ ][^,]+)+")) {
+
+					String propertyKey = StringUtil.extractFirst(
+						StringUtil.trimLeading(line), "=");
+
+					if (!propertyKey.contains("regex") &&
+						!allowedSingleLinePropertyKeys.contains(propertyKey)) {
+
+						line = line.replaceFirst("=", "=\\\\\n        ");
+
+						line = line.replaceAll(",", ",\\\\\n        ");
+					}
+				}
+
+				sb.append(line);
+				sb.append("\n");
+			}
+		}
+
+		content = sb.toString();
+
+		if (content.endsWith("\n")) {
+			content = content.substring(0, content.length() - 1);
+		}
+
+		return content;
+	}
+
+	private synchronized String _getPortalPortalPropertiesContent(
+			String absolutePath)
+		throws IOException {
+
+		if (_portalPortalPropertiesContent != null) {
+			return _portalPortalPropertiesContent;
+		}
+
+		if (isPortalSource() || isSubrepository()) {
+			_portalPortalPropertiesContent = getPortalContent(
+				"portal-impl/src/portal.properties", absolutePath);
+
+			if (_portalPortalPropertiesContent == null) {
+				_portalPortalPropertiesContent = StringPool.BLANK;
+			}
+
+			return _portalPortalPropertiesContent;
+		}
+
+		ClassLoader classLoader =
+			PropertiesSourceProcessor.class.getClassLoader();
+
+		URL url = classLoader.getResource("portal.properties");
+
+		if (url != null) {
+			_portalPortalPropertiesContent = IOUtils.toString(url);
+		}
+		else {
+			_portalPortalPropertiesContent = StringPool.BLANK;
+		}
+
+		return _portalPortalPropertiesContent;
+	}
+
+	private String _getPropertyCluster(String content, int lineNumber) {
+		StringBundler sb = new StringBundler();
+
+		while (true) {
+			String line = getLine(content, lineNumber);
+
+			if (Validator.isNull(line)) {
+				sb.setIndex(sb.index() - 1);
+
+				return sb.toString();
+			}
+
+			sb.append(line);
+			sb.append("\n");
+
+			lineNumber++;
+		}
+	}
+
+	private String _sortPortalProperties(
+		String content, int lineNumber, Collection<Integer> positions,
+		Map<Integer, Collection<Integer>> propertyClusterPositionsMap) {
+
+		if (propertyClusterPositionsMap.isEmpty()) {
+			return content;
+		}
+
+		outerLoop:
+		for (Map.Entry<Integer, Collection<Integer>> entry :
+				propertyClusterPositionsMap.entrySet()) {
+
+			for (int curPosition : entry.getValue()) {
+				for (int position : positions) {
+					if (curPosition <= position) {
+						continue outerLoop;
+					}
+				}
+
+				int previousLineNumber = entry.getKey();
+
+				String previousPropertyCluster = _getPropertyCluster(
+					content, previousLineNumber);
+
+				String propertyCluster = _getPropertyCluster(
+					content, lineNumber);
+
+				content = StringUtil.replaceFirst(
+					content, propertyCluster, previousPropertyCluster,
+					getLineStartPos(content, lineNumber) - 1);
+				content = StringUtil.replaceFirst(
+					content, previousPropertyCluster, propertyCluster,
+					getLineStartPos(content, previousLineNumber) - 1);
+
+				return content;
+			}
+		}
+
+		return content;
+	}
+
+	private String _sortPortalProperties(
+		String content, int lineNumber, int pos,
+		Map<Integer, Integer> propertyPositionsMap) {
+
+		for (Map.Entry<Integer, Integer> entry :
+				propertyPositionsMap.entrySet()) {
+
+			int curPos = entry.getValue();
+
+			if (curPos <= pos) {
+				continue;
+			}
+
+			int curLineNumber = entry.getKey();
+
+			String curProperty = getLine(content, curLineNumber);
+
+			String property = getLine(content, lineNumber);
+
+			content = StringUtil.replaceFirst(
+				content, property, curProperty,
+				getLineStartPos(content, lineNumber) - 1);
+			content = StringUtil.replaceFirst(
+				content, curProperty, property,
+				getLineStartPos(content, curLineNumber) - 1);
+
+			return content;
+		}
+
+		return content;
+	}
+
+	private String _sortPortalProperties(String absolutePath, String content)
+		throws IOException {
+
+		if (absolutePath.endsWith("/portal-impl/src/portal.properties")) {
+			return content;
+		}
+
+		String portalPortalPropertiesContent =
+			_getPortalPortalPropertiesContent(absolutePath);
+
+		Map<Integer, Integer> propertyPositionsMap = new HashMap<>();
+		Map<Integer, Collection<Integer>> propertyClusterPositionsMap =
+			new HashMap<>();
+
+		int startLineNumber = 1;
+
+		try (UnsyncBufferedReader unsyncBufferedReader =
+				new UnsyncBufferedReader(new UnsyncStringReader(content))) {
+
+			int lineNumber = 0;
 
 			String line = null;
 
-			int previousPos = -1;
-
 			while ((line = unsyncBufferedReader.readLine()) != null) {
-				lineCount++;
+				lineNumber++;
+
+				if (Validator.isNull(line)) {
+					if (!propertyPositionsMap.isEmpty()) {
+						Collection<Integer> positions =
+							propertyPositionsMap.values();
+
+						String newContent = _sortPortalProperties(
+							content, startLineNumber, positions,
+							propertyClusterPositionsMap);
+
+						if (!newContent.equals(content)) {
+							return newContent;
+						}
+
+						propertyClusterPositionsMap.put(
+							startLineNumber, positions);
+
+						propertyPositionsMap = new HashMap<>();
+					}
+
+					startLineNumber = lineNumber + 1;
+
+					continue;
+				}
+
+				if (line.matches(" *#.*")) {
+					continue;
+				}
 
 				int pos = line.indexOf(CharPool.EQUAL);
 
@@ -78,50 +289,35 @@ public class PropertiesPortalFileCheck extends BaseFileCheck {
 
 				String property = StringUtil.trim(line.substring(0, pos + 1));
 
-				pos = _portalPortalPropertiesContent.indexOf(
+				pos = portalPortalPropertiesContent.indexOf(
 					StringPool.FOUR_SPACES + property);
 
 				if (pos == -1) {
 					continue;
 				}
 
-				if (pos < previousPos) {
-					addMessage(
-						fileName,
-						"Follow order as in portal-impl/src/portal.properties",
-						lineCount);
+				String newContent = _sortPortalProperties(
+					content, lineNumber, pos, propertyPositionsMap);
+
+				if (!newContent.equals(content)) {
+					return newContent;
 				}
 
-				previousPos = pos;
+				propertyPositionsMap.put(lineNumber, pos);
 			}
 		}
+
+		if (!propertyPositionsMap.isEmpty()) {
+			return _sortPortalProperties(
+				content, startLineNumber, propertyPositionsMap.values(),
+				propertyClusterPositionsMap);
+		}
+
+		return content;
 	}
 
-	private String _getPortalPortalPropertiesContent() throws Exception {
-		String portalPortalPropertiesContent = null;
-
-		if (isPortalSource()) {
-			File file = getFile(
-				"portal-impl/src/portal.properties",
-				ToolsUtil.PORTAL_MAX_DIR_LEVEL);
-
-			return FileUtil.read(file);
-		}
-
-		ClassLoader classLoader =
-			PropertiesSourceProcessor.class.getClassLoader();
-
-		URL url = classLoader.getResource("portal.properties");
-
-		if (url != null) {
-			portalPortalPropertiesContent = IOUtils.toString(url);
-		}
-		else {
-			portalPortalPropertiesContent = StringPool.BLANK;
-		}
-
-		return portalPortalPropertiesContent;
-	}
+	private static final String _ALLOWED_SINGLE_LINE_PROPERTY_KEYS =
+		"allowedSingleLinePropertyKeys";
 
 	private String _portalPortalPropertiesContent;
 

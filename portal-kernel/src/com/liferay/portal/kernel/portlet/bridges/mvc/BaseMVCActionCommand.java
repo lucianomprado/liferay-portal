@@ -21,18 +21,14 @@ import com.liferay.portal.kernel.portlet.PortletConfigFactoryUtil;
 import com.liferay.portal.kernel.portlet.PortletIdCodec;
 import com.liferay.portal.kernel.security.auth.PrincipalException;
 import com.liferay.portal.kernel.service.PortletLocalServiceUtil;
-import com.liferay.portal.kernel.servlet.BrowserSnifferUtil;
 import com.liferay.portal.kernel.servlet.SessionErrors;
 import com.liferay.portal.kernel.servlet.SessionMessages;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
-import com.liferay.portal.kernel.util.CharPool;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HttpUtil;
 import com.liferay.portal.kernel.util.JavaConstants;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 
@@ -62,11 +58,11 @@ public abstract class BaseMVCActionCommand implements MVCActionCommand {
 
 			return SessionErrors.isEmpty(actionRequest);
 		}
-		catch (PortletException pe) {
-			throw pe;
+		catch (PortletException portletException) {
+			throw portletException;
 		}
-		catch (Exception e) {
-			throw new PortletException(e);
+		catch (Exception exception) {
+			throw new PortletException(exception);
 		}
 	}
 
@@ -107,10 +103,9 @@ public abstract class BaseMVCActionCommand implements MVCActionCommand {
 		throws Exception;
 
 	protected PortletConfig getPortletConfig(PortletRequest portletRequest) {
-		String portletId = PortalUtil.getPortletId(portletRequest);
-
 		return PortletConfigFactoryUtil.get(
-			PortletIdCodec.decodePortletName(portletId));
+			PortletIdCodec.decodePortletName(
+				PortalUtil.getPortletId(portletRequest)));
 	}
 
 	protected void hideDefaultErrorMessage(PortletRequest portletRequest) {
@@ -166,22 +161,23 @@ public abstract class BaseMVCActionCommand implements MVCActionCommand {
 		throws IOException {
 
 		if (actionRequest.getRemoteUser() == null) {
-			HttpServletRequest request = PortalUtil.getHttpServletRequest(
-				actionRequest);
+			HttpServletRequest httpServletRequest =
+				PortalUtil.getHttpServletRequest(actionRequest);
 
-			SessionErrors.add(request, PrincipalException.class.getName());
+			SessionErrors.add(
+				httpServletRequest, PrincipalException.class.getName());
 
-			ThemeDisplay themeDisplay = (ThemeDisplay)request.getAttribute(
-				WebKeys.THEME_DISPLAY);
+			ThemeDisplay themeDisplay =
+				(ThemeDisplay)httpServletRequest.getAttribute(
+					WebKeys.THEME_DISPLAY);
 
 			sendRedirect(
 				actionRequest, actionResponse, themeDisplay.getURLSignIn());
 
 			return true;
 		}
-		else {
-			return false;
-		}
+
+		return false;
 	}
 
 	protected void sendRedirect(
@@ -232,25 +228,6 @@ public abstract class BaseMVCActionCommand implements MVCActionCommand {
 
 		if (Validator.isNull(redirect)) {
 			return;
-		}
-
-		// LPS-1928
-
-		HttpServletRequest request = PortalUtil.getHttpServletRequest(
-			actionRequest);
-
-		if (BrowserSnifferUtil.isIe(request) &&
-			(BrowserSnifferUtil.getMajorVersion(request) == 6.0) &&
-			redirect.contains(StringPool.POUND)) {
-
-			String redirectToken = "&#";
-
-			if (!redirect.contains(StringPool.QUESTION)) {
-				redirectToken = StringPool.QUESTION + redirectToken;
-			}
-
-			redirect = StringUtil.replace(
-				redirect, CharPool.POUND, redirectToken);
 		}
 
 		redirect = PortalUtil.escapeRedirect(redirect);

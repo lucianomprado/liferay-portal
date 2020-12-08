@@ -16,38 +16,39 @@ package com.liferay.portlet;
 
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.portlet.LiferayEventResponse;
+import com.liferay.portlet.internal.EventRequestImpl;
+import com.liferay.portlet.internal.EventResponseImpl;
 
+import javax.portlet.EventRequest;
 import javax.portlet.PortletModeException;
 import javax.portlet.WindowStateException;
+import javax.portlet.filter.EventRequestWrapper;
 
 import javax.servlet.http.HttpServletResponse;
 
 /**
  * @author Brian Wing Shun Chan
+ * @author Neil Griffin
  */
 public class EventResponseFactory {
 
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link
-	 *             #create(EventRequestImpl, HttpServletResponse, User, Layout)}
-	 */
-	@Deprecated
-	public static EventResponseImpl create(
-			EventRequestImpl eventRequestImpl, HttpServletResponse response,
-			String portletName, User user, Layout layout)
-		throws Exception {
-
-		return create(eventRequestImpl, response, user, layout);
-	}
-
-	public static EventResponseImpl create(
-			EventRequestImpl eventRequestImpl, HttpServletResponse response,
+	public static LiferayEventResponse create(
+			EventRequest eventRequest, HttpServletResponse httpServletResponse,
 			User user, Layout layout)
 		throws PortletModeException, WindowStateException {
 
+		while (eventRequest instanceof EventRequestWrapper) {
+			EventRequestWrapper eventRequestWrapper =
+				(EventRequestWrapper)eventRequest;
+
+			eventRequest = eventRequestWrapper.getRequest();
+		}
+
 		EventResponseImpl eventResponseImpl = new EventResponseImpl();
 
-		eventResponseImpl.init(eventRequestImpl, response, user, layout);
+		eventResponseImpl.init(
+			(EventRequestImpl)eventRequest, httpServletResponse, user, layout);
 
 		return eventResponseImpl;
 	}

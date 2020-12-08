@@ -23,7 +23,6 @@ import com.liferay.portal.kernel.nio.intraband.welder.WelderFactoryUtil;
 import com.liferay.portal.kernel.process.ProcessCallable;
 import com.liferay.portal.kernel.process.ProcessException;
 import com.liferay.portal.kernel.process.local.LocalProcessLauncher;
-import com.liferay.portal.kernel.process.log.ProcessOutputStream;
 import com.liferay.portal.kernel.resiliency.mpi.MPI;
 import com.liferay.portal.kernel.resiliency.mpi.MPIHelperUtil;
 import com.liferay.portal.kernel.resiliency.spi.SPI;
@@ -48,8 +47,10 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @author Shuyang Zhou
+ * @author     Shuyang Zhou
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  */
+@Deprecated
 public abstract class RemoteSPI implements ProcessCallable<SPI>, Remote, SPI {
 
 	public RemoteSPI(SPIConfiguration spiConfiguration) {
@@ -81,10 +82,8 @@ public abstract class RemoteSPI implements ProcessCallable<SPI>, Remote, SPI {
 
 			RegisterCallback registerCallback = new RegisterCallback(uuid, spi);
 
-			ProcessOutputStream processOutputStream =
-				LocalProcessLauncher.ProcessContext.getProcessOutputStream();
-
-			processOutputStream.writeProcessCallable(registerCallback);
+			LocalProcessLauncher.ProcessContext.writeProcessCallable(
+				registerCallback);
 
 			registrationReference = welder.weld(MPIHelperUtil.getIntraband());
 
@@ -95,11 +94,12 @@ public abstract class RemoteSPI implements ProcessCallable<SPI>, Remote, SPI {
 
 			return spi;
 		}
-		catch (RemoteException re) {
-			throw new ProcessException("Failed to export SPI as RMI stub.", re);
+		catch (RemoteException remoteException) {
+			throw new ProcessException(
+				"Failed to export SPI as RMI stub", remoteException);
 		}
-		catch (IOException ioe) {
-			throw new ProcessException(ioe);
+		catch (IOException ioException) {
+			throw new ProcessException(ioException);
 		}
 	}
 
@@ -177,8 +177,8 @@ public abstract class RemoteSPI implements ProcessCallable<SPI>, Remote, SPI {
 			try {
 				SPISynchronousQueueUtil.notifySynchronousQueue(_spiUUID, _spi);
 			}
-			catch (InterruptedException ie) {
-				throw new ProcessException(ie);
+			catch (InterruptedException interruptedException) {
+				throw new ProcessException(interruptedException);
 			}
 
 			return _spi;
@@ -243,9 +243,9 @@ public abstract class RemoteSPI implements ProcessCallable<SPI>, Remote, SPI {
 
 				unregistered = future.get();
 			}
-			catch (Exception e) {
+			catch (Exception exception) {
 				if (_log.isWarnEnabled()) {
-					_log.warn("Unable to unregister SPI from MPI", e);
+					_log.warn("Unable to unregister SPI from MPI", exception);
 				}
 			}
 
@@ -255,7 +255,7 @@ public abstract class RemoteSPI implements ProcessCallable<SPI>, Remote, SPI {
 		}
 
 		@Override
-		public boolean shutdown(int shutdownCode, Throwable shutdownThrowable) {
+		public boolean shutdown(int shutdownCode, Throwable throwable) {
 			Runtime runtime = Runtime.getRuntime();
 
 			runtime.removeShutdownHook(this);
@@ -269,15 +269,15 @@ public abstract class RemoteSPI implements ProcessCallable<SPI>, Remote, SPI {
 			try {
 				RemoteSPI.this.stop();
 			}
-			catch (RemoteException re) {
-				_log.error("Unable to stop SPI", re);
+			catch (RemoteException remoteException) {
+				_log.error("Unable to stop SPI", remoteException);
 			}
 
 			try {
 				RemoteSPI.this.destroy();
 			}
-			catch (RemoteException re) {
-				_log.error("Unable to destroy SPI", re);
+			catch (RemoteException remoteException) {
+				_log.error("Unable to destroy SPI", remoteException);
 			}
 		}
 
@@ -300,7 +300,7 @@ public abstract class RemoteSPI implements ProcessCallable<SPI>, Remote, SPI {
 					return true;
 				}
 			}
-			catch (InterruptedException ie) {
+			catch (InterruptedException interruptedException) {
 			}
 
 			if (_log.isInfoEnabled()) {

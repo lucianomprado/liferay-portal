@@ -63,8 +63,8 @@ public class FormatSourceTask extends Task {
 				SourceFormatterArgs.OUTPUT_KEY_MODIFIED_FILES,
 				modifiedFileNames);
 		}
-		catch (Exception e) {
-			throw new BuildException(e);
+		catch (Exception exception) {
+			throw new BuildException(exception);
 		}
 	}
 
@@ -72,8 +72,16 @@ public class FormatSourceTask extends Task {
 		_sourceFormatterArgs.setAutoFix(autoFix);
 	}
 
-	public void setBaseDir(String baseDir) {
-		_sourceFormatterArgs.setBaseDirName(baseDir);
+	public void setBaseDir(String baseDirName) {
+		_sourceFormatterArgs.setBaseDirName(baseDirName);
+	}
+
+	public void setFailOnAutoFix(boolean failOnAutoFix) {
+		_sourceFormatterArgs.setFailOnAutoFix(failOnAutoFix);
+	}
+
+	public void setFailOnHasWarning(boolean failOnHasWarning) {
+		_sourceFormatterArgs.setFailOnHasWarning(failOnHasWarning);
 	}
 
 	public void setFileNames(String fileNames) {
@@ -113,12 +121,20 @@ public class FormatSourceTask extends Task {
 		_sourceFormatterArgs.setProcessorThreadCount(processorThreadCount);
 	}
 
+	public void setShowDebugInformation(boolean showDebugInformation) {
+		_sourceFormatterArgs.setShowDebugInformation(showDebugInformation);
+	}
+
 	public void setShowDocumentation(boolean showDocumentation) {
 		_sourceFormatterArgs.setShowDocumentation(showDocumentation);
 	}
 
-	public void setThrowException(boolean throwException) {
-		_sourceFormatterArgs.setThrowException(throwException);
+	public void setShowStatusUpdates(boolean showStatusUpdates) {
+		_sourceFormatterArgs.setShowStatusUpdates(showStatusUpdates);
+	}
+
+	public void setValidateCommitMessages(boolean validateCommitMessages) {
+		_sourceFormatterArgs.setValidateCommitMessages(validateCommitMessages);
 	}
 
 	private void _collectFromFileSets() {
@@ -128,12 +144,12 @@ public class FormatSourceTask extends Task {
 			DirectoryScanner directoryScanner = fileSet.getDirectoryScanner(
 				getProject());
 
-			File baseDir = directoryScanner.getBasedir();
+			File basedir = directoryScanner.getBasedir();
 
 			String[] includedFiles = directoryScanner.getIncludedFiles();
 
 			for (int i = 0; i < includedFiles.length; i++) {
-				File file = new File(baseDir, includedFiles[i]);
+				File file = new File(basedir, includedFiles[i]);
 
 				includedFiles[i] = file.getAbsolutePath();
 			}

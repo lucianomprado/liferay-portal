@@ -14,10 +14,10 @@
 
 package com.liferay.adaptive.media.web.internal.background.task;
 
-import com.liferay.adaptive.media.web.constants.OptimizeImagesBackgroundTaskConstants;
-import com.liferay.portal.kernel.backgroundtask.BackgroundTaskConstants;
+import com.liferay.adaptive.media.constants.AMOptimizeImagesBackgroundTaskConstants;
 import com.liferay.portal.kernel.backgroundtask.BackgroundTaskStatusMessageSender;
 import com.liferay.portal.kernel.backgroundtask.BackgroundTaskThreadLocal;
+import com.liferay.portal.kernel.backgroundtask.constants.BackgroundTaskConstants;
 import com.liferay.portal.kernel.messaging.Message;
 
 import org.osgi.service.component.annotations.Activate;
@@ -27,18 +27,19 @@ import org.osgi.service.component.annotations.Reference;
 /**
  * @author Sergio González
  */
-@Component(immediate = true)
+@Component(immediate = true, service = {})
 public class OptimizeImagesStatusMessageSenderUtil {
 
 	public static void sendStatusMessage(
 		String phase, long companyId, String configurationEntryUuid) {
 
-		_instance._sendStatusMessage(phase, companyId, configurationEntryUuid);
+		_optimizeImagesStatusMessageSenderUtil._sendStatusMessage(
+			phase, companyId, configurationEntryUuid);
 	}
 
 	@Activate
 	protected void activate() {
-		_instance = this;
+		_optimizeImagesStatusMessageSenderUtil = this;
 	}
 
 	private void _sendStatusMessage(
@@ -50,18 +51,19 @@ public class OptimizeImagesStatusMessageSenderUtil {
 			BackgroundTaskConstants.BACKGROUND_TASK_ID,
 			BackgroundTaskThreadLocal.getBackgroundTaskId());
 		message.put(
-			OptimizeImagesBackgroundTaskConstants.COMPANY_ID, companyId);
-		message.put(OptimizeImagesBackgroundTaskConstants.PHASE, phase);
-		message.put("status", BackgroundTaskConstants.STATUS_IN_PROGRESS);
+			AMOptimizeImagesBackgroundTaskConstants.COMPANY_ID, companyId);
 		message.put(
-			OptimizeImagesBackgroundTaskConstants.CONFIGURATION_ENTRY_UUID,
+			AMOptimizeImagesBackgroundTaskConstants.CONFIGURATION_ENTRY_UUID,
 			configurationEntryUuid);
+		message.put(AMOptimizeImagesBackgroundTaskConstants.PHASE, phase);
+		message.put("status", BackgroundTaskConstants.STATUS_IN_PROGRESS);
 
 		_backgroundTaskStatusMessageSender.sendBackgroundTaskStatusMessage(
 			message);
 	}
 
-	private static OptimizeImagesStatusMessageSenderUtil _instance;
+	private static OptimizeImagesStatusMessageSenderUtil
+		_optimizeImagesStatusMessageSenderUtil;
 
 	@Reference
 	private BackgroundTaskStatusMessageSender

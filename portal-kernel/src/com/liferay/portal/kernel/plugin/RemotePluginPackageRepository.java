@@ -14,7 +14,7 @@
 
 package com.liferay.portal.kernel.plugin;
 
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.petra.string.StringPool;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -125,13 +125,15 @@ public class RemotePluginPackageRepository {
 			groupId, artifactId);
 
 		if (pluginPackages != null) {
-			Iterator<PluginPackage> itr = pluginPackages.iterator();
+			Iterator<PluginPackage> iterator = pluginPackages.iterator();
 
-			while (itr.hasNext()) {
-				PluginPackage pluginPackage = itr.next();
+			while (iterator.hasNext()) {
+				PluginPackage pluginPackage = iterator.next();
 
-				if (pluginPackage.getModuleId().equals(moduleId)) {
-					itr.remove();
+				String pluginPackageModuleId = pluginPackage.getModuleId();
+
+				if (pluginPackageModuleId.equals(moduleId)) {
+					iterator.remove();
 
 					break;
 				}

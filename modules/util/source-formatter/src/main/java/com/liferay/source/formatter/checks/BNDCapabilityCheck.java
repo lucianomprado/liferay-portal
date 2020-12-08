@@ -14,9 +14,10 @@
 
 package com.liferay.source.formatter.checks;
 
-import com.liferay.portal.kernel.util.CharPool;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.tools.ToolsUtil;
 
@@ -82,6 +83,9 @@ public class BNDCapabilityCheck extends BaseFileCheck {
 		String match = StringUtil.trim(matcher.group());
 
 		String capabilities = StringUtil.trim(matcher.group(1));
+
+		capabilities = _sortFilters(capabilities);
+		capabilities = _sortResourceBundleAggregate(capabilities);
 
 		String singleLineCapabilities = StringUtil.replace(
 			capabilities,
@@ -149,6 +153,82 @@ public class BNDCapabilityCheck extends BaseFileCheck {
 
 		return capabilitiesList;
 	}
+
+	private String _sortFilterConditions(String filter, String... operators) {
+		for (String operator : operators) {
+			Pattern pattern = Pattern.compile(
+				"\\(\\" + operator + "((\\([^()\n]+\\)){2,})\\)");
+
+			Matcher matcher = pattern.matcher(filter);
+
+			while (matcher.find()) {
+				String conditions = matcher.group(1);
+
+				List<String> conditionsList = ListUtil.fromArray(
+					StringUtil.split(
+						conditions.substring(1, conditions.length() - 1),
+						")("));
+
+				Collections.sort(conditionsList);
+
+				String sortedConditions = StringBundler.concat(
+					StringPool.OPEN_PARENTHESIS,
+					ListUtil.toString(conditionsList, StringPool.BLANK, ")("),
+					StringPool.CLOSE_PARENTHESIS);
+
+				filter = StringUtil.replaceFirst(
+					filter, conditions, sortedConditions, matcher.start());
+			}
+		}
+
+		return filter;
+	}
+
+	private String _sortFilters(String capabilities) {
+		Matcher matcher = _filterPattern.matcher(capabilities);
+
+		while (matcher.find()) {
+			String filter = matcher.group(1);
+
+			String sortedFilter = _sortFilterConditions(filter, "&", "|");
+
+			if (!filter.equals(sortedFilter)) {
+				return StringUtil.replaceFirst(
+					capabilities, filter, sortedFilter, matcher.start());
+			}
+		}
+
+		return capabilities;
+	}
+
+	private String _sortResourceBundleAggregate(String capabilities) {
+		Matcher matcher = _resourceBundleAggregatePattern.matcher(capabilities);
+
+		if (!matcher.find()) {
+			return capabilities;
+		}
+
+		String resourceBundleAggregates = matcher.group(1);
+
+		List<String> resourceBundleAggregatesList = ListUtil.fromArray(
+			StringUtil.split(resourceBundleAggregates));
+
+		Collections.sort(resourceBundleAggregatesList);
+
+		String sortedResourceBundleAggregates = ListUtil.toString(
+			resourceBundleAggregatesList, StringPool.BLANK, StringPool.COMMA);
+
+		return StringUtil.replaceFirst(
+			capabilities, resourceBundleAggregates,
+			sortedResourceBundleAggregates, matcher.start());
+	}
+
+	private static final Pattern _filterPattern = Pattern.compile(
+		"\tfilter:=\"(.*?)\"");
+	private static final Pattern _resourceBundleAggregatePattern =
+		Pattern.compile(
+			"\tresource\\.bundle\\.aggregate:String=\"((\\([\\w.=]+\\),?)" +
+				"{2,})\"");
 
 	private class Capability implements Comparable<Capability> {
 

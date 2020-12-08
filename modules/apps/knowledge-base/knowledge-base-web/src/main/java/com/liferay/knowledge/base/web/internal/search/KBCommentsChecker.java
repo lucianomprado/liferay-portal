@@ -16,7 +16,9 @@ package com.liferay.knowledge.base.web.internal.search;
 
 import com.liferay.knowledge.base.model.KBComment;
 import com.liferay.knowledge.base.service.KBCommentLocalServiceUtil;
-import com.liferay.knowledge.base.service.permission.KBCommentPermission;
+import com.liferay.knowledge.base.web.internal.security.permission.resource.KBCommentPermission;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.search.EmptyOnClickRowChecker;
 import com.liferay.portal.kernel.dao.search.RowChecker;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -28,8 +30,6 @@ import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.WebKeys;
 
 import javax.servlet.http.HttpServletRequest;
@@ -61,14 +61,14 @@ public class KBCommentsChecker extends EmptyOnClickRowChecker {
 	}
 
 	@Override
-	public String getAllRowsCheckBox(HttpServletRequest request) {
+	public String getAllRowsCheckBox(HttpServletRequest httpServletRequest) {
 		return null;
 	}
 
 	@Override
 	public String getRowCheckBox(
-		HttpServletRequest request, boolean checked, boolean disabled,
-		String primaryKey) {
+		HttpServletRequest httpServletRequest, boolean checked,
+		boolean disabled, String primaryKey) {
 
 		long kbCommentId = GetterUtil.getLong(primaryKey);
 
@@ -80,12 +80,12 @@ public class KBCommentsChecker extends EmptyOnClickRowChecker {
 			KBCommentPermission.contains(
 				_permissionChecker, kbComment, ActionKeys.DELETE);
 		}
-		catch (PortalException pe) {
+		catch (PortalException portalException) {
 
 			// LPS-52675
 
 			if (_log.isDebugEnabled()) {
-				_log.debug(pe, pe);
+				_log.debug(portalException, portalException);
 			}
 
 			return StringPool.BLANK;
@@ -102,7 +102,7 @@ public class KBCommentsChecker extends EmptyOnClickRowChecker {
 		String checkBoxRowIds = sb.toString();
 
 		return getRowCheckBox(
-			request, checked, disabled,
+			httpServletRequest, checked, disabled,
 			_liferayPortletResponse.getNamespace() + RowChecker.ROW_IDS +
 				KBComment.class.getSimpleName(),
 			primaryKey, checkBoxRowIds, getAllRowIds(), StringPool.BLANK);

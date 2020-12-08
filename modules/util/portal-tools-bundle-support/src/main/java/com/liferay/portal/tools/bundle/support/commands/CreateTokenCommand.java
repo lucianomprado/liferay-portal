@@ -18,6 +18,7 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 
 import com.liferay.portal.tools.bundle.support.constants.BundleSupportConstants;
+import com.liferay.portal.tools.bundle.support.internal.util.FileUtil;
 import com.liferay.portal.tools.bundle.support.internal.util.HttpUtil;
 
 import java.io.Console;
@@ -55,16 +56,21 @@ public class CreateTokenCommand implements Command {
 			_emailAddress = console.readLine("Email Address: ");
 		}
 
-		while ((_password == null) || _password.isEmpty()) {
-			char[] characters = console.readPassword("Password: ");
+		if ((_passwordFile != null) && _passwordFile.exists()) {
+			_password = FileUtil.read(_passwordFile);
+		}
+		else {
+			while ((_password == null) || _password.isEmpty()) {
+				char[] characters = console.readPassword("Password: ");
 
-			if (characters != null) {
-				_password = new String(characters);
+				if (characters != null) {
+					_password = new String(characters);
+				}
 			}
 		}
 
 		String token = HttpUtil.createToken(
-			_tokenUrl.toURI(), _emailAddress, _password);
+			_tokenURL.toURI(), _emailAddress, _password);
 
 		Path tokenPath = _tokenFile.toPath();
 
@@ -85,12 +91,16 @@ public class CreateTokenCommand implements Command {
 		return _password;
 	}
 
+	public File getPasswordFile() {
+		return _passwordFile;
+	}
+
 	public File getTokenFile() {
 		return _tokenFile;
 	}
 
 	public URL getTokenUrl() {
-		return _tokenUrl;
+		return _tokenURL;
 	}
 
 	public boolean isForce() {
@@ -109,12 +119,16 @@ public class CreateTokenCommand implements Command {
 		_password = password;
 	}
 
+	public void setPasswordFile(File passwordFile) {
+		_passwordFile = passwordFile;
+	}
+
 	public void setTokenFile(File tokenFile) {
 		_tokenFile = tokenFile;
 	}
 
-	public void setTokenUrl(URL tokenUrl) {
-		_tokenUrl = tokenUrl;
+	public void setTokenUrl(URL tokenURL) {
+		_tokenURL = tokenURL;
 	}
 
 	private static final URL _DEFAULT_TOKEN_URL;
@@ -124,8 +138,8 @@ public class CreateTokenCommand implements Command {
 			_DEFAULT_TOKEN_URL = new URL(
 				BundleSupportConstants.DEFAULT_TOKEN_URL);
 		}
-		catch (MalformedURLException murle) {
-			throw new ExceptionInInitializerError(murle);
+		catch (MalformedURLException malformedURLException) {
+			throw new ExceptionInInitializerError(malformedURLException);
 		}
 	}
 
@@ -147,11 +161,17 @@ public class CreateTokenCommand implements Command {
 	private String _password;
 
 	@Parameter(
+		description = "The file where to read the password value.",
+		names = "--password-file"
+	)
+	private File _passwordFile;
+
+	@Parameter(
 		description = "The file where to store your liferay.com download token.",
 		names = "--token-file"
 	)
 	private File _tokenFile = BundleSupportConstants.DEFAULT_TOKEN_FILE;
 
-	private URL _tokenUrl = _DEFAULT_TOKEN_URL;
+	private URL _tokenURL = _DEFAULT_TOKEN_URL;
 
 }

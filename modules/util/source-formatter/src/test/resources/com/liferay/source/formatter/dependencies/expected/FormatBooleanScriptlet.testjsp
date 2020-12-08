@@ -14,6 +14,20 @@
  */
 --%>
 
-<liferay-ui:panel-container extended="<%= true %>" id='<%= renderResponse.getNamespace() + "facetAssetEntriesPanelContainer" %>' markupView="lexicon" persistState="<%= true %>">
-	<liferay-ui:panel collapsible="<%= true %>" cssClass="search-facet" id='<%= renderResponse.getNamespace() + "facetAssetEntriesPanel" %>' markupView="lexicon" persistState="<%= true %>" title="type" />
+<%@ taglib uri="http://liferay.com/tld/ui" prefix="liferay-ui" %>
+
+<liferay-ui:panel-container
+	extended="<%= true %>"
+	id='<%= liferayPortletResponse.getNamespace() + "facetAssetEntriesPanelContainer" %>'
+	markupView="lexicon"
+	persistState="<%= true %>"
+>
+	<liferay-ui:panel
+		collapsible="<%= true %>"
+		cssClass="search-facet"
+		id='<%= liferayPortletResponse.getNamespace() + "facetAssetEntriesPanel" %>'
+		markupView="lexicon"
+		persistState="<%= true %>"
+		title="type"
+	/>
 </liferay-ui:panel-container>

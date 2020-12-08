@@ -14,26 +14,26 @@
 
 package com.liferay.portal.util;
 
-import aQute.bnd.annotation.ProviderType;
-
+import com.liferay.petra.lang.CentralizedThreadLocal;
+import com.liferay.petra.memory.FinalizeAction;
+import com.liferay.petra.memory.FinalizeManager;
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.configuration.Filter;
 import com.liferay.portal.kernel.io.unsync.UnsyncByteArrayOutputStream;
 import com.liferay.portal.kernel.io.unsync.UnsyncFilterInputStream;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.memory.FinalizeAction;
-import com.liferay.portal.kernel.memory.FinalizeManager;
-import com.liferay.portal.kernel.security.pacl.DoPrivileged;
 import com.liferay.portal.kernel.servlet.HttpHeaders;
 import com.liferay.portal.kernel.util.ArrayUtil;
-import com.liferay.portal.kernel.util.CharPool;
 import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.Http;
+import com.liferay.portal.kernel.util.InetAddressUtil;
+import com.liferay.portal.kernel.util.JavaConstants;
 import com.liferay.portal.kernel.util.PortalUtil;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.SystemProperties;
 import com.liferay.portal.kernel.util.URLCodec;
@@ -55,6 +55,7 @@ import java.nio.charset.Charset;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -72,6 +73,7 @@ import javax.servlet.http.HttpSession;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
+import org.apache.http.StatusLine;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.NTCredentials;
@@ -84,7 +86,11 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.config.ConnectionConfig;
+import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.routing.HttpRoute;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.conn.socket.PlainConnectionSocketFactory;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.cookie.ClientCookie;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
@@ -106,8 +112,6 @@ import org.apache.http.util.EntityUtils;
  * @author Hugo Huijser
  * @author Shuyang Zhou
  */
-@DoPrivileged
-@ProviderType
 public class HttpImpl implements Http {
 
 	public HttpImpl() {
@@ -133,7 +137,14 @@ public class HttpImpl implements Http {
 		HttpClientBuilder httpClientBuilder = HttpClientBuilder.create();
 
 		_poolingHttpClientConnectionManager =
-			new PoolingHttpClientConnectionManager();
+			new PoolingHttpClientConnectionManager(
+				RegistryBuilder.<ConnectionSocketFactory>create(
+				).register(
+					Http.HTTP, PlainConnectionSocketFactory.getSocketFactory()
+				).register(
+					Http.HTTPS,
+					SSLConnectionSocketFactory.getSystemSocketFactory()
+				).build());
 
 		_poolingHttpClientConnectionManager.setDefaultMaxPerRoute(
 			_MAX_CONNECTIONS_PER_HOST);
@@ -148,9 +159,7 @@ public class HttpImpl implements Http {
 		requestConfigBuilder = requestConfigBuilder.setConnectionRequestTimeout(
 			_TIMEOUT);
 
-		RequestConfig requestConfig = requestConfigBuilder.build();
-
-		httpClientBuilder.setDefaultRequestConfig(requestConfig);
+		httpClientBuilder.setDefaultRequestConfig(requestConfigBuilder.build());
 
 		SystemDefaultRoutePlanner systemDefaultRoutePlanner =
 			new SystemDefaultRoutePlanner(ProxySelector.getDefault());
@@ -197,9 +206,8 @@ public class HttpImpl implements Http {
 		requestConfigBuilder.setProxy(new HttpHost(_PROXY_HOST, _PROXY_PORT));
 		requestConfigBuilder.setProxyPreferredAuthSchemes(_proxyAuthPrefs);
 
-		RequestConfig proxyRequestConfig = requestConfigBuilder.build();
-
-		proxyHttpClientBuilder.setDefaultRequestConfig(proxyRequestConfig);
+		proxyHttpClientBuilder.setDefaultRequestConfig(
+			requestConfigBuilder.build());
 
 		_proxyCloseableHttpClient = proxyHttpClientBuilder.build();
 	}
@@ -259,26 +267,12 @@ public class HttpImpl implements Http {
 		sb.append(URLCodec.encodeURL(value));
 		sb.append(anchor);
 
-		String result = sb.toString();
-
-		if (result.length() > URL_MAXIMUM_LENGTH) {
-			result = shortenURL(result, 2);
-		}
-
-		return result;
+		return shortenURL(sb.toString());
 	}
 
 	@Override
 	public String decodePath(String path) {
-		if (Validator.isNull(path)) {
-			return path;
-		}
-
-		path = StringUtil.replace(path, CharPool.SLASH, _TEMP_SLASH);
-		path = decodeURL(path, true);
-		path = StringUtil.replace(path, _TEMP_SLASH, StringPool.SLASH);
-
-		return path;
+		return decodeURL(path);
 	}
 
 	@Override
@@ -290,20 +284,13 @@ public class HttpImpl implements Http {
 		try {
 			return URLCodec.decodeURL(url, StringPool.UTF8);
 		}
-		catch (IllegalArgumentException iae) {
-			_log.error(iae.getMessage());
+		catch (IllegalArgumentException illegalArgumentException) {
+			if (_log.isWarnEnabled()) {
+				_log.warn(illegalArgumentException.getMessage());
+			}
 		}
 
 		return StringPool.BLANK;
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link #decodeURL(String)}
-	 */
-	@Deprecated
-	@Override
-	public String decodeURL(String url, boolean unescapeSpaces) {
-		return decodeURL(url);
 	}
 
 	public void destroy() {
@@ -321,8 +308,9 @@ public class HttpImpl implements Http {
 
 			if (_log.isDebugEnabled()) {
 				_log.debug(
-					toString() + " is waiting on " + availableConnections +
-						" connections");
+					StringBundler.concat(
+						toString(), " is waiting on ", availableConnections,
+						" connections"));
 			}
 
 			_poolingHttpClientConnectionManager.closeIdleConnections(
@@ -331,7 +319,7 @@ public class HttpImpl implements Http {
 			try {
 				Thread.sleep(500);
 			}
-			catch (InterruptedException ie) {
+			catch (InterruptedException interruptedException) {
 			}
 
 			retry++;
@@ -364,30 +352,15 @@ public class HttpImpl implements Http {
 			return path;
 		}
 
-		path = StringUtil.replace(path, CharPool.SLASH, _TEMP_SLASH);
+		path = StringUtil.replace(
+			path, new char[] {CharPool.PLUS, CharPool.SLASH, CharPool.TILDE},
+			new String[] {_TEMP_PLUS, _TEMP_SLASH, _TEMP_TILDE});
 		path = URLCodec.encodeURL(path, true);
-		path = StringUtil.replace(path, _TEMP_SLASH, StringPool.SLASH);
+		path = StringUtil.replace(
+			path, new String[] {_TEMP_PLUS, _TEMP_SLASH, _TEMP_TILDE},
+			new String[] {StringPool.PLUS, StringPool.SLASH, StringPool.TILDE});
 
 		return path;
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link URLCodec#encodeURL(String)}
-	 */
-	@Deprecated
-	@Override
-	public String encodeURL(String url) {
-		return encodeURL(url, false);
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by
-	 *     {@link URLCodec#encodeURL(String, boolean)}
-	 */
-	@Deprecated
-	@Override
-	public String encodeURL(String url, boolean escapeSpaces) {
-		return URLCodec.encodeURL(url, StringPool.UTF8, escapeSpaces);
 	}
 
 	@Override
@@ -440,27 +413,17 @@ public class HttpImpl implements Http {
 		return path;
 	}
 
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	public org.apache.commons.httpclient.HttpClient getClient(
-		org.apache.commons.httpclient.HostConfiguration hostConfiguration) {
-
-		throw new UnsupportedOperationException();
-	}
-
 	@Override
-	public String getCompleteURL(HttpServletRequest request) {
-		StringBuffer sb = request.getRequestURL();
+	public String getCompleteURL(HttpServletRequest httpServletRequest) {
+		StringBuffer sb = httpServletRequest.getRequestURL();
 
 		if (sb == null) {
 			sb = new StringBuffer();
 		}
 
-		if (request.getQueryString() != null) {
+		if (httpServletRequest.getQueryString() != null) {
 			sb.append(StringPool.QUESTION);
-			sb.append(request.getQueryString());
+			sb.append(httpServletRequest.getQueryString());
 		}
 
 		String proxyPath = PortalUtil.getPathProxy();
@@ -477,8 +440,8 @@ public class HttpImpl implements Http {
 
 		String completeURL = sb.toString();
 
-		if (request.isRequestedSessionIdFromURL()) {
-			HttpSession session = request.getSession();
+		if (httpServletRequest.isRequestedSessionIdFromURL()) {
+			HttpSession session = httpServletRequest.getSession();
 
 			String sessionId = session.getId();
 
@@ -486,10 +449,8 @@ public class HttpImpl implements Http {
 				completeURL, sessionId);
 		}
 
-		if (_log.isWarnEnabled()) {
-			if (completeURL.contains("?&")) {
-				_log.warn("Invalid url " + completeURL);
-			}
+		if (_log.isWarnEnabled() && completeURL.contains("?&")) {
+			_log.warn("Invalid url " + completeURL);
 		}
 
 		return completeURL;
@@ -506,27 +467,19 @@ public class HttpImpl implements Http {
 			return url;
 		}
 
-		url = removeProtocol(url);
+		URI uri = getURI(url);
 
-		int pos = url.indexOf(CharPool.SLASH);
-
-		if (pos != -1) {
-			return url.substring(0, pos);
+		if (uri == null) {
+			return StringPool.BLANK;
 		}
 
-		return url;
-	}
+		String host = uri.getHost();
 
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	@SuppressWarnings("unused")
-	public org.apache.commons.httpclient.HostConfiguration getHostConfiguration(
-			String location)
-		throws IOException {
+		if (host == null) {
+			return StringPool.BLANK;
+		}
 
-		throw new UnsupportedOperationException();
+		return host;
 	}
 
 	@Override
@@ -538,11 +491,12 @@ public class HttpImpl implements Http {
 		try {
 			URL urlObj = new URL(url);
 
-			InetAddress address = InetAddress.getByName(urlObj.getHost());
+			InetAddress address = InetAddressUtil.getInetAddressByName(
+				urlObj.getHost());
 
 			return address.getHostAddress();
 		}
-		catch (Exception e) {
+		catch (Exception exception) {
 			return url;
 		}
 	}
@@ -593,20 +547,19 @@ public class HttpImpl implements Http {
 			return url;
 		}
 
-		if (url.startsWith(Http.HTTP)) {
-			int pos = url.indexOf(
-				CharPool.SLASH, Http.HTTPS_WITH_SLASH.length());
+		URI uri = getURI(url);
 
-			url = url.substring(pos);
+		if (uri == null) {
+			return StringPool.BLANK;
 		}
 
-		int pos = url.indexOf(CharPool.QUESTION);
+		String path = uri.getPath();
 
-		if (pos == -1) {
-			return url;
+		if (path == null) {
+			return StringPool.BLANK;
 		}
 
-		return url.substring(0, pos);
+		return path;
 	}
 
 	@Override
@@ -624,8 +577,8 @@ public class HttpImpl implements Http {
 	}
 
 	@Override
-	public String getProtocol(HttpServletRequest request) {
-		return getProtocol(request.isSecure());
+	public String getProtocol(HttpServletRequest httpServletRequest) {
+		return getProtocol(httpServletRequest.isSecure());
 	}
 
 	@Override
@@ -639,13 +592,30 @@ public class HttpImpl implements Http {
 			return url;
 		}
 
-		int pos = url.indexOf(Http.PROTOCOL_DELIMITER);
+		URI uri = getURI(url);
 
-		if (pos != -1) {
-			return url.substring(0, pos);
+		if (uri == null) {
+			return StringPool.BLANK;
 		}
 
-		return Http.HTTP;
+		String scheme = uri.getScheme();
+
+		if (scheme == null) {
+			return StringPool.BLANK;
+		}
+
+		return scheme;
+	}
+
+	@Override
+	public String getQueryString(HttpServletRequest httpServletRequest) {
+		if (isForwarded(httpServletRequest)) {
+			return GetterUtil.getString(
+				httpServletRequest.getAttribute(
+					JavaConstants.JAVAX_SERVLET_FORWARD_QUERY_STRING));
+		}
+
+		return httpServletRequest.getQueryString();
 	}
 
 	@Override
@@ -654,18 +624,34 @@ public class HttpImpl implements Http {
 			return url;
 		}
 
-		int pos = url.indexOf(CharPool.QUESTION);
+		URI uri = getURI(url);
 
-		if (pos == -1) {
+		if (uri == null) {
 			return StringPool.BLANK;
 		}
 
-		return url.substring(pos + 1);
+		String queryString = uri.getRawQuery();
+
+		if (queryString == null) {
+			return StringPool.BLANK;
+		}
+
+		return queryString;
 	}
 
 	@Override
-	public String getRequestURL(HttpServletRequest request) {
-		return String.valueOf(request.getRequestURL());
+	public String getRequestURL(HttpServletRequest httpServletRequest) {
+		return String.valueOf(httpServletRequest.getRequestURL());
+	}
+
+	@Override
+	public URI getURI(String uriString) {
+		try {
+			return _getURI(uriString);
+		}
+		catch (URISyntaxException uriSyntaxException) {
+			return null;
+		}
 	}
 
 	@Override
@@ -679,13 +665,16 @@ public class HttpImpl implements Http {
 
 	@Override
 	public boolean hasProtocol(String url) {
-		if (Validator.isNull(url)) {
+		if (Validator.isNull(url) || (url.indexOf(CharPool.COLON) == -1)) {
 			return false;
 		}
 
-		int pos = url.indexOf(Http.PROTOCOL_DELIMITER);
+		return Validator.isNotNull(getProtocol(url));
+	}
 
-		if (pos != -1) {
+	@Override
+	public boolean hasProxyConfig() {
+		if (Validator.isNotNull(_PROXY_HOST) && (_PROXY_PORT > 0)) {
 			return true;
 		}
 
@@ -693,8 +682,11 @@ public class HttpImpl implements Http {
 	}
 
 	@Override
-	public boolean hasProxyConfig() {
-		if (Validator.isNotNull(_PROXY_HOST) && (_PROXY_PORT > 0)) {
+	public boolean isForwarded(HttpServletRequest httpServletRequest) {
+		String forwardedRequestURI = (String)httpServletRequest.getAttribute(
+			JavaConstants.JAVAX_SERVLET_FORWARD_REQUEST_URI);
+
+		if (forwardedRequestURI != null) {
 			return true;
 		}
 
@@ -733,9 +725,7 @@ public class HttpImpl implements Http {
 
 	@Override
 	public boolean isSecure(String url) {
-		String protocol = getProtocol(url);
-
-		return StringUtil.equalsIgnoreCase(protocol, Http.HTTPS);
+		return StringUtil.equalsIgnoreCase(getProtocol(url), Http.HTTPS);
 	}
 
 	@Override
@@ -807,7 +797,7 @@ public class HttpImpl implements Http {
 			return StringPool.SLASH;
 		}
 
-		StringBundler sb = new StringBundler(parts.size() * 2 + 2);
+		StringBundler sb = new StringBundler((parts.size() * 2) + 2);
 
 		for (String part : parts) {
 			sb.append(StringPool.SLASH);
@@ -833,41 +823,44 @@ public class HttpImpl implements Http {
 		String[] parameters = StringUtil.split(queryString, CharPool.AMPERSAND);
 
 		for (String parameter : parameters) {
-			if (parameter.length() > 0) {
-				String[] kvp = StringUtil.split(parameter, CharPool.EQUAL);
+			if (parameter.length() == 0) {
+				continue;
+			}
 
-				if (kvp.length == 0) {
+			String[] kvp = StringUtil.split(parameter, CharPool.EQUAL);
+
+			if (kvp.length == 0) {
+				continue;
+			}
+
+			String key = kvp[0];
+
+			String value = StringPool.BLANK;
+
+			if (kvp.length > 1) {
+				try {
+					value = decodeURL(kvp[1]);
+				}
+				catch (IllegalArgumentException illegalArgumentException) {
+					if (_log.isInfoEnabled()) {
+						_log.info(
+							StringBundler.concat(
+								"Skipping parameter with key ", key,
+								" because of invalid value ", kvp[1]),
+							illegalArgumentException);
+					}
+
 					continue;
 				}
+			}
 
-				String key = kvp[0];
+			String[] values = parameterMap.get(key);
 
-				String value = StringPool.BLANK;
-
-				if (kvp.length > 1) {
-					try {
-						value = decodeURL(kvp[1]);
-					}
-					catch (IllegalArgumentException iae) {
-						if (_log.isInfoEnabled()) {
-							_log.info(
-								"Skipping parameter with key " + key +
-									" because of invalid value " + kvp[1],
-								iae);
-						}
-
-						continue;
-					}
-				}
-
-				String[] values = parameterMap.get(key);
-
-				if (values == null) {
-					parameterMap.put(key, new String[] {value});
-				}
-				else {
-					parameterMap.put(key, ArrayUtil.append(values, value));
-				}
+			if (values == null) {
+				parameterMap.put(key, new String[] {value});
+			}
+			else {
+				parameterMap.put(key, ArrayUtil.append(values, value));
 			}
 		}
 
@@ -923,8 +916,10 @@ public class HttpImpl implements Http {
 	}
 
 	@Override
-	public String protocolize(String url, HttpServletRequest request) {
-		return protocolize(url, request.isSecure());
+	public String protocolize(
+		String url, HttpServletRequest httpServletRequest) {
+
+		return protocolize(url, httpServletRequest.isSecure());
 	}
 
 	@Override
@@ -951,7 +946,7 @@ public class HttpImpl implements Http {
 
 			return urlObj.toString();
 		}
-		catch (Exception e) {
+		catch (Exception exception) {
 			return url;
 		}
 	}
@@ -959,15 +954,6 @@ public class HttpImpl implements Http {
 	@Override
 	public String protocolize(String url, RenderRequest renderRequest) {
 		return protocolize(url, renderRequest.isSecure());
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	public void proxifyState(
-		org.apache.commons.httpclient.HttpState httpState,
-		org.apache.commons.httpclient.HostConfiguration hostConfiguration) {
 	}
 
 	@Override
@@ -1010,7 +996,7 @@ public class HttpImpl implements Http {
 		sb.append(url.substring(0, pos + 1));
 
 		String[] parameters = StringUtil.split(
-			url.substring(pos + 1, url.length()), CharPool.AMPERSAND);
+			url.substring(pos + 1), CharPool.AMPERSAND);
 
 		for (String parameter : parameters) {
 			if (parameter.length() > 0) {
@@ -1074,11 +1060,11 @@ public class HttpImpl implements Http {
 			if (pos == -1) {
 				sb.append(StringPool.SLASH);
 				sb.append(uriPart);
-			}
-			else if (pos == 0) {
+
 				continue;
 			}
-			else {
+
+			if (pos != 0) {
 				sb.append(StringPool.SLASH);
 				sb.append(uriPart.substring(0, pos));
 			}
@@ -1093,67 +1079,23 @@ public class HttpImpl implements Http {
 
 	@Override
 	public String removeProtocol(String url) {
-		if (Validator.isNull(url)) {
-			return url;
-		}
+		String protocol = getProtocol(url);
 
-		url = url.trim();
+		if (Validator.isNotNull(protocol)) {
+			url = url.trim();
 
-		// "/[a-zA-Z0-9]+" is considered as valid relative URL
+			if (url.regionMatches(
+					protocol.length(), PROTOCOL_DELIMITER, 0,
+					PROTOCOL_DELIMITER.length())) {
 
-		if ((url.length() >= 2) && (url.charAt(0) == CharPool.SLASH) &&
-			_isLetterOrNumber(url.charAt(1))) {
-
-			return url;
-		}
-
-		int pos = 0;
-
-		protocol:
-		while (true) {
-
-			// Find and skip all valid protocol "[a-zA-Z0-9]+://" headers
-
-			int index = url.indexOf(Http.PROTOCOL_DELIMITER, pos);
-
-			if (index > 0) {
-				boolean hasProtocol = true;
-
-				for (int i = pos; i < index; i++) {
-					if (!_isLetterOrNumber(url.charAt(i))) {
-						hasProtocol = false;
-
-						break;
-					}
-				}
-
-				if (hasProtocol) {
-					pos = index + Http.PROTOCOL_DELIMITER.length();
-
-					continue;
-				}
+				return url.substring(
+					protocol.length() + PROTOCOL_DELIMITER.length());
 			}
 
-			// Ignore all "[\\\\/]+" after valid protocol header
-
-			for (int i = pos; i < url.length(); i++) {
-				char c = url.charAt(i);
-
-				if ((c != CharPool.SLASH) && (c != CharPool.BACK_SLASH)) {
-					if (i != pos) {
-						pos = i;
-
-						continue protocol;
-					}
-
-					break;
-				}
-			}
-
-			// Chop off protocol and return
-
-			return url.substring(pos);
+			return url.substring(protocol.length() + StringPool.COLON.length());
 		}
+
+		return url;
 	}
 
 	@Override
@@ -1220,64 +1162,14 @@ public class HttpImpl implements Http {
 	}
 
 	@Override
-	public String shortenURL(String url, int count) {
-		if (count == 0) {
-			return null;
+	public String shortenURL(String url) {
+		if (url.length() <= URL_MAXIMUM_LENGTH) {
+			return url;
 		}
 
-		StringBundler sb = new StringBundler();
-
-		String[] params = StringUtil.split(url, CharPool.AMPERSAND);
-
-		for (int i = 0; i < params.length; i++) {
-			String param = params[i];
-
-			if (param.contains("_backURL=") || param.contains("_redirect=") ||
-				param.contains("_returnToFullPageURL=") ||
-				param.startsWith("redirect")) {
-
-				int pos = param.indexOf(CharPool.EQUAL);
-
-				String qName = param.substring(0, pos);
-
-				String redirect = param.substring(pos + 1);
-
-				try {
-					redirect = decodeURL(redirect);
-				}
-				catch (IllegalArgumentException iae) {
-					if (_log.isDebugEnabled()) {
-						_log.debug(
-							"Skipping undecodable parameter " + param, iae);
-					}
-
-					continue;
-				}
-
-				String newURL = shortenURL(redirect, count - 1);
-
-				if (newURL != null) {
-					newURL = URLCodec.encodeURL(newURL);
-
-					sb.append(qName);
-					sb.append(StringPool.EQUAL);
-					sb.append(newURL);
-
-					if (i < (params.length - 1)) {
-						sb.append(StringPool.AMPERSAND);
-					}
-				}
-			}
-			else {
-				sb.append(param);
-
-				if (i < (params.length - 1)) {
-					sb.append(StringPool.AMPERSAND);
-				}
-			}
-		}
-
-		return sb.toString();
+		return _shortenURL(
+			url, 0, StringPool.QUESTION, StringPool.AMPERSAND,
+			StringPool.EQUAL);
 	}
 
 	@Override
@@ -1344,19 +1236,37 @@ public class HttpImpl implements Http {
 
 	@Override
 	public String URLtoString(Http.Options options) throws IOException {
-		return new String(URLtoByteArray(options));
+		byte[] bytes = URLtoByteArray(options);
+
+		if (bytes == null) {
+			return null;
+		}
+
+		return new String(bytes);
 	}
 
 	@Override
 	public String URLtoString(String location) throws IOException {
-		return new String(URLtoByteArray(location));
+		byte[] bytes = URLtoByteArray(location);
+
+		if (bytes == null) {
+			return null;
+		}
+
+		return new String(bytes);
 	}
 
 	@Override
 	public String URLtoString(String location, boolean post)
 		throws IOException {
 
-		return new String(URLtoByteArray(location, post));
+		byte[] bytes = URLtoByteArray(location, post);
+
+		if (bytes == null) {
+			return null;
+		}
+
+		return new String(bytes);
 	}
 
 	/**
@@ -1372,8 +1282,6 @@ public class HttpImpl implements Http {
 	 */
 	@Override
 	public String URLtoString(URL url) throws IOException {
-		String xml = null;
-
 		if (url == null) {
 			return null;
 		}
@@ -1394,6 +1302,8 @@ public class HttpImpl implements Http {
 			return null;
 		}
 
+		String xml = null;
+
 		try (InputStream inputStream = urlConnection.getInputStream();
 			UnsyncByteArrayOutputStream unsyncByteArrayOutputStream =
 				new UnsyncByteArrayOutputStream()) {
@@ -1401,7 +1311,7 @@ public class HttpImpl implements Http {
 			byte[] bytes = new byte[512];
 
 			for (int i = inputStream.read(bytes, 0, 512); i != -1;
-				i = inputStream.read(bytes, 0, 512)) {
+				 i = inputStream.read(bytes, 0, 512)) {
 
 				unsyncByteArrayOutputStream.write(bytes, 0, i);
 			}
@@ -1417,9 +1327,7 @@ public class HttpImpl implements Http {
 	protected void addProxyCredentials(
 		URI uri, HttpClientContext httpClientContext) {
 
-		String host = uri.getHost();
-
-		if (!isProxyHost(host) || (_proxyCredentials == null)) {
+		if (!isProxyHost(uri.getHost()) || (_proxyCredentials == null)) {
 			return;
 		}
 
@@ -1497,42 +1405,19 @@ public class HttpImpl implements Http {
 		return requestConfigBuilder;
 	}
 
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	protected boolean hasRequestHeader(
-		org.apache.commons.httpclient.HttpMethod httpMethod, String name) {
-
-		throw new UnsupportedOperationException();
-	}
-
 	protected boolean hasRequestHeader(
 		RequestBuilder requestBuilder, String name) {
 
-		Header[] headers = requestBuilder.getHeaders(name);
-
-		if (ArrayUtil.isEmpty(headers)) {
+		if (ArrayUtil.isEmpty(requestBuilder.getHeaders(name))) {
 			return false;
 		}
 
 		return true;
 	}
 
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
 	protected void processPostMethod(
-		org.apache.commons.httpclient.methods.PostMethod postMethod,
+		RequestBuilder requestBuilder, Map<String, String> headers,
 		List<Http.FilePart> fileParts, Map<String, String> parts) {
-
-		throw new UnsupportedOperationException();
-	}
-
-	protected void processPostMethod(
-		RequestBuilder requestBuilder, List<Http.FilePart> fileParts,
-		Map<String, String> parts) {
 
 		if ((fileParts == null) || fileParts.isEmpty()) {
 			if (parts != null) {
@@ -1548,6 +1433,17 @@ public class HttpImpl implements Http {
 		else {
 			MultipartEntityBuilder multipartEntityBuilder =
 				MultipartEntityBuilder.create();
+
+			if (headers.containsKey(HttpHeaders.CONTENT_TYPE)) {
+				ContentType contentType = ContentType.parse(
+					headers.get(HttpHeaders.CONTENT_TYPE));
+
+				String boundary = contentType.getParameter("boundary");
+
+				if (boundary != null) {
+					multipartEntityBuilder.setBoundary(boundary);
+				}
+			}
 
 			if (parts != null) {
 				for (Map.Entry<String, String> entry : parts.entrySet()) {
@@ -1577,36 +1473,6 @@ public class HttpImpl implements Http {
 		}
 	}
 
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	protected org.apache.commons.httpclient.Cookie toCommonsCookie(
-		Cookie cookie) {
-
-		throw new UnsupportedOperationException();
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	protected org.apache.commons.httpclient.Cookie[] toCommonsCookies(
-		Cookie[] cookie) {
-
-		throw new UnsupportedOperationException();
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	protected org.apache.commons.httpclient.methods.multipart.FilePart
-		toCommonsFilePart(Http.FilePart filePart) {
-
-		throw new UnsupportedOperationException();
-	}
-
 	protected org.apache.http.cookie.Cookie toHttpCookie(Cookie cookie) {
 		BasicClientCookie basicClientCookie = new BasicClientCookie(
 			cookie.getName(), cookie.getValue());
@@ -1617,12 +1483,12 @@ public class HttpImpl implements Http {
 
 		if (maxAge > 0) {
 			Date expiryDate = new Date(
-				System.currentTimeMillis() + maxAge * 1000L);
+				System.currentTimeMillis() + (maxAge * 1000L));
 
 			basicClientCookie.setExpiryDate(expiryDate);
 
 			basicClientCookie.setAttribute(
-				ClientCookie.MAX_AGE_ATTR, Integer.toString(maxAge));
+				ClientCookie.MAX_AGE_ATTR, String.valueOf(maxAge));
 		}
 
 		basicClientCookie.setPath(cookie.getPath());
@@ -1645,16 +1511,6 @@ public class HttpImpl implements Http {
 		}
 
 		return httpCookies;
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	protected Cookie toServletCookie(
-		org.apache.commons.httpclient.Cookie commonsCookie) {
-
-		throw new UnsupportedOperationException();
 	}
 
 	protected Cookie toServletCookie(org.apache.http.cookie.Cookie httpCookie) {
@@ -1709,16 +1565,6 @@ public class HttpImpl implements Http {
 		return cookies;
 	}
 
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	protected Cookie[] toServletCookies(
-		org.apache.commons.httpclient.Cookie[] commonsCookies) {
-
-		throw new UnsupportedOperationException();
-	}
-
 	protected byte[] URLtoByteArray(
 			String location, Http.Method method, Map<String, String> headers,
 			Cookie[] cookies, Http.Auth auth, Http.Body body,
@@ -1738,15 +1584,14 @@ public class HttpImpl implements Http {
 			Http.Response response, boolean followRedirects, int timeout)
 		throws IOException {
 
-		InputStream inputStream = URLtoInputStream(
-			location, method, headers, cookies, auth, body, fileParts, parts,
-			response, followRedirects, timeout);
+		try (InputStream inputStream = URLtoInputStream(
+				location, method, headers, cookies, auth, body, fileParts,
+				parts, response, followRedirects, timeout)) {
 
-		if (inputStream == null) {
-			return null;
-		}
+			if (inputStream == null) {
+				return null;
+			}
 
-		try {
 			long contentLengthLong = response.getContentLengthLong();
 
 			if (contentLengthLong > _MAX_BYTE_ARRAY_LENGTH) {
@@ -1763,9 +1608,6 @@ public class HttpImpl implements Http {
 			}
 
 			return FileUtil.getBytes(inputStream);
-		}
-		finally {
-			inputStream.close();
 		}
 	}
 
@@ -1791,10 +1633,11 @@ public class HttpImpl implements Http {
 		URI uri = null;
 
 		try {
-			uri = new URI(location);
+			uri = _getURI(location);
 		}
-		catch (URISyntaxException urise) {
-			throw new IOException("Invalid URI: " + location, urise);
+		catch (URISyntaxException uriSyntaxException) {
+			throw new IOException(
+				"Invalid URI: " + location, uriSyntaxException);
 		}
 
 		BasicCookieStore basicCookieStore = null;
@@ -1812,7 +1655,7 @@ public class HttpImpl implements Http {
 
 				location = Http.HTTP_WITH_SLASH + location;
 
-				uri = new URI(location);
+				uri = _getURI(location);
 			}
 
 			HttpHost targetHttpHost = new HttpHost(
@@ -1830,10 +1673,13 @@ public class HttpImpl implements Http {
 
 			RequestBuilder requestBuilder = null;
 
-			if (method.equals(Http.Method.POST) ||
+			if (method.equals(Method.PATCH) || method.equals(Method.POST) ||
 				method.equals(Http.Method.PUT)) {
 
-				if (method.equals(Http.Method.POST)) {
+				if (method.equals(Method.PATCH)) {
+					requestBuilder = RequestBuilder.patch(location);
+				}
+				else if (method.equals(Http.Method.POST)) {
 					requestBuilder = RequestBuilder.post(location);
 				}
 				else {
@@ -1862,7 +1708,8 @@ public class HttpImpl implements Http {
 							targetHttpHost, connectionConfigBuilder.build());
 					}
 
-					processPostMethod(requestBuilder, fileParts, parts);
+					processPostMethod(
+						requestBuilder, headers, fileParts, parts);
 				}
 			}
 			else if (method.equals(Http.Method.DELETE)) {
@@ -1882,7 +1729,8 @@ public class HttpImpl implements Http {
 				}
 			}
 
-			if ((method.equals(Http.Method.POST) ||
+			if ((method.equals(Method.PATCH) ||
+				 method.equals(Http.Method.POST) ||
 				 method.equals(Http.Method.PUT)) &&
 				((body != null) ||
 				 ((fileParts != null) && !fileParts.isEmpty()) ||
@@ -1915,12 +1763,12 @@ public class HttpImpl implements Http {
 			if (auth != null) {
 				requestConfigBuilder.setAuthenticationEnabled(true);
 
-				CredentialsProvider credentialProvider =
+				CredentialsProvider credentialsProvider =
 					new BasicCredentialsProvider();
 
-				httpClientContext.setCredentialsProvider(credentialProvider);
+				httpClientContext.setCredentialsProvider(credentialsProvider);
 
-				credentialProvider.setCredentials(
+				credentialsProvider.setCredentials(
 					new AuthScope(
 						auth.getHost(), auth.getPort(), auth.getRealm()),
 					new UsernamePasswordCredentials(
@@ -1936,8 +1784,9 @@ public class HttpImpl implements Http {
 
 			httpEntity = closeableHttpResponse.getEntity();
 
-			response.setResponseCode(
-				closeableHttpResponse.getStatusLine().getStatusCode());
+			StatusLine statusLine = closeableHttpResponse.getStatusLine();
+
+			response.setResponseCode(statusLine.getStatusCode());
 
 			Header locationHeader = closeableHttpResponse.getFirstHeader(
 				"location");
@@ -1956,19 +1805,16 @@ public class HttpImpl implements Http {
 							cookies, auth, body, fileParts, parts, response,
 							followRedirects, timeout);
 					}
-					else {
-						response.setRedirect(locationHeaderValue);
-					}
+
+					response.setRedirect(locationHeaderValue);
 				}
 			}
-
-			long contentLengthLong = 0;
 
 			Header contentLengthHeader = closeableHttpResponse.getFirstHeader(
 				HttpHeaders.CONTENT_LENGTH);
 
 			if (contentLengthHeader != null) {
-				contentLengthLong = GetterUtil.getLong(
+				long contentLengthLong = GetterUtil.getLong(
 					contentLengthHeader.getValue());
 
 				response.setContentLengthLong(contentLengthLong);
@@ -1994,6 +1840,10 @@ public class HttpImpl implements Http {
 				response.addHeader(header.getName(), header.getValue());
 			}
 
+			if (httpEntity == null) {
+				return null;
+			}
+
 			InputStream inputStream = httpEntity.getContent();
 
 			final CloseableHttpResponse referenceCloseableHttpResponse =
@@ -2008,9 +1858,10 @@ public class HttpImpl implements Http {
 						try {
 							referenceCloseableHttpResponse.close();
 						}
-						catch (IOException ioe) {
+						catch (IOException ioException) {
 							if (_log.isDebugEnabled()) {
-								_log.debug("Unable to close response", ioe);
+								_log.debug(
+									"Unable to close response", ioException);
 							}
 						}
 					}
@@ -2031,7 +1882,7 @@ public class HttpImpl implements Http {
 
 			};
 		}
-		catch (Exception e) {
+		catch (Exception exception) {
 			if (httpEntity != null) {
 				EntityUtils.consumeQuietly(httpEntity);
 			}
@@ -2040,14 +1891,14 @@ public class HttpImpl implements Http {
 				try {
 					closeableHttpResponse.close();
 				}
-				catch (IOException ioe) {
+				catch (IOException ioException) {
 					if (_log.isWarnEnabled()) {
-						_log.warn("Unable to close response", e);
+						_log.warn("Unable to close response", exception);
 					}
 				}
 			}
 
-			throw new IOException(e);
+			throw new IOException(exception);
 		}
 		finally {
 			try {
@@ -2056,21 +1907,110 @@ public class HttpImpl implements Http {
 						toServletCookies(basicCookieStore.getCookies()));
 				}
 			}
-			catch (Exception e) {
-				_log.error(e, e);
+			catch (Exception exception) {
+				_log.error(exception, exception);
 			}
 		}
 	}
 
-	private boolean _isLetterOrNumber(char c) {
-		if (((CharPool.NUMBER_0 <= c) && (c <= CharPool.NUMBER_9)) ||
-			((CharPool.UPPER_CASE_A <= c) && (c <= CharPool.UPPER_CASE_Z)) ||
-			((CharPool.LOWER_CASE_A <= c) && (c <= CharPool.LOWER_CASE_Z))) {
+	private URI _getURI(String uriString) throws URISyntaxException {
+		Map<String, URI> uris = _uris.get();
 
-			return true;
+		uriString = uriString.trim();
+
+		URI uri = uris.get(uriString);
+
+		if (uri == null) {
+			uri = new URI(uriString);
+
+			uris.put(uriString, uri);
 		}
 
-		return false;
+		return uri;
+	}
+
+	private String _shortenURL(
+		String encodedURL, int currentLength, String encodedQuestion,
+		String encodedAmpersand, String encodedEqual) {
+
+		if ((currentLength + encodedURL.length()) <= Http.URL_MAXIMUM_LENGTH) {
+			return encodedURL;
+		}
+
+		int index = encodedURL.indexOf(encodedQuestion);
+
+		if (index == -1) {
+			return encodedURL;
+		}
+
+		StringBundler sb = new StringBundler();
+
+		sb.append(encodedURL.substring(0, index));
+		sb.append(encodedQuestion);
+
+		String queryString = encodedURL.substring(
+			index + encodedQuestion.length());
+
+		String[] params = StringUtil.split(queryString, encodedAmpersand);
+
+		params = ArrayUtil.unique(params);
+
+		List<String> encodedRedirectParams = new ArrayList<>();
+
+		for (String param : params) {
+			if (param.contains("_backURL" + encodedEqual) ||
+				param.contains("_redirect" + encodedEqual) ||
+				param.contains("_returnToFullPageURL" + encodedEqual) ||
+				(param.startsWith("redirect") &&
+				 (param.indexOf(encodedEqual) != -1))) {
+
+				encodedRedirectParams.add(param);
+			}
+			else {
+				sb.append(param);
+				sb.append(encodedAmpersand);
+			}
+		}
+
+		if ((currentLength + sb.length()) > URL_MAXIMUM_LENGTH) {
+			sb.setIndex(sb.index() - 1);
+
+			return sb.toString();
+		}
+
+		for (String encodedRedirectParam : encodedRedirectParams) {
+			int pos = encodedRedirectParam.indexOf(encodedEqual);
+
+			String key = encodedRedirectParam.substring(0, pos);
+
+			String redirect = encodedRedirectParam.substring(
+				pos + encodedEqual.length());
+
+			sb.append(key);
+			sb.append(encodedEqual);
+
+			int newLength = sb.length();
+
+			redirect = _shortenURL(
+				redirect, currentLength + newLength,
+				URLCodec.encodeURL(encodedQuestion),
+				URLCodec.encodeURL(encodedAmpersand),
+				URLCodec.encodeURL(encodedEqual));
+
+			newLength += redirect.length();
+
+			if ((currentLength + newLength) > URL_MAXIMUM_LENGTH) {
+				sb.setIndex(sb.index() - 2);
+			}
+			else {
+				sb.append(redirect);
+				sb.append(encodedAmpersand);
+			}
+		}
+
+		sb.setIndex(sb.index() - 1);
+
+		return sb.toString();
 	}
 
 	private static final String _DEFAULT_USER_AGENT =
@@ -2109,7 +2049,11 @@ public class HttpImpl implements Http {
 	private static final String _PROXY_USERNAME = GetterUtil.getString(
 		PropsUtil.get(HttpImpl.class.getName() + ".proxy.username"));
 
+	private static final String _TEMP_PLUS = "_LIFERAY_TEMP_PLUS_";
+
 	private static final String _TEMP_SLASH = "_LIFERAY_TEMP_SLASH_";
+
+	private static final String _TEMP_TILDE = "_LIFERAY_TEMP_TILDE_";
 
 	private static final int _TIMEOUT = GetterUtil.getInteger(
 		PropsUtil.get(HttpImpl.class.getName() + ".timeout"), 5000);
@@ -2117,6 +2061,8 @@ public class HttpImpl implements Http {
 	private static final Log _log = LogFactoryUtil.getLog(HttpImpl.class);
 
 	private static final ThreadLocal<Cookie[]> _cookies = new ThreadLocal<>();
+	private static final ThreadLocal<Map<String, URI>> _uris =
+		new CentralizedThreadLocal<>(HttpImpl.class + "._uris", HashMap::new);
 
 	private final CloseableHttpClient _closeableHttpClient;
 	private final Pattern _nonProxyHostsPattern;

@@ -1,54 +1,72 @@
-<definition>
-	<command name="assertEquals">
-		<echo message="${expected}" />
-		<echo message="${actual}" />
+definition {
 
-		<if>
-			<equals arg1="${expected}" arg2="${actual}" />
-			<then>
-				<echo message="PASSED" />
-			</then>
-			<else>
-				<execute macro="TestUtils#fail">
-					<var name="message" value="FAILED: expected '${expected}', actual was '${actual}'" />
-				</execute>
-			</else>
-		</if>
-	</command>
+	macro assertEquals {
+		echo("${expected}");
 
-	<command name="fail">
-		<if>
-			<not>
-				<isset var="message" />
-			</not>
-			<then>
-				<var name="message" value="FAIL" />
-			</then>
-		</if>
+		echo("${actual}");
 
-		<echo message="${message}" />
+		if ("${expected}" == "${actual}") {
+			echo("PASSED");
+		}
+		else {
+			TestUtils.fail(message = "FAILED: expected &apos;${expected}&apos;, actual was &apos;${actual}&apos;");
+		}
+	}
 
-		<fail message="${message}" />
-	</command>
+	macro assertNotEquals {
+		echo("${expected}");
 
-	<command name="pass">
-		<if>
-			<not>
-				<isset var="message" />
-			</not>
-			<then>
-				<var name="message" value="PASS" />
-			</then>
-		</if>
+		echo("${actual}");
 
-		<echo message="${message}" />
-	</command>
+		if ("${expected}" != "${actual}") {
+			echo("PASSED");
+		}
+		else {
+			TestUtils.fail(message = "FAILED: &apos;${expected}&apos; equals &apos;${actual}&apos;");
+		}
+	}
 
-	<command name="typeIntoField">
-		<execute macro="Navigator#openURL" />
+	macro fail {
+		if (!(isSet(message))) {
+			var message = "FAIL";
+		}
 
-		<execute macro="Page#add">
-			<var name="pageName" value="Test Page Name" />
-		</execute>
-	</command>
-</definition>
+		echo("${message}");
+
+		fail("${message}");
+	}
+
+	macro isGreaterThan {
+		echo("${expected}");
+
+		echo("${actual}");
+
+		var result = MathUtil.isGreaterThan("${actual}", "${expected}");
+
+		if ("${result}" == "true") {
+			echo("PASSED");
+		}
+		else {
+			TestUtils.fail(message = "FAILED: actual &apos;${actual}&apos; is less than or equals to expected &apos;${expected}&apos;");
+		}
+	}
+
+	macro pass {
+		if (!(isSet(message))) {
+			var message = "PASS";
+		}
+
+		echo("${message}");
+	}
+
+	macro typeIntoField {
+		Navigator.openURL();
+
+		ProductMenu.gotoPortlet(
+			category = "Site Builder",
+			portlet = "Pages");
+
+		SitePages.addPublicPage(pageName = "Test Page Name");
+	}
+
+}

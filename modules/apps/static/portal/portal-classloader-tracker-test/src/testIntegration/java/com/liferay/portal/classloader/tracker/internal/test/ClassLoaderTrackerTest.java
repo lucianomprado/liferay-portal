@@ -15,14 +15,15 @@
 package com.liferay.portal.classloader.tracker.internal.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
+import com.liferay.petra.lang.ClassLoaderPool;
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.concurrent.DefaultNoticeableFuture;
 import com.liferay.portal.kernel.io.unsync.UnsyncByteArrayInputStream;
 import com.liferay.portal.kernel.io.unsync.UnsyncByteArrayOutputStream;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
-import com.liferay.portal.kernel.util.CharPool;
-import com.liferay.portal.kernel.util.ClassLoaderPool;
 import com.liferay.portal.kernel.util.StreamUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 
@@ -75,9 +76,8 @@ public class ClassLoaderTrackerTest {
 		String bundleSymbolicName = ClassLoaderTrackerTest.class.getName();
 		String bundleVersion = "1.0.0";
 
-		String contextName =
-			bundleSymbolicName.concat(StringPool.UNDERLINE).concat(
-				bundleVersion);
+		String contextName = StringBundler.concat(
+			bundleSymbolicName, StringPool.UNDERLINE, bundleVersion);
 
 		try {
 
@@ -113,6 +113,11 @@ public class ClassLoaderTrackerTest {
 
 			Assert.assertEquals(Bundle.STARTING, bundle.getState());
 
+			BundleWiring bundleWiring = bundle.adapt(BundleWiring.class);
+
+			Assert.assertSame(
+				bundleWiring.getClassLoader(), classLoaders.get(contextName));
+
 			// Test 4, load class cause lazy activation
 
 			Assert.assertNotSame(
@@ -120,8 +125,6 @@ public class ClassLoaderTrackerTest {
 				bundle.loadClass(ClassLoaderTrackerTest.class.getName()));
 
 			Assert.assertEquals(Bundle.ACTIVE, bundle.getState());
-
-			BundleWiring bundleWiring = bundle.adapt(BundleWiring.class);
 
 			Assert.assertSame(
 				bundleWiring.getClassLoader(), classLoaders.get(contextName));
@@ -144,8 +147,8 @@ public class ClassLoaderTrackerTest {
 					throw frameworkEvent.getThrowable();
 				}
 			}
-			catch (Throwable t) {
-				throw t;
+			catch (Throwable throwable) {
+				throw throwable;
 			}
 
 			BundleWiring newBundleWiring = bundle.adapt(BundleWiring.class);

@@ -25,14 +25,6 @@ public class FacetedSearcherManagerUtil {
 		return _facetedSearcherManager.createFacetedSearcher();
 	}
 
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	public static FacetedSearcherManager getFacetedSearcherManager() {
-		return _facetedSearcherManager;
-	}
-
 	private static volatile FacetedSearcherManager _facetedSearcherManager =
 		ServiceProxyFactory.newServiceTrackedInstance(
 			FacetedSearcherManager.class, FacetedSearcherManagerUtil.class,

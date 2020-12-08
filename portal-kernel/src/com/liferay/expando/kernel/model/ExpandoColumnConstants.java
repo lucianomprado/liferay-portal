@@ -14,11 +14,13 @@
 
 package com.liferay.expando.kernel.model;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.DateFormatFactoryUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
+import com.liferay.portal.kernel.util.UnicodeProperties;
 
 import java.io.Serializable;
 
@@ -41,6 +43,12 @@ public class ExpandoColumnConstants {
 		"custom.field.boolean.array";
 
 	public static final String BOOLEAN_LABEL = "custom.field.boolean";
+
+	public static final String DATA_TYPE_DECIMAL = "Decimal";
+
+	public static final String DATA_TYPE_INTEGER = "Integer";
+
+	public static final String DATA_TYPE_TEXT = "Text";
 
 	public static final int DATE = 3;
 
@@ -103,9 +111,25 @@ public class ExpandoColumnConstants {
 
 	public static final String NUMBER_LABEL = "custom.field.number";
 
+	public static final String PRECISION_16_BIT = "16-bit";
+
+	public static final String PRECISION_32_BIT = "32-bit";
+
+	public static final String PRECISION_64_BIT = "64-bit";
+
 	public static final String PROPERTY_DISPLAY_TYPE = "display-type";
 
+	public static final String PROPERTY_DISPLAY_TYPE_BOOLEAN = "boolean";
+
 	public static final String PROPERTY_DISPLAY_TYPE_CHECKBOX = "checkbox";
+
+	public static final String PROPERTY_DISPLAY_TYPE_DATE = "date";
+
+	public static final String PROPERTY_DISPLAY_TYPE_GEOLOCATION =
+		"geolocation";
+
+	public static final String PROPERTY_DISPLAY_TYPE_INPUT_FIELD =
+		"input-field";
 
 	public static final String PROPERTY_DISPLAY_TYPE_RADIO = "radio";
 
@@ -116,7 +140,12 @@ public class ExpandoColumnConstants {
 
 	public static final String PROPERTY_HEIGHT = "height";
 
+	public static final int PROPERTY_HEIGHT_DEFAULT = 150;
+
 	public static final String PROPERTY_HIDDEN = "hidden";
+
+	public static final String PROPERTY_LOCALIZE_FIELD_NAME =
+		"localize-field-name";
 
 	public static final String PROPERTY_SECRET = "secret";
 
@@ -152,7 +181,7 @@ public class ExpandoColumnConstants {
 	public static final String STRING_LOCALIZED_LABEL =
 		"custom.field.java.lang.String.localized";
 
-	public static final int[] TYPES = new int[] {
+	public static final int[] TYPES = {
 		BOOLEAN, BOOLEAN_ARRAY, DATE, DATE_ARRAY, DOUBLE, DOUBLE_ARRAY, FLOAT,
 		FLOAT_ARRAY, GEOLOCATION, INTEGER, INTEGER_ARRAY, LONG, LONG_ARRAY,
 		NUMBER, NUMBER_ARRAY, SHORT, SHORT_ARRAY, STRING, STRING_ARRAY,
@@ -160,6 +189,79 @@ public class ExpandoColumnConstants {
 	};
 
 	public static final String UNKNOWN_LABEL = "Unknown";
+
+	public static final String getDataType(int type) {
+		if ((type == DOUBLE) || (type == DOUBLE_ARRAY) || (type == FLOAT) ||
+			(type == FLOAT_ARRAY)) {
+
+			return DATA_TYPE_DECIMAL;
+		}
+		else if ((type == INTEGER) || (type == INTEGER_ARRAY) ||
+				 (type == LONG) || (type == LONG_ARRAY) || (type == SHORT) ||
+				 (type == SHORT_ARRAY)) {
+
+			return DATA_TYPE_INTEGER;
+		}
+		else if ((type == STRING) || (type == STRING_ARRAY) ||
+				 (type == STRING_LOCALIZED)) {
+
+			return DATA_TYPE_TEXT;
+		}
+
+		return StringPool.BLANK;
+	}
+
+	public static final String getDefaultDisplayTypeProperty(
+		int type, UnicodeProperties unicodeProperties) {
+
+		if (type == BOOLEAN) {
+			return PROPERTY_DISPLAY_TYPE_BOOLEAN;
+		}
+		else if ((type == BOOLEAN_ARRAY) || (type == DATE_ARRAY) ||
+				 (type == DOUBLE_ARRAY) || (type == FLOAT_ARRAY) ||
+				 (type == INTEGER_ARRAY) || (type == LONG_ARRAY) ||
+				 (type == NUMBER_ARRAY) || (type == SHORT_ARRAY) ||
+				 (type == STRING_ARRAY) || (type == STRING_ARRAY_LOCALIZED)) {
+
+			return PROPERTY_DISPLAY_TYPE_SELECTION_LIST;
+		}
+		else if (type == DATE) {
+			return PROPERTY_DISPLAY_TYPE_DATE;
+		}
+		else if (type == GEOLOCATION) {
+			return PROPERTY_DISPLAY_TYPE_GEOLOCATION;
+		}
+		else if ((type == STRING) || (type == STRING_LOCALIZED)) {
+			int propertyHeight = GetterUtil.getInteger(
+				unicodeProperties.get(PROPERTY_HEIGHT));
+
+			if (propertyHeight > 0) {
+				return PROPERTY_DISPLAY_TYPE_TEXT_BOX;
+			}
+
+			return PROPERTY_DISPLAY_TYPE_INPUT_FIELD;
+		}
+
+		return StringPool.BLANK;
+	}
+
+	public static final String getPrecisionType(int type) {
+		if ((type == DOUBLE) || (type == DOUBLE_ARRAY) || (type == LONG) ||
+			(type == LONG_ARRAY)) {
+
+			return PRECISION_64_BIT;
+		}
+		else if ((type == FLOAT) || (type == FLOAT_ARRAY) ||
+				 (type == INTEGER) || (type == INTEGER_ARRAY)) {
+
+			return PRECISION_32_BIT;
+		}
+		else if ((type == SHORT) || (type == SHORT_ARRAY)) {
+			return PRECISION_16_BIT;
+		}
+
+		return StringPool.BLANK;
+	}
 
 	public static final Serializable getSerializable(int type, String value) {
 		if (type == BOOLEAN) {
@@ -175,9 +277,9 @@ public class ExpandoColumnConstants {
 
 				return dateFormat.parse(value);
 			}
-			catch (Exception e) {
+			catch (Exception exception) {
 				if (_log.isWarnEnabled()) {
-					_log.warn("Unable to parse date " + value, e);
+					_log.warn("Unable to parse date " + value, exception);
 				}
 			}
 		}

@@ -14,8 +14,6 @@
 
 package com.liferay.portal.kernel.messaging;
 
-import com.liferay.portal.kernel.log.Log;
-import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.ServiceProxyFactory;
 
 import java.util.Collection;
@@ -35,19 +33,8 @@ public class DestinationFactoryUtil {
 		return _destinationFactory.getDestinationTypes();
 	}
 
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	protected DestinationFactory getDestinationFactory() {
-		return _destinationFactory;
-	}
-
 	private DestinationFactoryUtil() {
 	}
-
-	private static final Log _log = LogFactoryUtil.getLog(
-		DestinationFactoryUtil.class);
 
 	private static volatile DestinationFactory _destinationFactory =
 		ServiceProxyFactory.newServiceTrackedInstance(

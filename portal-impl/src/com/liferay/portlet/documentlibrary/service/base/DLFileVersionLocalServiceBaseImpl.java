@@ -14,8 +14,6 @@
 
 package com.liferay.portlet.documentlibrary.service.base;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.document.library.kernel.model.DLFileVersion;
 import com.liferay.document.library.kernel.service.DLFileVersionLocalService;
 import com.liferay.document.library.kernel.service.persistence.DLFileEntryFinder;
@@ -23,7 +21,6 @@ import com.liferay.document.library.kernel.service.persistence.DLFileEntryPersis
 import com.liferay.document.library.kernel.service.persistence.DLFileVersionPersistence;
 import com.liferay.document.library.kernel.service.persistence.DLFolderFinder;
 import com.liferay.document.library.kernel.service.persistence.DLFolderPersistence;
-
 import com.liferay.exportimport.kernel.lar.ExportImportHelperUtil;
 import com.liferay.exportimport.kernel.lar.ManifestSummary;
 import com.liferay.exportimport.kernel.lar.PortletDataContext;
@@ -31,7 +28,8 @@ import com.liferay.exportimport.kernel.lar.StagedModelDataHandler;
 import com.liferay.exportimport.kernel.lar.StagedModelDataHandlerRegistryUtil;
 import com.liferay.exportimport.kernel.lar.StagedModelDataHandlerUtil;
 import com.liferay.exportimport.kernel.lar.StagedModelType;
-
+import com.liferay.petra.function.UnsafeFunction;
+import com.liferay.petra.sql.dsl.query.DSLQuery;
 import com.liferay.portal.kernel.bean.BeanReference;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
@@ -58,6 +56,9 @@ import com.liferay.portal.kernel.search.Indexable;
 import com.liferay.portal.kernel.search.IndexableType;
 import com.liferay.portal.kernel.service.BaseLocalServiceImpl;
 import com.liferay.portal.kernel.service.PersistedModelLocalServiceRegistry;
+import com.liferay.portal.kernel.service.persistence.BasePersistence;
+import com.liferay.portal.kernel.service.persistence.change.tracking.CTPersistence;
+import com.liferay.portal.kernel.transaction.Transactional;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
@@ -77,21 +78,24 @@ import javax.sql.DataSource;
  *
  * @author Brian Wing Shun Chan
  * @see com.liferay.portlet.documentlibrary.service.impl.DLFileVersionLocalServiceImpl
- * @see com.liferay.document.library.kernel.service.DLFileVersionLocalServiceUtil
  * @generated
  */
-@ProviderType
 public abstract class DLFileVersionLocalServiceBaseImpl
-	extends BaseLocalServiceImpl implements DLFileVersionLocalService,
-		IdentifiableOSGiService {
+	extends BaseLocalServiceImpl
+	implements DLFileVersionLocalService, IdentifiableOSGiService {
+
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. Always use {@link com.liferay.document.library.kernel.service.DLFileVersionLocalServiceUtil} to access the document library file version local service.
+	 * Never modify or reference this class directly. Use <code>DLFileVersionLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>com.liferay.document.library.kernel.service.DLFileVersionLocalServiceUtil</code>.
 	 */
 
 	/**
 	 * Adds the document library file version to the database. Also notifies the appropriate model listeners.
+	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect DLFileVersionLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
 	 *
 	 * @param dlFileVersion the document library file version
 	 * @return the document library file version that was added
@@ -111,12 +115,17 @@ public abstract class DLFileVersionLocalServiceBaseImpl
 	 * @return the new document library file version
 	 */
 	@Override
+	@Transactional(enabled = false)
 	public DLFileVersion createDLFileVersion(long fileVersionId) {
 		return dlFileVersionPersistence.create(fileVersionId);
 	}
 
 	/**
 	 * Deletes the document library file version with the primary key from the database. Also notifies the appropriate model listeners.
+	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect DLFileVersionLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
 	 *
 	 * @param fileVersionId the primary key of the document library file version
 	 * @return the document library file version that was removed
@@ -126,11 +135,16 @@ public abstract class DLFileVersionLocalServiceBaseImpl
 	@Override
 	public DLFileVersion deleteDLFileVersion(long fileVersionId)
 		throws PortalException {
+
 		return dlFileVersionPersistence.remove(fileVersionId);
 	}
 
 	/**
 	 * Deletes the document library file version from the database. Also notifies the appropriate model listeners.
+	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect DLFileVersionLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
 	 *
 	 * @param dlFileVersion the document library file version
 	 * @return the document library file version that was removed
@@ -142,11 +156,16 @@ public abstract class DLFileVersionLocalServiceBaseImpl
 	}
 
 	@Override
+	public <T> T dslQuery(DSLQuery dslQuery) {
+		return dlFileVersionPersistence.dslQuery(dslQuery);
+	}
+
+	@Override
 	public DynamicQuery dynamicQuery() {
 		Class<?> clazz = getClass();
 
-		return DynamicQueryFactoryUtil.forClass(DLFileVersion.class,
-			clazz.getClassLoader());
+		return DynamicQueryFactoryUtil.forClass(
+			DLFileVersion.class, clazz.getClassLoader());
 	}
 
 	/**
@@ -164,7 +183,7 @@ public abstract class DLFileVersionLocalServiceBaseImpl
 	 * Performs a dynamic query on the database and returns a range of the matching rows.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.documentlibrary.model.impl.DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>com.liferay.portlet.documentlibrary.model.impl.DLFileVersionModelImpl</code>.
 	 * </p>
 	 *
 	 * @param dynamicQuery the dynamic query
@@ -173,17 +192,18 @@ public abstract class DLFileVersionLocalServiceBaseImpl
 	 * @return the range of matching rows
 	 */
 	@Override
-	public <T> List<T> dynamicQuery(DynamicQuery dynamicQuery, int start,
-		int end) {
-		return dlFileVersionPersistence.findWithDynamicQuery(dynamicQuery,
-			start, end);
+	public <T> List<T> dynamicQuery(
+		DynamicQuery dynamicQuery, int start, int end) {
+
+		return dlFileVersionPersistence.findWithDynamicQuery(
+			dynamicQuery, start, end);
 	}
 
 	/**
 	 * Performs a dynamic query on the database and returns an ordered range of the matching rows.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.documentlibrary.model.impl.DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>com.liferay.portlet.documentlibrary.model.impl.DLFileVersionModelImpl</code>.
 	 * </p>
 	 *
 	 * @param dynamicQuery the dynamic query
@@ -193,10 +213,12 @@ public abstract class DLFileVersionLocalServiceBaseImpl
 	 * @return the ordered range of matching rows
 	 */
 	@Override
-	public <T> List<T> dynamicQuery(DynamicQuery dynamicQuery, int start,
-		int end, OrderByComparator<T> orderByComparator) {
-		return dlFileVersionPersistence.findWithDynamicQuery(dynamicQuery,
-			start, end, orderByComparator);
+	public <T> List<T> dynamicQuery(
+		DynamicQuery dynamicQuery, int start, int end,
+		OrderByComparator<T> orderByComparator) {
+
+		return dlFileVersionPersistence.findWithDynamicQuery(
+			dynamicQuery, start, end, orderByComparator);
 	}
 
 	/**
@@ -218,10 +240,11 @@ public abstract class DLFileVersionLocalServiceBaseImpl
 	 * @return the number of rows matching the dynamic query
 	 */
 	@Override
-	public long dynamicQueryCount(DynamicQuery dynamicQuery,
-		Projection projection) {
-		return dlFileVersionPersistence.countWithDynamicQuery(dynamicQuery,
-			projection);
+	public long dynamicQueryCount(
+		DynamicQuery dynamicQuery, Projection projection) {
+
+		return dlFileVersionPersistence.countWithDynamicQuery(
+			dynamicQuery, projection);
 	}
 
 	@Override
@@ -237,8 +260,9 @@ public abstract class DLFileVersionLocalServiceBaseImpl
 	 * @return the matching document library file version, or <code>null</code> if a matching document library file version could not be found
 	 */
 	@Override
-	public DLFileVersion fetchDLFileVersionByUuidAndGroupId(String uuid,
-		long groupId) {
+	public DLFileVersion fetchDLFileVersionByUuidAndGroupId(
+		String uuid, long groupId) {
+
 		return dlFileVersionPersistence.fetchByUUID_G(uuid, groupId);
 	}
 
@@ -252,12 +276,14 @@ public abstract class DLFileVersionLocalServiceBaseImpl
 	@Override
 	public DLFileVersion getDLFileVersion(long fileVersionId)
 		throws PortalException {
+
 		return dlFileVersionPersistence.findByPrimaryKey(fileVersionId);
 	}
 
 	@Override
 	public ActionableDynamicQuery getActionableDynamicQuery() {
-		ActionableDynamicQuery actionableDynamicQuery = new DefaultActionableDynamicQuery();
+		ActionableDynamicQuery actionableDynamicQuery =
+			new DefaultActionableDynamicQuery();
 
 		actionableDynamicQuery.setBaseLocalService(dlFileVersionLocalService);
 		actionableDynamicQuery.setClassLoader(getClassLoader());
@@ -269,10 +295,14 @@ public abstract class DLFileVersionLocalServiceBaseImpl
 	}
 
 	@Override
-	public IndexableActionableDynamicQuery getIndexableActionableDynamicQuery() {
-		IndexableActionableDynamicQuery indexableActionableDynamicQuery = new IndexableActionableDynamicQuery();
+	public IndexableActionableDynamicQuery
+		getIndexableActionableDynamicQuery() {
 
-		indexableActionableDynamicQuery.setBaseLocalService(dlFileVersionLocalService);
+		IndexableActionableDynamicQuery indexableActionableDynamicQuery =
+			new IndexableActionableDynamicQuery();
+
+		indexableActionableDynamicQuery.setBaseLocalService(
+			dlFileVersionLocalService);
 		indexableActionableDynamicQuery.setClassLoader(getClassLoader());
 		indexableActionableDynamicQuery.setModelClass(DLFileVersion.class);
 
@@ -284,6 +314,7 @@ public abstract class DLFileVersionLocalServiceBaseImpl
 
 	protected void initActionableDynamicQuery(
 		ActionableDynamicQuery actionableDynamicQuery) {
+
 		actionableDynamicQuery.setBaseLocalService(dlFileVersionLocalService);
 		actionableDynamicQuery.setClassLoader(getClassLoader());
 		actionableDynamicQuery.setModelClass(DLFileVersion.class);
@@ -294,48 +325,59 @@ public abstract class DLFileVersionLocalServiceBaseImpl
 	@Override
 	public ExportActionableDynamicQuery getExportActionableDynamicQuery(
 		final PortletDataContext portletDataContext) {
-		final ExportActionableDynamicQuery exportActionableDynamicQuery = new ExportActionableDynamicQuery() {
+
+		final ExportActionableDynamicQuery exportActionableDynamicQuery =
+			new ExportActionableDynamicQuery() {
+
 				@Override
 				public long performCount() throws PortalException {
-					ManifestSummary manifestSummary = portletDataContext.getManifestSummary();
+					ManifestSummary manifestSummary =
+						portletDataContext.getManifestSummary();
 
 					StagedModelType stagedModelType = getStagedModelType();
 
 					long modelAdditionCount = super.performCount();
 
-					manifestSummary.addModelAdditionCount(stagedModelType,
-						modelAdditionCount);
+					manifestSummary.addModelAdditionCount(
+						stagedModelType, modelAdditionCount);
 
-					long modelDeletionCount = ExportImportHelperUtil.getModelDeletionCount(portletDataContext,
-							stagedModelType);
+					long modelDeletionCount =
+						ExportImportHelperUtil.getModelDeletionCount(
+							portletDataContext, stagedModelType);
 
-					manifestSummary.addModelDeletionCount(stagedModelType,
-						modelDeletionCount);
+					manifestSummary.addModelDeletionCount(
+						stagedModelType, modelDeletionCount);
 
 					return modelAdditionCount;
 				}
+
 			};
 
 		initActionableDynamicQuery(exportActionableDynamicQuery);
 
-		exportActionableDynamicQuery.setAddCriteriaMethod(new ActionableDynamicQuery.AddCriteriaMethod() {
+		exportActionableDynamicQuery.setAddCriteriaMethod(
+			new ActionableDynamicQuery.AddCriteriaMethod() {
+
 				@Override
 				public void addCriteria(DynamicQuery dynamicQuery) {
-					Criterion modifiedDateCriterion = portletDataContext.getDateRangeCriteria(
-							"modifiedDate");
+					Criterion modifiedDateCriterion =
+						portletDataContext.getDateRangeCriteria("modifiedDate");
 
 					if (modifiedDateCriterion != null) {
-						Conjunction conjunction = RestrictionsFactoryUtil.conjunction();
+						Conjunction conjunction =
+							RestrictionsFactoryUtil.conjunction();
 
 						conjunction.add(modifiedDateCriterion);
 
-						Disjunction disjunction = RestrictionsFactoryUtil.disjunction();
+						Disjunction disjunction =
+							RestrictionsFactoryUtil.disjunction();
 
-						disjunction.add(RestrictionsFactoryUtil.gtProperty(
+						disjunction.add(
+							RestrictionsFactoryUtil.gtProperty(
 								"modifiedDate", "lastPublishDate"));
 
-						Property lastPublishDateProperty = PropertyFactoryUtil.forName(
-								"lastPublishDate");
+						Property lastPublishDateProperty =
+							PropertyFactoryUtil.forName("lastPublishDate");
 
 						disjunction.add(lastPublishDateProperty.isNull());
 
@@ -344,12 +386,14 @@ public abstract class DLFileVersionLocalServiceBaseImpl
 						modifiedDateCriterion = conjunction;
 					}
 
-					Criterion statusDateCriterion = portletDataContext.getDateRangeCriteria(
-							"statusDate");
+					Criterion statusDateCriterion =
+						portletDataContext.getDateRangeCriteria("statusDate");
 
 					if ((modifiedDateCriterion != null) &&
-							(statusDateCriterion != null)) {
-						Disjunction disjunction = RestrictionsFactoryUtil.disjunction();
+						(statusDateCriterion != null)) {
+
+						Disjunction disjunction =
+							RestrictionsFactoryUtil.disjunction();
 
 						disjunction.add(modifiedDateCriterion);
 						disjunction.add(statusDateCriterion);
@@ -357,35 +401,49 @@ public abstract class DLFileVersionLocalServiceBaseImpl
 						dynamicQuery.add(disjunction);
 					}
 
-					Property workflowStatusProperty = PropertyFactoryUtil.forName(
-							"status");
+					Property workflowStatusProperty =
+						PropertyFactoryUtil.forName("status");
 
 					if (portletDataContext.isInitialPublication()) {
-						dynamicQuery.add(workflowStatusProperty.ne(
+						dynamicQuery.add(
+							workflowStatusProperty.ne(
 								WorkflowConstants.STATUS_IN_TRASH));
 					}
 					else {
-						StagedModelDataHandler<?> stagedModelDataHandler = StagedModelDataHandlerRegistryUtil.getStagedModelDataHandler(DLFileVersion.class.getName());
+						StagedModelDataHandler<?> stagedModelDataHandler =
+							StagedModelDataHandlerRegistryUtil.
+								getStagedModelDataHandler(
+									DLFileVersion.class.getName());
 
-						dynamicQuery.add(workflowStatusProperty.in(
-								stagedModelDataHandler.getExportableStatuses()));
+						dynamicQuery.add(
+							workflowStatusProperty.in(
+								stagedModelDataHandler.
+									getExportableStatuses()));
 					}
 				}
+
 			});
 
-		exportActionableDynamicQuery.setCompanyId(portletDataContext.getCompanyId());
+		exportActionableDynamicQuery.setCompanyId(
+			portletDataContext.getCompanyId());
 
-		exportActionableDynamicQuery.setGroupId(portletDataContext.getScopeGroupId());
+		exportActionableDynamicQuery.setGroupId(
+			portletDataContext.getScopeGroupId());
 
-		exportActionableDynamicQuery.setPerformActionMethod(new ActionableDynamicQuery.PerformActionMethod<DLFileVersion>() {
+		exportActionableDynamicQuery.setPerformActionMethod(
+			new ActionableDynamicQuery.PerformActionMethod<DLFileVersion>() {
+
 				@Override
 				public void performAction(DLFileVersion dlFileVersion)
 					throws PortalException {
-					StagedModelDataHandlerUtil.exportStagedModel(portletDataContext,
-						dlFileVersion);
+
+					StagedModelDataHandlerUtil.exportStagedModel(
+						portletDataContext, dlFileVersion);
 				}
+
 			});
-		exportActionableDynamicQuery.setStagedModelType(new StagedModelType(
+		exportActionableDynamicQuery.setStagedModelType(
+			new StagedModelType(
 				PortalUtil.getClassNameId(DLFileVersion.class.getName())));
 
 		return exportActionableDynamicQuery;
@@ -395,14 +453,36 @@ public abstract class DLFileVersionLocalServiceBaseImpl
 	 * @throws PortalException
 	 */
 	@Override
+	public PersistedModel createPersistedModel(Serializable primaryKeyObj)
+		throws PortalException {
+
+		return dlFileVersionPersistence.create(
+			((Long)primaryKeyObj).longValue());
+	}
+
+	/**
+	 * @throws PortalException
+	 */
+	@Override
 	public PersistedModel deletePersistedModel(PersistedModel persistedModel)
 		throws PortalException {
-		return dlFileVersionLocalService.deleteDLFileVersion((DLFileVersion)persistedModel);
+
+		return dlFileVersionLocalService.deleteDLFileVersion(
+			(DLFileVersion)persistedModel);
 	}
 
 	@Override
+	public BasePersistence<DLFileVersion> getBasePersistence() {
+		return dlFileVersionPersistence;
+	}
+
+	/**
+	 * @throws PortalException
+	 */
+	@Override
 	public PersistedModel getPersistedModel(Serializable primaryKeyObj)
 		throws PortalException {
+
 		return dlFileVersionPersistence.findByPrimaryKey(primaryKeyObj);
 	}
 
@@ -416,6 +496,7 @@ public abstract class DLFileVersionLocalServiceBaseImpl
 	@Override
 	public List<DLFileVersion> getDLFileVersionsByUuidAndCompanyId(
 		String uuid, long companyId) {
+
 		return dlFileVersionPersistence.findByUuid_C(uuid, companyId);
 	}
 
@@ -433,8 +514,9 @@ public abstract class DLFileVersionLocalServiceBaseImpl
 	public List<DLFileVersion> getDLFileVersionsByUuidAndCompanyId(
 		String uuid, long companyId, int start, int end,
 		OrderByComparator<DLFileVersion> orderByComparator) {
-		return dlFileVersionPersistence.findByUuid_C(uuid, companyId, start,
-			end, orderByComparator);
+
+		return dlFileVersionPersistence.findByUuid_C(
+			uuid, companyId, start, end, orderByComparator);
 	}
 
 	/**
@@ -446,8 +528,10 @@ public abstract class DLFileVersionLocalServiceBaseImpl
 	 * @throws PortalException if a matching document library file version could not be found
 	 */
 	@Override
-	public DLFileVersion getDLFileVersionByUuidAndGroupId(String uuid,
-		long groupId) throws PortalException {
+	public DLFileVersion getDLFileVersionByUuidAndGroupId(
+			String uuid, long groupId)
+		throws PortalException {
+
 		return dlFileVersionPersistence.findByUUID_G(uuid, groupId);
 	}
 
@@ -455,7 +539,7 @@ public abstract class DLFileVersionLocalServiceBaseImpl
 	 * Returns a range of all the document library file versions.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.documentlibrary.model.impl.DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>com.liferay.portlet.documentlibrary.model.impl.DLFileVersionModelImpl</code>.
 	 * </p>
 	 *
 	 * @param start the lower bound of the range of document library file versions
@@ -479,6 +563,10 @@ public abstract class DLFileVersionLocalServiceBaseImpl
 
 	/**
 	 * Updates the document library file version in the database or adds it if it does not yet exist. Also notifies the appropriate model listeners.
+	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect DLFileVersionLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
 	 *
 	 * @param dlFileVersion the document library file version
 	 * @return the document library file version that was updated
@@ -505,6 +593,7 @@ public abstract class DLFileVersionLocalServiceBaseImpl
 	 */
 	public void setDLFileVersionLocalService(
 		DLFileVersionLocalService dlFileVersionLocalService) {
+
 		this.dlFileVersionLocalService = dlFileVersionLocalService;
 	}
 
@@ -524,6 +613,7 @@ public abstract class DLFileVersionLocalServiceBaseImpl
 	 */
 	public void setDLFileVersionPersistence(
 		DLFileVersionPersistence dlFileVersionPersistence) {
+
 		this.dlFileVersionPersistence = dlFileVersionPersistence;
 	}
 
@@ -532,7 +622,9 @@ public abstract class DLFileVersionLocalServiceBaseImpl
 	 *
 	 * @return the counter local service
 	 */
-	public com.liferay.counter.kernel.service.CounterLocalService getCounterLocalService() {
+	public com.liferay.counter.kernel.service.CounterLocalService
+		getCounterLocalService() {
+
 		return counterLocalService;
 	}
 
@@ -542,7 +634,9 @@ public abstract class DLFileVersionLocalServiceBaseImpl
 	 * @param counterLocalService the counter local service
 	 */
 	public void setCounterLocalService(
-		com.liferay.counter.kernel.service.CounterLocalService counterLocalService) {
+		com.liferay.counter.kernel.service.CounterLocalService
+			counterLocalService) {
+
 		this.counterLocalService = counterLocalService;
 	}
 
@@ -551,7 +645,9 @@ public abstract class DLFileVersionLocalServiceBaseImpl
 	 *
 	 * @return the document library file entry local service
 	 */
-	public com.liferay.document.library.kernel.service.DLFileEntryLocalService getDLFileEntryLocalService() {
+	public com.liferay.document.library.kernel.service.DLFileEntryLocalService
+		getDLFileEntryLocalService() {
+
 		return dlFileEntryLocalService;
 	}
 
@@ -561,7 +657,9 @@ public abstract class DLFileVersionLocalServiceBaseImpl
 	 * @param dlFileEntryLocalService the document library file entry local service
 	 */
 	public void setDLFileEntryLocalService(
-		com.liferay.document.library.kernel.service.DLFileEntryLocalService dlFileEntryLocalService) {
+		com.liferay.document.library.kernel.service.DLFileEntryLocalService
+			dlFileEntryLocalService) {
+
 		this.dlFileEntryLocalService = dlFileEntryLocalService;
 	}
 
@@ -581,6 +679,7 @@ public abstract class DLFileVersionLocalServiceBaseImpl
 	 */
 	public void setDLFileEntryPersistence(
 		DLFileEntryPersistence dlFileEntryPersistence) {
+
 		this.dlFileEntryPersistence = dlFileEntryPersistence;
 	}
 
@@ -607,7 +706,9 @@ public abstract class DLFileVersionLocalServiceBaseImpl
 	 *
 	 * @return the document library folder local service
 	 */
-	public com.liferay.document.library.kernel.service.DLFolderLocalService getDLFolderLocalService() {
+	public com.liferay.document.library.kernel.service.DLFolderLocalService
+		getDLFolderLocalService() {
+
 		return dlFolderLocalService;
 	}
 
@@ -617,7 +718,9 @@ public abstract class DLFileVersionLocalServiceBaseImpl
 	 * @param dlFolderLocalService the document library folder local service
 	 */
 	public void setDLFolderLocalService(
-		com.liferay.document.library.kernel.service.DLFolderLocalService dlFolderLocalService) {
+		com.liferay.document.library.kernel.service.DLFolderLocalService
+			dlFolderLocalService) {
+
 		this.dlFolderLocalService = dlFolderLocalService;
 	}
 
@@ -635,7 +738,9 @@ public abstract class DLFileVersionLocalServiceBaseImpl
 	 *
 	 * @param dlFolderPersistence the document library folder persistence
 	 */
-	public void setDLFolderPersistence(DLFolderPersistence dlFolderPersistence) {
+	public void setDLFolderPersistence(
+		DLFolderPersistence dlFolderPersistence) {
+
 		this.dlFolderPersistence = dlFolderPersistence;
 	}
 
@@ -658,7 +763,8 @@ public abstract class DLFileVersionLocalServiceBaseImpl
 	}
 
 	public void afterPropertiesSet() {
-		persistedModelLocalServiceRegistry.register("com.liferay.document.library.kernel.model.DLFileVersion",
+		persistedModelLocalServiceRegistry.register(
+			"com.liferay.document.library.kernel.model.DLFileVersion",
 			dlFileVersionLocalService);
 	}
 
@@ -677,8 +783,23 @@ public abstract class DLFileVersionLocalServiceBaseImpl
 		return DLFileVersionLocalService.class.getName();
 	}
 
-	protected Class<?> getModelClass() {
+	@Override
+	public CTPersistence<DLFileVersion> getCTPersistence() {
+		return dlFileVersionPersistence;
+	}
+
+	@Override
+	public Class<DLFileVersion> getModelClass() {
 		return DLFileVersion.class;
+	}
+
+	@Override
+	public <R, E extends Throwable> R updateWithUnsafeFunction(
+			UnsafeFunction<CTPersistence<DLFileVersion>, R, E>
+				updateUnsafeFunction)
+		throws E {
+
+		return updateUnsafeFunction.apply(dlFileVersionPersistence);
 	}
 
 	protected String getModelClassName() {
@@ -699,34 +820,55 @@ public abstract class DLFileVersionLocalServiceBaseImpl
 			sql = db.buildSQL(sql);
 			sql = PortalUtil.transformSQL(sql);
 
-			SqlUpdate sqlUpdate = SqlUpdateFactoryUtil.getSqlUpdate(dataSource,
-					sql);
+			SqlUpdate sqlUpdate = SqlUpdateFactoryUtil.getSqlUpdate(
+				dataSource, sql);
 
 			sqlUpdate.update();
 		}
-		catch (Exception e) {
-			throw new SystemException(e);
+		catch (Exception exception) {
+			throw new SystemException(exception);
 		}
 	}
 
 	@BeanReference(type = DLFileVersionLocalService.class)
 	protected DLFileVersionLocalService dlFileVersionLocalService;
+
 	@BeanReference(type = DLFileVersionPersistence.class)
 	protected DLFileVersionPersistence dlFileVersionPersistence;
-	@BeanReference(type = com.liferay.counter.kernel.service.CounterLocalService.class)
-	protected com.liferay.counter.kernel.service.CounterLocalService counterLocalService;
-	@BeanReference(type = com.liferay.document.library.kernel.service.DLFileEntryLocalService.class)
-	protected com.liferay.document.library.kernel.service.DLFileEntryLocalService dlFileEntryLocalService;
+
+	@BeanReference(
+		type = com.liferay.counter.kernel.service.CounterLocalService.class
+	)
+	protected com.liferay.counter.kernel.service.CounterLocalService
+		counterLocalService;
+
+	@BeanReference(
+		type = com.liferay.document.library.kernel.service.DLFileEntryLocalService.class
+	)
+	protected
+		com.liferay.document.library.kernel.service.DLFileEntryLocalService
+			dlFileEntryLocalService;
+
 	@BeanReference(type = DLFileEntryPersistence.class)
 	protected DLFileEntryPersistence dlFileEntryPersistence;
+
 	@BeanReference(type = DLFileEntryFinder.class)
 	protected DLFileEntryFinder dlFileEntryFinder;
-	@BeanReference(type = com.liferay.document.library.kernel.service.DLFolderLocalService.class)
-	protected com.liferay.document.library.kernel.service.DLFolderLocalService dlFolderLocalService;
+
+	@BeanReference(
+		type = com.liferay.document.library.kernel.service.DLFolderLocalService.class
+	)
+	protected com.liferay.document.library.kernel.service.DLFolderLocalService
+		dlFolderLocalService;
+
 	@BeanReference(type = DLFolderPersistence.class)
 	protected DLFolderPersistence dlFolderPersistence;
+
 	@BeanReference(type = DLFolderFinder.class)
 	protected DLFolderFinder dlFolderFinder;
+
 	@BeanReference(type = PersistedModelLocalServiceRegistry.class)
-	protected PersistedModelLocalServiceRegistry persistedModelLocalServiceRegistry;
+	protected PersistedModelLocalServiceRegistry
+		persistedModelLocalServiceRegistry;
+
 }

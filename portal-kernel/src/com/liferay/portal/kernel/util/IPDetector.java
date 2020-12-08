@@ -56,15 +56,17 @@ public class IPDetector {
 			InetAddress[] inetAddresses = InetAddress.getAllByName("localhost");
 
 			for (InetAddress inetAddress : inetAddresses) {
-				if (inetAddress.getHostAddress().contains(":")) {
+				String hostAddress = inetAddress.getHostAddress();
+
+				if (hostAddress.contains(":")) {
 					_suppportsV6 = Boolean.TRUE;
 
 					break;
 				}
 			}
 		}
-		catch (UnknownHostException uhe) {
-			_log.error(uhe, uhe);
+		catch (UnknownHostException unknownHostException) {
+			_log.error(unknownHostException, unknownHostException);
 		}
 
 		if (_suppportsV6 == null) {

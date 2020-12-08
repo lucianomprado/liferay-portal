@@ -14,6 +14,9 @@
 
 package com.liferay.portal.kernel.util;
 
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringPool;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,20 +25,18 @@ import java.util.List;
  */
 public class MethodParameter {
 
-	public MethodParameter(String name, String signatures, Class<?> type) {
+	public MethodParameter(
+		ClassLoader classLoader, String name, String signatures,
+		Class<?> type) {
+
 		_name = name;
 		_type = type;
 
 		try {
-			Thread currentThread = Thread.currentThread();
-
-			ClassLoader contextClassLoader =
-				currentThread.getContextClassLoader();
-
-			_genericTypes = _getGenericTypes(contextClassLoader, signatures);
+			_genericTypes = _getGenericTypes(classLoader, signatures);
 		}
-		catch (ClassNotFoundException cnfe) {
-			throw new IllegalArgumentException(cnfe);
+		catch (ClassNotFoundException classNotFoundException) {
+			throw new IllegalArgumentException(classNotFoundException);
 		}
 	}
 
@@ -64,10 +65,12 @@ public class MethodParameter {
 		}
 		else if (c == 'L') {
 			className = className.substring(1, className.length() - 1);
-			className = className.replace(CharPool.SLASH, CharPool.PERIOD);
+			className = StringUtil.replace(
+				className, CharPool.SLASH, CharPool.PERIOD);
 		}
 		else if (c == '[') {
-			className = className.replace(CharPool.SLASH, CharPool.PERIOD);
+			className = StringUtil.replace(
+				className, CharPool.SLASH, CharPool.PERIOD);
 		}
 		else {
 			throw new IllegalArgumentException(
@@ -101,7 +104,7 @@ public class MethodParameter {
 			try {
 				return Class.forName(className, true, contextClassLoader);
 			}
-			catch (ClassNotFoundException cnfe) {
+			catch (ClassNotFoundException classNotFoundException) {
 			}
 		}
 
@@ -205,7 +208,7 @@ public class MethodParameter {
 			return null;
 		}
 
-		return genericTypeslist.toArray(new Class<?>[genericTypeslist.size()]);
+		return genericTypeslist.toArray(new Class<?>[0]);
 	}
 
 	private boolean _isPrimitive(char c) {
@@ -215,9 +218,8 @@ public class MethodParameter {
 
 			return true;
 		}
-		else {
-			return false;
-		}
+
+		return false;
 	}
 
 	private final Class<?>[] _genericTypes;

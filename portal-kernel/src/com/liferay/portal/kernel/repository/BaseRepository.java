@@ -31,15 +31,7 @@ public interface BaseRepository extends Repository {
 	public LocalRepository getLocalRepository();
 
 	/**
-	 * @deprecated As of 7.0.0, replaced by {@link
-	 *             com.liferay.portal.kernel.repository.registry.RepositoryDefiner#getSupportedConfigurations(
-	 *             )}
-	 */
-	@Deprecated
-	public String[] getSupportedConfigurations();
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link
+	 * @deprecated As of Wilberforce (7.0.x), replaced by {@link
 	 *             com.liferay.portal.kernel.repository.registry.RepositoryDefiner#getSupportedParameters(
 	 *             )}
 	 */
@@ -69,7 +61,7 @@ public interface BaseRepository extends Repository {
 	public void setRepositoryId(long repositoryId);
 
 	public void setTypeSettingsProperties(
-		UnicodeProperties typeSettingsProperties);
+		UnicodeProperties typeSettingsUnicodeProperties);
 
 	public void setUserLocalService(UserLocalService userLocalService);
 

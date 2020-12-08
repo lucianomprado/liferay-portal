@@ -25,6 +25,7 @@ import java.lang.reflect.Proxy;
 import java.util.Collections;
 import java.util.Dictionary;
 import java.util.Enumeration;
+import java.util.Objects;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
@@ -50,13 +51,11 @@ import org.osgi.service.http.runtime.HttpServiceRuntimeConstants;
 /**
  * @author Raymond Augé
  */
-@Component(immediate = true)
+@Component(immediate = true, service = {})
 public class HttpAdapter {
 
 	@Activate
 	protected void activate(ComponentContext componentContext) {
-		BundleContext bundleContext = componentContext.getBundleContext();
-
 		_httpServiceServlet = new HttpServiceServlet() {
 
 			@Override
@@ -107,11 +106,14 @@ public class HttpAdapter {
 		try {
 			_httpServiceServlet.init(servletConfig);
 		}
-		catch (ServletException se) {
-			_servletContext.log(se.getMessage(), se);
+		catch (ServletException servletException) {
+			_servletContext.log(
+				servletException.getMessage(), servletException);
 
 			return;
 		}
+
+		BundleContext bundleContext = componentContext.getBundleContext();
 
 		Dictionary<String, Object> properties = new HashMapDictionary<>();
 
@@ -185,22 +187,24 @@ public class HttpAdapter {
 		public Object invoke(Object proxy, Method method, Object[] args)
 			throws Throwable {
 
-			if (method.getName().equals("getInitParameter") &&
-				(args != null) && (args.length == 1)) {
+			String methodName = method.getName();
 
-				if ("osgi.http.endpoint".equals(args[0])) {
+			if (methodName.equals("getInitParameter") && (args != null) &&
+				(args.length == 1)) {
+
+				if (Objects.equals(args[0], "osgi.http.endpoint")) {
 					return _servletContext.getInitParameter((String)args[0]);
 				}
 
 				return null;
 			}
-			else if (method.getName().equals("getInitParameterNames") &&
+			else if (methodName.equals("getInitParameterNames") &&
 					 (args == null)) {
 
 				return Collections.enumeration(
 					Collections.singleton("osgi.http.endpoint"));
 			}
-			else if (method.getName().equals("getJspConfigDescriptor") &&
+			else if (methodName.equals("getJspConfigDescriptor") &&
 					 JspConfigDescriptor.class.isAssignableFrom(
 						 method.getReturnType())) {
 
@@ -210,8 +214,8 @@ public class HttpAdapter {
 			try {
 				return method.invoke(_servletContext, args);
 			}
-			catch (InvocationTargetException ite) {
-				throw ite.getCause();
+			catch (InvocationTargetException invocationTargetException) {
+				throw invocationTargetException.getCause();
 			}
 		}
 

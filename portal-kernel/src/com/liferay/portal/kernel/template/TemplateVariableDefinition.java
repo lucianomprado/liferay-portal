@@ -14,8 +14,8 @@
 
 package com.liferay.portal.kernel.template;
 
-import com.liferay.portal.kernel.util.HashUtil;
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.petra.lang.HashUtil;
+import com.liferay.petra.string.StringPool;
 
 import java.util.Objects;
 
@@ -52,17 +52,17 @@ public class TemplateVariableDefinition {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
+	public boolean equals(Object object) {
+		if (this == object) {
 			return true;
 		}
 
-		if (!(obj instanceof TemplateVariableDefinition)) {
+		if (!(object instanceof TemplateVariableDefinition)) {
 			return false;
 		}
 
 		TemplateVariableDefinition templateVariableDefinition =
-			(TemplateVariableDefinition)obj;
+			(TemplateVariableDefinition)object;
 
 		if (Objects.equals(_name, templateVariableDefinition._name) &&
 			Objects.equals(_accessor, templateVariableDefinition._accessor)) {

@@ -16,9 +16,12 @@ package com.liferay.portal.kernel.repository.capabilities;
 
 import com.liferay.portal.kernel.repository.model.FileEntry;
 
+import org.osgi.annotation.versioning.ProviderType;
+
 /**
  * @author Adolfo Pérez
  */
+@ProviderType
 public interface WorkflowCapability extends Capability {
 
 	public int getStatus(FileEntry fileEntry);

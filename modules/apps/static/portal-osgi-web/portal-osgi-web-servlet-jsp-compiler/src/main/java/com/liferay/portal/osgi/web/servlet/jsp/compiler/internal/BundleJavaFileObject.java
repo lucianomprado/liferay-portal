@@ -14,7 +14,7 @@
 
 package com.liferay.portal.osgi.web.servlet.jsp.compiler.internal;
 
-import com.liferay.portal.kernel.util.ReflectionUtil;
+import com.liferay.petra.reflect.ReflectionUtil;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -44,8 +44,8 @@ public class BundleJavaFileObject extends BaseJavaFileObject {
 		try {
 			return _url.toURI();
 		}
-		catch (URISyntaxException urise) {
-			return ReflectionUtil.throwException(urise);
+		catch (URISyntaxException uriSyntaxException) {
+			return ReflectionUtil.throwException(uriSyntaxException);
 		}
 	}
 

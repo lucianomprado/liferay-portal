@@ -15,13 +15,13 @@
 package com.liferay.sync.service.persistence.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
-
 import com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery;
 import com.liferay.portal.kernel.dao.orm.DynamicQuery;
 import com.liferay.portal.kernel.dao.orm.DynamicQueryFactoryUtil;
 import com.liferay.portal.kernel.dao.orm.ProjectionFactoryUtil;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.dao.orm.RestrictionsFactoryUtil;
+import com.liferay.portal.kernel.dao.orm.Session;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
@@ -29,26 +29,15 @@ import com.liferay.portal.kernel.transaction.Propagation;
 import com.liferay.portal.kernel.util.IntegerWrapper;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.OrderByComparatorFactoryUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Time;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PersistenceTestRule;
 import com.liferay.portal.test.rule.TransactionalTestRule;
-
 import com.liferay.sync.exception.NoSuchDLObjectException;
 import com.liferay.sync.model.SyncDLObject;
 import com.liferay.sync.service.SyncDLObjectLocalServiceUtil;
 import com.liferay.sync.service.persistence.SyncDLObjectPersistence;
 import com.liferay.sync.service.persistence.SyncDLObjectUtil;
-
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
-
-import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 
@@ -57,20 +46,29 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
+
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /**
  * @generated
  */
 @RunWith(Arquillian.class)
 public class SyncDLObjectPersistenceTest {
+
 	@ClassRule
 	@Rule
-	public static final AggregateTestRule aggregateTestRule = new AggregateTestRule(new LiferayIntegrationTestRule(),
-			PersistenceTestRule.INSTANCE,
-			new TransactionalTestRule(Propagation.REQUIRED,
-				"com.liferay.sync.service"));
+	public static final AggregateTestRule aggregateTestRule =
+		new AggregateTestRule(
+			new LiferayIntegrationTestRule(), PersistenceTestRule.INSTANCE,
+			new TransactionalTestRule(
+				Propagation.REQUIRED, "com.liferay.sync.service"));
 
 	@Before
 	public void setUp() {
@@ -109,7 +107,8 @@ public class SyncDLObjectPersistenceTest {
 
 		_persistence.remove(newSyncDLObject);
 
-		SyncDLObject existingSyncDLObject = _persistence.fetchByPrimaryKey(newSyncDLObject.getPrimaryKey());
+		SyncDLObject existingSyncDLObject = _persistence.fetchByPrimaryKey(
+			newSyncDLObject.getPrimaryKey());
 
 		Assert.assertNull(existingSyncDLObject);
 	}
@@ -181,176 +180,191 @@ public class SyncDLObjectPersistenceTest {
 
 		_syncDLObjects.add(_persistence.update(newSyncDLObject));
 
-		SyncDLObject existingSyncDLObject = _persistence.findByPrimaryKey(newSyncDLObject.getPrimaryKey());
+		SyncDLObject existingSyncDLObject = _persistence.findByPrimaryKey(
+			newSyncDLObject.getPrimaryKey());
 
-		Assert.assertEquals(existingSyncDLObject.getSyncDLObjectId(),
+		Assert.assertEquals(
+			existingSyncDLObject.getSyncDLObjectId(),
 			newSyncDLObject.getSyncDLObjectId());
-		Assert.assertEquals(existingSyncDLObject.getCompanyId(),
+		Assert.assertEquals(
+			existingSyncDLObject.getCompanyId(),
 			newSyncDLObject.getCompanyId());
-		Assert.assertEquals(existingSyncDLObject.getUserId(),
-			newSyncDLObject.getUserId());
-		Assert.assertEquals(existingSyncDLObject.getUserName(),
-			newSyncDLObject.getUserName());
-		Assert.assertEquals(existingSyncDLObject.getCreateTime(),
+		Assert.assertEquals(
+			existingSyncDLObject.getUserId(), newSyncDLObject.getUserId());
+		Assert.assertEquals(
+			existingSyncDLObject.getUserName(), newSyncDLObject.getUserName());
+		Assert.assertEquals(
+			existingSyncDLObject.getCreateTime(),
 			newSyncDLObject.getCreateTime());
-		Assert.assertEquals(existingSyncDLObject.getModifiedTime(),
+		Assert.assertEquals(
+			existingSyncDLObject.getModifiedTime(),
 			newSyncDLObject.getModifiedTime());
-		Assert.assertEquals(existingSyncDLObject.getRepositoryId(),
+		Assert.assertEquals(
+			existingSyncDLObject.getRepositoryId(),
 			newSyncDLObject.getRepositoryId());
-		Assert.assertEquals(existingSyncDLObject.getParentFolderId(),
+		Assert.assertEquals(
+			existingSyncDLObject.getParentFolderId(),
 			newSyncDLObject.getParentFolderId());
-		Assert.assertEquals(existingSyncDLObject.getTreePath(),
-			newSyncDLObject.getTreePath());
-		Assert.assertEquals(existingSyncDLObject.getName(),
-			newSyncDLObject.getName());
-		Assert.assertEquals(existingSyncDLObject.getExtension(),
+		Assert.assertEquals(
+			existingSyncDLObject.getTreePath(), newSyncDLObject.getTreePath());
+		Assert.assertEquals(
+			existingSyncDLObject.getName(), newSyncDLObject.getName());
+		Assert.assertEquals(
+			existingSyncDLObject.getExtension(),
 			newSyncDLObject.getExtension());
-		Assert.assertEquals(existingSyncDLObject.getMimeType(),
-			newSyncDLObject.getMimeType());
-		Assert.assertEquals(existingSyncDLObject.getDescription(),
+		Assert.assertEquals(
+			existingSyncDLObject.getMimeType(), newSyncDLObject.getMimeType());
+		Assert.assertEquals(
+			existingSyncDLObject.getDescription(),
 			newSyncDLObject.getDescription());
-		Assert.assertEquals(existingSyncDLObject.getChangeLog(),
+		Assert.assertEquals(
+			existingSyncDLObject.getChangeLog(),
 			newSyncDLObject.getChangeLog());
-		Assert.assertEquals(existingSyncDLObject.getExtraSettings(),
+		Assert.assertEquals(
+			existingSyncDLObject.getExtraSettings(),
 			newSyncDLObject.getExtraSettings());
-		Assert.assertEquals(existingSyncDLObject.getVersion(),
-			newSyncDLObject.getVersion());
-		Assert.assertEquals(existingSyncDLObject.getVersionId(),
+		Assert.assertEquals(
+			existingSyncDLObject.getVersion(), newSyncDLObject.getVersion());
+		Assert.assertEquals(
+			existingSyncDLObject.getVersionId(),
 			newSyncDLObject.getVersionId());
-		Assert.assertEquals(existingSyncDLObject.getSize(),
-			newSyncDLObject.getSize());
-		Assert.assertEquals(existingSyncDLObject.getChecksum(),
-			newSyncDLObject.getChecksum());
-		Assert.assertEquals(existingSyncDLObject.getEvent(),
-			newSyncDLObject.getEvent());
-		Assert.assertEquals(existingSyncDLObject.getLanTokenKey(),
+		Assert.assertEquals(
+			existingSyncDLObject.getSize(), newSyncDLObject.getSize());
+		Assert.assertEquals(
+			existingSyncDLObject.getChecksum(), newSyncDLObject.getChecksum());
+		Assert.assertEquals(
+			existingSyncDLObject.getEvent(), newSyncDLObject.getEvent());
+		Assert.assertEquals(
+			existingSyncDLObject.getLanTokenKey(),
 			newSyncDLObject.getLanTokenKey());
-		Assert.assertEquals(Time.getShortTimestamp(
+		Assert.assertEquals(
+			Time.getShortTimestamp(
 				existingSyncDLObject.getLastPermissionChangeDate()),
 			Time.getShortTimestamp(
 				newSyncDLObject.getLastPermissionChangeDate()));
-		Assert.assertEquals(Time.getShortTimestamp(
+		Assert.assertEquals(
+			Time.getShortTimestamp(
 				existingSyncDLObject.getLockExpirationDate()),
 			Time.getShortTimestamp(newSyncDLObject.getLockExpirationDate()));
-		Assert.assertEquals(existingSyncDLObject.getLockUserId(),
+		Assert.assertEquals(
+			existingSyncDLObject.getLockUserId(),
 			newSyncDLObject.getLockUserId());
-		Assert.assertEquals(existingSyncDLObject.getLockUserName(),
+		Assert.assertEquals(
+			existingSyncDLObject.getLockUserName(),
 			newSyncDLObject.getLockUserName());
-		Assert.assertEquals(existingSyncDLObject.getType(),
-			newSyncDLObject.getType());
-		Assert.assertEquals(existingSyncDLObject.getTypePK(),
-			newSyncDLObject.getTypePK());
-		Assert.assertEquals(existingSyncDLObject.getTypeUuid(),
-			newSyncDLObject.getTypeUuid());
+		Assert.assertEquals(
+			existingSyncDLObject.getType(), newSyncDLObject.getType());
+		Assert.assertEquals(
+			existingSyncDLObject.getTypePK(), newSyncDLObject.getTypePK());
+		Assert.assertEquals(
+			existingSyncDLObject.getTypeUuid(), newSyncDLObject.getTypeUuid());
 	}
 
 	@Test
 	public void testCountByTreePath() throws Exception {
-		_persistence.countByTreePath(StringPool.BLANK);
+		_persistence.countByTreePath("");
 
-		_persistence.countByTreePath(StringPool.NULL);
+		_persistence.countByTreePath("null");
 
 		_persistence.countByTreePath((String)null);
 	}
 
 	@Test
 	public void testCountByM_R() throws Exception {
-		_persistence.countByM_R(RandomTestUtil.nextLong(),
-			RandomTestUtil.nextLong());
+		_persistence.countByM_R(
+			RandomTestUtil.nextLong(), RandomTestUtil.nextLong());
 
 		_persistence.countByM_R(0L, 0L);
 	}
 
 	@Test
 	public void testCountByR_P() throws Exception {
-		_persistence.countByR_P(RandomTestUtil.nextLong(),
-			RandomTestUtil.nextLong());
+		_persistence.countByR_P(
+			RandomTestUtil.nextLong(), RandomTestUtil.nextLong());
 
 		_persistence.countByR_P(0L, 0L);
 	}
 
 	@Test
 	public void testCountByR_NotE() throws Exception {
-		_persistence.countByR_NotE(RandomTestUtil.nextLong(), StringPool.BLANK);
+		_persistence.countByR_NotE(RandomTestUtil.nextLong(), "");
 
-		_persistence.countByR_NotE(0L, StringPool.NULL);
+		_persistence.countByR_NotE(0L, "null");
 
 		_persistence.countByR_NotE(0L, (String)null);
 	}
 
 	@Test
 	public void testCountByR_T() throws Exception {
-		_persistence.countByR_T(RandomTestUtil.nextLong(), StringPool.BLANK);
+		_persistence.countByR_T(RandomTestUtil.nextLong(), "");
 
-		_persistence.countByR_T(0L, StringPool.NULL);
+		_persistence.countByR_T(0L, "null");
 
 		_persistence.countByR_T(0L, (String)null);
 	}
 
 	@Test
 	public void testCountByT_NotE() throws Exception {
-		_persistence.countByT_NotE(StringPool.BLANK, StringPool.BLANK);
+		_persistence.countByT_NotE("", "");
 
-		_persistence.countByT_NotE(StringPool.NULL, StringPool.NULL);
+		_persistence.countByT_NotE("null", "null");
 
 		_persistence.countByT_NotE((String)null, (String)null);
 	}
 
 	@Test
 	public void testCountByV_T() throws Exception {
-		_persistence.countByV_T(StringPool.BLANK, StringPool.BLANK);
+		_persistence.countByV_T("", "");
 
-		_persistence.countByV_T(StringPool.NULL, StringPool.NULL);
+		_persistence.countByV_T("null", "null");
 
 		_persistence.countByV_T((String)null, (String)null);
 	}
 
 	@Test
 	public void testCountByT_T() throws Exception {
-		_persistence.countByT_T(StringPool.BLANK, RandomTestUtil.nextLong());
+		_persistence.countByT_T("", RandomTestUtil.nextLong());
 
-		_persistence.countByT_T(StringPool.NULL, 0L);
+		_persistence.countByT_T("null", 0L);
 
 		_persistence.countByT_T((String)null, 0L);
 	}
 
 	@Test
 	public void testCountByM_R_NotE() throws Exception {
-		_persistence.countByM_R_NotE(RandomTestUtil.nextLong(),
-			RandomTestUtil.nextLong(), StringPool.BLANK);
+		_persistence.countByM_R_NotE(
+			RandomTestUtil.nextLong(), RandomTestUtil.nextLong(), "");
 
-		_persistence.countByM_R_NotE(0L, 0L, StringPool.NULL);
+		_persistence.countByM_R_NotE(0L, 0L, "null");
 
 		_persistence.countByM_R_NotE(0L, 0L, (String)null);
 	}
 
 	@Test
 	public void testCountByM_R_NotEArrayable() throws Exception {
-		_persistence.countByM_R_NotE(RandomTestUtil.nextLong(),
-			RandomTestUtil.nextLong(),
+		_persistence.countByM_R_NotE(
+			RandomTestUtil.nextLong(), RandomTestUtil.nextLong(),
 			new String[] {
-				RandomTestUtil.randomString(), StringPool.BLANK, StringPool.NULL,
-				null, null
+				RandomTestUtil.randomString(), "", "null", null, null
 			});
 	}
 
 	@Test
 	public void testCountByR_P_T() throws Exception {
-		_persistence.countByR_P_T(RandomTestUtil.nextLong(),
-			RandomTestUtil.nextLong(), StringPool.BLANK);
+		_persistence.countByR_P_T(
+			RandomTestUtil.nextLong(), RandomTestUtil.nextLong(), "");
 
-		_persistence.countByR_P_T(0L, 0L, StringPool.NULL);
+		_persistence.countByR_P_T(0L, 0L, "null");
 
 		_persistence.countByR_P_T(0L, 0L, (String)null);
 	}
 
 	@Test
 	public void testCountByR_P_TArrayable() throws Exception {
-		_persistence.countByR_P_T(RandomTestUtil.nextLong(),
-			RandomTestUtil.nextLong(),
+		_persistence.countByR_P_T(
+			RandomTestUtil.nextLong(), RandomTestUtil.nextLong(),
 			new String[] {
-				RandomTestUtil.randomString(), StringPool.BLANK, StringPool.NULL,
-				null, null
+				RandomTestUtil.randomString(), "", "null", null, null
 			});
 	}
 
@@ -358,7 +372,8 @@ public class SyncDLObjectPersistenceTest {
 	public void testFindByPrimaryKeyExisting() throws Exception {
 		SyncDLObject newSyncDLObject = addSyncDLObject();
 
-		SyncDLObject existingSyncDLObject = _persistence.findByPrimaryKey(newSyncDLObject.getPrimaryKey());
+		SyncDLObject existingSyncDLObject = _persistence.findByPrimaryKey(
+			newSyncDLObject.getPrimaryKey());
 
 		Assert.assertEquals(existingSyncDLObject, newSyncDLObject);
 	}
@@ -372,18 +387,18 @@ public class SyncDLObjectPersistenceTest {
 
 	@Test
 	public void testFindAll() throws Exception {
-		_persistence.findAll(QueryUtil.ALL_POS, QueryUtil.ALL_POS,
-			getOrderByComparator());
+		_persistence.findAll(
+			QueryUtil.ALL_POS, QueryUtil.ALL_POS, getOrderByComparator());
 	}
 
 	protected OrderByComparator<SyncDLObject> getOrderByComparator() {
-		return OrderByComparatorFactoryUtil.create("SyncDLObject",
-			"syncDLObjectId", true, "companyId", true, "userId", true,
-			"userName", true, "createTime", true, "modifiedTime", true,
+		return OrderByComparatorFactoryUtil.create(
+			"SyncDLObject", "syncDLObjectId", true, "companyId", true, "userId",
+			true, "userName", true, "createTime", true, "modifiedTime", true,
 			"repositoryId", true, "parentFolderId", true, "treePath", true,
 			"name", true, "extension", true, "mimeType", true, "description",
-			true, "changeLog", true, "version", true, "versionId", true,
-			"size", true, "checksum", true, "event", true, "lanTokenKey", true,
+			true, "changeLog", true, "version", true, "versionId", true, "size",
+			true, "checksum", true, "event", true, "lanTokenKey", true,
 			"lastPermissionChangeDate", true, "lockExpirationDate", true,
 			"lockUserId", true, "lockUserName", true, "type", true, "typePK",
 			true, "typeUuid", true);
@@ -393,7 +408,8 @@ public class SyncDLObjectPersistenceTest {
 	public void testFetchByPrimaryKeyExisting() throws Exception {
 		SyncDLObject newSyncDLObject = addSyncDLObject();
 
-		SyncDLObject existingSyncDLObject = _persistence.fetchByPrimaryKey(newSyncDLObject.getPrimaryKey());
+		SyncDLObject existingSyncDLObject = _persistence.fetchByPrimaryKey(
+			newSyncDLObject.getPrimaryKey());
 
 		Assert.assertEquals(existingSyncDLObject, newSyncDLObject);
 	}
@@ -410,6 +426,7 @@ public class SyncDLObjectPersistenceTest {
 	@Test
 	public void testFetchByPrimaryKeysWithMultiplePrimaryKeysWhereAllPrimaryKeysExist()
 		throws Exception {
+
 		SyncDLObject newSyncDLObject1 = addSyncDLObject();
 		SyncDLObject newSyncDLObject2 = addSyncDLObject();
 
@@ -418,18 +435,22 @@ public class SyncDLObjectPersistenceTest {
 		primaryKeys.add(newSyncDLObject1.getPrimaryKey());
 		primaryKeys.add(newSyncDLObject2.getPrimaryKey());
 
-		Map<Serializable, SyncDLObject> syncDLObjects = _persistence.fetchByPrimaryKeys(primaryKeys);
+		Map<Serializable, SyncDLObject> syncDLObjects =
+			_persistence.fetchByPrimaryKeys(primaryKeys);
 
 		Assert.assertEquals(2, syncDLObjects.size());
-		Assert.assertEquals(newSyncDLObject1,
+		Assert.assertEquals(
+			newSyncDLObject1,
 			syncDLObjects.get(newSyncDLObject1.getPrimaryKey()));
-		Assert.assertEquals(newSyncDLObject2,
+		Assert.assertEquals(
+			newSyncDLObject2,
 			syncDLObjects.get(newSyncDLObject2.getPrimaryKey()));
 	}
 
 	@Test
 	public void testFetchByPrimaryKeysWithMultiplePrimaryKeysWhereNoPrimaryKeysExist()
 		throws Exception {
+
 		long pk1 = RandomTestUtil.nextLong();
 
 		long pk2 = RandomTestUtil.nextLong();
@@ -439,7 +460,8 @@ public class SyncDLObjectPersistenceTest {
 		primaryKeys.add(pk1);
 		primaryKeys.add(pk2);
 
-		Map<Serializable, SyncDLObject> syncDLObjects = _persistence.fetchByPrimaryKeys(primaryKeys);
+		Map<Serializable, SyncDLObject> syncDLObjects =
+			_persistence.fetchByPrimaryKeys(primaryKeys);
 
 		Assert.assertTrue(syncDLObjects.isEmpty());
 	}
@@ -447,6 +469,7 @@ public class SyncDLObjectPersistenceTest {
 	@Test
 	public void testFetchByPrimaryKeysWithMultiplePrimaryKeysWhereSomePrimaryKeysExist()
 		throws Exception {
+
 		SyncDLObject newSyncDLObject = addSyncDLObject();
 
 		long pk = RandomTestUtil.nextLong();
@@ -456,36 +479,39 @@ public class SyncDLObjectPersistenceTest {
 		primaryKeys.add(newSyncDLObject.getPrimaryKey());
 		primaryKeys.add(pk);
 
-		Map<Serializable, SyncDLObject> syncDLObjects = _persistence.fetchByPrimaryKeys(primaryKeys);
+		Map<Serializable, SyncDLObject> syncDLObjects =
+			_persistence.fetchByPrimaryKeys(primaryKeys);
 
 		Assert.assertEquals(1, syncDLObjects.size());
-		Assert.assertEquals(newSyncDLObject,
+		Assert.assertEquals(
+			newSyncDLObject,
 			syncDLObjects.get(newSyncDLObject.getPrimaryKey()));
 	}
 
 	@Test
-	public void testFetchByPrimaryKeysWithNoPrimaryKeys()
-		throws Exception {
+	public void testFetchByPrimaryKeysWithNoPrimaryKeys() throws Exception {
 		Set<Serializable> primaryKeys = new HashSet<Serializable>();
 
-		Map<Serializable, SyncDLObject> syncDLObjects = _persistence.fetchByPrimaryKeys(primaryKeys);
+		Map<Serializable, SyncDLObject> syncDLObjects =
+			_persistence.fetchByPrimaryKeys(primaryKeys);
 
 		Assert.assertTrue(syncDLObjects.isEmpty());
 	}
 
 	@Test
-	public void testFetchByPrimaryKeysWithOnePrimaryKey()
-		throws Exception {
+	public void testFetchByPrimaryKeysWithOnePrimaryKey() throws Exception {
 		SyncDLObject newSyncDLObject = addSyncDLObject();
 
 		Set<Serializable> primaryKeys = new HashSet<Serializable>();
 
 		primaryKeys.add(newSyncDLObject.getPrimaryKey());
 
-		Map<Serializable, SyncDLObject> syncDLObjects = _persistence.fetchByPrimaryKeys(primaryKeys);
+		Map<Serializable, SyncDLObject> syncDLObjects =
+			_persistence.fetchByPrimaryKeys(primaryKeys);
 
 		Assert.assertEquals(1, syncDLObjects.size());
-		Assert.assertEquals(newSyncDLObject,
+		Assert.assertEquals(
+			newSyncDLObject,
 			syncDLObjects.get(newSyncDLObject.getPrimaryKey()));
 	}
 
@@ -493,15 +519,19 @@ public class SyncDLObjectPersistenceTest {
 	public void testActionableDynamicQuery() throws Exception {
 		final IntegerWrapper count = new IntegerWrapper();
 
-		ActionableDynamicQuery actionableDynamicQuery = SyncDLObjectLocalServiceUtil.getActionableDynamicQuery();
+		ActionableDynamicQuery actionableDynamicQuery =
+			SyncDLObjectLocalServiceUtil.getActionableDynamicQuery();
 
-		actionableDynamicQuery.setPerformActionMethod(new ActionableDynamicQuery.PerformActionMethod<SyncDLObject>() {
+		actionableDynamicQuery.setPerformActionMethod(
+			new ActionableDynamicQuery.PerformActionMethod<SyncDLObject>() {
+
 				@Override
 				public void performAction(SyncDLObject syncDLObject) {
 					Assert.assertNotNull(syncDLObject);
 
 					count.increment();
 				}
+
 			});
 
 		actionableDynamicQuery.performActions();
@@ -510,17 +540,18 @@ public class SyncDLObjectPersistenceTest {
 	}
 
 	@Test
-	public void testDynamicQueryByPrimaryKeyExisting()
-		throws Exception {
+	public void testDynamicQueryByPrimaryKeyExisting() throws Exception {
 		SyncDLObject newSyncDLObject = addSyncDLObject();
 
-		DynamicQuery dynamicQuery = DynamicQueryFactoryUtil.forClass(SyncDLObject.class,
-				_dynamicQueryClassLoader);
+		DynamicQuery dynamicQuery = DynamicQueryFactoryUtil.forClass(
+			SyncDLObject.class, _dynamicQueryClassLoader);
 
-		dynamicQuery.add(RestrictionsFactoryUtil.eq("syncDLObjectId",
-				newSyncDLObject.getSyncDLObjectId()));
+		dynamicQuery.add(
+			RestrictionsFactoryUtil.eq(
+				"syncDLObjectId", newSyncDLObject.getSyncDLObjectId()));
 
-		List<SyncDLObject> result = _persistence.findWithDynamicQuery(dynamicQuery);
+		List<SyncDLObject> result = _persistence.findWithDynamicQuery(
+			dynamicQuery);
 
 		Assert.assertEquals(1, result.size());
 
@@ -531,32 +562,34 @@ public class SyncDLObjectPersistenceTest {
 
 	@Test
 	public void testDynamicQueryByPrimaryKeyMissing() throws Exception {
-		DynamicQuery dynamicQuery = DynamicQueryFactoryUtil.forClass(SyncDLObject.class,
-				_dynamicQueryClassLoader);
+		DynamicQuery dynamicQuery = DynamicQueryFactoryUtil.forClass(
+			SyncDLObject.class, _dynamicQueryClassLoader);
 
-		dynamicQuery.add(RestrictionsFactoryUtil.eq("syncDLObjectId",
-				RandomTestUtil.nextLong()));
+		dynamicQuery.add(
+			RestrictionsFactoryUtil.eq(
+				"syncDLObjectId", RandomTestUtil.nextLong()));
 
-		List<SyncDLObject> result = _persistence.findWithDynamicQuery(dynamicQuery);
+		List<SyncDLObject> result = _persistence.findWithDynamicQuery(
+			dynamicQuery);
 
 		Assert.assertEquals(0, result.size());
 	}
 
 	@Test
-	public void testDynamicQueryByProjectionExisting()
-		throws Exception {
+	public void testDynamicQueryByProjectionExisting() throws Exception {
 		SyncDLObject newSyncDLObject = addSyncDLObject();
 
-		DynamicQuery dynamicQuery = DynamicQueryFactoryUtil.forClass(SyncDLObject.class,
-				_dynamicQueryClassLoader);
+		DynamicQuery dynamicQuery = DynamicQueryFactoryUtil.forClass(
+			SyncDLObject.class, _dynamicQueryClassLoader);
 
-		dynamicQuery.setProjection(ProjectionFactoryUtil.property(
-				"syncDLObjectId"));
+		dynamicQuery.setProjection(
+			ProjectionFactoryUtil.property("syncDLObjectId"));
 
 		Object newSyncDLObjectId = newSyncDLObject.getSyncDLObjectId();
 
-		dynamicQuery.add(RestrictionsFactoryUtil.in("syncDLObjectId",
-				new Object[] { newSyncDLObjectId }));
+		dynamicQuery.add(
+			RestrictionsFactoryUtil.in(
+				"syncDLObjectId", new Object[] {newSyncDLObjectId}));
 
 		List<Object> result = _persistence.findWithDynamicQuery(dynamicQuery);
 
@@ -569,14 +602,15 @@ public class SyncDLObjectPersistenceTest {
 
 	@Test
 	public void testDynamicQueryByProjectionMissing() throws Exception {
-		DynamicQuery dynamicQuery = DynamicQueryFactoryUtil.forClass(SyncDLObject.class,
-				_dynamicQueryClassLoader);
+		DynamicQuery dynamicQuery = DynamicQueryFactoryUtil.forClass(
+			SyncDLObject.class, _dynamicQueryClassLoader);
 
-		dynamicQuery.setProjection(ProjectionFactoryUtil.property(
-				"syncDLObjectId"));
+		dynamicQuery.setProjection(
+			ProjectionFactoryUtil.property("syncDLObjectId"));
 
-		dynamicQuery.add(RestrictionsFactoryUtil.in("syncDLObjectId",
-				new Object[] { RandomTestUtil.nextLong() }));
+		dynamicQuery.add(
+			RestrictionsFactoryUtil.in(
+				"syncDLObjectId", new Object[] {RandomTestUtil.nextLong()}));
 
 		List<Object> result = _persistence.findWithDynamicQuery(dynamicQuery);
 
@@ -589,14 +623,61 @@ public class SyncDLObjectPersistenceTest {
 
 		_persistence.clearCache();
 
-		SyncDLObject existingSyncDLObject = _persistence.findByPrimaryKey(newSyncDLObject.getPrimaryKey());
+		_assertOriginalValues(
+			_persistence.findByPrimaryKey(newSyncDLObject.getPrimaryKey()));
+	}
 
-		Assert.assertTrue(Objects.equals(existingSyncDLObject.getType(),
-				ReflectionTestUtil.invoke(existingSyncDLObject,
-					"getOriginalType", new Class<?>[0])));
-		Assert.assertEquals(Long.valueOf(existingSyncDLObject.getTypePK()),
-			ReflectionTestUtil.<Long>invoke(existingSyncDLObject,
-				"getOriginalTypePK", new Class<?>[0]));
+	@Test
+	public void testResetOriginalValuesWithDynamicQueryLoadFromDatabase()
+		throws Exception {
+
+		_testResetOriginalValuesWithDynamicQuery(true);
+	}
+
+	@Test
+	public void testResetOriginalValuesWithDynamicQueryLoadFromSession()
+		throws Exception {
+
+		_testResetOriginalValuesWithDynamicQuery(false);
+	}
+
+	private void _testResetOriginalValuesWithDynamicQuery(boolean clearSession)
+		throws Exception {
+
+		SyncDLObject newSyncDLObject = addSyncDLObject();
+
+		if (clearSession) {
+			Session session = _persistence.openSession();
+
+			session.flush();
+
+			session.clear();
+		}
+
+		DynamicQuery dynamicQuery = DynamicQueryFactoryUtil.forClass(
+			SyncDLObject.class, _dynamicQueryClassLoader);
+
+		dynamicQuery.add(
+			RestrictionsFactoryUtil.eq(
+				"syncDLObjectId", newSyncDLObject.getSyncDLObjectId()));
+
+		List<SyncDLObject> result = _persistence.findWithDynamicQuery(
+			dynamicQuery);
+
+		_assertOriginalValues(result.get(0));
+	}
+
+	private void _assertOriginalValues(SyncDLObject syncDLObject) {
+		Assert.assertEquals(
+			syncDLObject.getType(),
+			ReflectionTestUtil.invoke(
+				syncDLObject, "getColumnOriginalValue",
+				new Class<?>[] {String.class}, "type_"));
+		Assert.assertEquals(
+			Long.valueOf(syncDLObject.getTypePK()),
+			ReflectionTestUtil.<Long>invoke(
+				syncDLObject, "getColumnOriginalValue",
+				new Class<?>[] {String.class}, "typePK"));
 	}
 
 	protected SyncDLObject addSyncDLObject() throws Exception {
@@ -666,4 +747,5 @@ public class SyncDLObjectPersistenceTest {
 	private List<SyncDLObject> _syncDLObjects = new ArrayList<SyncDLObject>();
 	private SyncDLObjectPersistence _persistence;
 	private ClassLoader _dynamicQueryClassLoader;
+
 }

@@ -14,8 +14,6 @@
 
 package com.liferay.announcements.kernel.model;
 
-import aQute.bnd.annotation.ProviderType;
-
 import java.io.Serializable;
 
 import java.util.ArrayList;
@@ -26,14 +24,16 @@ import java.util.List;
  * This class is used by SOAP remote services, specifically {@link com.liferay.portlet.announcements.service.http.AnnouncementsFlagServiceSoap}.
  *
  * @author Brian Wing Shun Chan
- * @see com.liferay.portlet.announcements.service.http.AnnouncementsFlagServiceSoap
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
-@ProviderType
+@Deprecated
 public class AnnouncementsFlagSoap implements Serializable {
+
 	public static AnnouncementsFlagSoap toSoapModel(AnnouncementsFlag model) {
 		AnnouncementsFlagSoap soapModel = new AnnouncementsFlagSoap();
 
+		soapModel.setMvccVersion(model.getMvccVersion());
 		soapModel.setFlagId(model.getFlagId());
 		soapModel.setCompanyId(model.getCompanyId());
 		soapModel.setUserId(model.getUserId());
@@ -46,7 +46,9 @@ public class AnnouncementsFlagSoap implements Serializable {
 
 	public static AnnouncementsFlagSoap[] toSoapModels(
 		AnnouncementsFlag[] models) {
-		AnnouncementsFlagSoap[] soapModels = new AnnouncementsFlagSoap[models.length];
+
+		AnnouncementsFlagSoap[] soapModels =
+			new AnnouncementsFlagSoap[models.length];
 
 		for (int i = 0; i < models.length; i++) {
 			soapModels[i] = toSoapModel(models[i]);
@@ -57,10 +59,12 @@ public class AnnouncementsFlagSoap implements Serializable {
 
 	public static AnnouncementsFlagSoap[][] toSoapModels(
 		AnnouncementsFlag[][] models) {
+
 		AnnouncementsFlagSoap[][] soapModels = null;
 
 		if (models.length > 0) {
-			soapModels = new AnnouncementsFlagSoap[models.length][models[0].length];
+			soapModels =
+				new AnnouncementsFlagSoap[models.length][models[0].length];
 		}
 		else {
 			soapModels = new AnnouncementsFlagSoap[0][0];
@@ -75,7 +79,9 @@ public class AnnouncementsFlagSoap implements Serializable {
 
 	public static AnnouncementsFlagSoap[] toSoapModels(
 		List<AnnouncementsFlag> models) {
-		List<AnnouncementsFlagSoap> soapModels = new ArrayList<AnnouncementsFlagSoap>(models.size());
+
+		List<AnnouncementsFlagSoap> soapModels =
+			new ArrayList<AnnouncementsFlagSoap>(models.size());
 
 		for (AnnouncementsFlag model : models) {
 			soapModels.add(toSoapModel(model));
@@ -93,6 +99,14 @@ public class AnnouncementsFlagSoap implements Serializable {
 
 	public void setPrimaryKey(long pk) {
 		setFlagId(pk);
+	}
+
+	public long getMvccVersion() {
+		return _mvccVersion;
+	}
+
+	public void setMvccVersion(long mvccVersion) {
+		_mvccVersion = mvccVersion;
 	}
 
 	public long getFlagId() {
@@ -143,10 +157,12 @@ public class AnnouncementsFlagSoap implements Serializable {
 		_value = value;
 	}
 
+	private long _mvccVersion;
 	private long _flagId;
 	private long _companyId;
 	private long _userId;
 	private Date _createDate;
 	private long _entryId;
 	private int _value;
+
 }

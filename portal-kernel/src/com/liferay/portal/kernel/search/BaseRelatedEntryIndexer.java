@@ -81,8 +81,15 @@ public class BaseRelatedEntryIndexer implements RelatedEntryIndexer {
 	}
 
 	@Override
-	public void addRelatedEntryFields(Document document, Object obj)
+	public void addRelatedEntryFields(Document document, Object object)
 		throws Exception {
+	}
+
+	@Override
+	public boolean isVisibleRelatedEntry(long classPK, int status)
+		throws Exception {
+
+		return true;
 	}
 
 	@Override
@@ -90,8 +97,8 @@ public class BaseRelatedEntryIndexer implements RelatedEntryIndexer {
 	}
 
 	/**
-	 * @deprecated As of 7.0.0, added strictly to support backwards
-	 *             compatibility of {@link
+	 * @deprecated As of Wilberforce (7.0.x), added strictly to support
+	 *             backwards compatibility of {@link
 	 *             Indexer#postProcessContextQuery(BooleanQuery, SearchContext)}
 	 */
 	@Deprecated
@@ -103,13 +110,6 @@ public class BaseRelatedEntryIndexer implements RelatedEntryIndexer {
 		BooleanQuery entityQuery = new BooleanQueryImpl();
 
 		indexer.postProcessContextQuery(entityQuery, searchContext);
-
-		for (IndexerPostProcessor indexerPostProcessor :
-				indexer.getIndexerPostProcessors()) {
-
-			indexerPostProcessor.postProcessContextQuery(
-				entityQuery, searchContext);
-		}
 
 		if (entityQuery.hasClauses()) {
 			QueryFilter queryFilter = new QueryFilter(entityQuery);

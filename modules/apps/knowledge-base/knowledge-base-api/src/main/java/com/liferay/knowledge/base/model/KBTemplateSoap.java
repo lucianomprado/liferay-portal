@@ -14,8 +14,6 @@
 
 package com.liferay.knowledge.base.model;
 
-import aQute.bnd.annotation.ProviderType;
-
 import java.io.Serializable;
 
 import java.util.ArrayList;
@@ -26,14 +24,16 @@ import java.util.List;
  * This class is used by SOAP remote services, specifically {@link com.liferay.knowledge.base.service.http.KBTemplateServiceSoap}.
  *
  * @author Brian Wing Shun Chan
- * @see com.liferay.knowledge.base.service.http.KBTemplateServiceSoap
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
-@ProviderType
+@Deprecated
 public class KBTemplateSoap implements Serializable {
+
 	public static KBTemplateSoap toSoapModel(KBTemplate model) {
 		KBTemplateSoap soapModel = new KBTemplateSoap();
 
+		soapModel.setMvccVersion(model.getMvccVersion());
 		soapModel.setUuid(model.getUuid());
 		soapModel.setKbTemplateId(model.getKbTemplateId());
 		soapModel.setGroupId(model.getGroupId());
@@ -77,7 +77,8 @@ public class KBTemplateSoap implements Serializable {
 	}
 
 	public static KBTemplateSoap[] toSoapModels(List<KBTemplate> models) {
-		List<KBTemplateSoap> soapModels = new ArrayList<KBTemplateSoap>(models.size());
+		List<KBTemplateSoap> soapModels = new ArrayList<KBTemplateSoap>(
+			models.size());
 
 		for (KBTemplate model : models) {
 			soapModels.add(toSoapModel(model));
@@ -95,6 +96,14 @@ public class KBTemplateSoap implements Serializable {
 
 	public void setPrimaryKey(long pk) {
 		setKbTemplateId(pk);
+	}
+
+	public long getMvccVersion() {
+		return _mvccVersion;
+	}
+
+	public void setMvccVersion(long mvccVersion) {
+		_mvccVersion = mvccVersion;
 	}
 
 	public String getUuid() {
@@ -185,6 +194,7 @@ public class KBTemplateSoap implements Serializable {
 		_lastPublishDate = lastPublishDate;
 	}
 
+	private long _mvccVersion;
 	private String _uuid;
 	private long _kbTemplateId;
 	private long _groupId;
@@ -196,4 +206,5 @@ public class KBTemplateSoap implements Serializable {
 	private String _title;
 	private String _content;
 	private Date _lastPublishDate;
+
 }

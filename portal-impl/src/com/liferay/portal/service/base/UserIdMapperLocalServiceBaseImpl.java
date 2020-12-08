@@ -14,8 +14,7 @@
 
 package com.liferay.portal.service.base;
 
-import aQute.bnd.annotation.ProviderType;
-
+import com.liferay.petra.sql.dsl.query.DSLQuery;
 import com.liferay.portal.kernel.bean.BeanReference;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
@@ -37,7 +36,9 @@ import com.liferay.portal.kernel.search.IndexableType;
 import com.liferay.portal.kernel.service.BaseLocalServiceImpl;
 import com.liferay.portal.kernel.service.PersistedModelLocalServiceRegistry;
 import com.liferay.portal.kernel.service.UserIdMapperLocalService;
+import com.liferay.portal.kernel.service.persistence.BasePersistence;
 import com.liferay.portal.kernel.service.persistence.UserIdMapperPersistence;
+import com.liferay.portal.kernel.transaction.Transactional;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.PortalUtil;
 
@@ -56,21 +57,24 @@ import javax.sql.DataSource;
  *
  * @author Brian Wing Shun Chan
  * @see com.liferay.portal.service.impl.UserIdMapperLocalServiceImpl
- * @see com.liferay.portal.kernel.service.UserIdMapperLocalServiceUtil
  * @generated
  */
-@ProviderType
 public abstract class UserIdMapperLocalServiceBaseImpl
-	extends BaseLocalServiceImpl implements UserIdMapperLocalService,
-		IdentifiableOSGiService {
+	extends BaseLocalServiceImpl
+	implements IdentifiableOSGiService, UserIdMapperLocalService {
+
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. Always use {@link com.liferay.portal.kernel.service.UserIdMapperLocalServiceUtil} to access the user ID mapper local service.
+	 * Never modify or reference this class directly. Use <code>UserIdMapperLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>com.liferay.portal.kernel.service.UserIdMapperLocalServiceUtil</code>.
 	 */
 
 	/**
 	 * Adds the user ID mapper to the database. Also notifies the appropriate model listeners.
+	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect UserIdMapperLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
 	 *
 	 * @param userIdMapper the user ID mapper
 	 * @return the user ID mapper that was added
@@ -90,12 +94,17 @@ public abstract class UserIdMapperLocalServiceBaseImpl
 	 * @return the new user ID mapper
 	 */
 	@Override
+	@Transactional(enabled = false)
 	public UserIdMapper createUserIdMapper(long userIdMapperId) {
 		return userIdMapperPersistence.create(userIdMapperId);
 	}
 
 	/**
 	 * Deletes the user ID mapper with the primary key from the database. Also notifies the appropriate model listeners.
+	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect UserIdMapperLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
 	 *
 	 * @param userIdMapperId the primary key of the user ID mapper
 	 * @return the user ID mapper that was removed
@@ -105,11 +114,16 @@ public abstract class UserIdMapperLocalServiceBaseImpl
 	@Override
 	public UserIdMapper deleteUserIdMapper(long userIdMapperId)
 		throws PortalException {
+
 		return userIdMapperPersistence.remove(userIdMapperId);
 	}
 
 	/**
 	 * Deletes the user ID mapper from the database. Also notifies the appropriate model listeners.
+	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect UserIdMapperLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
 	 *
 	 * @param userIdMapper the user ID mapper
 	 * @return the user ID mapper that was removed
@@ -121,11 +135,16 @@ public abstract class UserIdMapperLocalServiceBaseImpl
 	}
 
 	@Override
+	public <T> T dslQuery(DSLQuery dslQuery) {
+		return userIdMapperPersistence.dslQuery(dslQuery);
+	}
+
+	@Override
 	public DynamicQuery dynamicQuery() {
 		Class<?> clazz = getClass();
 
-		return DynamicQueryFactoryUtil.forClass(UserIdMapper.class,
-			clazz.getClassLoader());
+		return DynamicQueryFactoryUtil.forClass(
+			UserIdMapper.class, clazz.getClassLoader());
 	}
 
 	/**
@@ -143,7 +162,7 @@ public abstract class UserIdMapperLocalServiceBaseImpl
 	 * Performs a dynamic query on the database and returns a range of the matching rows.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portal.model.impl.UserIdMapperModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>com.liferay.portal.model.impl.UserIdMapperModelImpl</code>.
 	 * </p>
 	 *
 	 * @param dynamicQuery the dynamic query
@@ -152,17 +171,18 @@ public abstract class UserIdMapperLocalServiceBaseImpl
 	 * @return the range of matching rows
 	 */
 	@Override
-	public <T> List<T> dynamicQuery(DynamicQuery dynamicQuery, int start,
-		int end) {
-		return userIdMapperPersistence.findWithDynamicQuery(dynamicQuery,
-			start, end);
+	public <T> List<T> dynamicQuery(
+		DynamicQuery dynamicQuery, int start, int end) {
+
+		return userIdMapperPersistence.findWithDynamicQuery(
+			dynamicQuery, start, end);
 	}
 
 	/**
 	 * Performs a dynamic query on the database and returns an ordered range of the matching rows.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portal.model.impl.UserIdMapperModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>com.liferay.portal.model.impl.UserIdMapperModelImpl</code>.
 	 * </p>
 	 *
 	 * @param dynamicQuery the dynamic query
@@ -172,10 +192,12 @@ public abstract class UserIdMapperLocalServiceBaseImpl
 	 * @return the ordered range of matching rows
 	 */
 	@Override
-	public <T> List<T> dynamicQuery(DynamicQuery dynamicQuery, int start,
-		int end, OrderByComparator<T> orderByComparator) {
-		return userIdMapperPersistence.findWithDynamicQuery(dynamicQuery,
-			start, end, orderByComparator);
+	public <T> List<T> dynamicQuery(
+		DynamicQuery dynamicQuery, int start, int end,
+		OrderByComparator<T> orderByComparator) {
+
+		return userIdMapperPersistence.findWithDynamicQuery(
+			dynamicQuery, start, end, orderByComparator);
 	}
 
 	/**
@@ -197,10 +219,11 @@ public abstract class UserIdMapperLocalServiceBaseImpl
 	 * @return the number of rows matching the dynamic query
 	 */
 	@Override
-	public long dynamicQueryCount(DynamicQuery dynamicQuery,
-		Projection projection) {
-		return userIdMapperPersistence.countWithDynamicQuery(dynamicQuery,
-			projection);
+	public long dynamicQueryCount(
+		DynamicQuery dynamicQuery, Projection projection) {
+
+		return userIdMapperPersistence.countWithDynamicQuery(
+			dynamicQuery, projection);
 	}
 
 	@Override
@@ -218,12 +241,14 @@ public abstract class UserIdMapperLocalServiceBaseImpl
 	@Override
 	public UserIdMapper getUserIdMapper(long userIdMapperId)
 		throws PortalException {
+
 		return userIdMapperPersistence.findByPrimaryKey(userIdMapperId);
 	}
 
 	@Override
 	public ActionableDynamicQuery getActionableDynamicQuery() {
-		ActionableDynamicQuery actionableDynamicQuery = new DefaultActionableDynamicQuery();
+		ActionableDynamicQuery actionableDynamicQuery =
+			new DefaultActionableDynamicQuery();
 
 		actionableDynamicQuery.setBaseLocalService(userIdMapperLocalService);
 		actionableDynamicQuery.setClassLoader(getClassLoader());
@@ -235,10 +260,14 @@ public abstract class UserIdMapperLocalServiceBaseImpl
 	}
 
 	@Override
-	public IndexableActionableDynamicQuery getIndexableActionableDynamicQuery() {
-		IndexableActionableDynamicQuery indexableActionableDynamicQuery = new IndexableActionableDynamicQuery();
+	public IndexableActionableDynamicQuery
+		getIndexableActionableDynamicQuery() {
 
-		indexableActionableDynamicQuery.setBaseLocalService(userIdMapperLocalService);
+		IndexableActionableDynamicQuery indexableActionableDynamicQuery =
+			new IndexableActionableDynamicQuery();
+
+		indexableActionableDynamicQuery.setBaseLocalService(
+			userIdMapperLocalService);
 		indexableActionableDynamicQuery.setClassLoader(getClassLoader());
 		indexableActionableDynamicQuery.setModelClass(UserIdMapper.class);
 
@@ -250,6 +279,7 @@ public abstract class UserIdMapperLocalServiceBaseImpl
 
 	protected void initActionableDynamicQuery(
 		ActionableDynamicQuery actionableDynamicQuery) {
+
 		actionableDynamicQuery.setBaseLocalService(userIdMapperLocalService);
 		actionableDynamicQuery.setClassLoader(getClassLoader());
 		actionableDynamicQuery.setModelClass(UserIdMapper.class);
@@ -261,14 +291,36 @@ public abstract class UserIdMapperLocalServiceBaseImpl
 	 * @throws PortalException
 	 */
 	@Override
+	public PersistedModel createPersistedModel(Serializable primaryKeyObj)
+		throws PortalException {
+
+		return userIdMapperPersistence.create(
+			((Long)primaryKeyObj).longValue());
+	}
+
+	/**
+	 * @throws PortalException
+	 */
+	@Override
 	public PersistedModel deletePersistedModel(PersistedModel persistedModel)
 		throws PortalException {
-		return userIdMapperLocalService.deleteUserIdMapper((UserIdMapper)persistedModel);
+
+		return userIdMapperLocalService.deleteUserIdMapper(
+			(UserIdMapper)persistedModel);
 	}
 
 	@Override
+	public BasePersistence<UserIdMapper> getBasePersistence() {
+		return userIdMapperPersistence;
+	}
+
+	/**
+	 * @throws PortalException
+	 */
+	@Override
 	public PersistedModel getPersistedModel(Serializable primaryKeyObj)
 		throws PortalException {
+
 		return userIdMapperPersistence.findByPrimaryKey(primaryKeyObj);
 	}
 
@@ -276,7 +328,7 @@ public abstract class UserIdMapperLocalServiceBaseImpl
 	 * Returns a range of all the user ID mappers.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portal.model.impl.UserIdMapperModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>com.liferay.portal.model.impl.UserIdMapperModelImpl</code>.
 	 * </p>
 	 *
 	 * @param start the lower bound of the range of user ID mappers
@@ -300,6 +352,10 @@ public abstract class UserIdMapperLocalServiceBaseImpl
 
 	/**
 	 * Updates the user ID mapper in the database or adds it if it does not yet exist. Also notifies the appropriate model listeners.
+	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect UserIdMapperLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
 	 *
 	 * @param userIdMapper the user ID mapper
 	 * @return the user ID mapper that was updated
@@ -326,6 +382,7 @@ public abstract class UserIdMapperLocalServiceBaseImpl
 	 */
 	public void setUserIdMapperLocalService(
 		UserIdMapperLocalService userIdMapperLocalService) {
+
 		this.userIdMapperLocalService = userIdMapperLocalService;
 	}
 
@@ -345,6 +402,7 @@ public abstract class UserIdMapperLocalServiceBaseImpl
 	 */
 	public void setUserIdMapperPersistence(
 		UserIdMapperPersistence userIdMapperPersistence) {
+
 		this.userIdMapperPersistence = userIdMapperPersistence;
 	}
 
@@ -353,7 +411,9 @@ public abstract class UserIdMapperLocalServiceBaseImpl
 	 *
 	 * @return the counter local service
 	 */
-	public com.liferay.counter.kernel.service.CounterLocalService getCounterLocalService() {
+	public com.liferay.counter.kernel.service.CounterLocalService
+		getCounterLocalService() {
+
 		return counterLocalService;
 	}
 
@@ -363,12 +423,15 @@ public abstract class UserIdMapperLocalServiceBaseImpl
 	 * @param counterLocalService the counter local service
 	 */
 	public void setCounterLocalService(
-		com.liferay.counter.kernel.service.CounterLocalService counterLocalService) {
+		com.liferay.counter.kernel.service.CounterLocalService
+			counterLocalService) {
+
 		this.counterLocalService = counterLocalService;
 	}
 
 	public void afterPropertiesSet() {
-		persistedModelLocalServiceRegistry.register("com.liferay.portal.kernel.model.UserIdMapper",
+		persistedModelLocalServiceRegistry.register(
+			"com.liferay.portal.kernel.model.UserIdMapper",
 			userIdMapperLocalService);
 	}
 
@@ -409,22 +472,30 @@ public abstract class UserIdMapperLocalServiceBaseImpl
 			sql = db.buildSQL(sql);
 			sql = PortalUtil.transformSQL(sql);
 
-			SqlUpdate sqlUpdate = SqlUpdateFactoryUtil.getSqlUpdate(dataSource,
-					sql);
+			SqlUpdate sqlUpdate = SqlUpdateFactoryUtil.getSqlUpdate(
+				dataSource, sql);
 
 			sqlUpdate.update();
 		}
-		catch (Exception e) {
-			throw new SystemException(e);
+		catch (Exception exception) {
+			throw new SystemException(exception);
 		}
 	}
 
 	@BeanReference(type = UserIdMapperLocalService.class)
 	protected UserIdMapperLocalService userIdMapperLocalService;
+
 	@BeanReference(type = UserIdMapperPersistence.class)
 	protected UserIdMapperPersistence userIdMapperPersistence;
-	@BeanReference(type = com.liferay.counter.kernel.service.CounterLocalService.class)
-	protected com.liferay.counter.kernel.service.CounterLocalService counterLocalService;
+
+	@BeanReference(
+		type = com.liferay.counter.kernel.service.CounterLocalService.class
+	)
+	protected com.liferay.counter.kernel.service.CounterLocalService
+		counterLocalService;
+
 	@BeanReference(type = PersistedModelLocalServiceRegistry.class)
-	protected PersistedModelLocalServiceRegistry persistedModelLocalServiceRegistry;
+	protected PersistedModelLocalServiceRegistry
+		persistedModelLocalServiceRegistry;
+
 }

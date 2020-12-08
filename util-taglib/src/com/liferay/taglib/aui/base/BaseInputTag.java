@@ -185,6 +185,10 @@ public abstract class BaseInputTag extends com.liferay.taglib.BaseValidatorTagSu
 		return _resizable;
 	}
 
+	public java.lang.String getSelectedLanguageId() {
+		return _selectedLanguageId;
+	}
+
 	public boolean getShowRequiredLabel() {
 		return _showRequiredLabel;
 	}
@@ -369,6 +373,10 @@ public abstract class BaseInputTag extends com.liferay.taglib.BaseValidatorTagSu
 		_resizable = resizable;
 	}
 
+	public void setSelectedLanguageId(java.lang.String selectedLanguageId) {
+		_selectedLanguageId = selectedLanguageId;
+	}
+
 	public void setShowRequiredLabel(boolean showRequiredLabel) {
 		_showRequiredLabel = showRequiredLabel;
 	}
@@ -443,6 +451,7 @@ public abstract class BaseInputTag extends com.liferay.taglib.BaseValidatorTagSu
 		_prefix = null;
 		_required = false;
 		_resizable = false;
+		_selectedLanguageId = null;
 		_showRequiredLabel = true;
 		_suffix = null;
 		_title = null;
@@ -460,52 +469,53 @@ public abstract class BaseInputTag extends com.liferay.taglib.BaseValidatorTagSu
 
 	@Override
 	protected void setAttributes(HttpServletRequest request) {
-		request.setAttribute("aui:input:autoFocus", String.valueOf(_autoFocus));
-		request.setAttribute("aui:input:autoSize", String.valueOf(_autoSize));
-		request.setAttribute("aui:input:bean", _bean);
-		request.setAttribute("aui:input:changesContext", String.valueOf(_changesContext));
-		request.setAttribute("aui:input:checked", String.valueOf(_checked));
-		request.setAttribute("aui:input:classPK", String.valueOf(_classPK));
-		request.setAttribute("aui:input:classTypePK", String.valueOf(_classTypePK));
-		request.setAttribute("aui:input:cssClass", _cssClass);
-		request.setAttribute("aui:input:data", _data);
-		request.setAttribute("aui:input:dateTogglerCheckboxLabel", _dateTogglerCheckboxLabel);
-		request.setAttribute("aui:input:defaultLanguageId", _defaultLanguageId);
-		request.setAttribute("aui:input:disabled", String.valueOf(_disabled));
-		request.setAttribute("aui:input:field", _field);
-		request.setAttribute("aui:input:fieldParam", _fieldParam);
-		request.setAttribute("aui:input:first", String.valueOf(_first));
-		request.setAttribute("aui:input:formName", _formName);
-		request.setAttribute("aui:input:helpMessage", _helpMessage);
-		request.setAttribute("aui:input:helpTextCssClass", _helpTextCssClass);
-		request.setAttribute("aui:input:id", _id);
-		request.setAttribute("aui:input:ignoreRequestValue", String.valueOf(_ignoreRequestValue));
-		request.setAttribute("aui:input:inlineField", String.valueOf(_inlineField));
-		request.setAttribute("aui:input:inlineLabel", _inlineLabel);
-		request.setAttribute("aui:input:label", _label);
-		request.setAttribute("aui:input:languageId", _languageId);
-		request.setAttribute("aui:input:last", String.valueOf(_last));
-		request.setAttribute("aui:input:localized", String.valueOf(_localized));
-		request.setAttribute("aui:input:localizeLabel", String.valueOf(_localizeLabel));
-		request.setAttribute("aui:input:max", _max);
-		request.setAttribute("aui:input:min", _min);
-		request.setAttribute("aui:input:model", _model);
-		request.setAttribute("aui:input:multiple", String.valueOf(_multiple));
-		request.setAttribute("aui:input:name", _name);
-		request.setAttribute("aui:input:onChange", _onChange);
-		request.setAttribute("aui:input:onClick", _onClick);
-		request.setAttribute("aui:input:placeholder", _placeholder);
-		request.setAttribute("aui:input:prefix", _prefix);
-		request.setAttribute("aui:input:required", String.valueOf(_required));
-		request.setAttribute("aui:input:resizable", String.valueOf(_resizable));
-		request.setAttribute("aui:input:showRequiredLabel", String.valueOf(_showRequiredLabel));
-		request.setAttribute("aui:input:suffix", _suffix);
-		request.setAttribute("aui:input:title", _title);
-		request.setAttribute("aui:input:type", _type);
-		request.setAttribute("aui:input:useNamespace", String.valueOf(_useNamespace));
-		request.setAttribute("aui:input:value", _value);
-		request.setAttribute("aui:input:wrappedField", String.valueOf(_wrappedField));
-		request.setAttribute("aui:input:wrapperCssClass", _wrapperCssClass);
+		setNamespacedAttribute(request, "autoFocus", _autoFocus);
+		setNamespacedAttribute(request, "autoSize", _autoSize);
+		setNamespacedAttribute(request, "bean", _bean);
+		setNamespacedAttribute(request, "changesContext", _changesContext);
+		setNamespacedAttribute(request, "checked", _checked);
+		setNamespacedAttribute(request, "classPK", _classPK);
+		setNamespacedAttribute(request, "classTypePK", _classTypePK);
+		setNamespacedAttribute(request, "cssClass", _cssClass);
+		setNamespacedAttribute(request, "data", _data);
+		setNamespacedAttribute(request, "dateTogglerCheckboxLabel", _dateTogglerCheckboxLabel);
+		setNamespacedAttribute(request, "defaultLanguageId", _defaultLanguageId);
+		setNamespacedAttribute(request, "disabled", _disabled);
+		setNamespacedAttribute(request, "field", _field);
+		setNamespacedAttribute(request, "fieldParam", _fieldParam);
+		setNamespacedAttribute(request, "first", _first);
+		setNamespacedAttribute(request, "formName", _formName);
+		setNamespacedAttribute(request, "helpMessage", _helpMessage);
+		setNamespacedAttribute(request, "helpTextCssClass", _helpTextCssClass);
+		setNamespacedAttribute(request, "id", _id);
+		setNamespacedAttribute(request, "ignoreRequestValue", _ignoreRequestValue);
+		setNamespacedAttribute(request, "inlineField", _inlineField);
+		setNamespacedAttribute(request, "inlineLabel", _inlineLabel);
+		setNamespacedAttribute(request, "label", _label);
+		setNamespacedAttribute(request, "languageId", _languageId);
+		setNamespacedAttribute(request, "last", _last);
+		setNamespacedAttribute(request, "localized", _localized);
+		setNamespacedAttribute(request, "localizeLabel", _localizeLabel);
+		setNamespacedAttribute(request, "max", _max);
+		setNamespacedAttribute(request, "min", _min);
+		setNamespacedAttribute(request, "model", _model);
+		setNamespacedAttribute(request, "multiple", _multiple);
+		setNamespacedAttribute(request, "name", _name);
+		setNamespacedAttribute(request, "onChange", _onChange);
+		setNamespacedAttribute(request, "onClick", _onClick);
+		setNamespacedAttribute(request, "placeholder", _placeholder);
+		setNamespacedAttribute(request, "prefix", _prefix);
+		setNamespacedAttribute(request, "required", _required);
+		setNamespacedAttribute(request, "resizable", _resizable);
+		setNamespacedAttribute(request, "selectedLanguageId", _selectedLanguageId);
+		setNamespacedAttribute(request, "showRequiredLabel", _showRequiredLabel);
+		setNamespacedAttribute(request, "suffix", _suffix);
+		setNamespacedAttribute(request, "title", _title);
+		setNamespacedAttribute(request, "type", _type);
+		setNamespacedAttribute(request, "useNamespace", _useNamespace);
+		setNamespacedAttribute(request, "value", _value);
+		setNamespacedAttribute(request, "wrappedField", _wrappedField);
+		setNamespacedAttribute(request, "wrapperCssClass", _wrapperCssClass);
 	}
 
 	protected static final String _ATTRIBUTE_NAMESPACE = "aui:input:";
@@ -551,6 +561,7 @@ public abstract class BaseInputTag extends com.liferay.taglib.BaseValidatorTagSu
 	private java.lang.String _prefix = null;
 	private boolean _required = false;
 	private boolean _resizable = false;
+	private java.lang.String _selectedLanguageId = null;
 	private boolean _showRequiredLabel = true;
 	private java.lang.String _suffix = null;
 	private java.lang.String _title = null;

@@ -22,7 +22,7 @@ import com.liferay.portal.kernel.portlet.PortletClassLoaderUtil;
  * @author Michael C. Han
  */
 public class PluginSearchEngineConfigurator
-	extends AbstractSearchEngineConfigurator {
+	extends BaseSearchEngineConfigurator {
 
 	public void setDefaultSearchEngineId(String defaultSearchEngineId) {
 		_defaultSearchEngineId = defaultSearchEngineId;
@@ -49,17 +49,19 @@ public class PluginSearchEngineConfigurator
 			IndexWriterProxyBean.class.getName());
 	}
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *             #getOperatingClassLoader()}
+	 */
+	@Deprecated
 	@Override
 	protected ClassLoader getOperatingClassloader() {
-		ClassLoader classLoader = PortletClassLoaderUtil.getClassLoader();
+		return getOperatingClassLoader();
+	}
 
-		if (classLoader == null) {
-			Thread currentThread = Thread.currentThread();
-
-			classLoader = currentThread.getContextClassLoader();
-		}
-
-		return classLoader;
+	@Override
+	protected ClassLoader getOperatingClassLoader() {
+		return PortletClassLoaderUtil.getClassLoader();
 	}
 
 	@Override

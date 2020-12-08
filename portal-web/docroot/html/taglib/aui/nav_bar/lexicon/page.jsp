@@ -18,9 +18,9 @@
 
 <c:if test="<%= Validator.isContent(bodyContentString) %>">
 	<div class="navbar navbar-default <%= cssClass %>" id="<%= id %>" <%= AUIUtil.buildData(data) %> <%= InlineUtil.buildDynamicAttributes(dynamicAttributes) %>>
-		<div class="container-fluid-1280">
+		<div class="container-fluid container-fluid-max-xl">
 			<c:if test="<%= Validator.isNotNull(dataTarget) %>">
-				<div class="navbar-header visible-xs">
+				<div class="d-block d-sm-none navbar-header">
 					<button class="<%= (navItemCount.getValue() > 1) ? "collapsed" : StringPool.BLANK %> navbar-toggle navbar-toggle-left navbar-toggle-page-name" data-target="<%= (navItemCount.getValue() > 1) ? "#" + dataTarget + "NavbarCollapse" : StringPool.BLANK %>" data-toggle="<%= (navItemCount.getValue() > 1) ? "collapse" : StringPool.BLANK %>" id="<%= namespace %>NavbarBtn" type="button">
 						<span class="sr-only"><liferay-ui:message key="toggle-navigation" /></span>
 

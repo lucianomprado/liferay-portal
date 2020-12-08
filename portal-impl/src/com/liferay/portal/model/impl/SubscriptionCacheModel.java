@@ -14,14 +14,11 @@
 
 package com.liferay.portal.model.impl;
 
-import aQute.bnd.annotation.ProviderType;
-
+import com.liferay.petra.lang.HashUtil;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.model.CacheModel;
 import com.liferay.portal.kernel.model.MVCCModel;
 import com.liferay.portal.kernel.model.Subscription;
-import com.liferay.portal.kernel.util.HashUtil;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -34,26 +31,29 @@ import java.util.Date;
  * The cache model class for representing Subscription in entity cache.
  *
  * @author Brian Wing Shun Chan
- * @see Subscription
+ * @deprecated
  * @generated
  */
-@ProviderType
-public class SubscriptionCacheModel implements CacheModel<Subscription>,
-	Externalizable, MVCCModel {
+@Deprecated
+public class SubscriptionCacheModel
+	implements CacheModel<Subscription>, Externalizable, MVCCModel {
+
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
+	public boolean equals(Object object) {
+		if (this == object) {
 			return true;
 		}
 
-		if (!(obj instanceof SubscriptionCacheModel)) {
+		if (!(object instanceof SubscriptionCacheModel)) {
 			return false;
 		}
 
-		SubscriptionCacheModel subscriptionCacheModel = (SubscriptionCacheModel)obj;
+		SubscriptionCacheModel subscriptionCacheModel =
+			(SubscriptionCacheModel)object;
 
 		if ((subscriptionId == subscriptionCacheModel.subscriptionId) &&
-				(mvccVersion == subscriptionCacheModel.mvccVersion)) {
+			(mvccVersion == subscriptionCacheModel.mvccVersion)) {
+
 			return true;
 		}
 
@@ -119,7 +119,7 @@ public class SubscriptionCacheModel implements CacheModel<Subscription>,
 		subscriptionImpl.setUserId(userId);
 
 		if (userName == null) {
-			subscriptionImpl.setUserName(StringPool.BLANK);
+			subscriptionImpl.setUserName("");
 		}
 		else {
 			subscriptionImpl.setUserName(userName);
@@ -143,7 +143,7 @@ public class SubscriptionCacheModel implements CacheModel<Subscription>,
 		subscriptionImpl.setClassPK(classPK);
 
 		if (frequency == null) {
-			subscriptionImpl.setFrequency(StringPool.BLANK);
+			subscriptionImpl.setFrequency("");
 		}
 		else {
 			subscriptionImpl.setFrequency(frequency);
@@ -176,8 +176,7 @@ public class SubscriptionCacheModel implements CacheModel<Subscription>,
 	}
 
 	@Override
-	public void writeExternal(ObjectOutput objectOutput)
-		throws IOException {
+	public void writeExternal(ObjectOutput objectOutput) throws IOException {
 		objectOutput.writeLong(mvccVersion);
 
 		objectOutput.writeLong(subscriptionId);
@@ -189,7 +188,7 @@ public class SubscriptionCacheModel implements CacheModel<Subscription>,
 		objectOutput.writeLong(userId);
 
 		if (userName == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(userName);
@@ -203,7 +202,7 @@ public class SubscriptionCacheModel implements CacheModel<Subscription>,
 		objectOutput.writeLong(classPK);
 
 		if (frequency == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(frequency);
@@ -221,4 +220,5 @@ public class SubscriptionCacheModel implements CacheModel<Subscription>,
 	public long classNameId;
 	public long classPK;
 	public String frequency;
+
 }

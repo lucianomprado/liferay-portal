@@ -23,7 +23,9 @@ import java.io.PushbackInputStream;
 /**
  * @author Brian Wing Shun Chan
  * @author Mika Koivisto
+ * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
  */
+@Deprecated
 public class FlashMagicBytesUtil {
 
 	public static Result check(InputStream inputStream) throws IOException {
@@ -72,7 +74,8 @@ public class FlashMagicBytesUtil {
 
 	}
 
-	private static final byte[][] _FLASH_MAGIC_BYTES =
-		{{0x46, 0x57, 0x53}, {0x43, 0x57, 0x53}, {0x5a, 0x57, 0x53}};
+	private static final byte[][] _FLASH_MAGIC_BYTES = {
+		{0x46, 0x57, 0x53}, {0x43, 0x57, 0x53}, {0x5a, 0x57, 0x53}
+	};
 
 }

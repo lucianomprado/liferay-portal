@@ -14,10 +14,10 @@
 
 package com.liferay.portal.kernel.search;
 
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.json.JSON;
 import com.liferay.portal.kernel.util.ArrayUtil;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -230,7 +230,7 @@ public class HitsImpl implements Hits {
 			return sb.toString();
 		}
 
-		StringBundler sb = new StringBundler(2 * _docs.length + 4);
+		StringBundler sb = new StringBundler((2 * _docs.length) + 4);
 
 		sb.append(StringPool.OPEN_BRACKET);
 

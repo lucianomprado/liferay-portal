@@ -19,6 +19,7 @@ import com.liferay.portal.kernel.events.LifecycleAction;
 import com.liferay.portal.kernel.events.LifecycleEvent;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.InstancePool;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.registry.Registry;
@@ -27,9 +28,7 @@ import com.liferay.registry.ServiceRegistration;
 import com.liferay.registry.collections.ServiceTrackerCollections;
 import com.liferay.registry.collections.ServiceTrackerMap;
 
-import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -53,11 +52,13 @@ public class EventsProcessorUtil {
 	}
 
 	public static void process(
-			String key, String[] classes, HttpServletRequest request,
-			HttpServletResponse response)
+			String key, String[] classes, HttpServletRequest httpServletRequest,
+			HttpServletResponse httpServletResponse)
 		throws ActionException {
 
-		process(key, classes, new LifecycleEvent(request, response));
+		process(
+			key, classes,
+			new LifecycleEvent(httpServletRequest, httpServletResponse));
 	}
 
 	public static void process(
@@ -116,13 +117,12 @@ public class EventsProcessorUtil {
 	public static void registerEvent(String key, Object event) {
 		Registry registry = RegistryUtil.getRegistry();
 
-		Map<String, Object> properties = new HashMap<>();
-
-		properties.put("key", key);
-
 		ServiceRegistration<LifecycleAction> serviceRegistration =
 			registry.registerService(
-				LifecycleAction.class, (LifecycleAction)event, properties);
+				LifecycleAction.class, (LifecycleAction)event,
+				HashMapBuilder.<String, Object>put(
+					"key", key
+				).build());
 
 		Map<Object, ServiceRegistration<LifecycleAction>>
 			serviceRegistrationMap = _serviceRegistrationMaps.get(key);
@@ -158,71 +158,14 @@ public class EventsProcessorUtil {
 	protected EventsProcessorUtil() {
 	}
 
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	protected Collection<LifecycleAction> _getLifecycleActions(String key) {
-		List<LifecycleAction> lifecycleActions = _lifecycleActions.getService(
-			key);
-
-		if (lifecycleActions == null) {
-			lifecycleActions = Collections.emptyList();
-		}
-
-		return lifecycleActions;
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link
-	 *             #process(String, String[], LifecycleEvent)}
-	 */
-	@Deprecated
-	protected void _process(
-			String key, String[] classes, LifecycleEvent lifecycleEvent)
-		throws ActionException {
-
-		process(key, classes, lifecycleEvent);
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link
-	 *             #processEvent(LifecycleAction, LifecycleEvent)}
-	 */
-	@Deprecated
-	protected void _processEvent(
-			LifecycleAction lifecycleAction, LifecycleEvent lifecycleEvent)
-		throws ActionException {
-
-		processEvent(lifecycleAction, lifecycleEvent);
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link
-	 *             #registerEvent(String, Object)}
-	 */
-	@Deprecated
-	protected void _registerEvent(String key, Object event) {
-		registerEvent(key, event);
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link
-	 *             #unregisterEvent(String, Object)}
-	 */
-	@Deprecated
-	protected void _unregisterEvent(String key, Object event) {
-		unregisterEvent(key, event);
-	}
-
 	private static final Log _log = LogFactoryUtil.getLog(
 		EventsProcessorUtil.class);
 
 	private static final ServiceTrackerMap<String, List<LifecycleAction>>
 		_lifecycleActions = ServiceTrackerCollections.openMultiValueMap(
 			LifecycleAction.class, "key");
-	private static final
-		ConcurrentMap<String, Map<Object, ServiceRegistration<LifecycleAction>>>
+	private static final ConcurrentMap
+		<String, Map<Object, ServiceRegistration<LifecycleAction>>>
 			_serviceRegistrationMaps = new ConcurrentHashMap<>();
 
 }

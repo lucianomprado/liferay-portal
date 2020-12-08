@@ -14,6 +14,7 @@
 
 package com.liferay.portal.xmlrpc;
 
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.xmlrpc.Method;
@@ -33,19 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class XmlRpcMethodUtil {
 
 	public static Method getMethod(String token, String methodName) {
-		return _instance.doGetMethod(token, methodName);
-	}
-
-	protected Method doGetMethod(String token, String methodName) {
-		Method method = null;
-
-		Map<String, Method> methods = _methodRegistry.get(token);
-
-		if (methods != null) {
-			method = methods.get(methodName);
-		}
-
-		return method;
+		return _xmlRpcMethodUtil._getMethod(token, methodName);
 	}
 
 	private XmlRpcMethodUtil() {
@@ -57,10 +46,23 @@ public class XmlRpcMethodUtil {
 		_serviceTracker.open();
 	}
 
+	private Method _getMethod(String token, String methodName) {
+		Method method = null;
+
+		Map<String, Method> methods = _methodRegistry.get(token);
+
+		if (methods != null) {
+			method = methods.get(methodName);
+		}
+
+		return method;
+	}
+
 	private static final Log _log = LogFactoryUtil.getLog(
 		XmlRpcMethodUtil.class);
 
-	private static final XmlRpcMethodUtil _instance = new XmlRpcMethodUtil();
+	private static final XmlRpcMethodUtil _xmlRpcMethodUtil =
+		new XmlRpcMethodUtil();
 
 	private final Map<String, Map<String, Method>> _methodRegistry =
 		new ConcurrentHashMap<>();
@@ -92,8 +94,9 @@ public class XmlRpcMethodUtil {
 			if (registeredMethod != null) {
 				if (_log.isWarnEnabled()) {
 					_log.warn(
-						"There is already an XML-RPC method registered with " +
-							"name " + methodName + " at " + token);
+						StringBundler.concat(
+							"There is already an XML-RPC method registered ",
+							"with name ", methodName, " at ", token));
 				}
 			}
 			else {
@@ -124,9 +127,7 @@ public class XmlRpcMethodUtil {
 				return;
 			}
 
-			String methodName = method.getMethodName();
-
-			methods.remove(methodName);
+			methods.remove(method.getMethodName());
 
 			if (methods.isEmpty()) {
 				_methodRegistry.remove(token);

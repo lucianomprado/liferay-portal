@@ -15,7 +15,9 @@
 package com.liferay.knowledge.base.internal.upgrade.v1_3_0;
 
 import com.liferay.document.library.kernel.model.DLFolderConstants;
-import com.liferay.document.library.kernel.store.DLStoreUtil;
+import com.liferay.document.library.kernel.store.Store;
+import com.liferay.petra.io.StreamUtil;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -38,9 +40,13 @@ import java.sql.ResultSet;
  */
 public class UpgradeKBAttachments extends UpgradeProcess {
 
+	public UpgradeKBAttachments(Store store) {
+		_store = store;
+	}
+
 	protected void deleteEmptyDirectories() throws Exception {
 		for (long companyId : PortalUtil.getCompanyIds()) {
-			DLStoreUtil.deleteDirectory(
+			_store.deleteDirectory(
 				companyId, CompanyConstants.SYSTEM, "knowledgebase/kbarticles");
 		}
 	}
@@ -57,8 +63,7 @@ public class UpgradeKBAttachments extends UpgradeProcess {
 
 		String dirName = "knowledgebase/kbarticles/" + resourcePrimKey;
 
-		return DLStoreUtil.getFileNames(
-			companyId, CompanyConstants.SYSTEM, dirName);
+		return _store.getFileNames(companyId, CompanyConstants.SYSTEM, dirName);
 	}
 
 	/**
@@ -90,18 +95,18 @@ public class UpgradeKBAttachments extends UpgradeProcess {
 			ResultSet rs = ps.executeQuery()) {
 
 			while (rs.next()) {
-				long kbArticleId = rs.getLong("kbArticleId");
-				long resourcePrimKey = rs.getLong("resourcePrimKey");
 				long groupId = rs.getLong("groupId");
 				long companyId = rs.getLong("companyId");
-				long userId = rs.getLong("userId");
+
+				long classPK = rs.getLong("resourcePrimKey");
+
 				int status = rs.getInt("status");
 
-				long classPK = resourcePrimKey;
-
 				if (status != WorkflowConstants.STATUS_APPROVED) {
-					classPK = kbArticleId;
+					classPK = rs.getLong("kbArticleId");
 				}
+
+				long userId = rs.getLong("userId");
 
 				updateAttachments(companyId, groupId, classPK, userId);
 			}
@@ -114,45 +119,56 @@ public class UpgradeKBAttachments extends UpgradeProcess {
 
 		for (String attachment : getAttachments(companyId, resourcePrimKey)) {
 			try {
-				if (!DLStoreUtil.hasFile(
-						companyId, CompanyConstants.SYSTEM, attachment)) {
+				if (!_store.hasFile(
+						companyId, CompanyConstants.SYSTEM, attachment,
+						Store.VERSION_DEFAULT)) {
 
 					continue;
 				}
 
 				long folderId = getFolderId(groupId, userId, resourcePrimKey);
 
-				byte[] bytes = DLStoreUtil.getFileAsBytes(
-					companyId, CompanyConstants.SYSTEM, attachment);
+				byte[] bytes = StreamUtil.toByteArray(
+					_store.getFileAsStream(
+						companyId, CompanyConstants.SYSTEM, attachment,
+						StringPool.BLANK));
 
 				String title = FileUtil.getShortFileName(attachment);
 
-				String extension = FileUtil.getExtension(title);
-
 				String mimeType = MimeTypesUtil.getExtensionContentType(
-					extension);
+					FileUtil.getExtension(title));
 
 				PortletFileRepositoryUtil.addPortletFileEntry(
-					groupId, userId, _KB_ARTICLE_CLASS_NAME, resourcePrimKey,
+					groupId, userId, _CLASS_NAME_KB_ARTICLE, resourcePrimKey,
 					_PORTLET_ID, folderId, bytes, title, mimeType, false);
 
-				DLStoreUtil.deleteFile(
-					companyId, CompanyConstants.SYSTEM, attachment);
+				for (String versionLabel :
+						_store.getFileVersions(
+							companyId, CompanyConstants.SYSTEM, attachment)) {
+
+					_store.deleteFile(
+						companyId, CompanyConstants.SYSTEM, attachment,
+						versionLabel);
+				}
 			}
-			catch (PortalException pe) {
+			catch (PortalException portalException) {
 				if (_log.isWarnEnabled()) {
-					_log.warn("Unable to upgrade attachment " + attachment, pe);
+					_log.warn(
+						"Unable to upgrade attachment " + attachment,
+						portalException);
 				}
 			}
 		}
 	}
 
-	private static final String _KB_ARTICLE_CLASS_NAME =
+	private static final String _CLASS_NAME_KB_ARTICLE =
 		"com.liferay.knowledgebase.model.KBArticle";
 
 	private static final String _PORTLET_ID = "3_WAR_knowledgebaseportlet";
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		UpgradeKBAttachments.class);
+
+	private final Store _store;
 
 }

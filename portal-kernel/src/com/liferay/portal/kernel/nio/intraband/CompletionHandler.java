@@ -23,7 +23,7 @@ public interface CompletionHandler<A> {
 
 	public void delivered(A attachment);
 
-	public void failed(A attachment, IOException ioe);
+	public void failed(A attachment, IOException ioException);
 
 	public void replied(A attachment, Datagram datagram);
 
@@ -33,7 +33,7 @@ public interface CompletionHandler<A> {
 
 	public static enum CompletionType {
 
-		SUBMITTED, DELIVERED, REPLIED
+		DELIVERED, REPLIED, SUBMITTED
 
 	}
 

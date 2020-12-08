@@ -18,10 +18,10 @@ import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.portlet.PortletBag;
 import com.liferay.portal.kernel.portlet.PortletBagPool;
-import com.liferay.portal.kernel.util.AggregateResourceBundleLoader;
-import com.liferay.portal.kernel.util.ClassResourceBundleLoader;
-import com.liferay.portal.kernel.util.ResourceBundleLoader;
-import com.liferay.portal.kernel.util.ResourceBundleLoaderUtil;
+import com.liferay.portal.kernel.resource.bundle.AggregateResourceBundleLoader;
+import com.liferay.portal.kernel.resource.bundle.ClassResourceBundleLoader;
+import com.liferay.portal.kernel.resource.bundle.ResourceBundleLoader;
+import com.liferay.portal.kernel.resource.bundle.ResourceBundleLoaderUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 
@@ -40,45 +40,58 @@ public abstract class BaseJSPAssetRenderer<T>
 	extends BaseAssetRenderer<T> implements AssetRenderer<T> {
 
 	public abstract String getJspPath(
-		HttpServletRequest request, String template);
+		HttpServletRequest httpServletRequest, String template);
 
 	@Override
 	public boolean include(
-			HttpServletRequest request, HttpServletResponse response,
-			String template)
+			HttpServletRequest httpServletRequest,
+			HttpServletResponse httpServletResponse, String template)
 		throws Exception {
 
-		ServletContext servletContext = getServletContext();
-
-		String jspPath = getJspPath(request, template);
+		String jspPath = getJspPath(httpServletRequest, template);
 
 		if (Validator.isNull(jspPath)) {
 			return false;
 		}
 
-		ResourceBundleLoader resourceBundleLoader =
-			(ResourceBundleLoader)request.getAttribute(
+		ResourceBundleLoader originalResourceBundleLoader =
+			(ResourceBundleLoader)httpServletRequest.getAttribute(
 				WebKeys.RESOURCE_BUNDLE_LOADER);
+
+		ServletContext servletContext = getServletContext();
 
 		RequestDispatcher requestDispatcher =
 			servletContext.getRequestDispatcher(jspPath);
 
-		try {
-			request.setAttribute(
-				WebKeys.RESOURCE_BUNDLE_LOADER, getResourceBundleLoader());
+		ResourceBundleLoader resourceBundleLoader =
+			new AggregateResourceBundleLoader(
+				new ClassResourceBundleLoader("content.Language", getClass()),
+				ResourceBundleLoaderUtil.getPortalResourceBundleLoader());
 
-			requestDispatcher.include(request, response);
+		if (_servletContext != null) {
+			resourceBundleLoader =
+				ResourceBundleLoaderUtil.
+					getResourceBundleLoaderByServletContextName(
+						_servletContext.getServletContextName());
+		}
+
+		try {
+			httpServletRequest.setAttribute(
+				WebKeys.RESOURCE_BUNDLE_LOADER, resourceBundleLoader);
+
+			requestDispatcher.include(httpServletRequest, httpServletResponse);
 
 			return true;
 		}
-		catch (ServletException se) {
-			_log.error("Unable to include JSP " + jspPath, se);
+		catch (ServletException servletException) {
+			_log.error("Unable to include JSP " + jspPath, servletException);
 
-			throw new IOException("Unable to include " + jspPath, se);
+			throw new IOException(
+				"Unable to include " + jspPath, servletException);
 		}
 		finally {
-			request.setAttribute(
-				WebKeys.RESOURCE_BUNDLE_LOADER, resourceBundleLoader);
+			httpServletRequest.setAttribute(
+				WebKeys.RESOURCE_BUNDLE_LOADER, originalResourceBundleLoader);
 		}
 	}
 
@@ -86,7 +99,7 @@ public abstract class BaseJSPAssetRenderer<T>
 		_servletContext = servletContext;
 	}
 
-	protected ResourceBundleLoader getResourceBundleLoader() {
+	protected ResourceBundleLoader acquireResourceBundleLoader() {
 		if (_servletContext != null) {
 			return ResourceBundleLoaderUtil.
 				getResourceBundleLoaderByServletContextName(
@@ -98,14 +111,27 @@ public abstract class BaseJSPAssetRenderer<T>
 			ResourceBundleLoaderUtil.getPortalResourceBundleLoader());
 	}
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *             #acquireResourceBundleLoader}
+	 */
+	@Deprecated
+	protected com.liferay.portal.kernel.util.ResourceBundleLoader
+		getResourceBundleLoader() {
+
+		ResourceBundleLoader resourceBundleLoader =
+			acquireResourceBundleLoader();
+
+		return locale -> resourceBundleLoader.loadResourceBundle(locale);
+	}
+
 	protected ServletContext getServletContext() {
 		if (_servletContext != null) {
 			return _servletContext;
 		}
 
-		String portletId = getAssetRendererFactory().getPortletId();
-
-		PortletBag portletBag = PortletBagPool.get(portletId);
+		PortletBag portletBag = PortletBagPool.get(
+			getAssetRendererFactory().getPortletId());
 
 		return portletBag.getServletContext();
 	}

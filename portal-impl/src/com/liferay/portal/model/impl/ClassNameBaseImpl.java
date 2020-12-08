@@ -14,8 +14,6 @@
 
 package com.liferay.portal.model.impl;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.portal.kernel.model.ClassName;
 import com.liferay.portal.kernel.service.ClassNameLocalServiceUtil;
 
@@ -31,13 +29,13 @@ import com.liferay.portal.kernel.service.ClassNameLocalServiceUtil;
  * @see ClassName
  * @generated
  */
-@ProviderType
-public abstract class ClassNameBaseImpl extends ClassNameModelImpl
-	implements ClassName {
+public abstract class ClassNameBaseImpl
+	extends ClassNameModelImpl implements ClassName {
+
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. All methods that expect a class name model instance should use the {@link ClassName} interface instead.
+	 * Never modify or reference this class directly. All methods that expect a class name model instance should use the <code>ClassName</code> interface instead.
 	 */
 	@Override
 	public void persist() {
@@ -48,4 +46,5 @@ public abstract class ClassNameBaseImpl extends ClassNameModelImpl
 			ClassNameLocalServiceUtil.updateClassName(this);
 		}
 	}
+
 }

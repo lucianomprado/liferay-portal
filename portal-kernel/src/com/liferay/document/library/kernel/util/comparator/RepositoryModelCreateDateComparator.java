@@ -48,6 +48,7 @@ public class RepositoryModelCreateDateComparator<T>
 
 	public RepositoryModelCreateDateComparator(boolean ascending) {
 		_ascending = ascending;
+
 		_orderByModel = false;
 	}
 
@@ -88,9 +89,8 @@ public class RepositoryModelCreateDateComparator<T>
 		if (_ascending) {
 			return value;
 		}
-		else {
-			return -value;
-		}
+
+		return -value;
 	}
 
 	@Override
@@ -99,18 +99,15 @@ public class RepositoryModelCreateDateComparator<T>
 			if (_ascending) {
 				return ORDER_BY_MODEL_ASC;
 			}
-			else {
-				return ORDER_BY_MODEL_DESC;
-			}
+
+			return ORDER_BY_MODEL_DESC;
 		}
-		else {
-			if (_ascending) {
-				return ORDER_BY_ASC;
-			}
-			else {
-				return ORDER_BY_DESC;
-			}
+
+		if (_ascending) {
+			return ORDER_BY_ASC;
 		}
+
+		return ORDER_BY_DESC;
 	}
 
 	@Override
@@ -123,24 +120,24 @@ public class RepositoryModelCreateDateComparator<T>
 		return _ascending;
 	}
 
-	protected Date getCreateDate(Object obj) {
-		if (obj instanceof DLFileEntry) {
-			DLFileEntry dlFileEntry = (DLFileEntry)obj;
+	protected Date getCreateDate(Object object) {
+		if (object instanceof DLFileEntry) {
+			DLFileEntry dlFileEntry = (DLFileEntry)object;
 
 			return dlFileEntry.getCreateDate();
 		}
-		else if (obj instanceof DLFileShortcut) {
-			DLFileShortcut dlFileShortcut = (DLFileShortcut)obj;
+		else if (object instanceof DLFileShortcut) {
+			DLFileShortcut dlFileShortcut = (DLFileShortcut)object;
 
 			return dlFileShortcut.getCreateDate();
 		}
-		else if (obj instanceof DLFolder) {
-			DLFolder dlFolder = (DLFolder)obj;
+		else if (object instanceof DLFolder) {
+			DLFolder dlFolder = (DLFolder)object;
 
 			return dlFolder.getCreateDate();
 		}
 		else {
-			RepositoryEntry repositoryEntry = (RepositoryEntry)obj;
+			RepositoryEntry repositoryEntry = (RepositoryEntry)object;
 
 			return repositoryEntry.getCreateDate();
 		}

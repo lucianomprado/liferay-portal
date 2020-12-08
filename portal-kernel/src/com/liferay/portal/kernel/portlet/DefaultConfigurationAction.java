@@ -41,7 +41,6 @@ public class DefaultConfigurationAction
 		return new PortletPreferencesSettings(actionRequest.getPreferences());
 	}
 
-	@SuppressWarnings("unused")
 	protected void postProcess(
 			long companyId, PortletRequest portletRequest,
 			PortletPreferences portletPreferences)
@@ -73,8 +72,8 @@ public class DefaultConfigurationAction
 			try {
 				portletPreferences.reset(key);
 			}
-			catch (ReadOnlyException roe) {
-				throw new SystemException(roe);
+			catch (ReadOnlyException readOnlyException) {
+				throw new SystemException(readOnlyException);
 			}
 		}
 	}

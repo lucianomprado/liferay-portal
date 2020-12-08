@@ -14,8 +14,8 @@
 
 package com.liferay.portal.kernel.search;
 
-import com.liferay.portal.kernel.util.CharPool;
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 
@@ -138,7 +138,7 @@ public abstract class BaseBooleanQueryImpl
 			}
 		}
 
-		return keywords.toArray(new String[keywords.size()]);
+		return keywords.toArray(new String[0]);
 	}
 
 }

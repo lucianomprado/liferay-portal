@@ -22,31 +22,37 @@ String layoutTemplateIdPrefix = (String)request.getAttribute("liferay-ui:layout-
 List<LayoutTemplate> layoutTemplates = (List<LayoutTemplate>)request.getAttribute("liferay-ui:layout-templates-list:layoutTemplates");
 %>
 
-<div class="lfr-page-layouts row">
-	<ul class="list-unstyled">
+<div class="container-fluid lfr-page-layouts">
+	<ul class="list-unstyled row">
 
 		<%
 		layoutTemplates = PluginUtil.restrictPlugins(layoutTemplates, user);
 
 		for (int i = 0; i < layoutTemplates.size(); i++) {
 			LayoutTemplate layoutTemplate = layoutTemplates.get(i);
+
+			String templateId = layoutTemplate.getLayoutTemplateId();
+
+			// LPS-90259
+
+			if (templateId.equals("1_column_dynamic")) {
+				continue;
+			}
 		%>
 
 			<li class="col-lg-3 col-md-4 col-sm-6 lfr-layout-template">
 				<div class="checkbox-card">
-					<label for="<portlet:namespace /><%= layoutTemplateIdPrefix + "layoutTemplateId" + i %>">
-						<aui:input checked="<%= layoutTemplateId.equals(layoutTemplate.getLayoutTemplateId()) %>" cssClass="hide" id='<%= layoutTemplateIdPrefix + "layoutTemplateId" + i %>' label="" name="layoutTemplateId" type="radio" value="<%= layoutTemplate.getLayoutTemplateId() %>" wrappedField="<%= true %>" />
+					<label class="d-block" for="<portlet:namespace /><%= layoutTemplateIdPrefix + "layoutTemplateId" + i %>">
+						<aui:input checked="<%= layoutTemplateId.equals(layoutTemplate.getLayoutTemplateId()) %>" id='<%= layoutTemplateIdPrefix + "layoutTemplateId" + i %>' label="" name="layoutTemplateId" type="radio" value="<%= layoutTemplate.getLayoutTemplateId() %>" wrappedField="<%= true %>" />
 
 						<div class="card card-horizontal">
-							<div class="card-row card-row-padded">
-								<div class="card-col-field">
-									<img alt="" class="layout-template-entry modify-link <%= layoutTemplateId.equals(layoutTemplate.getLayoutTemplateId()) ? "layout-selected" : StringPool.BLANK %>" height="28" onclick="document.getElementById('<portlet:namespace /><%= layoutTemplateIdPrefix + "layoutTemplateId" + i %>').checked = true;" src="<%= layoutTemplate.getStaticResourcePath() %><%= HtmlUtil.escapeAttribute(layoutTemplate.getThumbnailPath()) %>" width="28" />
+							<div class="card-body card-row">
+								<div class="autofit-col">
+									<img alt="" class="layout-template-entry inline-item-before modify-linkm <%= layoutTemplateId.equals(layoutTemplate.getLayoutTemplateId()) ? "layout-selected" : StringPool.BLANK %>" height="28" onclick="document.getElementById('<portlet:namespace /><%= layoutTemplateIdPrefix + "layoutTemplateId" + i %>').checked = true;" src="<%= layoutTemplate.getStaticResourcePath() %><%= HtmlUtil.escapeAttribute(layoutTemplate.getThumbnailPath()) %>" width="28" />
 								</div>
 
-								<div class="card-col-content card-col-gutters clamp-horizontal">
-									<div class="clamp-container">
-										<span class="truncate-text" title=""><%= HtmlUtil.escape(layoutTemplate.getName(locale)) %></span>
-									</div>
+								<div class="autofit-col autofit-col-expand">
+									<span class="text-truncate" title="<%= HtmlUtil.escape(layoutTemplate.getName(locale)) %>"><%= HtmlUtil.escape(layoutTemplate.getName(locale)) %></span>
 								</div>
 							</div>
 						</div>

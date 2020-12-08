@@ -14,7 +14,7 @@
 
 package com.liferay.portlet.trash.service.http;
 
-import aQute.bnd.annotation.ProviderType;
+import org.osgi.annotation.versioning.ProviderType;
 
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -61,12 +61,11 @@ import java.rmi.RemoteException;
  * @see TrashEntryServiceHttp
  * @see com.liferay.trash.kernel.model.TrashEntrySoap
  * @see TrashEntryServiceUtil
- * @deprecated As of 7.0.0, replaced by {@link
+ * @deprecated As of Judson (7.1.x), replaced by {@link
            com.liferay.trash.service.impl.TrashEntryServiceImpl}
  * @generated
  */
 @Deprecated
-@ProviderType
 public class TrashEntryServiceSoap {
 	/**
 	* Deletes the trash entries with the matching group ID considering

@@ -14,10 +14,14 @@
 
 package com.liferay.portal.service.impl;
 
-import com.liferay.expando.kernel.model.ExpandoBridge;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.model.UserGroup;
+import com.liferay.portal.kernel.search.Indexer;
+import com.liferay.portal.kernel.search.IndexerRegistryUtil;
+import com.liferay.portal.kernel.search.Sort;
+import com.liferay.portal.kernel.search.SortFactoryUtil;
 import com.liferay.portal.kernel.security.membershippolicy.UserGroupMembershipPolicyUtil;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.service.ServiceContext;
@@ -26,13 +30,19 @@ import com.liferay.portal.kernel.service.permission.PortalPermissionUtil;
 import com.liferay.portal.kernel.service.permission.TeamPermissionUtil;
 import com.liferay.portal.kernel.service.permission.UserGroupPermissionUtil;
 import com.liferay.portal.kernel.service.permission.UserPermissionUtil;
+import com.liferay.portal.kernel.util.ArrayUtil;
+import com.liferay.portal.kernel.util.MapUtil;
+import com.liferay.portal.kernel.util.OrderByComparator;
+import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.kernel.util.comparator.UserGroupIdComparator;
 import com.liferay.portal.service.base.UserGroupServiceBaseImpl;
-
-import java.io.Serializable;
+import com.liferay.portal.service.persistence.constants.UserGroupFinderConstants;
+import com.liferay.portal.util.PropsValues;
+import com.liferay.users.admin.kernel.util.UsersAdminUtil;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Provides the remote service for accessing, adding, deleting, and updating
@@ -72,28 +82,6 @@ public class UserGroupServiceImpl extends UserGroupServiceBaseImpl {
 			getPermissionChecker(), teamId, ActionKeys.ASSIGN_MEMBERS);
 
 		userGroupLocalService.addTeamUserGroups(teamId, userGroupIds);
-	}
-
-	/**
-	 * Adds a user group.
-	 *
-	 * <p>
-	 * This method handles the creation and bookkeeping of the user group,
-	 * including its resources, metadata, and internal data structures.
-	 * </p>
-	 *
-	 * @param      name the user group's name
-	 * @param      description the user group's description
-	 * @return     the user group
-	 * @deprecated As of 6.2.0, replaced by {@link #addUserGroup(String, String,
-	 *             ServiceContext)}
-	 */
-	@Deprecated
-	@Override
-	public UserGroup addUserGroup(String name, String description)
-		throws PortalException {
-
-		return addUserGroup(name, description, null);
 	}
 
 	/**
@@ -161,6 +149,15 @@ public class UserGroupServiceImpl extends UserGroupServiceBaseImpl {
 		return userGroup;
 	}
 
+	@Override
+	public List<UserGroup> getGtUserGroups(
+		long gtUserGroupId, long companyId, long parentUserGroupId, int size) {
+
+		return userGroupPersistence.filterFindByU_C_P(
+			gtUserGroupId, companyId, parentUserGroupId, 0, size,
+			new UserGroupIdComparator(true));
+	}
+
 	/**
 	 * Returns the user group with the primary key.
 	 *
@@ -188,10 +185,9 @@ public class UserGroupServiceImpl extends UserGroupServiceBaseImpl {
 		UserGroup userGroup = userGroupLocalService.getUserGroup(
 			user.getCompanyId(), name);
 
-		long userGroupId = userGroup.getUserGroupId();
-
 		UserGroupPermissionUtil.check(
-			getPermissionChecker(), userGroupId, ActionKeys.VIEW);
+			getPermissionChecker(), userGroup.getUserGroupId(),
+			ActionKeys.VIEW);
 
 		return userGroup;
 	}
@@ -201,6 +197,28 @@ public class UserGroupServiceImpl extends UserGroupServiceBaseImpl {
 		throws PortalException {
 
 		return filterUserGroups(userGroupLocalService.getUserGroups(companyId));
+	}
+
+	@Override
+	public List<UserGroup> getUserGroups(
+		long companyId, String name, int start, int end) {
+
+		if (Validator.isNull(name)) {
+			return userGroupPersistence.filterFindByCompanyId(
+				companyId, start, end);
+		}
+
+		return userGroupPersistence.filterFindByC_LikeN(
+			companyId, name, start, end);
+	}
+
+	@Override
+	public int getUserGroupsCount(long companyId, String name) {
+		if (Validator.isNull(name)) {
+			return userGroupPersistence.filterCountByCompanyId(companyId);
+		}
+
+		return userGroupPersistence.filterCountByC_LikeN(companyId, name);
 	}
 
 	/**
@@ -220,6 +238,182 @@ public class UserGroupServiceImpl extends UserGroupServiceBaseImpl {
 			userId);
 
 		return filterUserGroups(userGroups);
+	}
+
+	/**
+	 * Returns an ordered range of all the user groups that match the keywords.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end -
+	 * start</code> instances. <code>start</code> and <code>end</code> are not
+	 * primary keys, they are indexes in the result set. Thus, <code>0</code>
+	 * refers to the first result in the set. Setting both <code>start</code>
+	 * and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full
+	 * result set.
+	 * </p>
+	 *
+	 * @param  companyId the primary key of the user group's company
+	 * @param  keywords the keywords (space separated), which may occur in the
+	 *         user group's name or description (optionally <code>null</code>)
+	 * @param  params the finder params (optionally <code>null</code>). For more
+	 *         information see {@link
+	 *         com.liferay.portal.kernel.service.persistence.UserGroupFinder}
+	 * @param  start the lower bound of the range of user groups to return
+	 * @param  end the upper bound of the range of user groups to return (not
+	 *         inclusive)
+	 * @param  orderByComparator the comparator to order the user groups
+	 *         (optionally <code>null</code>)
+	 * @return the matching user groups ordered by comparator
+	 *         <code>orderByComparator</code>
+	 * @see    com.liferay.portal.kernel.service.persistence.UserGroupFinder
+	 */
+	@Override
+	public List<UserGroup> search(
+		long companyId, String keywords, LinkedHashMap<String, Object> params,
+		int start, int end, OrderByComparator<UserGroup> orderByComparator) {
+
+		if (isUseCustomSQL(params)) {
+			return userGroupFinder.filterFindByKeywords(
+				companyId, keywords, params, start, end, orderByComparator);
+		}
+
+		String orderByCol = orderByComparator.getOrderByFields()[0];
+
+		String orderByType = "asc";
+
+		if (!orderByComparator.isAscending()) {
+			orderByType = "desc";
+		}
+
+		Sort sort = SortFactoryUtil.getSort(
+			UserGroup.class, orderByCol, orderByType);
+
+		try {
+			return UsersAdminUtil.getUserGroups(
+				userGroupLocalService.search(
+					companyId, keywords, params, start, end, sort));
+		}
+		catch (Exception exception) {
+			throw new SystemException(exception);
+		}
+	}
+
+	/**
+	 * Returns an ordered range of all the user groups that match the name and
+	 * description.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end -
+	 * start</code> instances. <code>start</code> and <code>end</code> are not
+	 * primary keys, they are indexes in the result set. Thus, <code>0</code>
+	 * refers to the first result in the set. Setting both <code>start</code>
+	 * and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full
+	 * result set.
+	 * </p>
+	 *
+	 * @param  companyId the primary key of the user group's company
+	 * @param  name the user group's name (optionally <code>null</code>)
+	 * @param  description the user group's description (optionally
+	 *         <code>null</code>)
+	 * @param  params the finder params (optionally <code>null</code>). For more
+	 *         information see {@link
+	 *         com.liferay.portal.kernel.service.persistence.UserGroupFinder}
+	 * @param  andOperator whether every field must match its keywords or just
+	 *         one field
+	 * @param  start the lower bound of the range of user groups to return
+	 * @param  end the upper bound of the range of user groups to return (not
+	 *         inclusive)
+	 * @param  orderByComparator the comparator to order the user groups
+	 *         (optionally <code>null</code>)
+	 * @return the matching user groups ordered by comparator
+	 *         <code>orderByComparator</code>
+	 * @see    com.liferay.portal.kernel.service.persistence.UserGroupFinder
+	 */
+	@Override
+	public List<UserGroup> search(
+		long companyId, String name, String description,
+		LinkedHashMap<String, Object> params, boolean andOperator, int start,
+		int end, OrderByComparator<UserGroup> orderByComparator) {
+
+		if (isUseCustomSQL(params)) {
+			return userGroupFinder.filterFindByC_N_D(
+				companyId, name, description, params, andOperator, start, end,
+				orderByComparator);
+		}
+
+		String orderByCol = orderByComparator.getOrderByFields()[0];
+
+		String orderByType = "asc";
+
+		if (!orderByComparator.isAscending()) {
+			orderByType = "desc";
+		}
+
+		Sort sort = SortFactoryUtil.getSort(
+			UserGroup.class, orderByCol, orderByType);
+
+		try {
+			return UsersAdminUtil.getUserGroups(
+				userGroupLocalService.search(
+					companyId, name, description, params, andOperator, start,
+					end, sort));
+		}
+		catch (Exception exception) {
+			throw new SystemException(exception);
+		}
+	}
+
+	/**
+	 * Returns the number of user groups that match the keywords
+	 *
+	 * @param  companyId the primary key of the user group's company
+	 * @param  keywords the keywords (space separated), which may occur in the
+	 *         user group's name or description (optionally <code>null</code>)
+	 * @param  params the finder params (optionally <code>null</code>). For more
+	 *         information see {@link
+	 *         com.liferay.portal.kernel.service.persistence.UserGroupFinder}
+	 * @return the number of matching user groups
+	 * @see    com.liferay.portal.kernel.service.persistence.UserGroupFinder
+	 */
+	@Override
+	public int searchCount(
+		long companyId, String keywords, LinkedHashMap<String, Object> params) {
+
+		if (isUseCustomSQL(params)) {
+			return userGroupFinder.filterCountByKeywords(
+				companyId, keywords, params);
+		}
+
+		return userGroupLocalService.searchCount(companyId, keywords, params);
+	}
+
+	/**
+	 * Returns the number of user groups that match the name and description.
+	 *
+	 * @param  companyId the primary key of the user group's company
+	 * @param  name the user group's name (optionally <code>null</code>)
+	 * @param  description the user group's description (optionally
+	 *         <code>null</code>)
+	 * @param  params the finder params (optionally <code>null</code>). For more
+	 *         information see {@link
+	 *         com.liferay.portal.kernel.service.persistence.UserGroupFinder}
+	 * @param  andOperator whether every field must match its keywords or just
+	 *         one field
+	 * @return the number of matching user groups
+	 * @see    com.liferay.portal.kernel.service.persistence.UserGroupFinder
+	 */
+	@Override
+	public int searchCount(
+		long companyId, String name, String description,
+		LinkedHashMap<String, Object> params, boolean andOperator) {
+
+		if (isUseCustomSQL(params)) {
+			return userGroupFinder.filterCountByC_N_D(
+				companyId, name, description, params, andOperator);
+		}
+
+		return userGroupLocalService.searchCount(
+			companyId, name, description, params, andOperator);
 	}
 
 	/**
@@ -252,39 +446,6 @@ public class UserGroupServiceImpl extends UserGroupServiceBaseImpl {
 			getPermissionChecker(), teamId, ActionKeys.ASSIGN_MEMBERS);
 
 		userGroupLocalService.unsetTeamUserGroups(teamId, userGroupIds);
-	}
-
-	/**
-	 * Updates the user group.
-	 *
-	 * @param      userGroupId the primary key of the user group
-	 * @param      name the user group's name
-	 * @param      description the the user group's description
-	 * @return     the user group
-	 * @deprecated As of 6.2.0, replaced by {@link #updateUserGroup(long,
-	 *             String, String, ServiceContext)}
-	 */
-	@Deprecated
-	@Override
-	public UserGroup updateUserGroup(
-			long userGroupId, String name, String description)
-		throws PortalException {
-
-		UserGroup oldUserGroup = userGroupPersistence.findByPrimaryKey(
-			userGroupId);
-
-		ExpandoBridge oldExpandoBridge = oldUserGroup.getExpandoBridge();
-
-		Map<String, Serializable> oldExpandoAttributes =
-			oldExpandoBridge.getAttributes();
-
-		UserGroup userGroup = updateUserGroup(
-			userGroupId, name, description, null);
-
-		UserGroupMembershipPolicyUtil.verifyPolicy(
-			userGroup, oldUserGroup, oldExpandoAttributes);
-
-		return userGroup;
 	}
 
 	/**
@@ -329,6 +490,36 @@ public class UserGroupServiceImpl extends UserGroupServiceBaseImpl {
 		}
 
 		return filteredGroups;
+	}
+
+	/**
+	 * @see UserGroupLocalServiceImpl#isUseCustomSQL
+	 */
+	protected boolean isUseCustomSQL(LinkedHashMap<String, Object> params) {
+		if (MapUtil.isEmpty(params)) {
+			return false;
+		}
+
+		Indexer<?> indexer = IndexerRegistryUtil.nullSafeGetIndexer(
+			UserGroup.class);
+
+		if (!indexer.isIndexerEnabled() ||
+			!PropsValues.USER_GROUPS_SEARCH_WITH_INDEX) {
+
+			return true;
+		}
+
+		if (MapUtil.isEmpty(params)) {
+			return false;
+		}
+
+		for (String key : params.keySet()) {
+			if (ArrayUtil.contains(UserGroupFinderConstants.PARAM_KEYS, key)) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 }

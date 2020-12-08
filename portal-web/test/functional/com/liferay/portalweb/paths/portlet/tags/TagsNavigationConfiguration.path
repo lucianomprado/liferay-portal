@@ -9,13 +9,13 @@
 </thead>
 <tbody>
 <tr>
-	<td>TAGS_NAVIGATION_IFRAME</td>
-	<td>//iframe[contains(@class,'dialog-iframe-node') and contains(@src,'tags-navigation')]</td>
+	<td>TAG_CLOUD_IFRAME</td>
+	<td>//iframe[contains(@class,'dialog-iframe-node') and contains(@src,'tag-cloud')]</td>
 	<td></td>
 </tr>
 <tr>
-	<td>TAG_CLOUD_IFRAME</td>
-	<td>//iframe[contains(@class,'dialog-iframe-node') and contains(@src,'tag-cloud')]</td>
+	<td>TAGS_NAVIGATION_IFRAME</td>
+	<td>//iframe[contains(@class,'dialog-iframe-node') and contains(@src,'tags-navigation')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -26,16 +26,6 @@
 <tr>
 	<td>SHOW_ASSET_COUNT_CHECKBOX</td>
 	<td>//input[contains(@id,'showAssetCount')]</td>
-	<td></td>
-</tr>
-<tr>
-	<td>DISPLAY_TEMPLATE_SELECT</td>
-	<td>//select[contains(@id,'displayStyle')]</td>
-	<td></td>
-</tr>
-<tr>
-	<td>CLOSE_BUTTON</td>
-	<td>//button[contains(@class,'btn close close-content')]</td>
 	<td></td>
 </tr>
 </tbody>

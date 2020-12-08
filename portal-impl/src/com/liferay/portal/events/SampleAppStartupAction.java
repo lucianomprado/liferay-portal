@@ -14,6 +14,7 @@
 
 package com.liferay.portal.events;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.events.ActionException;
 import com.liferay.portal.kernel.events.SimpleAction;
 import com.liferay.portal.kernel.log.Log;
@@ -24,7 +25,6 @@ import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.PwdGenerator;
-import com.liferay.portal.kernel.util.StringPool;
 
 import java.util.Calendar;
 import java.util.Locale;
@@ -46,8 +46,8 @@ public class SampleAppStartupAction extends SimpleAction {
 
 			doRun(companyId);
 		}
-		catch (Exception e) {
-			throw new ActionException(e);
+		catch (Exception exception) {
+			throw new ActionException(exception);
 		}
 	}
 

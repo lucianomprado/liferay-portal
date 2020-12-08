@@ -14,6 +14,7 @@
 
 package com.liferay.sync.web.internal.portlet;
 
+import com.liferay.portal.kernel.model.Release;
 import com.liferay.portal.kernel.security.auth.PrincipalException;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ParamUtil;
@@ -26,6 +27,7 @@ import javax.portlet.ActionResponse;
 import javax.portlet.Portlet;
 
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
 
 /**
  * @author Jonathan McCann
@@ -43,12 +45,11 @@ import org.osgi.service.component.annotations.Component;
 		"com.liferay.portlet.use-default-template=true",
 		"javax.portlet.display-name=My Sync Devices",
 		"javax.portlet.expiration-cache=0",
-		"javax.portlet.init-param.template-path=/",
+		"javax.portlet.init-param.template-path=/META-INF/resources/",
 		"javax.portlet.init-param.view-template=/devices.jsp",
 		"javax.portlet.name=" + SyncPortletKeys.SYNC_DEVICES_PORTLET,
 		"javax.portlet.resource-bundle=content.Language",
-		"javax.portlet.security-role-ref=power-user,user",
-		"javax.portlet.supports.mime-type=text/html"
+		"javax.portlet.security-role-ref=power-user,user"
 	},
 	service = Portlet.class
 )
@@ -93,6 +94,13 @@ public class SyncDevicesPortlet extends BaseSyncPortlet {
 		if (userId != syncDevice.getUserId()) {
 			throw new PrincipalException();
 		}
+	}
+
+	@Reference(
+		target = "(&(release.bundle.symbolic.name=com.liferay.sync.web)(&(release.schema.version>=1.0.0)(!(release.schema.version>=2.0.0))))",
+		unbind = "-"
+	)
+	protected void setRelease(Release release) {
 	}
 
 }

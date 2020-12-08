@@ -180,6 +180,7 @@ public class ByteArrayFileInputStreamTest {
 		byteArrayFileInputStream.read();
 
 		byteArrayFileInputStream.close();
+
 		Assert.assertNull(byteArrayFileInputStream.data);
 		Assert.assertNull(byteArrayFileInputStream.file);
 		Assert.assertNull(byteArrayFileInputStream.fileInputStream);
@@ -210,7 +211,7 @@ public class ByteArrayFileInputStreamTest {
 
 			Assert.fail();
 		}
-		catch (IllegalArgumentException iae) {
+		catch (IllegalArgumentException illegalArgumentException) {
 		}
 
 		// File does not exist
@@ -220,7 +221,7 @@ public class ByteArrayFileInputStreamTest {
 
 			Assert.fail();
 		}
-		catch (IllegalArgumentException iae) {
+		catch (IllegalArgumentException illegalArgumentException) {
 		}
 
 		// Constructor 1

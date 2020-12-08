@@ -14,7 +14,6 @@
 
 package com.liferay.source.formatter.checkstyle.checks;
 
-import com.puppycrawl.tools.checkstyle.api.AbstractCheck;
 import com.puppycrawl.tools.checkstyle.api.DetailAST;
 import com.puppycrawl.tools.checkstyle.api.FileContents;
 import com.puppycrawl.tools.checkstyle.api.TextBlock;
@@ -23,7 +22,7 @@ import com.puppycrawl.tools.checkstyle.api.TokenTypes;
 /**
  * @author Hugo Huijser
  */
-public class MissingAuthorCheck extends AbstractCheck {
+public class MissingAuthorCheck extends BaseCheck {
 
 	@Override
 	public int[] getDefaultTokens() {
@@ -33,10 +32,10 @@ public class MissingAuthorCheck extends AbstractCheck {
 	}
 
 	@Override
-	public void visitToken(DetailAST detailAST) {
-		DetailAST parentAST = detailAST.getParent();
+	protected void doVisitToken(DetailAST detailAST) {
+		DetailAST parentDetailAST = detailAST.getParent();
 
-		if (parentAST != null) {
+		if (parentDetailAST != null) {
 			return;
 		}
 
@@ -46,7 +45,7 @@ public class MissingAuthorCheck extends AbstractCheck {
 			detailAST.getLineNo());
 
 		if (javadoc == null) {
-			log(detailAST.getLineNo(), _MSG_MISSING_AUTHOR);
+			log(detailAST, _MSG_MISSING_AUTHOR);
 
 			return;
 		}
@@ -59,7 +58,7 @@ public class MissingAuthorCheck extends AbstractCheck {
 			}
 		}
 
-		log(detailAST.getLineNo(), _MSG_MISSING_AUTHOR);
+		log(detailAST, _MSG_MISSING_AUTHOR);
 	}
 
 	private static final String _MSG_MISSING_AUTHOR = "author.missing";

@@ -14,8 +14,8 @@
 
 package com.liferay.portal.servlet;
 
+import com.liferay.petra.lang.CentralizedThreadLocal;
 import com.liferay.portal.kernel.servlet.PersistentHttpServletRequestWrapper;
-import com.liferay.portal.kernel.util.AutoResetThreadLocal;
 import com.liferay.portal.kernel.util.WebKeys;
 
 import java.io.Closeable;
@@ -26,6 +26,7 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.locks.Lock;
+import java.util.function.Function;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletRequest;
@@ -34,8 +35,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
 /**
- * @author Shuyang Zhou
+ * @author     Shuyang Zhou
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  */
+@Deprecated
 public class ThreadLocalFacadeHttpServletRequestWrapper
 	extends PersistentHttpServletRequestWrapper implements Closeable {
 
@@ -142,10 +145,10 @@ public class ThreadLocalFacadeHttpServletRequestWrapper
 	}
 
 	@Override
-	public void setAttribute(String name, Object o) {
+	public void setAttribute(String name, Object object) {
 		ServletRequest servletRequest = getRequest();
 
-		servletRequest.setAttribute(name, o);
+		servletRequest.setAttribute(name, object);
 	}
 
 	@Override
@@ -155,19 +158,10 @@ public class ThreadLocalFacadeHttpServletRequestWrapper
 	}
 
 	private static final ThreadLocal<HttpServletRequest>
-		_nextHttpServletRequestThreadLocal =
-			new AutoResetThreadLocal<HttpServletRequest>(
-				ThreadLocalFacadeHttpServletRequestWrapper.class +
-					"._nextHttpServletRequestThreadLocal") {
-
-				@Override
-				protected HttpServletRequest copy(
-					HttpServletRequest httpServletRequest) {
-
-					return httpServletRequest;
-				}
-
-			};
+		_nextHttpServletRequestThreadLocal = new CentralizedThreadLocal<>(
+			ThreadLocalFacadeHttpServletRequestWrapper.class +
+				"._nextHttpServletRequestThreadLocal",
+			null, Function.identity(), true);
 
 	private final List<Locale> _locales;
 	private final ServletRequestWrapper _servletRequestWrapper;

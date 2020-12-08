@@ -28,16 +28,21 @@ String signature = ParamUtil.getString(request, "signature");
 			JSONWebServiceActionMapping jsonWebServiceActionMapping = JSONWebServiceActionsManagerUtil.getJSONWebServiceActionMapping(signature);
 			%>
 
-			<h2><%= jsonWebServiceActionMapping.getPath() %></h2>
+			<div class="align-items-center d-flex justify-content-between lfr-api-title-method mb-3">
+				<h2 class="mb-0"><%= jsonWebServiceActionMapping.getPath() %></h2>
 
-			<dl class="lfr-api-http-method">
-				<dt>
-					<liferay-ui:message key="http-method" />
-				</dt>
-				<dd class="lfr-action-label">
-					<%= jsonWebServiceActionMapping.getMethod() %>
-				</dd>
-			</dl>
+				<dl class="align-items-center d-flex lfr-api-http-method mb-0">
+					<h4 class="mb-0 text-secondary">
+						<liferay-ui:message key="http-method" />
+					</h4>
+
+					<span class="label label-inverse-success label-lg ml-3">
+						<span class="label-item label-item-expand">
+							<%= jsonWebServiceActionMapping.getMethod() %>
+						</span>
+					</span>
+				</dl>
+			</div>
 
 			<%
 			Class<?> actionClass = jsonWebServiceActionMapping.getActionClass();
@@ -337,7 +342,7 @@ String signature = ParamUtil.getString(request, "signature");
 
 					<%
 					}
-					else if (methodParameterTypeClass.equals(boolean.class)) {
+					else if (methodParameterTypeClass.equals(boolean.class) || methodParameterTypeClass.equals(Boolean.class)) {
 					%>
 
 						<aui:field-wrapper label="<%= methodParameterName %>">
@@ -350,7 +355,7 @@ String signature = ParamUtil.getString(request, "signature");
 
 					<%
 					}
-					else {
+					else if (methodParameterTypeClass.isArray() || methodParameterTypeClass.isEnum() || methodParameterTypeClass.isPrimitive() || methodParameterTypeClass.equals(Byte.class) || methodParameterTypeClass.equals(Character.class) || methodParameterTypeClass.equals(Date.class) || methodParameterTypeClass.equals(Double.class) || methodParameterTypeClass.equals(Float.class) || methodParameterTypeClass.equals(Integer.class) || methodParameterTypeClass.equals(List.class) || methodParameterTypeClass.equals(Locale.class) || methodParameterTypeClass.equals(Long.class) || methodParameterTypeClass.equals(Map.class) || methodParameterTypeClass.equals(Short.class) || methodParameterTypeClass.equals(String.class) || methodParameterTypeClass.equals(Void.class)) {
 						int size = 10;
 
 						if (methodParameterTypeClass.equals(String.class)) {
@@ -358,7 +363,14 @@ String signature = ParamUtil.getString(request, "signature");
 						}
 					%>
 
-						<aui:input id='<%= "field" + i %>' label="<%= methodParameterName %>" name="<%= methodParameterName %>" size="<%= size %>" suffix="<%= methodParameterTypeClassName %>" />
+						<aui:input id='<%= "field" + i %>' label="<%= methodParameterName %>" name="<%= methodParameterName %>" rows="1" size="<%= size %>" suffix="<%= methodParameterTypeClassName %>" type="textarea" />
+
+					<%
+					}
+					else {
+					%>
+
+						<aui:input id='<%= "field" + i %>' label="<%= methodParameterName %>" name='<%= "+" + methodParameterName %>' size="<%= 10 %>" suffix="<%= methodParameterTypeClassName %>" />
 
 					<%
 					}
@@ -391,7 +403,7 @@ String signature = ParamUtil.getString(request, "signature");
 			</aui:form>
 		</div>
 
-		<aui:script use="aui-io,aui-template-deprecated,querystring-parse">
+		<aui:script use="aui-io,aui-template-deprecated,io-form,querystring-parse">
 			var REGEX_QUERY_STRING = new RegExp('([^?=&]+)(?:=([^&]*))?', 'g');
 
 			var form = A.one('#execute');
@@ -411,6 +423,7 @@ String signature = ParamUtil.getString(request, "signature");
 
 			var formatDataType = function(key, value, includeNull) {
 				value = decodeURIComponent(value.replace(/\+/g, ' '));
+				value = escape(value);
 
 				if (fileType[key]) {
 					value = 'null';
@@ -470,11 +483,54 @@ String signature = ParamUtil.getString(request, "signature");
 
 					var formEl = form.getDOM();
 
+					var formQueryString = A.IO.prototype._serialize(formEl);
+
+					var query_elements = formQueryString.split("&");
+
+					var PLUS_ENCODING = "%2B";
+					var MINUS_ENCODING = "%2D";
+
+					for (var i = 0 ; i < query_elements.length ; i++) {
+						var query_map = query_elements[i].split("=");
+
+						var key = query_map[0];
+
+						var plus_bool = ((key.indexOf(PLUS_ENCODING) == 0) || (key.indexOf("+") == 0));
+						var minus_bool = ((key.indexOf(MINUS_ENCODING) == 0) || (key.indexOf("-") == 0));
+
+						if (plus_bool || minus_bool) {
+							var value = "";
+
+							for (var j = 1; j < query_map.length ; j++) {
+								value += query_map[j];
+							}
+
+							if (value.length > 0) {
+								if (minus_bool) {
+									key = key.replace(MINUS_ENCODING,"-");
+									var node = A.one('[name=' + key + ']');
+
+									key = key.replace("-", "+");
+									node.attr("name", key);
+								}
+							}
+							else if (plus_bool) {
+								key = key.replace(PLUS_ENCODING,"+");
+								var node = A.one('[name=' + key + ']');
+
+								key = key.replace("+", "-");
+								node.attr("name", key);
+							}
+						}
+					}
+
+					formEl = form.getDOM();
+
 					Liferay.Service(
 						'<%= jsonWebServiceActionMapping.getPath() %>',
 						formEl,
 						function(obj) {
-							serviceOutput.html(JSON.stringify(obj, null, 2));
+							serviceOutput.html(Liferay.Util.escapeHTML(JSON.stringify(obj, null, 2)));
 
 							output.removeClass('loading-results');
 
@@ -482,7 +538,10 @@ String signature = ParamUtil.getString(request, "signature");
 						}
 					);
 
-					var formQueryString = A.IO.prototype._serialize(formEl);
+					formQueryString = A.IO.prototype._serialize(formEl);
+
+					formQueryString = formQueryString.replace(PLUS_ENCODING, "+");
+					formQueryString = formQueryString.replace(MINUS_ENCODING, "-");
 
 					if (multipart) {
 						formQueryString += Object.keys(tplDataTypes.file).map(
@@ -546,10 +605,6 @@ String signature = ParamUtil.getString(request, "signature");
 						REGEX_QUERY_STRING,
 						function(match, key, value) {
 							if (!ignoreFields[key]) {
-								if (!value) {
-									key = '-' + key;
-								}
-
 								if (extraFields[key]) {
 									urlTplData.extraData.push(
 										{

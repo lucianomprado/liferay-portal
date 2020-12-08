@@ -14,8 +14,9 @@
 
 package com.liferay.source.formatter.checks;
 
-import com.liferay.portal.kernel.util.CharPool;
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.TextFormatter;
 import com.liferay.portal.kernel.util.Validator;
@@ -34,9 +35,7 @@ public class SessionKeysCheck extends BaseFileCheck {
 	protected String doProcess(
 		String fileName, String absolutePath, String content) {
 
-		content = _fixSessionKeys(content, getPatterns());
-
-		return content;
+		return _fixSessionKeys(content, getPatterns());
 	}
 
 	protected List<Pattern> getPatterns() {
@@ -77,7 +76,7 @@ public class SessionKeysCheck extends BaseFileCheck {
 
 			x = x + s.length();
 
-			String substring = match.substring(x).trim();
+			String substring = StringUtil.trim(match.substring(x));
 
 			String quote = StringPool.BLANK;
 
@@ -125,8 +124,8 @@ public class SessionKeysCheck extends BaseFileCheck {
 				continue;
 			}
 
-			String oldSub = prefix.concat(oldKey).concat(suffix);
-			String newSub = prefix.concat(newKey).concat(suffix);
+			String oldSub = StringBundler.concat(prefix, oldKey, suffix);
+			String newSub = StringBundler.concat(prefix, newKey, suffix);
 
 			newContent = StringUtil.replaceFirst(newContent, oldSub, newSub);
 		}

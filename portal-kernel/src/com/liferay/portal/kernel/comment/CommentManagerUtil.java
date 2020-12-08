@@ -15,11 +15,11 @@
 package com.liferay.portal.kernel.comment;
 
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.security.pacl.permission.PortalRuntimePermission;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.service.ServiceContext;
-import com.liferay.portal.kernel.util.Function;
 import com.liferay.portal.kernel.util.ServiceProxyFactory;
+
+import java.util.function.Function;
 
 /**
  * @author Adolfo Pérez
@@ -85,14 +85,6 @@ public class CommentManagerUtil {
 
 	public static Comment fetchComment(long commentId) {
 		return _getCommentManager().fetchComment(commentId);
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link #_getCommentManager()}
-	 */
-	@Deprecated
-	public static CommentManager getCommentManager() {
-		return _getCommentManager();
 	}
 
 	public static int getCommentsCount(String className, long classPK) {
@@ -161,8 +153,6 @@ public class CommentManagerUtil {
 	}
 
 	private static CommentManager _getCommentManager() {
-		PortalRuntimePermission.checkGetBeanProperty(CommentManagerUtil.class);
-
 		return _commentManager;
 	}
 

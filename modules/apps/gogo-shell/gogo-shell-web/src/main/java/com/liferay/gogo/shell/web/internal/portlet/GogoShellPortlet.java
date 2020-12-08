@@ -16,6 +16,7 @@ package com.liferay.gogo.shell.web.internal.portlet;
 
 import com.liferay.gogo.shell.web.internal.constants.GogoShellPortletKeys;
 import com.liferay.gogo.shell.web.internal.constants.GogoShellWebKeys;
+import com.liferay.portal.kernel.io.unsync.UnsyncByteArrayInputStream;
 import com.liferay.portal.kernel.io.unsync.UnsyncByteArrayOutputStream;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCPortlet;
@@ -27,15 +28,18 @@ import com.liferay.portal.kernel.servlet.SessionMessages;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
-import com.liferay.portal.kernel.util.ResourceBundleLoader;
-import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.kernel.util.ResourceBundleUtil;
+import com.liferay.portal.kernel.util.TransientValue;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintStream;
 
 import java.util.ResourceBundle;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.portlet.ActionRequest;
 import javax.portlet.ActionResponse;
@@ -48,6 +52,7 @@ import javax.portlet.RenderResponse;
 
 import org.apache.felix.service.command.CommandProcessor;
 import org.apache.felix.service.command.CommandSession;
+import org.apache.felix.service.command.Converter;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -55,6 +60,7 @@ import org.osgi.service.component.annotations.Reference;
 /**
  * @author Andrea Di Giorgi
  * @author Gregory Amerson
+ * @author David Truong
  */
 @Component(
 	immediate = true,
@@ -65,12 +71,11 @@ import org.osgi.service.component.annotations.Reference;
 		"com.liferay.portlet.render-weight=50",
 		"javax.portlet.display-name=Gogo Shell",
 		"javax.portlet.expiration-cache=0",
-		"javax.portlet.init-param.template-path=/",
+		"javax.portlet.init-param.template-path=/META-INF/resources/",
 		"javax.portlet.init-param.view-template=/view.jsp",
 		"javax.portlet.name=" + GogoShellPortletKeys.GOGO_SHELL,
 		"javax.portlet.resource-bundle=content.Language",
-		"javax.portlet.security-role-ref=administrator",
-		"javax.portlet.supports.mime-type=text/html"
+		"javax.portlet.security-role-ref=administrator"
 	},
 	service = Portlet.class
 )
@@ -84,8 +89,7 @@ public class GogoShellPortlet extends MVCPortlet {
 		initCommandSession(renderRequest);
 
 		CommandSession commandSession = _getSessionAttribute(
-			renderRequest, CommandSession.class,
-			GogoShellWebKeys.COMMAND_SESSION);
+			renderRequest, GogoShellWebKeys.COMMAND_SESSION);
 
 		SessionMessages.add(
 			renderRequest, "prompt", commandSession.get("prompt"));
@@ -105,33 +109,34 @@ public class GogoShellPortlet extends MVCPortlet {
 		initCommandSession(actionRequest);
 
 		CommandSession commandSession = _getSessionAttribute(
-			actionRequest, CommandSession.class,
-			GogoShellWebKeys.COMMAND_SESSION);
+			actionRequest, GogoShellWebKeys.COMMAND_SESSION);
 
 		UnsyncByteArrayOutputStream outputUnsyncByteArrayOutputStream =
 			_getSessionAttribute(
-				actionRequest, UnsyncByteArrayOutputStream.class,
-				GogoShellWebKeys.COMMAND_SESSION_OUTPUT_STREAM);
+				actionRequest, GogoShellWebKeys.COMMAND_SESSION_OUTPUT_STREAM);
 		UnsyncByteArrayOutputStream errorUnsyncByteArrayOutputStream =
 			_getSessionAttribute(
-				actionRequest, UnsyncByteArrayOutputStream.class,
-				GogoShellWebKeys.COMMAND_SESSION_ERROR_STREAM);
+				actionRequest, GogoShellWebKeys.COMMAND_SESSION_ERROR_STREAM);
 		PrintStream outputPrintStream = _getSessionAttribute(
-			actionRequest, PrintStream.class,
+			actionRequest,
 			GogoShellWebKeys.COMMAND_SESSION_OUTPUT_PRINT_STREAM);
 		PrintStream errorPrintStream = _getSessionAttribute(
-			actionRequest, PrintStream.class,
-			GogoShellWebKeys.COMMAND_SESSION_ERROR_PRINT_STREAM);
+			actionRequest, GogoShellWebKeys.COMMAND_SESSION_ERROR_PRINT_STREAM);
 
 		try {
 			SessionMessages.add(actionRequest, "command", command);
 
 			checkCommand(command, themeDisplay);
 
-			commandSession.execute(command);
+			Object result = commandSession.execute(command);
 
-			outputPrintStream.flush();
+			if (result != null) {
+				outputPrintStream.print(
+					commandSession.format(result, Converter.INSPECT));
+			}
+
 			errorPrintStream.flush();
+			outputPrintStream.flush();
 
 			SessionMessages.add(
 				actionRequest, "commandOutput",
@@ -143,10 +148,10 @@ public class GogoShellPortlet extends MVCPortlet {
 				throw new Exception(errorContent);
 			}
 		}
-		catch (Exception e) {
+		catch (Exception exception) {
 			hideDefaultErrorMessage(actionRequest);
 
-			SessionErrors.add(actionRequest, "gogo", e);
+			SessionErrors.add(actionRequest, "gogo", exception);
 		}
 		finally {
 			outputUnsyncByteArrayOutputStream.reset();
@@ -164,13 +169,24 @@ public class GogoShellPortlet extends MVCPortlet {
 		super.processAction(actionRequest, actionResponse);
 	}
 
+	@Override
+	public void render(
+			RenderRequest renderRequest, RenderResponse renderResponse)
+		throws IOException, PortletException {
+
+		checkOmniAdmin();
+
+		super.render(renderRequest, renderResponse);
+	}
+
 	protected void checkCommand(String command, ThemeDisplay themeDisplay)
 		throws Exception {
 
-		if (StringUtil.startsWith(command, "exit")) {
-			ResourceBundle resourceBundle =
-				_resourceBundleLoader.loadResourceBundle(
-					themeDisplay.getLocale());
+		Matcher matcher = _pattern.matcher(command);
+
+		if (matcher.find()) {
+			ResourceBundle resourceBundle = ResourceBundleUtil.getBundle(
+				themeDisplay.getLocale(), GogoShellPortlet.class);
 
 			throw new Exception(
 				LanguageUtil.format(
@@ -211,48 +227,55 @@ public class GogoShellPortlet extends MVCPortlet {
 			errorUnsyncByteArrayOutputStream);
 
 		CommandSession commandSession = _commandProcessor.createSession(
-			null, outputPrintStream, errorPrintStream);
+			_emptyInputStream, outputPrintStream, errorPrintStream);
 
 		commandSession.put("prompt", "g!");
 
 		portletSession.setAttribute(
-			GogoShellWebKeys.COMMAND_SESSION, commandSession);
+			GogoShellWebKeys.COMMAND_SESSION,
+			new TransientValue<>(commandSession));
 
 		portletSession.setAttribute(
 			GogoShellWebKeys.COMMAND_SESSION_ERROR_PRINT_STREAM,
-			errorPrintStream);
+			new TransientValue<>(errorPrintStream));
 		portletSession.setAttribute(
 			GogoShellWebKeys.COMMAND_SESSION_ERROR_STREAM,
-			errorUnsyncByteArrayOutputStream);
+			new TransientValue<>(errorUnsyncByteArrayOutputStream));
 		portletSession.setAttribute(
 			GogoShellWebKeys.COMMAND_SESSION_OUTPUT_PRINT_STREAM,
-			outputPrintStream);
+			new TransientValue<>(outputPrintStream));
 		portletSession.setAttribute(
 			GogoShellWebKeys.COMMAND_SESSION_OUTPUT_STREAM,
-			outputUnsyncByteArrayOutputStream);
+			new TransientValue<>(outputUnsyncByteArrayOutputStream));
 	}
 
-	private static <T> T _getSessionAttribute(
-		PortletRequest portletRequest, Class<T> clazz, String name) {
+	private <T> T _getSessionAttribute(
+		PortletRequest portletRequest, String name) {
 
 		PortletSession portletSession = portletRequest.getPortletSession();
 
 		Object sessionAttribute = portletSession.getAttribute(name);
 
-		if (sessionAttribute != null) {
-			return clazz.cast(sessionAttribute);
+		if (sessionAttribute instanceof TransientValue) {
+			TransientValue<T> transientValue =
+				(TransientValue<T>)sessionAttribute;
+
+			return transientValue.getValue();
 		}
 
 		return null;
 	}
+
+	private static final InputStream _emptyInputStream =
+		new UnsyncByteArrayInputStream(new byte[0]);
+	private static final Pattern _pattern = Pattern.compile(
+		".*(close|disconnect|exit|shutdown).*",
+		Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
 
 	@Reference
 	private CommandProcessor _commandProcessor;
 
 	@Reference
 	private Portal _portal;
-
-	@Reference(target = "(bundle.symbolic.name=com.liferay.gogo.shell.web)")
-	private ResourceBundleLoader _resourceBundleLoader;
 
 }

@@ -93,7 +93,7 @@ public class SocialRelationLocalServiceImpl
 			relation.setUserId2(userId2);
 			relation.setType(type);
 
-			socialRelationPersistence.update(relation);
+			relation = socialRelationPersistence.update(relation);
 		}
 
 		if (SocialRelationTypesUtil.isTypeBi(type)) {
@@ -364,9 +364,8 @@ public class SocialRelationLocalServiceImpl
 		if (relation == null) {
 			return false;
 		}
-		else {
-			return true;
-		}
+
+		return true;
 	}
 
 	/**

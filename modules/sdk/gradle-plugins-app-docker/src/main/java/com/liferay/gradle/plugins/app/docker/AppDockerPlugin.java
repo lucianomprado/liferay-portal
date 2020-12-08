@@ -27,8 +27,12 @@ import groovy.lang.Closure;
 import java.io.File;
 
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
+
+import org.apache.tools.ant.filters.FixCrLfFilter;
 
 import org.gradle.api.Action;
 import org.gradle.api.Plugin;
@@ -36,13 +40,17 @@ import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.artifacts.PublishArtifactSet;
+import org.gradle.api.file.FileCopyDetails;
 import org.gradle.api.internal.ConventionMapping;
 import org.gradle.api.internal.plugins.DslObject;
 import org.gradle.api.invocation.Gradle;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.plugins.BasePlugin;
+import org.gradle.api.plugins.PluginContainer;
+import org.gradle.api.plugins.WarPlugin;
 import org.gradle.api.specs.Spec;
 import org.gradle.api.tasks.Sync;
+import org.gradle.api.tasks.bundling.War;
 
 /**
  * @author Andrea Di Giorgi
@@ -112,10 +120,9 @@ public class AppDockerPlugin implements Plugin<Project> {
 		final Sync prepareAppDockerImageInputDirTask,
 		final AppDockerExtension appDockerExtension) {
 
-		Project project = prepareAppDockerImageInputDirTask.getProject();
-
 		final DockerBuildImage dockerBuildImage = GradleUtil.addTask(
-			project, BUILD_APP_DOCKER_IMAGE_TASK_NAME, DockerBuildImage.class);
+			prepareAppDockerImageInputDirTask.getProject(),
+			BUILD_APP_DOCKER_IMAGE_TASK_NAME, DockerBuildImage.class);
 
 		dockerBuildImage.setDependsOn(
 			Collections.singleton(prepareAppDockerImageInputDirTask));
@@ -132,8 +139,8 @@ public class AppDockerPlugin implements Plugin<Project> {
 
 				@Override
 				public File call() throws Exception {
-					return
-						prepareAppDockerImageInputDirTask.getDestinationDir();
+					return prepareAppDockerImageInputDirTask.
+						getDestinationDir();
 				}
 
 			});
@@ -157,6 +164,17 @@ public class AppDockerPlugin implements Plugin<Project> {
 
 		Sync sync = GradleUtil.addTask(
 			project, PREPARE_APP_DOCKER_IMAGE_INPUT_DIR_TASK_NAME, Sync.class);
+
+		sync.filesMatching(
+			"**/*.sh",
+			new Action<FileCopyDetails>() {
+
+				@Override
+				public void execute(FileCopyDetails fileCopyDetails) {
+					fileCopyDetails.filter(_fixCrLfArgs, FixCrLfFilter.class);
+				}
+
+			});
 
 		sync.from(
 			new Callable<File>() {
@@ -224,10 +242,11 @@ public class AppDockerPlugin implements Plugin<Project> {
 		String imageRepositoryAndTag = _getImageRepositoryAndTag(
 			dockerTagImage.getRepository(), dockerTagImage.getTag());
 
+		String taskName = _getTaskName(
+			PUSH_APP_DOCKER_IMAGE_TASK_NAME, imageRepositoryAndTag);
+
 		DockerPushImage dockerPushImage = GradleUtil.addTask(
-			dockerTagImage.getProject(),
-			PUSH_APP_DOCKER_IMAGE_TASK_NAME + "_" + imageRepositoryAndTag,
-			DockerPushImage.class);
+			dockerTagImage.getProject(), taskName, DockerPushImage.class);
 
 		dockerPushImage.setDependsOn(Collections.singleton(dockerTagImage));
 		dockerPushImage.setDescription(
@@ -272,10 +291,11 @@ public class AppDockerPlugin implements Plugin<Project> {
 		String imageRepositoryAndTag = _getImageRepositoryAndTag(
 			imageRepository, imageTag);
 
+		String taskName = _getTaskName(
+			TAG_APP_DOCKER_IMAGE_TASK_NAME, imageRepositoryAndTag);
+
 		DockerTagImage dockerTagImage = GradleUtil.addTask(
-			project,
-			TAG_APP_DOCKER_IMAGE_TASK_NAME + "_" + imageRepositoryAndTag,
-			DockerTagImage.class);
+			project, taskName, DockerTagImage.class);
 
 		dockerTagImage.setDependsOn(
 			Collections.singleton(buildAppDockerImagetask));
@@ -328,12 +348,24 @@ public class AppDockerPlugin implements Plugin<Project> {
 			return;
 		}
 
-		Configuration configuration = GradleUtil.getConfiguration(
-			subproject, Dependency.DEFAULT_CONFIGURATION);
+		PluginContainer pluginContainer = subproject.getPlugins();
 
-		PublishArtifactSet publishArtifactSet = configuration.getAllArtifacts();
+		if (pluginContainer.hasPlugin(WarPlugin.class)) {
+			War war = (War)GradleUtil.getTask(
+				subproject, WarPlugin.WAR_TASK_NAME);
 
-		prepareAppDockerImageInputDirTask.from(publishArtifactSet.getFiles());
+			prepareAppDockerImageInputDirTask.from(war);
+		}
+		else {
+			Configuration configuration = GradleUtil.getConfiguration(
+				subproject, Dependency.DEFAULT_CONFIGURATION);
+
+			PublishArtifactSet publishArtifactSet =
+				configuration.getAllArtifacts();
+
+			prepareAppDockerImageInputDirTask.from(
+				publishArtifactSet.getFiles());
+		}
 	}
 
 	private String _getImageRepository(AppDockerExtension appDockerExtension) {
@@ -344,7 +376,7 @@ public class AppDockerPlugin implements Plugin<Project> {
 			return imageName;
 		}
 
-		return imageUser + "/" + imageName;
+		return imageUser + '/' + imageName;
 	}
 
 	private String _getImageRepositoryAndTag(
@@ -354,7 +386,35 @@ public class AppDockerPlugin implements Plugin<Project> {
 			return imageRepository;
 		}
 
-		return imageRepository + ":" + imageTag;
+		return imageRepository + ':' + imageTag;
 	}
+
+	private String _getTaskName(String... values) {
+		StringBuilder sb = new StringBuilder();
+
+		for (String value : values) {
+			String s = value;
+
+			s = s.replace(':', '_');
+			s = s.replace('/', '_');
+
+			sb.append(s);
+
+			sb.append('_');
+		}
+
+		sb.setLength(sb.length() - 1);
+
+		return sb.toString();
+	}
+
+	private static final Map<String, Object> _fixCrLfArgs =
+		new HashMap<String, Object>() {
+			{
+				put("eof", FixCrLfFilter.AddAsisRemove.newInstance("remove"));
+				put("eol", FixCrLfFilter.CrLf.newInstance("lf"));
+				put("fixlast", false);
+			}
+		};
 
 }

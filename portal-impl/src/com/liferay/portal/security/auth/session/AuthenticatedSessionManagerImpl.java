@@ -14,6 +14,10 @@
 
 package com.liferay.portal.security.auth.session;
 
+import com.liferay.petra.encryptor.Encryptor;
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.events.EventsProcessorUtil;
 import com.liferay.portal.kernel.cluster.ClusterExecutorUtil;
 import com.liferay.portal.kernel.cluster.ClusterNode;
@@ -32,24 +36,20 @@ import com.liferay.portal.kernel.security.auth.AuthException;
 import com.liferay.portal.kernel.security.auth.AuthenticatedUserUUIDStoreUtil;
 import com.liferay.portal.kernel.security.auth.Authenticator;
 import com.liferay.portal.kernel.security.auth.session.AuthenticatedSessionManager;
-import com.liferay.portal.kernel.security.pacl.DoPrivileged;
 import com.liferay.portal.kernel.service.CompanyLocalServiceUtil;
 import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.servlet.HttpHeaders;
-import com.liferay.portal.kernel.util.CharPool;
 import com.liferay.portal.kernel.util.CookieKeys;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.Http;
+import com.liferay.portal.kernel.util.HttpUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.liveusers.LiveUsers;
 import com.liferay.portal.util.PropsValues;
-import com.liferay.util.Encryptor;
 
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -65,37 +65,39 @@ import javax.servlet.http.HttpSession;
 /**
  * @author Tomas Polesovsky
  */
-@DoPrivileged
 public class AuthenticatedSessionManagerImpl
 	implements AuthenticatedSessionManager {
 
 	@Override
 	public long getAuthenticatedUserId(
-			HttpServletRequest request, String login, String password,
-			String authType)
+			HttpServletRequest httpServletRequest, String login,
+			String password, String authType)
 		throws PortalException {
 
-		User user = _getAuthenticatedUser(request, login, password, authType);
+		User user = _getAuthenticatedUser(
+			httpServletRequest, login, password, authType);
 
 		return user.getUserId();
 	}
 
 	@Override
 	public void login(
-			HttpServletRequest request, HttpServletResponse response,
-			String login, String password, boolean rememberMe, String authType)
+			HttpServletRequest httpServletRequest,
+			HttpServletResponse httpServletResponse, String login,
+			String password, boolean rememberMe, String authType)
 		throws Exception {
 
-		request = PortalUtil.getOriginalServletRequest(request);
+		httpServletRequest = PortalUtil.getOriginalServletRequest(
+			httpServletRequest);
 
-		String queryString = request.getQueryString();
+		String queryString = HttpUtil.getQueryString(httpServletRequest);
 
 		if (Validator.isNotNull(queryString) &&
 			queryString.contains("password=")) {
 
 			String passwordParameterName = "password=";
 
-			String portletId = PortalUtil.getPortletId(request);
+			String portletId = PortalUtil.getPortletId(httpServletRequest);
 
 			if (portletId != null) {
 				passwordParameterName =
@@ -110,7 +112,8 @@ public class AuthenticatedSessionManagerImpl
 				 (queryString.charAt(index - 1) == CharPool.AMPERSAND))) {
 
 				if (_log.isWarnEnabled()) {
-					String referer = request.getHeader(HttpHeaders.REFERER);
+					String referer = httpServletRequest.getHeader(
+						HttpHeaders.REFERER);
 
 					StringBundler sb = new StringBundler(4);
 
@@ -126,25 +129,26 @@ public class AuthenticatedSessionManagerImpl
 			}
 		}
 
-		CookieKeys.validateSupportCookie(request);
+		CookieKeys.validateSupportCookie(httpServletRequest);
 
-		HttpSession session = request.getSession();
+		HttpSession session = httpServletRequest.getSession();
 
-		Company company = PortalUtil.getCompany(request);
+		Company company = PortalUtil.getCompany(httpServletRequest);
 
-		User user = _getAuthenticatedUser(request, login, password, authType);
+		User user = _getAuthenticatedUser(
+			httpServletRequest, login, password, authType);
 
 		if (!PropsValues.AUTH_SIMULTANEOUS_LOGINS) {
 			signOutSimultaneousLogins(user.getUserId());
 		}
 
 		if (PropsValues.SESSION_ENABLE_PHISHING_PROTECTION) {
-			session = renewSession(request, session);
+			session = renewSession(httpServletRequest, session);
 		}
 
 		// Set cookies
 
-		String domain = CookieKeys.getDomain(request);
+		String domain = CookieKeys.getDomain(httpServletRequest);
 
 		if (Validator.isNull(domain)) {
 			domain = null;
@@ -208,7 +212,7 @@ public class AuthenticatedSessionManagerImpl
 			idCookie.setMaxAge(-1);
 		}
 
-		boolean secure = request.isSecure();
+		boolean secure = httpServletRequest.isSecure();
 
 		if (secure && !PropsValues.COMPANY_SECURITY_AUTH_REQUIRES_HTTPS &&
 			!StringUtil.equalsIgnoreCase(
@@ -222,8 +226,10 @@ public class AuthenticatedSessionManagerImpl
 			}
 		}
 
-		CookieKeys.addCookie(request, response, companyIdCookie, secure);
-		CookieKeys.addCookie(request, response, idCookie, secure);
+		CookieKeys.addCookie(
+			httpServletRequest, httpServletResponse, companyIdCookie, secure);
+		CookieKeys.addCookie(
+			httpServletRequest, httpServletResponse, idCookie, secure);
 
 		if (rememberMe) {
 			Cookie loginCookie = new Cookie(CookieKeys.LOGIN, login);
@@ -235,7 +241,8 @@ public class AuthenticatedSessionManagerImpl
 			loginCookie.setMaxAge(loginMaxAge);
 			loginCookie.setPath(StringPool.SLASH);
 
-			CookieKeys.addCookie(request, response, loginCookie, secure);
+			CookieKeys.addCookie(
+				httpServletRequest, httpServletResponse, loginCookie, secure);
 
 			Cookie passwordCookie = new Cookie(
 				CookieKeys.PASSWORD,
@@ -248,7 +255,9 @@ public class AuthenticatedSessionManagerImpl
 			passwordCookie.setMaxAge(loginMaxAge);
 			passwordCookie.setPath(StringPool.SLASH);
 
-			CookieKeys.addCookie(request, response, passwordCookie, secure);
+			CookieKeys.addCookie(
+				httpServletRequest, httpServletResponse, passwordCookie,
+				secure);
 
 			Cookie rememberMeCookie = new Cookie(
 				CookieKeys.REMEMBER_ME, Boolean.TRUE.toString());
@@ -260,7 +269,9 @@ public class AuthenticatedSessionManagerImpl
 			rememberMeCookie.setMaxAge(loginMaxAge);
 			rememberMeCookie.setPath(StringPool.SLASH);
 
-			CookieKeys.addCookie(request, response, rememberMeCookie, secure);
+			CookieKeys.addCookie(
+				httpServletRequest, httpServletResponse, rememberMeCookie,
+				secure);
 
 			Cookie screenNameCookie = new Cookie(
 				CookieKeys.SCREEN_NAME,
@@ -273,77 +284,86 @@ public class AuthenticatedSessionManagerImpl
 			screenNameCookie.setMaxAge(loginMaxAge);
 			screenNameCookie.setPath(StringPool.SLASH);
 
-			CookieKeys.addCookie(request, response, screenNameCookie, secure);
+			CookieKeys.addCookie(
+				httpServletRequest, httpServletResponse, screenNameCookie,
+				secure);
 		}
 
-		if (PropsValues.AUTH_USER_UUID_STORE_ENABLED) {
-			String userUUID = userIdString.concat(StringPool.PERIOD).concat(
-				String.valueOf(System.nanoTime()));
-
-			Cookie userUUIDCookie = new Cookie(
-				CookieKeys.USER_UUID,
-				Encryptor.encrypt(company.getKeyObj(), userUUID));
-
-			userUUIDCookie.setPath(StringPool.SLASH);
-
-			session.setAttribute(WebKeys.USER_UUID, userUUID);
-
-			if (rememberMe) {
-				userUUIDCookie.setMaxAge(loginMaxAge);
-			}
-			else {
-				userUUIDCookie.setMaxAge(-1);
-			}
-
-			CookieKeys.addCookie(request, response, userUUIDCookie, secure);
-
-			AuthenticatedUserUUIDStoreUtil.register(userUUID);
+		if (!PropsValues.AUTH_USER_UUID_STORE_ENABLED) {
+			return;
 		}
+
+		String userUUID = StringBundler.concat(
+			userIdString, StringPool.PERIOD, System.nanoTime());
+
+		Cookie userUUIDCookie = new Cookie(
+			CookieKeys.USER_UUID,
+			Encryptor.encrypt(company.getKeyObj(), userUUID));
+
+		userUUIDCookie.setPath(StringPool.SLASH);
+
+		session.setAttribute(CookieKeys.USER_UUID, userUUID);
+
+		if (rememberMe) {
+			userUUIDCookie.setMaxAge(loginMaxAge);
+		}
+		else {
+			userUUIDCookie.setMaxAge(-1);
+		}
+
+		CookieKeys.addCookie(
+			httpServletRequest, httpServletResponse, userUUIDCookie, secure);
+
+		AuthenticatedUserUUIDStoreUtil.register(userUUID);
 	}
 
 	@Override
-	public void logout(HttpServletRequest request, HttpServletResponse response)
+	public void logout(
+			HttpServletRequest httpServletRequest,
+			HttpServletResponse httpServletResponse)
 		throws Exception {
 
-		HttpSession session = request.getSession();
+		HttpSession session = httpServletRequest.getSession();
 
 		EventsProcessorUtil.process(
-			PropsKeys.LOGOUT_EVENTS_PRE, PropsValues.LOGOUT_EVENTS_PRE, request,
-			response);
+			PropsKeys.LOGOUT_EVENTS_PRE, PropsValues.LOGOUT_EVENTS_PRE,
+			httpServletRequest, httpServletResponse);
 
-		String domain = CookieKeys.getDomain(request);
+		String domain = CookieKeys.getDomain(httpServletRequest);
 
 		if (Validator.isNull(domain)) {
 			domain = null;
 		}
 
 		boolean rememberMe = GetterUtil.getBoolean(
-			CookieKeys.getCookie(request, CookieKeys.REMEMBER_ME, false));
+			CookieKeys.getCookie(
+				httpServletRequest, CookieKeys.REMEMBER_ME, false));
 
 		CookieKeys.deleteCookies(
-			request, response, domain, CookieKeys.COMPANY_ID,
-			CookieKeys.GUEST_LANGUAGE_ID, CookieKeys.ID, CookieKeys.PASSWORD,
-			CookieKeys.REMEMBER_ME);
+			httpServletRequest, httpServletResponse, domain,
+			CookieKeys.COMPANY_ID, CookieKeys.GUEST_LANGUAGE_ID, CookieKeys.ID,
+			CookieKeys.PASSWORD, CookieKeys.REMEMBER_ME);
 
 		if (!rememberMe) {
 			CookieKeys.deleteCookies(
-				request, response, domain, CookieKeys.LOGIN);
+				httpServletRequest, httpServletResponse, domain,
+				CookieKeys.LOGIN);
 		}
 
 		try {
 			session.invalidate();
 		}
-		catch (Exception e) {
+		catch (Exception exception) {
 		}
 
 		EventsProcessorUtil.process(
 			PropsKeys.LOGOUT_EVENTS_POST, PropsValues.LOGOUT_EVENTS_POST,
-			request, response);
+			httpServletRequest, httpServletResponse);
 	}
 
 	@Override
 	public HttpSession renewSession(
-			HttpServletRequest request, HttpSession session)
+			HttpServletRequest httpServletRequest, HttpSession session)
 		throws Exception {
 
 		// Invalidate the previous session to prevent session fixation attacks
@@ -367,7 +387,7 @@ public class AuthenticatedSessionManagerImpl
 
 		session.invalidate();
 
-		session = request.getSession(true);
+		session = httpServletRequest.getSession(true);
 
 		for (String protectedAttributeName : protectedAttributeNames) {
 			Object protectedAttributeValue = protectedAttributes.get(
@@ -406,10 +426,15 @@ public class AuthenticatedSessionManagerImpl
 				jsonObject.put("clusterNodeId", clusterNode.getClusterNodeId());
 			}
 
-			jsonObject.put("command", "signOut");
-			jsonObject.put("companyId", companyId);
-			jsonObject.put("sessionId", userTracker.getSessionId());
-			jsonObject.put("userId", userId);
+			jsonObject.put(
+				"command", "signOut"
+			).put(
+				"companyId", companyId
+			).put(
+				"sessionId", userTracker.getSessionId()
+			).put(
+				"userId", userId
+			);
 
 			MessageBusUtil.sendMessage(
 				DestinationNames.LIVE_USERS, jsonObject.toString());
@@ -417,84 +442,82 @@ public class AuthenticatedSessionManagerImpl
 	}
 
 	private User _getAuthenticatedUser(
-			HttpServletRequest request, String login, String password,
-			String authType)
+			HttpServletRequest httpServletRequest, String login,
+			String password, String authType)
 		throws PortalException {
 
-		long userId = GetterUtil.getLong(login);
-
-		Company company = PortalUtil.getCompany(request);
-
-		String requestURI = request.getRequestURI();
+		String requestURI = httpServletRequest.getRequestURI();
 
 		String contextPath = PortalUtil.getPathContext();
 
 		if (requestURI.startsWith(contextPath.concat("/api/liferay"))) {
 			throw new AuthException();
 		}
-		else {
-			Map<String, String[]> headerMap = new HashMap<>();
 
-			Enumeration<String> enu1 = request.getHeaderNames();
+		Company company = PortalUtil.getCompany(httpServletRequest);
 
-			while (enu1.hasMoreElements()) {
-				String name = enu1.nextElement();
+		Map<String, String[]> headerMap = new HashMap<>();
 
-				Enumeration<String> enu2 = request.getHeaders(name);
+		Enumeration<String> enumeration1 = httpServletRequest.getHeaderNames();
 
-				List<String> headers = new ArrayList<>();
+		while (enumeration1.hasMoreElements()) {
+			String name = enumeration1.nextElement();
 
-				while (enu2.hasMoreElements()) {
-					String value = enu2.nextElement();
+			Enumeration<String> enumeration2 = httpServletRequest.getHeaders(
+				name);
 
-					headers.add(value);
-				}
+			List<String> headers = new ArrayList<>();
 
-				headerMap.put(
-					name, headers.toArray(new String[headers.size()]));
+			while (enumeration2.hasMoreElements()) {
+				String value = enumeration2.nextElement();
+
+				headers.add(value);
 			}
 
-			Map<String, String[]> parameterMap = request.getParameterMap();
-			Map<String, Object> resultsMap = new HashMap<>();
-
-			if (Validator.isNull(authType)) {
-				authType = company.getAuthType();
-			}
-
-			int authResult = Authenticator.FAILURE;
-
-			if (authType.equals(CompanyConstants.AUTH_TYPE_EA)) {
-				authResult = UserLocalServiceUtil.authenticateByEmailAddress(
-					company.getCompanyId(), login, password, headerMap,
-					parameterMap, resultsMap);
-			}
-			else if (authType.equals(CompanyConstants.AUTH_TYPE_SN)) {
-				authResult = UserLocalServiceUtil.authenticateByScreenName(
-					company.getCompanyId(), login, password, headerMap,
-					parameterMap, resultsMap);
-			}
-			else if (authType.equals(CompanyConstants.AUTH_TYPE_ID)) {
-				authResult = UserLocalServiceUtil.authenticateByUserId(
-					company.getCompanyId(), userId, password, headerMap,
-					parameterMap, resultsMap);
-			}
-
-			User user = (User)resultsMap.get("user");
-
-			if (authResult != Authenticator.SUCCESS) {
-				if (user != null) {
-					user = UserLocalServiceUtil.fetchUser(user.getUserId());
-				}
-
-				if (user != null) {
-					UserLocalServiceUtil.checkLockout(user);
-				}
-
-				throw new AuthException();
-			}
-
-			return user;
+			headerMap.put(name, headers.toArray(new String[0]));
 		}
+
+		Map<String, String[]> parameterMap =
+			httpServletRequest.getParameterMap();
+		Map<String, Object> resultsMap = new HashMap<>();
+
+		if (Validator.isNull(authType)) {
+			authType = company.getAuthType();
+		}
+
+		int authResult = Authenticator.FAILURE;
+
+		if (authType.equals(CompanyConstants.AUTH_TYPE_EA)) {
+			authResult = UserLocalServiceUtil.authenticateByEmailAddress(
+				company.getCompanyId(), login, password, headerMap,
+				parameterMap, resultsMap);
+		}
+		else if (authType.equals(CompanyConstants.AUTH_TYPE_SN)) {
+			authResult = UserLocalServiceUtil.authenticateByScreenName(
+				company.getCompanyId(), login, password, headerMap,
+				parameterMap, resultsMap);
+		}
+		else if (authType.equals(CompanyConstants.AUTH_TYPE_ID)) {
+			authResult = UserLocalServiceUtil.authenticateByUserId(
+				company.getCompanyId(), GetterUtil.getLong(login), password,
+				headerMap, parameterMap, resultsMap);
+		}
+
+		User user = (User)resultsMap.get("user");
+
+		if (authResult != Authenticator.SUCCESS) {
+			if (user != null) {
+				user = UserLocalServiceUtil.fetchUser(user.getUserId());
+			}
+
+			if (user != null) {
+				UserLocalServiceUtil.checkLockout(user);
+			}
+
+			throw new AuthException();
+		}
+
+		return user;
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(

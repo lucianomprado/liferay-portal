@@ -14,15 +14,16 @@
 
 package com.liferay.portal.upgrade.util;
 
-import com.liferay.portal.kernel.concurrent.ThreadPoolExecutor;
-import com.liferay.portal.kernel.dao.db.DB;
-import com.liferay.portal.kernel.dao.db.DBManagerUtil;
-import com.liferay.portal.kernel.executor.PortalExecutorManagerUtil;
+import com.liferay.petra.executor.PortalExecutorManager;
+import com.liferay.portal.kernel.dao.db.BaseDBProcess;
+import com.liferay.portal.kernel.dao.db.DBProcess;
 import com.liferay.portal.kernel.util.LoggingTimer;
+import com.liferay.portal.kernel.util.ServiceProxyFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 /**
@@ -30,9 +31,11 @@ import java.util.concurrent.Future;
  */
 public class ParallelUpgradeSchemaUtil {
 
-	public static void execute(String... sqlFileNames) throws Exception {
-		ThreadPoolExecutor threadPoolExecutor =
-			PortalExecutorManagerUtil.getPortalExecutor(
+	public static void execute(DBProcess dbProcess, String... sqlFileNames)
+		throws Exception {
+
+		ExecutorService executorService =
+			_portalExecutorManager.getPortalExecutor(
 				ParallelUpgradeSchemaUtil.class.getName());
 
 		List<Future<Void>> futures = new ArrayList<>(sqlFileNames.length);
@@ -40,8 +43,8 @@ public class ParallelUpgradeSchemaUtil {
 		try {
 			for (String sqlFileName : sqlFileNames) {
 				futures.add(
-					threadPoolExecutor.submit(
-						new CallableSQLExecutor(sqlFileName)));
+					executorService.submit(
+						new CallableSQLExecutor(dbProcess, sqlFileName)));
 			}
 
 			for (Future<Void> future : futures) {
@@ -49,27 +52,44 @@ public class ParallelUpgradeSchemaUtil {
 			}
 		}
 		finally {
-			threadPoolExecutor.shutdown();
+			executorService.shutdown();
 		}
 	}
+
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *             #execute(DBProcess, String...)}
+	 */
+	@Deprecated
+	public static void execute(String... sqlFileNames) throws Exception {
+		execute(
+			new BaseDBProcess() {
+			},
+			sqlFileNames);
+	}
+
+	private static volatile PortalExecutorManager _portalExecutorManager =
+		ServiceProxyFactory.newServiceTrackedInstance(
+			PortalExecutorManager.class, ParallelUpgradeSchemaUtil.class,
+			"_portalExecutorManager", true);
 
 	private static class CallableSQLExecutor implements Callable<Void> {
 
 		@Override
 		public Void call() throws Exception {
-			DB db = DBManagerUtil.getDB();
-
 			try (LoggingTimer loggingTimer = new LoggingTimer(_sqlFileName)) {
-				db.runSQLTemplate(_sqlFileName, false);
+				_dbProcess.runSQLTemplate(_sqlFileName, false);
 			}
 
 			return null;
 		}
 
-		private CallableSQLExecutor(String sqlFileName) {
+		private CallableSQLExecutor(DBProcess dbProcess, String sqlFileName) {
+			_dbProcess = dbProcess;
 			_sqlFileName = sqlFileName;
 		}
 
+		private final DBProcess _dbProcess;
 		private final String _sqlFileName;
 
 	}

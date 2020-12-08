@@ -14,13 +14,13 @@
 
 package com.liferay.util.ant;
 
-import com.liferay.portal.kernel.util.CharPool;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.io.unsync.UnsyncByteArrayOutputStream;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.SystemProperties;
 import com.liferay.portal.kernel.util.Validator;
-import com.liferay.util.xml.Dom4jUtil;
 import com.liferay.util.xml.XMLSafeReader;
 
 import java.io.File;
@@ -43,7 +43,9 @@ import org.dom4j.Attribute;
 import org.dom4j.Document;
 import org.dom4j.Element;
 import org.dom4j.Node;
+import org.dom4j.io.OutputFormat;
 import org.dom4j.io.SAXReader;
+import org.dom4j.io.XMLWriter;
 
 /**
  * @author Brian Wing Shun Chan
@@ -85,8 +87,8 @@ public class Java2WsddTask {
 
 		String location = "http://localhost/services/" + serviceName;
 
-		String mappingPackage = packagePath.substring(
-			0, packagePath.lastIndexOf(".")) + ".ws";
+		String mappingPackage =
+			packagePath.substring(0, packagePath.lastIndexOf(".")) + ".ws";
 
 		Project project = AntUtil.getProject();
 
@@ -130,19 +132,23 @@ public class Java2WsddTask {
 			packagePath, CharPool.PERIOD, CharPool.SLASH);
 
 		File deployFile = new File(
-			tempDir + "/" + packagePathWithSlashes + "/deploy.wsdd");
+			StringBundler.concat(
+				tempDir, "/", packagePathWithSlashes, "/deploy.wsdd"));
 
 		String deployContent = new String(
 			Files.readAllBytes(deployFile.toPath()));
 
 		deployContent = StringUtil.replace(
-			deployContent, packagePath + "." + serviceName + "SoapBindingImpl",
+			deployContent,
+			StringBundler.concat(
+				packagePath, ".", serviceName, "SoapBindingImpl"),
 			className);
 
 		deployContent = _format(deployContent);
 
 		File undeployFile = new File(
-			tempDir + "/" + packagePathWithSlashes + "/undeploy.wsdd");
+			StringBundler.concat(
+				tempDir, "/", packagePathWithSlashes, "/undeploy.wsdd"));
 
 		String undeployContent = new String(
 			Files.readAllBytes(undeployFile.toPath()));
@@ -197,7 +203,8 @@ public class Java2WsddTask {
 
 				List<Element> parameters = element.elements("parameter");
 
-				StringBundler sb = new StringBundler(2 * parameters.size() + 2);
+				StringBundler sb = new StringBundler(
+					(2 * parameters.size()) + 2);
 
 				String name = element.attributeValue("name");
 
@@ -256,14 +263,50 @@ public class Java2WsddTask {
 		_addElements(serviceElement, operationElements);
 		_addElements(serviceElement, parameterElements);
 
-		content = StringUtil.replace(
-			_formattedString(document), "\"/>", "\" />");
-
-		return content;
+		return StringUtil.replace(_formattedString(document), "\"/>", "\" />");
 	}
 
 	private static String _formattedString(Node node) throws Exception {
-		return Dom4jUtil.toString(node);
+		UnsyncByteArrayOutputStream unsyncByteArrayOutputStream =
+			new UnsyncByteArrayOutputStream();
+
+		OutputFormat outputFormat = OutputFormat.createPrettyPrint();
+
+		outputFormat.setExpandEmptyElements(false);
+		outputFormat.setIndent(StringPool.TAB);
+		outputFormat.setLineSeparator(StringPool.NEW_LINE);
+		outputFormat.setTrimText(true);
+
+		XMLWriter xmlWriter = new XMLWriter(
+			unsyncByteArrayOutputStream, outputFormat);
+
+		xmlWriter.write(node);
+
+		String content = unsyncByteArrayOutputStream.toString(StringPool.UTF8);
+
+		// LEP-4257
+
+		//content = StringUtil.replace(content, "\n\n\n", "\n\n");
+
+		if (content.endsWith("\n\n")) {
+			content = content.substring(0, content.length() - 2);
+		}
+
+		if (content.endsWith("\n")) {
+			content = content.substring(0, content.length() - 1);
+		}
+
+		while (content.contains(" \n")) {
+			content = StringUtil.replace(content, " \n", "\n");
+		}
+
+		if (content.startsWith("<?xml version=\"1.0\" encoding=\"UTF-8\"?>")) {
+			content = StringUtil.replaceFirst(
+				content, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
+				"<?xml version=\"1.0\"?>");
+		}
+
+		return content;
 	}
 
 	private static String _stripComments(String text) {

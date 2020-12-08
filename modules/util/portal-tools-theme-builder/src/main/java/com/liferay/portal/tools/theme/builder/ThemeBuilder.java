@@ -39,7 +39,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import net.coobird.thumbnailator.Thumbnails;
-import net.coobird.thumbnailator.Thumbnails.Builder;
 
 /**
  * @author David Truong
@@ -77,8 +76,8 @@ public class ThemeBuilder {
 				themeBuilder.build();
 			}
 		}
-		catch (ParameterException pe) {
-			System.err.println(pe.getMessage());
+		catch (ParameterException parameterException) {
+			System.err.println(parameterException.getMessage());
 
 			_printHelp(jCommander);
 		}
@@ -253,7 +252,7 @@ public class ThemeBuilder {
 		return false;
 	}
 
-	private void _writeLookAndFeelXml() throws IOException {
+	private void _writeLookAndFeelXml() throws Exception {
 		Path path = _outputDir.toPath();
 
 		path = path.resolve("WEB-INF/liferay-look-and-feel.xml");
@@ -279,14 +278,14 @@ public class ThemeBuilder {
 		Files.write(path, content.getBytes(StandardCharsets.UTF_8));
 	}
 
-	private void _writeScreenshotThumbnail() throws IOException {
+	private void _writeScreenshotThumbnail() throws Exception {
 		File file = new File(_outputDir, "images/screenshot.png");
 
 		if (!file.exists()) {
 			return;
 		}
 
-		Builder<File> thumbnailBuilder = Thumbnails.of(file);
+		Thumbnails.Builder<File> thumbnailBuilder = Thumbnails.of(file);
 
 		thumbnailBuilder.outputFormat("png");
 		thumbnailBuilder.size(160, 120);

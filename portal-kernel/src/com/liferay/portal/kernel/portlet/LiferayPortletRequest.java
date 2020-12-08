@@ -14,8 +14,6 @@
 
 package com.liferay.portal.kernel.portlet;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.portal.kernel.model.Portlet;
 
 import java.util.Map;
@@ -26,11 +24,15 @@ import javax.portlet.PortletResponse;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.osgi.annotation.versioning.ProviderType;
+
 /**
  * @author Brian Wing Shun Chan
  */
 @ProviderType
 public interface LiferayPortletRequest extends PortletRequest {
+
+	public void cleanUp();
 
 	public Map<String, String[]> clearRenderParameters();
 
@@ -39,6 +41,8 @@ public interface LiferayPortletRequest extends PortletRequest {
 
 	public HttpServletRequest getHttpServletRequest();
 
+	public String getLifecycle();
+
 	public HttpServletRequest getOriginalHttpServletRequest();
 
 	public long getPlid();
@@ -46,5 +50,12 @@ public interface LiferayPortletRequest extends PortletRequest {
 	public Portlet getPortlet();
 
 	public String getPortletName();
+
+	public HttpServletRequest getPortletRequestDispatcherRequest();
+
+	public void invalidateSession();
+
+	public void setPortletRequestDispatcherRequest(
+		HttpServletRequest httpServletRequest);
 
 }

@@ -14,8 +14,6 @@
 
 package com.liferay.portal.kernel.service;
 
-import aQute.bnd.annotation.ProviderType;
-
 /**
  * Provides a wrapper for {@link RegionService}.
  *
@@ -23,24 +21,35 @@ import aQute.bnd.annotation.ProviderType;
  * @see RegionService
  * @generated
  */
-@ProviderType
-public class RegionServiceWrapper implements RegionService,
-	ServiceWrapper<RegionService> {
+public class RegionServiceWrapper
+	implements RegionService, ServiceWrapper<RegionService> {
+
 	public RegionServiceWrapper(RegionService regionService) {
 		_regionService = regionService;
 	}
 
 	@Override
-	public com.liferay.portal.kernel.model.Region addRegion(long countryId,
-		java.lang.String regionCode, java.lang.String name, boolean active)
+	public com.liferay.portal.kernel.model.Region addRegion(
+			long countryId, boolean active, java.lang.String name,
+			double position, java.lang.String regionCode,
+			ServiceContext serviceContext)
 		throws com.liferay.portal.kernel.exception.PortalException {
-		return _regionService.addRegion(countryId, regionCode, name, active);
+
+		return _regionService.addRegion(
+			countryId, active, name, position, regionCode, serviceContext);
 	}
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x)
+	 */
+	@Deprecated
 	@Override
-	public com.liferay.portal.kernel.model.Region fetchRegion(long countryId,
-		java.lang.String regionCode) {
-		return _regionService.fetchRegion(countryId, regionCode);
+	public com.liferay.portal.kernel.model.Region addRegion(
+			long countryId, java.lang.String regionCode, java.lang.String name,
+			boolean active)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _regionService.addRegion(countryId, regionCode, name, active);
 	}
 
 	@Override
@@ -49,26 +58,35 @@ public class RegionServiceWrapper implements RegionService,
 	}
 
 	@Override
-	public com.liferay.portal.kernel.model.Region getRegion(long countryId,
-		java.lang.String regionCode)
-		throws com.liferay.portal.kernel.exception.PortalException {
-		return _regionService.getRegion(countryId, regionCode);
+	public com.liferay.portal.kernel.model.Region fetchRegion(
+		long countryId, java.lang.String regionCode) {
+
+		return _regionService.fetchRegion(countryId, regionCode);
+	}
+
+	/**
+	 * Returns the OSGi service identifier.
+	 *
+	 * @return the OSGi service identifier
+	 */
+	@Override
+	public java.lang.String getOSGiServiceIdentifier() {
+		return _regionService.getOSGiServiceIdentifier();
 	}
 
 	@Override
 	public com.liferay.portal.kernel.model.Region getRegion(long regionId)
 		throws com.liferay.portal.kernel.exception.PortalException {
+
 		return _regionService.getRegion(regionId);
 	}
 
-	/**
-	* Returns the OSGi service identifier.
-	*
-	* @return the OSGi service identifier
-	*/
 	@Override
-	public java.lang.String getOSGiServiceIdentifier() {
-		return _regionService.getOSGiServiceIdentifier();
+	public com.liferay.portal.kernel.model.Region getRegion(
+			long countryId, java.lang.String regionCode)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _regionService.getRegion(countryId, regionCode);
 	}
 
 	@Override
@@ -79,18 +97,21 @@ public class RegionServiceWrapper implements RegionService,
 	@Override
 	public java.util.List<com.liferay.portal.kernel.model.Region> getRegions(
 		boolean active) {
+
 		return _regionService.getRegions(active);
 	}
 
 	@Override
 	public java.util.List<com.liferay.portal.kernel.model.Region> getRegions(
 		long countryId) {
+
 		return _regionService.getRegions(countryId);
 	}
 
 	@Override
 	public java.util.List<com.liferay.portal.kernel.model.Region> getRegions(
 		long countryId, boolean active) {
+
 		return _regionService.getRegions(countryId, active);
 	}
 
@@ -105,4 +126,5 @@ public class RegionServiceWrapper implements RegionService,
 	}
 
 	private RegionService _regionService;
+
 }

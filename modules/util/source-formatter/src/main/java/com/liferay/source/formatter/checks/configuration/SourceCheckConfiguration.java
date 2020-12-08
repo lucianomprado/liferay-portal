@@ -14,9 +14,12 @@
 
 package com.liferay.source.formatter.checks.configuration;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.json.JSONArrayImpl;
+import com.liferay.portal.json.JSONObjectImpl;
+import com.liferay.portal.kernel.json.JSONArray;
+import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.util.StringUtil;
 
 /**
  * @author Hugo Huijser
@@ -28,31 +31,28 @@ public class SourceCheckConfiguration {
 	}
 
 	public void addAttribute(String name, String value) {
-		_attributesMap.put(name, value);
+		JSONArray jsonArray = _attributesJSONObject.getJSONArray(name);
+
+		if (jsonArray == null) {
+			jsonArray = new JSONArrayImpl();
+		}
+
+		for (String s : StringUtil.split(value, StringPool.COMMA)) {
+			jsonArray.put(s);
+		}
+
+		_attributesJSONObject.put(name, jsonArray);
 	}
 
-	public Set<String> attributeNames() {
-		return _attributesMap.keySet();
-	}
-
-	public String getAttributeValue(String name) {
-		return _attributesMap.get(name);
+	public JSONObject getAttributesJSONObject() {
+		return _attributesJSONObject;
 	}
 
 	public String getName() {
 		return _name;
 	}
 
-	public boolean isEnabled() {
-		return _enabled;
-	}
-
-	public void setEnabled(boolean enabled) {
-		_enabled = enabled;
-	}
-
-	private final Map<String, String> _attributesMap = new HashMap<>();
-	private boolean _enabled;
+	private final JSONObject _attributesJSONObject = new JSONObjectImpl();
 	private final String _name;
 
 }

@@ -14,12 +14,14 @@
 
 package com.liferay.javadoc.formatter;
 
+import com.liferay.javadoc.formatter.util.JavadocFormatterUtil;
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
+import com.liferay.petra.xml.Dom4jUtil;
 import com.liferay.portal.kernel.io.unsync.UnsyncByteArrayOutputStream;
 import com.liferay.portal.kernel.io.unsync.UnsyncStringReader;
-import com.liferay.portal.kernel.util.CharPool;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Tuple;
 import com.liferay.portal.kernel.util.Validator;
@@ -28,34 +30,34 @@ import com.liferay.portal.tools.JavaImportsFormatter;
 import com.liferay.portal.tools.ToolsUtil;
 import com.liferay.portal.xml.SAXReaderFactory;
 import com.liferay.util.xml.Dom4jDocUtil;
-import com.liferay.util.xml.Dom4jUtil;
 import com.liferay.util.xml.XMLSafeReader;
 
-import com.thoughtworks.qdox.JavaDocBuilder;
-import com.thoughtworks.qdox.model.AbstractBaseJavaEntity;
-import com.thoughtworks.qdox.model.AbstractJavaEntity;
-import com.thoughtworks.qdox.model.Annotation;
+import com.thoughtworks.qdox.JavaProjectBuilder;
 import com.thoughtworks.qdox.model.DocletTag;
+import com.thoughtworks.qdox.model.JavaAnnotatedElement;
+import com.thoughtworks.qdox.model.JavaAnnotation;
 import com.thoughtworks.qdox.model.JavaClass;
+import com.thoughtworks.qdox.model.JavaConstructor;
+import com.thoughtworks.qdox.model.JavaExecutable;
 import com.thoughtworks.qdox.model.JavaField;
+import com.thoughtworks.qdox.model.JavaMember;
 import com.thoughtworks.qdox.model.JavaMethod;
+import com.thoughtworks.qdox.model.JavaModel;
 import com.thoughtworks.qdox.model.JavaParameter;
-import com.thoughtworks.qdox.model.Type;
-import com.thoughtworks.qdox.parser.ParseException;
+import com.thoughtworks.qdox.model.JavaType;
+import com.thoughtworks.qdox.model.JavaTypeVariable;
+import com.thoughtworks.qdox.model.expression.AnnotationValue;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -68,8 +70,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.apache.tools.ant.DirectoryScanner;
 
 import org.dom4j.Document;
 import org.dom4j.DocumentHelper;
@@ -93,8 +93,8 @@ public class JavadocFormatter {
 		try {
 			new JavadocFormatter(arguments);
 		}
-		catch (Exception e) {
-			ArgumentsUtil.processMainException(arguments, e);
+		catch (Exception exception) {
+			ArgumentsUtil.processMainException(arguments, exception);
 		}
 	}
 
@@ -103,6 +103,9 @@ public class JavadocFormatter {
 			arguments, "javadoc.author", JavadocFormatterArgs.AUTHOR);
 
 		_author = author;
+
+		_deprecationSyncDirName = ArgumentsUtil.getString(
+			arguments, "javadoc.deprecation.sync.dir", null);
 
 		_generateXml = GetterUtil.getBoolean(
 			arguments.get("javadoc.generate.xml"));
@@ -157,13 +160,11 @@ public class JavadocFormatter {
 		_updateJavadocs = GetterUtil.getBoolean(
 			arguments.get("javadoc.update"));
 
-		DirectoryScanner directoryScanner = new DirectoryScanner();
-
-		directoryScanner.setBasedir(_inputDirName);
-		directoryScanner.setExcludes(
-			new String[] {
-				"**\\build\\**", "**\\classes\\**", "**\\portal-client\\**"
-			});
+		String[] excludes = {
+			"**/.git/**", "**/.gradle/**", "**/bin/**", "**/build/**",
+			"**/classes/**", "**/node_modules/**", "**/node_modules_cache/**",
+			"**/portal-client/**", "**/tmp/**"
+		};
 
 		for (String limit : limits) {
 			List<String> includes = new ArrayList<>();
@@ -175,25 +176,19 @@ public class JavadocFormatter {
 
 				for (String curLimit : limitArray) {
 					includes.add(
-						"**\\" + StringUtil.replace(curLimit, '.', '\\') +
-							"\\**\\*.java");
-					includes.add("**\\" + curLimit + ".java");
+						"**/" + StringUtil.replace(curLimit, '.', '/') +
+							"/**/*.java");
+					includes.add("**/" + curLimit + ".java");
 				}
 			}
 			else {
-				includes.add("**\\*.java");
+				includes.add("**/*.java");
 			}
 
-			directoryScanner.setIncludes(
-				includes.toArray(new String[includes.size()]));
+			List<String> fileNames = JavadocFormatterUtil.scanForFiles(
+				_inputDirName, excludes, includes.toArray(new String[0]));
 
-			directoryScanner.scan();
-
-			String[] fileNames = StringPool.EMPTY_ARRAY;
-
-			fileNames = directoryScanner.getIncludedFiles();
-
-			if ((fileNames.length == 0) && Validator.isNotNull(limit) &&
+			if (fileNames.isEmpty() && Validator.isNotNull(limit) &&
 				!limit.startsWith("$")) {
 
 				StringBundler sb = new StringBundler("Limit file not found: ");
@@ -201,15 +196,12 @@ public class JavadocFormatter {
 				sb.append(limit);
 
 				if (limit.contains(".")) {
-					sb.append(
-						" Specify limit filename without package path or ");
-					sb.append("file type suffix.");
+					sb.append(" Specify limit filename without package path ");
+					sb.append("or file type suffix.");
 				}
 
 				System.out.println(sb.toString());
 			}
-
-			_populateJavadocBuilder(fileNames);
 
 			for (String fileName : fileNames) {
 				fileName = StringUtil.replace(fileName, '\\', '/');
@@ -217,18 +209,9 @@ public class JavadocFormatter {
 				try {
 					_format(fileName);
 				}
-				catch (Exception e) {
-					if (e instanceof ParseException) {
-						if (!fileName.contains("/tools/templates/")) {
-							System.out.println(
-								"Qdox parsing error while formatting file " +
-									fileName);
-						}
-					}
-					else {
-						throw new RuntimeException(
-							"Unable to format file " + fileName, e);
-					}
+				catch (Exception exception) {
+					throw new RuntimeException(
+						"Unable to format file " + fileName, exception);
 				}
 			}
 		}
@@ -241,6 +224,7 @@ public class JavadocFormatter {
 
 				File javadocsXmlFile = (File)tuple.getObject(1);
 				String oldJavadocsXmlContent = (String)tuple.getObject(2);
+
 				Document javadocsXmlDocument = (Document)tuple.getObject(3);
 
 				Element javadocsXmlRootElement =
@@ -267,7 +251,7 @@ public class JavadocFormatter {
 				String oldJavadocsRuntimeXmlContent = StringPool.BLANK;
 
 				if (javadocsRuntimeXmlFile.exists()) {
-					oldJavadocsRuntimeXmlContent = _read(
+					oldJavadocsRuntimeXmlContent = JavadocFormatterUtil.read(
 						javadocsRuntimeXmlFile);
 				}
 
@@ -309,8 +293,239 @@ public class JavadocFormatter {
 		commentElement.addCDATA(comment);
 	}
 
+	private void _addClassDocletElements(
+			Element parentElement, JavaClass javaClass, boolean nestedClass)
+		throws Exception {
+
+		Dom4jDocUtil.add(parentElement, "name", javaClass.getName());
+		Dom4jDocUtil.add(
+			parentElement, "type", javaClass.getFullyQualifiedName());
+
+		_addClassCommentElement(parentElement, javaClass);
+
+		if (!nestedClass) {
+			_addDocletElements(parentElement, javaClass, "author");
+		}
+
+		_addParamElements(
+			parentElement, javaClass, javaClass.getTagsByName("param"));
+		_addDocletElements(parentElement, javaClass, "version");
+		_addDocletElements(parentElement, javaClass, "see");
+		_addDocletElements(parentElement, javaClass, "since");
+		_addDocletElements(parentElement, javaClass, "serial");
+		_addDocletElements(parentElement, javaClass, "deprecated");
+		_addDocletElements(parentElement, javaClass, "review");
+	}
+
+	private void _addClassElement(
+			Element parentElement, JavaClass javaClass, boolean nestedClass)
+		throws Exception {
+
+		Element classElement = null;
+
+		if (nestedClass) {
+			classElement = parentElement.addElement("class");
+		}
+		else {
+			classElement = parentElement;
+		}
+
+		_addClassDocletElements(classElement, javaClass, nestedClass);
+
+		List<JavaConstructor> javaConstructors = javaClass.getConstructors();
+
+		for (JavaConstructor javaConstructor : javaConstructors) {
+			_addConstructorElement(classElement, javaConstructor);
+		}
+
+		List<JavaMethod> javaMethods = javaClass.getMethods();
+
+		for (JavaMethod javaMethod : javaMethods) {
+			_addMethodElement(classElement, javaMethod);
+		}
+
+		List<JavaField> javaFields = javaClass.getFields();
+
+		for (JavaField javaField : javaFields) {
+			_addFieldElement(classElement, javaField);
+		}
+
+		List<JavaClass> nestedJavaClasses = javaClass.getNestedClasses();
+
+		for (JavaClass nestedJavaClass : nestedJavaClasses) {
+			_addClassElement(classElement, nestedJavaClass, true);
+		}
+	}
+
+	private Map<Integer, String> _addComments(
+			Map<Integer, String> commentsMap, Element classElement,
+			JavaClass javaClass, String content, String[] lines)
+		throws Exception {
+
+		int lineNumber = _getJavaModelLineNumber(javaClass, content);
+
+		if (lineNumber == -1) {
+			return commentsMap;
+		}
+
+		String indent = _getIndent(lines, lineNumber);
+
+		String javaClassComment = _getJavaClassComment(
+			classElement, javaClass, indent);
+
+		javaClassComment = _addDeprecatedTag(
+			javaClassComment, javaClass, indent);
+
+		commentsMap.put(
+			_getJavaModelLineNumber(javaClass, content), javaClassComment);
+
+		Map<String, Element> constructorElementsMap = new HashMap<>();
+
+		List<Element> constructorElements = classElement.elements(
+			"constructor");
+
+		for (Element constructorElement : constructorElements) {
+			String constructorKey = _getExecutableKey(constructorElement);
+
+			constructorElementsMap.put(constructorKey, constructorElement);
+		}
+
+		List<JavaConstructor> javaConstructors = javaClass.getConstructors();
+
+		for (JavaConstructor javaConstructor : javaConstructors) {
+			lineNumber = _getJavaModelLineNumber(javaConstructor, content);
+
+			if ((lineNumber == -1) || commentsMap.containsKey(lineNumber)) {
+				continue;
+			}
+
+			indent = _getIndent(lines, lineNumber);
+
+			String javaConstructorComment = _getJavaExecutableComment(
+				constructorElementsMap, javaConstructor, indent);
+
+			javaConstructorComment = _addDeprecatedTag(
+				javaConstructorComment, javaConstructor, indent);
+
+			commentsMap.put(lineNumber, javaConstructorComment);
+		}
+
+		Map<String, Element> methodElementsMap = new HashMap<>();
+
+		List<Element> methodElements = classElement.elements("method");
+
+		for (Element methodElement : methodElements) {
+			String methodKey = _getExecutableKey(methodElement);
+
+			methodElementsMap.put(methodKey, methodElement);
+		}
+
+		List<JavaMethod> javaMethods = javaClass.getMethods();
+
+		for (JavaMethod javaMethod : javaMethods) {
+			lineNumber = _getJavaModelLineNumber(javaMethod, content);
+
+			if ((lineNumber == -1) || commentsMap.containsKey(lineNumber)) {
+				continue;
+			}
+
+			indent = _getIndent(lines, lineNumber);
+
+			String javaMethodComment = _getJavaExecutableComment(
+				methodElementsMap, javaMethod, indent);
+
+			javaMethodComment = _addDeprecatedTag(
+				javaMethodComment, javaMethod, indent);
+
+			commentsMap.put(lineNumber, javaMethodComment);
+		}
+
+		Map<String, Element> fieldElementsMap = new HashMap<>();
+
+		List<Element> fieldElements = classElement.elements("field");
+
+		for (Element fieldElement : fieldElements) {
+			String fieldKey = _getFieldKey(fieldElement);
+
+			fieldElementsMap.put(fieldKey, fieldElement);
+		}
+
+		List<JavaField> javaFields = javaClass.getFields();
+
+		for (JavaField javaField : javaFields) {
+			lineNumber = _getJavaModelLineNumber(javaField, content);
+
+			if ((lineNumber == -1) || commentsMap.containsKey(lineNumber)) {
+				continue;
+			}
+
+			indent = _getIndent(lines, lineNumber);
+
+			String javaFieldComment = _getJavaFieldComment(
+				fieldElementsMap, javaField, indent);
+
+			javaFieldComment = _addDeprecatedTag(
+				javaFieldComment, javaField, indent);
+
+			commentsMap.put(lineNumber, javaFieldComment);
+		}
+
+		Map<String, Element> nestedClassElementsMap = new HashMap<>();
+
+		List<Element> nestedClassElements = classElement.elements("class");
+
+		for (Element nestedClassElement : nestedClassElements) {
+			String nestedClassKey = _getClassKey(nestedClassElement);
+
+			nestedClassElementsMap.put(nestedClassKey, nestedClassElement);
+		}
+
+		List<JavaClass> nestedClasses = javaClass.getNestedClasses();
+
+		for (JavaClass nestedClass : nestedClasses) {
+			String nestedClassKey = _getClassKey(nestedClass);
+
+			Element nestedClassElement = nestedClassElementsMap.get(
+				nestedClassKey);
+
+			commentsMap = _addComments(
+				commentsMap, nestedClassElement, nestedClass, content, lines);
+		}
+
+		return commentsMap;
+	}
+
+	private void _addConstructorElement(
+			Element parentElement, JavaConstructor javaConstructor)
+		throws Exception {
+
+		Element constructorElement = parentElement.addElement("constructor");
+
+		Dom4jDocUtil.add(constructorElement, "name", javaConstructor.getName());
+
+		String comment = _getCDATA(javaConstructor);
+
+		if (Validator.isNotNull(comment)) {
+			Element commentElement = constructorElement.addElement("comment");
+
+			commentElement.addCDATA(_getCDATA(javaConstructor));
+		}
+
+		_addDocletElements(constructorElement, javaConstructor, "version");
+		_addParamElements(
+			constructorElement, javaConstructor,
+			javaConstructor.getTagsByName("param"));
+		_addThrowsElements(
+			constructorElement, javaConstructor,
+			javaConstructor.getTagsByName("throws"));
+		_addDocletElements(constructorElement, javaConstructor, "see");
+		_addDocletElements(constructorElement, javaConstructor, "since");
+		_addDocletElements(constructorElement, javaConstructor, "deprecated");
+		_addDocletElements(constructorElement, javaConstructor, "review");
+	}
+
 	private String _addDeprecatedTag(
-			String comment, AbstractBaseJavaEntity abstractBaseJavaEntity,
+			String comment, JavaAnnotatedElement javaAnnotatedElement,
 			String indent)
 		throws Exception {
 
@@ -318,11 +533,8 @@ public class JavadocFormatter {
 			return null;
 		}
 
-		comment = ToolsUtil.stripFullyQualifiedClassNames(
-			comment, _imports, _packagePath);
-
 		if (!comment.contains("* @deprecated ") ||
-			_hasAnnotation(abstractBaseJavaEntity, "Deprecated")) {
+			_hasAnnotation(javaAnnotatedElement, "Deprecated")) {
 
 			return comment;
 		}
@@ -331,17 +543,24 @@ public class JavadocFormatter {
 	}
 
 	private void _addDocletElements(
-			Element parentElement, AbstractJavaEntity abstractJavaEntity,
+			Element parentElement, JavaAnnotatedElement javaAnnotatedElement,
 			String name)
 		throws Exception {
 
-		DocletTag[] docletTags = abstractJavaEntity.getTagsByName(name);
+		List<DocletTag> docletTags = javaAnnotatedElement.getTagsByName(name);
 
 		for (DocletTag docletTag : docletTags) {
 			String value = docletTag.getValue();
 
-			value = ToolsUtil.stripFullyQualifiedClassNames(
-				value, _imports, _packagePath);
+			if (name.equals("deprecated") &&
+				(_deprecationSyncDirName != null)) {
+
+				Element nameElement = parentElement.element("name");
+
+				value = JavadocFormatterUtil.syncDeprecatedVersion(
+					value, javaAnnotatedElement, nameElement.getText(),
+					_fullyQualifiedName, _getDeprecationsDocument());
+			}
 
 			value = _trimMultilineText(value);
 
@@ -352,7 +571,7 @@ public class JavadocFormatter {
 			element.addCDATA(value);
 		}
 
-		if ((docletTags.length == 0) && name.equals("author")) {
+		if (docletTags.isEmpty() && name.equals("author")) {
 			Element element = parentElement.addElement(name);
 
 			element.addCDATA(_author);
@@ -553,10 +772,14 @@ public class JavadocFormatter {
 		return sb.toString();
 	}
 
-	private void _addFieldElement(Element rootElement, JavaField javaField)
+	private void _addFieldElement(Element parentElement, JavaField javaField)
 		throws Exception {
 
-		Element fieldElement = rootElement.addElement("field");
+		if (javaField == null) {
+			return;
+		}
+
+		Element fieldElement = parentElement.addElement("field");
 
 		Dom4jDocUtil.add(fieldElement, "name", javaField.getName());
 
@@ -572,12 +795,13 @@ public class JavadocFormatter {
 		_addDocletElements(fieldElement, javaField, "see");
 		_addDocletElements(fieldElement, javaField, "since");
 		_addDocletElements(fieldElement, javaField, "deprecated");
+		_addDocletElements(fieldElement, javaField, "review");
 	}
 
-	private void _addMethodElement(Element rootElement, JavaMethod javaMethod)
+	private void _addMethodElement(Element parentElement, JavaMethod javaMethod)
 		throws Exception {
 
-		Element methodElement = rootElement.addElement("method");
+		Element methodElement = parentElement.addElement("method");
 
 		Dom4jDocUtil.add(methodElement, "name", javaMethod.getName());
 
@@ -590,46 +814,49 @@ public class JavadocFormatter {
 		}
 
 		_addDocletElements(methodElement, javaMethod, "version");
-		_addParamElements(methodElement, javaMethod);
+		_addParamElements(
+			methodElement, javaMethod, javaMethod.getTagsByName("param"));
 		_addReturnElement(methodElement, javaMethod);
-		_addThrowsElements(methodElement, javaMethod);
+		_addThrowsElements(
+			methodElement, javaMethod, javaMethod.getTagsByName("throws"));
 		_addDocletElements(methodElement, javaMethod, "see");
 		_addDocletElements(methodElement, javaMethod, "since");
 		_addDocletElements(methodElement, javaMethod, "deprecated");
+		_addDocletElements(methodElement, javaMethod, "review");
 	}
 
 	private void _addParamElement(
-			Element methodElement, JavaParameter javaParameter,
-			DocletTag[] paramDocletTags)
+			Element executableElement, String parameterName,
+			String parameterValue, List<DocletTag> paramDocletTags)
 		throws Exception {
-
-		String name = javaParameter.getName();
 
 		String value = null;
 
 		for (DocletTag paramDocletTag : paramDocletTags) {
 			String curValue = paramDocletTag.getValue();
 
-			if (curValue.equals(name) || curValue.startsWith(name + " ")) {
+			if (curValue.equals(parameterName) ||
+				curValue.startsWith(parameterName + " ")) {
+
 				value = curValue;
 
 				break;
 			}
 		}
 
-		Element paramElement = methodElement.addElement("param");
+		Element paramElement = executableElement.addElement("param");
 
-		Dom4jDocUtil.add(paramElement, "name", name);
-		Dom4jDocUtil.add(paramElement, "type", _getTypeValue(javaParameter));
+		Dom4jDocUtil.add(paramElement, "name", parameterName);
+
+		if (parameterValue != null) {
+			Dom4jDocUtil.add(paramElement, "type", parameterValue);
+		}
 
 		if (value != null) {
-			value = value.substring(name.length());
+			value = value.substring(parameterName.length());
 
 			Dom4jDocUtil.add(paramElement, "required", true);
 		}
-
-		value = ToolsUtil.stripFullyQualifiedClassNames(
-			value, _imports, _packagePath);
 
 		value = _trimMultilineText(value);
 
@@ -638,22 +865,38 @@ public class JavadocFormatter {
 		commentElement.addCDATA(value);
 	}
 
-	private void _addParamElements(Element methodElement, JavaMethod javaMethod)
+	private void _addParamElements(
+			Element classElement, JavaClass javaClass,
+			List<DocletTag> paramDocletTags)
 		throws Exception {
 
-		JavaParameter[] javaParameters = javaMethod.getParameters();
+		for (JavaTypeVariable<?> typeParameter :
+				javaClass.getTypeParameters()) {
 
-		DocletTag[] paramDocletTags = javaMethod.getTagsByName("param");
+			_addParamElement(
+				classElement, "<" + typeParameter.getName() + ">", null,
+				paramDocletTags);
+		}
+	}
+
+	private void _addParamElements(
+			Element executableElement, JavaExecutable javaExecutable,
+			List<DocletTag> paramDocletTags)
+		throws Exception {
+
+		List<JavaParameter> javaParameters = javaExecutable.getParameters();
 
 		for (JavaParameter javaParameter : javaParameters) {
-			_addParamElement(methodElement, javaParameter, paramDocletTags);
+			_addParamElement(
+				executableElement, javaParameter.getName(),
+				_getTypeValue(javaParameter), paramDocletTags);
 		}
 	}
 
 	private void _addReturnElement(Element methodElement, JavaMethod javaMethod)
 		throws Exception {
 
-		Type returnType = javaMethod.getReturnType();
+		JavaType returnType = javaMethod.getReturnType();
 
 		if (returnType == null) {
 			return;
@@ -667,20 +910,17 @@ public class JavadocFormatter {
 
 		Element returnElement = methodElement.addElement("return");
 
-		DocletTag[] returnDocletTags = javaMethod.getTagsByName("return");
+		List<DocletTag> returnDocletTags = javaMethod.getTagsByName("return");
 
 		String comment = StringPool.BLANK;
 
-		if (returnDocletTags.length > 0) {
-			DocletTag returnDocletTag = returnDocletTags[0];
+		if (!returnDocletTags.isEmpty()) {
+			DocletTag returnDocletTag = returnDocletTags.get(0);
 
 			comment = GetterUtil.getString(returnDocletTag.getValue());
 
 			Dom4jDocUtil.add(returnElement, "required", true);
 		}
-
-		comment = ToolsUtil.stripFullyQualifiedClassNames(
-			comment, _imports, _packagePath);
 
 		comment = _trimMultilineText(comment);
 
@@ -690,13 +930,17 @@ public class JavadocFormatter {
 	}
 
 	private void _addThrowsElement(
-			Element methodElement, Type exceptionType,
-			DocletTag[] throwsDocletTags)
+			Element executableElement, JavaClass exceptionJavaClass,
+			List<DocletTag> throwsDocletTags)
 		throws Exception {
 
-		JavaClass javaClass = exceptionType.getJavaClass();
+		String name = exceptionJavaClass.getName();
 
-		String name = javaClass.getName();
+		int pos = name.lastIndexOf(StringPool.PERIOD);
+
+		if (pos != -1) {
+			name = name.substring(pos + 1);
+		}
 
 		String value = null;
 
@@ -706,26 +950,22 @@ public class JavadocFormatter {
 			if (!curValue.startsWith(name)) {
 				continue;
 			}
-			else {
-				value = curValue;
 
-				break;
-			}
+			value = curValue;
+
+			break;
 		}
 
-		Element throwsElement = methodElement.addElement("throws");
+		Element throwsElement = executableElement.addElement("throws");
 
 		Dom4jDocUtil.add(throwsElement, "name", name);
-		Dom4jDocUtil.add(throwsElement, "type", exceptionType.getValue());
+		Dom4jDocUtil.add(throwsElement, "type", exceptionJavaClass.getValue());
 
 		if (value != null) {
 			value = value.substring(name.length());
 
 			Dom4jDocUtil.add(throwsElement, "required", true);
 		}
-
-		value = ToolsUtil.stripFullyQualifiedClassNames(
-			value, _imports, _packagePath);
 
 		value = _trimMultilineText(value);
 
@@ -735,15 +975,15 @@ public class JavadocFormatter {
 	}
 
 	private void _addThrowsElements(
-			Element methodElement, JavaMethod javaMethod)
+			Element executableElement, JavaExecutable javaExecutable,
+			List<DocletTag> throwsDocletTags)
 		throws Exception {
 
-		Type[] exceptionTypes = javaMethod.getExceptions();
+		List<JavaClass> exceptionJavaClasses = javaExecutable.getExceptions();
 
-		DocletTag[] throwsDocletTags = javaMethod.getTagsByName("throws");
-
-		for (Type exceptionType : exceptionTypes) {
-			_addThrowsElement(methodElement, exceptionType, throwsDocletTags);
+		for (JavaClass exceptionJavaClass : exceptionJavaClasses) {
+			_addThrowsElement(
+				executableElement, exceptionJavaClass, throwsDocletTags);
 		}
 	}
 
@@ -794,7 +1034,7 @@ public class JavadocFormatter {
 		return comment;
 	}
 
-	private String _compactString(Node node) throws IOException {
+	private String _compactString(Node node) throws Exception {
 		UnsyncByteArrayOutputStream unsyncByteArrayOutputStream =
 			new UnsyncByteArrayOutputStream();
 
@@ -821,28 +1061,47 @@ public class JavadocFormatter {
 	}
 
 	private void _format(String fileName) throws Exception {
-		File file = new File(_inputDirName, fileName);
-
-		String originalContent = _read(file);
-
-		String absolutePath = _getAbsolutePath(fileName);
-
-		if (absolutePath.contains("modules/third-party") ||
-			fileName.endsWith("Application.java") ||
-			fileName.endsWith("JavadocFormatter.java") ||
+		if (fileName.endsWith("JavadocFormatter.java") ||
 			fileName.endsWith("Mojo.java") ||
+			fileName.endsWith("package-info.java") ||
 			fileName.endsWith("SourceFormatter.java") ||
-			fileName.endsWith("WebProxyPortlet.java") ||
-			_hasGeneratedTag(originalContent)) {
+			fileName.endsWith("WebProxyPortlet.java")) {
 
 			return;
 		}
 
-		_imports = JavaImportsFormatter.getImports(originalContent);
 		_packagePath = ToolsUtil.getPackagePath(fileName);
 
-		JavaClass javaClass = _getJavaClass(
-			fileName, new UnsyncStringReader(originalContent));
+		if (!_packagePath.startsWith("com.liferay")) {
+			return;
+		}
+
+		File file = new File(_inputDirName, fileName);
+
+		String originalContent = JavadocFormatterUtil.read(file);
+
+		if (_hasGeneratedTag(originalContent)) {
+			return;
+		}
+
+		_imports = JavaImportsFormatter.getImports(originalContent);
+
+		JavaClass javaClass = null;
+
+		try {
+			javaClass = _getJavaClass(
+				fileName, new UnsyncStringReader(originalContent));
+		}
+		catch (Exception exception) {
+			if (!fileName.contains("__")) {
+				System.out.println(
+					"Qdox parsing error while formatting file " + fileName);
+			}
+
+			return;
+		}
+
+		_fullyQualifiedName = javaClass.getFullyQualifiedName();
 
 		String javadocLessContent = _removeJavadocFromJava(
 			javaClass, originalContent);
@@ -902,41 +1161,60 @@ public class JavadocFormatter {
 
 		// Capitalize ID
 
-		text = text.replaceAll("[?@param id](?i)\\bid(s)?\\b", " ID$1");
+		text = text.replaceAll("(?i)(?<!@link) id(s)?\\b", " ID$1");
 
 		// Wrap special constants in code tags
 
 		text = text.replaceAll(
-			"(?i)(?<!<code>|\\w)(null|false|true)(?!\\w)", "<code>$1</code>");
+			"(?i)(?<!<code>|\\{@code |[\\w\"])(null|false|true)(?![\\w\"])",
+			"<code>$1</code>");
 
 		return text;
 	}
 
-	private String _formattedString(Node node) throws IOException {
+	private String _formattedString(Node node) throws Exception {
 		return Dom4jUtil.toString(node);
 	}
 
-	private String _getAbsolutePath(String fileName) {
-		Path filePath = Paths.get(fileName);
+	private int _getAdjustedLineNumber(int lineNumber, JavaModel javaModel) {
+		JavaAnnotatedElement javaAnnotatedElement =
+			(JavaAnnotatedElement)javaModel;
 
-		filePath = filePath.toAbsolutePath();
+		List<JavaAnnotation> annotations =
+			javaAnnotatedElement.getAnnotations();
 
-		filePath = filePath.normalize();
+		if (annotations.isEmpty()) {
+			return lineNumber;
+		}
 
-		return StringUtil.replace(
-			filePath.toString(), CharPool.BACK_SLASH, CharPool.SLASH);
+		for (JavaAnnotation annotation : annotations) {
+			int annotationLineNumber = annotation.getLineNumber();
+
+			Map<String, AnnotationValue> propertyMap =
+				annotation.getPropertyMap();
+
+			if (propertyMap.isEmpty()) {
+				annotationLineNumber--;
+			}
+
+			if (annotationLineNumber < lineNumber) {
+				lineNumber = annotationLineNumber;
+			}
+		}
+
+		return lineNumber;
 	}
 
-	private String _getCDATA(AbstractJavaEntity abstractJavaEntity) {
-		return _getCDATA(abstractJavaEntity.getComment());
+	private String _getCDATA(JavaAnnotatedElement javaAnnotatedElement) {
+		return _getCDATA(javaAnnotatedElement.getComment());
 	}
 
 	private String _getCDATA(String cdata) {
-		StringBundler sb = new StringBundler();
-
 		if ((cdata == null) || cdata.isEmpty()) {
 			return StringPool.BLANK;
 		}
+
+		StringBundler sb = new StringBundler();
 
 		int cdataBeginIndex = 0;
 
@@ -1037,59 +1315,75 @@ public class JavadocFormatter {
 		return cdata.trim();
 	}
 
+	private String _getClassKey(Element classElement) {
+		return classElement.elementText("name");
+	}
+
+	private String _getClassKey(JavaClass javaClass) {
+		return javaClass.getName();
+	}
+
 	private String _getClassName(String fileName) {
-		int pos = fileName.indexOf("src/main/java/");
+		int pos = fileName.lastIndexOf(StringPool.SLASH);
 
-		if (pos == -1) {
-			pos = fileName.indexOf("src/test/java/");
+		return fileName.substring(pos + 1, fileName.length() - 5);
+	}
+
+	private Document _getDeprecationsDocument() {
+		if (_deprecationsDocument != null) {
+			return _deprecationsDocument;
 		}
 
-		if (pos == -1) {
-			pos = fileName.indexOf("src/testIntegration/java/");
+		try {
+			_deprecationsDocument =
+				JavadocFormatterUtil.getDeprecationsDocument(
+					_deprecationSyncDirName);
+		}
+		catch (Exception exception) {
+			_deprecationsDocument = DocumentHelper.createDocument();
 		}
 
-		if (pos != -1) {
-			pos = fileName.indexOf("java/", pos);
+		return _deprecationsDocument;
+	}
+
+	private String _getExecutableKey(Element executableElement) {
+		StringBundler sb = new StringBundler();
+
+		sb.append(executableElement.elementText("name"));
+		sb.append(StringPool.OPEN_PARENTHESIS);
+
+		List<Element> paramElements = executableElement.elements("param");
+
+		for (Element paramElement : paramElements) {
+			sb.append(paramElement.elementText("name"));
+			sb.append("|");
+			sb.append(paramElement.elementText("type"));
+			sb.append(",");
 		}
 
-		if (pos == -1) {
-			pos = fileName.indexOf("src/");
+		sb.append(StringPool.CLOSE_PARENTHESIS);
+
+		return sb.toString();
+	}
+
+	private String _getExecutableKey(JavaExecutable javaExecutable) {
+		StringBundler sb = new StringBundler();
+
+		sb.append(javaExecutable.getName());
+		sb.append(StringPool.OPEN_PARENTHESIS);
+
+		List<JavaParameter> javaParameters = javaExecutable.getParameters();
+
+		for (JavaParameter javaParameter : javaParameters) {
+			sb.append(javaParameter.getName());
+			sb.append("|");
+			sb.append(_getTypeValue(javaParameter));
+			sb.append(",");
 		}
 
-		if (pos == -1) {
-			pos = fileName.indexOf("test/integration/");
+		sb.append(StringPool.CLOSE_PARENTHESIS);
 
-			if (pos != -1) {
-				pos = fileName.indexOf("integration/", pos);
-			}
-		}
-
-		if (pos == -1) {
-			pos = fileName.indexOf("test/unit/");
-
-			if (pos != -1) {
-				pos = fileName.indexOf("unit/", pos);
-			}
-		}
-
-		if (pos == -1) {
-			pos = fileName.indexOf("test/");
-		}
-
-		if (pos == -1) {
-			pos = fileName.indexOf("service/");
-		}
-
-		if (pos == -1) {
-			throw new RuntimeException(fileName);
-		}
-
-		pos = fileName.indexOf("/", pos);
-
-		String srcFile = fileName.substring(pos + 1, fileName.length());
-
-		return StringUtil.replace(
-			srcFile.substring(0, srcFile.length() - 5), '/', '.');
+		return sb.toString();
 	}
 
 	private String _getFieldKey(Element fieldElement) {
@@ -1100,10 +1394,8 @@ public class JavadocFormatter {
 		return javaField.getName();
 	}
 
-	private String _getIndent(
-		String[] lines, AbstractBaseJavaEntity abstractBaseJavaEntity) {
-
-		String line = lines[abstractBaseJavaEntity.getLineNumber() - 1];
+	private String _getIndent(String[] lines, int lineNumber) {
+		String line = lines[lineNumber - 1];
 
 		String indent = StringPool.BLANK;
 
@@ -1134,81 +1426,65 @@ public class JavadocFormatter {
 		return indentLength;
 	}
 
-	private JavaClass _getJavaClass(String fileName, Reader reader)
-		throws Exception {
-
-		String className = _getClassName(fileName);
-
+	private JavaClass _getJavaClass(String fileName, Reader reader) {
 		if (reader != null) {
-			_javadocBuilder.addSource(reader);
+			_javaProjectBuilder = new JavaProjectBuilder();
+
+			_javaProjectBuilder.addSource(reader);
 		}
 
-		return _javadocBuilder.getClassByName(className);
+		return _javaProjectBuilder.getClassByName(
+			_packagePath + StringPool.PERIOD + _getClassName(fileName));
 	}
 
 	private String _getJavaClassComment(
-			Element rootElement, JavaClass javaClass)
+			Element rootElement, JavaClass javaClass, String indent)
 		throws Exception {
 
-		StringBundler sb = new StringBundler();
+		StringBundler sb = new StringBundler(8);
 
-		String indent = StringPool.BLANK;
-
+		sb.append(indent);
 		sb.append("/**\n");
 
 		String comment = rootElement.elementText("comment");
 
 		if (Validator.isNotNull(comment)) {
-			comment = ToolsUtil.stripFullyQualifiedClassNames(
-				comment, _imports, _packagePath);
-
 			sb.append(_wrapText(comment, indent + " * "));
 		}
 
 		String docletTags = _addDocletTags(
 			rootElement,
 			new String[] {
-				"author", "version", "see", "since", "serial", "deprecated"
+				"author", "version", "param", "see", "since", "serial",
+				"deprecated", "review"
 			},
 			indent + " * ", _hasPublicModifier(javaClass));
 
 		if (Validator.isNotNull(docletTags)) {
 			if (_initializeMissingJavadocs || Validator.isNotNull(comment)) {
+				sb.append(indent);
 				sb.append(" *\n");
 			}
 
 			sb.append(docletTags);
 		}
 
+		sb.append(indent);
 		sb.append(" */\n");
 
+		if (!_initializeMissingJavadocs && Validator.isNull(comment) &&
+			Validator.isNull(docletTags)) {
+
+			return null;
+		}
+
+		if (!_hasPublicModifier(javaClass) && Validator.isNull(comment) &&
+			Validator.isNull(docletTags)) {
+
+			return null;
+		}
+
 		return sb.toString();
-	}
-
-	private int _getJavaClassLineNumber(JavaClass javaClass) {
-		int lineNumber = javaClass.getLineNumber();
-
-		Annotation[] annotations = javaClass.getAnnotations();
-
-		if (annotations.length == 0) {
-			return lineNumber;
-		}
-
-		for (Annotation annotation : annotations) {
-			int annotationLineNumber = annotation.getLineNumber();
-
-			Map<String, String> propertyMap = annotation.getPropertyMap();
-
-			if (propertyMap.isEmpty()) {
-				annotationLineNumber--;
-			}
-
-			if (annotationLineNumber < lineNumber) {
-				lineNumber = annotationLineNumber;
-			}
-		}
-
-		return lineNumber;
 	}
 
 	private Document _getJavadocDocument(JavaClass javaClass) throws Exception {
@@ -1216,29 +1492,7 @@ public class JavadocFormatter {
 
 		Document document = DocumentHelper.createDocument(rootElement);
 
-		Dom4jDocUtil.add(rootElement, "name", javaClass.getName());
-		Dom4jDocUtil.add(
-			rootElement, "type", javaClass.getFullyQualifiedName());
-
-		_addClassCommentElement(rootElement, javaClass);
-		_addDocletElements(rootElement, javaClass, "author");
-		_addDocletElements(rootElement, javaClass, "version");
-		_addDocletElements(rootElement, javaClass, "see");
-		_addDocletElements(rootElement, javaClass, "since");
-		_addDocletElements(rootElement, javaClass, "serial");
-		_addDocletElements(rootElement, javaClass, "deprecated");
-
-		JavaMethod[] javaMethods = javaClass.getMethods();
-
-		for (JavaMethod javaMethod : javaMethods) {
-			_addMethodElement(rootElement, javaMethod);
-		}
-
-		JavaField[] javaFields = javaClass.getFields();
-
-		for (JavaField javaField : javaFields) {
-			_addFieldElement(rootElement, javaField);
-		}
+		_addClassElement(rootElement, javaClass, false);
 
 		return document;
 	}
@@ -1331,7 +1585,7 @@ public class JavadocFormatter {
 			_modifiedFileNames.add(javadocsXmlFile.getAbsolutePath());
 		}
 
-		javadocsXmlContent = _read(javadocsXmlFile);
+		javadocsXmlContent = JavadocFormatterUtil.read(javadocsXmlFile);
 
 		SAXReader saxReader = _getSAXReader();
 
@@ -1347,6 +1601,76 @@ public class JavadocFormatter {
 		return tuple;
 	}
 
+	private String _getJavaExecutableComment(
+			Map<String, Element> executableElementsMap,
+			JavaExecutable javaExecutable, String indent)
+		throws Exception {
+
+		String executableKey = _getExecutableKey(javaExecutable);
+
+		Element executableElement = executableElementsMap.get(executableKey);
+
+		if (executableElement == null) {
+			return null;
+		}
+
+		StringBundler sb = new StringBundler(8);
+
+		sb.append(indent);
+		sb.append("/**\n");
+
+		String comment = executableElement.elementText("comment");
+
+		if (Validator.isNotNull(comment)) {
+			sb.append(_wrapText(comment, indent + " * "));
+		}
+
+		String[] tags = null;
+
+		if (javaExecutable instanceof JavaMethod) {
+			tags = new String[] {
+				"version", "param", "return", "throws", "see", "since",
+				"deprecated", "review"
+			};
+		}
+		else {
+			tags = new String[] {
+				"version", "param", "throws", "see", "since", "deprecated",
+				"review"
+			};
+		}
+
+		String docletTags = _addDocletTags(
+			executableElement, tags, indent + " * ",
+			_hasPublicModifier(javaExecutable));
+
+		if (Validator.isNotNull(docletTags)) {
+			if (_initializeMissingJavadocs || Validator.isNotNull(comment)) {
+				sb.append(indent);
+				sb.append(" *\n");
+			}
+
+			sb.append(docletTags);
+		}
+
+		sb.append(indent);
+		sb.append(" */\n");
+
+		if (!_initializeMissingJavadocs && Validator.isNull(comment) &&
+			Validator.isNull(docletTags)) {
+
+			return null;
+		}
+
+		if (!_hasPublicModifier(javaExecutable) && Validator.isNull(comment) &&
+			Validator.isNull(docletTags)) {
+
+			return null;
+		}
+
+		return sb.toString();
+	}
+
 	private String _getJavaFieldComment(
 			Map<String, Element> fieldElementsMap, JavaField javaField,
 			String indent)
@@ -1360,7 +1684,7 @@ public class JavadocFormatter {
 			return null;
 		}
 
-		StringBundler sb = new StringBundler();
+		StringBundler sb = new StringBundler(8);
 
 		sb.append(indent);
 		sb.append("/**\n");
@@ -1368,15 +1692,12 @@ public class JavadocFormatter {
 		String comment = fieldElement.elementText("comment");
 
 		if (Validator.isNotNull(comment)) {
-			comment = ToolsUtil.stripFullyQualifiedClassNames(
-				comment, _imports, _packagePath);
-
 			sb.append(_wrapText(comment, indent + " * "));
 		}
 
 		String docletTags = _addDocletTags(
 			fieldElement,
-			new String[] {"version", "see", "since", "deprecated"},
+			new String[] {"version", "see", "since", "deprecated", "review"},
 			indent + " * ", _hasPublicModifier(javaField));
 
 		if (Validator.isNotNull(docletTags)) {
@@ -1406,106 +1727,110 @@ public class JavadocFormatter {
 		return sb.toString();
 	}
 
-	private String _getJavaMethodComment(
-			Map<String, Element> methodElementsMap, JavaMethod javaMethod,
-			String indent)
-		throws Exception {
-
-		String methodKey = _getMethodKey(javaMethod);
-
-		Element methodElement = methodElementsMap.get(methodKey);
-
-		if (methodElement == null) {
-			return null;
+	private int _getJavaModelLineNumber(JavaModel javaModel, String content) {
+		if ((javaModel == null) || (javaModel.getLineNumber() == 0)) {
+			return -1;
 		}
 
-		StringBundler sb = new StringBundler();
+		String[] lines = StringUtil.splitLines(content);
 
-		sb.append(indent);
-		sb.append("/**\n");
+		if (javaModel instanceof JavaClass) {
+			JavaClass javaClass = (JavaClass)javaModel;
 
-		String comment = methodElement.elementText("comment");
+			List<String> modifiers = javaClass.getModifiers();
 
-		if (Validator.isNotNull(comment)) {
-			comment = ToolsUtil.stripFullyQualifiedClassNames(
-				comment, _imports, _packagePath);
-
-			sb.append(_wrapText(comment, indent + " * "));
-		}
-
-		String docletTags = _addDocletTags(
-			methodElement,
-			new String[] {
-				"version", "param", "return", "throws", "see", "since",
-				"deprecated"
-			},
-			indent + " * ", _hasPublicModifier(javaMethod));
-
-		if (Validator.isNotNull(docletTags)) {
-			if (_initializeMissingJavadocs || Validator.isNotNull(comment)) {
-				sb.append(indent);
-				sb.append(" *\n");
+			if (modifiers.isEmpty()) {
+				return _getAdjustedLineNumber(
+					javaModel.getLineNumber(), javaModel);
 			}
 
-			sb.append(docletTags);
+			String modifier = modifiers.get(0);
+
+			for (int i = javaClass.getLineNumber() - 1; i < lines.length; i++) {
+				String line = StringUtil.trim(lines[i - 1]);
+
+				if (line.startsWith(modifier + StringPool.SPACE)) {
+					return _getAdjustedLineNumber(i, javaModel);
+				}
+			}
+
+			return -1;
 		}
 
-		sb.append(indent);
-		sb.append(" */\n");
+		if (javaModel instanceof JavaField) {
+			JavaField javaField = (JavaField)javaModel;
 
-		if (!_initializeMissingJavadocs && Validator.isNull(comment) &&
-			Validator.isNull(docletTags)) {
+			if (javaField.isEnumConstant()) {
+				for (int i = javaModel.getLineNumber(); i < lines.length; i++) {
+					String line = lines[i - 1];
 
-			return null;
+					if (!StringUtil.startsWith(
+							StringUtil.trim(line), CharPool.STAR) &&
+						line.matches(
+							".*\\W" + javaField.getName() + "(\\W.*)?")) {
+
+						return _getAdjustedLineNumber(i, javaModel);
+					}
+				}
+			}
+
+			return _getAdjustedLineNumber(javaModel.getLineNumber(), javaModel);
 		}
 
-		if (!_hasPublicModifier(javaMethod) && Validator.isNull(comment) &&
-			Validator.isNull(docletTags)) {
+		JavaMember javaMember = (JavaMember)javaModel;
 
-			return null;
+		List<String> modifiers = javaMember.getModifiers();
+
+		if (modifiers.isEmpty()) {
+			return _getAdjustedLineNumber(javaModel.getLineNumber(), javaModel);
 		}
 
-		return sb.toString();
+		String modifier = modifiers.get(0);
+
+		for (int i = javaModel.getLineNumber(); i > 0; i--) {
+			String line = StringUtil.trim(lines[i - 1]);
+
+			if (line.equals(modifier) ||
+				line.startsWith(modifier + StringPool.SPACE)) {
+
+				return _getAdjustedLineNumber(i, javaModel);
+			}
+		}
+
+		return -1;
 	}
 
-	private String _getMethodKey(Element methodElement) {
-		StringBundler sb = new StringBundler();
+	private Set<Integer> _getJavaTermLineNumbers(
+		Set<Integer> lineNumbers, JavaClass javaClass, String content) {
 
-		sb.append(methodElement.elementText("name"));
-		sb.append(StringPool.OPEN_PARENTHESIS);
+		lineNumbers.add(_getJavaModelLineNumber(javaClass, content));
 
-		List<Element> paramElements = methodElement.elements("param");
+		List<JavaConstructor> javaConstructors = javaClass.getConstructors();
 
-		for (Element paramElement : paramElements) {
-			sb.append(paramElement.elementText("name"));
-			sb.append("|");
-			sb.append(paramElement.elementText("type"));
-			sb.append(",");
+		for (JavaConstructor javaConstructor : javaConstructors) {
+			lineNumbers.add(_getJavaModelLineNumber(javaConstructor, content));
 		}
 
-		sb.append(StringPool.CLOSE_PARENTHESIS);
+		List<JavaMethod> javaMethods = javaClass.getMethods();
 
-		return sb.toString();
-	}
-
-	private String _getMethodKey(JavaMethod javaMethod) {
-		StringBundler sb = new StringBundler();
-
-		sb.append(javaMethod.getName());
-		sb.append(StringPool.OPEN_PARENTHESIS);
-
-		JavaParameter[] javaParameters = javaMethod.getParameters();
-
-		for (JavaParameter javaParameter : javaParameters) {
-			sb.append(javaParameter.getName());
-			sb.append("|");
-			sb.append(_getTypeValue(javaParameter));
-			sb.append(",");
+		for (JavaMethod javaMethod : javaMethods) {
+			lineNumbers.add(_getJavaModelLineNumber(javaMethod, content));
 		}
 
-		sb.append(StringPool.CLOSE_PARENTHESIS);
+		List<JavaField> javaFields = javaClass.getFields();
 
-		return sb.toString();
+		for (JavaField javaField : javaFields) {
+			lineNumbers.add(_getJavaModelLineNumber(javaField, content));
+		}
+
+		List<JavaClass> nestedClasses = javaClass.getNestedClasses();
+
+		for (JavaClass nestedClass : nestedClasses) {
+			lineNumbers = _getJavaTermLineNumbers(
+				lineNumbers, nestedClass, content);
+		}
+
+		return lineNumbers;
 	}
 
 	private SAXReader _getSAXReader() {
@@ -1523,15 +1848,9 @@ public class JavadocFormatter {
 	}
 
 	private String _getTypeValue(JavaParameter javaParameter) {
-		Type type = javaParameter.getType();
+		JavaType type = javaParameter.getType();
 
-		String typeValue = type.getValue();
-
-		if (type.isArray()) {
-			typeValue += "[]";
-		}
-
-		return typeValue;
+		return type.getValue();
 	}
 
 	private String _getUpdateJavaFromDocument(
@@ -1545,72 +1864,9 @@ public class JavadocFormatter {
 
 		_updateLanguageProperties(document, javaClass.getName());
 
-		Element rootElement = document.getRootElement();
-
-		Map<Integer, String> commentsMap = new TreeMap<>();
-
-		String javaClassComment = _getJavaClassComment(rootElement, javaClass);
-
-		javaClassComment = _addDeprecatedTag(
-			javaClassComment, javaClass, StringPool.BLANK);
-
-		commentsMap.put(_getJavaClassLineNumber(javaClass), javaClassComment);
-
-		Map<String, Element> methodElementsMap = new HashMap<>();
-
-		List<Element> methodElements = rootElement.elements("method");
-
-		for (Element methodElement : methodElements) {
-			String methodKey = _getMethodKey(methodElement);
-
-			methodElementsMap.put(methodKey, methodElement);
-		}
-
-		JavaMethod[] javaMethods = javaClass.getMethods();
-
-		for (JavaMethod javaMethod : javaMethods) {
-			if (commentsMap.containsKey(javaMethod.getLineNumber())) {
-				continue;
-			}
-
-			String indent = _getIndent(lines, javaMethod);
-
-			String javaMethodComment = _getJavaMethodComment(
-				methodElementsMap, javaMethod, indent);
-
-			javaMethodComment = _addDeprecatedTag(
-				javaMethodComment, javaMethod, indent);
-
-			commentsMap.put(javaMethod.getLineNumber(), javaMethodComment);
-		}
-
-		Map<String, Element> fieldElementsMap = new HashMap<>();
-
-		List<Element> fieldElements = rootElement.elements("field");
-
-		for (Element fieldElement : fieldElements) {
-			String fieldKey = _getFieldKey(fieldElement);
-
-			fieldElementsMap.put(fieldKey, fieldElement);
-		}
-
-		JavaField[] javaFields = javaClass.getFields();
-
-		for (JavaField javaField : javaFields) {
-			if (commentsMap.containsKey(javaField.getLineNumber())) {
-				continue;
-			}
-
-			String indent = _getIndent(lines, javaField);
-
-			String javaFieldComment = _getJavaFieldComment(
-				fieldElementsMap, javaField, indent);
-
-			javaFieldComment = _addDeprecatedTag(
-				javaFieldComment, javaField, indent);
-
-			commentsMap.put(javaField.getLineNumber(), javaFieldComment);
-		}
+		Map<Integer, String> commentsMap = _addComments(
+			new TreeMap<Integer, String>(), document.getRootElement(),
+			javaClass, javadocLessContent, lines);
 
 		StringBundler sb = new StringBundler(javadocLessContent.length());
 
@@ -1633,18 +1889,17 @@ public class JavadocFormatter {
 	}
 
 	private boolean _hasAnnotation(
-		AbstractBaseJavaEntity abstractBaseJavaEntity, String annotationName) {
+		JavaAnnotatedElement javaAnnotatedElement, String annotationName) {
 
-		Annotation[] annotations = abstractBaseJavaEntity.getAnnotations();
+		List<JavaAnnotation> annotations =
+			javaAnnotatedElement.getAnnotations();
 
 		if (annotations == null) {
 			return false;
 		}
 
-		for (int i = 0; i < annotations.length; i++) {
-			Type type = annotations[i].getType();
-
-			JavaClass javaClass = type.getJavaClass();
+		for (JavaAnnotation javaAnnotation : annotations) {
+			JavaClass javaClass = javaAnnotation.getType();
 
 			if (annotationName.equals(javaClass.getName())) {
 				return true;
@@ -1661,14 +1916,19 @@ public class JavadocFormatter {
 
 			return true;
 		}
-		else {
-			return false;
-		}
+
+		return false;
 	}
 
-	private boolean _hasPublicModifier(AbstractJavaEntity abstractJavaEntity) {
-		String[] modifiers = abstractJavaEntity.getModifiers();
+	private boolean _hasPublicModifier(JavaClass javaClass) {
+		return _hasPublicModifier(javaClass.getModifiers());
+	}
 
+	private boolean _hasPublicModifier(JavaMember javaMember) {
+		return _hasPublicModifier(javaMember.getModifiers());
+	}
+
+	private boolean _hasPublicModifier(List<String> modifiers) {
 		if (modifiers == null) {
 			return false;
 		}
@@ -1682,52 +1942,14 @@ public class JavadocFormatter {
 		return false;
 	}
 
-	private void _populateJavadocBuilder(String[] fileNames) {
-		_javadocBuilder = new JavaDocBuilder();
-
-		for (String fileName : fileNames) {
-			fileName = StringUtil.replace(
-				fileName, CharPool.BACK_SLASH, CharPool.SLASH);
-
-			File file = new File(_inputDirName, fileName);
-
-			try {
-				_javadocBuilder.addSource(file);
-			}
-			catch (Exception e) {
-			}
-		}
-	}
-
-	private String _read(File file) throws IOException {
-		String s = new String(
-			Files.readAllBytes(file.toPath()), StringPool.UTF8);
-
-		return StringUtil.replace(
-			s, StringPool.RETURN_NEW_LINE, StringPool.NEW_LINE);
-	}
-
 	private String _removeJavadocFromJava(JavaClass javaClass, String content) {
-		Set<Integer> lineNumbers = new HashSet<>();
-
-		lineNumbers.add(_getJavaClassLineNumber(javaClass));
-
-		JavaMethod[] javaMethods = javaClass.getMethods();
-
-		for (JavaMethod javaMethod : javaMethods) {
-			lineNumbers.add(javaMethod.getLineNumber());
-		}
-
-		JavaField[] javaFields = javaClass.getFields();
-
-		for (JavaField javaField : javaFields) {
-			lineNumbers.add(javaField.getLineNumber());
-		}
+		Set<Integer> lineNumbers = _getJavaTermLineNumbers(
+			new HashSet<Integer>(), javaClass, content);
 
 		String[] lines = StringUtil.splitLines(content);
 
 		for (int lineNumber : lineNumbers) {
-			if (lineNumber == 0) {
+			if (lineNumber == -1) {
 				continue;
 			}
 
@@ -1818,13 +2040,13 @@ public class JavadocFormatter {
 			Element curElement = elements.get(i);
 
 			if (!foundLastElementWithElementName) {
-				if (elementName.equals(curElement.getName())) {
-					if ((i + 1) < elements.size()) {
-						Element nextElement = elements.get(i + 1);
+				if (elementName.equals(curElement.getName()) &&
+					((i + 1) < elements.size())) {
 
-						if (!elementName.equals(nextElement.getName())) {
-							foundLastElementWithElementName = true;
-						}
+					Element nextElement = elements.get(i + 1);
+
+					if (!elementName.equals(nextElement.getName())) {
+						foundLastElementWithElementName = true;
 					}
 				}
 			}
@@ -1858,6 +2080,12 @@ public class JavadocFormatter {
 			String fileName, JavaClass javaClass, Document javaClassDocument)
 		throws Exception {
 
+		Tuple javadocsXmlTuple = _getJavadocsXmlTuple(fileName);
+
+		if (javadocsXmlTuple == null) {
+			return;
+		}
+
 		String javaClassFullyQualifiedName = javaClass.getFullyQualifiedName();
 
 		/*if (!javaClassFullyQualifiedName.contains(".service.") ||
@@ -1865,12 +2093,6 @@ public class JavadocFormatter {
 
 			return;
 		}*/
-
-		Tuple javadocsXmlTuple = _getJavadocsXmlTuple(fileName);
-
-		if (javadocsXmlTuple == null) {
-			return;
-		}
 
 		Document javadocsXmlDocument = (Document)javadocsXmlTuple.getObject(3);
 
@@ -1903,7 +2125,7 @@ public class JavadocFormatter {
 	}
 
 	private void _updateLanguageProperties(Document document, String className)
-		throws IOException {
+		throws Exception {
 
 		if (_languageProperties == null) {
 			return;
@@ -1967,7 +2189,7 @@ public class JavadocFormatter {
 	}
 
 	private void _updateLanguageProperties(String key, String value)
-		throws IOException {
+		throws Exception {
 
 		StringBundler sb = new StringBundler();
 
@@ -2010,7 +2232,74 @@ public class JavadocFormatter {
 		}
 
 		System.out.println(
-			"Updating " + _languagePropertiesFile + " key " + key);
+			StringBundler.concat(
+				"Updating ", _languagePropertiesFile, " key ", key));
+	}
+
+	private String _wrap(String text, int width) {
+		if (text == null) {
+			return null;
+		}
+
+		StringBundler sb = new StringBundler();
+
+		for (String line : StringUtil.splitLines(text)) {
+			if (line.isEmpty()) {
+				sb.append("\n");
+
+				continue;
+			}
+
+			int lineLength = 0;
+
+			for (String token : StringUtil.split(line, CharPool.SPACE)) {
+				if ((lineLength + token.length() + 1) > width) {
+					if (lineLength > 0) {
+						sb.append("\n");
+					}
+
+					if (token.length() > width) {
+						int pos = token.indexOf(CharPool.OPEN_PARENTHESIS);
+
+						if (pos != -1) {
+							sb.append(token.substring(0, pos + 1));
+							sb.append("\n");
+
+							token = token.substring(pos + 1);
+
+							sb.append(token);
+
+							lineLength = token.length();
+						}
+						else {
+							sb.append(token);
+
+							lineLength = token.length();
+						}
+					}
+					else {
+						sb.append(token);
+
+						lineLength = token.length();
+					}
+				}
+				else {
+					if (lineLength > 0) {
+						sb.append(StringPool.SPACE);
+
+						lineLength++;
+					}
+
+					sb.append(token);
+
+					lineLength += token.length();
+				}
+			}
+
+			sb.append("\n");
+		}
+
+		return sb.toString();
 	}
 
 	private String _wrapText(String text, int indentLength, String exclude) {
@@ -2030,7 +2319,7 @@ public class JavadocFormatter {
 		while (matcher.find()) {
 			String wrapped = _formatInlines(matcher.group());
 
-			wrapped = StringUtil.wrap(wrapped, 80 - indentLength, "\n");
+			wrapped = _wrap(wrapped, 80 - indentLength);
 
 			matcher.appendReplacement(sb, wrapped);
 		}
@@ -2051,7 +2340,7 @@ public class JavadocFormatter {
 		}
 		else {
 			text = _formatInlines(text);
-			text = StringUtil.wrap(text, 80 - indentLength, "\n");
+			text = _wrap(text, 80 - indentLength);
 		}
 
 		text = text.replaceAll("(?m)^", indent);
@@ -2060,24 +2349,28 @@ public class JavadocFormatter {
 		return text;
 	}
 
-	private void _write(File file, String s) throws IOException {
+	private void _write(File file, String s) throws Exception {
 		Files.write(file.toPath(), s.getBytes(StandardCharsets.UTF_8));
 	}
 
+	private static final Pattern _paragraphTagPattern = Pattern.compile(
+		"(^.*?(?=\n\n|$)+|(?<=<p>\n).*?(?=\n</p>))", Pattern.DOTALL);
+
 	private final String _author;
+	private Document _deprecationsDocument;
+	private final String _deprecationSyncDirName;
+	private String _fullyQualifiedName;
 	private final boolean _generateXml;
 	private String _imports;
 	private final boolean _initializeMissingJavadocs;
 	private final String _inputDirName;
-	private JavaDocBuilder _javadocBuilder;
 	private final Map<String, Tuple> _javadocxXmlTuples = new HashMap<>();
+	private JavaProjectBuilder _javaProjectBuilder;
 	private final Properties _languageProperties;
 	private final File _languagePropertiesFile;
 	private final Set<String> _modifiedFileNames = new HashSet<>();
 	private final String _outputFilePrefix;
 	private String _packagePath;
-	private final Pattern _paragraphTagPattern = Pattern.compile(
-		"(^.*?(?=\n\n|$)+|(?<=<p>\n).*?(?=\n</p>))", Pattern.DOTALL);
 	private final boolean _updateJavadocs;
 
 }

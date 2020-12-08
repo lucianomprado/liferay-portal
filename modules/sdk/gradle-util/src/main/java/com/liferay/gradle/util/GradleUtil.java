@@ -24,17 +24,21 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
+import org.gradle.StartParameter;
 import org.gradle.api.Action;
 import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
+import org.gradle.api.UnknownTaskException;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.ConfigurationContainer;
 import org.gradle.api.artifacts.Dependency;
@@ -50,8 +54,11 @@ import org.gradle.api.plugins.JavaPluginConvention;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.SourceSetContainer;
 import org.gradle.api.tasks.TaskContainer;
+import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.util.PatternFilterable;
 import org.gradle.api.tasks.util.PatternSet;
+import org.gradle.util.GUtil;
+import org.gradle.util.NameMatcher;
 
 /**
  * @author Andrea Di Giorgi
@@ -145,6 +152,14 @@ public class GradleUtil {
 		return (T)project.task(args, name);
 	}
 
+	public static <T extends Task> TaskProvider<T> addTaskProvider(
+		Project project, String name, Class<T> clazz) {
+
+		TaskContainer taskContainer = project.getTasks();
+
+		return taskContainer.register(name, clazz);
+	}
+
 	public static <T extends Plugin<? extends Project>> void applyPlugin(
 		Project project, Class<T> clazz) {
 
@@ -156,8 +171,6 @@ public class GradleUtil {
 	public static void applyScript(
 		Project project, String name, Object object) {
 
-		Map<String, Object> args = new HashMap<>();
-
 		ClassLoader classLoader = GradleUtil.class.getClassLoader();
 
 		URL url = classLoader.getResource(name);
@@ -165,6 +178,8 @@ public class GradleUtil {
 		if (url == null) {
 			throw new GradleException("Unable to apply script " + name);
 		}
+
+		Map<String, Object> args = new HashMap<>();
 
 		args.put("from", url);
 
@@ -203,6 +218,34 @@ public class GradleUtil {
 			});
 	}
 
+	public static Task fetchTask(Project project, String name) {
+		TaskContainer taskContainer = project.getTasks();
+
+		return taskContainer.findByName(name);
+	}
+
+	public static TaskProvider<Task> fetchTaskProvider(
+		Project project, String name) {
+
+		try {
+			return getTaskProvider(project, name);
+		}
+		catch (UnknownTaskException unknownTaskException) {
+			return null;
+		}
+	}
+
+	public static <T extends Task> TaskProvider<T> fetchTaskProvider(
+		Project project, String name, Class<T> clazz) {
+
+		try {
+			return getTaskProvider(project, name, clazz);
+		}
+		catch (UnknownTaskException unknownTaskException) {
+			return null;
+		}
+	}
+
 	public static Configuration getConfiguration(Project project, String name) {
 		ConfigurationContainer configurationContainer =
 			project.getConfigurations();
@@ -238,6 +281,59 @@ public class GradleUtil {
 		}
 
 		return fileTree.matching(patternFilterable);
+	}
+
+	public static Properties getGradleProperties(File gradlePropertiesDir) {
+		File gradlePropertiesFile = new File(
+			gradlePropertiesDir, "gradle.properties");
+
+		if (!gradlePropertiesFile.exists()) {
+			return null;
+		}
+
+		Properties properties = GUtil.loadProperties(gradlePropertiesFile);
+
+		File gradleExtPropertiesFile = new File(
+			gradlePropertiesFile.getParentFile(), "gradle-ext.properties");
+
+		if (gradleExtPropertiesFile.exists()) {
+			properties.putAll(GUtil.loadProperties(gradleExtPropertiesFile));
+		}
+
+		return properties;
+	}
+
+	public static Properties getGradleProperties(Project project) {
+		return getGradleProperties(getRootDir(project, "gradle.properties"));
+	}
+
+	public static String getGradlePropertiesValue(
+		File gradlePropertiesDir, String key) {
+
+		return getGradlePropertiesValue(gradlePropertiesDir, key, "");
+	}
+
+	public static String getGradlePropertiesValue(
+		File gradlePropertiesDir, String key, String defaultValue) {
+
+		if (gradlePropertiesDir == null) {
+			return defaultValue;
+		}
+
+		Properties properties = getGradleProperties(gradlePropertiesDir);
+
+		return properties.getProperty(key, defaultValue);
+	}
+
+	public static String getGradlePropertiesValue(Project project, String key) {
+		return getGradlePropertiesValue(project, key, "");
+	}
+
+	public static String getGradlePropertiesValue(
+		Project project, String key, String defaultValue) {
+
+		return getGradlePropertiesValue(
+			getRootDir(project, "gradle.properties"), key, defaultValue);
 	}
 
 	public static Project getProject(Project rootProject, File projectDir) {
@@ -311,6 +407,26 @@ public class GradleUtil {
 		return toFile(project, value);
 	}
 
+	public static File getRootDir(File dir, String markerFileName) {
+		while (true) {
+			File markerFile = new File(dir, markerFileName);
+
+			if (markerFile.exists()) {
+				return dir;
+			}
+
+			dir = dir.getParentFile();
+
+			if (dir == null) {
+				return null;
+			}
+		}
+	}
+
+	public static File getRootDir(Project project, String markerFileName) {
+		return getRootDir(project.getProjectDir(), markerFileName);
+	}
+
 	public static SourceSet getSourceSet(Project project, String name) {
 		JavaPluginConvention javaPluginConvention = getConvention(
 			project, JavaPluginConvention.class);
@@ -335,6 +451,43 @@ public class GradleUtil {
 		return prefix + StringUtil.capitalize(fileName);
 	}
 
+	public static Set<String> getTaskNames(
+		Project project, StartParameter startParameter) {
+
+		Set<String> fullyQualifiedTaskNames = new HashSet<>();
+
+		TaskContainer taskContainer = project.getTasks();
+
+		for (String taskName : startParameter.getTaskNames()) {
+			int pos = taskName.lastIndexOf(':');
+
+			if (pos != -1) {
+				taskName = taskName.substring(pos + 1);
+			}
+
+			String s = _nameMatcher.find(taskName, taskContainer.getNames());
+
+			if (s != null) {
+				fullyQualifiedTaskNames.add(s);
+			}
+		}
+
+		return fullyQualifiedTaskNames;
+	}
+
+	public static String getTaskPrefixedProperty(
+		String projectPath, String taskName, String suffix) {
+
+		String value = System.getProperty(
+			projectPath + ':' + taskName + '.' + suffix);
+
+		if (Validator.isNull(value)) {
+			value = System.getProperty(taskName + '.' + suffix);
+		}
+
+		return value;
+	}
+
 	public static String getTaskPrefixedProperty(Task task, String name) {
 		String suffix = "." + name;
 
@@ -345,6 +498,22 @@ public class GradleUtil {
 		}
 
 		return value;
+	}
+
+	public static TaskProvider<Task> getTaskProvider(
+		Project project, String name) {
+
+		TaskContainer taskContainer = project.getTasks();
+
+		return taskContainer.named(name);
+	}
+
+	public static <T extends Task> TaskProvider<T> getTaskProvider(
+		Project project, String name, Class<T> clazz) {
+
+		TaskContainer taskContainer = project.getTasks();
+
+		return taskContainer.named(name, clazz);
 	}
 
 	public static void removeDependencies(
@@ -415,8 +584,8 @@ public class GradleUtil {
 			try {
 				object = callable.call();
 			}
-			catch (Exception e) {
-				throw new GradleException(e.getMessage(), e);
+			catch (Exception exception) {
+				throw new GradleException(exception.getMessage(), exception);
 			}
 		}
 		else if (object instanceof Closure<?>) {
@@ -490,5 +659,7 @@ public class GradleUtil {
 
 		return sb.toString();
 	}
+
+	private static final NameMatcher _nameMatcher = new NameMatcher();
 
 }

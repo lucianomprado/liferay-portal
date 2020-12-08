@@ -16,14 +16,17 @@ package com.liferay.document.library.google.docs.internal.display.context;
 
 import com.liferay.document.library.display.context.DLFilePicker;
 import com.liferay.document.library.google.docs.internal.util.GoogleDocsConfigurationHelper;
-import com.liferay.document.library.google.docs.internal.util.GoogleDocsConstants;
+import com.liferay.document.library.google.docs.internal.util.GoogleDocsMetadataHelper;
+import com.liferay.document.library.google.docs.internal.util.constants.GoogleDocsConstants;
+import com.liferay.petra.io.unsync.UnsyncStringWriter;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.io.unsync.UnsyncStringWriter;
 import com.liferay.portal.kernel.template.Template;
 import com.liferay.portal.kernel.template.TemplateConstants;
 import com.liferay.portal.kernel.template.TemplateManagerUtil;
 import com.liferay.portal.kernel.template.URLTemplateResource;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
+import com.liferay.portal.kernel.util.HtmlUtil;
 
 /**
  * @author Iván Zaera
@@ -32,9 +35,11 @@ import com.liferay.portal.kernel.theme.ThemeDisplay;
 public class GoogleDocsDLFilePicker implements DLFilePicker {
 
 	public GoogleDocsDLFilePicker(
-		String namespace, String onFilePickCallback,
-		ThemeDisplay themeDisplay) {
+			GoogleDocsMetadataHelper googleDocsMetadataHelper, String namespace,
+			String onFilePickCallback, ThemeDisplay themeDisplay)
+		throws PortalException {
 
+		_googleDocsMetadataHelper = googleDocsMetadataHelper;
 		_namespace = namespace;
 		_onFilePickCallback = onFilePickCallback;
 
@@ -43,8 +48,31 @@ public class GoogleDocsDLFilePicker implements DLFilePicker {
 	}
 
 	@Override
+	public String getCurrentIconURL() {
+		if (_googleDocsMetadataHelper != null) {
+			return _googleDocsMetadataHelper.getFieldValue(getIconFieldName());
+		}
+
+		return StringPool.BLANK;
+	}
+
+	@Override
+	public String getCurrentTitle() {
+		if (_googleDocsMetadataHelper != null) {
+			return _googleDocsMetadataHelper.getFieldValue(getTitleFieldName());
+		}
+
+		return StringPool.BLANK;
+	}
+
+	@Override
 	public String getDescriptionFieldName() {
 		return GoogleDocsConstants.DDM_FIELD_NAME_DESCRIPTION;
+	}
+
+	@Override
+	public String getFileNameFieldName() {
+		return GoogleDocsConstants.DDM_FIELD_NAME_NAME;
 	}
 
 	@Override
@@ -72,6 +100,7 @@ public class GoogleDocsDLFilePicker implements DLFilePicker {
 		template.put(
 			"googleClientId",
 			_googleDocsConfigurationHelper.getGoogleClientId());
+		template.put("htmlUtil", HtmlUtil.getHtml());
 		template.put("namespace", _namespace);
 		template.put("onFilePickCallback", _onFilePickCallback);
 
@@ -94,10 +123,11 @@ public class GoogleDocsDLFilePicker implements DLFilePicker {
 
 	@Override
 	public String getTitleFieldName() {
-		return GoogleDocsConstants.DDM_FIELD_NAME_NAME;
+		return GoogleDocsConstants.DDM_FIELD_NAME_TITLE;
 	}
 
 	private final GoogleDocsConfigurationHelper _googleDocsConfigurationHelper;
+	private final GoogleDocsMetadataHelper _googleDocsMetadataHelper;
 	private final String _namespace;
 	private final String _onFilePickCallback;
 

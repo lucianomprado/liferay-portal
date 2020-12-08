@@ -14,7 +14,6 @@
 
 package com.liferay.portal.kernel.template;
 
-import java.util.List;
 import java.util.Map;
 
 import javax.servlet.ServletContext;
@@ -27,33 +26,64 @@ import javax.servlet.http.HttpServletResponse;
  */
 public interface TemplateManager {
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
+	 */
+	@Deprecated
 	public void addContextObjects(
 		Map<String, Object> contextObjects,
 		Map<String, Object> newContextObjects);
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
+	 */
+	@Deprecated
 	public void addStaticClassSupport(
 		Map<String, Object> contextObjects, String variableName,
 		Class<?> variableClass);
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
+	 */
+	@Deprecated
 	public void addTaglibApplication(
 		Map<String, Object> contextObjects, String applicationName,
 		ServletContext servletContext);
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
+	 */
+	@Deprecated
 	public void addTaglibFactory(
 		Map<String, Object> contextObjects, String taglibLiferayHash,
 		ServletContext servletContext);
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
+	 */
+	@Deprecated
 	public void addTaglibRequest(
 		Map<String, Object> contextObjects, String applicationName,
-		HttpServletRequest request, HttpServletResponse response);
+		HttpServletRequest httpServletRequest,
+		HttpServletResponse httpServletResponse);
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
+	 */
+	@Deprecated
 	public void addTaglibSupport(
-		Map<String, Object> contextObjects, HttpServletRequest request,
-		HttpServletResponse response);
+		Map<String, Object> contextObjects,
+		HttpServletRequest httpServletRequest,
+		HttpServletResponse httpServletResponse);
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
+	 */
+	@Deprecated
 	public void addTaglibTheme(
 		Map<String, Object> contextObjects, String string,
-		HttpServletRequest request, HttpServletResponse response);
+		HttpServletRequest httpServletRequest,
+		HttpServletResponse httpServletResponse);
 
 	public void destroy();
 
@@ -64,18 +94,7 @@ public interface TemplateManager {
 	public String[] getRestrictedVariables();
 
 	public Template getTemplate(
-		List<TemplateResource> templateResources, boolean restricted);
-
-	public Template getTemplate(
-		List<TemplateResource> templateResources,
-		TemplateResource errorTemplateResource, boolean restricted);
-
-	public Template getTemplate(
 		TemplateResource templateResource, boolean restricted);
-
-	public Template getTemplate(
-		TemplateResource templateResource,
-		TemplateResource errorTemplateResource, boolean restricted);
 
 	public void init() throws TemplateException;
 

@@ -15,7 +15,7 @@
 package com.liferay.ant.bnd.social;
 
 import aQute.bnd.osgi.Analyzer;
-import aQute.bnd.osgi.Descriptors.PackageRef;
+import aQute.bnd.osgi.Descriptors;
 import aQute.bnd.osgi.Jar;
 import aQute.bnd.osgi.Packages;
 import aQute.bnd.osgi.Resource;
@@ -67,9 +67,8 @@ public class SocialAnalyzerPlugin implements AnalyzerPlugin {
 				continue;
 			}
 
-			String packageName = getPackageName(className);
-
-			PackageRef packageRef = analyzer.getPackageRef(packageName);
+			Descriptors.PackageRef packageRef = analyzer.getPackageRef(
+				getPackageName(className));
 
 			packages.put(packageRef);
 		}
@@ -98,9 +97,7 @@ public class SocialAnalyzerPlugin implements AnalyzerPlugin {
 	}
 
 	protected Document readXMLResource(Resource resource) throws Exception {
-		InputStream inputStream = resource.openInputStream();
-
-		try {
+		try (InputStream inputStream = resource.openInputStream()) {
 			DocumentBuilder documentBuilder =
 				_documentBuilderFactory.newDocumentBuilder();
 
@@ -134,26 +131,26 @@ public class SocialAnalyzerPlugin implements AnalyzerPlugin {
 
 			return documentBuilder.parse(inputStream);
 		}
-		finally {
-			inputStream.close();
-		}
 	}
 
 	private static final DocumentBuilderFactory _documentBuilderFactory =
 		DocumentBuilderFactory.newInstance();
 	private static final Map<String, String> _publicIds =
-		new HashMap<String, String>();
-
-	static {
-		_publicIds.put(
-			"-//Liferay//DTD Social 6.1.0//EN",
-			"com/liferay/portal/definitions/liferay-social_6_1_0.dtd");
-		_publicIds.put(
-			"-//Liferay//DTD Social 6.2.0//EN",
-			"com/liferay/portal/definitions/liferay-social_6_2_0.dtd");
-		_publicIds.put(
-			"-//Liferay//DTD Social 7.0.0//EN",
-			"com/liferay/portal/definitions/liferay-social_7_0_0.dtd");
-	}
+		new HashMap<String, String>() {
+			{
+				put(
+					"-//Liferay//DTD Social 6.1.0//EN",
+					"com/liferay/portal/definitions/liferay-social_6_1_0.dtd");
+				put(
+					"-//Liferay//DTD Social 6.2.0//EN",
+					"com/liferay/portal/definitions/liferay-social_6_2_0.dtd");
+				put(
+					"-//Liferay//DTD Social 7.0.0//EN",
+					"com/liferay/portal/definitions/liferay-social_7_0_0.dtd");
+				put(
+					"-//Liferay//DTD Social 7.1.0//EN",
+					"com/liferay/portal/definitions/liferay-social_7_1_0.dtd");
+			}
+		};
 
 }

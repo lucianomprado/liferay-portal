@@ -46,7 +46,7 @@ public class UnsyncBufferedOutputStreamTest {
 
 		unsyncBufferedOutputStream.write(_BUFFER);
 
-		for (int i = _SIZE; i < _SIZE * 2; i++) {
+		for (int i = _SIZE; i < (_SIZE * 2); i++) {
 			Assert.assertEquals(
 				i - _SIZE, unsyncBufferedOutputStream.buffer[i]);
 		}
@@ -75,13 +75,13 @@ public class UnsyncBufferedOutputStreamTest {
 		try {
 			new UnsyncBufferedOutputStream(byteArrayOutputStream, 0);
 		}
-		catch (IllegalArgumentException iae) {
+		catch (IllegalArgumentException illegalArgumentException) {
 		}
 
 		try {
 			new UnsyncBufferedOutputStream(byteArrayOutputStream, -1);
 		}
-		catch (IllegalArgumentException iae) {
+		catch (IllegalArgumentException illegalArgumentException) {
 		}
 	}
 

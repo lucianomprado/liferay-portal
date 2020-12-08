@@ -37,7 +37,7 @@ public class RoleMembershipPolicyFactoryImpl
 
 	@Override
 	public RoleMembershipPolicy getRoleMembershipPolicy() {
-		return _instance._serviceTracker.getService();
+		return _roleMembershipPolicyFactoryImpl._serviceTracker.getService();
 	}
 
 	private RoleMembershipPolicyFactoryImpl() {
@@ -53,15 +53,15 @@ public class RoleMembershipPolicyFactoryImpl
 	private static final Log _log = LogFactoryUtil.getLog(
 		RoleMembershipPolicyFactoryImpl.class);
 
-	private static final RoleMembershipPolicyFactoryImpl _instance =
-		new RoleMembershipPolicyFactoryImpl();
+	private static final RoleMembershipPolicyFactoryImpl
+		_roleMembershipPolicyFactoryImpl =
+			new RoleMembershipPolicyFactoryImpl();
 
 	private final ServiceTracker<?, RoleMembershipPolicy> _serviceTracker;
 
 	private static class RoleMembershipPolicyTrackerCustomizer
-		implements
-			ServiceTrackerCustomizer
-				<RoleMembershipPolicy, RoleMembershipPolicy> {
+		implements ServiceTrackerCustomizer
+			<RoleMembershipPolicy, RoleMembershipPolicy> {
 
 		@Override
 		public RoleMembershipPolicy addingService(
@@ -76,8 +76,8 @@ public class RoleMembershipPolicyFactoryImpl
 				try {
 					roleMembershipPolicy.verifyPolicy();
 				}
-				catch (PortalException pe) {
-					_log.error(pe, pe);
+				catch (PortalException portalException) {
+					_log.error(portalException, portalException);
 				}
 			}
 

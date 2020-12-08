@@ -14,8 +14,9 @@
 
 package com.liferay.social.kernel.model;
 
-import com.liferay.portal.kernel.util.HashUtil;
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.petra.lang.HashUtil;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 
 import java.io.Serializable;
@@ -60,17 +61,17 @@ public class SocialActivityCounterDefinition implements Serializable {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
+	public boolean equals(Object object) {
+		if (this == object) {
 			return true;
 		}
 
-		if (!(obj instanceof SocialActivityCounterDefinition)) {
+		if (!(object instanceof SocialActivityCounterDefinition)) {
 			return false;
 		}
 
 		SocialActivityCounterDefinition activityCounterDefinition =
-			(SocialActivityCounterDefinition)obj;
+			(SocialActivityCounterDefinition)object;
 
 		if ((activityCounterDefinition != null) &&
 			(_enabled == activityCounterDefinition._enabled) &&
@@ -94,8 +95,7 @@ public class SocialActivityCounterDefinition implements Serializable {
 	}
 
 	public String getKey() {
-		return _name.concat(StringPool.SLASH).concat(
-			String.valueOf(_ownerType));
+		return StringBundler.concat(_name, StringPool.SLASH, _ownerType);
 	}
 
 	public int getLimitPeriod() {

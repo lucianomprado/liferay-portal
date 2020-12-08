@@ -28,9 +28,7 @@ public class JSPRedirectBackURLCheck extends BaseFileCheck {
 	protected String doProcess(
 		String fileName, String absolutePath, String content) {
 
-		content = _fixRedirectBackURL(content);
-
-		return content;
+		return _fixRedirectBackURL(content);
 	}
 
 	private String _fixRedirectBackURL(String content) {
@@ -47,7 +45,7 @@ public class JSPRedirectBackURLCheck extends BaseFileCheck {
 		return newContent;
 	}
 
-	private final Pattern _redirectBackURLPattern = Pattern.compile(
+	private static final Pattern _redirectBackURLPattern = Pattern.compile(
 		"(String redirect = ParamUtil\\.getString\\(request, \"redirect\".*" +
 			"\\);)\n(String backURL = ParamUtil\\.getString\\(request, \"" +
 				"backURL\", redirect\\);)");

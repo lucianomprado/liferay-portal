@@ -14,6 +14,8 @@
 
 package com.liferay.portal.security.auth.tunnel;
 
+import com.liferay.petra.encryptor.Encryptor;
+import com.liferay.petra.encryptor.EncryptorException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.User;
@@ -30,8 +32,6 @@ import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.util.PortalInstances;
 import com.liferay.portal.util.PropsValues;
-import com.liferay.util.Encryptor;
-import com.liferay.util.EncryptorException;
 
 import java.net.HttpURLConnection;
 
@@ -84,19 +84,21 @@ public class TunnelAuthenticationManagerImpl
 		try {
 			expectedPassword = Encryptor.encrypt(getSharedSecretKey(), login);
 		}
-		catch (EncryptorException ee) {
-			AuthException authException = new RemoteAuthException(ee);
+		catch (EncryptorException encryptorException) {
+			AuthException authException = new RemoteAuthException(
+				encryptorException);
 
 			authException.setType(AuthException.INTERNAL_SERVER_ERROR);
 
 			throw authException;
 		}
-		catch (AuthException ae) {
-			AuthException authException = new RemoteAuthException(ae);
+		catch (AuthException authException1) {
+			AuthException authException2 = new RemoteAuthException(
+				authException1);
 
-			authException.setType(ae.getType());
+			authException2.setType(authException1.getType());
 
-			throw authException;
+			throw authException2;
 		}
 
 		String password = httpAuthorizationHeader.getAuthParameter(
@@ -155,14 +157,13 @@ public class TunnelAuthenticationManagerImpl
 
 		httpAuthorizationHeader.setAuthParameter(
 			HttpAuthorizationHeader.AUTH_PARAMETER_NAME_USERNAME, login);
+
 		httpURLConnection.setRequestProperty(
 			HttpHeaders.AUTHORIZATION, httpAuthorizationHeader.toString());
 	}
 
 	protected Key getSharedSecretKey() throws AuthException {
 		String sharedSecret = PropsValues.TUNNELING_SERVLET_SHARED_SECRET;
-		boolean sharedSecretHex =
-			PropsValues.TUNNELING_SERVLET_SHARED_SECRET_HEX;
 
 		if (Validator.isNull(sharedSecret)) {
 			String message =
@@ -181,13 +182,13 @@ public class TunnelAuthenticationManagerImpl
 
 		byte[] key = null;
 
-		if (sharedSecretHex) {
+		if (PropsValues.TUNNELING_SERVLET_SHARED_SECRET_HEX) {
 			try {
 				key = Hex.decodeHex(sharedSecret.toCharArray());
 			}
-			catch (DecoderException de) {
+			catch (DecoderException decoderException) {
 				if (_log.isWarnEnabled()) {
-					_log.warn(de, de);
+					_log.warn(decoderException, decoderException);
 				}
 
 				AuthException authException = new AuthException();

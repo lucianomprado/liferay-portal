@@ -14,19 +14,12 @@
 
 package com.liferay.taglib.util;
 
-import com.liferay.portal.kernel.model.Layout;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.model.Portlet;
 import com.liferay.portal.kernel.portlet.PortletProvider;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.taglib.ui.AssetCategoriesSummaryTag;
-import com.liferay.taglib.ui.AssetLinksTag;
-import com.liferay.taglib.ui.AssetTagsSummaryTag;
 import com.liferay.taglib.ui.BreadcrumbTag;
 import com.liferay.taglib.ui.IconTag;
-import com.liferay.taglib.ui.JournalArticleTag;
-import com.liferay.taglib.ui.RatingsTag;
 
-import javax.portlet.PortletURL;
 import javax.portlet.WindowState;
 
 import javax.servlet.ServletContext;
@@ -75,21 +68,6 @@ public class DummyVelocityTaglib implements VelocityTaglib {
 	}
 
 	@Override
-	public void assetCategoriesSummary(
-		String className, long classPK, String message, PortletURL portletURL) {
-	}
-
-	@Override
-	public void assetLinks(long assetEntryId, String className, long classPK) {
-	}
-
-	@Override
-	public void assetTagsSummary(
-		String className, long classPK, String message, String assetTagNames,
-		PortletURL portletURL) {
-	}
-
-	@Override
 	public void breadcrumb() {
 	}
 
@@ -100,54 +78,12 @@ public class DummyVelocityTaglib implements VelocityTaglib {
 		boolean showPortletBreadcrumb) {
 	}
 
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link #breadcrumb(long, String,
-	 *             boolean, boolean, boolean, boolean)}}
-	 */
-	@Deprecated
-	@Override
-	public void breadcrumb(
-		String ddmTemplateKey, boolean showGuestGroup, boolean showParentGroups,
-		boolean showLayout, boolean showPortletBreadcrumb) {
-	}
-
-	@Override
-	public void discussion(
-		String className, long classPK, String formAction, String formName,
-		boolean hideControls, boolean ratingsEnabled, String redirect,
-		long userId) {
-	}
-
 	@Override
 	public void doAsURL(long doAsUserId) {
 	}
 
 	@Override
-	public AssetCategoriesSummaryTag<?> getAssetCategoriesSummaryTag() {
-		return null;
-	}
-
-	@Override
-	public AssetLinksTag getAssetLinksTag() {
-		return null;
-	}
-
-	@Override
-	public AssetTagsSummaryTag<?> getAssetTagsSummaryTag() {
-		return null;
-	}
-
-	@Override
 	public BreadcrumbTag getBreadcrumbTag() {
-		return null;
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	@Override
-	public com.liferay.taglib.ui.DiscussionTag getDiscussionTag() {
 		return null;
 	}
 
@@ -157,35 +93,7 @@ public class DummyVelocityTaglib implements VelocityTaglib {
 	}
 
 	@Override
-	public JournalArticleTag getJournalArticleTag() {
-		return null;
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	@Override
-	public com.liferay.taglib.ui.MySitesTag getMySitesTag() {
-		return null;
-	}
-
-	@Override
 	public PageContext getPageContext() {
-		return null;
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	@Override
-	public com.liferay.taglib.ui.PngImageTag getPngImageTag() {
-		return null;
-	}
-
-	@Override
-	public RatingsTag getRatingsTag() {
 		return null;
 	}
 
@@ -216,20 +124,6 @@ public class DummyVelocityTaglib implements VelocityTaglib {
 	}
 
 	@Override
-	public void journalArticle(
-		String articleId, long groupId, String ddmTemplateKey) {
-	}
-
-	@Override
-	public void journalContentSearch() {
-	}
-
-	@Override
-	public void journalContentSearch(
-		boolean showListed, String targetPortletId) {
-	}
-
-	@Override
 	public void language() {
 	}
 
@@ -245,19 +139,7 @@ public class DummyVelocityTaglib implements VelocityTaglib {
 	}
 
 	@Override
-	public void layoutIcon(Layout layout) {
-	}
-
-	@Override
 	public void metaTags() {
-	}
-
-	@Override
-	public void mySites() {
-	}
-
-	@Override
-	public void mySites(int max) {
 	}
 
 	@Override
@@ -267,10 +149,6 @@ public class DummyVelocityTaglib implements VelocityTaglib {
 		int[] roleTypes) {
 
 		return null;
-	}
-
-	@Override
-	public void portletIconBack() {
 	}
 
 	@Override
@@ -287,12 +165,6 @@ public class DummyVelocityTaglib implements VelocityTaglib {
 
 	@Override
 	public void portletIconPortlet(Portlet portlet) {
-	}
-
-	@Override
-	public void ratings(
-		String className, long classPK, int numberOfStars, String type,
-		String url) {
 	}
 
 	@Override
@@ -368,38 +240,6 @@ public class DummyVelocityTaglib implements VelocityTaglib {
 	public void runtime(
 		String portletName, String instanceId, String queryString,
 		String defaultPreferences) {
-	}
-
-	@Override
-	public void search() {
-	}
-
-	@Override
-	public void sitesDirectory() {
-	}
-
-	@Override
-	public void sitesDirectory(String displayStyle, String sites) {
-	}
-
-	@Override
-	public void socialBookmarks(
-		String displayStyle, String target, String types, String title,
-		String url) {
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	@Override
-	public void staging() {
-	}
-
-	@Override
-	public void toggle(
-		String id, String showImage, String hideImage, String showMessage,
-		String hideMessage, boolean defaultShowContent) {
 	}
 
 	@Override

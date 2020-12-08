@@ -14,11 +14,10 @@
 
 package com.liferay.portal.kernel.util;
 
-import aQute.bnd.annotation.ProviderType;
-
 import java.io.IOException;
 import java.io.InputStream;
 
+import java.net.URI;
 import java.net.URL;
 
 import java.util.ArrayList;
@@ -31,6 +30,8 @@ import javax.portlet.RenderRequest;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
+
+import org.osgi.annotation.versioning.ProviderType;
 
 /**
  * @author Brian Wing Shun Chan
@@ -71,34 +72,15 @@ public interface Http {
 
 	public String decodeURL(String url);
 
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link #decodeURL(String)}
-	 */
-	@Deprecated
-	public String decodeURL(String url, boolean unescapeSpaces);
-
 	public String encodeParameters(String url);
 
 	public String encodePath(String path);
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link URLCodec#encodeURL(String)}
-	 */
-	@Deprecated
-	public String encodeURL(String url);
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by
-	 *     {@link URLCodec#encodeURL(String, boolean)}
-	 */
-	@Deprecated
-	public String encodeURL(String url, boolean escapeSpaces);
 
 	public String fixPath(String path);
 
 	public String fixPath(String path, boolean leading, boolean trailing);
 
-	public String getCompleteURL(HttpServletRequest request);
+	public String getCompleteURL(HttpServletRequest httpServletRequest);
 
 	public Cookie[] getCookies();
 
@@ -118,21 +100,27 @@ public interface Http {
 
 	public String getProtocol(boolean secure);
 
-	public String getProtocol(HttpServletRequest request);
+	public String getProtocol(HttpServletRequest httpServletRequest);
 
 	public String getProtocol(RenderRequest renderRequest);
 
 	public String getProtocol(String url);
 
+	public String getQueryString(HttpServletRequest httpServletRequest);
+
 	public String getQueryString(String url);
 
-	public String getRequestURL(HttpServletRequest request);
+	public String getRequestURL(HttpServletRequest httpServletRequest);
+
+	public URI getURI(String uriString);
 
 	public boolean hasDomain(String url);
 
 	public boolean hasProtocol(String url);
 
 	public boolean hasProxyConfig();
+
+	public boolean isForwarded(HttpServletRequest httpServletRequest);
 
 	public boolean isNonProxyHost(String host);
 
@@ -153,7 +141,8 @@ public interface Http {
 
 	public String protocolize(String url, boolean secure);
 
-	public String protocolize(String url, HttpServletRequest request);
+	public String protocolize(
+		String url, HttpServletRequest httpServletRequest);
 
 	public String protocolize(String url, int port, boolean secure);
 
@@ -181,7 +170,7 @@ public interface Http {
 
 	public String setParameter(String url, String name, String value);
 
-	public String shortenURL(String url, int count);
+	public String shortenURL(String url);
 
 	public byte[] URLtoByteArray(Http.Options options) throws IOException;
 
@@ -327,7 +316,7 @@ public interface Http {
 
 	public enum Method {
 
-		DELETE, GET, HEAD, POST, PUT
+		DELETE, GET, HEAD, PATCH, POST, PUT
 
 	}
 
@@ -418,9 +407,8 @@ public interface Http {
 			if (_method == Method.DELETE) {
 				return true;
 			}
-			else {
-				return false;
-			}
+
+			return false;
 		}
 
 		public boolean isFollowRedirects() {
@@ -431,36 +419,40 @@ public interface Http {
 			if (_method == Method.GET) {
 				return true;
 			}
-			else {
-				return false;
-			}
+
+			return false;
 		}
 
 		public boolean isHead() {
 			if (_method == Method.HEAD) {
 				return true;
 			}
-			else {
-				return false;
+
+			return false;
+		}
+
+		public boolean isPatch() {
+			if (_method == Method.PATCH) {
+				return true;
 			}
+
+			return false;
 		}
 
 		public boolean isPost() {
 			if (_method == Method.POST) {
 				return true;
 			}
-			else {
-				return false;
-			}
+
+			return false;
 		}
 
 		public boolean isPut() {
 			if (_method == Method.PUT) {
 				return true;
 			}
-			else {
-				return false;
-			}
+
+			return false;
 		}
 
 		public void setAuth(Http.Auth auth) {
@@ -534,6 +526,15 @@ public interface Http {
 			_parts = parts;
 		}
 
+		public void setPatch(boolean patch) {
+			if (patch) {
+				_method = Method.PATCH;
+			}
+			else {
+				_method = Method.GET;
+			}
+		}
+
 		public void setPost(boolean post) {
 			if (post) {
 				_method = Method.POST;
@@ -600,9 +601,8 @@ public interface Http {
 			if (_headers == null) {
 				return null;
 			}
-			else {
-				return _headers.get(StringUtil.toLowerCase(name));
-			}
+
+			return _headers.get(StringUtil.toLowerCase(name));
 		}
 
 		public Map<String, String> getHeaders() {

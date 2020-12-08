@@ -1,56 +1,120 @@
-<definition>
-	<command name="addOrganization">
-		<execute macro="LexiconEntry#gotoAdd" />
+definition {
 
-		<execute macro="PortletEntry#inputName">
-			<var name="name" value="${organizationName}" />
-		</execute>
+	macro addOrganization {
+		LexiconEntry.gotoAdd();
 
-		<execute macro="Button#clickSave" />
+		PortletEntry.inputName(name = "${organizationName}");
 
-		<execute macro="Alert#viewSuccessMessage" />
-	</command>
+		PortletEntry.save();
+	}
 
-	<command name="changeUserLanguage">
-		<execute function="Select" locator1="MyAccount#LANGUAGE_SELECT" value1="${languageName}" />
+	macro changeUserLanguage {
+		Select(
+			locator1 = "MyAccount#LANGUAGE_SELECT",
+			value1 = "${languageName}");
 
-		<var name="key_saveButton" value="${saveButton}" />
+		var key_saveButton = "${saveButton}";
 
-		<execute function="AssertClick" locator1="Button#SAVE_LOCALIZED" value1="${saveButton}" />
+		ScrollWebElementIntoView(locator1 = "Button#SAVE_LOCALIZED");
 
-		<execute function="AssertElementPresent" locator1="Message#SUCCESS" />
-	</command>
+		Pause(locator1 = "2000");
 
-	<command name="configureDisplaySettingsLanguage">
-		<execute macro="Page#gotoMyAccount">
-			<var name="portletName" value="Account Settings" />
-		</execute>
+		AssertClick(
+			locator1 = "Button#SAVE_LOCALIZED",
+			value1 = "${saveButton}");
 
-		<execute function="Select" locator1="MyAccount#LANGUAGE_SELECT" value1="${languageName}" />
+		VerifyElementPresent(locator1 = "Message#SUCCESS");
+	}
 
-		<execute function="AssertClick" locator1="Button#SAVE" value1="Save" />
+	macro configureDisplaySettingsLanguage {
+		Navigator.openURL();
 
-		<execute function="AssertElementPresent" locator1="Message#SUCCESS" />
-	</command>
+		Navigator.gotoAccountSettings();
 
-	<command name="configureDisplaySettingsLanguageLocalized">
-		<execute macro="ProductMenu#gotoLocalizedUserMyAccount">
-			<var name="category" value="${category}" />
-			<var name="portlet" value="${portlet}" />
-		</execute>
+		Select(
+			locator1 = "MyAccount#LANGUAGE_SELECT",
+			value1 = "${languageName}");
 
-		<execute function="Select" locator1="MyAccount#LANGUAGE_SELECT" value1="${languageName}" />
+		AssertClick(
+			locator1 = "Button#SAVE",
+			value1 = "Save");
 
-		<var name="key_saveButton" value="${saveButton}" />
+		VerifyElementPresent(locator1 = "Message#SUCCESS");
+	}
 
-		<execute function="AssertClick" locator1="Button#SAVE_LOCALIZED" value1="${saveButton}" />
+	macro configureDisplaySettingsLanguageLocalized {
+		ProductMenu.gotoPortlet(
+			category = "${category}",
+			panel = "User",
+			portlet = "${portlet}");
 
-		<execute function="AssertElementPresent" locator1="Message#SUCCESS" />
-	</command>
+		Select(
+			locator1 = "MyAccount#LANGUAGE_SELECT",
+			value1 = "${languageName}");
 
-	<command name="view">
-		<for list="Password,Organizations,Sites,User Groups,Roles,Categorization" param="key_panelHeading">
-			<execute function="AssertElementPresent" locator1="Panel#PANEL_HEADING_COLLAPSED" />
-		</for>
-	</command>
-</definition>
+		var key_saveButton = "${saveButton}";
+
+		AssertClick(
+			locator1 = "Button#SAVE_LOCALIZED",
+			value1 = "${saveButton}");
+
+		VerifyElementPresent(locator1 = "Message#SUCCESS");
+	}
+
+	macro editPasswordInvalidCP {
+		UserNavigator.gotoPassword();
+
+		if (isSet(currentPassword)) {
+			Type(
+				locator1 = "TextInput#CURRENT_PASSWORD",
+				value1 = "${currentPassword}");
+		}
+		else {
+			Type(
+				locator1 = "TextInput#CURRENT_PASSWORD",
+				value1 = "test");
+		}
+
+		Type(
+			locator1 = "TextInput#NEW_PASSWORD",
+			value1 = "${newPassword}");
+
+		Type(
+			locator1 = "TextInput#ENTER_AGAIN",
+			value1 = "${newPassword}");
+
+		Button.clickSave();
+
+		if ("${changeable}" == "false") {
+			Alert.viewRequestFailedToComplete();
+
+			AssertTextEquals.assertPartialText(
+				locator1 = "Message#ERROR_1",
+				value1 = "Passwords may not be changed under the current password policy.");
+		}
+		else {
+			Alert.viewRequestFailedToComplete();
+
+			AssertTextEquals.assertPartialText(
+				locator1 = "Message#ERROR_1",
+				value1 = "That password is invalid. Please enter in a different password.");
+		}
+	}
+
+	macro openMyAccountAdmin {
+		Navigator.openWithAppendToBaseURL(urlAppend = "group/control_panel/manage?p_p_id=com_liferay_my_account_web_portlet_MyAccountPortlet");
+	}
+
+	macro view {
+		AssertElementPresent(locator1 = "UsersAndOrganizationsEditUser#CATEGORIZATION_LABEL");
+
+		UserNavigator.gotoOrganizations();
+
+		UserNavigator.gotoMemberships();
+
+		UserNavigator.gotoRoles();
+
+		UserNavigator.gotoPassword();
+	}
+
+}

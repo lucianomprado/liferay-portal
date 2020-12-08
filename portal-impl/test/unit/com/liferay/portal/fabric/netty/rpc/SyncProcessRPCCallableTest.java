@@ -14,8 +14,8 @@
 
 package com.liferay.portal.fabric.netty.rpc;
 
-import com.liferay.portal.kernel.concurrent.NoticeableFuture;
-import com.liferay.portal.kernel.process.ProcessCallable;
+import com.liferay.petra.concurrent.NoticeableFuture;
+import com.liferay.petra.process.ProcessCallable;
 import com.liferay.portal.kernel.test.rule.CodeCoverageAssertor;
 
 import java.util.concurrent.ExecutionException;
@@ -54,8 +54,9 @@ public class SyncProcessRPCCallableTest {
 
 			Assert.fail();
 		}
-		catch (ExecutionException ee) {
-			Assert.assertEquals(runtimeException, ee.getCause());
+		catch (ExecutionException executionException) {
+			Assert.assertEquals(
+				runtimeException, executionException.getCause());
 		}
 	}
 

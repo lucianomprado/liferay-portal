@@ -1,45 +1,75 @@
-<definition component-name="portal-plugins-osgi">
-	<property name="portal.release" value="true" />
-	<property name="portal.upstream" value="true" />
-	<property name="testray.main.component.name" value="App Manager" />
+@component-name = "portal-plugins-osgi"
+definition {
 
-	<set-up>
-		<execute macro="TestCase#setUpPortalInstance" />
+	property portal.release = "true";
+	property portal.upstream = "true";
+	property testray.main.component.name = "App Manager";
 
-		<execute macro="User#firstLoginPG" />
-	</set-up>
+	setUp {
+		User.firstLoginPG();
+	}
 
-	<tear-down>
-		<var method="TestPropsUtil#get('test.portal.instance')" name="testPortalInstance" />
+	tearDown {
+		Page.tearDownCP();
+	}
 
-		<if>
-			<equals arg1="${testPortalInstance}" arg2="true" />
-			<then>
-				<execute macro="PortalInstances#tearDownCP" />
-			</then>
-			<else>
-				<execute macro="PortalInstances#tearDownCP" />
+	@priority = "5"
+	test InstallUninstallApp {
+		property test.name.skip.portal.instance = "AppManagerUsecase#InstallUninstallApp";
 
-				<execute macro="Page#tearDownPG" />
-			</else>
-		</if>
-	</tear-down>
+		var appName = "test-app-portlet";
 
-	<command name="ViewIndependentModulesIsNotNestedWithinItself" priority="4">
-		<property name="test.name.skip.portal.instance" value="AppManagerUsecase#ViewIndependentModulesIsNotNestedWithinItself" />
+		ApplicationsMenu.gotoPortlet(
+			category = "System",
+			panel = "Control Panel",
+			portlet = "App Manager");
 
-		<execute macro="ProductMenu#gotoControlPanelApps">
-			<var name="portlet" value="App Manager" />
-		</execute>
+		AppManager.uploadAppCP(
+			appName = "${appName}",
+			warFileName = "${appName}-7.2.0.war");
 
-		<execute macro="AppManager#selectAppCP">
-			<var name="appName" value="Independent Modules" />
-		</execute>
+		AppManager.viewAppCP(
+			appName = "${appName}",
+			appStatus = "Active");
 
-		<execute function="Pause" locator1="3000" />
+		AppManager.uninstallAppCP(appName = "${appName}");
 
-		<execute macro="AppManager#viewNoAppCP">
-			<var name="appName" value="Independent Modules" />
-		</execute>
-	</command>
-</definition>
+		AppManager.viewUninstallAppCP(appName = "${appName}");
+
+		AssertConsoleTextPresent(value1 = "STOPPED ${appName}");
+	}
+
+	@priority = "4"
+	test ViewIndependentModulesIsNotNestedWithinItself {
+		property test.name.skip.portal.instance = "AppManagerUsecase#ViewIndependentModulesIsNotNestedWithinItself";
+
+		ApplicationsMenu.gotoPortlet(
+			category = "System",
+			panel = "Control Panel",
+			portlet = "App Manager");
+
+		AppManager.selectAppCP(appName = "Independent Modules");
+
+		Pause(locator1 = "3000");
+
+		AppManager.viewNoAppCP(appName = "Independent Modules");
+	}
+
+	@description = "This is a use case for LPS-99031."
+	@priority = "5"
+	test ViewLicenseManager {
+		property test.name.skip.portal.instance = "AppManagerUsecase#ViewLicenseManager";
+
+		ApplicationsMenu.gotoPortlet(
+			category = "Marketplace",
+			panel = "Control Panel",
+			portlet = "License Manager");
+
+		Pause(locator1 = "3000");
+
+		LicenseManager.viewDefaultCP(tableTexts = "Server Info,Host Name,IP Addresses,Licenses Registered,Owner,Start Date");
+
+		AssertElementNotPresent(locator1 = "Portlet#HEADER_DUPLICATE");
+	}
+
+}

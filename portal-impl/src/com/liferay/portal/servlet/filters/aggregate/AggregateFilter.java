@@ -14,6 +14,14 @@
 
 package com.liferay.portal.servlet.filters.aggregate;
 
+import com.liferay.petra.concurrent.NoticeableExecutorService;
+import com.liferay.petra.concurrent.NoticeableFuture;
+import com.liferay.petra.executor.PortalExecutorManager;
+import com.liferay.petra.io.unsync.UnsyncBufferedReader;
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.internal.minifier.MinifierThreadLocal;
 import com.liferay.portal.kernel.configuration.Filter;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -22,17 +30,18 @@ import com.liferay.portal.kernel.servlet.BufferCacheServletResponse;
 import com.liferay.portal.kernel.servlet.HttpHeaders;
 import com.liferay.portal.kernel.servlet.PortalWebResourceConstants;
 import com.liferay.portal.kernel.servlet.PortalWebResourcesUtil;
+import com.liferay.portal.kernel.servlet.RequestDispatcherUtil;
+import com.liferay.portal.kernel.servlet.ResourceUtil;
 import com.liferay.portal.kernel.servlet.ServletResponseUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
-import com.liferay.portal.kernel.util.CharPool;
 import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.FileUtil;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.JavaConstants;
+import com.liferay.portal.kernel.util.ObjectValuePair;
 import com.liferay.portal.kernel.util.ParamUtil;
-import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.portal.kernel.util.ServiceProxyFactory;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.URLUtil;
 import com.liferay.portal.kernel.util.Validator;
@@ -45,12 +54,17 @@ import com.liferay.portal.util.JavaScriptBundleUtil;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.portal.util.PropsValues;
 
+import java.io.Closeable;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
+import java.io.Reader;
 
 import java.net.URL;
 import java.net.URLConnection;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -131,14 +145,18 @@ public class AggregateFilter extends IgnoreModuleRequestFilter {
 				String importContent = null;
 
 				if (Validator.isUrl(importFileName)) {
-					URL url = new URL(importFileName);
+					ServletPaths downServletPaths = servletPaths.down(
+						importFileName);
 
-					URLConnection urlConnection = url.openConnection();
-
-					importContent = StringUtil.read(
-						urlConnection.getInputStream());
+					importContent = downServletPaths.getContent();
 				}
 				else {
+					int queryPos = importFileName.indexOf(CharPool.QUESTION);
+
+					if (queryPos != -1) {
+						importFileName = importFileName.substring(0, queryPos);
+					}
+
 					ServletPaths importFileServletPaths = servletPaths.down(
 						importFileName);
 
@@ -247,13 +265,15 @@ public class AggregateFilter extends IgnoreModuleRequestFilter {
 	}
 
 	protected Object getBundleContent(
-			HttpServletRequest request, HttpServletResponse response)
+			HttpServletRequest httpServletRequest,
+			HttpServletResponse httpServletResponse)
 		throws IOException {
 
-		String minifierType = ParamUtil.getString(request, "minifierType");
+		String minifierType = ParamUtil.getString(
+			httpServletRequest, "minifierType");
 		String bundleId = ParamUtil.getString(
-			request, "bundleId",
-			ParamUtil.getString(request, "minifierBundleId"));
+			httpServletRequest, "bundleId",
+			ParamUtil.getString(httpServletRequest, "minifierBundleId"));
 
 		if (Validator.isNull(minifierType) || Validator.isNull(bundleId) ||
 			!ArrayUtil.contains(PropsValues.JAVASCRIPT_BUNDLE_IDS, bundleId)) {
@@ -276,16 +296,31 @@ public class AggregateFilter extends IgnoreModuleRequestFilter {
 
 		String cacheFileName = bundleId;
 
-		String[] fileNames = JavaScriptBundleUtil.getFileNames(bundleId);
-
 		File cacheFile = new File(_tempDir, cacheFileName);
 
 		if (cacheFile.exists()) {
 			long lastModified = PortalWebResourcesUtil.getLastModified(
 				PortalWebResourceConstants.RESOURCE_TYPE_JS);
 
-			if (lastModified <= cacheFile.lastModified()) {
-				response.setContentType(ContentTypes.TEXT_JAVASCRIPT);
+			long fileLastModifiedTime = -1;
+
+			try (Reader reader = new FileReader(cacheFile);
+				UnsyncBufferedReader unsyncBufferedReader =
+					new UnsyncBufferedReader(reader)) {
+
+				String line = unsyncBufferedReader.readLine();
+
+				if ((line != null) &&
+					line.startsWith(StringPool.DOUBLE_SLASH)) {
+
+					fileLastModifiedTime = GetterUtil.getLong(
+						line.substring(2), -1);
+				}
+			}
+
+			if (lastModified == fileLastModifiedTime) {
+				httpServletResponse.setContentType(
+					ContentTypes.TEXT_JAVASCRIPT);
 
 				return cacheFile;
 			}
@@ -297,6 +332,8 @@ public class AggregateFilter extends IgnoreModuleRequestFilter {
 
 		String content = null;
 
+		String[] fileNames = JavaScriptBundleUtil.getFileNames(bundleId);
+
 		if (fileNames.length == 0) {
 			content = StringPool.BLANK;
 		}
@@ -305,28 +342,35 @@ public class AggregateFilter extends IgnoreModuleRequestFilter {
 				new ServletPaths(jsServletContext, bundleDirName), fileNames);
 		}
 
-		response.setContentType(ContentTypes.TEXT_JAVASCRIPT);
+		content = StringBundler.concat(
+			StringPool.DOUBLE_SLASH,
+			PortalWebResourcesUtil.getLastModified(
+				PortalWebResourceConstants.RESOURCE_TYPE_JS),
+			StringPool.NEW_LINE, content);
+
+		httpServletResponse.setContentType(ContentTypes.TEXT_JAVASCRIPT);
 
 		FileUtil.write(cacheFile, content);
 
 		return content;
 	}
 
-	protected String getCacheFileName(HttpServletRequest request) {
+	protected String getCacheFileName(HttpServletRequest httpServletRequest) {
 		return CacheFileNameGenerator.getCacheFileName(
-			request, AggregateFilter.class.getName());
+			httpServletRequest, AggregateFilter.class.getName());
 	}
 
 	protected Object getContent(
-			HttpServletRequest request, HttpServletResponse response,
-			FilterChain filterChain)
+			HttpServletRequest httpServletRequest,
+			HttpServletResponse httpServletResponse, FilterChain filterChain)
 		throws Exception {
 
-		String minifierType = ParamUtil.getString(request, "minifierType");
+		String minifierType = ParamUtil.getString(
+			httpServletRequest, "minifierType");
 		String minifierBundleId = ParamUtil.getString(
-			request, "minifierBundleId");
+			httpServletRequest, "minifierBundleId");
 		String minifierBundleDirName = ParamUtil.getString(
-			request, "minifierBundleDir");
+			httpServletRequest, "minifierBundleDir");
 
 		if (Validator.isNull(minifierType) ||
 			Validator.isNotNull(minifierBundleId) ||
@@ -335,150 +379,211 @@ public class AggregateFilter extends IgnoreModuleRequestFilter {
 			return null;
 		}
 
-		String requestURI = request.getRequestURI();
+		String resourcePath = httpServletRequest.getRequestURI();
 
-		String resourcePath = requestURI;
-
-		String contextPath = request.getContextPath();
+		String contextPath = httpServletRequest.getContextPath();
 
 		if (!contextPath.equals(StringPool.SLASH)) {
 			resourcePath = resourcePath.substring(contextPath.length());
 		}
 
-		if (resourcePath.endsWith(_CSS_EXTENSION) &&
-			PortalUtil.isRightToLeft(request)) {
-
-			int pos = resourcePath.lastIndexOf(StringPool.PERIOD);
-
-			resourcePath =
-				resourcePath.substring(0, pos) + "_rtl" +
-					resourcePath.substring(pos);
-		}
-
-		URL resourceURL = _servletContext.getResource(resourcePath);
+		URL resourceURL = ResourceUtil.getResourceURL(
+			resourcePath, httpServletRequest.getRequestURI(), _servletContext);
 
 		if (resourceURL == null) {
-			resourceURL = PortalWebResourcesUtil.getResource(resourcePath);
-
-			if (resourceURL == null) {
-				return null;
-			}
+			return null;
 		}
 
-		String cacheCommonFileName = getCacheFileName(request);
+		String cacheCommonFileName = getCacheFileName(httpServletRequest);
 
 		File cacheContentTypeFile = new File(
 			_tempDir, cacheCommonFileName + "_E_CTYPE");
 		File cacheDataFile = new File(
 			_tempDir, cacheCommonFileName + "_E_DATA");
 
-		if (cacheDataFile.exists() &&
-			(cacheDataFile.lastModified() >=
-				URLUtil.getLastModifiedTime(resourceURL))) {
+		if (cacheDataFile.exists()) {
+			long fileLastModifiedTime = -1;
 
-			if (cacheContentTypeFile.exists()) {
-				String contentType = FileUtil.read(cacheContentTypeFile);
+			try (Reader reader = new FileReader(cacheDataFile);
+				UnsyncBufferedReader unsyncBufferedReader =
+					new UnsyncBufferedReader(reader)) {
 
-				response.setContentType(contentType);
+				String line = unsyncBufferedReader.readLine();
+
+				if ((line != null) && line.startsWith(_CSS_COMMENT_BEGIN) &&
+					line.endsWith(_CSS_COMMENT_END)) {
+
+					fileLastModifiedTime = GetterUtil.getLong(
+						line.substring(2, line.length() - 2), -1);
+				}
 			}
 
-			return cacheDataFile;
+			if (URLUtil.getLastModifiedTime(resourceURL) ==
+					fileLastModifiedTime) {
+
+				if (cacheContentTypeFile.exists()) {
+					httpServletResponse.setContentType(
+						FileUtil.read(cacheContentTypeFile));
+				}
+				else if (resourcePath.endsWith(_CSS_EXTENSION)) {
+					httpServletResponse.setContentType(
+						ContentTypes.TEXT_CSS_UTF8);
+				}
+				else if (resourcePath.endsWith(_JAVASCRIPT_EXTENSION)) {
+					httpServletResponse.setContentType(
+						ContentTypes.TEXT_JAVASCRIPT);
+				}
+
+				return cacheDataFile;
+			}
 		}
 
-		String content = null;
+		try (Closeable closeable = MinifierThreadLocal.disable()) {
+			String content = null;
 
-		if (resourcePath.endsWith(_CSS_EXTENSION)) {
-			if (_log.isInfoEnabled()) {
-				_log.info("Minifying CSS " + resourcePath);
-			}
+			if (resourcePath.endsWith(_CSS_EXTENSION)) {
+				if (_log.isInfoEnabled()) {
+					_log.info("Minifying CSS " + resourcePath);
+				}
 
-			content = getCssContent(
-				request, response, resourceURL, resourcePath);
-
-			response.setContentType(ContentTypes.TEXT_CSS);
-
-			FileUtil.write(cacheContentTypeFile, ContentTypes.TEXT_CSS);
-		}
-		else if (resourcePath.endsWith(_JAVASCRIPT_EXTENSION)) {
-			if (_log.isInfoEnabled()) {
-				_log.info("Minifying JavaScript " + resourcePath);
-			}
-
-			content = getJavaScriptContent(resourceURL);
-
-			response.setContentType(ContentTypes.TEXT_JAVASCRIPT);
-
-			FileUtil.write(cacheContentTypeFile, ContentTypes.TEXT_JAVASCRIPT);
-		}
-		else if (resourcePath.endsWith(_JSP_EXTENSION)) {
-			if (_log.isInfoEnabled()) {
-				_log.info("Minifying JSP " + resourcePath);
-			}
-
-			BufferCacheServletResponse bufferCacheServletResponse =
-				new BufferCacheServletResponse(response);
-
-			processFilter(
-				AggregateFilter.class.getName(), request,
-				bufferCacheServletResponse, filterChain);
-
-			content = bufferCacheServletResponse.getString();
-
-			if (minifierType.equals("css")) {
 				content = getCssContent(
-					request, response, resourcePath, content);
+					httpServletRequest, httpServletResponse, resourcePath);
+
+				httpServletResponse.setContentType(ContentTypes.TEXT_CSS_UTF8);
+
+				FileUtil.write(
+					cacheContentTypeFile, ContentTypes.TEXT_CSS_UTF8);
 			}
-			else if (minifierType.equals("js")) {
-				content = getJavaScriptContent(resourcePath, content);
+			else if (resourcePath.endsWith(_JAVASCRIPT_EXTENSION)) {
+				if (_log.isInfoEnabled()) {
+					_log.info("Minifying JavaScript " + resourcePath);
+				}
+
+				content = getJavaScriptContent(
+					httpServletRequest, httpServletResponse, resourcePath,
+					resourceURL);
+
+				httpServletResponse.setContentType(
+					ContentTypes.TEXT_JAVASCRIPT);
+
+				FileUtil.write(
+					cacheContentTypeFile, ContentTypes.TEXT_JAVASCRIPT);
+			}
+			else if (resourcePath.endsWith(_JSP_EXTENSION)) {
+				if (_log.isInfoEnabled()) {
+					_log.info("Minifying JSP " + resourcePath);
+				}
+
+				BufferCacheServletResponse bufferCacheServletResponse =
+					new BufferCacheServletResponse(httpServletResponse);
+
+				processFilter(
+					AggregateFilter.class.getName(), httpServletRequest,
+					bufferCacheServletResponse, filterChain);
+
+				content = bufferCacheServletResponse.getString();
+
+				if (minifierType.equals("css")) {
+					content = getCssContent(
+						httpServletRequest, httpServletResponse, resourcePath,
+						content);
+				}
+				else if (minifierType.equals("js")) {
+					content = getJavaScriptContent(resourcePath, content);
+				}
+
+				FileUtil.write(
+					cacheContentTypeFile,
+					bufferCacheServletResponse.getContentType());
+			}
+			else {
+				return null;
 			}
 
-			FileUtil.write(
-				cacheContentTypeFile,
-				bufferCacheServletResponse.getContentType());
-		}
-		else {
-			return null;
-		}
+			content = StringBundler.concat(
+				_CSS_COMMENT_BEGIN, URLUtil.getLastModifiedTime(resourceURL),
+				_CSS_COMMENT_END, StringPool.NEW_LINE, content);
 
-		FileUtil.write(cacheDataFile, content);
+			FileUtil.write(cacheDataFile, content);
 
-		return content;
+			if (!PropsValues.MINIFIER_ENABLED) {
+				return content;
+			}
+
+			httpServletResponse.setHeader(
+				HttpHeaders.CACHE_CONTROL, HttpHeaders.PRAGMA_NO_CACHE_VALUE);
+
+			String finalContent = content;
+			String finalResourcePath = resourcePath;
+
+			NoticeableFuture<String> noticeableFuture =
+				_noticeableFutures.computeIfAbsent(
+					cacheCommonFileName,
+					key -> {
+						NoticeableExecutorService noticeableExecutorService =
+							_portalExecutorManager.getPortalExecutor(
+								AggregateFilter.class.getName());
+
+						return noticeableExecutorService.submit(
+							() -> {
+								String minifiedContent = null;
+
+								if (minifierType.equals("css")) {
+									minifiedContent = MinifierUtil.minifyCss(
+										finalContent);
+								}
+								else {
+									minifiedContent =
+										MinifierUtil.minifyJavaScript(
+											finalResourcePath, finalContent);
+								}
+
+								minifiedContent = StringBundler.concat(
+									_CSS_COMMENT_BEGIN,
+									URLUtil.getLastModifiedTime(resourceURL),
+									_CSS_COMMENT_END, StringPool.NEW_LINE,
+									minifiedContent);
+
+								File tempFile = FileUtil.createTempFile();
+
+								FileUtil.write(tempFile, minifiedContent);
+
+								FileUtil.move(tempFile, cacheDataFile);
+
+								return minifiedContent;
+							});
+					});
+
+			noticeableFuture.addFutureListener(
+				future -> _noticeableFutures.remove(cacheCommonFileName));
+
+			return content;
+		}
 	}
 
 	protected String getCssContent(
-		HttpServletRequest request, HttpServletResponse response,
-		String resourcePath, String content) {
+		HttpServletRequest httpServletRequest,
+		HttpServletResponse httpServletResponse,
+		ServletContext cssServletContext, String resourcePath, String content) {
 
 		try {
-			ServletContext cssServletContext = null;
-
-			String requestURI = request.getRequestURI();
-
-			if (PortalWebResourcesUtil.hasContextPath(requestURI)) {
-				cssServletContext =
-					PortalWebResourcesUtil.getPathServletContext(requestURI);
-			}
-
-			if (cssServletContext == null) {
-				cssServletContext = _servletContext;
-			}
-
 			content = DynamicCSSUtil.replaceToken(
-				cssServletContext, request, content);
+				cssServletContext, httpServletRequest, content);
 		}
-		catch (Exception e) {
-			_log.error("Unable to replace tokens in CSS " + resourcePath, e);
+		catch (Exception exception) {
+			_log.error(
+				"Unable to replace tokens in CSS " + resourcePath, exception);
 
 			if (_log.isDebugEnabled()) {
 				_log.debug(content);
 			}
 
-			response.setHeader(
+			httpServletResponse.setHeader(
 				HttpHeaders.CACHE_CONTROL,
 				HttpHeaders.CACHE_CONTROL_NO_CACHE_VALUE);
 		}
 
-		String browserId = ParamUtil.getString(request, "browserId");
+		String browserId = ParamUtil.getString(httpServletRequest, "browserId");
 
 		if (!browserId.equals(BrowserSniffer.BROWSER_ID_IE)) {
 			Matcher matcher = _pattern.matcher(content);
@@ -490,80 +595,146 @@ public class AggregateFilter extends IgnoreModuleRequestFilter {
 	}
 
 	protected String getCssContent(
-			HttpServletRequest request, HttpServletResponse response,
-			URL resourceURL, String resourcePath)
-		throws IOException {
+			HttpServletRequest httpServletRequest,
+			HttpServletResponse httpServletResponse, String resourcePath)
+		throws Exception {
 
-		ServletContext cssServletContext = null;
 		String resourcePathRoot = null;
 
-		String requestURI = request.getRequestURI();
+		String requestURI = httpServletRequest.getRequestURI();
+
+		ServletContext cssServletContext = ResourceUtil.getPathServletContext(
+			resourcePath, requestURI, _servletContext);
 
 		if (PortalWebResourcesUtil.hasContextPath(requestURI)) {
-			cssServletContext = PortalWebResourcesUtil.getPathServletContext(
-				requestURI);
-			resourcePathRoot = "/";
-		}
+			resourcePathRoot = PortalWebResourcesUtil.stripContextPath(
+				cssServletContext, resourcePath);
 
-		if (cssServletContext == null) {
-			cssServletContext = _servletContext;
+			resourcePathRoot = ServletPaths.getParentPath(resourcePathRoot);
+
+			if (resourcePathRoot.equals(StringPool.BLANK)) {
+				resourcePathRoot = "/";
+			}
+		}
+		else {
 			resourcePathRoot = ServletPaths.getParentPath(resourcePath);
 		}
 
-		URLConnection urlConnection = resourceURL.openConnection();
-
-		String content = StringUtil.read(urlConnection.getInputStream());
+		String content = _readResource(
+			httpServletRequest, httpServletResponse, resourcePath);
 
 		content = aggregateCss(
 			new ServletPaths(cssServletContext, resourcePathRoot), content);
 
-		return getCssContent(request, response, resourcePath, content);
+		return getCssContent(
+			httpServletRequest, httpServletResponse, cssServletContext,
+			resourcePath, content);
 	}
 
-	protected String getJavaScriptContent(URL resourceURL) throws IOException {
-		URLConnection urlConnection = resourceURL.openConnection();
+	protected String getCssContent(
+		HttpServletRequest httpServletRequest,
+		HttpServletResponse httpServletResponse, String resourcePath,
+		String content) {
 
-		String content = StringUtil.read(urlConnection.getInputStream());
+		try {
+			ServletContext cssServletContext =
+				ResourceUtil.getPathServletContext(
+					resourcePath, httpServletRequest.getRequestURI(),
+					_servletContext);
+
+			return getCssContent(
+				httpServletRequest, httpServletResponse, cssServletContext,
+				resourcePath, content);
+		}
+		catch (Exception exception) {
+			_log.error(
+				"Unable to detect servlet context " + resourcePath, exception);
+
+			if (_log.isDebugEnabled()) {
+				_log.debug(content);
+			}
+
+			httpServletResponse.setHeader(
+				HttpHeaders.CACHE_CONTROL,
+				HttpHeaders.CACHE_CONTROL_NO_CACHE_VALUE);
+
+			return content;
+		}
+	}
+
+	protected String getJavaScriptContent(
+			HttpServletRequest httpServletRequest,
+			HttpServletResponse httpServletResponse, String resourcePath,
+			URL resourceURL)
+		throws Exception {
+
+		String content = _readResource(
+			httpServletRequest, httpServletResponse, resourcePath);
 
 		return getJavaScriptContent(resourceURL.toString(), content);
 	}
 
 	@Override
-	protected boolean isModuleRequest(HttpServletRequest request) {
-		String requestURI = request.getRequestURI();
+	protected boolean isModuleRequest(HttpServletRequest httpServletRequest) {
+		if (PortalWebResourcesUtil.hasContextPath(
+				httpServletRequest.getRequestURI())) {
 
-		if (PortalWebResourcesUtil.hasContextPath(requestURI)) {
 			return false;
 		}
 
-		return super.isModuleRequest(request);
+		return super.isModuleRequest(httpServletRequest);
 	}
 
 	@Override
 	protected void processFilter(
-			HttpServletRequest request, HttpServletResponse response,
-			FilterChain filterChain)
+			HttpServletRequest httpServletRequest,
+			HttpServletResponse httpServletResponse, FilterChain filterChain)
 		throws Exception {
 
-		Object minifiedContent = getContent(request, response, filterChain);
+		Object minifiedContent = getContent(
+			httpServletRequest, httpServletResponse, filterChain);
 
 		if (minifiedContent == null) {
-			minifiedContent = getBundleContent(request, response);
+			minifiedContent = getBundleContent(
+				httpServletRequest, httpServletResponse);
 		}
 
 		if (minifiedContent == null) {
 			processFilter(
-				AggregateFilter.class.getName(), request, response,
-				filterChain);
+				AggregateFilter.class.getName(), httpServletRequest,
+				httpServletResponse, filterChain);
 		}
 		else {
 			if (minifiedContent instanceof File) {
-				ServletResponseUtil.write(response, (File)minifiedContent);
+				ServletResponseUtil.write(
+					httpServletResponse, (File)minifiedContent);
 			}
 			else if (minifiedContent instanceof String) {
-				ServletResponseUtil.write(response, (String)minifiedContent);
+				ServletResponseUtil.write(
+					httpServletResponse, (String)minifiedContent);
 			}
 		}
+	}
+
+	private String _readResource(
+			HttpServletRequest httpServletRequest,
+			HttpServletResponse httpServletResponse, String resourcePath)
+		throws Exception {
+
+		URL url = _servletContext.getResource(resourcePath);
+
+		if (url == null) {
+			ObjectValuePair<String, Long> objectValuePair =
+				RequestDispatcherUtil.getContentAndLastModifiedTime(
+					httpServletRequest.getRequestDispatcher(resourcePath),
+					httpServletRequest, httpServletResponse);
+
+			return objectValuePair.getKey();
+		}
+
+		URLConnection urlConnection = url.openConnection();
+
+		return StringUtil.read(urlConnection.getInputStream());
 	}
 
 	private static final String _BASE_URL = "@base_url@";
@@ -591,7 +762,13 @@ public class AggregateFilter extends IgnoreModuleRequestFilter {
 
 	private static final Pattern _pattern = Pattern.compile(
 		"^(\\.ie|\\.js\\.ie)([^}]*)}", Pattern.MULTILINE);
+	private static volatile PortalExecutorManager _portalExecutorManager =
+		ServiceProxyFactory.newServiceTrackedInstance(
+			PortalExecutorManager.class, AggregateFilter.class,
+			"_portalExecutorManager", true);
 
+	private final Map<String, NoticeableFuture<String>> _noticeableFutures =
+		new ConcurrentHashMap<>();
 	private ServletContext _servletContext;
 	private File _tempDir;
 

@@ -14,13 +14,13 @@
 
 package com.liferay.portal.security.pwd;
 
+import com.liferay.petra.string.CharPool;
 import com.liferay.portal.kernel.exception.PwdEncryptorException;
 import com.liferay.portal.kernel.io.BigEndianCodec;
 import com.liferay.portal.kernel.security.SecureRandomUtil;
 import com.liferay.portal.kernel.security.pwd.PasswordEncryptor;
 import com.liferay.portal.kernel.security.pwd.PasswordEncryptorUtil;
 import com.liferay.portal.kernel.util.Base64;
-import com.liferay.portal.kernel.util.CharPool;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.Validator;
 
@@ -77,7 +77,7 @@ public class PBKDF2PasswordEncryptor
 			byte[] secretKeyBytes = secretKey.getEncoded();
 
 			ByteBuffer byteBuffer = ByteBuffer.allocate(
-				2 * 4 + saltBytes.length + secretKeyBytes.length);
+				(2 * 4) + saltBytes.length + secretKeyBytes.length);
 
 			byteBuffer.putInt(pbkdf2EncryptionConfiguration.getKeySize());
 			byteBuffer.putInt(pbkdf2EncryptionConfiguration.getRounds());
@@ -86,8 +86,8 @@ public class PBKDF2PasswordEncryptor
 
 			return Base64.encode(byteBuffer.array());
 		}
-		catch (Exception e) {
-			throw new PwdEncryptorException(e.getMessage(), e);
+		catch (Exception exception) {
+			throw new PwdEncryptorException(exception.getMessage(), exception);
 		}
 	}
 
@@ -133,9 +133,10 @@ public class PBKDF2PasswordEncryptor
 
 					byteBuffer.get(_saltBytes);
 				}
-				catch (BufferUnderflowException bue) {
+				catch (BufferUnderflowException bufferUnderflowException) {
 					throw new PwdEncryptorException(
-						"Unable to extract salt from encrypted password", bue);
+						"Unable to extract salt from encrypted password",
+						bufferUnderflowException);
 				}
 			}
 		}

@@ -1,229 +1,256 @@
-<definition>
-	<command name="add">
-		<execute function="AssertTextEquals" locator1="Portlet#HEADER" value1="Document Types" />
+definition {
 
-		<execute function="Click" locator1="Button#PLUS" />
+	macro add {
+		LexiconEntry.gotoAdd();
 
-		<execute function="Type" locator1="DocumentsAndMediaEditDocumentType#NAME_FIELD" value1="${dmDocumentTypeName}" />
-		<execute function="Type" locator1="DocumentsAndMediaEditDocumentType#DETAILS_DESCRIPTION_FIELD" value1="${dmDocumentTypeDescription}" />
+		PortletEntry.inputName(name = "${dmDocumentTypeName}");
 
-		<execute macro="Panel#expandPanel">
-			<var name="panelHeading" value="Main Metadata Fields" />
-		</execute>
+		DMDocumentType.gotoTab(tabName = "Builder");
 
-		<for list="${dmDocumentTypeFieldNames}" param="dmDocumentTypeFieldName">
-			<execute macro="DMDocumentType#addField">
-				<var name="field" value="${dmDocumentTypeFieldName}" />
-				<var name="fieldFieldLabel" value="${dmDocumentTypeFieldName}" />
-				<var method="StringUtil#replace('${dmDocumentTypeFieldName}', ' ', '')" name="fieldName" />
-			</execute>
-		</for>
+		var rowNum = "0";
 
-		<if>
-			<isset var="metadataSetName" />
-			<then>
-				<execute macro="Panel#expandPanel">
-					<var name="panelHeading" value="Additional Metadata Fields" />
-				</execute>
+		for (var dmDocumentTypeFieldName : list "${dmDocumentTypeFieldNames}") {
+			Type.sendKeys(
+				locator1 = "DocumentsAndMediaDocumentTypes#SEARCH_FIELD",
+				value1 = "${dmDocumentTypeFieldName}");
 
-				<execute macro="DMDocumentType#selectPGMetadataSet">
-					<var name="key_metadataSetName" value="${metadataSetName}" />
-				</execute>
-			</then>
-		</if>
+			var key_fieldType = "${dmDocumentTypeFieldName}";
 
-		<execute function="AssertClick" locator1="DocumentsAndMediaDocumentTypes#SAVE_BUTTON" value1="Save" />
+			if (IsElementPresent(locator1 = "DocumentsAndMediaDocumentTypes#FIELD_DROP_TARGET")) {
+				DragAndDrop.javaScriptDragAndDropToObject(
+					locator1 = "DocumentsAndMediaDocumentTypes#ADD_FIELD_TYPE",
+					locator2 = "DocumentsAndMediaDocumentTypes#FIELD_DROP_TARGET",
+					value1 = "${dmDocumentTypeFieldName}");
+			}
+			else {
+				DragAndDrop.javaScriptDragAndDropToBottom(
+					key_rowNum = "${rowNum}",
+					locator1 = "DocumentsAndMediaDocumentTypes#ADD_FIELD_TYPE",
+					locator2 = "DocumentsAndMediaDocumentTypes#FIELD_BOTTOM_DROP_TARGET",
+					value1 = "${dmDocumentTypeFieldName}");
+			}
 
-		<execute macro="Alert#viewSuccessMessage" />
-	</command>
+			Click(locator1 = "DocumentsAndMediaDocumentTypes#SIDEBAR_BACK");
 
-	<command name="addField">
-		<execute function="AssertClick" locator1="DDMEditStructure#FIELDS_LINK" value1="Fields" />
+			Click(locator1 = "DocumentsAndMediaDocumentTypes#SIDEBAR_DELETE");
 
-		<var name="key_field" value="${field}" />
+			var rowNum = ${rowNum} + 1;
+		}
 
-		<execute function="DragAndDrop" locator1="DDMEditStructure#FIELDS_FIELD" locator2="DDMEditStructure#FORM_BUILDER" value1="${field}" />
+		if (isSet(dmDocumentTypeDescription)) {
+			DMDocumentType.gotoTab(tabName = "Details");
 
-		<var name="key_fieldFieldLabel" value="${field}" />
+			PortletEntry.inputDescription(description = "${dmDocumentTypeDescription}");
+		}
 
-		<execute function="Click" locator1="DDMEditStructure#FORM_FIELD" />
+		if (isSet(metadataSetName)) {
+			DMDocumentType.gotoTab(tabName = "Additional Metadata Fields");
 
-		<execute function="DoubleClick" locator1="DDMEditStructure#SETTINGS_FIELD_LABEL" />
+			DMDocumentType.selectPGMetadataSet(key_metadataSetName = "${metadataSetName}");
+		}
 
-		<execute function="Type" locator1="DDMEditStructure#SETTINGS_CELL_EDITOR_FIELD" value1="${fieldFieldLabel}" />
+		DDLDataDefinition.save();
+	}
 
-		<execute function="AssertClick" locator1="DDMEditStructure#SETTINGS_CELL_EDITOR_SAVE_BUTTON" value1="Save" />
+	macro deletePG {
+		DMDocumentType.selectDocumentTypeFrame();
 
-		<execute function="AssertTextEquals" locator1="DDMEditStructure#SETTINGS_FIELD_LABEL" value1="${fieldFieldLabel}" />
+		var key_dmDocumentTypeName = "${dmDocumentTypeName}";
 
-		<execute function="DoubleClick" locator1="DDMEditStructure#SETTINGS_NAME" />
+		LexiconEntry.openEntryMenu(rowEntry = "${dmDocumentTypeName}");
 
-		<execute function="Type" locator1="DDMEditStructure#SETTINGS_CELL_EDITOR_FIELD" value1="${fieldName}" />
+		MenuItem.clickNoError(menuItem = "Delete");
 
-		<execute function="AssertClick" locator1="DDMEditStructure#SETTINGS_CELL_EDITOR_SAVE_BUTTON" value1="Save" />
+		AssertConfirm(value1 = "Are you sure you want to delete this? It will be deleted immediately.");
 
-		<execute function="AssertTextEquals" locator1="DDMEditStructure#SETTINGS_NAME" value1="${fieldName}" />
+		if ("${documentTypeHasReference}" == "true") {
+			Alert.viewRequestFailedToComplete();
 
-		<execute function="AssertClick" locator1="DDMEditStructure#FIELDS_LINK" value1="Fields" />
+			AssertTextEquals.assertPartialText(
+				locator1 = "Message#ERROR_1",
+				value1 = "Cannot delete a document type that is presently being used by one or more documents.");
+		}
+		else {
+			Alert.viewSuccessMessage();
 
-		<execute function="Click" locator1="DocumentsAndMediaEditDocumentType#NAME_FIELD" />
-	</command>
+			AssertTextNotPresent(
+				locator1 = "DocumentsAndMediaDocumentTypes#DOCUMENT_TYPES_TABLE_NAME",
+				value1 = "${dmDocumentTypeName}");
+		}
+	}
 
-	<command name="deletePG">
-		<execute macro="DMDocumentType#selectDocumentTypeFrame" />
+	macro edit {
+		DMDocumentType.selectDocumentTypeFrame();
 
-		<var name="key_dmDocumentTypeName" value="${dmDocumentTypeName}" />
+		var key_dmDocumentTypeName = "${dmDocumentTypeName}";
 
-		<execute function="Click" locator1="DocumentsAndMediaDocumentTypes#DOCUMENT_TYPES_TABLE_ACTIONS" />
+		LexiconEntry.openEntryMenu(rowEntry = "${dmDocumentTypeName}");
 
-		<execute function="AssertClickNoError" locator1="MenuItem#ANY_MENU_ITEM" value1="Delete">
-			<var name="key_menuItem" value="Delete" />
-		</execute>
+		MenuItem.click(menuItem = "Edit");
 
-		<execute function="Confirm" value1="Are you sure you want to delete this? It will be deleted immediately." />
+		if (isSet(dmDocumentTypeNameEdit)) {
+			Type.clickAtType(
+				locator1 = "TextInput#NAME",
+				value1 = "${dmDocumentTypeNameEdit}");
+		}
 
-		<execute macro="Alert#viewSuccessMessage" />
-		<execute function="AssertTextNotPresent" locator1="DocumentsAndMediaDocumentTypes#DOCUMENT_TYPES_TABLE_NAME" value1="${dmDocumentTypeName}" />
-	</command>
+		if (isSet(dmDocumentTypeDescriptionEdit)) {
+			DMDocumentType.gotoTab(tabName = "Details");
 
-	<command name="edit">
-		<execute macro="DMDocumentType#selectDocumentTypeFrame" />
+			Type(
+				locator1 = "DocumentsAndMediaEditDocumentType#DETAILS_DESCRIPTION_FIELD",
+				value1 = "${dmDocumentTypeDescriptionEdit}");
+		}
 
-		<var name="key_dmDocumentTypeName" value="${dmDocumentTypeName}" />
+		if (isSet(dmDocumentTypeFieldRequiredEdit)) {
+			DMDocumentType.gotoEditField(fieldName = "${dmDocumentTypeFieldRequiredEdit}");
 
-		<execute function="Click" locator1="DocumentsAndMediaDocumentTypes#DOCUMENT_TYPES_TABLE_ACTIONS" />
+			FormFields.enableSwitcher(fieldName = "Required Field");
+		}
 
-		<execute function="AssertClick" locator1="MenuItem#ANY_MENU_ITEM" value1="Edit">
-			<var name="key_menuItem" value="Edit" />
-		</execute>
+		if (isSet(dmDocumentTypeFieldNames)) {
+			DMDocumentType.gotoTab(tabName = "Builder");
 
-		<if>
-			<isset var="dmDocumentTypeNameEdit" />
-			<then>
-				<execute function="Type#clickAtType" locator1="DocumentsAndMediaEditDocumentType#NAME_FIELD" value1="${dmDocumentTypeNameEdit}"  />
-			</then>
-		</if>
-
-		<if>
-			<isset var="dmDocumentTypeDescriptionEdit" />
-			<then>
-				<execute function="Type" locator1="DocumentsAndMediaEditDocumentType#DETAILS_DESCRIPTION_FIELD" value1="${dmDocumentTypeDescriptionEdit}"  />
-			</then>
-		</if>
-
-		<if>
-			<isset var="dmDocumentTypeFieldNames" />
-			<then>
-				<execute macro="Panel#expandPanel">
-					<var name="panelHeading" value="Main Metadata Fields" />
-				</execute>
-
-				<for list="${dmDocumentTypeFieldNames}" param="dmDocumentTypeFieldName">
-					<execute macro="DMDocumentType#addField">
-						<var name="field" value="${dmDocumentTypeFieldName}" />
-						<var name="fieldFieldLabel" value="${dmDocumentTypeFieldName}" />
-						<var method="StringUtil#replace('${dmDocumentTypeFieldName}', ' ', '')" name="fieldName" />
-					</execute>
-				</for>
-			</then>
-		</if>
-
-		<execute macro="DMDocumentType#selectDocumentTypeFrame" />
-
-		<if>
-			<equals arg1="${removeMetadataSet}" arg2="true" />
-			<then>
-				<var name="key_metadataSetName" value="${metadataSetName}" />
-
-				<execute macro="Panel#expandPanel">
-					<var name="panelHeading" value="Additional Metadata Fields" />
-				</execute>
-
-				<execute function="AssertClick" locator1="DocumentsAndMediaEditDocumentType#REMOVE_METADATA_SET_BUTTON" value1="Remove" />
-			</then>
-		</if>
-
-		<execute function="AssertClick" locator1="DocumentsAndMediaDocumentTypes#SAVE_BUTTON" value1="Save" />
-
-		<if>
-			<isset var="dmDocumentTypeNameEdit" />
-			<then>
-				<execute function="AssertTextEquals" locator1="DocumentsAndMediaDocumentTypes#DOCUMENT_TYPES_TABLE_NAME" value1="${dmDocumentTypeNameEdit}" />
-			</then>
-			<else>
-				<var name="key_dmDocumentTypeName" value="${dmDocumentTypeName}" />
-
-				<execute function="AssertTextEquals" locator1="DocumentsAndMediaDocumentTypes#DOCUMENT_TYPES_TABLE_NAME" value1="${dmDocumentTypeName}" />
-			</else>
-		</if>
-	</command>
-
-	<command name="selectDocumentTypeFrame">
-		<if>
-			<condition function="IsElementPresent" locator1="IFrame#DOCUMENT_TYPES" />
-			<then>
-				<execute function="SelectFrame" locator1="IFrame#DOCUMENT_TYPES" />
-			</then>
-		</if>
-	</command>
-
-	<command name="selectPGMetadataSet">
-		<execute function="AssertClick" locator1="DocumentsAndMediaEditDocumentType#SELECT_METADATA_SET_BUTTON" value1="Select Metadata Set" />
-
-		<execute function="SelectFrameTop" value1="relative=top" />
-
-		<execute macro="DMMetadataSet#selectMetadataSetsFrame" />
-
-		<execute function="Click" locator1="DocumentsAndMediaMetadataSets#METADATA_SETS_NAME">
-			<var name="key_metadataSetName" value="${metadataSetName}" />
-		</execute>
-
-		<execute function="SelectFrameTop" value1="relative=top" />
-	</command>
-
-	<command name="tearDownCP">
-		<execute macro="Navigator#openURL" />
-
-		<execute macro="ProductMenu#gotoSitesContent">
-			<var name="portlet" value="Documents and Media" />
-		</execute>
-
-		<execute macro="DMNavigator#gotoDocumentType" />
-
-		<execute macro="DMDocumentType#selectDocumentTypeFrame" />
-
-		<execute function="Type" locator1="NavBar#BASIC_SEARCH_FIELD" value1="DM Document Type" />
-		<execute function="AssertClick" locator1="NavBar#BASIC_SEARCH_BUTTON" value1="Search" />
-
-		<while>
-			<condition function="IsElementPresent" locator1="DocumentsAndMediaDocumentTypes#DOCUMENT_TYPES_TABLE_ACTIONS_1" />
-			<then>
-				<execute function="Click" locator1="DocumentsAndMediaDocumentTypes#DOCUMENT_TYPES_TABLE_ACTIONS_1" />
-
-				<execute function="AssertClickNoError" locator1="MenuItem#ANY_MENU_ITEM" value1="Delete">
-					<var name="key_menuItem" value="Delete" />
-				</execute>
-
-				<execute function="Confirm#waitForConfirmation" value1="Are you sure you want to delete this? It will be deleted immediately." />
-
-				<execute macro="Alert#viewSuccessMessage" />
-			</then>
-		</while>
-	</command>
-
-	<command name="viewMenulistOption">
-		<var name="key_dmDocumentTypeName" value="${dmDocumentTypeName}" />
-
-		<execute function="Click" locator1="Button#PLUS" />
-
-		<execute function="AssertTextEquals" locator1="MenuItem#ANY_MENU_ITEM" value1="${dmDocumentTypeName}">
-			<var name="key_menuItem" value="${dmDocumentTypeName}" />
-		</execute>
-	</command>
-
-	<command name="viewNoAvailableActionsViaDocumentTypesPG">
-		<execute macro="DMNavigator#gotoDocumentType" />
-
-		<execute function="AssertElementNotPresent" locator1="DocumentsAndMediaDocumentTypes#DOCUMENT_TYPES_TABLE_ACTIONS_1" />
-	</command>
-</definition>
+			var rowNum = "${rowNum}";
+
+			for (var dmDocumentTypeFieldName : list "${dmDocumentTypeFieldNames}") {
+				Type.sendKeys(
+					locator1 = "DocumentsAndMediaDocumentTypes#SEARCH_FIELD",
+					value1 = "${dmDocumentTypeFieldName}");
+
+				var key_fieldType = "${dmDocumentTypeFieldName}";
+
+				DragAndDrop.javaScriptDragAndDropToBottom(
+					key_rowNum = "${rowNum}",
+					locator1 = "DocumentsAndMediaDocumentTypes#ADD_FIELD_TYPE",
+					locator2 = "DocumentsAndMediaDocumentTypes#FIELD_BOTTOM_DROP_TARGET",
+					value1 = "${dmDocumentTypeFieldName}");
+
+				Click(locator1 = "DocumentsAndMediaDocumentTypes#SIDEBAR_BACK");
+
+				var rowNum = ${rowNum} + 1;
+			}
+		}
+
+		DMDocumentType.selectDocumentTypeFrame();
+
+		if ("${removeMetadataSet}" == "true") {
+			var key_metadataSetName = "${metadataSetName}";
+
+			DMDocumentType.gotoTab(tabName = "Additional Metadata Fields");
+
+			Click(locator1 = "DocumentsAndMediaEditDocumentType#REMOVE_METADATA_SET_BUTTON");
+		}
+
+		DDLDataDefinition.save();
+
+		if (isSet(dmDocumentTypeNameEdit)) {
+			AssertTextEquals(
+				locator1 = "DocumentsAndMediaDocumentTypes#DOCUMENT_TYPES_TABLE_NAME",
+				value1 = "${dmDocumentTypeNameEdit}");
+		}
+		else {
+			var key_dmDocumentTypeName = "${dmDocumentTypeName}";
+
+			AssertTextEquals(
+				locator1 = "DocumentsAndMediaDocumentTypes#DOCUMENT_TYPES_TABLE_NAME",
+				value1 = "${dmDocumentTypeName}");
+		}
+	}
+
+	macro gotoEditField {
+		Click(
+			key_fieldName = "${fieldName}",
+			locator1 = "DocumentsAndMediaDocumentTypes#FIELD_NAME");
+
+		AssertElementPresent(locator1 = "DocumentsAndMediaDocumentTypes#SIDEBAR_ACTIVE_BASIC_TAB");
+	}
+
+	macro gotoTab {
+		if (IsElementNotPresent(key_sidebarTitle = "${tabName}", locator1 = "DocumentsAndMediaDocumentTypes#SIDEBAR_TITLE")) {
+			Click.clickNoMouseOver(
+				key_sidebarButton = "${tabName}",
+				locator1 = "DocumentsAndMediaDocumentTypes#SIDEBAR_BUTTON");
+		}
+	}
+
+	macro selectDocumentTypeFrame {
+		if (IsElementPresent(locator1 = "IFrame#DOCUMENT_TYPES")) {
+			SelectFrame(locator1 = "IFrame#DOCUMENT_TYPES");
+		}
+	}
+
+	macro selectPGMetadataSet {
+		AssertClick(
+			locator1 = "DocumentsAndMediaEditDocumentType#SELECT_BUTTON",
+			value1 = "Select");
+
+		SelectFrameTop(value1 = "relative=top");
+
+		DMMetadataSet.selectMetadataSetsFrame();
+
+		Click(
+			key_metadataSetName = "${metadataSetName}",
+			locator1 = "DocumentsAndMediaMetadataSets#METADATA_SETS_NAME");
+
+		SelectFrameTop(value1 = "relative=top");
+	}
+
+	macro tearDownCP {
+		Navigator.openURL();
+
+		ProductMenu.gotoPortlet(
+			category = "Content &amp; Data",
+			portlet = "Documents and Media");
+
+		DMNavigator.gotoDocumentType();
+
+		DMDocumentType.selectDocumentTypeFrame();
+
+		Search.searchCP(searchTerm = "DM Document Type");
+
+		while (IsElementPresent(locator1 = "DocumentsAndMediaDocumentTypes#DOCUMENT_TYPES_TABLE_ACTIONS_1")) {
+			Click(locator1 = "DocumentsAndMediaDocumentTypes#DOCUMENT_TYPES_TABLE_ACTIONS_1");
+
+			MenuItem.clickNoError(menuItem = "Delete");
+
+			AssertConfirm.waitForConfirmation(value1 = "Are you sure you want to delete this? It will be deleted immediately.");
+
+			Alert.viewSuccessMessage();
+		}
+	}
+
+	macro viewCP {
+		var key_dmDocumentTypeName = "${dmDocumentTypeName}";
+
+		if (isSet(dmDocumentTypeScope)) {
+			var key_dmDocumentTypeScope = "${dmDocumentTypeScope}";
+
+			AssertTextEquals(
+				locator1 = "DocumentsAndMediaDocumentTypes#DOCUMENT_TYPES_TABLE_SCOPE",
+				value1 = "${dmDocumentTypeName}");
+		}
+
+		AssertTextEquals(
+			locator1 = "DocumentsAndMediaDocumentTypes#DOCUMENT_TYPES_TABLE_NAME",
+			value1 = "${dmDocumentTypeName}");
+	}
+
+	macro viewMenulistOption {
+		var key_dmDocumentTypeName = "${dmDocumentTypeName}";
+
+		LexiconEntry.gotoAdd();
+
+		AssertTextEquals(
+			key_menuItem = "${dmDocumentTypeName}",
+			locator1 = "MenuItem#ANY_MENU_ITEM",
+			value1 = "${dmDocumentTypeName}");
+	}
+
+	macro viewNoAvailableActionsViaDocumentTypesPG {
+		DMNavigator.gotoDocumentType();
+
+		AssertElementNotPresent(locator1 = "DocumentsAndMediaDocumentTypes#DOCUMENT_TYPES_TABLE_ACTIONS_1");
+	}
+
+}

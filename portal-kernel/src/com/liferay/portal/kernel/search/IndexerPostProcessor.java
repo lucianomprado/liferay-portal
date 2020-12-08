@@ -27,17 +27,7 @@ public interface IndexerPostProcessor {
 			BooleanFilter booleanFilter, SearchContext searchContext)
 		throws Exception;
 
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link
-	 *             #postProcessContextBooleanFilter(BooleanFilter,
-	 *             SearchContext)}
-	 */
-	@Deprecated
-	public void postProcessContextQuery(
-			BooleanQuery contextQuery, SearchContext searchContext)
-		throws Exception;
-
-	public void postProcessDocument(Document document, Object obj)
+	public void postProcessDocument(Document document, Object object)
 		throws Exception;
 
 	public void postProcessFullQuery(
@@ -47,16 +37,6 @@ public interface IndexerPostProcessor {
 	public void postProcessSearchQuery(
 			BooleanQuery searchQuery, BooleanFilter booleanFilter,
 			SearchContext searchContext)
-		throws Exception;
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link
-	 *             #postProcessSearchQuery(BooleanQuery, BooleanFilter,
-	 *             SearchContext)}
-	 */
-	@Deprecated
-	public void postProcessSearchQuery(
-			BooleanQuery searchQuery, SearchContext searchContext)
 		throws Exception;
 
 	public void postProcessSummary(

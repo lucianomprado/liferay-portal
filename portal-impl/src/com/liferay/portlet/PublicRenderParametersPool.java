@@ -35,26 +35,15 @@ import javax.servlet.http.HttpSession;
  */
 public class PublicRenderParametersPool {
 
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link
-	 *             #get(HttpServletRequest, long)}
-	 */
-	@Deprecated
 	public static Map<String, String[]> get(
-		HttpServletRequest request, long plid, boolean warFile) {
-
-		return get(request, plid);
-	}
-
-	protected static Map<String, String[]> get(
-		HttpServletRequest request, long plid) {
+		HttpServletRequest httpServletRequest, long plid) {
 
 		if (PropsValues.PORTLET_PUBLIC_RENDER_PARAMETER_DISTRIBUTION_LAYOUT) {
 			return RenderParametersPool.getOrCreate(
-				request, plid, _PUBLIC_RENDER_PARAMETERS);
+				httpServletRequest, plid, _PUBLIC_RENDER_PARAMETERS);
 		}
 
-		HttpSession session = request.getSession();
+		HttpSession session = httpServletRequest.getSession();
 
 		HttpSession portalSession = PortalSessionContext.get(session.getId());
 
@@ -82,9 +71,9 @@ public class PublicRenderParametersPool {
 			return publicRenderParametersPool.computeIfAbsent(
 				layoutSet.getLayoutSetId(), key -> new HashMap<>());
 		}
-		catch (Exception e) {
+		catch (Exception exception) {
 			if (_log.isWarnEnabled()) {
-				_log.warn(e, e);
+				_log.warn(exception, exception);
 			}
 
 			return new HashMap<>();

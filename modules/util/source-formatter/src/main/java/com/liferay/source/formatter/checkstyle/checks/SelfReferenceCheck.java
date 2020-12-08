@@ -14,10 +14,8 @@
 
 package com.liferay.source.formatter.checkstyle.checks;
 
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.source.formatter.checkstyle.util.DetailASTUtil;
+import com.liferay.petra.string.StringPool;
 
-import com.puppycrawl.tools.checkstyle.api.AbstractCheck;
 import com.puppycrawl.tools.checkstyle.api.DetailAST;
 import com.puppycrawl.tools.checkstyle.api.TokenTypes;
 
@@ -26,79 +24,85 @@ import java.util.List;
 /**
  * @author Hugo Huijser
  */
-public class SelfReferenceCheck extends AbstractCheck {
+public class SelfReferenceCheck extends BaseCheck {
 
 	@Override
 	public int[] getDefaultTokens() {
-		return new int[] {TokenTypes.CLASS_DEF};
+		return new int[] {
+			TokenTypes.CLASS_DEF, TokenTypes.ENUM_DEF, TokenTypes.INTERFACE_DEF
+		};
 	}
 
 	@Override
-	public void visitToken(DetailAST detailAST) {
-		DetailAST nameAST = detailAST.findFirstToken(TokenTypes.IDENT);
+	protected void doVisitToken(DetailAST detailAST) {
+		DetailAST nameDetailAST = detailAST.findFirstToken(TokenTypes.IDENT);
 
-		String className = nameAST.getText();
+		String className = nameDetailAST.getText();
 
-		List<DetailAST> methodCallASTList = DetailASTUtil.getAllChildTokens(
+		List<DetailAST> methodCallDetailASTList = getAllChildTokens(
 			detailAST, true, TokenTypes.METHOD_CALL);
 
-		for (DetailAST methodCallAST : methodCallASTList) {
-			DetailAST dotAST = methodCallAST.findFirstToken(TokenTypes.DOT);
+		for (DetailAST methodCallDetailAST : methodCallDetailASTList) {
+			DetailAST dotDetailAST = methodCallDetailAST.findFirstToken(
+				TokenTypes.DOT);
 
-			if (dotAST == null) {
+			if (dotDetailAST == null) {
 				continue;
 			}
 
-			DetailAST firstChild = dotAST.getFirstChild();
+			DetailAST firstChildDetailAST = dotDetailAST.getFirstChild();
 
-			if ((firstChild.getType() != TokenTypes.IDENT) &&
-				(firstChild.getType() != TokenTypes.LITERAL_THIS)) {
+			if ((firstChildDetailAST.getType() != TokenTypes.IDENT) &&
+				(firstChildDetailAST.getType() != TokenTypes.LITERAL_THIS)) {
 
 				continue;
 			}
 
-			String methodClassName = firstChild.getText();
+			String methodClassName = firstChildDetailAST.getText();
 
-			if ((firstChild.getType() == TokenTypes.LITERAL_THIS) ||
+			if ((firstChildDetailAST.getType() == TokenTypes.LITERAL_THIS) ||
 				(methodClassName.equals(className) &&
-				 !_isInsideAnonymousClass(methodCallAST) &&
-				 !_isInsideInnerClass(methodCallAST, className))) {
+				 !_isInsideAnonymousClass(methodCallDetailAST) &&
+				 !_isInsideInnerClass(methodCallDetailAST, className) &&
+				 !hasParentWithTokenType(
+					 methodCallDetailAST, TokenTypes.INSTANCE_INIT))) {
 
-				DetailAST secondChild = firstChild.getNextSibling();
+				DetailAST secondChildDetailAST =
+					firstChildDetailAST.getNextSibling();
 
-				if (secondChild.getType() == TokenTypes.IDENT) {
+				if (secondChildDetailAST.getType() == TokenTypes.IDENT) {
 					log(
-						methodCallAST.getLineNo(), _MSG_UNNEEDED_SELF_REFERENCE,
-						secondChild.getText(),
-						firstChild.getText() + StringPool.PERIOD);
+						methodCallDetailAST, _MSG_UNNEEDED_SELF_REFERENCE,
+						secondChildDetailAST.getText(),
+						firstChildDetailAST.getText() + StringPool.PERIOD);
 				}
 			}
 		}
 	}
 
-	private boolean _isInsideAnonymousClass(DetailAST methodCallAST) {
-		DetailAST parentAST = methodCallAST.getParent();
+	private boolean _isInsideAnonymousClass(DetailAST methodCallDetailAST) {
+		DetailAST parentDetailAST = methodCallDetailAST.getParent();
 
 		while (true) {
-			if (parentAST == null) {
+			if (parentDetailAST == null) {
 				return false;
 			}
 
-			if (parentAST.getType() != TokenTypes.METHOD_DEF) {
-				parentAST = parentAST.getParent();
+			if (parentDetailAST.getType() != TokenTypes.METHOD_DEF) {
+				parentDetailAST = parentDetailAST.getParent();
 
 				continue;
 			}
 
-			parentAST = parentAST.getParent();
+			parentDetailAST = parentDetailAST.getParent();
 
-			if (parentAST.getType() != TokenTypes.OBJBLOCK) {
+			if (parentDetailAST.getType() != TokenTypes.OBJBLOCK) {
 				return false;
 			}
 
-			parentAST = parentAST.getParent();
+			parentDetailAST = parentDetailAST.getParent();
 
-			if (parentAST.getType() != TokenTypes.CLASS_DEF) {
+			if (parentDetailAST.getType() != TokenTypes.CLASS_DEF) {
 				return true;
 			}
 
@@ -107,22 +111,26 @@ public class SelfReferenceCheck extends AbstractCheck {
 	}
 
 	private boolean _isInsideInnerClass(
-		DetailAST methodCallAST, String className) {
+		DetailAST methodCallDetailAST, String className) {
 
-		DetailAST parentAST = methodCallAST.getParent();
+		DetailAST parentDetailAST = methodCallDetailAST.getParent();
 
 		while (true) {
-			if (parentAST.getType() == TokenTypes.CLASS_DEF) {
-				DetailAST nameAST = parentAST.findFirstToken(TokenTypes.IDENT);
+			if ((parentDetailAST.getType() == TokenTypes.CLASS_DEF) ||
+				(parentDetailAST.getType() == TokenTypes.ENUM_DEF) ||
+				(parentDetailAST.getType() == TokenTypes.INTERFACE_DEF)) {
 
-				if (className.equals(nameAST.getText())) {
+				DetailAST nameDetailAST = parentDetailAST.findFirstToken(
+					TokenTypes.IDENT);
+
+				if (className.equals(nameDetailAST.getText())) {
 					return false;
 				}
 
 				return true;
 			}
 
-			parentAST = parentAST.getParent();
+			parentDetailAST = parentDetailAST.getParent();
 		}
 	}
 

@@ -9,28 +9,33 @@
 </thead>
 <tbody>
 <tr>
-	<td>EDIT_LIVE_DELETE</td>
-	<td>//li/a[@title='Delete']</td>
-	<td></td>
-</tr>
-<tr>
-	<td></td>
-	<td></td>
-	<td></td>
-</tr>
-<tr>
 	<td>ADD</td>
 	<td>//*[@data-qa-id='controlMenu']//*[@data-qa-id='add']</td>
 	<td></td>
 </tr>
 <tr>
-	<td>ADMIN</td>
-	<td>//li[@id='_145_adminLinks']/a</td>
-	<td>Admin Drop Down Button</td>
+	<td>EDIT_COG</td>
+	<td>//*[@data-qa-id='controlMenu']//a[span/*[name()='svg'][contains(@class,'icon-cog')]]</td>
+	<td></td>
 </tr>
 <tr>
-	<td>EDIT_COG</td>
-	<td>//*[@data-qa-id='controlMenu']//span/*[name()='svg'][contains(@class,'icon-cog')]</td>
+	<td>APPLICATIONS_MENU_ICON</td>
+	<td>//div[contains(@class,'control-menu')]//button[@data-qa-id='applicationsMenu']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>HEADING</td>
+	<td>//*[@data-qa-id='headerTitle']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>NEW_COLLECTION_PAGE_ITEM_BUTTON</td>
+	<td>//*[@data-qa-id='controlMenu']//a[@*='${key_title}']//*[name()='svg'][contains(@class,'lexicon-icon-plus')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>PAGE_TYPE</td>
+	<td>//*[@data-qa-id='controlMenu']//span[contains(@class,'text-truncate')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -49,8 +54,13 @@
 	<td></td>
 </tr>
 <tr>
-	<td>USER_NAME</td>
-	<td>//span[contains(@class,'user-name')]</td>
+	<td>TOGGLE_CONTROLS</td>
+	<td>//*[@data-qa-id='showControls' and contains(.,'Toggle Controls')]//*[name()='svg'][contains(@class,'${key_status}')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>VIEW_COLLECTION_ITEMS_BUTTON</td>
+	<td>//*[@data-qa-id='controlMenu']//button[contains(@id,'viewCollectionItems')]</td>
 	<td></td>
 </tr>
 <tr>

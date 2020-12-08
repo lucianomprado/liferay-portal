@@ -104,9 +104,8 @@ public class DynamicResourceRequest extends ResourceRequestWrapper {
 		if (ArrayUtil.isNotEmpty(values)) {
 			return values[0];
 		}
-		else {
-			return null;
-		}
+
+		return null;
 	}
 
 	@Override
@@ -127,10 +126,10 @@ public class DynamicResourceRequest extends ResourceRequestWrapper {
 		Set<String> names = new LinkedHashSet<>();
 
 		if (_inherit) {
-			Enumeration<String> enu = super.getParameterNames();
+			Enumeration<String> enumeration = super.getParameterNames();
 
-			while (enu.hasMoreElements()) {
-				names.add(enu.nextElement());
+			while (enumeration.hasMoreElements()) {
+				names.add(enumeration.nextElement());
 			}
 		}
 

@@ -14,8 +14,6 @@
 
 package com.liferay.portlet.announcements.model.impl;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.announcements.kernel.model.AnnouncementsEntry;
 import com.liferay.announcements.kernel.service.AnnouncementsEntryLocalServiceUtil;
 
@@ -31,13 +29,13 @@ import com.liferay.announcements.kernel.service.AnnouncementsEntryLocalServiceUt
  * @see AnnouncementsEntry
  * @generated
  */
-@ProviderType
 public abstract class AnnouncementsEntryBaseImpl
 	extends AnnouncementsEntryModelImpl implements AnnouncementsEntry {
+
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. All methods that expect a announcements entry model instance should use the {@link AnnouncementsEntry} interface instead.
+	 * Never modify or reference this class directly. All methods that expect a announcements entry model instance should use the <code>AnnouncementsEntry</code> interface instead.
 	 */
 	@Override
 	public void persist() {
@@ -48,4 +46,5 @@ public abstract class AnnouncementsEntryBaseImpl
 			AnnouncementsEntryLocalServiceUtil.updateAnnouncementsEntry(this);
 		}
 	}
+
 }

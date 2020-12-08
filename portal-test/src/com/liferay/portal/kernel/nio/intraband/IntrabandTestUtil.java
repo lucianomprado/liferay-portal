@@ -16,7 +16,6 @@ package com.liferay.portal.kernel.nio.intraband;
 
 import com.liferay.portal.kernel.util.ProxyUtil;
 import com.liferay.portal.kernel.util.SocketUtil;
-import com.liferay.portal.kernel.util.SocketUtil.ServerSocketConfigurator;
 
 import java.io.IOException;
 
@@ -96,15 +95,15 @@ public class IntrabandTestUtil {
 			ScatteringByteChannel scatteringByteChannel)
 		throws IOException {
 
-		Datagram datagram = DatagramHelper.createReceiveDatagram();
+		Datagram datagram = DatagramUtil.createReceiveDatagram();
 
-		while (!DatagramHelper.readFrom(datagram, scatteringByteChannel));
+		while (!DatagramUtil.readFrom(datagram, scatteringByteChannel));
 
 		return datagram;
 	}
 
-	private static final ServerSocketConfigurator _serverSocketConfigurator =
-		new ServerSocketConfigurator() {
+	private static final SocketUtil.ServerSocketConfigurator
+		_serverSocketConfigurator = new SocketUtil.ServerSocketConfigurator() {
 
 			@Override
 			public void configure(ServerSocket serverSocket)

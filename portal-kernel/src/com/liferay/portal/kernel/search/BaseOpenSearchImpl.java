@@ -14,6 +14,7 @@
 
 package com.liferay.portal.kernel.search;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.portlet.LiferayPortletURL;
@@ -28,7 +29,6 @@ import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HttpUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.PropsUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
@@ -83,31 +83,31 @@ public abstract class BaseOpenSearchImpl implements OpenSearch {
 
 	@Override
 	public abstract String search(
-			HttpServletRequest request, long groupId, long userId,
+			HttpServletRequest httpServletRequest, long groupId, long userId,
 			String keywords, int startPage, int itemsPerPage, String format)
 		throws SearchException;
 
 	@Override
 	public String search(
-			HttpServletRequest request, long userId, String keywords,
+			HttpServletRequest httpServletRequest, long userId, String keywords,
 			int startPage, int itemsPerPage, String format)
 		throws SearchException {
 
 		return search(
-			request, 0, userId, keywords, startPage, itemsPerPage, format);
+			httpServletRequest, 0, userId, keywords, startPage, itemsPerPage,
+			format);
 	}
 
 	@Override
-	public String search(HttpServletRequest request, String url)
+	public String search(HttpServletRequest httpServletRequest, String url)
 		throws SearchException {
 
 		try {
-			long userId = PortalUtil.getUserId(request);
+			long userId = PortalUtil.getUserId(httpServletRequest);
 
 			if (userId == 0) {
-				long companyId = PortalUtil.getCompanyId(request);
-
-				userId = UserLocalServiceUtil.getDefaultUserId(companyId);
+				userId = UserLocalServiceUtil.getDefaultUserId(
+					PortalUtil.getCompanyId(httpServletRequest));
 			}
 
 			String keywords = GetterUtil.getString(
@@ -121,13 +121,14 @@ public abstract class BaseOpenSearchImpl implements OpenSearch {
 				HttpUtil.getParameter(url, "format", false));
 
 			return search(
-				request, userId, keywords, startPage, itemsPerPage, format);
+				httpServletRequest, userId, keywords, startPage, itemsPerPage,
+				format);
 		}
-		catch (SearchException se) {
-			throw se;
+		catch (SearchException searchException) {
+			throw searchException;
 		}
-		catch (Exception e) {
-			throw new SearchException(e);
+		catch (Exception exception) {
+			throw new SearchException(exception);
 		}
 	}
 
@@ -325,12 +326,11 @@ public abstract class BaseOpenSearchImpl implements OpenSearch {
 				start, totalPages, previousPage, nextPage, title, searchPath,
 				themeDisplay);
 		}
-		else {
-			return addSearchResultsAtom(
-				doc, queryTerms, keywords, startPage, itemsPerPage, total,
-				start, totalPages, previousPage, nextPage, title, searchPath,
-				themeDisplay);
-		}
+
+		return addSearchResultsAtom(
+			doc, queryTerms, keywords, startPage, itemsPerPage, total, start,
+			totalPages, previousPage, nextPage, title, searchPath,
+			themeDisplay);
 	}
 
 	protected Object[] addSearchResultsAtom(
@@ -531,10 +531,11 @@ public abstract class BaseOpenSearchImpl implements OpenSearch {
 	}
 
 	protected long getPlid(
-			HttpServletRequest request, String portletId, long scopeGroupId)
+			HttpServletRequest httpServletRequest, String portletId,
+			long scopeGroupId)
 		throws Exception {
 
-		Layout layout = (Layout)request.getAttribute(WebKeys.LAYOUT);
+		Layout layout = (Layout)httpServletRequest.getAttribute(WebKeys.LAYOUT);
 
 		long layoutGroupId = scopeGroupId;
 
@@ -550,30 +551,29 @@ public abstract class BaseOpenSearchImpl implements OpenSearch {
 				layoutGroupId, scopeGroupId, true, portletId);
 		}
 
-		if (plid == 0) {
-			if (layout != null) {
-				plid = layout.getPlid();
-			}
+		if ((plid == 0) && (layout != null)) {
+			plid = layout.getPlid();
 		}
 
 		return plid;
 	}
 
 	protected PortletURL getPortletURL(
-			HttpServletRequest request, String portletId)
+			HttpServletRequest httpServletRequest, String portletId)
 		throws Exception {
 
-		return getPortletURL(request, portletId, 0);
+		return getPortletURL(httpServletRequest, portletId, 0);
 	}
 
 	protected PortletURL getPortletURL(
-			HttpServletRequest request, String portletId, long scopeGroupId)
+			HttpServletRequest httpServletRequest, String portletId,
+			long scopeGroupId)
 		throws Exception {
 
-		long plid = getPlid(request, portletId, scopeGroupId);
-
 		PortletURL portletURL = PortletURLFactoryUtil.create(
-			request, portletId, plid, PortletRequest.RENDER_PHASE);
+			httpServletRequest, portletId,
+			getPlid(httpServletRequest, portletId, scopeGroupId),
+			PortletRequest.RENDER_PHASE);
 
 		portletURL.setPortletMode(PortletMode.VIEW);
 		portletURL.setWindowState(WindowState.MAXIMIZED);
@@ -582,15 +582,16 @@ public abstract class BaseOpenSearchImpl implements OpenSearch {
 	}
 
 	protected PortletURL getPortletURL(
-			HttpServletRequest request, String className,
+			HttpServletRequest httpServletRequest, String className,
 			PortletProvider.Action action, long scopeGroupId)
 		throws Exception {
 
 		LiferayPortletURL portletURL =
 			(LiferayPortletURL)PortletProviderUtil.getPortletURL(
-				request, className, action);
+				httpServletRequest, className, action);
 
-		long plid = getPlid(request, portletURL.getPortletId(), scopeGroupId);
+		long plid = getPlid(
+			httpServletRequest, portletURL.getPortletId(), scopeGroupId);
 
 		portletURL.setPlid(plid);
 

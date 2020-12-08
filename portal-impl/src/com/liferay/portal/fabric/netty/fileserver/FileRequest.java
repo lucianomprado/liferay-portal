@@ -14,9 +14,9 @@
 
 package com.liferay.portal.fabric.netty.fileserver;
 
-import com.liferay.portal.kernel.io.PathHolder;
-import com.liferay.portal.kernel.util.HashUtil;
-import com.liferay.portal.kernel.util.StringBundler;
+import com.liferay.petra.lang.HashUtil;
+import com.liferay.petra.process.PathHolder;
+import com.liferay.petra.string.StringBundler;
 
 import java.io.Serializable;
 
@@ -37,16 +37,16 @@ public class FileRequest implements Serializable {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
+	public boolean equals(Object object) {
+		if (this == object) {
 			return true;
 		}
 
-		if (!(obj instanceof FileRequest)) {
+		if (!(object instanceof FileRequest)) {
 			return false;
 		}
 
-		FileRequest fileRequest = (FileRequest)obj;
+		FileRequest fileRequest = (FileRequest)object;
 
 		if ((_deleteAfterFetch == fileRequest._deleteAfterFetch) &&
 			(_lastModifiedTime == fileRequest._lastModifiedTime) &&

@@ -25,6 +25,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 
+import java.net.URLEncoder;
+
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileVisitResult;
@@ -48,8 +50,10 @@ import org.gradle.api.AntBuilder;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.file.FileCollection;
+import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
+import org.gradle.api.tasks.SourceSet;
 
 /**
  * @author Andrea Di Giorgi
@@ -128,6 +132,15 @@ public class FileUtil {
 		String mirrorsCacheArtifactSubdir = url.replaceFirst(
 			"https?:\\/\\/(.+\\/).+", "$1");
 
+		StringBuilder sb = new StringBuilder();
+
+		for (String segment : mirrorsCacheArtifactSubdir.split("/")) {
+			sb.append(URLEncoder.encode(segment, "UTF-8"));
+			sb.append('/');
+		}
+
+		mirrorsCacheArtifactSubdir = sb.toString();
+
 		File mirrorsCacheArtifactDir = new File(
 			_getMirrorsCacheDir(), mirrorsCacheArtifactSubdir);
 
@@ -148,7 +161,7 @@ public class FileUtil {
 						project, mirrorsUrl, null, null,
 						mirrorsCacheArtifactFile, ignoreErrors);
 				}
-				catch (Exception e) {
+				catch (Exception exception) {
 					_get(
 						project, url, username, password,
 						mirrorsCacheArtifactFile, ignoreErrors);
@@ -171,7 +184,11 @@ public class FileUtil {
 			destinationPath = destinationPath.resolve(fileName);
 		}
 
-		Files.createDirectories(destinationPath.getParent());
+		Path destinationParentPath = destinationPath.getParent();
+
+		if (destinationParentPath != null) {
+			Files.createDirectories(destinationParentPath);
+		}
 
 		Files.copy(
 			mirrorsCacheArtifactFile.toPath(), destinationPath,
@@ -196,6 +213,12 @@ public class FileUtil {
 		char driveLetter = absolutePath.charAt(0);
 
 		return Character.toLowerCase(driveLetter);
+	}
+
+	public static File getJavaClassesDir(SourceSet sourceSet) {
+		SourceDirectorySet sourceDirectorySet = sourceSet.getJava();
+
+		return sourceDirectorySet.getOutputDir();
 	}
 
 	public static boolean isChild(File file, File parentFile) {
@@ -234,8 +257,8 @@ public class FileUtil {
 				upToDate = true;
 			}
 		}
-		catch (IOException ioe) {
-			throw new GradleException(ioe.getMessage(), ioe);
+		catch (IOException ioException) {
+			throw new GradleException(ioException.getMessage(), ioException);
 		}
 
 		return upToDate;

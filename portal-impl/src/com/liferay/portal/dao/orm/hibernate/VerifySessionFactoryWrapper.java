@@ -14,6 +14,7 @@
 
 package com.liferay.portal.dao.orm.hibernate;
 
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.dao.orm.Dialect;
 import com.liferay.portal.kernel.dao.orm.ORMException;
 import com.liferay.portal.kernel.dao.orm.Session;
@@ -21,9 +22,9 @@ import com.liferay.portal.kernel.dao.orm.SessionFactory;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
-import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.spring.hibernate.PortletTransactionManager;
-import com.liferay.portal.spring.transaction.CurrentPlatformTransactionManagerUtil;
+import com.liferay.portal.spring.transaction.TransactionExecutor;
+import com.liferay.portal.spring.transaction.TransactionExecutorThreadLocal;
 import com.liferay.portal.util.PropsValues;
 
 import java.lang.reflect.InvocationHandler;
@@ -57,6 +58,10 @@ public class VerifySessionFactoryWrapper implements SessionFactory {
 
 	@Override
 	public void closeSession(Session session) throws ORMException {
+		if (session == null) {
+			return;
+		}
+
 		if (PropsValues.SPRING_HIBERNATE_SESSION_DELEGATED &&
 			ProxyUtil.isProxyClass(session.getClass())) {
 
@@ -119,12 +124,20 @@ public class VerifySessionFactoryWrapper implements SessionFactory {
 	}
 
 	private boolean _verify() {
+		TransactionExecutor transactionExecutor =
+			TransactionExecutorThreadLocal.getCurrentTransactionExecutor();
+
+		if (transactionExecutor == null) {
+			throw new IllegalStateException("No current transaction executor");
+		}
+
 		PlatformTransactionManager platformTransactionManager =
-			CurrentPlatformTransactionManagerUtil.
-				getCurrentPlatformTransactionManager();
+			transactionExecutor.getPlatformTransactionManager();
 
 		if (platformTransactionManager == null) {
-			throw new IllegalStateException("No current transaction manager");
+			throw new IllegalStateException(
+				"No transaction manager for transaction executor: " +
+					transactionExecutor);
 		}
 
 		SessionFactoryImplementor targetSessionFactoryImplementor =
@@ -143,13 +156,12 @@ public class VerifySessionFactoryWrapper implements SessionFactory {
 
 				return true;
 			}
-			else {
-				_logFailure(
-					currentSessionFactoryImplementor,
-					targetSessionFactoryImplementor);
 
-				return false;
-			}
+			_logFailure(
+				currentSessionFactoryImplementor,
+				targetSessionFactoryImplementor);
+
+			return false;
 		}
 
 		if (platformTransactionManager instanceof PortletTransactionManager) {
@@ -165,13 +177,12 @@ public class VerifySessionFactoryWrapper implements SessionFactory {
 
 				return true;
 			}
-			else {
-				_logFailure(
-					currentSessionFactoryImplementor,
-					targetSessionFactoryImplementor);
 
-				return false;
-			}
+			_logFailure(
+				currentSessionFactoryImplementor,
+				targetSessionFactoryImplementor);
+
+			return false;
 		}
 
 		throw new IllegalStateException(

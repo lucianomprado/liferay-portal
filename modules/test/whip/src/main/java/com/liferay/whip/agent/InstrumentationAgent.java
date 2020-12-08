@@ -26,9 +26,12 @@ import java.io.IOException;
 import java.lang.instrument.ClassDefinition;
 import java.lang.instrument.Instrumentation;
 import java.lang.instrument.UnmodifiableClassException;
+import java.lang.reflect.Method;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import org.objectweb.asm.Type;
 
 /**
  * @author Shuyang Zhou
@@ -36,7 +39,8 @@ import java.util.List;
 public class InstrumentationAgent {
 
 	public static synchronized void assertCoverage(
-		boolean includeInnerClasses, Class<?>... classes) {
+		boolean includeInnerClasses, List<Class<?>> classes,
+		List<Method> methods) {
 
 		if (!_dynamicallyInstrumented) {
 			return;
@@ -84,6 +88,14 @@ public class InstrumentationAgent {
 				}
 			}
 
+			for (Method method : methods) {
+				Class<?> clazz = method.getDeclaringClass();
+
+				_assertMethodCoverage(
+					assertionErrors, projectData.getClassData(clazz.getName()),
+					method);
+			}
+
 			if (!assertionErrors.isEmpty()) {
 				AssertionError assertionError = assertionErrors.get(0);
 
@@ -116,12 +128,11 @@ public class InstrumentationAgent {
 					_originalClassDefinitions = null;
 
 					_instrumentation.redefineClasses(
-						classDefinitions.toArray(
-							new ClassDefinition[classDefinitions.size()]));
+						classDefinitions.toArray(new ClassDefinition[0]));
 				}
-				catch (Exception e) {
+				catch (Exception exception) {
 					throw new RuntimeException(
-						"Unable to uninstrument classes", e);
+						"Unable to uninstrument classes", exception);
 				}
 			}
 		}
@@ -199,7 +210,7 @@ public class InstrumentationAgent {
 		}
 
 		_instrumentation.retransformClasses(
-			modifiableClasses.toArray(new Class<?>[modifiableClasses.size()]));
+			modifiableClasses.toArray(new Class<?>[0]));
 
 		_dynamicallyInstrumented = true;
 		_originalClassDefinitions = null;
@@ -337,6 +348,42 @@ public class InstrumentationAgent {
 		System.out.printf("[Whip] %s is fully covered.%n", classData.getName());
 	}
 
+	private static void _assertMethodCoverage(
+		List<AssertionError> assertionErrors, ClassData classData,
+		Method method) {
+
+		boolean hasUncoveredLines = false;
+
+		for (LineData lineData : classData.getLines()) {
+			if (lineData.isCovered()) {
+				continue;
+			}
+
+			String methodName = lineData.getMethodName();
+
+			if (!methodName.equals(method.getName())) {
+				continue;
+			}
+
+			String methodDescriptor = Type.getMethodDescriptor(method);
+
+			if (!methodDescriptor.equals(lineData.getMethodDescriptor())) {
+				continue;
+			}
+
+			hasUncoveredLines = true;
+
+			System.out.printf(
+				"[Whip] %s line %d is not covered %n", method,
+				lineData.getLineNumber());
+		}
+
+		if (hasUncoveredLines) {
+			assertionErrors.add(
+				new AssertionError(method + " is not fully covered"));
+		}
+	}
+
 	private static final File _dataFile;
 	private static boolean _dynamicallyInstrumented;
 	private static String[] _excludes;
@@ -364,8 +411,8 @@ public class InstrumentationAgent {
 		try {
 			_lockFile.createNewFile();
 		}
-		catch (IOException ioe) {
-			throw new ExceptionInInitializerError(ioe);
+		catch (IOException ioException) {
+			throw new ExceptionInInitializerError(ioException);
 		}
 	}
 
@@ -377,7 +424,7 @@ public class InstrumentationAgent {
 
 				return new ClassDefinition(clazz, _bytes);
 			}
-			catch (Throwable t) {
+			catch (Throwable throwable) {
 				return null;
 			}
 		}
@@ -386,8 +433,9 @@ public class InstrumentationAgent {
 			ClassLoader classLoader, String className, byte[] bytes) {
 
 			_classLoader = classLoader;
-			_className = className.replace('/', '.');
 			_bytes = bytes;
+
+			_className = className.replace('/', '.');
 		}
 
 		private final byte[] _bytes;

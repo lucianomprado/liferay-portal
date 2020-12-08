@@ -14,12 +14,9 @@
 
 package com.liferay.push.notifications.model.impl;
 
-import aQute.bnd.annotation.ProviderType;
-
 /**
  * @author Silvio Santos
  */
-@ProviderType
 public class PushNotificationsDeviceImpl
 	extends PushNotificationsDeviceBaseImpl {
 

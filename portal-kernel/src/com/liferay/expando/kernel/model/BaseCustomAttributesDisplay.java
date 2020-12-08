@@ -16,8 +16,7 @@ package com.liferay.expando.kernel.model;
 
 import com.liferay.asset.kernel.AssetRendererFactoryRegistryUtil;
 import com.liferay.asset.kernel.model.AssetRendererFactory;
-import com.liferay.portal.kernel.theme.ThemeDisplay;
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.petra.string.StringPool;
 
 /**
  * @author Jorge Ferrer
@@ -39,15 +38,6 @@ public abstract class BaseCustomAttributesDisplay
 			return assetRendererFactory.getIconCssClass();
 		}
 
-		return StringPool.BLANK;
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	@Override
-	public String getIconPath(ThemeDisplay themeDisplay) {
 		return StringPool.BLANK;
 	}
 

@@ -14,7 +14,6 @@
 
 package com.liferay.portal.kernel.workflow;
 
-import com.liferay.portal.kernel.security.pacl.permission.PortalRuntimePermission;
 import com.liferay.portal.kernel.util.OrderByComparator;
 
 import java.util.List;
@@ -30,13 +29,19 @@ import java.util.List;
 public class WorkflowDefinitionManagerUtil {
 
 	public static WorkflowDefinition deployWorkflowDefinition(
-			long companyId, long userId, String title, byte[] bytes)
+			long companyId, long userId, String title, String name,
+			byte[] bytes)
 		throws WorkflowException {
 
 		return getWorkflowDefinitionManager().deployWorkflowDefinition(
-			companyId, userId, title, bytes);
+			companyId, userId, title, name, bytes);
 	}
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *             #getActiveWorkflowDefinitionsCount(long)}
+	 */
+	@Deprecated
 	public static int getActiveWorkflowDefinitionCount(long companyId)
 		throws WorkflowException {
 
@@ -44,6 +49,10 @@ public class WorkflowDefinitionManagerUtil {
 			companyId);
 	}
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
+	 */
+	@Deprecated
 	public static int getActiveWorkflowDefinitionCount(
 			long companyId, String name)
 		throws WorkflowException {
@@ -70,12 +79,35 @@ public class WorkflowDefinitionManagerUtil {
 			companyId, name, start, end, orderByComparator);
 	}
 
-	public static WorkflowDefinition getLatestKaleoDefinition(
+	public static int getActiveWorkflowDefinitionsCount(long companyId)
+		throws WorkflowException {
+
+		return getWorkflowDefinitionManager().getActiveWorkflowDefinitionsCount(
+			companyId);
+	}
+
+	public static WorkflowDefinition getLatestWorkflowDefinition(
 			long companyId, String name)
 		throws WorkflowException {
 
-		return getWorkflowDefinitionManager().getLatestKaleoDefinition(
+		return getWorkflowDefinitionManager().getLatestWorkflowDefinition(
 			companyId, name);
+	}
+
+	public static List<WorkflowDefinition> getLatestWorkflowDefinitions(
+			long companyId, int start, int end,
+			OrderByComparator<WorkflowDefinition> orderByComparator)
+		throws WorkflowException {
+
+		return getWorkflowDefinitionManager().getLatestWorkflowDefinitions(
+			companyId, start, end, orderByComparator);
+	}
+
+	public static int getLatestWorkflowDefinitionsCount(long companyId)
+		throws WorkflowException {
+
+		return getWorkflowDefinitionManager().getLatestWorkflowDefinitionsCount(
+			companyId);
 	}
 
 	public static WorkflowDefinition getWorkflowDefinition(
@@ -86,6 +118,10 @@ public class WorkflowDefinitionManagerUtil {
 			companyId, name, version);
 	}
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
+	 */
+	@Deprecated
 	public static int getWorkflowDefinitionCount(long companyId)
 		throws WorkflowException {
 
@@ -93,6 +129,11 @@ public class WorkflowDefinitionManagerUtil {
 			companyId);
 	}
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *             #getWorkflowDefinitionsCount(long, String)}
+	 */
+	@Deprecated
 	public static int getWorkflowDefinitionCount(long companyId, String name)
 		throws WorkflowException {
 
@@ -101,12 +142,13 @@ public class WorkflowDefinitionManagerUtil {
 	}
 
 	public static WorkflowDefinitionManager getWorkflowDefinitionManager() {
-		PortalRuntimePermission.checkGetBeanProperty(
-			WorkflowDefinitionManagerUtil.class);
-
 		return _workflowDefinitionManager;
 	}
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
+	 */
+	@Deprecated
 	public static List<WorkflowDefinition> getWorkflowDefinitions(
 			long companyId, int start, int end,
 			OrderByComparator<WorkflowDefinition> orderByComparator)
@@ -123,6 +165,36 @@ public class WorkflowDefinitionManagerUtil {
 
 		return getWorkflowDefinitionManager().getWorkflowDefinitions(
 			companyId, name, start, end, orderByComparator);
+	}
+
+	public static int getWorkflowDefinitionsCount(long companyId, String name)
+		throws WorkflowException {
+
+		return getWorkflowDefinitionManager().getWorkflowDefinitionsCount(
+			companyId, name);
+	}
+
+	/**
+	 * Saves a workflow definition without activating it or validating its data.
+	 * To save the definition, validate its data, and activate it, use {@link
+	 * #deployWorkflowDefinition(long, long, String, String, byte[])} instead.
+	 *
+	 * @param  companyId the company ID of the workflow definition
+	 * @param  userId the ID of the user saving the workflow definition
+	 * @param  title the workflow definition's title
+	 * @param  name the workflow definition's name
+	 * @param  bytes the data saved as the workflow definition's content
+	 * @return the workflow definition
+	 * @throws WorkflowException if there was an issue saving the workflow
+	 *         definition
+	 */
+	public static WorkflowDefinition saveWorkflowDefinition(
+			long companyId, long userId, String title, String name,
+			byte[] bytes)
+		throws WorkflowException {
+
+		return getWorkflowDefinitionManager().saveWorkflowDefinition(
+			companyId, userId, title, name, bytes);
 	}
 
 	public static void undeployWorkflowDefinition(
@@ -142,6 +214,10 @@ public class WorkflowDefinitionManagerUtil {
 			companyId, userId, name, version, active);
 	}
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement}
+	 */
+	@Deprecated
 	public static WorkflowDefinition updateTitle(
 			long companyId, long userId, String name, int version, String title)
 		throws WorkflowException {
@@ -158,8 +234,6 @@ public class WorkflowDefinitionManagerUtil {
 
 	public void setWorkflowDefinitionManager(
 		WorkflowDefinitionManager workflowDefinitionManager) {
-
-		PortalRuntimePermission.checkSetBeanProperty(getClass());
 
 		_workflowDefinitionManager = workflowDefinitionManager;
 	}

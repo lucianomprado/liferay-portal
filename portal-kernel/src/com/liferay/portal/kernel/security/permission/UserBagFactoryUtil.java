@@ -15,7 +15,6 @@
 package com.liferay.portal.kernel.security.permission;
 
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.security.pacl.permission.PortalRuntimePermission;
 import com.liferay.portal.kernel.util.ServiceProxyFactory;
 
 /**
@@ -24,13 +23,7 @@ import com.liferay.portal.kernel.util.ServiceProxyFactory;
 public class UserBagFactoryUtil {
 
 	public static UserBag create(long userId) throws PortalException {
-		return getUserBagFactory().create(userId);
-	}
-
-	public static UserBagFactory getUserBagFactory() {
-		PortalRuntimePermission.checkGetBeanProperty(UserBagFactoryUtil.class);
-
-		return _userBagFactory;
+		return _userBagFactory.create(userId);
 	}
 
 	private UserBagFactoryUtil() {

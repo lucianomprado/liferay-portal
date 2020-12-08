@@ -27,7 +27,7 @@ import java.util.regex.Pattern;
 public class JavaUpgradeClassCheck extends BaseFileCheck {
 
 	@Override
-	public boolean isPortalCheck() {
+	public boolean isLiferaySourceCheck() {
 		return true;
 	}
 
@@ -75,9 +75,6 @@ public class JavaUpgradeClassCheck extends BaseFileCheck {
 	}
 
 	private void _checkLocaleUtil(String fileName, String content) {
-
-		// LPS-41205
-
 		int pos = content.indexOf("LocaleUtil.getDefault()");
 
 		if (pos != -1) {
@@ -85,14 +82,11 @@ public class JavaUpgradeClassCheck extends BaseFileCheck {
 				fileName,
 				"Use UpgradeProcessUtil.getDefaultLanguageId(companyId) " +
 					"instead of LocaleUtil.getDefault()",
-				getLineCount(content, pos));
+				getLineNumber(content, pos));
 		}
 	}
 
 	private void _checkRegistryVersion(String fileName, String content) {
-
-		// LPS-65685
-
 		Matcher matcher1 = _registryRegisterPattern.matcher(content);
 
 		while (matcher1.find()) {
@@ -100,17 +94,17 @@ public class JavaUpgradeClassCheck extends BaseFileCheck {
 				continue;
 			}
 
-			List<String> parametersList = JavaSourceUtil.getParameterList(
+			List<String> parameterList = JavaSourceUtil.getParameterList(
 				content.substring(matcher1.start()));
 
-			if (parametersList.size() <= 4) {
+			if (parameterList.size() <= 4) {
 				continue;
 			}
 
 			String previousUpgradeClassName = null;
 
-			for (int i = 3; i < parametersList.size(); i++) {
-				String parameter = parametersList.get(i);
+			for (int i = 3; i < parameterList.size(); i++) {
+				String parameter = parameterList.get(i);
 
 				Matcher matcher2 = _upgradeClassNamePattern.matcher(parameter);
 
@@ -127,8 +121,8 @@ public class JavaUpgradeClassCheck extends BaseFileCheck {
 					addMessage(
 						fileName,
 						"Break up Upgrade classes with a minor version " +
-							"increment or order alphabetically, see LPS-65685",
-						getLineCount(content, matcher1.start()));
+							"increment or order alphabetically",
+						getLineNumber(content, matcher1.start()));
 
 					break;
 				}
@@ -141,8 +135,6 @@ public class JavaUpgradeClassCheck extends BaseFileCheck {
 	private void _checkServiceUtil(
 		String fileName, String absolutePath, String content) {
 
-		// LPS-34911
-
 		if (!isExcludedPath(_UPGRADE_SERVICE_UTIL_EXCLUDES, absolutePath) &&
 			fileName.contains("/portal/upgrade/") &&
 			!fileName.contains("/test/") &&
@@ -153,34 +145,30 @@ public class JavaUpgradeClassCheck extends BaseFileCheck {
 			if (pos != -1) {
 				addMessage(
 					fileName,
-					"Do not use *ServiceUtil classes in upgrade classes, see " +
-						"LPS-34911",
-					getLineCount(content, pos));
+					"Do not use *ServiceUtil classes in upgrade classes",
+					getLineNumber(content, pos));
 			}
 		}
 	}
 
 	private void _checkTimestamp(String fileName, String content) {
-
-		// LPS-41205
-
 		int pos = content.indexOf("rs.getDate(");
 
 		if (pos != -1) {
 			addMessage(
 				fileName, "Use rs.getTimestamp instead of rs.getDate",
-				getLineCount(content, pos));
+				getLineNumber(content, pos));
 		}
 	}
 
 	private static final String _UPGRADE_SERVICE_UTIL_EXCLUDES =
 		"upgrade.service.util.excludes";
 
-	private final Pattern _componentAnnotationPattern = Pattern.compile(
+	private static final Pattern _componentAnnotationPattern = Pattern.compile(
 		"@Component(\n|\\([\\s\\S]*?\\)\n)");
-	private final Pattern _registryRegisterPattern = Pattern.compile(
+	private static final Pattern _registryRegisterPattern = Pattern.compile(
 		"registry\\.register\\((.*?)\\);\n", Pattern.DOTALL);
-	private final Pattern _upgradeClassNamePattern = Pattern.compile(
+	private static final Pattern _upgradeClassNamePattern = Pattern.compile(
 		"new .*?(\\w+)\\(", Pattern.DOTALL);
 
 }

@@ -14,11 +14,14 @@
 
 package com.liferay.css.builder.ant;
 
+import com.liferay.css.builder.CSSBuilder;
 import com.liferay.css.builder.CSSBuilderArgs;
-import com.liferay.css.builder.CSSBuilderInvoker;
+
+import java.io.File;
+
+import java.util.Arrays;
 
 import org.apache.tools.ant.BuildException;
-import org.apache.tools.ant.Project;
 import org.apache.tools.ant.Task;
 
 /**
@@ -28,8 +31,6 @@ public class BuildCSSTask extends Task {
 
 	@Override
 	public void execute() throws BuildException {
-		Project project = getProject();
-
 		Thread currentThread = Thread.currentThread();
 
 		ClassLoader contextClassLoader = currentThread.getContextClassLoader();
@@ -37,35 +38,45 @@ public class BuildCSSTask extends Task {
 		currentThread.setContextClassLoader(
 			BuildCSSTask.class.getClassLoader());
 
-		try {
-			CSSBuilderInvoker.invoke(project.getBaseDir(), _cssBuilderArgs);
+		try (CSSBuilder cssBuilder = new CSSBuilder(_cssBuilderArgs)) {
+			cssBuilder.execute();
 		}
-		catch (Exception e) {
-			throw new BuildException(e);
+		catch (Exception exception) {
+			throw new BuildException(exception);
 		}
 		finally {
 			currentThread.setContextClassLoader(contextClassLoader);
 		}
 	}
 
+	public void setAppendCssImportTimestamps(
+		boolean appendCssImportTimestamps) {
+
+		_cssBuilderArgs.setAppendCssImportTimestamps(appendCssImportTimestamps);
+	}
+
+	public void setBaseDir(File baseDir) {
+		_cssBuilderArgs.setBaseDir(baseDir);
+	}
+
 	public void setDirNames(String dirNames) {
 		_cssBuilderArgs.setDirNames(dirNames);
 	}
 
-	public void setDocrootDirName(String docrootDirName) {
-		_cssBuilderArgs.setDocrootDirName(docrootDirName);
+	public void setExcludes(String excludes) {
+		_cssBuilderArgs.setExcludes(excludes);
 	}
 
 	public void setGenerateSourceMap(boolean generateSourceMap) {
 		_cssBuilderArgs.setGenerateSourceMap(generateSourceMap);
 	}
 
-	public void setOutputDirName(String outputDirName) {
-		_cssBuilderArgs.setOutputDirName(outputDirName);
+	public void setImportDir(File importDir) {
+		_cssBuilderArgs.setImportPaths(Arrays.asList(importDir));
 	}
 
-	public void setPortalCommonPath(String portalCommonPath) {
-		_cssBuilderArgs.setPortalCommonPath(portalCommonPath);
+	public void setOutputDirName(String outputDirName) {
+		_cssBuilderArgs.setOutputDirName(outputDirName);
 	}
 
 	public void setPrecision(int precision) {

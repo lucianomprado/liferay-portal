@@ -1,7 +1,4 @@
-task jar(type: Jar, overwrite: true)
-
-sourceCompatibility = "1.6"
-targetCompatibility = "1.6"
+task jarOverwrite(type: Jar)
 
 String gradleVersion = version.substring(0, version.lastIndexOf('.'))
 
@@ -9,12 +6,22 @@ if (gradleVersion != gradle.gradleVersion) {
 	throw new GradleException("Unable to use Gradle " + gradle.gradleVersion + ", " + gradleVersion + " is required")
 }
 
+tasks.eclipse {
+	ext.gradleVersion = gradleVersion
+}
+
 dependencies {
 	compile fileTree(dir: gradle.gradleHomeDir, include: "lib/**/*.jar")
 }
 
 jar {
-	baseName = "gradle-resources-http"
+	finalizedBy jarOverwrite
+
+	enabled = false
+}
+
+jarOverwrite {
+	baseName = "org-gradle-resources-http"
 	duplicatesStrategy = "exclude"
 	from sourceSets.main.output
 

@@ -14,8 +14,6 @@
 
 package com.liferay.portal.model.impl;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.portal.kernel.model.LayoutSetBranch;
 import com.liferay.portal.kernel.service.LayoutSetBranchLocalServiceUtil;
 
@@ -31,13 +29,13 @@ import com.liferay.portal.kernel.service.LayoutSetBranchLocalServiceUtil;
  * @see LayoutSetBranch
  * @generated
  */
-@ProviderType
-public abstract class LayoutSetBranchBaseImpl extends LayoutSetBranchModelImpl
-	implements LayoutSetBranch {
+public abstract class LayoutSetBranchBaseImpl
+	extends LayoutSetBranchModelImpl implements LayoutSetBranch {
+
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. All methods that expect a layout set branch model instance should use the {@link LayoutSetBranch} interface instead.
+	 * Never modify or reference this class directly. All methods that expect a layout set branch model instance should use the <code>LayoutSetBranch</code> interface instead.
 	 */
 	@Override
 	public void persist() {
@@ -48,4 +46,5 @@ public abstract class LayoutSetBranchBaseImpl extends LayoutSetBranchModelImpl
 			LayoutSetBranchLocalServiceUtil.updateLayoutSetBranch(this);
 		}
 	}
+
 }

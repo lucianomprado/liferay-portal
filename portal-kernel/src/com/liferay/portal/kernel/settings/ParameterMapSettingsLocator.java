@@ -19,7 +19,7 @@ import com.liferay.portal.kernel.util.Validator;
 import java.util.Map;
 
 /**
- * @author Ivan Zaera
+ * @author Iván Zaera
  */
 public class ParameterMapSettingsLocator implements SettingsLocator {
 
@@ -40,10 +40,8 @@ public class ParameterMapSettingsLocator implements SettingsLocator {
 
 	@Override
 	public Settings getSettings() throws SettingsException {
-		Settings settings = _settingsLocator.getSettings();
-
 		ParameterMapSettings parameterMapSettings = new ParameterMapSettings(
-			_parameterMap, settings);
+			_parameterMap, _settingsLocator.getSettings());
 
 		if (Validator.isNotNull(_parameterNamePrefix)) {
 			parameterMapSettings.setParameterNamePrefix(_parameterNamePrefix);

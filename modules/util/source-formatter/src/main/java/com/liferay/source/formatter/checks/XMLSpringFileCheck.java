@@ -14,17 +14,19 @@
 
 package com.liferay.source.formatter.checks;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.NaturalOrderStringComparator;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.tools.ImportPackage;
 import com.liferay.source.formatter.checks.comparator.ElementComparator;
 import com.liferay.source.formatter.checks.util.SourceUtil;
 
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.dom4j.Document;
+import org.dom4j.DocumentException;
 import org.dom4j.Element;
 
 /**
@@ -33,9 +35,14 @@ import org.dom4j.Element;
 public class XMLSpringFileCheck extends BaseFileCheck {
 
 	@Override
+	public boolean isLiferaySourceCheck() {
+		return true;
+	}
+
+	@Override
 	protected String doProcess(
 			String fileName, String absolutePath, String content)
-		throws Exception {
+		throws DocumentException {
 
 		if (fileName.endsWith("-spring.xml")) {
 			_checkSpringXML(fileName, content);
@@ -45,12 +52,28 @@ public class XMLSpringFileCheck extends BaseFileCheck {
 	}
 
 	private void _checkSpringXML(String fileName, String content)
-		throws Exception {
+		throws DocumentException {
 
 		Document document = SourceUtil.readXML(content);
 
+		Element rootElement = document.getRootElement();
+
+		for (Element beanElement :
+				(List<Element>)rootElement.elements("bean")) {
+
+			String name = beanElement.attributeValue("id");
+
+			if (name == null) {
+				name = beanElement.attributeValue("class");
+			}
+
+			checkElementOrder(
+				fileName, beanElement, "property", name,
+				new ElementComparator());
+		}
+
 		checkElementOrder(
-			fileName, document.getRootElement(), "bean", null,
+			fileName, rootElement, "bean", null,
 			new SpringBeanElementComparator("id"));
 	}
 

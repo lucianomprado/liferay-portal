@@ -14,8 +14,7 @@
 
 package com.liferay.portal.kernel.deploy.hot;
 
-import aQute.bnd.annotation.ProviderType;
-
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.deploy.DeployManagerUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -44,7 +43,6 @@ import javax.servlet.ServletContext;
  * @author Raymond Augé
  * @author Miguel Pastor
  */
-@ProviderType
 public class HotDeployEvent {
 
 	public HotDeployEvent(ServletContext servletContext) {
@@ -60,8 +58,8 @@ public class HotDeployEvent {
 		try {
 			initDependentServletContextNames();
 		}
-		catch (IOException ioe) {
-			_log.error(ioe, ioe);
+		catch (IOException ioException) {
+			_log.error(ioException, ioException);
 		}
 	}
 
@@ -147,11 +145,11 @@ public class HotDeployEvent {
 		}
 
 		if (!_dependentServletContextNames.isEmpty() && _log.isInfoEnabled()) {
-			String servletContextName = _servletContext.getServletContextName();
-
 			_log.info(
-				"Plugin " + servletContextName + " requires " +
-					StringUtil.merge(_dependentServletContextNames, ", "));
+				StringBundler.concat(
+					"Plugin ", _servletContext.getServletContextName(),
+					" requires ",
+					StringUtil.merge(_dependentServletContextNames, ", ")));
 		}
 	}
 

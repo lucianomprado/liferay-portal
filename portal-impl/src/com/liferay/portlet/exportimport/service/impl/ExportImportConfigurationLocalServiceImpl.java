@@ -14,8 +14,9 @@
 
 package com.liferay.portlet.exportimport.service.impl;
 
-import com.liferay.exportimport.kernel.configuration.ExportImportConfigurationConstants;
+import com.liferay.exportimport.kernel.configuration.constants.ExportImportConfigurationConstants;
 import com.liferay.exportimport.kernel.model.ExportImportConfiguration;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.model.SystemEventConstants;
@@ -35,8 +36,8 @@ import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.systemevent.SystemEvent;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.OrderByComparator;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portlet.exportimport.service.base.ExportImportConfigurationLocalServiceBaseImpl;
@@ -48,7 +49,6 @@ import java.io.Serializable;
 
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -117,9 +117,8 @@ public class ExportImportConfigurationLocalServiceImpl
 		exportImportConfiguration.setType(type);
 
 		if (settingsMap != null) {
-			String settings = JSONFactoryUtil.serialize(settingsMap);
-
-			exportImportConfiguration.setSettings(settings);
+			exportImportConfiguration.setSettings(
+				JSONFactoryUtil.serialize(settingsMap));
 		}
 
 		exportImportConfiguration.setStatus(status);
@@ -427,9 +426,8 @@ public class ExportImportConfigurationLocalServiceImpl
 		exportImportConfiguration.setDescription(description);
 
 		if (settingsMap != null) {
-			String settings = JSONFactoryUtil.serialize(settingsMap);
-
-			exportImportConfiguration.setSettings(settings);
+			exportImportConfiguration.setSettings(
+				JSONFactoryUtil.serialize(settingsMap));
 		}
 
 		return exportImportConfigurationPersistence.update(
@@ -453,9 +451,8 @@ public class ExportImportConfigurationLocalServiceImpl
 		exportImportConfiguration.setStatusByUserName(user.getScreenName());
 		exportImportConfiguration.setStatusDate(new Date());
 
-		exportImportConfigurationPersistence.update(exportImportConfiguration);
-
-		return exportImportConfiguration;
+		return exportImportConfigurationPersistence.update(
+			exportImportConfiguration);
 	}
 
 	protected SearchContext buildSearchContext(
@@ -466,15 +463,18 @@ public class ExportImportConfigurationLocalServiceImpl
 
 		searchContext.setAndSearch(andSearch);
 
-		Map<String, Serializable> attributes = new HashMap<>();
-
-		attributes.put(Field.STATUS, WorkflowConstants.STATUS_APPROVED);
-		attributes.put("description", description);
-		attributes.put("groupId", groupId);
-		attributes.put("name", name);
-		attributes.put("type", type);
-
-		searchContext.setAttributes(attributes);
+		searchContext.setAttributes(
+			HashMapBuilder.<String, Serializable>put(
+				Field.STATUS, WorkflowConstants.STATUS_APPROVED
+			).put(
+				"description", description
+			).put(
+				"groupId", groupId
+			).put(
+				"name", name
+			).put(
+				"type", type
+			).build());
 
 		searchContext.setCompanyId(companyId);
 		searchContext.setEnd(end);

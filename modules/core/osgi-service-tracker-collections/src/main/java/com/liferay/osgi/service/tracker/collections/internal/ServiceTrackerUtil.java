@@ -30,24 +30,32 @@ public class ServiceTrackerUtil {
 		ServiceTrackerCustomizer<SR, TS> serviceTrackerCustomizer) {
 
 		if (filterString != null) {
+			if (clazz != null) {
+				filterString =
+					"(&" + filterString + "(objectClass=" + clazz.getName() +
+						"))";
+			}
+
 			try {
-				Filter filter = bundleContext.createFilter(
-					"(&(objectClass=" + clazz.getName() + ")" + filterString +
-						")");
+				Filter filter = bundleContext.createFilter(filterString);
 
 				return new ServiceTracker<>(
 					bundleContext, filter, serviceTrackerCustomizer);
 			}
-			catch (InvalidSyntaxException ise) {
-				throwException(ise);
+			catch (InvalidSyntaxException invalidSyntaxException) {
+				throwException(invalidSyntaxException);
 
 				return null;
 			}
 		}
-		else {
+
+		if (clazz != null) {
 			return new ServiceTracker<>(
 				bundleContext, clazz, serviceTrackerCustomizer);
 		}
+
+		throw new IllegalArgumentException(
+			"Filter string and class are both null");
 	}
 
 	public static <T> T throwException(Throwable throwable) {

@@ -14,21 +14,21 @@
 
 package com.liferay.portal.language;
 
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.language.LanguageBuilderUtil;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.util.CharPool;
+import com.liferay.portal.kernel.resource.bundle.ResourceBundleLoader;
+import com.liferay.portal.kernel.resource.bundle.ResourceBundleLoaderUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.PropertiesUtil;
-import com.liferay.portal.kernel.util.ResourceBundleLoader;
-import com.liferay.portal.kernel.util.ResourceBundleLoaderUtil;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
-import com.liferay.portal.tools.LangBuilder;
 import com.liferay.registry.Filter;
 import com.liferay.registry.Registry;
 import com.liferay.registry.RegistryUtil;
@@ -56,7 +56,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class LanguageResources {
 
-	public static ResourceBundleLoader RESOURCE_BUNDLE_LOADER =
+	public static ResourceBundleLoader PORTAL_RESOURCE_BUNDLE_LOADER =
 		new ResourceBundleLoader() {
 
 			@Override
@@ -64,43 +64,41 @@ public class LanguageResources {
 				return LanguageResources.getResourceBundle(locale);
 			}
 
-			/**
-			 * @deprecated As of 7.0.0, replaced by {@link #loadResourceBundle(
-			 *             Locale)}
-			 */
-			@Deprecated
-			public ResourceBundle loadResourceBundle(String languageId) {
-				return loadResourceBundle(
-					LocaleUtil.fromLanguageId(languageId));
-			}
-
 		};
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *             #PORTAL_RESOURCE_BUNDLE_LOADER}
+	 */
+	@Deprecated
+	public static com.liferay.portal.kernel.util.ResourceBundleLoader
+		RESOURCE_BUNDLE_LOADER =
+			new com.liferay.portal.kernel.util.ResourceBundleLoader() {
+
+				@Override
+				public ResourceBundle loadResourceBundle(Locale locale) {
+					return LanguageResources.getResourceBundle(locale);
+				}
+
+			};
+
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *             LanguageBuilderUtil#fixValue(String)}
+	 */
+	@Deprecated
 	public static String fixValue(String value) {
-		if (value.endsWith(LangBuilder.AUTOMATIC_COPY)) {
-			value = value.substring(
-				0, value.length() - LangBuilder.AUTOMATIC_COPY.length());
-		}
-
-		if (value.endsWith(LangBuilder.AUTOMATIC_TRANSLATION)) {
-			value = value.substring(
-				0, value.length() - LangBuilder.AUTOMATIC_TRANSLATION.length());
-		}
-
-		return value;
+		return LanguageBuilderUtil.fixValue(value);
 	}
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
+	 */
+	@Deprecated
 	public static void fixValues(
 		Map<String, String> languageMap, Properties properties) {
 
-		for (Map.Entry<Object, Object> entry : properties.entrySet()) {
-			String key = (String)entry.getKey();
-			String value = (String)entry.getValue();
-
-			value = fixValue(value);
-
-			languageMap.put(key, value);
-		}
+		_fixValues(languageMap, properties);
 	}
 
 	public static String getMessage(Locale locale, String key) {
@@ -119,9 +117,8 @@ public class LanguageResources {
 		if (value == null) {
 			return getMessage(getSuperLocale(locale), key);
 		}
-		else {
-			return value;
-		}
+
+		return value;
 	}
 
 	public static ResourceBundle getResourceBundle(Locale locale) {
@@ -165,12 +162,26 @@ public class LanguageResources {
 		_serviceTracker.open();
 
 		ResourceBundleLoaderUtil.setPortalResourceBundleLoader(
-			RESOURCE_BUNDLE_LOADER);
+			PORTAL_RESOURCE_BUNDLE_LOADER);
 	}
 
 	public void setConfig(String config) {
 		_configNames = StringUtil.split(
-			config.replace(CharPool.PERIOD, CharPool.SLASH));
+			StringUtil.replace(config, CharPool.PERIOD, CharPool.SLASH));
+	}
+
+	private static void _fixValues(
+		Map<String, String> languageMap, Properties properties) {
+
+		for (Map.Entry<Object, Object> entry : properties.entrySet()) {
+			String key = (String)entry.getKey();
+
+			String value = (String)entry.getValue();
+
+			value = LanguageBuilderUtil.fixValue(value);
+
+			languageMap.put(key, value);
+		}
 	}
 
 	private static Locale _getSuperLocale(Locale locale) {
@@ -231,7 +242,7 @@ public class LanguageResources {
 
 				Properties properties = _loadProperties(sb.toString());
 
-				fixValues(languageMap, properties);
+				_fixValues(languageMap, properties);
 			}
 		}
 		else {
@@ -249,17 +260,18 @@ public class LanguageResources {
 		try {
 			ClassLoader classLoader = LanguageResources.class.getClassLoader();
 
-			Enumeration<URL> enu = classLoader.getResources(name);
+			Enumeration<URL> enumeration = classLoader.getResources(name);
 
-			if (_log.isDebugEnabled() && !enu.hasMoreElements()) {
+			if (_log.isDebugEnabled() && !enumeration.hasMoreElements()) {
 				_log.debug("No resources found for " + name);
 			}
 
-			while (enu.hasMoreElements()) {
-				URL url = enu.nextElement();
+			while (enumeration.hasMoreElements()) {
+				URL url = enumeration.nextElement();
 
 				if (_log.isInfoEnabled()) {
-					_log.info("Loading " + name + " from " + url);
+					_log.info(
+						StringBundler.concat("Loading ", name, " from ", url));
 				}
 
 				try (InputStream inputStream = url.openStream()) {
@@ -270,15 +282,16 @@ public class LanguageResources {
 
 					if (_log.isInfoEnabled()) {
 						_log.info(
-							"Loading " + url + " with " +
-								inputStreamProperties.size() + " values");
+							StringBundler.concat(
+								"Loading ", url, " with ",
+								inputStreamProperties.size(), " values"));
 					}
 				}
 			}
 		}
-		catch (Exception e) {
+		catch (Exception exception) {
 			if (_log.isWarnEnabled()) {
-				_log.warn(e, e);
+				_log.warn(exception, exception);
 			}
 		}
 
@@ -413,10 +426,10 @@ public class LanguageResources {
 				locale = new Locale(StringPool.BLANK);
 			}
 
-			Enumeration<String> keys = resourceBundle.getKeys();
+			Enumeration<String> enumeration = resourceBundle.getKeys();
 
-			while (keys.hasMoreElements()) {
-				String key = keys.nextElement();
+			while (enumeration.hasMoreElements()) {
+				String key = enumeration.nextElement();
 
 				String value = ResourceBundleUtil.getString(
 					resourceBundle, key);

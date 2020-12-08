@@ -25,13 +25,15 @@ import java.util.List;
 import org.gradle.api.GradleException;
 import org.gradle.api.Task;
 import org.gradle.api.specs.Spec;
+import org.gradle.api.tasks.CacheableTask;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.OutputDirectory;
 
 /**
  * @author Andrea Di Giorgi
  */
-public class DownloadNodeModuleTask extends ExecuteNpmTask {
+@CacheableTask
+public class DownloadNodeModuleTask extends ExecutePackageManagerTask {
 
 	public DownloadNodeModuleTask() {
 		onlyIf(
@@ -60,8 +62,9 @@ public class DownloadNodeModuleTask extends ExecuteNpmTask {
 
 						return true;
 					}
-					catch (Exception e) {
-						throw new GradleException(e.getMessage(), e);
+					catch (Exception exception) {
+						throw new GradleException(
+							exception.getMessage(), exception);
 					}
 				}
 
@@ -70,9 +73,7 @@ public class DownloadNodeModuleTask extends ExecuteNpmTask {
 
 	@OutputDirectory
 	public File getModuleDir() {
-		File nodeModulesDir = new File(getWorkingDir(), "node_modules");
-
-		return new File(nodeModulesDir, getModuleName());
+		return new File(getNodeModulesDir(), getModuleName());
 	}
 
 	@Input
@@ -97,7 +98,13 @@ public class DownloadNodeModuleTask extends ExecuteNpmTask {
 	protected List<String> getCompleteArgs() {
 		List<String> completeArgs = super.getCompleteArgs();
 
-		completeArgs.add("install");
+		if (isUseNpm()) {
+			completeArgs.add("install");
+		}
+		else {
+			completeArgs.add("add");
+		}
+
 		completeArgs.add(getModuleName() + "@" + getModuleVersion());
 
 		return completeArgs;

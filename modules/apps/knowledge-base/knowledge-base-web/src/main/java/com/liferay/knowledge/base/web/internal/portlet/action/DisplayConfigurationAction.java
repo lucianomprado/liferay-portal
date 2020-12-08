@@ -29,13 +29,13 @@ import org.osgi.service.component.annotations.Reference;
  */
 @Component(
 	immediate = true,
-	property = {"javax.portlet.name=" + KBPortletKeys.KNOWLEDGE_BASE_DISPLAY},
+	property = "javax.portlet.name=" + KBPortletKeys.KNOWLEDGE_BASE_DISPLAY,
 	service = ConfigurationAction.class
 )
 public class DisplayConfigurationAction extends DefaultConfigurationAction {
 
 	@Override
-	public String getJspPath(HttpServletRequest request) {
+	public String getJspPath(HttpServletRequest httpServletRequest) {
 		return "/display/configuration.jsp";
 	}
 

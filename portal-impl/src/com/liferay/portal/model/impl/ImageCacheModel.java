@@ -14,14 +14,11 @@
 
 package com.liferay.portal.model.impl;
 
-import aQute.bnd.annotation.ProviderType;
-
+import com.liferay.petra.lang.HashUtil;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.model.CacheModel;
 import com.liferay.portal.kernel.model.Image;
 import com.liferay.portal.kernel.model.MVCCModel;
-import com.liferay.portal.kernel.util.HashUtil;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -34,26 +31,26 @@ import java.util.Date;
  * The cache model class for representing Image in entity cache.
  *
  * @author Brian Wing Shun Chan
- * @see Image
  * @generated
  */
-@ProviderType
-public class ImageCacheModel implements CacheModel<Image>, Externalizable,
-	MVCCModel {
+public class ImageCacheModel
+	implements CacheModel<Image>, Externalizable, MVCCModel {
+
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
+	public boolean equals(Object object) {
+		if (this == object) {
 			return true;
 		}
 
-		if (!(obj instanceof ImageCacheModel)) {
+		if (!(object instanceof ImageCacheModel)) {
 			return false;
 		}
 
-		ImageCacheModel imageCacheModel = (ImageCacheModel)obj;
+		ImageCacheModel imageCacheModel = (ImageCacheModel)object;
 
 		if ((imageId == imageCacheModel.imageId) &&
-				(mvccVersion == imageCacheModel.mvccVersion)) {
+			(mvccVersion == imageCacheModel.mvccVersion)) {
+
 			return true;
 		}
 
@@ -79,10 +76,12 @@ public class ImageCacheModel implements CacheModel<Image>, Externalizable,
 
 	@Override
 	public String toString() {
-		StringBundler sb = new StringBundler(17);
+		StringBundler sb = new StringBundler(19);
 
 		sb.append("{mvccVersion=");
 		sb.append(mvccVersion);
+		sb.append(", ctCollectionId=");
+		sb.append(ctCollectionId);
 		sb.append(", imageId=");
 		sb.append(imageId);
 		sb.append(", companyId=");
@@ -107,6 +106,7 @@ public class ImageCacheModel implements CacheModel<Image>, Externalizable,
 		ImageImpl imageImpl = new ImageImpl();
 
 		imageImpl.setMvccVersion(mvccVersion);
+		imageImpl.setCtCollectionId(ctCollectionId);
 		imageImpl.setImageId(imageId);
 		imageImpl.setCompanyId(companyId);
 
@@ -118,7 +118,7 @@ public class ImageCacheModel implements CacheModel<Image>, Externalizable,
 		}
 
 		if (type == null) {
-			imageImpl.setType(StringPool.BLANK);
+			imageImpl.setType("");
 		}
 		else {
 			imageImpl.setType(type);
@@ -137,6 +137,8 @@ public class ImageCacheModel implements CacheModel<Image>, Externalizable,
 	public void readExternal(ObjectInput objectInput) throws IOException {
 		mvccVersion = objectInput.readLong();
 
+		ctCollectionId = objectInput.readLong();
+
 		imageId = objectInput.readLong();
 
 		companyId = objectInput.readLong();
@@ -151,9 +153,10 @@ public class ImageCacheModel implements CacheModel<Image>, Externalizable,
 	}
 
 	@Override
-	public void writeExternal(ObjectOutput objectOutput)
-		throws IOException {
+	public void writeExternal(ObjectOutput objectOutput) throws IOException {
 		objectOutput.writeLong(mvccVersion);
+
+		objectOutput.writeLong(ctCollectionId);
 
 		objectOutput.writeLong(imageId);
 
@@ -161,7 +164,7 @@ public class ImageCacheModel implements CacheModel<Image>, Externalizable,
 		objectOutput.writeLong(modifiedDate);
 
 		if (type == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(type);
@@ -175,6 +178,7 @@ public class ImageCacheModel implements CacheModel<Image>, Externalizable,
 	}
 
 	public long mvccVersion;
+	public long ctCollectionId;
 	public long imageId;
 	public long companyId;
 	public long modifiedDate;
@@ -182,4 +186,5 @@ public class ImageCacheModel implements CacheModel<Image>, Externalizable,
 	public int height;
 	public int width;
 	public int size;
+
 }

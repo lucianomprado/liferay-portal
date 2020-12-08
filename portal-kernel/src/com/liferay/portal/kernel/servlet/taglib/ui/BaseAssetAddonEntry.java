@@ -14,7 +14,7 @@
 
 package com.liferay.portal.kernel.servlet.taglib.ui;
 
-import com.liferay.portal.kernel.util.HashUtil;
+import com.liferay.petra.lang.HashUtil;
 
 import java.io.IOException;
 
@@ -27,25 +27,24 @@ import javax.servlet.http.HttpServletResponse;
 public abstract class BaseAssetAddonEntry implements AssetAddonEntry {
 
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
+	public boolean equals(Object object) {
+		if (this == object) {
 			return true;
 		}
 
-		if (!(obj instanceof AssetAddonEntry)) {
+		if (!(object instanceof AssetAddonEntry)) {
 			return false;
 		}
 
-		AssetAddonEntry assetAddonEntry = (AssetAddonEntry)obj;
+		AssetAddonEntry assetAddonEntry = (AssetAddonEntry)object;
 
 		String key = assetAddonEntry.getKey();
 
 		if (key.equals(getKey())) {
 			return true;
 		}
-		else {
-			return false;
-		}
+
+		return false;
 	}
 
 	@Override
@@ -75,7 +74,8 @@ public abstract class BaseAssetAddonEntry implements AssetAddonEntry {
 	 */
 	@Override
 	public void include(
-			HttpServletRequest request, HttpServletResponse response)
+			HttpServletRequest httpServletRequest,
+			HttpServletResponse httpServletResponse)
 		throws IOException {
 	}
 

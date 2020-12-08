@@ -1,76 +1,224 @@
-<definition component-name="portal-upgrades">
-	<property name="portal.release" value="true" />
-	<property name="portal.upstream" value="true" />
-	<property name="ignore.errors" value="Plugin security management is not enabled. Enable a security manager, then restart." />
-	<property name="testray.main.component.name" value="Upgrades Foundation" />
+@component-name = "portal-upgrades"
+definition {
 
-	<set-up>
-		<execute macro="SignIn#signIn" />
+	property app.server.types = "jboss,tomcat,weblogic,websphere,wildfly";
+	property database.types = "db2,mariadb,mysql,oracle,postgresql,sqlserver,sybase";
+	property portal.release = "true";
+	property portal.upstream = "true";
+	property testray.main.component.name = "Upgrades Core Infrastructure";
 
-		<execute macro="Smoke#viewWelcomePage" />
+	setUp {
+		SignIn.signIn();
 
-		<execute macro="Upgrade#reindexSearches" />
-	</set-up>
+		Smoke.viewWelcomePage();
 
-	<command name="ViewPortalSmokeArchive6012" priority="5">
-		<property name="data.archive.type" value="data-archive-portal" />
-		<property name="portal.version" value="6.0.12" />
-		<property name="test.assert.warning.exceptions" value="true" />
+		ApplicationsMenu.gotoPortlet(
+			category = "Configuration",
+			panel = "Control Panel",
+			portlet = "Search");
 
-		<execute macro="Upgrade#viewUpgrade" />
+		SearchAdministration.executeSearchActions(actionsDescription = "Reindex all search indexes.");
+	}
 
-		<execute macro="Upgrade#searchForAssetsAfterUpgrade" />
-	</command>
+	@priority = "4"
+	test ViewPortalSmokeArchive625 {
+		property data.archive.type = "data-archive-portal";
+		property database.types = "mariadb,mysql,postgresql";
+		property portal.upgrades = "false";
+		property portal.version = "6.2.5";
+		property test.assert.warning.exceptions = "true";
 
-	<command name="ViewPortalSmokeArchive612" priority="5">
-		<property name="data.archive.type" value="data-archive-portal" />
-		<property name="portal.upgrades" value="true" />
-		<property name="portal.version" value="6.1.2" />
-		<property name="test.assert.warning.exceptions" value="true" />
+		Upgrade.viewUpgrade();
+	}
 
-		<execute macro="Upgrade#viewUpgrade" />
+	@priority = "4"
+	test ViewPortalSmokeArchive704 {
+		property data.archive.type = "data-archive-portal";
+		property database.types = "mariadb,mysql,postgresql";
+		property portal.upgrades = "false";
+		property portal.version = "7.0.4";
+		property test.assert.warning.exceptions = "true";
 
-		<execute macro="Upgrade#searchForAssetsAfterUpgrade" />
-	</command>
+		Upgrade.viewUpgrade();
+	}
 
-	<command name="ViewPortalSmokeArchive6130" priority="5">
-		<property name="data.archive.type" value="data-archive-portal" />
-		<property name="portal.version" value="6.1.30" />
-		<property name="test.assert.warning.exceptions" value="true" />
+	@priority = "4"
+	test ViewPortalSmokeArchive713 {
+		property data.archive.type = "data-archive-portal";
+		property database.types = "mariadb,mysql,postgresql";
+		property portal.upgrades = "false";
+		property portal.version = "7.1.3";
+		property test.assert.warning.exceptions = "true";
 
-		<execute macro="Upgrade#viewUpgrade" />
+		Upgrade.viewUpgrade();
+	}
 
-		<execute macro="Upgrade#searchForAssetsAfterUpgrade" />
-	</command>
+	@priority = "4"
+	test ViewPortalSmokeArchive720 {
+		property data.archive.type = "data-archive-portal";
+		property database.types = "mariadb,mysql,postgresql";
+		property portal.upgrades = "false";
+		property portal.version = "7.2.0";
+		property test.assert.warning.exceptions = "true";
 
-	<command name="ViewPortalSmokeArchive621015" priority="5">
-		<property name="data.archive.type" value="data-archive-portal" />
-		<property name="portal.version" value="6.2.10.15" />
-		<property name="test.assert.warning.exceptions" value="true" />
+		Upgrade.viewUpgrade();
+	}
 
-		<execute macro="Upgrade#viewUpgrade" />
+	@priority = "4"
+	test ViewPortalSmokeArchive730 {
+		property data.archive.type = "data-archive-portal";
+		property database.types = "mariadb,mysql,postgresql";
+		property portal.upgrades = "true";
+		property portal.version = "7.3.0";
+		property test.assert.warning.exceptions = "true";
 
-		<execute macro="Upgrade#searchForAssetsAfterUpgrade" />
-	</command>
+		Upgrade.viewUpgrade();
+	}
 
-	<command name="ViewPortalSmokeArchive623" priority="5">
-		<property name="data.archive.type" value="data-archive-portal" />
-		<property name="portal.upgrades" value="true" />
-		<property name="portal.version" value="6.2.3" />
-		<property name="test.assert.warning.exceptions" value="true" />
+	@priority = "5"
+	test ViewPortalSmokeArchive7110 {
+		property data.archive.type = "data-archive-portal";
+		property portal.upgrades = "true";
+		property portal.version = "7.1.10";
+		property test.assert.warning.exceptions = "true";
 
-		<execute macro="Upgrade#viewUpgrade" />
+		Upgrade.viewUpgrade();
+	}
 
-		<execute macro="Upgrade#searchForAssetsAfterUpgrade" />
-	</command>
+	@priority = "5"
+	test ViewPortalSmokeArchive7210 {
+		property data.archive.type = "data-archive-portal";
+		property portal.upgrades = "true";
+		property portal.version = "7.2.10";
+		property test.assert.warning.exceptions = "true";
+		property test.run.environment = "EE";
 
-	<command name="ViewPortalSmokeArchive625" priority="5">
-		<property name="data.archive.type" value="data-archive-portal" />
-		<property name="portal.version" value="6.2.5" />
-		<property name="test.assert.warning.exceptions" value="true" />
+		Upgrade.viewUpgrade();
+	}
 
-		<execute macro="Upgrade#viewUpgrade" />
+	@priority = "5"
+	test ViewPortalSmokeArchive70106 {
+		property data.archive.type = "data-archive-portal";
+		property portal.upgrades = "true";
+		property portal.upstream = "true";
+		property portal.version = "7.0.10.6";
+		property test.assert.warning.exceptions = "true";
 
-		<execute macro="Upgrade#searchForAssetsAfterUpgrade" />
-	</command>
-</definition>
+		Upgrade.viewUpgrade();
+	}
+
+	@description = "This is a use case for LPS-105035."
+	@priority = "5"
+	test ViewPortalSmokeArchive71103 {
+		property data.archive.type = "data-archive-portal";
+		property portal.upgrades = "true";
+		property portal.version = "7.1.10.3";
+		property test.assert.warning.exceptions = "true";
+
+		Upgrade.viewUpgrade();
+	}
+
+	@priority = "4"
+	test ViewPortalSmokeArchive621015 {
+		property data.archive.type = "data-archive-portal";
+		property database.types = "db2,mariadb,mysql,oracle,postgresql";
+		property portal.upgrades = "false";
+		property portal.version = "6.2.10.15";
+		property test.assert.warning.exceptions = "true";
+
+		Upgrade.viewUpgrade();
+	}
+
+	@priority = "5"
+	test ViewPortalSmokeArchive621021 {
+		property data.archive.type = "data-archive-portal";
+		property database.types = "db2,mariadb,mysql,oracle,postgresql";
+		property portal.upgrades = "true";
+		property portal.version = "6.2.10.21";
+		property test.assert.warning.exceptions = "true";
+
+		Upgrade.viewUpgrade();
+	}
+
+	@priority = "4"
+	test ViewPortalSmokeArchiveAutoUpgrade730 {
+		property custom.properties = "upgrade.database.auto.run=true";
+		property data.archive.type = "data-archive-portal";
+		property database.types = "mariadb,mysql,postgresql";
+		property portal.upgrades = "true";
+		property portal.upstream = "quarantine";
+		property portal.version = "7.3.0";
+		property skip.upgrade-legacy-database = "true";
+		property test.assert.warning.exceptions = "true";
+
+		Upgrade.viewUpgrade();
+	}
+
+	@priority = "5"
+	test ViewPortalSmokeArchiveAutoUpgrade7110 {
+		property custom.properties = "upgrade.database.auto.run=true";
+		property data.archive.type = "data-archive-portal";
+		property portal.upgrades = "true";
+		property portal.upstream = "quarantine";
+		property portal.version = "7.1.10";
+		property skip.upgrade-legacy-database = "true";
+		property test.assert.warning.exceptions = "true";
+
+		Upgrade.viewUpgrade();
+	}
+
+	@priority = "5"
+	test ViewPortalSmokeArchiveAutoUpgrade7210 {
+		property custom.properties = "upgrade.database.auto.run=true";
+		property data.archive.type = "data-archive-portal";
+		property portal.upgrades = "true";
+		property portal.upstream = "quarantine";
+		property portal.version = "7.2.10";
+		property skip.upgrade-legacy-database = "true";
+		property test.assert.warning.exceptions = "true";
+		property test.run.environment = "EE";
+
+		Upgrade.viewUpgrade();
+	}
+
+	@priority = "5"
+	test ViewPortalSmokeArchiveAutoUpgrade70106 {
+		property custom.properties = "upgrade.database.auto.run=true";
+		property data.archive.type = "data-archive-portal";
+		property portal.upgrades = "true";
+		property portal.upstream = "quarantine";
+		property portal.version = "7.0.10.6";
+		property skip.upgrade-legacy-database = "true";
+		property test.assert.warning.exceptions = "true";
+
+		Upgrade.viewUpgrade();
+	}
+
+	@priority = "5"
+	test ViewPortalSmokeArchiveAutoUpgrade71103 {
+		property custom.properties = "upgrade.database.auto.run=true";
+		property data.archive.type = "data-archive-portal";
+		property portal.upgrades = "true";
+		property portal.upstream = "quarantine";
+		property portal.version = "7.1.10.3";
+		property skip.upgrade-legacy-database = "true";
+		property test.assert.warning.exceptions = "true";
+
+		Upgrade.viewUpgrade();
+	}
+
+	@priority = "5"
+	test ViewPortalSmokeArchiveAutoUpgrade621021 {
+		property custom.properties = "upgrade.database.auto.run=true";
+		property data.archive.type = "data-archive-portal";
+		property database.types = "db2,mariadb,mysql,oracle,postgresql";
+		property portal.upgrades = "true";
+		property portal.upstream = "quarantine";
+		property portal.version = "6.2.10.21";
+		property skip.upgrade-legacy-database = "true";
+		property test.assert.warning.exceptions = "true";
+
+		Upgrade.viewUpgrade();
+	}
+
+}

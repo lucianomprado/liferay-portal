@@ -16,6 +16,7 @@ package com.liferay.portal.kernel.security.auth;
 
 import com.liferay.portal.kernel.model.Portlet;
 import com.liferay.portal.kernel.portlet.LiferayPortletURL;
+import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.registry.Registry;
@@ -30,10 +31,7 @@ import com.liferay.registry.util.StringPlus;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
@@ -43,51 +41,6 @@ import javax.servlet.http.HttpServletRequest;
  */
 public abstract class BaseAuthTokenWhitelist implements AuthTokenWhitelist {
 
-	/**
-	 * @deprecated As of 7.0.0
-	 */
-	@Deprecated
-	@Override
-	public Set<String> getOriginCSRFWhitelist() {
-		return Collections.emptySet();
-	}
-
-	/**
-	 * @deprecated As of 7.0.0
-	 */
-	@Deprecated
-	@Override
-	public Set<String> getPortletCSRFWhitelist() {
-		return Collections.emptySet();
-	}
-
-	/**
-	 * @deprecated As of 7.0.0
-	 */
-	@Deprecated
-	@Override
-	public Set<String> getPortletCSRFWhitelistActions() {
-		return Collections.emptySet();
-	}
-
-	/**
-	 * @deprecated As of 7.0.0
-	 */
-	@Deprecated
-	@Override
-	public Set<String> getPortletInvocationWhitelist() {
-		return Collections.emptySet();
-	}
-
-	/**
-	 * @deprecated As of 7.0.0
-	 */
-	@Deprecated
-	@Override
-	public Set<String> getPortletInvocationWhitelistActions() {
-		return Collections.emptySet();
-	}
-
 	@Override
 	public boolean isOriginCSRFWhitelisted(long companyId, String origin) {
 		return false;
@@ -95,36 +48,14 @@ public abstract class BaseAuthTokenWhitelist implements AuthTokenWhitelist {
 
 	@Override
 	public boolean isPortletCSRFWhitelisted(
-		HttpServletRequest request, Portlet portlet) {
-
-		return false;
-	}
-
-	/**
-	 * @deprecated As of 7.0.0
-	 */
-	@Deprecated
-	@Override
-	public boolean isPortletCSRFWhitelisted(
-		long companyId, String portletId, String strutsAction) {
+		HttpServletRequest httpServletRequest, Portlet portlet) {
 
 		return false;
 	}
 
 	@Override
 	public boolean isPortletInvocationWhitelisted(
-		HttpServletRequest request, Portlet portlet) {
-
-		return false;
-	}
-
-	/**
-	 * @deprecated As of 7.0.0
-	 */
-	@Deprecated
-	@Override
-	public boolean isPortletInvocationWhitelisted(
-		long companyId, String portletId, String strutsAction) {
+		HttpServletRequest httpServletRequest, Portlet portlet) {
 
 		return false;
 	}
@@ -148,42 +79,6 @@ public abstract class BaseAuthTokenWhitelist implements AuthTokenWhitelist {
 		return false;
 	}
 
-	/**
-	 * @deprecated As of 7.0.0
-	 */
-	@Deprecated
-	@Override
-	public Set<String> resetOriginCSRFWhitelist() {
-		return Collections.emptySet();
-	}
-
-	/**
-	 * @deprecated As of 7.0.0
-	 */
-	@Deprecated
-	@Override
-	public Set<String> resetPortletCSRFWhitelist() {
-		return Collections.emptySet();
-	}
-
-	/**
-	 * @deprecated As of 7.0.0
-	 */
-	@Deprecated
-	@Override
-	public Set<String> resetPortletInvocationWhitelist() {
-		return Collections.emptySet();
-	}
-
-	/**
-	 * @deprecated As of 7.0.0
-	 */
-	@Deprecated
-	@Override
-	public Set<String> resetPortletInvocationWhitelistActions() {
-		return Collections.emptySet();
-	}
-
 	protected void destroy() {
 		for (ServiceRegistration<?> serviceRegistration :
 				serviceRegistrations.values()) {
@@ -197,18 +92,21 @@ public abstract class BaseAuthTokenWhitelist implements AuthTokenWhitelist {
 	}
 
 	protected void registerPortalProperty(String key) {
-		Registry registry = RegistryUtil.getRegistry();
-
-		Map<String, Object> properties = new HashMap<>();
-
 		String[] values = PropsUtil.getArray(key);
 
-		properties.put(key, values);
+		if (values.length > 0) {
+			Registry registry = RegistryUtil.getRegistry();
 
-		ServiceRegistration<Object> serviceRegistration =
-			registry.registerService(Object.class, new Object(), properties);
+			ServiceRegistration<Object> serviceRegistration =
+				registry.registerService(
+					Object.class, new Object(),
+					HashMapBuilder.<String, Object>put(
+						key, values
+					).build());
 
-		serviceRegistrations.put(StringUtil.merge(values), serviceRegistration);
+			serviceRegistrations.put(
+				StringUtil.merge(values), serviceRegistration);
+		}
 	}
 
 	protected ServiceTracker<Object, Object> trackWhitelistServices(

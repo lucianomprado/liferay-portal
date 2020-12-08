@@ -17,6 +17,7 @@ package com.liferay.portal.kernel.poller;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.messaging.Message;
 import com.liferay.portal.kernel.messaging.MessageBusUtil;
 import com.liferay.portal.kernel.util.Validator;
@@ -69,25 +70,25 @@ public class DefaultPollerResponse implements PollerResponse {
 	}
 
 	@Override
-	public void setParameter(String name, JSONArray value)
+	public void setParameter(String name, JSONArray jsonArray)
 		throws PollerResponseClosedException {
 
 		if (_closed) {
 			throw new PollerResponseClosedException();
 		}
 
-		_parameterMap.put(name, value);
+		_parameterMap.put(name, jsonArray);
 	}
 
 	@Override
-	public void setParameter(String name, JSONObject value)
+	public void setParameter(String name, JSONObject jsonObject)
 		throws PollerResponseClosedException {
 
 		if (_closed) {
 			throw new PollerResponseClosedException();
 		}
 
-		_parameterMap.put(name, value);
+		_parameterMap.put(name, jsonObject);
 	}
 
 	@Override
@@ -103,10 +104,8 @@ public class DefaultPollerResponse implements PollerResponse {
 
 	@Override
 	public JSONObject toJSONObject() {
-		JSONObject pollerResponseJSONObject =
-			JSONFactoryUtil.createJSONObject();
-
-		pollerResponseJSONObject.put("portletId", _portletId);
+		JSONObject pollerResponseJSONObject = JSONUtil.put(
+			"portletId", _portletId);
 
 		if (Validator.isNotNull(_chunkId)) {
 			pollerResponseJSONObject.put("chunkId", _chunkId);

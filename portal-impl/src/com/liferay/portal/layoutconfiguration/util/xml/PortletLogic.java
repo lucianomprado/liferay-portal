@@ -26,7 +26,6 @@ import com.liferay.portal.kernel.service.PortletPreferencesLocalServiceUtil;
 import com.liferay.portal.kernel.servlet.BufferCacheServletResponse;
 import com.liferay.portal.kernel.servlet.DynamicServletRequest;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
-import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.PortletKeys;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
@@ -34,7 +33,9 @@ import com.liferay.portal.kernel.xml.Document;
 import com.liferay.portal.kernel.xml.Element;
 import com.liferay.portal.kernel.xml.SAXReaderUtil;
 
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -52,10 +53,11 @@ public class PortletLogic extends RuntimeLogic {
 	public static final String OPEN_TAG = "<runtime-portlet";
 
 	public PortletLogic(
-		HttpServletRequest request, HttpServletResponse response) {
+		HttpServletRequest httpServletRequest,
+		HttpServletResponse httpServletResponse) {
 
-		_request = request;
-		_response = response;
+		_httpServletRequest = httpServletRequest;
+		_httpServletResponse = httpServletResponse;
 	}
 
 	@Override
@@ -85,27 +87,32 @@ public class PortletLogic extends RuntimeLogic {
 		}
 
 		BufferCacheServletResponse bufferCacheServletResponse =
-			new BufferCacheServletResponse(_response);
+			new BufferCacheServletResponse(_httpServletResponse);
 
 		queryString = PortletParameterUtil.addNamespace(portletId, queryString);
 
-		Map<String, String[]> parameterMap = _request.getParameterMap();
+		Map<String, String[]> parameterMap =
+			_httpServletRequest.getParameterMap();
 
-		if (!portletId.equals(_request.getParameter("p_p_id"))) {
-			parameterMap = MapUtil.filterByKeys(
-				parameterMap, (key) -> !key.startsWith("p_p_"));
+		if (!portletId.equals(_httpServletRequest.getParameter("p_p_id"))) {
+			parameterMap = new HashMap<>(parameterMap);
+
+			Set<String> keySet = parameterMap.keySet();
+
+			keySet.removeIf(key -> key.startsWith("p_p_"));
 		}
 
-		HttpServletRequest request = DynamicServletRequest.addQueryString(
-			_request, parameterMap, queryString, false);
+		HttpServletRequest httpServletRequest =
+			DynamicServletRequest.addQueryString(
+				_httpServletRequest, parameterMap, queryString, false);
 
-		ThemeDisplay themeDisplay = (ThemeDisplay)request.getAttribute(
-			WebKeys.THEME_DISPLAY);
-
-		Portlet portlet = getPortlet(themeDisplay, portletId);
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)httpServletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
 
 		PortletContainerUtil.render(
-			request, bufferCacheServletResponse, portlet);
+			httpServletRequest, bufferCacheServletResponse,
+			getPortlet(themeDisplay, portletId));
 
 		return bufferCacheServletResponse.getString();
 	}
@@ -123,11 +130,14 @@ public class PortletLogic extends RuntimeLogic {
 		// See LayoutTypePortletImpl#getStaticPortlets for why we only clone
 		// non-instanceable portlets
 
-		if (PortletPreferencesLocalServiceUtil.getPortletPreferencesCount(
+		long count =
+			PortletPreferencesLocalServiceUtil.getPortletPreferencesCount(
 				PortletKeys.PREFS_OWNER_TYPE_LAYOUT, themeDisplay.getPlid(),
-				portletId) < 1) {
+				portletId);
 
-			PortletPreferencesFactoryUtil.getPortletSetup(_request, portletId);
+		if (count < 1) {
+			PortletPreferencesFactoryUtil.getPortletSetup(
+				_httpServletRequest, portletId);
 
 			PortletLayoutListener portletLayoutListener =
 				portlet.getPortletLayoutListenerInstance();
@@ -147,7 +157,7 @@ public class PortletLogic extends RuntimeLogic {
 		return portlet;
 	}
 
-	private final HttpServletRequest _request;
-	private final HttpServletResponse _response;
+	private final HttpServletRequest _httpServletRequest;
+	private final HttpServletResponse _httpServletResponse;
 
 }

@@ -29,19 +29,13 @@ import com.liferay.portal.kernel.service.PortletLocalServiceUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Tuple;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.ResourceBundle;
 
-import javax.portlet.PortletRequest;
 import javax.portlet.PortletURL;
 import javax.portlet.WindowState;
 
@@ -74,7 +68,6 @@ public abstract class BaseAssetRendererFactory<T>
 	}
 
 	@Override
-	@SuppressWarnings("unused")
 	public AssetRenderer<T> getAssetRenderer(long groupId, String urlTitle)
 		throws PortalException {
 
@@ -98,109 +91,14 @@ public abstract class BaseAssetRendererFactory<T>
 		return PortalUtil.getClassNameId(getClassName());
 	}
 
-	/**
-	 * @deprecated As of 7.0.0
-	 */
-	@Deprecated
-	@Override
-	public Tuple getClassTypeFieldName(
-			long classTypeId, String fieldName, Locale locale)
-		throws Exception {
-
-		ClassTypeReader classTypeReader = getClassTypeReader();
-
-		ClassType classType = classTypeReader.getClassType(classTypeId, locale);
-
-		List<ClassTypeField> classTypeFields = classType.getClassTypeFields();
-
-		for (ClassTypeField classTypeField : classTypeFields) {
-			if (fieldName.equals(classTypeField.getName())) {
-				return toTuple(classTypeField);
-			}
-		}
-
-		return null;
-	}
-
-	/**
-	 * @deprecated As of 7.0.0
-	 */
-	@Deprecated
-	@Override
-	public List<Tuple> getClassTypeFieldNames(
-			long classTypeId, Locale locale, int start, int end)
-		throws Exception {
-
-		ClassTypeReader classTypeReader = getClassTypeReader();
-
-		ClassType classType = classTypeReader.getClassType(classTypeId, locale);
-
-		List<ClassTypeField> classTypeFields = classType.getClassTypeFields(
-			start, end);
-
-		List<Tuple> tuples = new ArrayList<>(classTypeFields.size());
-
-		for (ClassTypeField classTypeField : classTypeFields) {
-			tuples.add(toTuple(classTypeField));
-		}
-
-		return tuples;
-	}
-
-	/**
-	 * @deprecated As of 7.0.0
-	 */
-	@Deprecated
-	@Override
-	public int getClassTypeFieldNamesCount(long classTypeId, Locale locale)
-		throws Exception {
-
-		ClassTypeReader classTypeReader = getClassTypeReader();
-
-		ClassType classType = classTypeReader.getClassType(classTypeId, locale);
-
-		return classType.getClassTypeFieldsCount();
-	}
-
 	@Override
 	public ClassTypeReader getClassTypeReader() {
 		return new NullClassTypeReader();
 	}
 
-	/**
-	 * @deprecated As of 7.0.0
-	 */
-	@Deprecated
-	@Override
-	public Map<Long, String> getClassTypes(long[] groupIds, Locale locale)
-		throws Exception {
-
-		ClassTypeReader classTypeReader = getClassTypeReader();
-
-		List<ClassType> classTypes = classTypeReader.getAvailableClassTypes(
-			groupIds, locale);
-
-		Map<Long, String> classTypesMap = new HashMap<>();
-
-		for (ClassType classType : classTypes) {
-			classTypesMap.put(classType.getClassTypeId(), classType.getName());
-		}
-
-		return classTypesMap;
-	}
-
 	@Override
 	public String getIconCssClass() {
 		return null;
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	@Override
-	public String getIconPath(PortletRequest portletRequest) {
-		return StringPool.BLANK;
 	}
 
 	@Override
@@ -222,8 +120,10 @@ public abstract class BaseAssetRendererFactory<T>
 
 		String value = LanguageUtil.get(locale, key, null);
 
-		if (value == null) {
-			PortletBag portletBag = PortletBagPool.get(getPortletId());
+		String portletId = getPortletId();
+
+		if ((value == null) && (portletId != null)) {
+			PortletBag portletBag = PortletBagPool.get(portletId);
 
 			ResourceBundle resourceBundle = portletBag.getResourceBundle(
 				locale);
@@ -240,35 +140,12 @@ public abstract class BaseAssetRendererFactory<T>
 		return value;
 	}
 
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link #getTypeName(Locale)}
-	 */
-	@Deprecated
-	@Override
-	public String getTypeName(Locale locale, boolean hasSubtypes) {
-		return getTypeName(locale);
-	}
-
 	@Override
 	public String getTypeName(Locale locale, long subtypeId) {
 		return getTypeName(locale);
 	}
 
-	/**
-	 * @deprecated As of 7.0.0
-	 */
-	@Deprecated
 	@Override
-	public PortletURL getURLAdd(
-			LiferayPortletRequest liferayPortletRequest,
-			LiferayPortletResponse liferayPortletResponse)
-		throws PortalException {
-
-		return getURLAdd(liferayPortletRequest, liferayPortletResponse, 0);
-	}
-
-	@Override
-	@SuppressWarnings("unused")
 	public PortletURL getURLAdd(
 			LiferayPortletRequest liferayPortletRequest,
 			LiferayPortletResponse liferayPortletResponse, long classTypeId)
@@ -278,7 +155,6 @@ public abstract class BaseAssetRendererFactory<T>
 	}
 
 	@Override
-	@SuppressWarnings("unused")
 	public PortletURL getURLView(
 			LiferayPortletResponse liferayPortletResponse,
 			WindowState windowState)
@@ -291,25 +167,6 @@ public abstract class BaseAssetRendererFactory<T>
 	public boolean hasAddPermission(
 			PermissionChecker permissionChecker, long groupId, long classTypeId)
 		throws Exception {
-
-		return false;
-	}
-
-	/**
-	 * @deprecated As of 7.0.0
-	 */
-	@Deprecated
-	@Override
-	public boolean hasClassTypeFieldNames(long classTypeId, Locale locale)
-		throws Exception {
-
-		ClassTypeReader classTypeReader = getClassTypeReader();
-
-		ClassType classType = classTypeReader.getClassType(classTypeId, locale);
-
-		if (classType.getClassTypeFieldsCount() > 0) {
-			return true;
-		}
 
 		return false;
 	}
@@ -328,15 +185,11 @@ public abstract class BaseAssetRendererFactory<T>
 			return true;
 		}
 
-		Portlet portlet = PortletLocalServiceUtil.getPortletById(
+		Portlet portlet = PortletLocalServiceUtil.fetchPortletById(
 			companyId, getPortletId());
 
 		if (portlet == null) {
-			portlet = PortletLocalServiceUtil.getPortletById(getPortletId());
-		}
-
-		if (portlet == null) {
-			return false;
+			return true;
 		}
 
 		return portlet.isActive();

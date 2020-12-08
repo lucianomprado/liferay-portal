@@ -14,20 +14,22 @@
 
 package com.liferay.source.formatter.checks;
 
-import com.liferay.portal.kernel.util.CharPool;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
-import com.liferay.source.formatter.BNDSettings;
 import com.liferay.source.formatter.checks.comparator.ElementComparator;
 import com.liferay.source.formatter.util.FileUtil;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 
 import java.util.Iterator;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.dom4j.Element;
 import org.dom4j.Node;
@@ -64,7 +66,13 @@ public abstract class BaseFileCheck
 			Node curNode = (Node)iterator.next();
 
 			if (curNode instanceof Text) {
-				continue;
+				Text text = (Text)curNode;
+
+				if (!StringUtil.startsWith(
+						StringUtil.trim(text.asXML()), CharPool.POUND)) {
+
+					continue;
+				}
 			}
 
 			if (previousNode == null) {
@@ -73,7 +81,9 @@ public abstract class BaseFileCheck
 				continue;
 			}
 
-			if (curNode instanceof Element && previousNode instanceof Element) {
+			if ((curNode instanceof Element) &&
+				(previousNode instanceof Element)) {
+
 				Element curElement = (Element)curNode;
 				Element previousElement = (Element)previousNode;
 
@@ -85,19 +95,22 @@ public abstract class BaseFileCheck
 					(elementComparator.compare(previousElement, curElement) >
 						0)) {
 
-					StringBundler sb = new StringBundler(7);
+					StringBundler sb = new StringBundler(9);
 
 					sb.append("Incorrect order '");
-					sb.append(elementName);
-					sb.append("':");
 
 					if (Validator.isNotNull(parentElementName)) {
-						sb.append(StringPool.SPACE);
 						sb.append(parentElementName);
+						sb.append(StringPool.POUND);
 					}
 
-					sb.append(StringPool.SPACE);
+					sb.append(elementName);
+					sb.append("': '");
+					sb.append(
+						elementComparator.getElementName(previousElement));
+					sb.append("' should come after '");
 					sb.append(elementComparator.getElementName(curElement));
+					sb.append("'");
 
 					addMessage(fileName, sb.toString());
 				}
@@ -110,56 +123,6 @@ public abstract class BaseFileCheck
 	protected abstract String doProcess(
 			String fileName, String absolutePath, String content)
 		throws Exception;
-
-	protected BNDSettings getBNDSettings(String fileName) throws Exception {
-		for (Map.Entry<String, BNDSettings> entry :
-				_bndSettingsMap.entrySet()) {
-
-			String bndFileLocation = entry.getKey();
-
-			if (fileName.startsWith(bndFileLocation)) {
-				return entry.getValue();
-			}
-		}
-
-		String bndFileLocation = fileName;
-
-		while (true) {
-			int pos = bndFileLocation.lastIndexOf(StringPool.SLASH);
-
-			if (pos == -1) {
-				return null;
-			}
-
-			bndFileLocation = bndFileLocation.substring(0, pos + 1);
-
-			File file = new File(bndFileLocation + "bnd.bnd");
-
-			if (file.exists()) {
-				return new BNDSettings(bndFileLocation, FileUtil.read(file));
-			}
-
-			bndFileLocation = StringUtil.replaceLast(
-				bndFileLocation, CharPool.SLASH, StringPool.BLANK);
-		}
-	}
-
-	protected String getLine(String content, int lineCount) {
-		int nextLineStartPos = getLineStartPos(content, lineCount);
-
-		if (nextLineStartPos == -1) {
-			return null;
-		}
-
-		int nextLineEndPos = content.indexOf(
-			CharPool.NEW_LINE, nextLineStartPos);
-
-		if (nextLineEndPos == -1) {
-			return content.substring(nextLineStartPos);
-		}
-
-		return content.substring(nextLineStartPos, nextLineEndPos);
-	}
 
 	protected int getLineLength(String line) {
 		int lineLength = 0;
@@ -188,28 +151,143 @@ public abstract class BaseFileCheck
 		return lineLength;
 	}
 
-	protected int getLineStartPos(String content, int lineCount) {
-		int x = 0;
+	protected String getPortalVersion(boolean privateApp) throws IOException {
+		String portalVersion = _getPublicPortalVersion();
 
-		for (int i = 1; i < lineCount; i++) {
-			x = content.indexOf(CharPool.NEW_LINE, x + 1);
+		if (privateApp) {
+			portalVersion = _getPrivatePortalVersion();
+		}
 
-			if (x == -1) {
-				return x;
+		if (Validator.isNull(portalVersion) || privateApp) {
+			return portalVersion;
+		}
+
+		Matcher matcher = _portalVersionPattern.matcher(portalVersion);
+
+		if (matcher.find()) {
+			portalVersion = matcher.group(1) + ".0";
+		}
+
+		return portalVersion;
+	}
+
+	private synchronized String _getPrivatePortalVersion() throws IOException {
+		if (_privatePortalVersion != null) {
+			return _privatePortalVersion;
+		}
+
+		_privatePortalVersion = StringPool.BLANK;
+
+		if (!isPortalSource()) {
+			return _privatePortalVersion;
+		}
+
+		File workingDirPropertiesFile = new File(
+			getPortalDir(), "working.dir.properties");
+
+		if (!workingDirPropertiesFile.exists()) {
+			return _privatePortalVersion;
+		}
+
+		String content = FileUtil.read(workingDirPropertiesFile);
+
+		Matcher matcher = _privateBranchNamePattern.matcher(content);
+
+		if (!matcher.find()) {
+			return _privatePortalVersion;
+		}
+
+		String privateBranchName = StringUtil.trim(matcher.group(1));
+
+		if (Validator.isNull(privateBranchName)) {
+			return _privatePortalVersion;
+		}
+
+		String s = Pattern.quote("lp.version[" + privateBranchName + "]=");
+
+		Pattern pattern = Pattern.compile(s + "(.*)");
+
+		matcher = pattern.matcher(content);
+
+		if (!matcher.find()) {
+			return _privatePortalVersion;
+		}
+
+		_privatePortalVersion = StringUtil.trim(matcher.group(1));
+
+		return _privatePortalVersion;
+	}
+
+	private synchronized String _getPublicPortalVersion() throws IOException {
+		if (_publicPortalVersion != null) {
+			return _publicPortalVersion;
+		}
+
+		_publicPortalVersion = StringPool.BLANK;
+
+		if (!isPortalSource()) {
+			return _publicPortalVersion;
+		}
+
+		File workingDirPropertiesFile = new File(
+			getPortalDir(), "working.dir.properties");
+
+		if (workingDirPropertiesFile.exists()) {
+			String content = FileUtil.read(workingDirPropertiesFile);
+
+			Matcher matcher = _privateBranchNamePattern.matcher(content);
+
+			if (matcher.find()) {
+				String privateBranchName = StringUtil.trim(matcher.group(1));
+
+				if (Validator.isNotNull(privateBranchName) &&
+					privateBranchName.endsWith("-private")) {
+
+					String branchName = StringUtil.replaceLast(
+						privateBranchName, "-private", StringPool.BLANK);
+
+					String s = Pattern.quote("lp.version[" + branchName + "]=");
+
+					Pattern pattern = Pattern.compile(s + "(.*)");
+
+					matcher = pattern.matcher(content);
+
+					if (matcher.find()) {
+						String match = matcher.group(1);
+
+						_publicPortalVersion = StringUtil.trim(match);
+					}
+				}
+			}
+		}
+		else {
+			File releasePropertiesFile = new File(
+				getPortalDir(), _RELEASE_PROPERTIES_FILE_NAME);
+
+			if (releasePropertiesFile.exists()) {
+				Properties properties = new Properties();
+
+				properties.load(new FileInputStream(releasePropertiesFile));
+
+				if (properties.containsKey("release.info.version")) {
+					_publicPortalVersion = properties.getProperty(
+						"release.info.version");
+				}
 			}
 		}
 
-		return x + 1;
+		return _publicPortalVersion;
 	}
 
-	protected void putBNDSettings(BNDSettings bndSettings) {
-		_bndSettingsMap.put(bndSettings.getFileLocation(), bndSettings);
-	}
+	private static final String _RELEASE_PROPERTIES_FILE_NAME =
+		"release.properties";
 
-	protected static final String RUN_OUTSIDE_PORTAL_EXCLUDES =
-		"run.outside.portal.excludes";
+	private static final Pattern _portalVersionPattern = Pattern.compile(
+		"(\\w+\\.\\w+)\\.\\w+");
+	private static final Pattern _privateBranchNamePattern = Pattern.compile(
+		"private.branch.name=(.*)\n");
 
-	private final Map<String, BNDSettings> _bndSettingsMap =
-		new ConcurrentHashMap<>();
+	private String _privatePortalVersion;
+	private String _publicPortalVersion;
 
 }

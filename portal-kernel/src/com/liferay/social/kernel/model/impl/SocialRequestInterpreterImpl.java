@@ -31,6 +31,7 @@ public class SocialRequestInterpreterImpl implements SocialRequestInterpreter {
 		String portletId, SocialRequestInterpreter requestInterpreter) {
 
 		_portletId = portletId;
+
 		_requestInterpreter = requestInterpreter;
 
 		String[] classNames = _requestInterpreter.getClassNames();
@@ -53,9 +54,8 @@ public class SocialRequestInterpreterImpl implements SocialRequestInterpreter {
 		if (_classNames.contains(className)) {
 			return true;
 		}
-		else {
-			return false;
-		}
+
+		return false;
 	}
 
 	@Override

@@ -14,7 +14,6 @@
 
 package com.liferay.portal.kernel.settings;
 
-import com.liferay.portal.kernel.security.pacl.permission.PortalRuntimePermission;
 import com.liferay.registry.collections.ServiceTrackerCollections;
 import com.liferay.registry.collections.ServiceTrackerList;
 
@@ -41,15 +40,6 @@ public class SettingsFactoryUtil {
 			groupId, portletId);
 	}
 
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link
-	 *             SettingsLocatorHelperUtil#getServerSettings(String)}
-	 */
-	@Deprecated
-	public static Settings getServerSettings(String settingsId) {
-		return getSettingsFactory().getServerSettings(settingsId);
-	}
-
 	public static Settings getSettings(SettingsLocator settingsLocator)
 		throws SettingsException {
 
@@ -61,8 +51,6 @@ public class SettingsFactoryUtil {
 	}
 
 	public static SettingsFactory getSettingsFactory() {
-		PortalRuntimePermission.checkGetBeanProperty(SettingsFactoryUtil.class);
-
 		return _settingsFactories.get(0);
 	}
 

@@ -14,6 +14,7 @@
 
 package com.liferay.portal.kernel.settings;
 
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.resource.ResourceRetriever;
 import com.liferay.portal.kernel.resource.manager.ResourceManager;
@@ -26,19 +27,6 @@ import java.io.IOException;
  * @author Iván Zaera
  */
 public class LocationVariableResolver {
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link #LocationVariableResolver(
-	 *			   ResourceManager, SettingsLocatorHelper)}
-	 */
-	@Deprecated
-	public LocationVariableResolver(
-		ResourceManager resourceManager, SettingsFactory settingsFactory) {
-
-		_resourceManager = resourceManager;
-		_settingsLocatorHelper =
-			SettingsLocatorHelperUtil.getSettingsLocatorHelper();
-	}
 
 	public LocationVariableResolver(
 		ResourceManager resourceManager,
@@ -55,7 +43,20 @@ public class LocationVariableResolver {
 
 		if (value.startsWith(_LOCATION_VARIABLE_START) &&
 			value.endsWith(_LOCATION_VARIABLE_END) &&
-			value.contains(_LOCATION_VARIABLE_PROTOCOL_SEPARATOR)) {
+			value.contains(_LOCATION_VARIABLE_PROTOCOL_SEPARATOR) &&
+			LocationVariableProtocol.isProtocol(_getProtocol(value))) {
+
+			return true;
+		}
+
+		return false;
+	}
+
+	public boolean isLocationVariable(
+		String value, LocationVariableProtocol locationVariableProtocol) {
+
+		if (isLocationVariable(value) &&
+			locationVariableProtocol.equals(_getProtocol(value))) {
 
 			return true;
 		}
@@ -67,13 +68,13 @@ public class LocationVariableResolver {
 		String protocol = _getProtocol(value);
 		String location = _getLocation(value);
 
-		if (protocol.equals("resource")) {
-			return _resolveResource(location);
-		}
-		else if (protocol.equals("file")) {
+		if (LocationVariableProtocol.FILE.equals(protocol)) {
 			return _resolveFile(location);
 		}
-		else if (protocol.equals("server-property")) {
+		else if (LocationVariableProtocol.RESOURCE.equals(protocol)) {
+			return _resolveResource(location);
+		}
+		else if (LocationVariableProtocol.SERVER_PROPERTY.equals(protocol)) {
 			return _resolveServerProperty(location);
 		}
 
@@ -96,15 +97,17 @@ public class LocationVariableResolver {
 	private String _resolveFile(String location) {
 		if (!location.startsWith("///")) {
 			throw new IllegalArgumentException(
-				"Invalid file location " + location + " because only local " +
-					"file URIs starting with file:/// are supported");
+				StringBundler.concat(
+					"Invalid file location ", location, " because only local ",
+					"file URIs starting with file:/// are supported"));
 		}
 
 		try {
 			return StringUtil.read(new FileInputStream(location.substring(2)));
 		}
-		catch (IOException ioe) {
-			throw new SystemException("Unable to read file " + location, ioe);
+		catch (IOException ioException) {
+			throw new SystemException(
+				"Unable to read file " + location, ioException);
 		}
 	}
 
@@ -115,9 +118,9 @@ public class LocationVariableResolver {
 		try {
 			return StringUtil.read(resourceRetriever.getInputStream());
 		}
-		catch (IOException ioe) {
+		catch (IOException ioException) {
 			throw new SystemException(
-				"Unable to read resource " + location, ioe);
+				"Unable to read resource " + location, ioException);
 		}
 	}
 

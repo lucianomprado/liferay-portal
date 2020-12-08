@@ -113,9 +113,8 @@ public class AssetCategoryPermission {
 			return AssetCategoriesPermission.contains(
 				permissionChecker, groupId, actionId);
 		}
-		else {
-			return contains(permissionChecker, categoryId, actionId);
-		}
+
+		return contains(permissionChecker, categoryId, actionId);
 	}
 
 	public static boolean contains(
@@ -123,10 +122,9 @@ public class AssetCategoryPermission {
 			String actionId)
 		throws PortalException {
 
-		AssetCategory category = AssetCategoryLocalServiceUtil.getCategory(
-			categoryId);
-
-		return contains(permissionChecker, category, actionId);
+		return contains(
+			permissionChecker,
+			AssetCategoryLocalServiceUtil.getCategory(categoryId), actionId);
 	}
 
 	private static boolean _hasPermission(

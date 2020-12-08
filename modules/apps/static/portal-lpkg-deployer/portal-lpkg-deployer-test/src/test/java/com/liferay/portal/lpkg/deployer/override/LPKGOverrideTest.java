@@ -14,11 +14,13 @@
 
 package com.liferay.portal.lpkg.deployer.override;
 
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.io.unsync.UnsyncByteArrayOutputStream;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.portal.kernel.util.ReleaseInfo;
+import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.kernel.util.SystemProperties;
 import com.liferay.portal.kernel.util.Validator;
-import com.liferay.portal.util.FileImpl;
 
 import java.io.File;
 import java.io.IOException;
@@ -37,8 +39,8 @@ import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 import java.util.regex.Matcher;
@@ -66,27 +68,29 @@ public class LPKGOverrideTest {
 
 		File file = new File(liferayHome, "/osgi/marketplace/override");
 
-		_fileImpl.deltree(file);
-
-		_fileImpl.mkdirs(file);
+		for (File subfiles : file.listFiles()) {
+			subfiles.delete();
+		}
 
 		Map<String, String> overrides = new HashMap<>();
+
+		List<String> lpkgStaticFileNames = _getStaticLPKGFileNames();
 
 		try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(
 				Paths.get(liferayHome, "/osgi/marketplace"), "*.lpkg")) {
 
 			for (Path lpkgPath : directoryStream) {
 				try (ZipFile zipFile = new ZipFile(lpkgPath.toFile())) {
-					Enumeration<? extends ZipEntry> zipEntries =
+					Enumeration<? extends ZipEntry> enumeration =
 						zipFile.entries();
 
-					while (zipEntries.hasMoreElements()) {
-						ZipEntry zipEntry = zipEntries.nextElement();
+					while (enumeration.hasMoreElements()) {
+						ZipEntry zipEntry = enumeration.nextElement();
 
 						String name = zipEntry.getName();
 
 						if (!(name.startsWith("com.liferay") &&
-							 name.endsWith(".jar")) &&
+							  name.endsWith(".jar")) &&
 							!name.endsWith(".war")) {
 
 							continue;
@@ -100,9 +104,11 @@ public class LPKGOverrideTest {
 
 						name = matcher.group(1) + matcher.group(4);
 
-						String lpkgPathString = lpkgPath.toString();
+						Path lpkgPathName = lpkgPath.getFileName();
 
-						if (lpkgPathString.endsWith("Static.lpkg")) {
+						if (lpkgStaticFileNames.contains(
+								lpkgPathName.toString())) {
+
 							Path staticOverridePath = Paths.get(
 								liferayHome, "/osgi/static/", name);
 
@@ -127,8 +133,8 @@ public class LPKGOverrideTest {
 							if (name.endsWith(".war")) {
 								String fileName = matcher.group(1);
 
-								fileName = fileName.replace(
-									"-dxp", StringPool.BLANK);
+								fileName = StringUtil.removeSubstring(
+									fileName, "-dxp");
 
 								overrides.put("war.".concat(fileName), null);
 
@@ -144,7 +150,7 @@ public class LPKGOverrideTest {
 
 		StringBundler sb = new StringBundler(overrides.size() * 4);
 
-		for (Entry<String, String> entry : overrides.entrySet()) {
+		for (Map.Entry<String, String> entry : overrides.entrySet()) {
 			sb.append(entry.getKey());
 			sb.append(StringPool.COLON);
 			sb.append(entry.getValue());
@@ -157,6 +163,33 @@ public class LPKGOverrideTest {
 			Paths.get(liferayHome, "/overrides"), Arrays.asList(sb.toString()),
 			StandardCharsets.UTF_8, StandardOpenOption.CREATE,
 			StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
+	}
+
+	private List<String> _getStaticLPKGFileNames() {
+		String staticLPKGBundleSymbolicNames = SystemProperties.get(
+			"static.lpkg.bundle.symbolic.names");
+
+		List<String> staticLPKGBundleSymbolicNameList =
+			com.liferay.petra.string.StringUtil.split(
+				staticLPKGBundleSymbolicNames);
+
+		String name = ReleaseInfo.getName();
+
+		String lpkgSymbolicNamePrefix = "Liferay ";
+
+		if (name.contains("Community")) {
+			lpkgSymbolicNamePrefix = "Liferay CE ";
+		}
+
+		for (int i = 0; i < staticLPKGBundleSymbolicNameList.size(); i++) {
+			staticLPKGBundleSymbolicNameList.set(
+				i,
+				StringBundler.concat(
+					lpkgSymbolicNamePrefix,
+					staticLPKGBundleSymbolicNameList.get(i), ".lpkg"));
+		}
+
+		return staticLPKGBundleSymbolicNameList;
 	}
 
 	private void _upgradeModuleVersion(Path path, Map<String, String> overrides)
@@ -201,7 +234,6 @@ public class LPKGOverrideTest {
 		}
 	}
 
-	private static final FileImpl _fileImpl = FileImpl.getInstance();
 	private static final Pattern _pattern = Pattern.compile(
 		"(.*?)(-\\d+\\.\\d+\\.\\d+)(\\..+)?(\\.[jw]ar)");
 

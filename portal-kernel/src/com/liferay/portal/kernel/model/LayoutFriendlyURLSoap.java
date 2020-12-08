@@ -14,8 +14,6 @@
 
 package com.liferay.portal.kernel.model;
 
-import aQute.bnd.annotation.ProviderType;
-
 import java.io.Serializable;
 
 import java.util.ArrayList;
@@ -26,14 +24,17 @@ import java.util.List;
  * This class is used by SOAP remote services.
  *
  * @author Brian Wing Shun Chan
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
-@ProviderType
+@Deprecated
 public class LayoutFriendlyURLSoap implements Serializable {
+
 	public static LayoutFriendlyURLSoap toSoapModel(LayoutFriendlyURL model) {
 		LayoutFriendlyURLSoap soapModel = new LayoutFriendlyURLSoap();
 
 		soapModel.setMvccVersion(model.getMvccVersion());
+		soapModel.setCtCollectionId(model.getCtCollectionId());
 		soapModel.setUuid(model.getUuid());
 		soapModel.setLayoutFriendlyURLId(model.getLayoutFriendlyURLId());
 		soapModel.setGroupId(model.getGroupId());
@@ -43,7 +44,7 @@ public class LayoutFriendlyURLSoap implements Serializable {
 		soapModel.setCreateDate(model.getCreateDate());
 		soapModel.setModifiedDate(model.getModifiedDate());
 		soapModel.setPlid(model.getPlid());
-		soapModel.setPrivateLayout(model.getPrivateLayout());
+		soapModel.setPrivateLayout(model.isPrivateLayout());
 		soapModel.setFriendlyURL(model.getFriendlyURL());
 		soapModel.setLanguageId(model.getLanguageId());
 		soapModel.setLastPublishDate(model.getLastPublishDate());
@@ -53,7 +54,9 @@ public class LayoutFriendlyURLSoap implements Serializable {
 
 	public static LayoutFriendlyURLSoap[] toSoapModels(
 		LayoutFriendlyURL[] models) {
-		LayoutFriendlyURLSoap[] soapModels = new LayoutFriendlyURLSoap[models.length];
+
+		LayoutFriendlyURLSoap[] soapModels =
+			new LayoutFriendlyURLSoap[models.length];
 
 		for (int i = 0; i < models.length; i++) {
 			soapModels[i] = toSoapModel(models[i]);
@@ -64,10 +67,12 @@ public class LayoutFriendlyURLSoap implements Serializable {
 
 	public static LayoutFriendlyURLSoap[][] toSoapModels(
 		LayoutFriendlyURL[][] models) {
+
 		LayoutFriendlyURLSoap[][] soapModels = null;
 
 		if (models.length > 0) {
-			soapModels = new LayoutFriendlyURLSoap[models.length][models[0].length];
+			soapModels =
+				new LayoutFriendlyURLSoap[models.length][models[0].length];
 		}
 		else {
 			soapModels = new LayoutFriendlyURLSoap[0][0];
@@ -82,7 +87,9 @@ public class LayoutFriendlyURLSoap implements Serializable {
 
 	public static LayoutFriendlyURLSoap[] toSoapModels(
 		List<LayoutFriendlyURL> models) {
-		List<LayoutFriendlyURLSoap> soapModels = new ArrayList<LayoutFriendlyURLSoap>(models.size());
+
+		List<LayoutFriendlyURLSoap> soapModels =
+			new ArrayList<LayoutFriendlyURLSoap>(models.size());
 
 		for (LayoutFriendlyURL model : models) {
 			soapModels.add(toSoapModel(model));
@@ -108,6 +115,14 @@ public class LayoutFriendlyURLSoap implements Serializable {
 
 	public void setMvccVersion(long mvccVersion) {
 		_mvccVersion = mvccVersion;
+	}
+
+	public long getCtCollectionId() {
+		return _ctCollectionId;
+	}
+
+	public void setCtCollectionId(long ctCollectionId) {
+		_ctCollectionId = ctCollectionId;
 	}
 
 	public String getUuid() {
@@ -219,6 +234,7 @@ public class LayoutFriendlyURLSoap implements Serializable {
 	}
 
 	private long _mvccVersion;
+	private long _ctCollectionId;
 	private String _uuid;
 	private long _layoutFriendlyURLId;
 	private long _groupId;
@@ -232,4 +248,5 @@ public class LayoutFriendlyURLSoap implements Serializable {
 	private String _friendlyURL;
 	private String _languageId;
 	private Date _lastPublishDate;
+
 }

@@ -16,10 +16,11 @@ package com.liferay.portal.kernel.util;
 
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.language.LanguageUtil;
-import com.liferay.portal.kernel.security.pacl.permission.PortalRuntimePermission;
 import com.liferay.portal.kernel.settings.LocalizedValuesMap;
 import com.liferay.portal.kernel.settings.Settings;
 import com.liferay.portal.kernel.xml.Document;
+
+import java.io.Serializable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -64,6 +65,15 @@ public class LocalizationUtil {
 			className, classPK, contentDefaultLocale, contentAvailableLocales);
 	}
 
+	public static Locale getDefaultImportLocale(
+		String className, Serializable primaryKey, Locale contentDefaultLocale,
+		Locale[] contentAvailableLocales) {
+
+		return getLocalization().getDefaultImportLocale(
+			className, primaryKey, contentDefaultLocale,
+			contentAvailableLocales);
+	}
+
 	public static String getDefaultLanguageId(Document document) {
 		return getLocalization().getDefaultLanguageId(document);
 	}
@@ -85,8 +95,6 @@ public class LocalizationUtil {
 	}
 
 	public static Localization getLocalization() {
-		PortalRuntimePermission.checkGetBeanProperty(LocalizationUtil.class);
-
 		return _localization;
 	}
 
@@ -127,9 +135,10 @@ public class LocalizationUtil {
 	}
 
 	public static Map<Locale, String> getLocalizationMap(
-		HttpServletRequest request, String parameter) {
+		HttpServletRequest httpServletRequest, String parameter) {
 
-		return getLocalization().getLocalizationMap(request, parameter);
+		return getLocalization().getLocalizationMap(
+			httpServletRequest, parameter);
 	}
 
 	public static Map<Locale, String> getLocalizationMap(
@@ -250,15 +259,6 @@ public class LocalizationUtil {
 		return modifiedLocales;
 	}
 
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link #getLocalizedName(String,
-	 *             String)}
-	 */
-	@Deprecated
-	public static String getPreferencesKey(String key, String languageId) {
-		return getLocalization().getPreferencesKey(key, languageId);
-	}
-
 	public static String getPreferencesValue(
 		PortletPreferences preferences, String key, String languageId) {
 
@@ -325,6 +325,14 @@ public class LocalizationUtil {
 		Map<String, String> map, String defaultLanguageId, String key) {
 
 		return getLocalization().getXml(map, defaultLanguageId, key);
+	}
+
+	public static Map<Locale, String> populateLocalizationMap(
+		Map<Locale, String> localizationMap, String defaultLanguageId,
+		long groupId) {
+
+		return getLocalization().populateLocalizationMap(
+			localizationMap, defaultLanguageId, groupId);
 	}
 
 	public static String removeLocalization(
@@ -423,8 +431,6 @@ public class LocalizationUtil {
 	}
 
 	public void setLocalization(Localization localization) {
-		PortalRuntimePermission.checkSetBeanProperty(getClass());
-
 		_localization = localization;
 	}
 

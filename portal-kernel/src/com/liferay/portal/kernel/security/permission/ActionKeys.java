@@ -196,6 +196,8 @@ public class ActionKeys {
 	public static final String MANAGE_SUBORGANIZATIONS =
 		"MANAGE_SUBORGANIZATIONS";
 
+	public static final String MANAGE_TAG = "MANAGE_TAG";
+
 	public static final String MANAGE_TEAMS = "MANAGE_TEAMS";
 
 	public static final String MANAGE_USERS = "MANAGE_USERS";
@@ -234,6 +236,8 @@ public class ActionKeys {
 	public static final String UPDATE = "UPDATE";
 
 	public static final String UPDATE_DISCUSSION = "UPDATE_DISCUSSION";
+
+	public static final String UPDATE_LAYOUT_CONTENT = "UPDATE_LAYOUT_CONTENT";
 
 	public static final String UPDATE_THREAD_PRIORITY =
 		"UPDATE_THREAD_PRIORITY";

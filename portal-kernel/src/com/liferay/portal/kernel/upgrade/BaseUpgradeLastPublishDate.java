@@ -14,6 +14,7 @@
 
 package com.liferay.portal.kernel.upgrade;
 
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.LayoutConstants;
@@ -31,7 +32,7 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * @author Mate Thurzo
+ * @author Máté Thurzó
  */
 public abstract class BaseUpgradeLastPublishDate extends UpgradeProcess {
 
@@ -60,13 +61,14 @@ public abstract class BaseUpgradeLastPublishDate extends UpgradeProcess {
 
 			try (ResultSet rs = ps.executeQuery()) {
 				while (rs.next()) {
-					UnicodeProperties settingsProperties =
+					UnicodeProperties settingsUnicodeProperties =
 						new UnicodeProperties(true);
 
-					settingsProperties.load(rs.getString("settings_"));
+					settingsUnicodeProperties.load(rs.getString("settings_"));
 
 					String lastPublishDateString =
-						settingsProperties.getProperty("last-publish-date");
+						settingsUnicodeProperties.getProperty(
+							"last-publish-date");
 
 					if (Validator.isNotNull(lastPublishDateString)) {
 						return new Date(
@@ -81,6 +83,39 @@ public abstract class BaseUpgradeLastPublishDate extends UpgradeProcess {
 
 	protected Date getPortletLastPublishDate(long groupId, String portletId)
 		throws Exception {
+
+		if (!hasColumn("PortletPreferences", "preferences")) {
+			try (PreparedStatement ps = connection.prepareStatement(
+					StringBundler.concat(
+						"select PortletPreferenceValue.smallValue from ",
+						"PortletPreferenceValue inner join PortletPreferences ",
+						"on PortletPreferences.portletPreferencesId = ",
+						"PortletPreferenceValue.portletPreferencesId where ",
+						"PortletPreferences.plid = ? and ",
+						"PortletPreferences.ownerType = ? and ",
+						"PortletPreferences.ownerId = ? and ",
+						"PortletPreferences.portletId = ? and ",
+						"PortletPreferenceValue.name = ?"))) {
+
+				ps.setLong(1, LayoutConstants.DEFAULT_PLID);
+				ps.setInt(2, PortletKeys.PREFS_OWNER_TYPE_GROUP);
+				ps.setLong(3, groupId);
+				ps.setString(4, portletId);
+				ps.setString(5, "last-publish-date");
+
+				try (ResultSet rs = ps.executeQuery()) {
+					while (rs.next()) {
+						String value = rs.getString("smallValue");
+
+						if (Validator.isNotNull(value)) {
+							return new Date(GetterUtil.getLong(value));
+						}
+					}
+				}
+			}
+
+			return null;
+		}
 
 		try (PreparedStatement ps = connection.prepareStatement(
 				"select preferences from PortletPreferences where plid = ? " +
@@ -168,8 +203,9 @@ public abstract class BaseUpgradeLastPublishDate extends UpgradeProcess {
 		throws Exception {
 
 		try (PreparedStatement ps = connection.prepareStatement(
-				"update " + tableName + " set lastPublishDate = ? where " +
-					"groupId = ?")) {
+				StringBundler.concat(
+					"update ", tableName, " set lastPublishDate = ? where ",
+					"groupId = ?"))) {
 
 			ps.setDate(1, new java.sql.Date(lastPublishDate.getTime()));
 			ps.setLong(2, groupId);

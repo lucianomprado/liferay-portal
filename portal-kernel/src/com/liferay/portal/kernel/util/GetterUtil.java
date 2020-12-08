@@ -14,6 +14,9 @@
 
 package com.liferay.portal.kernel.util;
 
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringPool;
+
 import java.math.BigDecimal;
 
 import java.text.DateFormat;
@@ -22,6 +25,7 @@ import java.text.ParsePosition;
 
 import java.util.Date;
 import java.util.Locale;
+import java.util.function.Supplier;
 
 /**
  * Provides utility methods for reading values as various types.
@@ -303,7 +307,7 @@ public class GetterUtil {
 			try {
 				return new BigDecimal(valueString.trim());
 			}
-			catch (NumberFormatException nfe) {
+			catch (NumberFormatException numberFormatException) {
 				return defaultValue;
 			}
 		}
@@ -481,7 +485,7 @@ public class GetterUtil {
 				return date;
 			}
 		}
-		catch (Exception e) {
+		catch (Exception exception) {
 		}
 
 		return defaultValue;
@@ -519,7 +523,7 @@ public class GetterUtil {
 			try {
 				return Double.parseDouble(value);
 			}
-			catch (Exception e) {
+			catch (Exception exception) {
 			}
 		}
 		else {
@@ -534,7 +538,7 @@ public class GetterUtil {
 					return number.doubleValue();
 				}
 			}
-			catch (Exception e) {
+			catch (Exception exception) {
 			}
 		}
 
@@ -557,7 +561,7 @@ public class GetterUtil {
 		try {
 			return Float.parseFloat(value.trim());
 		}
-		catch (Exception e) {
+		catch (Exception exception) {
 		}
 
 		return defaultValue;
@@ -1267,9 +1271,8 @@ public class GetterUtil {
 		if (negative) {
 			return result;
 		}
-		else {
-			return -result;
-		}
+
+		return -result;
 	}
 
 	/**
@@ -1455,9 +1458,8 @@ public class GetterUtil {
 		if (negative) {
 			return result;
 		}
-		else {
-			return -result;
-		}
+
+		return -result;
 	}
 
 	/**
@@ -1909,6 +1911,16 @@ public class GetterUtil {
 		return defaultValue;
 	}
 
+	public static String[] getStringValues(
+		Object value, Supplier<String[]> defaultValueSupplier) {
+
+		if (value instanceof String[]) {
+			return getStringValues((String[])value, defaultValueSupplier);
+		}
+
+		return defaultValueSupplier.get();
+	}
+
 	/**
 	 * Returns the String array values as a String array. If the values array is
 	 * <code>null</code>, the default value is returned. In the returned array,
@@ -1924,6 +1936,26 @@ public class GetterUtil {
 
 		if (values == null) {
 			return defaultValue;
+		}
+
+		String[] stringValues = new String[values.length];
+
+		for (int i = 0; i < values.length; i++) {
+			stringValues[i] = String.valueOf(values[i]);
+		}
+
+		return stringValues;
+	}
+
+	public static String[] getStringValues(
+		Object[] values, Supplier<String[]> defaultValueSupplier) {
+
+		if (values instanceof String[]) {
+			return (String[])values;
+		}
+
+		if (values == null) {
+			return defaultValueSupplier.get();
 		}
 
 		String[] stringValues = new String[values.length];
@@ -2006,9 +2038,8 @@ public class GetterUtil {
 		if (negative) {
 			return result;
 		}
-		else {
-			return -result;
-		}
+
+		return -result;
 	}
 
 	private static long _parseLong(String value, long defaultValue) {
@@ -2069,9 +2100,8 @@ public class GetterUtil {
 		if (negative) {
 			return result;
 		}
-		else {
-			return -result;
-		}
+
+		return -result;
 	}
 
 	private static short _parseShort(String value, short defaultValue) {
@@ -2082,42 +2112,6 @@ public class GetterUtil {
 		}
 
 		return (short)i;
-	}
-
-	/**
-	 * @see StringUtil#toLowerCase
-	 */
-	private static String _toLowerCase(String s) {
-		if (s == null) {
-			return null;
-		}
-
-		StringBuilder sb = null;
-
-		for (int i = 0; i < s.length(); i++) {
-			char c = s.charAt(i);
-
-			if (c > 127) {
-
-				// Found non-ascii char, fallback to the slow unicode detection
-
-				return s.toLowerCase(LocaleUtil.getDefault());
-			}
-
-			if ((c >= 'A') && (c <= 'Z')) {
-				if (sb == null) {
-					sb = new StringBuilder(s);
-				}
-
-				sb.setCharAt(i, (char)(c + 32));
-			}
-		}
-
-		if (sb == null) {
-			return s;
-		}
-
-		return sb.toString();
 	}
 
 }

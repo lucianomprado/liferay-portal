@@ -30,7 +30,7 @@ import org.apache.maven.plugins.annotations.Parameter;
  * @author David Truong
  * @author Andrea Di Giorgi
  */
-@Mojo(name = "create-token")
+@Mojo(name = "create-token", requiresDirectInvocation = true)
 public class CreateTokenMojo extends AbstractMojo {
 
 	@Override
@@ -41,14 +41,15 @@ public class CreateTokenMojo extends AbstractMojo {
 			createTokenCommand.setEmailAddress(emailAddress);
 			createTokenCommand.setForce(force);
 			createTokenCommand.setPassword(password);
+			createTokenCommand.setPasswordFile(passwordFile);
 			createTokenCommand.setTokenFile(tokenFile);
 			createTokenCommand.setTokenUrl(tokenUrl);
 
 			createTokenCommand.execute();
 		}
-		catch (Exception e) {
+		catch (Exception exception) {
 			throw new MojoExecutionException(
-				"Unable to create liferay.com download token", e);
+				"Unable to create liferay.com download token", exception);
 		}
 	}
 
@@ -61,12 +62,15 @@ public class CreateTokenMojo extends AbstractMojo {
 	@Parameter
 	protected String password;
 
+	@Parameter
+	protected File passwordFile;
+
 	@Parameter(
 		defaultValue = "${user.home}/" + BundleSupportConstants.DEFAULT_TOKEN_FILE_NAME
 	)
 	protected File tokenFile;
 
-	@Parameter(defaultValue = BundleSupportConstants.DEFAULT_BUNDLE_URL)
+	@Parameter(defaultValue = BundleSupportConstants.DEFAULT_TOKEN_URL)
 	protected URL tokenUrl;
 
 }

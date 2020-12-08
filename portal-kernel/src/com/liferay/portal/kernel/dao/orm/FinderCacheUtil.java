@@ -15,7 +15,6 @@
 package com.liferay.portal.kernel.dao.orm;
 
 import com.liferay.portal.kernel.model.BaseModel;
-import com.liferay.portal.kernel.security.pacl.permission.PortalRuntimePermission;
 import com.liferay.portal.kernel.service.persistence.impl.BasePersistenceImpl;
 import com.liferay.portal.kernel.util.ServiceProxyFactory;
 
@@ -28,6 +27,15 @@ public class FinderCacheUtil {
 		_finderCache.clearCache();
 	}
 
+	public static void clearCache(Class<?> clazz) {
+		_finderCache.clearCache(clazz);
+	}
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 * 			#clearCache(Class)}
+	 */
+	@Deprecated
 	public static void clearCache(String className) {
 		_finderCache.clearCache(className);
 	}
@@ -37,11 +45,18 @@ public class FinderCacheUtil {
 	}
 
 	public static FinderCache getFinderCache() {
-		PortalRuntimePermission.checkGetBeanProperty(FinderCacheUtil.class);
-
 		return _finderCache;
 	}
 
+	public static Object getResult(FinderPath finderPath, Object[] args) {
+		return _finderCache.getResult(finderPath, args);
+	}
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 * 			#getResult(FinderPath, Object[])}
+	 */
+	@Deprecated
 	public static Object getResult(
 		FinderPath finderPath, Object[] args,
 		BasePersistenceImpl<? extends BaseModel<?>> basePersistenceImpl) {
@@ -59,6 +74,11 @@ public class FinderCacheUtil {
 		_finderCache.putResult(finderPath, args, result);
 	}
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 * 			#putResult(FinderPath, Object[], Object)}
+	 */
+	@Deprecated
 	public static void putResult(
 		FinderPath finderPath, Object[] args, Object result, boolean quiet) {
 

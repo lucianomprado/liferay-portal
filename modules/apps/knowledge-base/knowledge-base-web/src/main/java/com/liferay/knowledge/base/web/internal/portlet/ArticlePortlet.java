@@ -21,13 +21,12 @@ import com.liferay.knowledge.base.exception.NoSuchArticleException;
 import com.liferay.knowledge.base.exception.NoSuchCommentException;
 import com.liferay.knowledge.base.model.KBArticle;
 import com.liferay.knowledge.base.service.KBArticleLocalService;
-import com.liferay.knowledge.base.service.permission.KBArticlePermission;
 import com.liferay.knowledge.base.web.internal.constants.KBWebKeys;
 import com.liferay.portal.kernel.exception.NoSuchSubscriptionException;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.Release;
 import com.liferay.portal.kernel.security.auth.PrincipalException;
-import com.liferay.portal.kernel.security.permission.PermissionChecker;
+import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
 import com.liferay.portal.kernel.servlet.SessionErrors;
 import com.liferay.portal.kernel.servlet.SessionMessages;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
@@ -76,8 +75,7 @@ import org.osgi.service.component.annotations.Reference;
 		"javax.portlet.resource-bundle=content.Language",
 		"javax.portlet.security-role-ref=administrator,guest,power-user,user",
 		"javax.portlet.supported-public-render-parameter=categoryId",
-		"javax.portlet.supported-public-render-parameter=tag",
-		"javax.portlet.supports.mime-type=text/html"
+		"javax.portlet.supported-public-render-parameter=tag"
 	},
 	service = Portlet.class
 )
@@ -124,31 +122,28 @@ public class ArticlePortlet extends BaseKBPortlet {
 		throws IOException, PortletException {
 
 		try {
-			renderRequest.setAttribute(
-				KBWebKeys.DL_MIME_TYPE_DISPLAY_CONTEXT,
-				dlMimeTypeDisplayContext);
-
 			KBArticle kbArticle = null;
 
 			long resourcePrimKey = getResourcePrimKey(renderRequest);
 
+			int status = ParamUtil.getInteger(
+				renderRequest, "status", WorkflowConstants.STATUS_APPROVED);
+
 			if (resourcePrimKey > 0) {
 				kbArticle = kbArticleService.getLatestKBArticle(
-					resourcePrimKey, WorkflowConstants.STATUS_APPROVED);
+					resourcePrimKey, status);
 			}
 
 			renderRequest.setAttribute(
 				KBWebKeys.KNOWLEDGE_BASE_KB_ARTICLE, kbArticle);
 
-			renderRequest.setAttribute(
-				KBWebKeys.KNOWLEDGE_BASE_STATUS,
-				WorkflowConstants.STATUS_APPROVED);
+			renderRequest.setAttribute(KBWebKeys.KNOWLEDGE_BASE_STATUS, status);
 		}
-		catch (Exception e) {
-			if (e instanceof NoSuchArticleException ||
-				e instanceof PrincipalException) {
+		catch (Exception exception) {
+			if (exception instanceof NoSuchArticleException ||
+				exception instanceof PrincipalException) {
 
-				SessionErrors.add(renderRequest, e.getClass());
+				SessionErrors.add(renderRequest, exception.getClass());
 
 				SessionMessages.add(
 					renderRequest,
@@ -156,16 +151,13 @@ public class ArticlePortlet extends BaseKBPortlet {
 						SessionMessages.KEY_SUFFIX_HIDE_DEFAULT_ERROR_MESSAGE);
 			}
 			else {
-				throw new PortletException(e);
+				throw new PortletException(exception);
 			}
 		}
 	}
 
 	protected long getResourcePrimKey(RenderRequest renderRequest)
 		throws Exception {
-
-		ThemeDisplay themeDisplay = (ThemeDisplay)renderRequest.getAttribute(
-			KBWebKeys.THEME_DISPLAY);
 
 		PortletPreferences preferences = renderRequest.getPreferences();
 
@@ -196,11 +188,12 @@ public class ArticlePortlet extends BaseKBPortlet {
 			return resourcePrimKey;
 		}
 
-		PermissionChecker permissionChecker =
-			themeDisplay.getPermissionChecker();
+		ThemeDisplay themeDisplay = (ThemeDisplay)renderRequest.getAttribute(
+			KBWebKeys.THEME_DISPLAY);
 
-		if (!KBArticlePermission.contains(
-				permissionChecker, defaultValue, KBActionKeys.VIEW)) {
+		if (!_kbArticleModelResourcePermission.contains(
+				themeDisplay.getPermissionChecker(), defaultValue,
+				KBActionKeys.VIEW)) {
 
 			return 0;
 		}
@@ -248,13 +241,19 @@ public class ArticlePortlet extends BaseKBPortlet {
 	}
 
 	@Reference(
-		target = "(&(release.bundle.symbolic.name=com.liferay.knowledge.base.web)(release.schema.version=1.0.0))",
+		target = "(&(release.bundle.symbolic.name=com.liferay.knowledge.base.web)(&(release.schema.version>=1.2.0)(!(release.schema.version>=2.0.0))))",
 		unbind = "-"
 	)
 	protected void setRelease(Release release) {
 	}
 
 	private KBArticleLocalService _kbArticleLocalService;
+
+	@Reference(
+		target = "(model.class.name=com.liferay.knowledge.base.model.KBArticle)"
+	)
+	private ModelResourcePermission<KBArticle>
+		_kbArticleModelResourcePermission;
 
 	@Reference
 	private Portal _portal;

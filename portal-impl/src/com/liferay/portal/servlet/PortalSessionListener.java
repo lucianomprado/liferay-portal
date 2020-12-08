@@ -14,6 +14,7 @@
 
 package com.liferay.portal.servlet;
 
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.servlet.filters.compoundsessionid.CompoundSessionIdHttpSession;
@@ -46,15 +47,17 @@ public class PortalSessionListener implements HttpSessionListener {
 
 		new PortalSessionCreator(session);
 
-		if (PropsValues.SESSION_MAX_ALLOWED > 0) {
-			if (_counter.incrementAndGet() > PropsValues.SESSION_MAX_ALLOWED) {
-				session.setAttribute(WebKeys.SESSION_MAX_ALLOWED, Boolean.TRUE);
+		if ((PropsValues.SESSION_MAX_ALLOWED > 0) &&
+			(_counter.incrementAndGet() > PropsValues.SESSION_MAX_ALLOWED)) {
 
-				_log.error(
-					"Exceeded maximum number of " +
-						PropsValues.SESSION_MAX_ALLOWED + " sessions " +
-							"allowed. You may be experiencing a DoS attack.");
-			}
+			session.setAttribute(WebKeys.SESSION_MAX_ALLOWED, Boolean.TRUE);
+
+			_log.error(
+				StringBundler.concat(
+					"Exceeded maximum number of ",
+					PropsValues.SESSION_MAX_ALLOWED,
+					" sessions allowed. You may be experiencing a DoS ",
+					"attack."));
 		}
 	}
 

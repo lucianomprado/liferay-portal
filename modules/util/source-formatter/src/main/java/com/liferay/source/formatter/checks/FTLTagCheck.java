@@ -14,9 +14,9 @@
 
 package com.liferay.source.formatter.checks;
 
-import com.liferay.portal.kernel.util.CharPool;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.tools.ToolsUtil;
 
@@ -52,7 +52,7 @@ public class FTLTagCheck extends BaseFileCheck {
 			String tabs = matcher.group(2);
 
 			String replacement = StringUtil.removeSubstrings(
-				match, "<#assign ", "<#assign\n", " />", "\n/>", "\t/>");
+				match, "<#assign ", "<#assign\n", "/>");
 
 			replacement = StringUtil.removeChar(replacement, CharPool.TAB);
 
@@ -99,7 +99,8 @@ public class FTLTagCheck extends BaseFileCheck {
 				delimeter = "\n" + tabs + "\t";
 			}
 
-			StringBundler sb = new StringBundler(attributesMap.size() * 4 + 4);
+			StringBundler sb = new StringBundler(
+				(attributesMap.size() * 4) + 4);
 
 			sb.append(_getTagName(match));
 			sb.append(delimeter);
@@ -190,13 +191,14 @@ public class FTLTagCheck extends BaseFileCheck {
 		return sb.toString();
 	}
 
-	private final Pattern _assignTagsBlockPattern = Pattern.compile(
-		"((\t*)<#assign[^<#/>]*=[^<#/>]*/>(\n|$)+){2,}", Pattern.MULTILINE);
-	private final Pattern _incorrectAssignTagPattern = Pattern.compile(
+	private static final Pattern _assignTagsBlockPattern = Pattern.compile(
+		"((\t*)<#assign(.(?!<[#@]))+?/>(\n|$)+){2,}",
+		Pattern.DOTALL | Pattern.MULTILINE);
+	private static final Pattern _incorrectAssignTagPattern = Pattern.compile(
 		"(<#assign .*=.*[^/])>(\n|$)");
-	private final Pattern _tagAttributePattern = Pattern.compile(
+	private static final Pattern _tagAttributePattern = Pattern.compile(
 		"\\s(\\S+)\\s*=");
-	private final Pattern _tagPattern = Pattern.compile(
+	private static final Pattern _tagPattern = Pattern.compile(
 		"(\\A|\n)(\t*)<@(\\S[^>]*?)(/?>)(\n|\\Z)", Pattern.DOTALL);
 
 }

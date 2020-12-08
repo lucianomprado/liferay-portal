@@ -14,24 +14,27 @@
 
 package com.liferay.source.formatter.checks;
 
-import com.liferay.portal.kernel.util.CharPool;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.TextFormatter;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.source.formatter.BNDSettings;
+import com.liferay.source.formatter.SourceFormatterExcludes;
+import com.liferay.source.formatter.checks.util.SourceUtil;
 import com.liferay.source.formatter.util.FileUtil;
+import com.liferay.source.formatter.util.SourceFormatterUtil;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringReader;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -42,29 +45,24 @@ import java.util.regex.Pattern;
 public class LanguageKeysCheck extends BaseFileCheck {
 
 	@Override
-	public void init() throws Exception {
-		_portalLanguageProperties = getPortalLanguageProperties();
-	}
-
-	@Override
-	public boolean isPortalCheck() {
+	public boolean isLiferaySourceCheck() {
 		return true;
 	}
 
 	@Override
 	protected String doProcess(
 			String fileName, String absolutePath, String content)
-		throws Exception {
+		throws IOException {
 
-		if (!isSubrepository()) {
-			_checkLanguageKeys(fileName, absolutePath, content, getPatterns());
-		}
+		_checkLanguageKeys(fileName, absolutePath, content, getPatterns());
 
 		return content;
 	}
 
 	protected List<Pattern> getPatterns() {
-		return Arrays.asList(languageKeyPattern);
+		return Arrays.asList(
+			languageKeyPattern, _metaAnnotationDescriptionParameterPattern,
+			_metaAnnotationNameParameterPattern);
 	}
 
 	protected final Pattern languageKeyPattern = Pattern.compile(
@@ -73,23 +71,36 @@ public class LanguageKeysCheck extends BaseFileCheck {
 	private void _checkLanguageKeys(
 			String fileName, String absolutePath, String content,
 			List<Pattern> patterns)
-		throws Exception {
+		throws IOException {
 
 		if (fileName.endsWith(".vm")) {
 			return;
 		}
 
+		Properties portalLanguageProperties = _getPortalLanguageProperties(
+			absolutePath);
+
+		if (portalLanguageProperties.isEmpty()) {
+			return;
+		}
+
 		for (Pattern pattern : patterns) {
-			_checkLanguageKeys(fileName, absolutePath, content, pattern);
+			_checkLanguageKeys(
+				fileName, absolutePath, content, portalLanguageProperties,
+				pattern);
 		}
 	}
 
 	private void _checkLanguageKeys(
 			String fileName, String absolutePath, String content,
-			Pattern pattern)
-		throws Exception {
+			Properties portalLanguageProperties, Pattern pattern)
+		throws IOException {
 
 		Matcher matcher = pattern.matcher(content);
+
+		Properties buildGradleLanguageProperties = null;
+		Properties langModuleLanguageProperties = null;
+		Properties moduleLanguageProperties = null;
 
 		while (matcher.find()) {
 			String[] languageKeys = _getLanguageKeys(matcher);
@@ -107,51 +118,190 @@ public class LanguageKeysCheck extends BaseFileCheck {
 					languageKey.startsWith(StringPool.OPEN_CURLY_BRACE) ||
 					languageKey.startsWith(StringPool.PERIOD) ||
 					languageKey.startsWith(StringPool.UNDERLINE) ||
-					_portalLanguageProperties.containsKey(languageKey)) {
+					portalLanguageProperties.containsKey(languageKey)) {
 
 					continue;
 				}
 
-				Properties moduleLanguageProperties =
-					_getModuleLanguageProperties(fileName);
+				if (moduleLanguageProperties == null) {
+					moduleLanguageProperties = _getModuleLanguageProperties(
+						fileName);
+				}
 
-				if ((moduleLanguageProperties != null) &&
-					moduleLanguageProperties.containsKey(languageKey)) {
-
+				if (moduleLanguageProperties.containsKey(languageKey)) {
 					continue;
 				}
 
-				Properties moduleLangLanguageProperties =
-					_getModuleLangLanguageProperties(absolutePath);
+				if (buildGradleLanguageProperties == null) {
+					buildGradleLanguageProperties =
+						_getBuildGradleLanguageProperties(absolutePath);
+				}
 
-				if ((moduleLangLanguageProperties != null) &&
-					moduleLangLanguageProperties.containsKey(languageKey)) {
+				if (buildGradleLanguageProperties.containsKey(languageKey)) {
+					continue;
+				}
 
+				if (langModuleLanguageProperties == null) {
+					langModuleLanguageProperties =
+						_getLangModuleLanguageProperties(absolutePath);
+				}
+
+				if (langModuleLanguageProperties.containsKey(languageKey)) {
 					continue;
 				}
 
 				BNDSettings bndSettings = getBNDSettings(fileName);
 
-				if (bndSettings == null) {
-					addMessage(
-						fileName, "Missing language key '" + languageKey + "'");
+				if (bndSettings != null) {
+					Properties bndLanguageProperties =
+						bndSettings.getLanguageProperties();
 
-					continue;
+					if ((bndLanguageProperties == null) ||
+						bndLanguageProperties.containsKey(languageKey)) {
+
+						continue;
+					}
 				}
 
-				Properties bndFileLanguageProperties =
-					bndSettings.getLanguageProperties();
-
-				if ((bndFileLanguageProperties != null) &&
-					!bndFileLanguageProperties.containsKey(languageKey)) {
-
-					addMessage(
-						fileName, "Missing language key '" + languageKey + "'");
-				}
-
-				putBNDSettings(bndSettings);
+				addMessage(
+					fileName, "Missing language key '" + languageKey + "'");
 			}
 		}
+	}
+
+	private Properties _getBuildGradleLanguageProperties(String absolutePath)
+		throws IOException {
+
+		Properties properties = new Properties();
+
+		String buildGradleContent = null;
+		String buildGradleFileLocation = absolutePath;
+
+		while (true) {
+			int pos = buildGradleFileLocation.lastIndexOf(StringPool.SLASH);
+
+			if (pos == -1) {
+				return properties;
+			}
+
+			buildGradleFileLocation = buildGradleFileLocation.substring(
+				0, pos + 1);
+
+			File file = new File(buildGradleFileLocation + "build.gradle");
+
+			if (file.exists()) {
+				buildGradleContent = FileUtil.read(file);
+
+				break;
+			}
+
+			buildGradleFileLocation = StringUtil.replaceLast(
+				buildGradleFileLocation, CharPool.SLASH, StringPool.BLANK);
+		}
+
+		Matcher matcher = _applyLangMergerPluginPattern.matcher(
+			buildGradleContent);
+
+		if (!matcher.find()) {
+			return properties;
+		}
+
+		String moduleLocation = StringUtil.replaceLast(
+			buildGradleFileLocation, CharPool.SLASH, StringPool.BLANK);
+
+		List<String> moduleLangDirNames = _getModuleLangDirNames(
+			moduleLocation, buildGradleContent);
+
+		for (String moduleLangDirName : moduleLangDirNames) {
+			String moduleLangLanguagePropertiesFileName =
+				moduleLangDirName + "/Language.properties";
+
+			File file = new File(moduleLangLanguagePropertiesFileName);
+
+			if (!file.exists()) {
+				continue;
+			}
+
+			InputStream inputStream = new FileInputStream(file);
+
+			properties.load(inputStream);
+		}
+
+		return properties;
+	}
+
+	private Properties _getLangModuleLanguageProperties(String absolutePath)
+		throws IOException {
+
+		Properties properties = new Properties();
+
+		if (!isModulesFile(absolutePath)) {
+			return properties;
+		}
+
+		List<String> langModulePaths = new ArrayList<>();
+
+		String fileLocation = absolutePath;
+
+		int x = fileLocation.length();
+
+		while (true) {
+			x = fileLocation.lastIndexOf(CharPool.SLASH, x - 1);
+
+			if (x == -1) {
+				break;
+			}
+
+			fileLocation = fileLocation.substring(0, x);
+
+			if (fileLocation.endsWith("/modules")) {
+				break;
+			}
+
+			File directory = new File(fileLocation);
+
+			if (!directory.exists()) {
+				continue;
+			}
+
+			for (File subdirectory : directory.listFiles(File::isDirectory)) {
+				String subdirectoryPath = SourceUtil.getAbsolutePath(
+					subdirectory);
+
+				if (subdirectoryPath.endsWith("-lang")) {
+					langModulePaths.add(subdirectoryPath);
+				}
+			}
+
+			if (isSubrepository() &&
+				FileUtil.exists(fileLocation + "/gradle.properties")) {
+
+				break;
+			}
+		}
+
+		for (String langModulePath : langModulePaths) {
+			List<String> languagePropertyFileNames =
+				SourceFormatterUtil.scanForFiles(
+					langModulePath, new String[0],
+					new String[] {"**/resources/content/Language.properties"},
+					new SourceFormatterExcludes(), true);
+
+			if (!languagePropertyFileNames.isEmpty()) {
+				properties.load(
+					new FileInputStream(
+						new File(languagePropertyFileNames.get(0))));
+			}
+		}
+
+		if (absolutePath.contains("/modules/dxp/apps/")) {
+			properties.putAll(
+				_getLangModuleLanguageProperties(
+					StringUtil.replace(
+						absolutePath, "/modules/dxp/apps/", "/modules/apps/")));
+		}
+
+		return properties;
 	}
 
 	private String[] _getLanguageKeys(Matcher matcher) {
@@ -181,42 +331,32 @@ public class LanguageKeysCheck extends BaseFileCheck {
 		for (int i = 0; i < match.length(); i++) {
 			char c = match.charAt(i);
 
-			switch (c) {
-				case CharPool.CLOSE_PARENTHESIS:
-					if (count <= 1) {
-						return new String[0];
-					}
+			if (c == CharPool.CLOSE_PARENTHESIS) {
+				if (count <= 1) {
+					return new String[0];
+				}
 
-					count--;
+				count--;
+			}
+			else if (c == CharPool.OPEN_PARENTHESIS) {
+				count++;
+			}
+			else if ((c == CharPool.QUOTE) && (count <= 1)) {
+				while (i < match.length()) {
+					i++;
 
-					break;
+					if (match.charAt(i) == CharPool.QUOTE) {
+						String languageKey = sb.toString();
 
-				case CharPool.OPEN_PARENTHESIS:
-					count++;
-
-					break;
-
-				case CharPool.QUOTE:
-					if (count > 1) {
-						break;
-					}
-
-					while (i < match.length()) {
-						i++;
-
-						if (match.charAt(i) == CharPool.QUOTE) {
-							String languageKey = sb.toString();
-
-							if (match.startsWith("names")) {
-								return StringUtil.split(languageKey);
-							}
-							else {
-								return new String[] {languageKey};
-							}
+						if (match.startsWith("names")) {
+							return StringUtil.split(languageKey);
 						}
 
-						sb.append(match.charAt(i));
+						return new String[] {languageKey};
 					}
+
+					sb.append(match.charAt(i));
+				}
 			}
 		}
 
@@ -250,8 +390,7 @@ public class LanguageKeysCheck extends BaseFileCheck {
 
 		int y = baseModuleName.lastIndexOf(StringPool.SLASH);
 
-		baseModuleName = baseModuleName.substring(
-			y + 1, baseModuleName.length());
+		baseModuleName = baseModuleName.substring(y + 1);
 
 		String moduleLangDirName =
 			moduleLocation.substring(0, x + 1) + baseModuleName +
@@ -268,85 +407,31 @@ public class LanguageKeysCheck extends BaseFileCheck {
 
 		moduleLangDirNames.add(moduleLangDirName);
 
+		if (moduleLangDirName.contains("/modules/dxp/apps/")) {
+			moduleLangDirNames.add(
+				StringUtil.replace(
+					moduleLangDirName, "/modules/dxp/apps/", "/modules/apps/"));
+		}
+
+		String projectName = getProjectName();
+
+		if (Validator.isNotNull(projectName)) {
+			String projectLangDirName = StringBundler.concat(
+				moduleLocation.substring(0, x + 1), projectName,
+				"-lang/src/main/resources/content");
+
+			File projectLangDir = new File(projectLangDirName);
+
+			if (projectLangDir.exists()) {
+				moduleLangDirNames.add(projectLangDirName);
+			}
+		}
+
 		return moduleLangDirNames;
 	}
 
-	private Properties _getModuleLangLanguageProperties(String absolutePath)
-		throws Exception {
-
-		Properties properties = _moduleLangLanguagePropertiesMap.get(
-			absolutePath);
-
-		if (properties != null) {
-			return properties;
-		}
-
-		String buildGradleContent = null;
-		String buildGradleFileLocation = absolutePath;
-
-		while (true) {
-			int pos = buildGradleFileLocation.lastIndexOf(StringPool.SLASH);
-
-			if (pos == -1) {
-				return null;
-			}
-
-			buildGradleFileLocation = buildGradleFileLocation.substring(
-				0, pos + 1);
-
-			File file = new File(buildGradleFileLocation + "build.gradle");
-
-			if (file.exists()) {
-				buildGradleContent = FileUtil.read(file);
-
-				break;
-			}
-
-			buildGradleFileLocation = StringUtil.replaceLast(
-				buildGradleFileLocation, CharPool.SLASH, StringPool.BLANK);
-		}
-
-		Matcher matcher = _applyLangMergerPluginPattern.matcher(
-			buildGradleContent);
-
-		if (!matcher.find()) {
-			return null;
-		}
-
-		String moduleLocation = StringUtil.replaceLast(
-			buildGradleFileLocation, CharPool.SLASH, StringPool.BLANK);
-
-		List<String> moduleLangDirNames = _getModuleLangDirNames(
-			moduleLocation, buildGradleContent);
-
-		properties = new Properties();
-
-		for (String moduleLangDirName : moduleLangDirNames) {
-			String moduleLangLanguagePropertiesFileName =
-				moduleLangDirName + "/Language.properties";
-
-			File file = new File(moduleLangLanguagePropertiesFileName);
-
-			if (!file.exists()) {
-				continue;
-			}
-
-			InputStream inputStream = new FileInputStream(file);
-
-			properties.load(inputStream);
-		}
-
-		_moduleLangLanguagePropertiesMap.put(absolutePath, properties);
-
-		return properties;
-	}
-
 	private Properties _getModuleLanguageProperties(String fileName) {
-		Properties properties = _moduleLanguagePropertiesMap.get(fileName);
-
-		if (properties != null) {
-			return properties;
-		}
+		Properties properties = new Properties();
 
 		StringBundler sb = new StringBundler(3);
 
@@ -360,7 +445,7 @@ public class LanguageKeysCheck extends BaseFileCheck {
 			pos = fileName.indexOf("src/");
 
 			if (pos == -1) {
-				return null;
+				return properties;
 			}
 
 			sb.append(fileName.substring(0, pos + 4));
@@ -379,25 +464,49 @@ public class LanguageKeysCheck extends BaseFileCheck {
 
 			properties.load(inputStream);
 
-			_moduleLanguagePropertiesMap.put(fileName, properties);
-
 			return properties;
 		}
-		catch (Exception e) {
+		catch (Exception exception) {
 		}
 
-		return null;
+		return properties;
 	}
 
-	private final Pattern _applyLangMergerPluginPattern = Pattern.compile(
-		"^apply[ \t]+plugin[ \t]*:[ \t]+\"com.liferay.lang.merger\"$",
-		Pattern.MULTILINE);
-	private final Pattern _mergeLangPattern = Pattern.compile(
-		"mergeLang \\{\\s*sourceDirs = \\[(.*?)\\]", Pattern.DOTALL);
-	private final Map<String, Properties> _moduleLangLanguagePropertiesMap =
-		new HashMap<>();
-	private final Map<String, Properties> _moduleLanguagePropertiesMap =
-		new HashMap<>();
+	private synchronized Properties _getPortalLanguageProperties(
+			String absolutePath)
+		throws IOException {
+
+		if (_portalLanguageProperties != null) {
+			return _portalLanguageProperties;
+		}
+
+		_portalLanguageProperties = new Properties();
+
+		String portalLanguagePropertiesContent = getPortalContent(
+			"portal-impl/src/content/Language.properties", absolutePath);
+
+		if (portalLanguagePropertiesContent == null) {
+			return _portalLanguageProperties;
+		}
+
+		_portalLanguageProperties.load(
+			new StringReader(portalLanguagePropertiesContent));
+
+		return _portalLanguageProperties;
+	}
+
+	private static final Pattern _applyLangMergerPluginPattern =
+		Pattern.compile(
+			"^apply[ \t]+plugin[ \t]*:[ \t]+\"com.liferay.lang.merger\"$",
+			Pattern.MULTILINE);
+	private static final Pattern _mergeLangPattern = Pattern.compile(
+		"mergeLang \\{.*sourceDirs = \\[(.*?)\\]", Pattern.DOTALL);
+	private static final Pattern _metaAnnotationDescriptionParameterPattern =
+		Pattern.compile(
+			"@Meta\\.(?:AD|OCD)\\([^\\{]*?description\\s*=\\s*\"(.+?)\"");
+	private static final Pattern _metaAnnotationNameParameterPattern =
+		Pattern.compile("@Meta\\.(?:AD|OCD)\\([^\\{]*?name\\s*=\\s*\"(.+?)\"");
+
 	private Properties _portalLanguageProperties;
 
 }

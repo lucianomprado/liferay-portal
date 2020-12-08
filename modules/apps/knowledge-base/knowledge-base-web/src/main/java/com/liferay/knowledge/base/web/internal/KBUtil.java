@@ -17,6 +17,7 @@ package com.liferay.knowledge.base.web.internal;
 import com.liferay.knowledge.base.constants.KBCommentConstants;
 import com.liferay.knowledge.base.constants.KBFolderConstants;
 import com.liferay.knowledge.base.constants.KBPortletKeys;
+import com.liferay.knowledge.base.model.KBArticle;
 import com.liferay.knowledge.base.model.KBComment;
 import com.liferay.knowledge.base.model.KBFolder;
 import com.liferay.knowledge.base.model.KBTemplate;
@@ -43,6 +44,7 @@ import com.liferay.knowledge.base.util.comparator.KBTemplateCreateDateComparator
 import com.liferay.knowledge.base.util.comparator.KBTemplateModifiedDateComparator;
 import com.liferay.knowledge.base.util.comparator.KBTemplateTitleComparator;
 import com.liferay.knowledge.base.util.comparator.KBTemplateUserNameComparator;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONException;
@@ -57,7 +59,6 @@ import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.PortalUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
 
 import java.util.ArrayList;
@@ -81,20 +82,20 @@ public class KBUtil {
 
 		kbFolders = new ArrayList<>(kbFolders);
 
-		Iterator<KBFolder> itr = kbFolders.iterator();
+		Iterator<KBFolder> iterator = kbFolders.iterator();
 
-		while (itr.hasNext()) {
-			KBFolder kbFolder = itr.next();
+		while (iterator.hasNext()) {
+			KBFolder kbFolder = iterator.next();
 
 			if (kbFolder.isEmpty()) {
-				itr.remove();
+				iterator.remove();
 			}
 		}
 
 		return ListUtil.sort(kbFolders, new KBFolderNameComparator(false));
 	}
 
-	public static OrderByComparator getKBArticleOrderByComparator(
+	public static OrderByComparator<KBArticle> getKBArticleOrderByComparator(
 		String orderByCol, String orderByType) {
 
 		if (Validator.isNull(orderByCol) || Validator.isNull(orderByType)) {
@@ -287,9 +288,8 @@ public class KBUtil {
 		else if (status == KBCommentConstants.STATUS_NEW) {
 			return KBCommentConstants.STATUS_IN_PROGRESS;
 		}
-		else {
-			return KBCommentConstants.STATUS_NONE;
-		}
+
+		return KBCommentConstants.STATUS_NONE;
 	}
 
 	public static String getPreferredKBFolderURLTitle(
@@ -313,9 +313,8 @@ public class KBUtil {
 		else if (status == KBCommentConstants.STATUS_IN_PROGRESS) {
 			return KBCommentConstants.STATUS_NEW;
 		}
-		else {
-			return KBCommentConstants.STATUS_NONE;
-		}
+
+		return KBCommentConstants.STATUS_NONE;
 	}
 
 	public static long getRootResourcePrimKey(

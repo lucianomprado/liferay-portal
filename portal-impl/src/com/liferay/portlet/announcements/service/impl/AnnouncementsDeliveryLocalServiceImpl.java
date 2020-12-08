@@ -16,6 +16,7 @@ package com.liferay.portlet.announcements.service.impl;
 
 import com.liferay.announcements.kernel.model.AnnouncementsDelivery;
 import com.liferay.announcements.kernel.model.AnnouncementsEntryConstants;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.log.Log;
@@ -51,20 +52,21 @@ public class AnnouncementsDeliveryLocalServiceImpl
 		delivery.setWebsite(true);
 
 		try {
-			announcementsDeliveryPersistence.update(delivery);
+			delivery = announcementsDeliveryPersistence.update(delivery);
 		}
-		catch (SystemException se) {
+		catch (SystemException systemException) {
 			if (_log.isWarnEnabled()) {
 				_log.warn(
-					"Add failed, fetch {userId=" + userId + ", type=" + type +
-						"}");
+					StringBundler.concat(
+						"Add failed, fetch {userId=", userId, ", type=", type,
+						"}"));
 			}
 
 			delivery = announcementsDeliveryPersistence.fetchByU_T(
 				userId, type, false);
 
 			if (delivery == null) {
-				throw se;
+				throw systemException;
 			}
 		}
 
@@ -142,19 +144,16 @@ public class AnnouncementsDeliveryLocalServiceImpl
 
 	@Override
 	public AnnouncementsDelivery updateDelivery(
-			long userId, String type, boolean email, boolean sms,
-			boolean website)
+			long userId, String type, boolean email, boolean sms)
 		throws PortalException {
 
 		AnnouncementsDelivery delivery = getUserDelivery(userId, type);
 
 		delivery.setEmail(email);
 		delivery.setSms(sms);
-		delivery.setWebsite(website);
+		delivery.setWebsite(true);
 
-		announcementsDeliveryPersistence.update(delivery);
-
-		return delivery;
+		return announcementsDeliveryPersistence.update(delivery);
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(

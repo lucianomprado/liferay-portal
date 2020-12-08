@@ -14,14 +14,11 @@
 
 package com.liferay.marketplace.exception;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.portal.kernel.exception.PortalException;
 
 /**
  * @author Ryan Park
  */
-@ProviderType
 public class AppVersionException extends PortalException {
 
 	public AppVersionException() {
@@ -31,12 +28,12 @@ public class AppVersionException extends PortalException {
 		super(msg);
 	}
 
-	public AppVersionException(String msg, Throwable cause) {
-		super(msg, cause);
+	public AppVersionException(String msg, Throwable throwable) {
+		super(msg, throwable);
 	}
 
-	public AppVersionException(Throwable cause) {
-		super(cause);
+	public AppVersionException(Throwable throwable) {
+		super(throwable);
 	}
 
 }

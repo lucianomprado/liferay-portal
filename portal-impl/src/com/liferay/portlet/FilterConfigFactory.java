@@ -15,6 +15,8 @@
 package com.liferay.portlet;
 
 import com.liferay.portal.kernel.model.PortletApp;
+import com.liferay.portal.kernel.model.PortletFilter;
+import com.liferay.portlet.internal.FilterConfigImpl;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -28,16 +30,13 @@ import javax.portlet.filter.FilterConfig;
 public class FilterConfigFactory {
 
 	public static FilterConfig create(
-		com.liferay.portal.kernel.model.PortletFilter portletFilter,
-		PortletContext ctx) {
+		PortletFilter portletFilter, PortletContext ctx) {
 
-		return _instance._create(portletFilter, ctx);
+		return _filterConfigFactory._create(portletFilter, ctx);
 	}
 
-	public static void destroy(
-		com.liferay.portal.kernel.model.PortletFilter portletFilter) {
-
-		_instance._destroy(portletFilter);
+	public static void destroy(PortletFilter portletFilter) {
+		_filterConfigFactory._destroy(portletFilter);
 	}
 
 	private FilterConfigFactory() {
@@ -45,8 +44,7 @@ public class FilterConfigFactory {
 	}
 
 	private FilterConfig _create(
-		com.liferay.portal.kernel.model.PortletFilter portletFilter,
-		PortletContext ctx) {
+		PortletFilter portletFilter, PortletContext ctx) {
 
 		PortletApp portletApp = portletFilter.getPortletApp();
 
@@ -73,15 +71,13 @@ public class FilterConfigFactory {
 		return filterConfig;
 	}
 
-	private void _destroy(
-		com.liferay.portal.kernel.model.PortletFilter portletFilter) {
-
+	private void _destroy(PortletFilter portletFilter) {
 		PortletApp portletApp = portletFilter.getPortletApp();
 
 		_pool.remove(portletApp.getServletContextName());
 	}
 
-	private static final FilterConfigFactory _instance =
+	private static final FilterConfigFactory _filterConfigFactory =
 		new FilterConfigFactory();
 
 	private final Map<String, Map<String, FilterConfig>> _pool;

@@ -43,7 +43,7 @@ public class SocialCounterPeriodUtil {
 	}
 
 	public static Date getDate(int activityDay) {
-		return new Date(_BASE_TIME + activityDay * Time.DAY);
+		return new Date(_BASE_TIME + (activityDay * Time.DAY));
 	}
 
 	public static int getEndPeriod() {
@@ -73,7 +73,7 @@ public class SocialCounterPeriodUtil {
 			return getActivityDay(calendar);
 		}
 
-		return getEndPeriod() - offset * getPeriodLength();
+		return getEndPeriod() - (offset * getPeriodLength());
 	}
 
 	public static int getEndPeriod(long time) {
@@ -107,14 +107,14 @@ public class SocialCounterPeriodUtil {
 
 			Calendar calendar2 = new GregorianCalendar();
 
-			calendar2.setTimeInMillis(_BASE_TIME + activityDay * Time.DAY);
+			calendar2.setTimeInMillis(_BASE_TIME + (activityDay * Time.DAY));
 
 			int monthDelta =
 				calendar.get(Calendar.MONTH) - calendar2.get(Calendar.MONTH);
 			int yearDelta =
 				calendar.get(Calendar.YEAR) - calendar2.get(Calendar.YEAR);
 
-			return -(yearDelta * 12 + monthDelta);
+			return -((yearDelta * 12) + monthDelta);
 		}
 
 		return -((getStartPeriod() - activityDay) / getPeriodLength());
@@ -206,10 +206,12 @@ public class SocialCounterPeriodUtil {
 			calendar.set(Calendar.SECOND, 0);
 			calendar.set(Calendar.MILLISECOND, 0);
 
-			return getActivityDay(calendar.getTime().getTime());
+			Date calendarTime = calendar.getTime();
+
+			return getActivityDay(calendarTime.getTime());
 		}
 
-		return getStartPeriod() + offset * getPeriodLength();
+		return getStartPeriod() + (offset * getPeriodLength());
 	}
 
 	public static int getStartPeriod(long time) {
@@ -228,9 +230,8 @@ public class SocialCounterPeriodUtil {
 		if (_SOCIAL_ACTIVITY_COUNTER_PERIOD_LENGTH.equals("month")) {
 			return true;
 		}
-		else {
-			return false;
-		}
+
+		return false;
 	}
 
 	private static boolean _isWithinPeriod(
@@ -239,13 +240,13 @@ public class SocialCounterPeriodUtil {
 		if ((activityDay >= startPeriod) && (activityDay <= endPeriod)) {
 			return true;
 		}
-		else {
-			return false;
-		}
+
+		return false;
 	}
 
 	private static final long _BASE_TIME = new GregorianCalendar(
-		2011, Calendar.JANUARY, 1).getTimeInMillis();
+		2011, Calendar.JANUARY, 1
+	).getTimeInMillis();
 
 	private static final String _SOCIAL_ACTIVITY_COUNTER_PERIOD_LENGTH =
 		PropsUtil.get(PropsKeys.SOCIAL_ACTIVITY_COUNTER_PERIOD_LENGTH);

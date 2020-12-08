@@ -19,16 +19,18 @@ import com.liferay.document.library.kernel.model.DLFileShortcut;
 import com.liferay.document.library.kernel.model.DLFileShortcutConstants;
 import com.liferay.document.library.kernel.model.DLFolder;
 import com.liferay.document.library.kernel.model.DLFolderConstants;
+import com.liferay.portal.kernel.bean.BeanReference;
 import com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery;
-import com.liferay.portal.kernel.dao.orm.DynamicQuery;
 import com.liferay.portal.kernel.dao.orm.Property;
 import com.liferay.portal.kernel.dao.orm.PropertyFactoryUtil;
 import com.liferay.portal.kernel.dao.orm.RestrictionsFactoryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.model.Repository;
 import com.liferay.portal.kernel.model.ResourceConstants;
 import com.liferay.portal.kernel.model.SystemEventConstants;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.repository.model.FileEntry;
+import com.liferay.portal.kernel.service.RepositoryLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.permission.ModelPermissions;
 import com.liferay.portal.kernel.systemevent.SystemEvent;
@@ -78,7 +80,7 @@ public class DLFileShortcutLocalServiceImpl
 		fileShortcut.setStatusByUserName(user.getFullName());
 		fileShortcut.setStatusDate(new Date());
 
-		dlFileShortcutPersistence.update(fileShortcut);
+		fileShortcut = dlFileShortcutPersistence.update(fileShortcut);
 
 		// Resources
 
@@ -103,9 +105,8 @@ public class DLFileShortcutLocalServiceImpl
 
 		// Asset
 
-		FileEntry fileEntry = dlAppLocalService.getFileEntry(toFileEntryId);
-
-		copyAssetTags(fileEntry, serviceContext);
+		copyAssetTags(
+			dlAppLocalService.getFileEntry(toFileEntryId), serviceContext);
 
 		updateAsset(
 			userId, fileShortcut, serviceContext.getAssetCategoryIds(),
@@ -239,6 +240,35 @@ public class DLFileShortcutLocalServiceImpl
 	}
 
 	@Override
+	public void deleteRepositoryFileShortcuts(long repositoryId)
+		throws PortalException {
+
+		ActionableDynamicQuery actionableDynamicQuery =
+			dlFileShortcutLocalService.getActionableDynamicQuery();
+
+		actionableDynamicQuery.setAddCriteriaMethod(
+			dynamicQuery -> dynamicQuery.add(
+				RestrictionsFactoryUtil.eq("repositoryId", repositoryId)));
+
+		long groupId = repositoryId;
+
+		Repository repository = _repositoryLocalService.fetchRepository(
+			repositoryId);
+
+		if (repository != null) {
+			groupId = repository.getGroupId();
+		}
+
+		actionableDynamicQuery.setGroupId(groupId);
+
+		actionableDynamicQuery.setPerformActionMethod(
+			(DLFileShortcut fileShortcut) ->
+				dlFileShortcutLocalService.deleteDLFileShortcut(fileShortcut));
+
+		actionableDynamicQuery.performActions();
+	}
+
+	@Override
 	public void disableFileShortcuts(long toFileEntryId) {
 		updateFileShortcutsActive(toFileEntryId, false);
 	}
@@ -294,36 +324,26 @@ public class DLFileShortcutLocalServiceImpl
 			getActionableDynamicQuery();
 
 		actionableDynamicQuery.setAddCriteriaMethod(
-			new ActionableDynamicQuery.AddCriteriaMethod() {
+			dynamicQuery -> {
+				Property folderIdProperty = PropertyFactoryUtil.forName(
+					"folderId");
 
-				@Override
-				public void addCriteria(DynamicQuery dynamicQuery) {
-					Property folderIdProperty = PropertyFactoryUtil.forName(
-						"folderId");
+				dynamicQuery.add(folderIdProperty.eq(folderId));
 
-					dynamicQuery.add(folderIdProperty.eq(folderId));
+				Property treePathProperty = PropertyFactoryUtil.forName(
+					"treePath");
 
-					Property treePathProperty = PropertyFactoryUtil.forName(
-						"treePath");
-
-					dynamicQuery.add(
-						RestrictionsFactoryUtil.or(
-							treePathProperty.isNull(),
-							treePathProperty.ne(treePath)));
-				}
-
+				dynamicQuery.add(
+					RestrictionsFactoryUtil.or(
+						treePathProperty.isNull(),
+						treePathProperty.ne(treePath)));
 			});
 
 		actionableDynamicQuery.setPerformActionMethod(
-			new ActionableDynamicQuery.PerformActionMethod<DLFileShortcut>() {
+			(DLFileShortcut dlFileShortcut) -> {
+				dlFileShortcut.setTreePath(treePath);
 
-				@Override
-				public void performAction(DLFileShortcut dlFileShortcut) {
-					dlFileShortcut.setTreePath(treePath);
-
-					updateDLFileShortcut(dlFileShortcut);
-				}
-
+				updateDLFileShortcut(dlFileShortcut);
 			});
 
 		actionableDynamicQuery.performActions();
@@ -368,7 +388,7 @@ public class DLFileShortcutLocalServiceImpl
 		fileShortcut.setToFileEntryId(toFileEntryId);
 		fileShortcut.setTreePath(fileShortcut.buildTreePath());
 
-		dlFileShortcutPersistence.update(fileShortcut);
+		fileShortcut = dlFileShortcutPersistence.update(fileShortcut);
 
 		// Folder
 
@@ -379,9 +399,8 @@ public class DLFileShortcutLocalServiceImpl
 
 		// Asset
 
-		FileEntry fileEntry = dlAppLocalService.getFileEntry(toFileEntryId);
-
-		copyAssetTags(fileEntry, serviceContext);
+		copyAssetTags(
+			dlAppLocalService.getFileEntry(toFileEntryId), serviceContext);
 
 		updateAsset(
 			userId, fileShortcut, serviceContext.getAssetCategoryIds(),
@@ -474,5 +493,8 @@ public class DLFileShortcutLocalServiceImpl
 				"{fileEntryId=" + toFileEntryId + "}");
 		}
 	}
+
+	@BeanReference(type = RepositoryLocalService.class)
+	private RepositoryLocalService _repositoryLocalService;
 
 }

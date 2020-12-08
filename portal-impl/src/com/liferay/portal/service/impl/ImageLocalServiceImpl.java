@@ -14,6 +14,8 @@
 
 package com.liferay.portal.service.impl;
 
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.image.HookFactory;
 import com.liferay.portal.kernel.exception.ImageTypeException;
 import com.liferay.portal.kernel.exception.NoSuchImageException;
@@ -24,7 +26,6 @@ import com.liferay.portal.kernel.image.ImageToolUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Image;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.webserver.WebServerServletTokenUtil;
 import com.liferay.portal.service.base.ImageLocalServiceBaseImpl;
 
@@ -68,13 +69,13 @@ public class ImageLocalServiceImpl extends ImageLocalServiceBaseImpl {
 			try {
 				hook.deleteImage(image);
 			}
-			catch (NoSuchImageException nsie) {
+			catch (NoSuchImageException noSuchImageException) {
 
 				// DLHook throws NoSuchImageException if the file no longer
 				// exists. See LPS-30430. This exception can be ignored.
 
 				if (_log.isWarnEnabled()) {
-					_log.warn(nsie, nsie);
+					_log.warn(noSuchImageException, noSuchImageException);
 				}
 			}
 		}
@@ -100,11 +101,12 @@ public class ImageLocalServiceImpl extends ImageLocalServiceBaseImpl {
 			try {
 				return imagePersistence.fetchByPrimaryKey(imageId);
 			}
-			catch (Exception e) {
+			catch (Exception exception) {
 				if (_log.isWarnEnabled()) {
 					_log.warn(
-						"Unable to get image " + imageId + ": " +
-							e.getMessage());
+						StringBundler.concat(
+							"Unable to get image ", imageId, ": ",
+							exception.getMessage()));
 				}
 			}
 		}
@@ -153,8 +155,8 @@ public class ImageLocalServiceImpl extends ImageLocalServiceBaseImpl {
 		try {
 			image = ImageToolUtil.getImage(bytes);
 		}
-		catch (IOException ioe) {
-			throw new SystemException(ioe);
+		catch (IOException ioException) {
+			throw new SystemException(ioException);
 		}
 
 		return updateImage(
@@ -186,7 +188,7 @@ public class ImageLocalServiceImpl extends ImageLocalServiceBaseImpl {
 
 		hook.updateImage(image, type, bytes);
 
-		imagePersistence.update(image);
+		image = imagePersistence.update(image);
 
 		WebServerServletTokenUtil.resetToken(imageId);
 
@@ -200,8 +202,8 @@ public class ImageLocalServiceImpl extends ImageLocalServiceBaseImpl {
 		try {
 			image = ImageToolUtil.getImage(file);
 		}
-		catch (IOException ioe) {
-			throw new SystemException(ioe);
+		catch (IOException ioException) {
+			throw new SystemException(ioException);
 		}
 
 		return updateImage(
@@ -210,16 +212,16 @@ public class ImageLocalServiceImpl extends ImageLocalServiceBaseImpl {
 	}
 
 	@Override
-	public Image updateImage(long imageId, InputStream is)
+	public Image updateImage(long imageId, InputStream inputStream)
 		throws PortalException {
 
 		Image image = null;
 
 		try {
-			image = ImageToolUtil.getImage(is);
+			image = ImageToolUtil.getImage(inputStream);
 		}
-		catch (IOException ioe) {
-			throw new SystemException(ioe);
+		catch (IOException ioException) {
+			throw new SystemException(ioException);
 		}
 
 		return updateImage(
@@ -229,16 +231,16 @@ public class ImageLocalServiceImpl extends ImageLocalServiceBaseImpl {
 
 	@Override
 	public Image updateImage(
-			long imageId, InputStream is, boolean cleanUpStream)
+			long imageId, InputStream inputStream, boolean cleanUpStream)
 		throws PortalException {
 
 		Image image = null;
 
 		try {
-			image = ImageToolUtil.getImage(is, cleanUpStream);
+			image = ImageToolUtil.getImage(inputStream, cleanUpStream);
 		}
-		catch (IOException ioe) {
-			throw new SystemException(ioe);
+		catch (IOException ioException) {
+			throw new SystemException(ioException);
 		}
 
 		return updateImage(

@@ -14,6 +14,9 @@
 
 package com.liferay.portal.fabric.netty.worker;
 
+import com.liferay.petra.concurrent.DefaultNoticeableFuture;
+import com.liferay.petra.concurrent.NoticeableFuture;
+import com.liferay.portal.fabric.ReturnProcessCallable;
 import com.liferay.portal.fabric.local.worker.EmbeddedProcessChannel;
 import com.liferay.portal.fabric.local.worker.LocalFabricWorker;
 import com.liferay.portal.fabric.netty.NettyTestUtil;
@@ -23,9 +26,6 @@ import com.liferay.portal.fabric.netty.util.NettyUtilAdvice;
 import com.liferay.portal.fabric.repository.MockRepository;
 import com.liferay.portal.fabric.status.FabricStatus;
 import com.liferay.portal.fabric.status.RemoteFabricStatus;
-import com.liferay.portal.kernel.concurrent.DefaultNoticeableFuture;
-import com.liferay.portal.kernel.concurrent.NoticeableFuture;
-import com.liferay.portal.kernel.process.local.ReturnProcessCallable;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.CodeCoverageAssertor;
@@ -66,8 +66,9 @@ public class NettyFabricWorkerStubTest {
 
 			Assert.fail();
 		}
-		catch (NullPointerException npe) {
-			Assert.assertEquals("Channel is null", npe.getMessage());
+		catch (NullPointerException nullPointerException) {
+			Assert.assertEquals(
+				"Channel is null", nullPointerException.getMessage());
 		}
 
 		try {
@@ -76,8 +77,9 @@ public class NettyFabricWorkerStubTest {
 
 			Assert.fail();
 		}
-		catch (NullPointerException npe) {
-			Assert.assertEquals("Repository is null", npe.getMessage());
+		catch (NullPointerException nullPointerException) {
+			Assert.assertEquals(
+				"Repository is null", nullPointerException.getMessage());
 		}
 
 		try {
@@ -87,8 +89,9 @@ public class NettyFabricWorkerStubTest {
 
 			Assert.fail();
 		}
-		catch (NullPointerException npe) {
-			Assert.assertEquals("Output path map is null", npe.getMessage());
+		catch (NullPointerException nullPointerException) {
+			Assert.assertEquals(
+				"Output path map is null", nullPointerException.getMessage());
 		}
 
 		Channel channel = NettyTestUtil.createEmptyEmbeddedChannel();
@@ -187,8 +190,8 @@ public class NettyFabricWorkerStubTest {
 
 			Assert.fail();
 		}
-		catch (ExecutionException ee) {
-			Assert.assertSame(throwable, ee.getCause());
+		catch (ExecutionException executionException) {
+			Assert.assertSame(throwable, executionException.getCause());
 		}
 	}
 
@@ -296,8 +299,8 @@ public class NettyFabricWorkerStubTest {
 
 			Assert.fail();
 		}
-		catch (ExecutionException ee) {
-			Assert.assertSame(throwable, ee.getCause());
+		catch (ExecutionException executionException) {
+			Assert.assertSame(throwable, executionException.getCause());
 		}
 	}
 
@@ -324,8 +327,8 @@ public class NettyFabricWorkerStubTest {
 		NoticeableFuture<String> noticeableFuture = nettyFabricWorkerStub.write(
 			new ReturnProcessCallable<String>(result));
 
-		embeddedChannel.writeInbound(embeddedChannel.readOutbound());
-		embeddedChannel.writeInbound(embeddedChannel.readOutbound());
+		embeddedChannel.writeOneInbound(embeddedChannel.readOutbound());
+		embeddedChannel.writeOneInbound(embeddedChannel.readOutbound());
 
 		Assert.assertEquals(result, noticeableFuture.get());
 	}

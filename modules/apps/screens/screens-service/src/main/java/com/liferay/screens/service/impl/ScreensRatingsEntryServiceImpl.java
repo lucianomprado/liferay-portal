@@ -15,9 +15,12 @@
 package com.liferay.screens.service.impl;
 
 import com.liferay.asset.kernel.model.AssetEntry;
+import com.liferay.portal.aop.AopService;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.security.auth.PrincipalException;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portlet.asset.service.permission.AssetEntryPermission;
@@ -26,9 +29,18 @@ import com.liferay.screens.service.base.ScreensRatingsEntryServiceBaseImpl;
 
 import java.util.List;
 
+import org.osgi.service.component.annotations.Component;
+
 /**
- * @author Alejandro Hernández Malillos
+ * @author Alejandro Hernández
  */
+@Component(
+	property = {
+		"json.web.service.context.name=screens",
+		"json.web.service.context.path=ScreensRatingsEntry"
+	},
+	service = AopService.class
+)
 public class ScreensRatingsEntryServiceImpl
 	extends ScreensRatingsEntryServiceBaseImpl {
 
@@ -37,8 +49,11 @@ public class ScreensRatingsEntryServiceImpl
 			long classPK, String className, int ratingsLength)
 		throws PortalException {
 
-		AssetEntryPermission.check(
-			getPermissionChecker(), className, classPK, ActionKeys.DELETE);
+		User user = getUser();
+
+		if (user.isDefaultUser()) {
+			throw new PrincipalException();
+		}
 
 		ratingsEntryLocalService.deleteEntry(getUserId(), className, classPK);
 
@@ -94,12 +109,19 @@ public class ScreensRatingsEntryServiceImpl
 			jsonObject.put("average", 0);
 		}
 
-		jsonObject.put("className", className);
-		jsonObject.put("classPK", classPK);
-		jsonObject.put("ratings", ratings);
-		jsonObject.put("totalCount", ratingsEntries.size());
-		jsonObject.put("totalScore", totalScore);
-		jsonObject.put("userScore", userScore);
+		jsonObject.put(
+			"className", className
+		).put(
+			"classPK", classPK
+		).put(
+			"ratings", ratings
+		).put(
+			"totalCount", ratingsEntries.size()
+		).put(
+			"totalScore", totalScore
+		).put(
+			"userScore", userScore
+		);
 
 		return jsonObject;
 	}
@@ -109,8 +131,11 @@ public class ScreensRatingsEntryServiceImpl
 			long classPK, String className, double score, int ratingsLength)
 		throws PortalException {
 
-		AssetEntryPermission.check(
-			getPermissionChecker(), className, classPK, ActionKeys.UPDATE);
+		User user = getUser();
+
+		if (user.isDefaultUser()) {
+			throw new PrincipalException();
+		}
 
 		ratingsEntryLocalService.updateEntry(
 			getUserId(), className, classPK, score, new ServiceContext());

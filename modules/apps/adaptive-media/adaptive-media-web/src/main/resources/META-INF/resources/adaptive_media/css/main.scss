@@ -1,11 +1,10 @@
-@import "bourbon";
-@import "mixins";
+@import 'atlas-variables';
 
 .portlet-adaptive-media {
 	.lfr-adapted-images-column {
 		.progress-container {
 			float: left;
-			margin-top: 7px;
+			margin-top: 5px;
 			min-height: 25px;
 			width: 90%;
 
@@ -14,13 +13,21 @@
 			}
 		}
 
-		.progress {
-			margin-bottom: 0;
+		.progress-error-container {
+			button {
+				padding-top: 5px;
+			}
+
+			span {
+				padding-left: 0.25rem;
+			}
 		}
 
-		.loading-icon {
+		.loading-animation {
 			float: right;
-			margin-top: 9px;
+			margin-bottom: 0;
+			margin-top: 8px;
+			width: 5%;
 		}
 	}
 }

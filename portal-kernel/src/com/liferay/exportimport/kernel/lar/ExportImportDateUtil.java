@@ -14,20 +14,10 @@
 
 package com.liferay.exportimport.kernel.lar;
 
-import static com.liferay.exportimport.kernel.configuration.ExportImportConfigurationConstants.TYPE_EXPORT_LAYOUT;
-import static com.liferay.exportimport.kernel.configuration.ExportImportConfigurationConstants.TYPE_EXPORT_PORTLET;
-import static com.liferay.exportimport.kernel.configuration.ExportImportConfigurationConstants.TYPE_IMPORT_LAYOUT;
-import static com.liferay.exportimport.kernel.configuration.ExportImportConfigurationConstants.TYPE_IMPORT_PORTLET;
-import static com.liferay.exportimport.kernel.configuration.ExportImportConfigurationConstants.TYPE_PUBLISH_LAYOUT_LOCAL;
-import static com.liferay.exportimport.kernel.configuration.ExportImportConfigurationConstants.TYPE_PUBLISH_LAYOUT_REMOTE;
-import static com.liferay.exportimport.kernel.configuration.ExportImportConfigurationConstants.TYPE_PUBLISH_PORTLET;
-import static com.liferay.exportimport.kernel.configuration.ExportImportConfigurationConstants.TYPE_SCHEDULED_PUBLISH_LAYOUT_LOCAL;
-import static com.liferay.exportimport.kernel.configuration.ExportImportConfigurationConstants.TYPE_SCHEDULED_PUBLISH_LAYOUT_REMOTE;
-
-import aQute.bnd.annotation.ProviderType;
-
+import com.liferay.exportimport.kernel.configuration.constants.ExportImportConfigurationConstants;
 import com.liferay.exportimport.kernel.model.ExportImportConfiguration;
 import com.liferay.exportimport.kernel.service.ExportImportConfigurationLocalServiceUtil;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -46,7 +36,6 @@ import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Time;
 import com.liferay.portal.kernel.util.TimeZoneUtil;
 import com.liferay.portal.kernel.util.UnicodeProperties;
@@ -65,9 +54,8 @@ import javax.portlet.PortletPreferences;
 import javax.portlet.PortletRequest;
 
 /**
- * @author Mate Thurzo
+ * @author Máté Thurzó
  */
-@ProviderType
 public class ExportImportDateUtil {
 
 	public static final String RANGE = "range";
@@ -87,13 +75,13 @@ public class ExportImportDateUtil {
 		LayoutSet layoutSet = LayoutSetLocalServiceUtil.getLayoutSet(
 			groupId, privateLayout);
 
-		UnicodeProperties settingsProperties =
+		UnicodeProperties settingsUnicodeProperties =
 			layoutSet.getSettingsProperties();
 
-		settingsProperties.remove(_LAST_PUBLISH_DATE);
+		settingsUnicodeProperties.remove(_LAST_PUBLISH_DATE);
 
 		LayoutSetLocalServiceUtil.updateSettings(
-			groupId, privateLayout, settingsProperties.toString());
+			groupId, privateLayout, settingsUnicodeProperties.toString());
 	}
 
 	public static Calendar getCalendar(
@@ -114,11 +102,12 @@ public class ExportImportDateUtil {
 			portletRequest, paramPrefix + "Minute");
 		int dateAmPm = ParamUtil.getInteger(
 			portletRequest, paramPrefix + "AmPm");
+		TimeZone timeZone = TimeZoneUtil.getTimeZone(
+			ParamUtil.getString(portletRequest, "timeZoneId"));
 
 		return getCalendar(
 			dateAmPm, dateYear, dateMonth, dateDay, dateHour, dateMinute,
-			themeDisplay.getLocale(), themeDisplay.getTimeZone(),
-			timeZoneSensitive);
+			themeDisplay.getLocale(), timeZone, timeZoneSensitive);
 	}
 
 	public static DateRange getDateRange(
@@ -186,11 +175,9 @@ public class ExportImportDateUtil {
 	public static DateRange getDateRange(long exportImportConfigurationId)
 		throws PortalException {
 
-		ExportImportConfiguration exportImportConfiguration =
+		return getDateRange(
 			ExportImportConfigurationLocalServiceUtil.
-				getExportImportConfiguration(exportImportConfigurationId);
-
-		return getDateRange(exportImportConfiguration);
+				getExportImportConfiguration(exportImportConfigurationId));
 	}
 
 	public static DateRange getDateRange(
@@ -287,6 +274,58 @@ public class ExportImportDateUtil {
 		return new Date(lastPublishDate);
 	}
 
+	public static boolean isRange(
+		Map<String, String[]> parameterMap, String range) {
+
+		String rangeValue = MapUtil.getString(parameterMap, RANGE);
+
+		return rangeValue.equals(range);
+	}
+
+	public static boolean isRange(
+		PortletDataContext portletDataContext, String range) {
+
+		return isRange(portletDataContext.getParameterMap(), range);
+	}
+
+	public static boolean isRangeAll(Map<String, String[]> parameterMap) {
+		return isRange(parameterMap, RANGE_ALL);
+	}
+
+	public static boolean isRangeAll(PortletDataContext portletDataContext) {
+		return isRange(portletDataContext, RANGE_ALL);
+	}
+
+	public static boolean isRangeDateRange(Map<String, String[]> parameterMap) {
+		return isRange(parameterMap, RANGE_DATE_RANGE);
+	}
+
+	public static boolean isRangeDateRange(
+		PortletDataContext portletDataContext) {
+
+		return isRange(portletDataContext, RANGE_DATE_RANGE);
+	}
+
+	public static boolean isRangeFromLastPublishDate(
+		Map<String, String[]> parameterMap) {
+
+		return isRange(parameterMap, RANGE_FROM_LAST_PUBLISH_DATE);
+	}
+
+	public static boolean isRangeFromLastPublishDate(
+		PortletDataContext portletDataContext) {
+
+		return isRange(portletDataContext, RANGE_FROM_LAST_PUBLISH_DATE);
+	}
+
+	public static boolean isRangeLast(Map<String, String[]> parameterMap) {
+		return isRange(parameterMap, RANGE_LAST);
+	}
+
+	public static boolean isRangeLast(PortletDataContext portletDataContext) {
+		return isRange(portletDataContext, RANGE_LAST);
+	}
+
 	public static void updateLastPublishDate(
 			long groupId, boolean privateLayout, DateRange dateRange,
 			Date lastPublishDate)
@@ -305,15 +344,15 @@ public class ExportImportDateUtil {
 			lastPublishDate = new Date();
 		}
 
-		UnicodeProperties settingsProperties =
+		UnicodeProperties settingsUnicodeProperties =
 			layoutSet.getSettingsProperties();
 
-		settingsProperties.setProperty(
+		settingsUnicodeProperties.setProperty(
 			_LAST_PUBLISH_DATE, String.valueOf(lastPublishDate.getTime()));
 
 		LayoutSetLocalServiceUtil.updateSettings(
 			layoutSet.getGroupId(), layoutSet.isPrivateLayout(),
-			settingsProperties.toString());
+			settingsUnicodeProperties.toString());
 	}
 
 	public static void updateLastPublishDate(
@@ -347,15 +386,15 @@ public class ExportImportDateUtil {
 
 			portletPreferences.store();
 		}
-		catch (UnsupportedOperationException uoe) {
+		catch (UnsupportedOperationException unsupportedOperationException) {
 			if (_log.isDebugEnabled()) {
 				_log.debug(
 					"Not updating the portlet setup for " + portletId +
 						" because no setup was returned for the current page");
 			}
 		}
-		catch (Exception e) {
-			_log.error(e, e);
+		catch (Exception exception) {
+			_log.error(exception, exception);
 		}
 	}
 
@@ -461,38 +500,59 @@ public class ExportImportDateUtil {
 	protected static String getDefaultDateRange(
 		ExportImportConfiguration exportImportConfiguration) {
 
-		if (exportImportConfiguration.getType() == TYPE_EXPORT_LAYOUT) {
-			return RANGE_ALL;
-		}
-		else if (exportImportConfiguration.getType() == TYPE_EXPORT_PORTLET) {
-			return RANGE_ALL;
-		}
-		else if (exportImportConfiguration.getType() == TYPE_IMPORT_LAYOUT) {
-			return RANGE_ALL;
-		}
-		else if (exportImportConfiguration.getType() == TYPE_IMPORT_PORTLET) {
+		if (exportImportConfiguration.getType() ==
+				ExportImportConfigurationConstants.TYPE_EXPORT_LAYOUT) {
+
 			return RANGE_ALL;
 		}
 		else if (exportImportConfiguration.getType() ==
-					TYPE_PUBLISH_LAYOUT_LOCAL) {
+					ExportImportConfigurationConstants.TYPE_EXPORT_PORTLET) {
+
+			return RANGE_ALL;
+		}
+		else if (exportImportConfiguration.getType() ==
+					ExportImportConfigurationConstants.TYPE_IMPORT_LAYOUT) {
+
+			return RANGE_ALL;
+		}
+		else if (exportImportConfiguration.getType() ==
+					ExportImportConfigurationConstants.TYPE_IMPORT_PORTLET) {
+
+			return RANGE_ALL;
+		}
+		else if (exportImportConfiguration.getType() ==
+					ExportImportConfigurationConstants.
+						TYPE_PUBLISH_LAYOUT_LOCAL) {
 
 			return RANGE_FROM_LAST_PUBLISH_DATE;
 		}
 		else if (exportImportConfiguration.getType() ==
-					TYPE_PUBLISH_LAYOUT_REMOTE) {
-
-			return RANGE_FROM_LAST_PUBLISH_DATE;
-		}
-		else if (exportImportConfiguration.getType() == TYPE_PUBLISH_PORTLET) {
-			return RANGE_FROM_LAST_PUBLISH_DATE;
-		}
-		else if (exportImportConfiguration.getType() ==
-					TYPE_SCHEDULED_PUBLISH_LAYOUT_LOCAL) {
+					ExportImportConfigurationConstants.
+						TYPE_PUBLISH_LAYOUT_REMOTE) {
 
 			return RANGE_FROM_LAST_PUBLISH_DATE;
 		}
 		else if (exportImportConfiguration.getType() ==
-					TYPE_SCHEDULED_PUBLISH_LAYOUT_REMOTE) {
+					ExportImportConfigurationConstants.
+						TYPE_PUBLISH_PORTLET_LOCAL) {
+
+			return RANGE_FROM_LAST_PUBLISH_DATE;
+		}
+		else if (exportImportConfiguration.getType() ==
+					ExportImportConfigurationConstants.
+						TYPE_PUBLISH_PORTLET_REMOTE) {
+
+			return RANGE_FROM_LAST_PUBLISH_DATE;
+		}
+		else if (exportImportConfiguration.getType() ==
+					ExportImportConfigurationConstants.
+						TYPE_SCHEDULED_PUBLISH_LAYOUT_LOCAL) {
+
+			return RANGE_FROM_LAST_PUBLISH_DATE;
+		}
+		else if (exportImportConfiguration.getType() ==
+					ExportImportConfigurationConstants.
+						TYPE_SCHEDULED_PUBLISH_LAYOUT_REMOTE) {
 
 			return RANGE_FROM_LAST_PUBLISH_DATE;
 		}
@@ -511,7 +571,6 @@ public class ExportImportDateUtil {
 		}
 
 		Date startDate = dateRange.getStartDate();
-		Date endDate = dateRange.getEndDate();
 
 		if (originalLastPublishDate != null) {
 			if ((startDate != null) &&
@@ -519,6 +578,8 @@ public class ExportImportDateUtil {
 
 				return false;
 			}
+
+			Date endDate = dateRange.getEndDate();
 
 			if ((endDate != null) && endDate.before(originalLastPublishDate)) {
 				return false;

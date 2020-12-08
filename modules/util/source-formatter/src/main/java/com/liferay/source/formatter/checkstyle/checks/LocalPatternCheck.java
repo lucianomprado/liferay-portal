@@ -14,19 +14,16 @@
 
 package com.liferay.source.formatter.checkstyle.checks;
 
-import com.liferay.source.formatter.checkstyle.util.DetailASTUtil;
-
-import com.puppycrawl.tools.checkstyle.api.AbstractCheck;
 import com.puppycrawl.tools.checkstyle.api.DetailAST;
 import com.puppycrawl.tools.checkstyle.api.TokenTypes;
-import com.puppycrawl.tools.checkstyle.utils.ScopeUtils;
+import com.puppycrawl.tools.checkstyle.utils.ScopeUtil;
 
 import java.util.List;
 
 /**
  * @author Hugo Huijser
  */
-public class LocalPatternCheck extends AbstractCheck {
+public class LocalPatternCheck extends BaseCheck {
 
 	@Override
 	public int[] getDefaultTokens() {
@@ -34,38 +31,40 @@ public class LocalPatternCheck extends AbstractCheck {
 	}
 
 	@Override
-	public void visitToken(DetailAST detailAST) {
-		if (!ScopeUtils.isLocalVariableDef(detailAST)) {
+	protected void doVisitToken(DetailAST detailAST) {
+		if (!ScopeUtil.isLocalVariableDef(detailAST)) {
 			return;
 		}
 
-		List<DetailAST> methodCallASTList = DetailASTUtil.getMethodCalls(
+		List<DetailAST> methodCallDetailASTList = getMethodCalls(
 			detailAST, "Pattern", "compile");
 
-		if (methodCallASTList.isEmpty()) {
+		if (methodCallDetailASTList.isEmpty()) {
 			return;
 		}
 
-		DetailAST methodCallAST = methodCallASTList.get(0);
+		DetailAST methodCallDetailAST = methodCallDetailASTList.get(0);
 
-		DetailAST elistAST = methodCallAST.findFirstToken(TokenTypes.ELIST);
+		DetailAST elistDetailAST = methodCallDetailAST.findFirstToken(
+			TokenTypes.ELIST);
 
-		DetailAST expressionAST = elistAST.findFirstToken(TokenTypes.EXPR);
+		DetailAST expressionDetailAST = elistDetailAST.findFirstToken(
+			TokenTypes.EXPR);
 
-		List<DetailAST> childASTList = DetailASTUtil.getAllChildTokens(
-			expressionAST, true, DetailASTUtil.ALL_TYPES);
+		List<DetailAST> childDetailASTList = getAllChildTokens(
+			expressionDetailAST, true, ALL_TYPES);
 
-		for (DetailAST childAST : childASTList) {
-			if ((childAST.getType() != TokenTypes.PLUS) &&
-				(childAST.getType() != TokenTypes.STRING_LITERAL)) {
+		for (DetailAST childDetailAST : childDetailASTList) {
+			if ((childDetailAST.getType() != TokenTypes.PLUS) &&
+				(childDetailAST.getType() != TokenTypes.STRING_LITERAL)) {
 
 				return;
 			}
 		}
 
-		DetailAST nameAST = detailAST.findFirstToken(TokenTypes.IDENT);
+		DetailAST nameDetailAST = detailAST.findFirstToken(TokenTypes.IDENT);
 
-		log(detailAST.getLineNo(), _MSG_LOCAL_PATTERN, nameAST.getText());
+		log(detailAST, _MSG_LOCAL_PATTERN, nameDetailAST.getText());
 	}
 
 	private static final String _MSG_LOCAL_PATTERN = "pattern.local";

@@ -14,8 +14,8 @@
 
 package com.liferay.source.formatter.checks;
 
-import com.liferay.portal.kernel.util.CharPool;
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 
 import java.util.regex.Matcher;
@@ -25,6 +25,11 @@ import java.util.regex.Pattern;
  * @author Hugo Huijser
  */
 public class JavaLogLevelCheck extends BaseFileCheck {
+
+	@Override
+	public boolean isLiferaySourceCheck() {
+		return true;
+	}
 
 	@Override
 	protected String doProcess(
@@ -60,21 +65,21 @@ public class JavaLogLevelCheck extends BaseFileCheck {
 					"Enabled()";
 
 			if (codeBlock.contains(s) ^ !s.equals("_log.isErrorEnabled()")) {
-				int lineCount = getLineCount(content, matcher.start(1));
+				int lineNumber = getLineNumber(content, matcher.start(1));
 
 				if (codeBlock.contains(s)) {
 					addMessage(
 						fileName, "Do not use _log.isErrorEnabled()",
-						lineCount);
+						lineNumber);
 				}
 				else {
-					addMessage(fileName, "Use " + s, lineCount);
+					addMessage(fileName, "Use " + s, lineNumber);
 				}
 			}
 		}
 	}
 
-	private final Pattern _logLevelPattern = Pattern.compile(
+	private static final Pattern _logLevelPattern = Pattern.compile(
 		"\n(\t+)_log.(debug|error|info|trace|warn)\\(");
 
 }

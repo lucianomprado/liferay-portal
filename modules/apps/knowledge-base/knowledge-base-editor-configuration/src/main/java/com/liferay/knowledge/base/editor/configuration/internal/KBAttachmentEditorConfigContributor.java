@@ -28,17 +28,15 @@ import com.liferay.portal.kernel.editor.configuration.BaseEditorConfigContributo
 import com.liferay.portal.kernel.editor.configuration.EditorConfigContributor;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.portlet.RequestBackedPortletURLFactory;
+import com.liferay.portal.kernel.resource.bundle.ResourceBundleLoader;
+import com.liferay.portal.kernel.resource.bundle.ResourceBundleLoaderUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
-import com.liferay.portal.kernel.util.AggregateResourceBundleLoader;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.ResourceBundleLoader;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
-import com.liferay.portal.language.LanguageResources;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.ResourceBundle;
 
 import javax.portlet.ActionRequest;
 import javax.portlet.PortletURL;
@@ -92,6 +90,12 @@ public class KBAttachmentEditorConfigContributor
 			return;
 		}
 
+		String namespace = GetterUtil.getString(
+			inputEditorTaglibAttributes.get(
+				"liferay-ui:input-editor:namespace"));
+		String name = GetterUtil.getString(
+			inputEditorTaglibAttributes.get("liferay-ui:input-editor:name"));
+
 		List<ItemSelectorReturnType> desiredItemSelectorReturnTypes =
 			new ArrayList<>();
 
@@ -99,34 +103,20 @@ public class KBAttachmentEditorConfigContributor
 			new FileEntryItemSelectorReturnType());
 		desiredItemSelectorReturnTypes.add(new URLItemSelectorReturnType());
 
-		ItemSelectorCriterion kbAttachmentsItemSelectorCriterion =
-			getKBAttachmentItemSelectorCriterion(
-				resourcePrimKey, desiredItemSelectorReturnTypes);
-
-		ItemSelectorCriterion imageItemSelectorCriterion =
-			getImageItemSelectorCriterion(desiredItemSelectorReturnTypes);
-
-		ItemSelectorCriterion urlItemSelectorCriterion =
-			getURLItemSelectorCriterion();
-
-		ItemSelectorCriterion uploadItemSelectorCriterion =
-			getUploadItemSelectorCriterion(
-				resourcePrimKey, themeDisplay, requestBackedPortletURLFactory);
-
-		String namespace = GetterUtil.getString(
-			inputEditorTaglibAttributes.get(
-				"liferay-ui:input-editor:namespace"));
-		String name = GetterUtil.getString(
-			inputEditorTaglibAttributes.get("liferay-ui:input-editor:name"));
-
 		PortletURL itemSelectorURL = _itemSelector.getItemSelectorURL(
 			requestBackedPortletURLFactory, namespace + name + "selectItem",
-			kbAttachmentsItemSelectorCriterion, imageItemSelectorCriterion,
-			urlItemSelectorCriterion, uploadItemSelectorCriterion);
+			getKBAttachmentItemSelectorCriterion(
+				resourcePrimKey, desiredItemSelectorReturnTypes),
+			getImageItemSelectorCriterion(desiredItemSelectorReturnTypes),
+			getURLItemSelectorCriterion(),
+			getUploadItemSelectorCriterion(
+				resourcePrimKey, themeDisplay, requestBackedPortletURLFactory));
 
 		jsonObject.put(
-			"filebrowserImageBrowseLinkUrl", itemSelectorURL.toString());
-		jsonObject.put("filebrowserImageBrowseUrl", itemSelectorURL.toString());
+			"filebrowserImageBrowseLinkUrl", itemSelectorURL.toString()
+		).put(
+			"filebrowserImageBrowseUrl", itemSelectorURL.toString()
+		);
 	}
 
 	@Reference(unbind = "-")
@@ -137,26 +127,26 @@ public class KBAttachmentEditorConfigContributor
 	protected ItemSelectorCriterion getImageItemSelectorCriterion(
 		List<ItemSelectorReturnType> desiredItemSelectorReturnTypes) {
 
-		ItemSelectorCriterion imageItemSelectorCriterion =
+		ItemSelectorCriterion itemSelectorCriterion =
 			new ImageItemSelectorCriterion();
 
-		imageItemSelectorCriterion.setDesiredItemSelectorReturnTypes(
+		itemSelectorCriterion.setDesiredItemSelectorReturnTypes(
 			desiredItemSelectorReturnTypes);
 
-		return imageItemSelectorCriterion;
+		return itemSelectorCriterion;
 	}
 
 	protected ItemSelectorCriterion getKBAttachmentItemSelectorCriterion(
 		long resourcePrimKey,
 		List<ItemSelectorReturnType> desiredItemSelectorReturnTypes) {
 
-		ItemSelectorCriterion kbAttachmentItemSelectorCriterion =
+		ItemSelectorCriterion itemSelectorCriterion =
 			new KBAttachmentItemSelectorCriterion(resourcePrimKey);
 
-		kbAttachmentItemSelectorCriterion.setDesiredItemSelectorReturnTypes(
+		itemSelectorCriterion.setDesiredItemSelectorReturnTypes(
 			desiredItemSelectorReturnTypes);
 
-		return kbAttachmentItemSelectorCriterion;
+		return itemSelectorCriterion;
 	}
 
 	protected ItemSelectorCriterion getUploadItemSelectorCriterion(
@@ -171,54 +161,35 @@ public class KBAttachmentEditorConfigContributor
 		portletURL.setParameter(
 			"resourcePrimKey", String.valueOf(resourcePrimKey));
 
-		ResourceBundle resourceBundle =
-			_resourceBundleLoader.loadResourceBundle(themeDisplay.getLocale());
+		ResourceBundleLoader resourceBundleLoader =
+			ResourceBundleLoaderUtil.
+				getResourceBundleLoaderByBundleSymbolicName(
+					"com.liferay.knowledge.base.item.selector.web");
 
-		ItemSelectorCriterion uploadItemSelectorCriterion =
+		ItemSelectorCriterion itemSelectorCriterion =
 			new UploadItemSelectorCriterion(
-				portletURL.toString(),
+				null, portletURL.toString(),
 				ResourceBundleUtil.getString(
-					resourceBundle, "article-attachments"));
+					resourceBundleLoader.loadResourceBundle(
+						themeDisplay.getLocale()),
+					"article-attachments"));
 
-		List<ItemSelectorReturnType> uploadDesiredItemSelectorReturnTypes =
-			new ArrayList<>();
-
-		uploadDesiredItemSelectorReturnTypes.add(
+		itemSelectorCriterion.setDesiredItemSelectorReturnTypes(
 			new FileEntryItemSelectorReturnType());
 
-		uploadItemSelectorCriterion.setDesiredItemSelectorReturnTypes(
-			uploadDesiredItemSelectorReturnTypes);
-
-		return uploadItemSelectorCriterion;
+		return itemSelectorCriterion;
 	}
 
 	protected ItemSelectorCriterion getURLItemSelectorCriterion() {
-		ItemSelectorCriterion urlItemSelectorCriterion =
+		ItemSelectorCriterion itemSelectorCriterion =
 			new URLItemSelectorCriterion();
 
-		List<ItemSelectorReturnType> urlDesiredItemSelectorReturnTypes =
-			new ArrayList<>();
+		itemSelectorCriterion.setDesiredItemSelectorReturnTypes(
+			new URLItemSelectorReturnType());
 
-		urlDesiredItemSelectorReturnTypes.add(new URLItemSelectorReturnType());
-
-		urlItemSelectorCriterion.setDesiredItemSelectorReturnTypes(
-			urlDesiredItemSelectorReturnTypes);
-
-		return urlItemSelectorCriterion;
-	}
-
-	@Reference(
-		target = "(bundle.symbolic.name=com.liferay.knowledge.base.item.selector.web)",
-		unbind = "-"
-	)
-	protected void setResourceBundleLoader(
-		ResourceBundleLoader resourceBundleLoader) {
-
-		_resourceBundleLoader = new AggregateResourceBundleLoader(
-			resourceBundleLoader, LanguageResources.RESOURCE_BUNDLE_LOADER);
+		return itemSelectorCriterion;
 	}
 
 	private ItemSelector _itemSelector;
-	private ResourceBundleLoader _resourceBundleLoader;
 
 }

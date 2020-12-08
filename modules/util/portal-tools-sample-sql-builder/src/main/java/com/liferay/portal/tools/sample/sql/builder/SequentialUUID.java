@@ -14,8 +14,8 @@
 
 package com.liferay.portal.tools.sample.sql.builder;
 
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -44,7 +44,7 @@ public class SequentialUUID {
 	}
 
 	public static SequentialUUID getSequentialUUID() {
-		return _instance;
+		return _sequentialUUID;
 	}
 
 	private static String _toHexString(long number, int digits) {
@@ -73,8 +73,7 @@ public class SequentialUUID {
 
 	private static final String _UUID_PREFIX = "00000000-0000-0000-";
 
-	private static final SequentialUUID _instance = new SequentialUUID();
-
 	private static final AtomicLong _counter = new AtomicLong();
+	private static final SequentialUUID _sequentialUUID = new SequentialUUID();
 
 }

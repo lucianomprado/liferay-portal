@@ -14,24 +14,47 @@
 
 package com.liferay.portal.kernel.util;
 
+import com.liferay.petra.concurrent.ConcurrentReferenceKeyHashMap;
+import com.liferay.petra.memory.FinalizeManager;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Locale;
 import java.util.Map;
 import java.util.ResourceBundle;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author Carlos Sierra Andrés
+ *
+ * @deprecated As of Athanasius (7.3.x), replaced by {@link
+ *             com.liferay.portal.kernel.resource.bundle.CacheResourceBundleLoader}
  */
+@Deprecated
 public class CacheResourceBundleLoader implements ResourceBundleLoader {
+
+	public static void clearCache() {
+		for (CacheResourceBundleLoader cacheResourceBundleLoader :
+				_cacheResourceBundleLoaders) {
+
+			if (cacheResourceBundleLoader != null) {
+				Map<Locale, ResourceBundle> resourceBundles =
+					cacheResourceBundleLoader._resourceBundles;
+
+				resourceBundles.clear();
+			}
+		}
+	}
 
 	public CacheResourceBundleLoader(
 		ResourceBundleLoader resourceBundleLoader) {
 
 		_resourceBundleLoader = resourceBundleLoader;
+
+		_cacheResourceBundleLoaders.add(this);
 	}
 
 	@Override
@@ -47,9 +70,9 @@ public class CacheResourceBundleLoader implements ResourceBundleLoader {
 				resourceBundle = _resourceBundleLoader.loadResourceBundle(
 					locale);
 			}
-			catch (Exception e) {
+			catch (Exception exception) {
 				if (_log.isDebugEnabled()) {
-					_log.debug(e, e);
+					_log.debug(exception, exception);
 				}
 			}
 
@@ -64,17 +87,13 @@ public class CacheResourceBundleLoader implements ResourceBundleLoader {
 		return resourceBundle;
 	}
 
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link #loadResourceBundle(Locale)}
-	 */
-	@Deprecated
-	@Override
-	public ResourceBundle loadResourceBundle(String languageId) {
-		return loadResourceBundle(LocaleUtil.fromLanguageId(languageId));
-	}
-
 	private static final Log _log = LogFactoryUtil.getLog(
 		CacheResourceBundleLoader.class);
+
+	private static final Set<CacheResourceBundleLoader>
+		_cacheResourceBundleLoaders = Collections.newSetFromMap(
+			new ConcurrentReferenceKeyHashMap<>(
+				FinalizeManager.WEAK_REFERENCE_FACTORY));
 
 	private static final ResourceBundle _nullResourceBundle =
 		new ResourceBundle() {

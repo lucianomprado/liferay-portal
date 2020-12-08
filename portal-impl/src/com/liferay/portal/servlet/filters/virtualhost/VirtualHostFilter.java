@@ -14,6 +14,9 @@
 
 package com.liferay.portal.servlet.filters.virtualhost;
 
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.LayoutFriendlyURLException;
 import com.liferay.portal.kernel.exception.NoSuchLayoutException;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -23,12 +26,9 @@ import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.LayoutSet;
 import com.liferay.portal.kernel.service.LayoutLocalServiceUtil;
 import com.liferay.portal.kernel.struts.LastPath;
-import com.liferay.portal.kernel.util.CharPool;
 import com.liferay.portal.kernel.util.HttpUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.PortalUtil;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
@@ -40,6 +40,7 @@ import com.liferay.portal.util.PropsValues;
 import com.liferay.portal.webserver.WebServerServlet;
 
 import java.util.Map;
+import java.util.Objects;
 
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -66,7 +67,9 @@ public class VirtualHostFilter extends BasePortalFilter {
 
 		_servletContext = filterConfig.getServletContext();
 
-		String contextPath = PortalUtil.getPathContext();
+		_originalContextPath = PortalUtil.getPathContext();
+
+		String contextPath = _originalContextPath;
 
 		String proxyPath = PortalUtil.getPathProxy();
 
@@ -81,9 +84,10 @@ public class VirtualHostFilter extends BasePortalFilter {
 
 	@Override
 	public boolean isFilterEnabled(
-		HttpServletRequest request, HttpServletResponse response) {
+		HttpServletRequest httpServletRequest,
+		HttpServletResponse httpServletResponse) {
 
-		String uri = request.getRequestURI();
+		String uri = httpServletRequest.getRequestURI();
 
 		for (String extension : PropsValues.VIRTUAL_HOSTS_IGNORE_EXTENSIONS) {
 			if (uri.endsWith(extension)) {
@@ -95,13 +99,14 @@ public class VirtualHostFilter extends BasePortalFilter {
 	}
 
 	protected boolean isDocumentFriendlyURL(
-			HttpServletRequest request, long groupId, String friendlyURL)
+			HttpServletRequest httpServletRequest, long groupId,
+			String friendlyURL)
 		throws PortalException {
 
 		if (friendlyURL.startsWith(_PATH_DOCUMENTS) &&
-			WebServerServlet.hasFiles(request)) {
+			WebServerServlet.hasFiles(httpServletRequest)) {
 
-			String path = HttpUtil.fixPath(request.getPathInfo());
+			String path = HttpUtil.fixPath(httpServletRequest.getPathInfo());
 
 			String[] pathArray = StringUtil.split(path, CharPool.SLASH);
 
@@ -110,12 +115,13 @@ public class VirtualHostFilter extends BasePortalFilter {
 					LayoutLocalServiceUtil.getFriendlyURLLayout(
 						groupId, false, friendlyURL);
 				}
-				catch (NoSuchLayoutException nsle) {
+				catch (NoSuchLayoutException noSuchLayoutException) {
 
 					// LPS-52675
 
 					if (_log.isDebugEnabled()) {
-						_log.debug(nsle, nsle);
+						_log.debug(
+							noSuchLayoutException, noSuchLayoutException);
 					}
 
 					return true;
@@ -156,40 +162,16 @@ public class VirtualHostFilter extends BasePortalFilter {
 		return true;
 	}
 
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	protected boolean isValidRequestURL(StringBuffer requestURL) {
-		if (requestURL == null) {
-			return false;
-		}
-
-		String url = requestURL.toString();
-
-		for (String extension : PropsValues.VIRTUAL_HOSTS_IGNORE_EXTENSIONS) {
-			if (url.endsWith(extension)) {
-				return false;
-			}
-		}
-
-		return true;
-	}
-
 	@Override
 	protected void processFilter(
-			HttpServletRequest request, HttpServletResponse response,
-			FilterChain filterChain)
+			HttpServletRequest httpServletRequest,
+			HttpServletResponse httpServletResponse, FilterChain filterChain)
 		throws Exception {
 
-		long companyId = PortalInstances.getCompanyId(request);
-
-		String originalFriendlyURL = request.getRequestURI();
+		String originalFriendlyURL = HttpUtil.normalizePath(
+			httpServletRequest.getRequestURI());
 
 		String friendlyURL = originalFriendlyURL;
-
-		friendlyURL = StringUtil.replace(
-			friendlyURL, StringPool.DOUBLE_SLASH, StringPool.SLASH);
 
 		if (!friendlyURL.equals(StringPool.SLASH) && !_contextPath.isEmpty() &&
 			(friendlyURL.length() > _contextPath.length()) &&
@@ -213,7 +195,7 @@ public class VirtualHostFilter extends BasePortalFilter {
 
 		int widgetServletMappingPos = 0;
 
-		if (friendlyURL.contains(PropsValues.WIDGET_SERVLET_MAPPING)) {
+		if (friendlyURL.contains(_WIDGET_SERVLET_MAPPING_SLASH)) {
 			friendlyURL = StringUtil.replaceFirst(
 				friendlyURL, PropsValues.WIDGET_SERVLET_MAPPING,
 				StringPool.BLANK);
@@ -256,20 +238,21 @@ public class VirtualHostFilter extends BasePortalFilter {
 					RequestDispatcher requestDispatcher =
 						_servletContext.getRequestDispatcher(forwardURL);
 
-					requestDispatcher.forward(request, response);
+					requestDispatcher.forward(
+						httpServletRequest, httpServletResponse);
 
 					return;
 				}
 			}
 
 			processFilter(
-				VirtualHostFilter.class.getName(), request, response,
-				filterChain);
+				VirtualHostFilter.class.getName(), httpServletRequest,
+				httpServletResponse, filterChain);
 
 			return;
 		}
 
-		LayoutSet layoutSet = (LayoutSet)request.getAttribute(
+		LayoutSet layoutSet = (LayoutSet)httpServletRequest.getAttribute(
 			WebKeys.VIRTUAL_HOST_LAYOUT_SET);
 
 		if (_log.isDebugEnabled()) {
@@ -278,14 +261,17 @@ public class VirtualHostFilter extends BasePortalFilter {
 
 		if (layoutSet == null) {
 			processFilter(
-				VirtualHostFilter.class.getName(), request, response,
-				filterChain);
+				VirtualHostFilter.class.getName(), httpServletRequest,
+				httpServletResponse, filterChain);
 
 			return;
 		}
 
+		long companyId = PortalInstances.getCompanyId(httpServletRequest);
+
 		try {
-			Map<String, String[]> parameterMap = request.getParameterMap();
+			Map<String, String[]> parameterMap =
+				httpServletRequest.getParameterMap();
 
 			String parameters = StringPool.BLANK;
 
@@ -294,20 +280,20 @@ public class VirtualHostFilter extends BasePortalFilter {
 			}
 
 			LastPath lastPath = new LastPath(
-				_contextPath, friendlyURL, parameters);
+				_originalContextPath, friendlyURL, parameters);
 
-			request.setAttribute(WebKeys.LAST_PATH, lastPath);
+			httpServletRequest.setAttribute(WebKeys.LAST_PATH, lastPath);
 
-			StringBundler forwardURL = new StringBundler(5);
+			StringBundler sb = new StringBundler(5);
 
 			if (i18nLanguageId != null) {
-				forwardURL.append(i18nLanguageId);
+				sb.append(i18nLanguageId);
 			}
 
 			if (originalFriendlyURL.startsWith(
 					PropsValues.WIDGET_SERVLET_MAPPING)) {
 
-				forwardURL.append(PropsValues.WIDGET_SERVLET_MAPPING);
+				sb.append(PropsValues.WIDGET_SERVLET_MAPPING);
 
 				friendlyURL = StringUtil.replaceFirst(
 					friendlyURL, PropsValues.WIDGET_SERVLET_MAPPING,
@@ -321,19 +307,23 @@ public class VirtualHostFilter extends BasePortalFilter {
 				Group group = layoutSet.getGroup();
 
 				if (isDocumentFriendlyURL(
-						request, group.getGroupId(), friendlyURL)) {
+						httpServletRequest, group.getGroupId(), friendlyURL)) {
 
 					processFilter(
-						VirtualHostFilter.class.getName(), request, response,
-						filterChain);
+						VirtualHostFilter.class.getName(), httpServletRequest,
+						httpServletResponse, filterChain);
 
 					return;
 				}
 
-				if (group.isGuest() && friendlyURL.equals(StringPool.SLASH) &&
+				if (Objects.equals(
+						group.getGroupKey(),
+						PropsValues.VIRTUAL_HOSTS_DEFAULT_SITE_NAME) &&
+					friendlyURL.equals(StringPool.SLASH) &&
 					!layoutSet.isPrivateLayout()) {
 
-					String homeURL = PortalUtil.getRelativeHomeURL(request);
+					String homeURL = PortalUtil.getRelativeHomeURL(
+						httpServletRequest);
 
 					if (Validator.isNotNull(homeURL)) {
 						friendlyURL = homeURL;
@@ -342,26 +332,26 @@ public class VirtualHostFilter extends BasePortalFilter {
 				else {
 					if (layoutSet.isPrivateLayout()) {
 						if (group.isUser()) {
-							forwardURL.append(_PRIVATE_USER_SERVLET_MAPPING);
+							sb.append(_PRIVATE_USER_SERVLET_MAPPING);
 						}
 						else {
-							forwardURL.append(_PRIVATE_GROUP_SERVLET_MAPPING);
+							sb.append(_PRIVATE_GROUP_SERVLET_MAPPING);
 						}
 					}
 					else {
-						forwardURL.append(_PUBLIC_GROUP_SERVLET_MAPPING);
+						sb.append(_PUBLIC_GROUP_SERVLET_MAPPING);
 					}
 
-					forwardURL.append(group.getFriendlyURL());
+					sb.append(group.getFriendlyURL());
 				}
 			}
 
 			String forwardURLString = friendlyURL;
 
-			if (forwardURL.index() > 0) {
-				forwardURL.append(friendlyURL);
+			if (sb.index() > 0) {
+				sb.append(friendlyURL);
 
-				forwardURLString = forwardURL.toString();
+				forwardURLString = sb.toString();
 			}
 
 			if (_log.isDebugEnabled()) {
@@ -371,14 +361,14 @@ public class VirtualHostFilter extends BasePortalFilter {
 			RequestDispatcher requestDispatcher =
 				_servletContext.getRequestDispatcher(forwardURLString);
 
-			requestDispatcher.forward(request, response);
+			requestDispatcher.forward(httpServletRequest, httpServletResponse);
 		}
-		catch (Exception e) {
-			_log.error(e, e);
+		catch (Exception exception) {
+			_log.error(exception, exception);
 
 			processFilter(
-				VirtualHostFilter.class.getName(), request, response,
-				filterChain);
+				VirtualHostFilter.class.getName(), httpServletRequest,
+				httpServletResponse, filterChain);
 		}
 	}
 
@@ -433,10 +423,14 @@ public class VirtualHostFilter extends BasePortalFilter {
 	private static final String _PUBLIC_GROUP_SERVLET_MAPPING_SLASH =
 		_PUBLIC_GROUP_SERVLET_MAPPING + StringPool.SLASH;
 
+	private static final String _WIDGET_SERVLET_MAPPING_SLASH =
+		PropsValues.WIDGET_SERVLET_MAPPING + StringPool.SLASH;
+
 	private static final Log _log = LogFactoryUtil.getLog(
 		VirtualHostFilter.class);
 
 	private String _contextPath;
+	private String _originalContextPath;
 	private ServletContext _servletContext;
 
 }

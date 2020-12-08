@@ -17,6 +17,8 @@ package com.liferay.gradle.plugins.maven.plugin.builder;
 import com.liferay.gradle.plugins.maven.plugin.builder.internal.util.GradleUtil;
 import com.liferay.gradle.plugins.maven.plugin.builder.tasks.BuildPluginDescriptorTask;
 import com.liferay.gradle.plugins.maven.plugin.builder.tasks.WriteMavenSettingsTask;
+import com.liferay.gradle.util.FileUtil;
+import com.liferay.gradle.util.OSGiUtil;
 import com.liferay.gradle.util.Validator;
 
 import java.io.File;
@@ -34,12 +36,10 @@ import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.DependencySet;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.SourceDirectorySet;
-import org.gradle.api.internal.plugins.osgi.OsgiHelper;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.plugins.BasePlugin;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.tasks.SourceSet;
-import org.gradle.api.tasks.SourceSetOutput;
 import org.gradle.api.tasks.TaskContainer;
 import org.gradle.api.tasks.Upload;
 import org.gradle.api.tasks.javadoc.Javadoc;
@@ -78,6 +78,7 @@ public class MavenPluginBuilderPlugin implements Plugin<Project> {
 			_configureTasksJavadocDisableDoclint(project);
 		}
 
+		_configureTasksBuildPluginDescriptor(project);
 		_configureTasksUpload(project, buildPluginDescriptorTask);
 	}
 
@@ -144,9 +145,7 @@ public class MavenPluginBuilderPlugin implements Plugin<Project> {
 
 				@Override
 				public File call() throws Exception {
-					SourceSetOutput sourceSetOutput = sourceSet.getOutput();
-
-					return sourceSetOutput.getClassesDir();
+					return FileUtil.getJavaClassesDir(sourceSet);
 				}
 
 			});
@@ -184,7 +183,7 @@ public class MavenPluginBuilderPlugin implements Plugin<Project> {
 
 				@Override
 				public String call() throws Exception {
-					return _osgiHelper.getBundleSymbolicName(project);
+					return OSGiUtil.getBundleSymbolicName(project);
 				}
 
 			});
@@ -323,11 +322,39 @@ public class MavenPluginBuilderPlugin implements Plugin<Project> {
 		return writeMavenSettingsTask;
 	}
 
+	private void _configureTaskBuildPluginDescriptor(
+		BuildPluginDescriptorTask buildPluginDescriptorTask) {
+
+		boolean mavenDebug = Boolean.parseBoolean(
+			GradleUtil.getTaskPrefixedProperty(
+				buildPluginDescriptorTask, "maven.debug"));
+
+		buildPluginDescriptorTask.setMavenDebug(mavenDebug);
+	}
+
 	private void _configureTaskJavadocDisableDoclint(Javadoc javadoc) {
 		CoreJavadocOptions coreJavadocOptions =
 			(CoreJavadocOptions)javadoc.getOptions();
 
 		coreJavadocOptions.addStringOption("Xdoclint:none", "-quiet");
+	}
+
+	private void _configureTasksBuildPluginDescriptor(Project project) {
+		TaskContainer taskContainer = project.getTasks();
+
+		taskContainer.withType(
+			BuildPluginDescriptorTask.class,
+			new Action<BuildPluginDescriptorTask>() {
+
+				@Override
+				public void execute(
+					BuildPluginDescriptorTask buildPluginDescriptorTask) {
+
+					_configureTaskBuildPluginDescriptor(
+						buildPluginDescriptorTask);
+				}
+
+			});
 	}
 
 	private void _configureTasksJavadocDisableDoclint(Project project) {
@@ -376,8 +403,6 @@ public class MavenPluginBuilderPlugin implements Plugin<Project> {
 
 		return iterator.next();
 	}
-
-	private static final OsgiHelper _osgiHelper = new OsgiHelper();
 
 	private static class ProxyPropertyCallable extends SystemPropertyCallable {
 

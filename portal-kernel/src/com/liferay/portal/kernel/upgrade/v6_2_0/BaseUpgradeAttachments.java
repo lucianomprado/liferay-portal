@@ -16,21 +16,21 @@ package com.liferay.portal.kernel.upgrade.v6_2_0;
 
 import com.liferay.document.library.kernel.model.DLFolderConstants;
 import com.liferay.document.library.kernel.store.DLStoreUtil;
-import com.liferay.portal.kernel.dao.jdbc.DataAccess;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.CompanyConstants;
 import com.liferay.portal.kernel.model.ResourceConstants;
 import com.liferay.portal.kernel.model.ResourcePermission;
-import com.liferay.portal.kernel.model.RoleConstants;
+import com.liferay.portal.kernel.model.role.RoleConstants;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.FileUtil;
+import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.MimeTypesUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.uuid.PortalUUIDUtil;
 
 import java.sql.PreparedStatement;
@@ -54,27 +54,22 @@ public abstract class BaseUpgradeAttachments extends UpgradeProcess {
 			String mimeType, String title, long size)
 		throws Exception {
 
-		PreparedStatement ps = null;
+		long fileEntryId = increment();
 
-		try {
-			long fileEntryId = increment();
+		StringBundler sb = new StringBundler(8);
 
-			StringBundler sb = new StringBundler(9);
+		sb.append("insert into DLFileEntry (uuid_, fileEntryId, groupId, ");
+		sb.append("companyId, userId, userName, createDate, modifiedDate, ");
+		sb.append("classNameId, classPK, repositoryId, folderId, name, ");
+		sb.append("extension, mimeType, title, description, extraSettings, ");
+		sb.append("fileEntryTypeId, version, size_, smallImageId, ");
+		sb.append("largeImageId, custom1ImageId, custom2ImageId) values (?, ");
+		sb.append("?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ");
+		sb.append("?, ?, ?, ?, ?, ?)");
 
-			sb.append("insert into DLFileEntry (uuid_, fileEntryId, groupId, ");
-			sb.append("companyId, userId, userName, createDate, ");
-			sb.append("modifiedDate, classNameId, classPK, repositoryId, ");
-			sb.append("folderId, name, extension, mimeType, title, ");
-			sb.append("description, extraSettings, fileEntryTypeId, version, ");
-			sb.append("size_, readCount, smallImageId, largeImageId, ");
-			sb.append("custom1ImageId, custom2ImageId) values (?, ?, ?, ?, ");
-			sb.append("?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ");
-			sb.append("?, ?, ?, ?)");
+		String sql = sb.toString();
 
-			String sql = sb.toString();
-
-			ps = connection.prepareStatement(sql);
-
+		try (PreparedStatement ps = connection.prepareStatement(sql)) {
 			ps.setString(1, PortalUUIDUtil.generate());
 			ps.setLong(2, fileEntryId);
 			ps.setLong(3, groupId);
@@ -100,18 +95,13 @@ public abstract class BaseUpgradeAttachments extends UpgradeProcess {
 			ps.setLong(23, 0);
 			ps.setLong(24, 0);
 			ps.setLong(25, 0);
-			ps.setLong(26, 0);
 
 			ps.executeUpdate();
 
-			Map<String, Long> bitwiseValues = getBitwiseValues(
-				"com.liferay.portlet.documentlibrary.model.DLFileEntry");
-
-			List<String> actionIds = new ArrayList<>();
-
-			actionIds.add(ActionKeys.VIEW);
-
-			long bitwiseValue = getBitwiseValue(bitwiseValues, actionIds);
+			long bitwiseValue = getBitwiseValue(
+				getBitwiseValues(
+					"com.liferay.portlet.documentlibrary.model.DLFileEntry"),
+				ListUtil.fromArray(ActionKeys.VIEW));
 
 			addResourcePermission(
 				companyId,
@@ -126,15 +116,12 @@ public abstract class BaseUpgradeAttachments extends UpgradeProcess {
 
 			return fileEntryId;
 		}
-		catch (Exception e) {
+		catch (Exception exception) {
 			if (_log.isWarnEnabled()) {
-				_log.warn("Unable to add file entry " + name, e);
+				_log.warn("Unable to add file entry " + name, exception);
 			}
 
 			return -1;
-		}
-		finally {
-			DataAccess.cleanUp(ps);
 		}
 	}
 
@@ -145,24 +132,19 @@ public abstract class BaseUpgradeAttachments extends UpgradeProcess {
 			String title, long size)
 		throws Exception {
 
-		PreparedStatement ps = null;
+		StringBundler sb = new StringBundler(7);
 
-		try {
-			StringBundler sb = new StringBundler(8);
+		sb.append("insert into DLFileVersion (uuid_, fileVersionId, groupId, ");
+		sb.append("companyId, userId, userName, createDate, modifiedDate, ");
+		sb.append("repositoryId, folderId, fileEntryId, extension, mimeType, ");
+		sb.append("title, description, changeLog, extraSettings, ");
+		sb.append("fileEntryTypeId, version, size_, status, statusByUserId, ");
+		sb.append("statusByUserName, statusDate) values (?, ?, ?, ?, ?, ?, ");
+		sb.append("?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
-			sb.append("insert into DLFileVersion (uuid_, fileVersionId, ");
-			sb.append("groupId, companyId, userId, userName, createDate, ");
-			sb.append("modifiedDate, repositoryId, folderId, fileEntryId, ");
-			sb.append("extension, mimeType, title, description, changeLog, ");
-			sb.append("extraSettings, fileEntryTypeId, version, size_, ");
-			sb.append("status, statusByUserId, statusByUserName, statusDate) ");
-			sb.append("values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ");
-			sb.append("?, ?, ?, ?, ?, ?, ?, ?, ?)");
+		String sql = sb.toString();
 
-			String sql = sb.toString();
-
-			ps = connection.prepareStatement(sql);
-
+		try (PreparedStatement ps = connection.prepareStatement(sql)) {
 			ps.setString(1, PortalUUIDUtil.generate());
 			ps.setLong(2, fileVersionId);
 			ps.setLong(3, groupId);
@@ -190,15 +172,12 @@ public abstract class BaseUpgradeAttachments extends UpgradeProcess {
 
 			ps.executeUpdate();
 		}
-		catch (Exception e) {
+		catch (Exception exception) {
 			if (_log.isWarnEnabled()) {
 				_log.warn(
 					"Unable to add file version 1.0 for file entry " + title,
-					e);
+					exception);
 			}
-		}
-		finally {
-			DataAccess.cleanUp(ps);
 		}
 	}
 
@@ -209,24 +188,19 @@ public abstract class BaseUpgradeAttachments extends UpgradeProcess {
 			boolean hidden)
 		throws Exception {
 
-		PreparedStatement ps = null;
+		StringBundler sb = new StringBundler(7);
 
-		try {
-			StringBundler sb = new StringBundler(8);
+		sb.append("insert into DLFolder (uuid_, folderId, groupId, ");
+		sb.append("companyId, userId, userName, createDate, modifiedDate, ");
+		sb.append("repositoryId, mountPoint, parentFolderId, name, ");
+		sb.append("description, lastPostDate, defaultFileEntryTypeId, ");
+		sb.append("hidden_, overrideFileEntryTypes, status, statusByUserId, ");
+		sb.append("statusByUserName, statusDate) values (?, ?, ?, ?, ?, ?, ");
+		sb.append("?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
-			sb.append("insert into DLFolder (uuid_, folderId, groupId, ");
-			sb.append("companyId, userId, userName, createDate, ");
-			sb.append("modifiedDate, repositoryId, mountPoint, ");
-			sb.append("parentFolderId, name, description, lastPostDate, ");
-			sb.append("defaultFileEntryTypeId, hidden_, ");
-			sb.append("overrideFileEntryTypes, status, statusByUserId, ");
-			sb.append("statusByUserName, statusDate) values (?, ?, ?, ?, ?, ");
-			sb.append("?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+		String sql = sb.toString();
 
-			String sql = sb.toString();
-
-			ps = connection.prepareStatement(sql);
-
+		try (PreparedStatement ps = connection.prepareStatement(sql)) {
 			ps.setString(1, PortalUUIDUtil.generate());
 			ps.setLong(2, folderId);
 			ps.setLong(3, groupId);
@@ -254,12 +228,8 @@ public abstract class BaseUpgradeAttachments extends UpgradeProcess {
 			Map<String, Long> bitwiseValues = getBitwiseValues(
 				"com.liferay.portlet.documentlibrary.model.DLFolder");
 
-			List<String> guestActionIds = new ArrayList<>();
-
-			guestActionIds.add(ActionKeys.VIEW);
-
 			long guestBitwiseValue = getBitwiseValue(
-				bitwiseValues, guestActionIds);
+				bitwiseValues, ListUtil.fromArray(ActionKeys.VIEW));
 
 			addResourcePermission(
 				companyId, "com.liferay.portlet.documentlibrary.model.DLFolder",
@@ -282,15 +252,12 @@ public abstract class BaseUpgradeAttachments extends UpgradeProcess {
 
 			return folderId;
 		}
-		catch (Exception e) {
+		catch (Exception exception) {
 			if (_log.isWarnEnabled()) {
-				_log.warn("Unable to add folder " + name, e);
+				_log.warn("Unable to add folder " + name, exception);
 			}
 
 			return -1;
-		}
-		finally {
-			DataAccess.cleanUp(ps);
 		}
 	}
 
@@ -310,18 +277,16 @@ public abstract class BaseUpgradeAttachments extends UpgradeProcess {
 			return -1;
 		}
 
-		PreparedStatement ps = null;
+		StringBundler sb = new StringBundler(5);
 
-		try {
-			StringBundler sb = new StringBundler(5);
+		sb.append("insert into Repository (uuid_, repositoryId, groupId, ");
+		sb.append("companyId, userId, userName, createDate, modifiedDate, ");
+		sb.append("classNameId, name, description, portletId, typeSettings, ");
+		sb.append("dlFolderId) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ");
+		sb.append("?, ?)");
 
-			sb.append("insert into Repository (uuid_, repositoryId, groupId, ");
-			sb.append("companyId, userId, userName, createDate, ");
-			sb.append("modifiedDate, classNameId, name, description, ");
-			sb.append("portletId, typeSettings, dlFolderId) values (?, ?, ?, ");
-			sb.append("?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-
-			ps = connection.prepareStatement(sb.toString());
+		try (PreparedStatement ps = connection.prepareStatement(
+				sb.toString())) {
 
 			ps.setString(1, PortalUUIDUtil.generate());
 			ps.setLong(2, repositoryId);
@@ -342,16 +307,14 @@ public abstract class BaseUpgradeAttachments extends UpgradeProcess {
 
 			return repositoryId;
 		}
-		catch (Exception e) {
+		catch (Exception exception) {
 			if (_log.isWarnEnabled()) {
 				_log.warn(
-					"Unable to add repository for portlet " + portletId, e);
+					"Unable to add repository for portlet " + portletId,
+					exception);
 			}
 
 			return -1;
-		}
-		finally {
-			DataAccess.cleanUp(ps);
 		}
 	}
 
@@ -360,22 +323,18 @@ public abstract class BaseUpgradeAttachments extends UpgradeProcess {
 			long actionIds)
 		throws Exception {
 
-		PreparedStatement ps = null;
+		long resourcePermissionId = increment(
+			ResourcePermission.class.getName());
 
-		try {
-			long resourcePermissionId = increment(
-				ResourcePermission.class.getName());
+		StringBundler sb = new StringBundler(3);
 
-			StringBundler sb = new StringBundler(3);
+		sb.append("insert into ResourcePermission (resourcePermissionId, ");
+		sb.append("companyId, name, scope, primKey, roleId, ownerId, ");
+		sb.append("actionIds) values (?, ?, ?, ?, ?, ?, ?, ?)");
 
-			sb.append("insert into ResourcePermission (resourcePermissionId, ");
-			sb.append("companyId, name, scope, primKey, roleId, ownerId, ");
-			sb.append("actionIds) values (?, ?, ?, ?, ?, ?, ?, ?)");
+		String sql = sb.toString();
 
-			String sql = sb.toString();
-
-			ps = connection.prepareStatement(sql);
-
+		try (PreparedStatement ps = connection.prepareStatement(sql)) {
 			ps.setLong(1, resourcePermissionId);
 			ps.setLong(2, companyId);
 			ps.setString(3, className);
@@ -387,13 +346,12 @@ public abstract class BaseUpgradeAttachments extends UpgradeProcess {
 
 			ps.executeUpdate();
 		}
-		catch (Exception e) {
+		catch (Exception exception) {
 			if (_log.isWarnEnabled()) {
-				_log.warn("Unable to add resource permission " + className, e);
+				_log.warn(
+					"Unable to add resource permission " + className,
+					exception);
 			}
-		}
-		finally {
-			DataAccess.cleanUp(ps);
 		}
 	}
 
@@ -406,10 +364,9 @@ public abstract class BaseUpgradeAttachments extends UpgradeProcess {
 			long companyId, long containerModelId, long resourcePrimKey)
 		throws Exception {
 
-		String dirName = getDirName(containerModelId, resourcePrimKey);
-
 		return DLStoreUtil.getFileNames(
-			companyId, CompanyConstants.SYSTEM, dirName);
+			companyId, CompanyConstants.SYSTEM,
+			getDirName(containerModelId, resourcePrimKey));
 	}
 
 	protected long getBitwiseValue(
@@ -437,33 +394,26 @@ public abstract class BaseUpgradeAttachments extends UpgradeProcess {
 			return bitwiseValues;
 		}
 
-		PreparedStatement ps = null;
-		ResultSet rs = null;
-
-		try {
-			ps = connection.prepareStatement(
+		try (PreparedStatement ps = connection.prepareStatement(
 				"select actionId, bitwiseValue from ResourceAction where " +
-					"name = ?");
+					"name = ?")) {
 
 			ps.setString(1, name);
 
-			rs = ps.executeQuery();
+			try (ResultSet rs = ps.executeQuery()) {
+				bitwiseValues = new HashMap<>();
 
-			bitwiseValues = new HashMap<>();
+				while (rs.next()) {
+					String actionId = rs.getString("actionId");
+					long bitwiseValue = rs.getLong("bitwiseValue");
 
-			while (rs.next()) {
-				String actionId = rs.getString("actionId");
-				long bitwiseValue = rs.getLong("bitwiseValue");
+					bitwiseValues.put(actionId, bitwiseValue);
+				}
 
-				bitwiseValues.put(actionId, bitwiseValue);
+				_bitwiseValues.put(name, bitwiseValues);
+
+				return bitwiseValues;
 			}
-
-			_bitwiseValues.put(name, bitwiseValues);
-
-			return bitwiseValues;
-		}
-		finally {
-			DataAccess.cleanUp(ps, rs);
 		}
 	}
 
@@ -495,28 +445,19 @@ public abstract class BaseUpgradeAttachments extends UpgradeProcess {
 			return -1;
 		}
 
-		PreparedStatement ps = null;
-		ResultSet rs = null;
-
-		try {
-			ps = connection.prepareStatement(
+		try (PreparedStatement ps = connection.prepareStatement(
 				"select folderId from DLFolder where repositoryId = ? and " +
-					"parentFolderId = ? and name = ?");
+					"parentFolderId = ? and name = ?")) {
 
 			ps.setLong(1, repositoryId);
 			ps.setLong(2, parentFolderId);
 			ps.setString(3, name);
 
-			rs = ps.executeQuery();
-
-			while (rs.next()) {
-				long folderId = rs.getLong(1);
-
-				return folderId;
+			try (ResultSet rs = ps.executeQuery()) {
+				while (rs.next()) {
+					return rs.getLong(1);
+				}
 			}
-		}
-		finally {
-			DataAccess.cleanUp(ps);
 		}
 
 		return addDLFolder(
@@ -531,28 +472,19 @@ public abstract class BaseUpgradeAttachments extends UpgradeProcess {
 			Timestamp createDate, long classNameId, String portletId)
 		throws Exception {
 
-		PreparedStatement ps = null;
-		ResultSet rs = null;
-
-		try {
-			ps = connection.prepareStatement(
+		try (PreparedStatement ps = connection.prepareStatement(
 				"select repositoryId from Repository where groupId = ? and " +
-					"name = ? and portletId = ?");
+					"name = ? and portletId = ?")) {
 
 			ps.setLong(1, groupId);
 			ps.setString(2, portletId);
 			ps.setString(3, portletId);
 
-			rs = ps.executeQuery();
-
-			while (rs.next()) {
-				long repositoryId = rs.getLong(1);
-
-				return repositoryId;
+			try (ResultSet rs = ps.executeQuery()) {
+				while (rs.next()) {
+					return rs.getLong(1);
+				}
 			}
-		}
-		finally {
-			DataAccess.cleanUp(ps);
 		}
 
 		return addRepository(
@@ -569,28 +501,21 @@ public abstract class BaseUpgradeAttachments extends UpgradeProcess {
 			return roleId;
 		}
 
-		PreparedStatement ps = null;
-		ResultSet rs = null;
-
-		try {
-			ps = connection.prepareStatement(
-				"select roleId from Role_ where companyId = ? and name = ?");
+		try (PreparedStatement ps = connection.prepareStatement(
+				"select roleId from Role_ where companyId = ? and name = ?")) {
 
 			ps.setLong(1, companyId);
 			ps.setString(2, name);
 
-			rs = ps.executeQuery();
+			try (ResultSet rs = ps.executeQuery()) {
+				if (rs.next()) {
+					roleId = rs.getLong("roleId");
+				}
 
-			if (rs.next()) {
-				roleId = rs.getLong("roleId");
+				_roleIds.put(roleIdsKey, roleId);
+
+				return roleId;
 			}
-
-			_roleIds.put(roleIdsKey, roleId);
-
-			return roleId;
-		}
-		finally {
-			DataAccess.cleanUp(ps, rs);
 		}
 	}
 
@@ -612,7 +537,7 @@ public abstract class BaseUpgradeAttachments extends UpgradeProcess {
 
 		long repositoryId = getRepositoryId(
 			groupId, companyId, userId, userName, createDate,
-			PortalUtil.getClassNameId(_LIFERAY_REPOSITORY_CLASS_NAME),
+			PortalUtil.getClassNameId(_CLASS_NAME_LIFERAY_REPOSITORY),
 			getPortletId());
 
 		if (repositoryId < 0) {
@@ -662,9 +587,10 @@ public abstract class BaseUpgradeAttachments extends UpgradeProcess {
 				DLStoreUtil.addFile(
 					companyId, containerModelFolderId, name, false, bytes);
 			}
-			catch (Exception e) {
+			catch (Exception exception) {
 				if (_log.isWarnEnabled()) {
-					_log.warn("Unable to add attachment " + attachment, e);
+					_log.warn(
+						"Unable to add attachment " + attachment, exception);
 				}
 			}
 
@@ -672,15 +598,16 @@ public abstract class BaseUpgradeAttachments extends UpgradeProcess {
 				DLStoreUtil.deleteFile(
 					companyId, CompanyConstants.SYSTEM, attachment);
 			}
-			catch (Exception e) {
+			catch (Exception exception) {
 				if (_log.isWarnEnabled()) {
-					_log.warn("Unable to delete attachment " + attachment, e);
+					_log.warn(
+						"Unable to delete attachment " + attachment, exception);
 				}
 			}
 		}
 	}
 
-	private static final String _LIFERAY_REPOSITORY_CLASS_NAME =
+	private static final String _CLASS_NAME_LIFERAY_REPOSITORY =
 		"com.liferay.portal.repository.liferayrepository.LiferayRepository";
 
 	private static final Log _log = LogFactoryUtil.getLog(

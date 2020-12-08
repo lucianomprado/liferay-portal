@@ -1,14 +1,6 @@
 <?xml version="1.0"?>
 
-<project
-	basedir="."
-	default="compile"
-	name="portal-impl"
-	xmlns:antelope="antlib:ise.antelope.tasks"
-	xmlns:artifact="antlib:org.apache.maven.artifact.ant"
-	xmlns:if="ant:if"
-	xmlns:unless="ant:unless"
->
+<project basedir="." default="compile" name="portal-impl" xmlns:antelope="antlib:ise.antelope.tasks" xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:if="ant:if" xmlns:unless="ant:unless">
 	<property name="test.properties" value="portal-test.properties" />
 
 	<import file="../build-common-java.xml" />
@@ -38,33 +30,18 @@ svn://svn.liferay.com/repos/public/alloy/trunk/sandbox/taglibs.
 		<ant dir="${alloy.taglibs.dir}" inheritAll="false" target="clean" />
 		<ant dir="${alloy.taglibs.dir}" inheritAll="false" target="start" />
 
-		<copy preservelastmodified="true" todir="${project.dir}/lib/development">
-			<fileset file="${alloy.taglibs.dir}/alloy-taglib/alloy-taglib.jar" />
+		<copy
+			preservelastmodified="true"
+			todir="${project.dir}/lib/development"
+		>
+			<fileset
+				file="${alloy.taglibs.dir}/alloy-taglib/alloy-taglib.jar"
+			/>
 		</copy>
 	</target>
 
 	<target name="build-db">
 		<ant dir="../sql" target="build-db" />
-	</target>
-
-	<target name="build-ehcache-xsd">
-		<mirrors-get dest="ehcache.xsd" src="http://ehcache.org/ehcache.xsd" />
-
-		<xmltask dest="src/ehcache/ehcache.xsd" source="ehcache.xsd">
-			<replace path="/xs:schema/xs:element[@name='ehcache']/xs:complexType/xs:attribute[@name='name']/@use" withText="required" />
-		</xmltask>
-
-		<replace file="src/ehcache/ehcache.xsd">
-			<replacefilter>
-				<replacetoken><![CDATA[<?xml encoding="UTF-8" standalone="no" version="1.0"?>]]></replacetoken>
-				<replacevalue><![CDATA[<?xml encoding="UTF-8" standalone="no" version="1.0"?>
-
-<!-- @generated -->
-]]></replacevalue>
-			</replacefilter>
-		</replace>
-
-		<delete file="ehcache.xsd" />
 	</target>
 
 	<target name="build-iw">
@@ -123,7 +100,10 @@ svn://svn.liferay.com/repos/public/alloy/trunk/sandbox/taglibs.
 
 	<target name="build-lang-cmd">
 		<path id="lang.builder.classpath">
-			<fileset dir="${sdk.dir}/dependencies/com.liferay.lang.builder/lib" includes="*.jar" />
+			<fileset
+				dir="${sdk.dir}/dependencies/com.liferay.lang.builder/lib"
+				includes="*.jar"
+			/>
 		</path>
 
 		<java
@@ -132,6 +112,7 @@ svn://svn.liferay.com/repos/public/alloy/trunk/sandbox/taglibs.
 			fork="true"
 			newenvironment="true"
 		>
+			<jvmarg if:true="${jvm.debug}" value="${jpda.settings}" />
 			<jvmarg value="-Dfile.encoding=UTF-8" />
 			<jvmarg value="-Duser.country=US" />
 			<jvmarg value="-Duser.language=en" />
@@ -154,33 +135,59 @@ svn://svn.liferay.com/repos/public/alloy/trunk/sandbox/taglibs.
 	</target>
 
 	<target name="build-lib-versions">
+		<delete dir="${project.dir}/tmp/license-reports" quiet="true" />
+
+		<gradle-execute dir="${project.dir}/modules" task="generateLicenseReport">
+			<arg value="-Dbuild.profile=portal" />
+			<arg value="-Dlicense.report.enabled=true" />
+			<arg value="-Dlicense.report.output.dir=${project.dir}/tmp/license-reports" />
+			<arg value="-Dlicense.report.override.properties.file=${project.dir}/lib/license-override.properties" />
+		</gradle-execute>
+
+		<pathconvert pathsep="," property="modules.lib.versions.files">
+			<fileset
+				dir="${project.dir}/tmp/license-reports"
+				includes="*.xml"
+			/>
+		</pathconvert>
+
 		<java
 			classname="com.liferay.portal.tools.XSLTBuilder"
 			classpathref="project.classpath"
 			fork="true"
+			inputstring="${modules.lib.versions.files},${project.dir}/lib/versions.xml,${project.dir}/lib/versions-ext.xml"
 			newenvironment="true"
 		>
 			<jvmarg value="-Dexternal-properties=com/liferay/portal/tools/dependencies/portal-tools.properties" />
-			<arg value="${project.dir}/lib/versions.xml,${project.dir}/lib/versions-ext.xml" />
 			<arg value="${project.dir}/lib/versions.xsl" />
 			<arg value="${project.dir}/lib/versions.html" />
 		</java>
-	</target>
 
-	<target if="release.info" name="build-releaseinfo">
-		<java
-			classname="com.liferay.portal.tools.ReleaseInfoBuilder"
-			classpathref="project.classpath"
-			fork="true"
-			newenvironment="true"
-		>
-			<jvmarg value="-Dexternal-properties=com/liferay/portal/tools/dependencies/portal-tools.properties" />
-		</java>
+		<if>
+			<available file="${project.dir}/lib/spdx.rdf" />
+			<then>
+				<java
+					classname="com.liferay.portal.tools.SPDXBuilder"
+					classpathref="project.classpath"
+					fork="true"
+					inputstring="${modules.lib.versions.files},${project.dir}/lib/versions.xml,${project.dir}/lib/versions-ext.xml"
+					newenvironment="true"
+				>
+					<jvmarg if:true="${jvm.debug}" value="${jpda.settings}" />
+					<jvmarg value="-Dexternal-properties=com/liferay/portal/tools/dependencies/portal-tools.properties" />
+					<arg value="license.override.properties.file=${project.dir}/lib/license-override.properties" />
+					<arg value="spdx.file=${project.dir}/lib/spdx.rdf" />
+				</java>
+			</then>
+		</if>
 	</target>
 
 	<target name="build-service">
 		<path id="service.builder.classpath">
-			<fileset dir="${sdk.dir}/dependencies/com.liferay.portal.tools.service.builder/lib" includes="*.jar" />
+			<fileset
+				dir="${sdk.dir}/dependencies/com.liferay.portal.tools.service.builder/lib"
+				includes="*.jar"
+			/>
 		</path>
 
 		<java
@@ -206,6 +213,7 @@ svn://svn.liferay.com/repos/public/alloy/trunk/sandbox/taglibs.
 			<arg value="service.build.number.increment=true" />
 			<arg value="service.hbm.file=${basedir}/src/META-INF/portal-hbm.xml" />
 			<arg value="service.impl.dir=${basedir}/src" />
+			<arg value="service.incubation.features=${service.builder.incubation.features}" />
 			<arg value="service.input.file=${service.file}" />
 			<arg value="service.model.hints.configs=${basedir}/src/META-INF/portal-model-hints.xml" />
 			<arg value="service.model.hints.file=${basedir}/src/META-INF/portal-model-hints.xml" />
@@ -220,7 +228,7 @@ svn://svn.liferay.com/repos/public/alloy/trunk/sandbox/taglibs.
 			<arg value="service.sql.indexes.file=indexes.sql" />
 			<arg value="service.sql.sequences.file=sequences.sql" />
 			<arg value="service.target.entity.name=${service.target.entity.name}" />
-			<arg value="service.test.dir=${basedir}/test/integration" />
+			<arg value="service.test.dir=${basedir}/../modules/test/persistence-test/src/testIntegration/java" />
 		</java>
 
 		<delete file="ServiceBuilder.temp" />
@@ -279,12 +287,6 @@ svn://svn.liferay.com/repos/public/alloy/trunk/sandbox/taglibs.
 		</antcall>
 	</target>
 
-	<target name="build-service-portlet-messageboards">
-		<antcall target="build-service">
-			<param name="service.file" value="${basedir}/src/com/liferay/portlet/messageboards/service.xml" />
-		</antcall>
-	</target>
-
 	<target name="build-service-portlet-ratings">
 		<antcall target="build-service">
 			<param name="service.file" value="${basedir}/src/com/liferay/portlet/ratings/service.xml" />
@@ -303,7 +305,6 @@ svn://svn.liferay.com/repos/public/alloy/trunk/sandbox/taglibs.
 		<antcall target="build-service-portlet-documentlibrary" />
 		<antcall target="build-service-portlet-expando" />
 		<antcall target="build-service-portlet-exportimport" />
-		<antcall target="build-service-portlet-messageboards" />
 		<antcall target="build-service-portlet-ratings" />
 		<antcall target="build-service-portlet-social" />
 	</target>
@@ -313,9 +314,11 @@ svn://svn.liferay.com/repos/public/alloy/trunk/sandbox/taglibs.
 		<antcall target="build-service-portal" />
 		<antcall target="build-service-portlets" />
 
-		<gradle-execute dir="../modules" task="buildService">
+		<gradle-execute dir="../modules" forcedcacheenabled="false" task="buildService">
+			<arg value="--continue" />
+			<arg unless:true="${build.services.baseline.enabled}" value="--exclude-task" />
+			<arg unless:true="${build.services.baseline.enabled}" value="baseline" />
 			<arg value="-DbuildService.skipReadOnly=${build.services.skip.read.only}" />
-			<arg value="-Pcom.liferay.portal.tools.service.builder.ignore.local=false" />
 		</gradle-execute>
 	</target>
 
@@ -328,7 +331,10 @@ svn://svn.liferay.com/repos/public/alloy/trunk/sandbox/taglibs.
 				<antcall target="prepare-upgrade-table" />
 
 				<path id="upgrade.table.builder.classpath">
-					<fileset dir="${sdk.dir}/dependencies/com.liferay.portal.tools.upgrade.table.builder/lib" includes="*.jar" />
+					<fileset
+						dir="${sdk.dir}/dependencies/com.liferay.portal.tools.upgrade.table.builder/lib"
+						includes="*.jar"
+					/>
 				</path>
 
 				<java
@@ -337,9 +343,10 @@ svn://svn.liferay.com/repos/public/alloy/trunk/sandbox/taglibs.
 					fork="true"
 					newenvironment="true"
 				>
+					<jvmarg if:true="${jvm.debug}" value="${jpda.settings}" />
 					<arg value="upgrade.base.dir=." />
 					<arg value="upgrade.osgi.module=false" />
-					<arg value="upgrade.release.info.file=../portal-kernel/src/com/liferay/portal/kernel/util/ReleaseInfo.java" />
+					<arg value="upgrade.release.info.version=${release.info.version}" />
 					<arg value="upgrade.table.dir=${upgrade.table.dir}" />
 				</java>
 			</then>
@@ -348,7 +355,10 @@ svn://svn.liferay.com/repos/public/alloy/trunk/sandbox/taglibs.
 
 	<target depends="compile" name="build-wsdd">
 		<path id="wsdd.builder.classpath">
-			<fileset dir="${sdk.dir}/dependencies/com.liferay.portal.tools.wsdd.builder/lib" includes="*.jar" />
+			<fileset
+				dir="${sdk.dir}/dependencies/com.liferay.portal.tools.wsdd.builder/lib"
+				includes="*.jar"
+			/>
 			<path refid="project.classpath" />
 		</path>
 
@@ -395,12 +405,6 @@ svn://svn.liferay.com/repos/public/alloy/trunk/sandbox/taglibs.
 		</antcall>
 	</target>
 
-	<target name="build-wsdd-portlet-blogs">
-		<antcall target="build-wsdd">
-			<param name="service.file" value="${basedir}/src/com/liferay/portlet/blogs/service.xml" />
-		</antcall>
-	</target>
-
 	<target name="build-wsdd-portlet-calendar">
 		<antcall target="build-wsdd">
 			<param name="service.file" value="${basedir}/src/com/liferay/portlet/calendar/service.xml" />
@@ -425,12 +429,6 @@ svn://svn.liferay.com/repos/public/alloy/trunk/sandbox/taglibs.
 		</antcall>
 	</target>
 
-	<target name="build-wsdd-portlet-messageboards">
-		<antcall target="build-wsdd">
-			<param name="service.file" value="${basedir}/src/com/liferay/portlet/messageboards/service.xml" />
-		</antcall>
-	</target>
-
 	<target name="build-wsdd-portlet-ratings">
 		<antcall target="build-wsdd">
 			<param name="service.file" value="${basedir}/src/com/liferay/portlet/ratings/service.xml" />
@@ -446,11 +444,9 @@ svn://svn.liferay.com/repos/public/alloy/trunk/sandbox/taglibs.
 	<target name="build-wsdd-portlets">
 		<antcall target="build-wsdd-portlet-announcements" />
 		<antcall target="build-wsdd-portlet-asset" />
-		<antcall target="build-wsdd-portlet-blogs" />
 		<antcall target="build-wsdd-portlet-documentlibrary" />
 		<antcall target="build-wsdd-portlet-expando" />
 		<antcall target="build-wsdd-portlet-exportimport" />
-		<antcall target="build-wsdd-portlet-messageboards" />
 		<antcall target="build-wsdd-portlet-ratings" />
 		<antcall target="build-wsdd-portlet-social" />
 	</target>
@@ -465,11 +461,17 @@ svn://svn.liferay.com/repos/public/alloy/trunk/sandbox/taglibs.
 	<target name="build-yui-compressor-jar">
 		<setup-libs />
 
-		<taskdef classname="com.tonicsystems.jarjar.JarJarTask" classpath="${project.dir}/lib/development/jarjar.jar" name="jarjar" />
+		<taskdef
+			classname="com.tonicsystems.jarjar.JarJarTask"
+			classpath="${project.dir}/lib/development/jarjar.jar"
+			name="jarjar"
+		/>
 
 		<jarjar jarfile="${project.dir}/lib/portal/liferay-yui-compressor.jar.new">
 			<rule pattern="org.mozilla.**" result="com.yahoo.platform.yui.mozilla.@1" />
-			<zipfileset src="${project.dir}/tools/yuicompressor-2.4.7.jar" />
+			<zipfileset
+				src="${project.dir}/tools/yuicompressor-2.4.7.jar"
+			/>
 		</jarjar>
 	</target>
 
@@ -524,91 +526,316 @@ svn://svn.liferay.com/repos/public/alloy/trunk/sandbox/taglibs.
 			<then>
 				<delete failonerror="false" file="${deploy.dir}/${jar.file}" />
 
-				<unjar dest="${app.server.classes.portal.dir}" src="portal-impl.jar" />
+				<unjar
+					dest="${app.server.classes.portal.dir}"
+					src="portal-impl.jar"
+				/>
 			</then>
 			<else>
-				<copy file="${jar.file}.jar" preservelastmodified="true" todir="${deploy.dir}" />
+				<copy
+					file="${jar.file}.jar"
+					preservelastmodified="true"
+					todir="${deploy.dir}"
+				/>
 
-				<copy file="classes/log4j.properties" preservelastmodified="true" todir="${app.server.classes.portal.dir}" />
-				<copy file="classes/logging.properties" preservelastmodified="true" todir="${app.server.classes.portal.dir}" />
+				<copy
+					file="classes/log4j.properties"
+					preservelastmodified="true"
+					todir="${app.server.classes.portal.dir}"
+				/>
+				<copy
+					file="classes/logging.properties"
+					preservelastmodified="true"
+					todir="${app.server.classes.portal.dir}"
+				/>
 			</else>
 		</if>
 	</target>
 
 	<target name="format-source">
-		<path id="source.formatter.classpath">
-			<fileset dir="${sdk.dir}/dependencies/com.liferay.source.formatter/lib" includes="*.jar" />
-			<path refid="project.classpath" />
-		</path>
+		<antcall target="format-source-files">
+			<param name="format.source.default.task" value="true" />
+		</antcall>
+	</target>
 
-		<if>
-			<not>
-				<isset property="source.formatter.dir" />
-			</not>
-			<then>
-				<property name="source.formatter.dir" value="${project.dir}" />
-			</then>
-		</if>
-
-		<java
-			classname="com.liferay.source.formatter.SourceFormatter"
-			classpathref="source.formatter.classpath"
-			dir="${source.formatter.dir}"
-			failonerror="${source.fail.on.error}"
-			fork="true"
-			newenvironment="true"
-		>
-			<jvmarg if:true="${jvm.debug}" value="${jpda.settings}" />
-			<jvmarg value="-Xmx512m" />
-			<jvmarg value="-Xss2048k" />
-			<jvmarg value="-Dsource.formatter.check.registry.in.test.classes=${source.formatter.check.registry.in.test.classes}" />
-			<jvmarg value="-Dsource.formatter.excludes=${source.formatter.excludes}" />
-			<arg value="format.current.branch=${format.current.branch}" />
-			<arg value="format.latest.author=${format.latest.author}" />
-			<arg value="format.local.changes=${format.local.changes}" />
-			<arg value="git.working.branch.name=${git.working.branch.name}" />
-			<arg value="include.subrepositories=${source.formatter.include.subrepositories}" />
-			<arg value="max.line.length=${source.formatter.max.line.length}" />
-			<arg value="processor.thread.count=${source.formatter.processor.thread.count}" />
-			<arg value="show.documentation=${source.formatter.show.documentation}" />
-			<arg value="source.auto.fix=${source.auto.fix}" />
-			<arg value="source.base.dir=${source.base.dir}" />
-			<arg value="source.file.extensions=${source.file.extensions}" />
-			<arg value="source.files=${source.files}" />
-			<arg value="source.print.errors=${source.print.errors}" />
-			<arg value="source.throw.exception=${source.throw.exception}" />
-		</java>
-
-		<delete file="ServiceBuilder.temp" />
+	<target name="format-source-all">
+		<antcall target="format-source-files" />
 	</target>
 
 	<target name="format-source-bnd">
-		<antcall target="format-source">
-			<param name="source.file.extensions" value="bnd,gradle" />
+		<antcall target="format-source-files">
+			<param name="source.file.extensions" value="bnd,gradle,json" />
 		</antcall>
 	</target>
 
 	<target name="format-source-current-branch">
-		<antcall target="format-source">
+		<antcall target="format-source-files">
 			<param name="format.current.branch" value="true" />
 		</antcall>
 	</target>
 
+	<target name="format-source-current-branch-debug">
+		<antcall target="format-source-current-branch">
+			<param name="source.formatter.show.debug.information" value="true" />
+		</antcall>
+	</target>
+
+	<target name="format-source-debug">
+		<antcall target="format-source-files">
+			<param name="source.formatter.show.debug.information" value="true" />
+		</antcall>
+	</target>
+
+	<target name="format-source-files">
+		<exec executable="git" failonerror="true" outputproperty="current.branch.name">
+			<arg value="rev-parse" />
+			<arg value="--abbrev-ref" />
+			<arg value="HEAD" />
+		</exec>
+
+		<path id="source.formatter.classpath">
+			<fileset
+				dir="${sdk.dir}/dependencies/com.liferay.source.formatter/lib"
+				includes="*.jar"
+			/>
+			<path refid="project.classpath" />
+		</path>
+
+		<if>
+			<equals arg1="${current.branch.name}" arg2="${git.working.branch.name}" />
+			<then>
+				<if>
+					<isset property="format.current.branch" />
+					<then>
+						<property name="source.formatter.message" value="The current branch is the same as the working branch (${git.working.branch.name}).${line.separator}Not executing Source Formatter task." />
+						<property name="source.formatter.skip" value="true" />
+					</then>
+				</if>
+			</then>
+			<else>
+				<java
+					classname="com.liferay.portal.tools.GitUtil"
+					classpathref="source.formatter.classpath"
+					dir="${project.dir}"
+					fork="true"
+					newenvironment="true"
+					outputProperty="baseline.current.branch.file.names"
+					resultproperty="baseline.current.branch.result"
+				>
+					<arg value="git.type=current-branch" />
+					<arg value="git.working.branch.name=${git.working.branch.name}" />
+				</java>
+
+				<if>
+					<and>
+						<not>
+							<equals arg1="${baseline.current.branch.file.names}" arg2="" />
+						</not>
+						<equals arg1="${baseline.current.branch.result}" arg2="0" />
+					</and>
+					<then>
+						<if>
+							<isset property="format.source.default.task" />
+							<then>
+								<property name="format.current.branch" value="true" />
+								<property name="source.formatter.message" value="Running SourceFormatter on added/modified files in the current branch (${current.branch.name}) only. Please run the following command to run SourceFormatter on all files:${line.separator}${line.separator}ant format-source-all" />
+								<property name="validate.commit.messages" value="true" />
+							</then>
+						</if>
+
+						<if>
+							<not>
+								<matches pattern="\.(js|json|jsp|jspf|scss|ts|tsx)(${line.separator}|$)" string="${baseline.current.branch.file.names}" />
+							</not>
+							<then>
+								<property name="skip.node.task" value="true" />
+							</then>
+						</if>
+
+						<if>
+							<not>
+								<matches pattern="\.py(${line.separator}|$)" string="${baseline.current.branch.file.names}" />
+							</not>
+							<then>
+								<property name="skip.format.python" value="true" />
+							</then>
+						</if>
+					</then>
+					<else>
+						<if>
+							<isset property="format.source.default.task" />
+							<then>
+								<property name="source.formatter.message" value="There are no modified files on the current branch (${current.branch.name}).${line.separator}Executing Source Formatter task on all files." />
+							</then>
+							<else>
+								<if>
+									<isset property="format.current.branch" />
+									<then>
+										<property name="source.formatter.message" value="There are no modified files on the current branch (${current.branch.name}).${line.separator}Not executing Source Formatter task." />
+										<property name="source.formatter.skip" value="true" />
+									</then>
+								</if>
+							</else>
+						</if>
+					</else>
+				</if>
+			</else>
+		</if>
+
+		<if>
+			<isset property="source.formatter.message" />
+			<then>
+				<echo></echo>
+				<echo>${source.formatter.message}</echo>
+				<echo></echo>
+			</then>
+		</if>
+
+		<if>
+			<not>
+				<isset property="source.formatter.skip" />
+			</not>
+			<then>
+				<if>
+					<not>
+						<isset property="source.formatter.dir" />
+					</not>
+					<then>
+						<property name="source.formatter.dir" value="${project.dir}" />
+					</then>
+				</if>
+
+				<java
+					classname="com.liferay.source.formatter.SourceFormatter"
+					classpathref="source.formatter.classpath"
+					dir="${source.formatter.dir}"
+					failonerror="true"
+					fork="true"
+					newenvironment="true"
+				>
+					<jvmarg if:true="${jvm.debug}" value="${jpda.settings}" />
+					<jvmarg value="-Xmx512m" />
+					<jvmarg value="-Xss2048k" />
+					<jvmarg value="-Dsource.formatter.check.registry.in.test.classes=${source.formatter.check.registry.in.test.classes}" />
+					<jvmarg value="-Dsource.formatter.excludes=${source.formatter.excludes}" />
+					<arg value="format.current.branch=${format.current.branch}" />
+					<arg value="format.latest.author=${format.latest.author}" />
+					<arg value="format.local.changes=${format.local.changes}" />
+					<arg value="git.working.branch.name=${git.working.branch.name}" />
+					<arg value="include.subrepositories=${source.formatter.include.subrepositories}" />
+					<arg value="max.line.length=${source.formatter.max.line.length}" />
+					<arg value="processor.thread.count=${source.formatter.processor.thread.count}" />
+					<arg value="show.debug.information=${source.formatter.show.debug.information}" />
+					<arg value="show.documentation=${source.formatter.show.documentation}" />
+					<arg value="source.auto.fix=${source.auto.fix}" />
+					<arg value="source.base.dir=${source.base.dir}" />
+					<arg value="source.check.name=${source.check.name}" />
+					<arg value="source.fail.on.auto.fix=${source.fail.on.auto.fix}" />
+					<arg value="source.fail.on.has.warning=${source.fail.on.has.warning}" />
+					<arg value="source.file.extensions=${source.file.extensions}" />
+					<arg value="source.files=${source.files}" />
+					<arg value="source.print.errors=${source.print.errors}" />
+					<arg value="validate.commit.messages=${validate.commit.messages}" />
+				</java>
+
+				<delete file="ServiceBuilder.temp" />
+
+				<if>
+					<and>
+						<not>
+							<or>
+								<isset property="skip.node.task" />
+								<isset property="source.file.extensions" />
+								<isset property="source.files" />
+							</or>
+						</not>
+						<resourcecount count="0" when="greater">
+							<fileset
+								dir="${project.dir}/modules"
+								excludes="**/.gradle/,**/bin/,**/build/,**/classes/,**/node_modules/,**/tmp/"
+								includes="**/yarn.lock"
+							/>
+						</resourcecount>
+					</and>
+					<then>
+						<if>
+							<and>
+								<isset property="source.auto.fix" />
+								<isfalse value="${source.auto.fix}" />
+							</and>
+							<then>
+								<gradle-execute dir="${project.dir}/modules" task=":portalYarnCheckFormat">
+									<env key="LIFERAY_NPM_SCRIPTS_WORKING_BRANCH_NAME" value="${git.working.branch.name}" />
+								</gradle-execute>
+							</then>
+							<else>
+								<gradle-execute dir="${project.dir}/modules" task=":portalYarnFormat">
+									<env key="LIFERAY_NPM_SCRIPTS_WORKING_BRANCH_NAME" value="${git.working.branch.name}" />
+								</gradle-execute>
+							</else>
+						</if>
+					</then>
+				</if>
+
+				<if>
+					<not>
+						<isset property="skip.format.python" />
+					</not>
+					<then>
+						<if>
+							<and>
+								<isset property="source.auto.fix" />
+								<isfalse value="${source.auto.fix}" />
+							</and>
+							<then>
+								<gradle-execute dir="${project.dir}/modules" task=":checkPythonFormatting">
+									<arg value="--build-file=${project.dir}/modules/util.gradle" />
+									<arg value="-DcheckPythonFormatting.base.dir=.." />
+								</gradle-execute>
+							</then>
+							<else>
+								<gradle-execute dir="${project.dir}/modules" task=":formatPython">
+									<arg value="--build-file=${project.dir}/modules/util.gradle" />
+									<arg value="-DformatPython.base.dir=.." />
+								</gradle-execute>
+							</else>
+						</if>
+					</then>
+				</if>
+			</then>
+		</if>
+	</target>
+
 	<target name="format-source-latest-author">
-		<antcall target="format-source">
+		<antcall target="format-source-files">
 			<param name="format.latest.author" value="true" />
 		</antcall>
 	</target>
 
+	<target name="format-source-latest-author-debug">
+		<antcall target="format-source-latest-author">
+			<param name="source.formatter.show.debug.information" value="true" />
+		</antcall>
+	</target>
+
 	<target name="format-source-local-changes">
-		<antcall target="format-source">
+		<antcall target="format-source-files">
 			<param name="format.local.changes" value="true" />
+		</antcall>
+	</target>
+
+	<target name="format-source-local-changes-debug">
+		<antcall target="format-source-local-changes">
+			<param name="source.formatter.show.debug.information" value="true" />
 		</antcall>
 	</target>
 
 	<target name="format-tld">
 		<path id="tld.formatter.classpath">
-			<fileset dir="${sdk.dir}/dependencies/com.liferay.tld.formatter/lib" includes="*.jar" />
+			<fileset
+				dir="${sdk.dir}/dependencies/com.liferay.tld.formatter/lib"
+				includes="*.jar"
+			/>
 		</path>
 
 		<java
@@ -626,11 +853,19 @@ svn://svn.liferay.com/repos/public/alloy/trunk/sandbox/taglibs.
 	</target>
 
 	<target depends="build-common-java.init-compile" name="init-compile">
-		<copy preservelastmodified="true" todir="${portal-impl.classes.dir}/com/liferay/portal/definitions">
-			<fileset dir="${project.dir}/definitions" />
+		<copy
+			preservelastmodified="true"
+			todir="${portal-impl.classes.dir}/com/liferay/portal/definitions"
+		>
+			<fileset
+				dir="${project.dir}/definitions"
+			/>
 		</copy>
 
-		<copy preservelastmodified="true" todir="${portal-impl.classes.dir}/com/liferay/portal/deploy/dependencies">
+		<copy
+			preservelastmodified="true"
+			todir="${portal-impl.classes.dir}/com/liferay/portal/deploy/dependencies"
+		>
 			<fileset
 				dir="${project.dir}/classes"
 				includes="*.properties"
@@ -641,18 +876,35 @@ svn://svn.liferay.com/repos/public/alloy/trunk/sandbox/taglibs.
 			/>
 		</copy>
 
-		<copy preservelastmodified="true" todir="${portal-impl.classes.dir}/com/liferay/portal/tools/sql/dependencies">
+		<copy
+			preservelastmodified="true"
+			todir="${portal-impl.classes.dir}/com/liferay/portal/tools/sql/dependencies"
+		>
 			<fileset
 				dir="${project.dir}/sql"
-				includes="portal-data-common.sql,portal-data-counter.sql,portal-data-release.sql,portal-tables.sql,indexes.properties,indexes.sql,sequences.sql,update-*.sql"
+				includes="portal-data-common.sql,portal-data-counter.sql,portal-tables.sql,indexes.properties,indexes.sql,sequences.sql,update-*.sql"
 			/>
 		</copy>
 
-		<copy file="${project.dir}/classes/log4j.properties" preservelastmodified="true" todir="${portal-impl.classes.dir}" />
-		<copy file="${project.dir}/classes/logging.properties" preservelastmodified="true" todir="${portal-impl.classes.dir}" />
+		<copy
+			file="${project.dir}/classes/log4j.properties"
+			preservelastmodified="true"
+			todir="${portal-impl.classes.dir}"
+		/>
+		<copy
+			file="${project.dir}/classes/logging.properties"
+			preservelastmodified="true"
+			todir="${portal-impl.classes.dir}"
+		/>
 
-		<copy preservelastmodified="true" todir="${portal-impl.classes.dir}">
-			<fileset dir="src" excludes="**/*.java,**/META-INF/javadocs-all*.xml" />
+		<copy
+			preservelastmodified="true"
+			todir="${portal-impl.classes.dir}"
+		>
+			<fileset
+				dir="src"
+				excludes="**/*.java,**/META-INF/javadocs-all*.xml"
+			/>
 		</copy>
 	</target>
 
@@ -668,7 +920,10 @@ svn://svn.liferay.com/repos/public/alloy/trunk/sandbox/taglibs.
 				<if>
 					<available file="${portal.deploy.dependencies.dir}/plugins@{index}" />
 					<then>
-						<fileset dir="${portal.deploy.dependencies.dir}/plugins@{index}" id="plugins@{index}.wars">
+						<fileset
+							dir="${portal.deploy.dependencies.dir}/plugins@{index}"
+							id="plugins@{index}.wars"
+						>
 							<include name="*.war" />
 						</fileset>
 
@@ -678,7 +933,9 @@ svn://svn.liferay.com/repos/public/alloy/trunk/sandbox/taglibs.
 
 						<if>
 							<not>
-								<uptodate targetfile="${jar.file}.jar">
+								<uptodate
+									targetfile="${jar.file}.jar"
+								>
 									<srcfiles dir="${portal.deploy.dependencies.dir}/plugins@{index}" includes="**/*.*" />
 								</uptodate>
 							</not>
@@ -744,7 +1001,9 @@ svn://svn.liferay.com/repos/public/alloy/trunk/sandbox/taglibs.
 								<include name="**/*ModelImpl.java" />
 								<include name="**/sql/indexes.sql" />
 							</patternset>
-							<mapper type="flatten" />
+							<mapper
+								type="flatten"
+							/>
 						</unzip>
 					</then>
 				</if>
@@ -773,8 +1032,8 @@ svn://svn.liferay.com/repos/public/alloy/trunk/sandbox/taglibs.
 		<java
 			classname="com.liferay.portal.tools.PluginsGitSvnSyncer"
 			classpathref="project.classpath"
-			newenvironment="true"
 			fork="true"
+			newenvironment="true"
 		>
 			<jvmarg value="-Dgit.plugins.dir=L:/projects/github/liferay-plugins" />
 			<jvmarg value="-Dsvn.plugins.dir=L:/projects/liferay.public/plugins/trunk" />
@@ -791,209 +1050,6 @@ svn://svn.liferay.com/repos/public/alloy/trunk/sandbox/taglibs.
 		>
 			<jvmarg value="-Xmx128m" />
 		</java>
-	</target>
-
-	<target name="update-from-plugins-test-pacl-portlet">
-
-		<!-- Copy Java files -->
-
-		<copy overwrite="true" todir="test/integration/com/liferay/portal/security/pacl/test">
-			<fileset
-				dir="${lp.plugins.dir}/portlets/test-pacl-portlet/docroot/WEB-INF/src/com/liferay/testpacl"
-				includes="hook/**,messaging/**"
-			/>
-			<filterchain>
-				<tokenfilter>
-					<replacestring from="com.liferay.testpacl" to="com.liferay.portal.security.pacl.test" />
-				</tokenfilter>
-			</filterchain>
-		</copy>
-
-		<!-- Update TestPACLMessageListener.java -->
-
-		<replace file="test/integration/com/liferay/portal/security/pacl/test/messaging/TestPACLMessageListener.java">
-			<replacetoken><![CDATA[import com.liferay.portal.security.pacl.test.util.TestPACLUtil;]]></replacetoken>
-			<replacevalue><![CDATA[import com.liferay.portal.kernel.model.User;
-import com.liferay.portal.kernel.service.PortalServiceUtil;
-import com.liferay.portal.kernel.service.UserLocalServiceUtil;
-import com.liferay.portal.kernel.test.util.TestPropsValues;
-
-import java.util.HashMap;]]></replacevalue>
-		</replace>
-
-		<replace file="test/integration/com/liferay/portal/security/pacl/test/messaging/TestPACLMessageListener.java">
-			<replacetoken><![CDATA[protected Map<String, Boolean> getResults(Message message) {]]></replacetoken>
-			<replacevalue><![CDATA[protected Map<String, Object> getResults(Message message) throws Exception {
-		Map<String, Object> results = new HashMap<String, Object>();
-
-		try {
-			int buildNumber = PortalServiceUtil.getBuildNumber();
-
-			results.put("PortalServiceUtil#getBuildNumber", buildNumber);
-		}
-		catch (SecurityException se) {
-		}
-
-		try {
-			User user = UserLocalServiceUtil.getUser(
-				TestPropsValues.getUserId());
-
-			results.put("UserLocalServiceUtil#getUser", user);
-		}
-		catch (SecurityException se) {
-		}
-
-		return results;
-	}]]></replacevalue>
-		</replace>
-
-		<replaceregexp
-			flags="s"
-			file="test/integration/com/liferay/portal/security/pacl/test/messaging/TestPACLMessageListener.java"
-			match="long userId = (.*)"
-			replace="${line.separator}}"
-		/>
-
-		<!-- Copy WEB-INF files -->
-
-		<copy overwrite="true" todir="test/integration/com/liferay/portal/security/pacl/test/dependencies">
-			<fileset
-				dir="${lp.plugins.dir}/portlets/test-pacl-portlet/docroot"
-				includes="WEB-INF/liferay-hook.xml,WEB-INF/liferay-plugin-package.properties"
-			/>
-			<filterchain>
-				<tokenfilter>
-					<replacestring from="com.liferay.testpacl" to="com.liferay.portal.security.pacl.test" />
-				</tokenfilter>
-			</filterchain>
-		</copy>
-
-		<!-- Update liferay-plugin-package.properties -->
-
-		<replace file="test/integration/com/liferay/portal/security/pacl/test/dependencies/WEB-INF/liferay-plugin-package.properties">
-			<replacetoken>Test Portal Access Control List</replacetoken>
-			<replacevalue>A Test</replacevalue>
-		</replace>
-
-		<replaceregexp
-			flags="g"
-			file="test/integration/com/liferay/portal/security/pacl/test/dependencies/WEB-INF/liferay-plugin-package.properties"
-			match="(portal-dependency-jars|portal-dependency-tlds|required-deployment-contexts)=(\\\n[^\\\n]+)*\n\n"
-			replace=""
-		/>
-
-		<replace file="test/integration/com/liferay/portal/security/pacl/test/dependencies/WEB-INF/liferay-plugin-package.properties">
-			<replacetoken>security-manager-enabled=true</replacetoken>
-			<replacevalue>security-manager-enabled=true
-
-security-manager-awt-operations=\
-    accessEventQueue</replacevalue>
-		</replace>
-
-		<replaceregexp
-			flags="g"
-			file="test/integration/com/liferay/portal/security/pacl/test/dependencies/WEB-INF/liferay-plugin-package.properties"
-			match="security-manager-files-(delete|execute|write)=(\\\n[^\\\n]+)*(?=\n\n)"
-			replace="security-manager-files-\1="
-		/>
-
-		<replace file="test/integration/com/liferay/portal/security/pacl/test/dependencies/WEB-INF/liferay-plugin-package.properties">
-			<replacetoken>security-manager-files-delete=</replacetoken>
-			<replacevalue>security-manager-files-delete=\
-    ${liferay.home}${/}pacl-test${/}-</replacevalue>
-		</replace>
-
-		<replaceregexp
-			flags="g"
-			file="test/integration/com/liferay/portal/security/pacl/test/dependencies/WEB-INF/liferay-plugin-package.properties"
-			match="security-manager-files-read=(\\\n[^\\\n]+)*(\\\n\s*\\)(?=\n[ ]{4}/bin/bash)"
-			replace="security-manager-files-read=\2"
-		/>
-
-		<replace file="test/integration/com/liferay/portal/security/pacl/test/dependencies/WEB-INF/liferay-plugin-package.properties">
-			<replacetoken>security-manager-files-read=</replacetoken>
-			<replacevalue>security-manager-files-read=\
-    ${env:JAVA_HOME}${/},\
-    ${java.home}${/}bin${/}java,\
-    ${java.home}${/}bin${/}java.exe,\
-    ${liferay.home}${/}pacl-test${/},\
-    ${liferay.home}${/}pacl-test${/}-,</replacevalue>
-		</replace>
-
-		<replace file="test/integration/com/liferay/portal/security/pacl/test/dependencies/WEB-INF/liferay-plugin-package.properties">
-			<replacetoken>security-manager-files-write=</replacetoken>
-			<replacevalue>security-manager-files-write=\
-    ${liferay.home}${/}pacl-test${/},\
-    ${liferay.home}${/}pacl-test${/}-</replacevalue>
-		</replace>
-
-		<replace file="test/integration/com/liferay/portal/security/pacl/test/dependencies/WEB-INF/liferay-plugin-package.properties">
-			<replacetoken>security-manager-get-bean-property[portal]=</replacetoken>
-			<replacevalue>security-manager-get-bean-property=</replacevalue>
-		</replace>
-
-		<replaceregexp
-			flags="g"
-			file="test/integration/com/liferay/portal/security/pacl/test/dependencies/WEB-INF/liferay-plugin-package.properties"
-			match="(security-manager-get-bean-property=)([\s\S]*?)(,\\\n[ ]{4})(?=com.liferay.portal.kernel.util.PortalUtil)"
-			replace="\1\2\3com.liferay.portal.kernel.util.InfrastructureUtil\3"
-		/>
-
-		<replace file="test/integration/com/liferay/portal/security/pacl/test/dependencies/WEB-INF/liferay-plugin-package.properties">
-			<replacetoken>security-manager-hook-custom-jsp-dir-enabled=false</replacetoken>
-			<replacevalue>security-manager-get-bean-property[portal]=\
-    com.liferay.portal.kernel.xml.SAXReader
-
-security-manager-get-bean-property[flash-portlet]=\
-    com.liferay.portal.kernel.bean.PortletBeanLocatorUtil#liferayDataSource
-
-security-manager-hook-custom-jsp-dir-enabled=false</replacevalue>
-		</replace>
-
-		<replaceregexp
-			flags="g"
-			file="test/integration/com/liferay/portal/security/pacl/test/dependencies/WEB-INF/liferay-plugin-package.properties"
-			match="(security-manager-services\[portal\]=)([\s\S]*?)(,\\\n[ ]{4})(?=com.liferay.portal.kernel.service.ResourceLocalService)"
-			replace="\1\2\3com.liferay.portal.kernel.service.PortletPreferencesLocalService#getStrictPreferences\3com.liferay.portal.kernel.service.UserLocalService#getDefaultUser\3"
-		/>
-
-		<replace file="test/integration/com/liferay/portal/security/pacl/test/dependencies/WEB-INF/liferay-plugin-package.properties">
-			<replacetoken>security-manager-sockets-accept=\</replacetoken>
-			<replacevalue>security-manager-set-bean-property[flash-portlet]=\
-    com.liferay.portal.kernel.bean.PortletBeanLocatorUtil
-
-security-manager-sockets-accept=\</replacevalue>
-		</replace>
-
-		<!-- Copy WEB-INF/classes files -->
-
-		<copy overwrite="true" todir="test/integration/com/liferay/portal/security/pacl/test/dependencies/WEB-INF/classes">
-			<fileset
-				dir="${lp.plugins.dir}/portlets/test-pacl-portlet/docroot/WEB-INF/src"
-				includes="portal.properties,content/**,META-INF/base-spring.xml,META-INF/hibernate-spring.xml,META-INF/infrastructure-spring.xml,META-INF/messaging-spring.xml"
-			/>
-			<filterchain>
-				<tokenfilter>
-					<replacestring from="com.liferay.testpacl" to="com.liferay.portal.security.pacl.test" />
-				</tokenfilter>
-			</filterchain>
-		</copy>
-
-		<!-- Update hibernate-spring.xml -->
-
-		<replace file="test/integration/com/liferay/portal/security/pacl/test/dependencies/WEB-INF/classes/META-INF/hibernate-spring.xml">
-			<replacetoken><![CDATA[<bean class="com.liferay.portal.kernel.spring.util.SpringFactoryUtil" factory-method="newBean" id="liferayHibernateSessionFactory">]]></replacetoken>
-			<replacevalue><![CDATA[<bean class="com.liferay.portal.spring.hibernate.PortletHibernateConfiguration" id="liferayHibernateSessionFactory">
-		<property name="dataSource" ref="liferayDataSource" />
-	</bean>]]></replacevalue>
-		</replace>
-
-		<replaceregexp
-			flags="s"
-			file="test/integration/com/liferay/portal/security/pacl/test/dependencies/WEB-INF/classes/META-INF/hibernate-spring.xml"
-			match="&lt;/bean(.*)&lt;bean id=&quot;liferaySessionFactory"
-			replace="&lt;/bean>${line.separator}&#x9;&lt;bean id=&quot;liferaySessionFactory"
-		/>
 	</target>
 
 	<target name="upgrade-db">

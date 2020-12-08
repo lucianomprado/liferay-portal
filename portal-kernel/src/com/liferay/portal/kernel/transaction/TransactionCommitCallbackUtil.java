@@ -14,9 +14,9 @@
 
 package com.liferay.portal.kernel.transaction;
 
+import com.liferay.petra.lang.CentralizedThreadLocal;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.util.AutoResetThreadLocal;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -42,9 +42,10 @@ public class TransactionCommitCallbackUtil {
 					try {
 						callable.call();
 					}
-					catch (Exception e) {
+					catch (Exception exception) {
 						_log.error(
-							"Unable to execute transaction commit callback", e);
+							"Unable to execute transaction commit callback",
+							exception);
 					}
 				}
 			}
@@ -79,8 +80,8 @@ public class TransactionCommitCallbackUtil {
 			try {
 				callable.call();
 			}
-			catch (Exception e) {
-				throw new RuntimeException(e);
+			catch (Exception exception) {
+				throw new RuntimeException(exception);
 			}
 		}
 		else {
@@ -116,16 +117,9 @@ public class TransactionCommitCallbackUtil {
 		TransactionCommitCallbackUtil.class);
 
 	private static final ThreadLocal<List<List<Callable<?>>>>
-		_callbackListListThreadLocal =
-			new AutoResetThreadLocal<List<List<Callable<?>>>>(
-				TransactionCommitCallbackUtil.class +
-					"._callbackListListThreadLocal") {
-
-				@Override
-				protected List<List<Callable<?>>> initialValue() {
-					return new ArrayList<>();
-				}
-
-			};
+		_callbackListListThreadLocal = new CentralizedThreadLocal<>(
+			TransactionCommitCallbackUtil.class +
+				"._callbackListListThreadLocal",
+			ArrayList::new);
 
 }

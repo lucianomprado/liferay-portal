@@ -14,9 +14,9 @@
 
 package com.liferay.aspectj.hibernate.unexpected.row.count;
 
+import com.liferay.petra.reflect.ReflectionUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.util.ReflectionUtil;
 
 import java.lang.reflect.Field;
 
@@ -48,8 +48,8 @@ public class HibernateUnexpectedRowCountAspect {
 				"batchUpdateSQL = " + _batchUpdateSQLField.get(batchingBatcher),
 				runtimeException);
 		}
-		catch (ReflectiveOperationException roe) {
-			runtimeException.addSuppressed(roe);
+		catch (ReflectiveOperationException reflectiveOperationException) {
+			runtimeException.addSuppressed(reflectiveOperationException);
 		}
 	}
 
@@ -63,8 +63,8 @@ public class HibernateUnexpectedRowCountAspect {
 			_batchUpdateSQLField = ReflectionUtil.getDeclaredField(
 				AbstractBatcher.class, "batchUpdateSQL");
 		}
-		catch (Exception e) {
-			throw new ExceptionInInitializerError(e);
+		catch (Exception exception) {
+			throw new ExceptionInInitializerError(exception);
 		}
 	}
 

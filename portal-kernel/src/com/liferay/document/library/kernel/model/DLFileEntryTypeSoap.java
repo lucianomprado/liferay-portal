@@ -14,8 +14,6 @@
 
 package com.liferay.document.library.kernel.model;
 
-import aQute.bnd.annotation.ProviderType;
-
 import java.io.Serializable;
 
 import java.util.ArrayList;
@@ -26,14 +24,17 @@ import java.util.List;
  * This class is used by SOAP remote services, specifically {@link com.liferay.portlet.documentlibrary.service.http.DLFileEntryTypeServiceSoap}.
  *
  * @author Brian Wing Shun Chan
- * @see com.liferay.portlet.documentlibrary.service.http.DLFileEntryTypeServiceSoap
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
-@ProviderType
+@Deprecated
 public class DLFileEntryTypeSoap implements Serializable {
+
 	public static DLFileEntryTypeSoap toSoapModel(DLFileEntryType model) {
 		DLFileEntryTypeSoap soapModel = new DLFileEntryTypeSoap();
 
+		soapModel.setMvccVersion(model.getMvccVersion());
+		soapModel.setCtCollectionId(model.getCtCollectionId());
 		soapModel.setUuid(model.getUuid());
 		soapModel.setFileEntryTypeId(model.getFileEntryTypeId());
 		soapModel.setGroupId(model.getGroupId());
@@ -42,6 +43,7 @@ public class DLFileEntryTypeSoap implements Serializable {
 		soapModel.setUserName(model.getUserName());
 		soapModel.setCreateDate(model.getCreateDate());
 		soapModel.setModifiedDate(model.getModifiedDate());
+		soapModel.setDataDefinitionId(model.getDataDefinitionId());
 		soapModel.setFileEntryTypeKey(model.getFileEntryTypeKey());
 		soapModel.setName(model.getName());
 		soapModel.setDescription(model.getDescription());
@@ -51,7 +53,8 @@ public class DLFileEntryTypeSoap implements Serializable {
 	}
 
 	public static DLFileEntryTypeSoap[] toSoapModels(DLFileEntryType[] models) {
-		DLFileEntryTypeSoap[] soapModels = new DLFileEntryTypeSoap[models.length];
+		DLFileEntryTypeSoap[] soapModels =
+			new DLFileEntryTypeSoap[models.length];
 
 		for (int i = 0; i < models.length; i++) {
 			soapModels[i] = toSoapModel(models[i]);
@@ -62,10 +65,12 @@ public class DLFileEntryTypeSoap implements Serializable {
 
 	public static DLFileEntryTypeSoap[][] toSoapModels(
 		DLFileEntryType[][] models) {
+
 		DLFileEntryTypeSoap[][] soapModels = null;
 
 		if (models.length > 0) {
-			soapModels = new DLFileEntryTypeSoap[models.length][models[0].length];
+			soapModels =
+				new DLFileEntryTypeSoap[models.length][models[0].length];
 		}
 		else {
 			soapModels = new DLFileEntryTypeSoap[0][0];
@@ -80,7 +85,9 @@ public class DLFileEntryTypeSoap implements Serializable {
 
 	public static DLFileEntryTypeSoap[] toSoapModels(
 		List<DLFileEntryType> models) {
-		List<DLFileEntryTypeSoap> soapModels = new ArrayList<DLFileEntryTypeSoap>(models.size());
+
+		List<DLFileEntryTypeSoap> soapModels =
+			new ArrayList<DLFileEntryTypeSoap>(models.size());
 
 		for (DLFileEntryType model : models) {
 			soapModels.add(toSoapModel(model));
@@ -98,6 +105,22 @@ public class DLFileEntryTypeSoap implements Serializable {
 
 	public void setPrimaryKey(long pk) {
 		setFileEntryTypeId(pk);
+	}
+
+	public long getMvccVersion() {
+		return _mvccVersion;
+	}
+
+	public void setMvccVersion(long mvccVersion) {
+		_mvccVersion = mvccVersion;
+	}
+
+	public long getCtCollectionId() {
+		return _ctCollectionId;
+	}
+
+	public void setCtCollectionId(long ctCollectionId) {
+		_ctCollectionId = ctCollectionId;
 	}
 
 	public String getUuid() {
@@ -164,6 +187,14 @@ public class DLFileEntryTypeSoap implements Serializable {
 		_modifiedDate = modifiedDate;
 	}
 
+	public long getDataDefinitionId() {
+		return _dataDefinitionId;
+	}
+
+	public void setDataDefinitionId(long dataDefinitionId) {
+		_dataDefinitionId = dataDefinitionId;
+	}
+
 	public String getFileEntryTypeKey() {
 		return _fileEntryTypeKey;
 	}
@@ -196,6 +227,8 @@ public class DLFileEntryTypeSoap implements Serializable {
 		_lastPublishDate = lastPublishDate;
 	}
 
+	private long _mvccVersion;
+	private long _ctCollectionId;
 	private String _uuid;
 	private long _fileEntryTypeId;
 	private long _groupId;
@@ -204,8 +237,10 @@ public class DLFileEntryTypeSoap implements Serializable {
 	private String _userName;
 	private Date _createDate;
 	private Date _modifiedDate;
+	private long _dataDefinitionId;
 	private String _fileEntryTypeKey;
 	private String _name;
 	private String _description;
 	private Date _lastPublishDate;
+
 }

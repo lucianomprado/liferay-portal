@@ -14,13 +14,13 @@
 
 package com.liferay.portal.tools;
 
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.dao.db.DBManagerImpl;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBManager;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
 import com.liferay.portal.kernel.dao.db.DBType;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 
@@ -62,7 +62,7 @@ public class HypersonicLoader {
 			sb.append(StringPool.NEW_LINE);
 		}
 
-		db.runSQLTemplateString(con, sb.toString(), false, true);
+		db.runSQLTemplateString(con, sb.toString(), true);
 	}
 
 	public static void main(String[] args) throws Exception {
@@ -71,17 +71,32 @@ public class HypersonicLoader {
 		String databaseName = arguments.get("db.database.name");
 		String sqlDir = arguments.get("db.sql.dir");
 		String fileNames = arguments.get("db.file.names");
+		String username = arguments.get("db.database.username");
+		String password = arguments.get("db.database.password");
 
 		try {
-			new HypersonicLoader(databaseName, sqlDir, fileNames);
+			new HypersonicLoader(
+				databaseName, sqlDir, fileNames, username, password);
 		}
-		catch (Exception e) {
-			ArgumentsUtil.processMainException(arguments, e);
+		catch (Exception exception) {
+			ArgumentsUtil.processMainException(arguments, exception);
 		}
 	}
 
+	/**
+	 * @deprecated As of Mueller (7.2.x), replaced by {@link
+	 *             #HypersonicLoader(String, String, String, String, String)}
+	 */
+	@Deprecated
 	public HypersonicLoader(
-			String databaseName, String sqlDir, String fileNames)
+		String databaseName, String sqlDir, String fileNames) {
+
+		throw new UnsupportedOperationException();
+	}
+
+	public HypersonicLoader(
+			String databaseName, String sqlDir, String fileNames,
+			String userName, String password)
 		throws Exception {
 
 		ToolDependencies.wireBasic();
@@ -92,9 +107,10 @@ public class HypersonicLoader {
 		// guarantees that ${databaseName}.log is purged.
 
 		try (Connection con = DriverManager.getConnection(
-				"jdbc:hsqldb:" + sqlDir + "/" + databaseName +
-					";hsqldb.write_delay=false;shutdown=true",
-				"sa", "")) {
+				StringBundler.concat(
+					"jdbc:hsqldb:", sqlDir, "/", databaseName,
+					";hsqldb.write_delay=false;shutdown=true"),
+				userName, password)) {
 
 			if (Validator.isNull(fileNames)) {
 				loadHypersonic(con, sqlDir + "/portal/portal-hypersonic.sql");

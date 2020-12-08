@@ -15,8 +15,11 @@
 package com.liferay.portal.kernel.language;
 
 /**
- * @author Drew Brokke
+ * @author     Drew Brokke
+ * @deprecated As of Athanasius (7.3.x), replaced by {@link
+ *             com.liferay.portal.kernel.language.constants.LanguageConstants}
  */
+@Deprecated
 public class LanguageConstants {
 
 	public static final String KEY_DIR = "lang.dir";
@@ -24,6 +27,12 @@ public class LanguageConstants {
 	public static final String KEY_LINE_BEGIN = "lang.line.begin";
 
 	public static final String KEY_LINE_END = "lang.line.end";
+
+	public static final String KEY_USER_DEFAULT_PORTRAIT =
+		"lang.user.default.portrait";
+
+	public static final String KEY_USER_INITIALS_FIELD_NAMES =
+		"lang.user.initials.field.names";
 
 	public static final String KEY_USER_NAME_FIELD_NAMES =
 		"lang.user.name.field.names";
@@ -38,12 +47,17 @@ public class LanguageConstants {
 		"lang.user.name.suffix.values";
 
 	public static final String[] KEYS_SPECIAL_PROPERTIES = {
-		KEY_DIR, KEY_LINE_BEGIN, KEY_LINE_END, KEY_USER_NAME_FIELD_NAMES,
+		KEY_DIR, KEY_LINE_BEGIN, KEY_LINE_END, KEY_USER_DEFAULT_PORTRAIT,
+		KEY_USER_INITIALS_FIELD_NAMES, KEY_USER_NAME_FIELD_NAMES,
 		KEY_USER_NAME_PREFIX_VALUES, KEY_USER_NAME_REQUIRED_FIELD_NAMES,
 		KEY_USER_NAME_SUFFIX_VALUES
 	};
 
 	public static final String VALUE_FIRST_NAME = "first-name";
+
+	public static final String VALUE_IMAGE = "image";
+
+	public static final String VALUE_INITIALS = "initials";
 
 	public static final String VALUE_LAST_NAME = "last-name";
 
@@ -64,6 +78,14 @@ public class LanguageConstants {
 	public static final String[] VALUES_DIR = {VALUE_LTR, VALUE_RTL};
 
 	public static final String[] VALUES_LINE = {VALUE_LEFT, VALUE_RIGHT};
+
+	public static final String[] VALUES_USER_DEFAULT_PORTRAIT = {
+		VALUE_IMAGE, VALUE_INITIALS
+	};
+
+	public static final String[] VALUES_USER_INITIALS_FIELD_NAMES = {
+		VALUE_FIRST_NAME, VALUE_LAST_NAME, VALUE_MIDDLE_NAME
+	};
 
 	public static final String[] VALUES_USER_NAME_FIELD_NAMES = {
 		VALUE_PREFIX, VALUE_FIRST_NAME, VALUE_MIDDLE_NAME, VALUE_LAST_NAME,

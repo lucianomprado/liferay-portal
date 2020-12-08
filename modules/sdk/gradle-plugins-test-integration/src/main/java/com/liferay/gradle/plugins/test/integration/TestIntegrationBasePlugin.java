@@ -15,8 +15,12 @@
 package com.liferay.gradle.plugins.test.integration;
 
 import com.liferay.gradle.plugins.test.integration.internal.util.GradleUtil;
+import com.liferay.gradle.plugins.test.integration.internal.util.ReflectionUtil;
+import com.liferay.gradle.util.FileUtil;
 
 import java.io.File;
+
+import java.lang.reflect.Method;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -26,6 +30,7 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 
 import org.gradle.api.Action;
+import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
@@ -33,6 +38,7 @@ import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.internal.ConventionMapping;
+import org.gradle.api.invocation.Gradle;
 import org.gradle.api.plugins.JavaBasePlugin;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.plugins.PluginContainer;
@@ -46,6 +52,7 @@ import org.gradle.plugins.ide.eclipse.model.EclipseModel;
 import org.gradle.plugins.ide.idea.IdeaPlugin;
 import org.gradle.plugins.ide.idea.model.IdeaModel;
 import org.gradle.plugins.ide.idea.model.IdeaModule;
+import org.gradle.util.VersionNumber;
 
 /**
  * @author Andrea Di Giorgi
@@ -142,19 +149,67 @@ public class TestIntegrationBasePlugin implements Plugin<Project> {
 
 			});
 
-		conventionMapping.map(
-			"testClassesDir",
-			new Callable<File>() {
+		final SourceSetOutput sourceSetOutput =
+			testIntegrationSourceSet.getOutput();
 
-				@Override
-				public File call() throws Exception {
-					SourceSetOutput sourceSetOutput =
-						testIntegrationSourceSet.getOutput();
+		final Method getClassesDirsMethod = ReflectionUtil.getMethod(
+			sourceSetOutput, "getClassesDirs");
 
-					return sourceSetOutput.getClassesDir();
+		if (getClassesDirsMethod != null) {
+
+			// https://github.com/gradle/gradle/issues/2343
+
+			Gradle gradle = project.getGradle();
+
+			VersionNumber versionNumber = VersionNumber.parse(
+				gradle.getGradleVersion());
+
+			if ((versionNumber.getMajor() == 4) &&
+				(versionNumber.getMinor() < 1)) {
+
+				Method setTestClassesDirsMethod = ReflectionUtil.getMethod(
+					test, "setTestClassesDirs", FileCollection.class);
+
+				try {
+					FileCollection testClassesDirs =
+						(FileCollection)getClassesDirsMethod.invoke(
+							sourceSetOutput);
+
+					setTestClassesDirsMethod.invoke(test, testClassesDirs);
 				}
+				catch (Exception exception) {
+					throw new GradleException(
+						"Unable to set the \"testClassesDirs\" property of " +
+							test,
+						exception);
+				}
+			}
 
-			});
+			conventionMapping.map(
+				"testClassesDirs",
+				new Callable<FileCollection>() {
+
+					@Override
+					public FileCollection call() throws Exception {
+						return (FileCollection)getClassesDirsMethod.invoke(
+							sourceSetOutput);
+					}
+
+				});
+		}
+		else {
+			conventionMapping.map(
+				"testClassesDir",
+				new Callable<File>() {
+
+					@Override
+					public File call() throws Exception {
+						return FileUtil.getJavaClassesDir(
+							testIntegrationSourceSet);
+					}
+
+				});
+		}
 
 		project.afterEvaluate(
 			new Action<Project>() {
@@ -265,10 +320,8 @@ public class TestIntegrationBasePlugin implements Plugin<Project> {
 	}
 
 	private void _configureTaskCheck(Test test) {
-		Project project = test.getProject();
-
 		Task task = GradleUtil.getTask(
-			project, LifecycleBasePlugin.CHECK_TASK_NAME);
+			test.getProject(), LifecycleBasePlugin.CHECK_TASK_NAME);
 
 		task.dependsOn(test);
 	}

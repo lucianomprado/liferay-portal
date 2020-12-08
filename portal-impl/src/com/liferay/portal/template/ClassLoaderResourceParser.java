@@ -14,6 +14,7 @@
 
 package com.liferay.portal.template;
 
+import com.liferay.petra.lang.ClassLoaderPool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.spring.osgi.OSGiBeanProperties;
@@ -40,15 +41,9 @@ public class ClassLoaderResourceParser extends URLResourceParser {
 		_classLoader = clazz.getClassLoader();
 	}
 
-	public ClassLoaderResourceParser(ClassLoader classLoader) {
-		_classLoader = classLoader;
-	}
-
 	@Override
-	@SuppressWarnings("deprecation")
 	public URL getURL(String templateId) {
-		if (templateId.contains(TemplateConstants.JOURNAL_SEPARATOR) ||
-			templateId.contains(TemplateConstants.SERVLET_SEPARATOR) ||
+		if (templateId.contains(TemplateConstants.SERVLET_SEPARATOR) ||
 			templateId.contains(TemplateConstants.TEMPLATE_SEPARATOR) ||
 			templateId.contains(TemplateConstants.THEME_LOADER_SEPARATOR)) {
 
@@ -59,7 +54,19 @@ public class ClassLoaderResourceParser extends URLResourceParser {
 			_log.debug("Loading " + templateId);
 		}
 
-		return _classLoader.getResource(templateId);
+		ClassLoader classLoader = _classLoader;
+
+		int pos = templateId.indexOf(TemplateConstants.CLASS_LOADER_SEPARATOR);
+
+		if (pos >= 0) {
+			classLoader = ClassLoaderPool.getClassLoader(
+				templateId.substring(0, pos));
+
+			templateId = templateId.substring(
+				pos + TemplateConstants.CLASS_LOADER_SEPARATOR.length());
+		}
+
+		return classLoader.getResource(templateId);
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(

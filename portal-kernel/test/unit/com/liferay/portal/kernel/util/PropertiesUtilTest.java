@@ -14,6 +14,7 @@
 
 package com.liferay.portal.kernel.util;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.io.unsync.UnsyncStringReader;
 
 import java.util.Properties;
@@ -46,8 +47,9 @@ public class PropertiesUtilTest {
 		}
 	}
 
-	private static final String[][] _PROPERTIES_ARRAY =
-		{{"testKey", "testValue"}, {"测试键", "测试值"}};
+	private static final String[][] _PROPERTIES_ARRAY = {
+		{"testKey", "testValue"}, {"测试键", "测试值"}
+	};
 
 	private static final String _PROPERTIES_STRING;
 

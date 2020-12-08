@@ -14,8 +14,6 @@
 
 package com.liferay.portal.kernel.template;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.portal.kernel.util.ServiceProxyFactory;
 
 import java.util.List;
@@ -23,7 +21,6 @@ import java.util.List;
 /**
  * @author Juan Fernández
  */
-@ProviderType
 public class TemplateHandlerRegistryUtil {
 
 	public static long[] getClassNameIds() {

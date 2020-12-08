@@ -1,121 +1,200 @@
-<definition component-name="portal-web-forms-and-data-lists">
-	<property name="portal.release" value="true" />
-	<property name="portal.upstream" value="true" />
-	<property name="testray.main.component.name" value="Dynamic Data Lists" />
+@component-name = "portal-web-forms-and-data-lists"
+definition {
 
-	<set-up>
-		<execute macro="TestCase#setUpPortalInstance" />
+	property portal.release = "true";
+	property portal.upstream = "true";
+	property testray.main.component.name = "Dynamic Data Lists";
 
-		<execute macro="User#firstLoginPG" />
+	setUp {
+		TestCase.setUpPortalInstance();
 
-		<execute macro="ProductMenu#gotoControlPanelSites">
-			<var name="portlet" value="Sites" />
-		</execute>
+		User.firstLoginPG();
 
-		<execute macro="Site#addBlankCP">
-			<var name="siteName" value="Staging Site Name" />
-		</execute>
+		JSONGroup.addGroup(groupName = "Staging Site Name");
 
-		<execute macro="ProductMenu#gotoSite">
-			<var name="site" value="Staging Site Name" />
-		</execute>
+		JSONLayout.addPublicLayout(
+			groupName = "Staging Site Name",
+			layoutName = "Staging Page");
 
-		<execute macro="ProductMenu#gotoSitesPublishing">
-			<var name="portlet" value="Staging" />
-		</execute>
+		Navigator.openSiteURL(siteName = "Staging Site Name");
 
-		<execute macro="Staging#activateStagingCP">
-			<var name="pageVersioningEnabled" value="true" />
-			<var name="siteName" value="Staging Site Name" />
-		</execute>
+		ProductMenu.gotoPortlet(
+			category = "Publishing",
+			portlet = "Staging");
 
-		<execute macro="ProductMenu#gotoSite">
-			<var name="site" value="Staging Site Name" />
-		</execute>
-	</set-up>
+		Staging.activateStagingCP(
+			pageVersioningEnabled = "true",
+			siteName = "Staging Site Name");
 
-	<tear-down>
-		<var method="TestPropsUtil#get('test.portal.instance')" name="testPortalInstance" />
+		Navigator.openSiteURL(siteName = "Staging Site Name");
+	}
 
-		<if>
-			<equals arg1="${testPortalInstance}" arg2="true" />
-			<then>
-				<execute macro="PortalInstances#tearDownCP" />
-			</then>
-			<else>
-				<execute macro="User#logoutAndLoginPG">
-					<var name="userLoginEmailAddress" value="test@liferay.com" />
-					<var name="userLoginFullName" value="Test Test" />
-				</execute>
+	tearDown {
+		var testPortalInstance = PropsUtil.get("test.portal.instance");
 
-				<execute macro="Site#tearDownCP" />
-			</else>
-		</if>
-	</tear-down>
+		if ("${testPortalInstance}" == "true") {
+			PortalInstances.tearDownCP();
+		}
+		else {
+			User.logoutAndLoginPG(
+				userLoginEmailAddress = "test@liferay.com",
+				userLoginFullName = "Test Test");
 
-	<command name="CreateWebContentStructureAndTemplate" priority="3">
-		<description message="This is a use case for LPS-68661." />
+			Site.tearDownCP();
+		}
+	}
 
-		<execute macro="ProductMenu#gotoSitesContent">
-			<var name="portlet" value="Web Content" />
-		</execute>
+	@description = "This is a use case for LPS-80085."
+	@priority = "3"
+	test AddWebContentTemplateWithSmallImage {
+		property test.name.skip.portal.instance = "DDMStructuresStaging#AddWebContentTemplateWithSmallImage";
 
-		<execute macro="WebContentNavigator#gotoManageStructures" />
+		Navigator.gotoStagedSitePage(
+			pageName = "Staging Page",
+			siteName = "Staging Site Name");
 
-		<execute macro="WebContentStructures#addCP">
-			<var name="structureDescription" value="WC Structure Description" />
-			<var name="structureName" value="WC Structure Name" />
-		</execute>
+		ProductMenu.gotoPortlet(
+			category = "Content &amp; Data",
+			portlet = "Documents and Media");
 
-		<execute macro="DynamicDataMapping#addField">
-			<var name="field" value="Text" />
-			<var name="fieldFieldLabel" value="Text" />
-			<var name="fieldName" value="Text" />
-		</execute>
+		DMDocument.addCP(
+			dmDocumentDescription = "DM Document Description",
+			dmDocumentFile = "Document_1.jpg",
+			dmDocumentTitle = "Document_1.jpg");
 
-		<execute macro="WebContentStructures#saveCP">
-			<var name="structureName" value="WC Structure Name" />
-		</execute>
+		ProductMenu.gotoPortlet(
+			category = "Content &amp; Data",
+			portlet = "Web Content");
 
-		<execute macro="ProductMenu#gotoSitesContent">
-			<var name="portlet" value="Web Content" />
-		</execute>
+		Navigator.gotoNavItem(navItem = "Templates");
 
-		<execute macro="WebContentNavigator#gotoManageStructures" />
+		WebContentTemplates.addCP(
+			imageSourceURL = "http://localhost:8080/webdav/staging-site-name-staging/document_library/Document_1.jpg",
+			templateName = "WC Template Name");
 
-		<execute macro="WebContentStructures#viewCP">
-			<var name="structureDescription" value="WC Structure Description" />
-			<var name="structureName" value="WC Structure Name" />
-		</execute>
+		ProductMenu.gotoPortlet(
+			category = "Content &amp; Data",
+			portlet = "Web Content");
 
-		<execute macro="ProductMenu#gotoSitesContent">
-			<var name="portlet" value="Web Content" />
-		</execute>
+		Navigator.gotoNavItem(navItem = "Templates");
 
-		<execute macro="WebContentNavigator#gotoManageTemplates" />
+		LexiconEntry.changeDisplayStyle(displayStyle = "cards");
 
-		<execute macro="WebContentTemplates#addCP">
-			<var name="templateDescription" value="WC Template Description" />
-			<var name="templateLanguage" value="ftl" />
-			<var name="templateName" value="WC Template Name" />
-		</execute>
+		WebContentTemplates.viewCardsEntryCP(
+			templateName = "WC Template Name",
+			templateSmallImage = "true");
 
-		<execute macro="WebContentTemplates#addStructure">
-			<var name="structureName" value="WC Structure Name" />
-			<var name="templateFieldNames" value="Text" />
-			<var name="templateLanguage" value="ftl" />
-		</execute>
+		Navigator.gotoStagedSitePage(
+			pageName = "Staging Page",
+			siteName = "Staging Site Name");
 
-		<execute macro="WebContentTemplates#save" />
+		Staging.gotoPublishToLive();
 
-		<execute macro="ProductMenu#gotoSitesContent">
-			<var name="portlet" value="Web Content" />
-		</execute>
+		Staging.publishToLive();
 
-		<execute macro="WebContentTemplates#viewCP">
-			<var name="templateDescription" value="WC Template Description" />
-			<var name="templateLanguage" value="ftl" />
-			<var name="templateName" value="WC Template Name" />
-		</execute>
-	</command>
-</definition>
+		ProductMenu.gotoLiveSite(site = "Staging Site Name");
+
+		ProductMenu.gotoPortlet(
+			category = "Content &amp; Data",
+			portlet = "Web Content");
+
+		Navigator.gotoNavItem(navItem = "Templates");
+
+		LexiconEntry.changeDisplayStyle(displayStyle = "cards");
+
+		WebContentTemplates.viewCardsEntryCP(
+			templateName = "WC Template Name",
+			templateSmallImage = "true");
+	}
+
+	@description = "This is a use case for LPS-68661 and LPS-77957."
+	@priority = "4"
+	test CreateWebContentStructureAndTemplate {
+		Navigator.gotoStagedSitePage(
+			pageName = "Staging Page",
+			siteName = "Staging Site Name");
+
+		ProductMenu.gotoPortlet(
+			category = "Content &amp; Data",
+			portlet = "Web Content");
+
+		Navigator.gotoNavItem(navItem = "Structures");
+
+		WebContentStructures.addCP(
+			structureDescription = "WC Structure Description",
+			structureName = "WC Structure Name");
+
+		DataEngine.addField(
+			fieldFieldLabel = "Text",
+			fieldName = "Text");
+
+		WebContentStructures.saveCP(structureName = "WC Structure Name");
+
+		ProductMenu.gotoPortlet(
+			category = "Content &amp; Data",
+			portlet = "Web Content");
+
+		Navigator.gotoNavItem(navItem = "Structures");
+
+		WebContentStructures.viewCP(
+			structureDescription = "WC Structure Description",
+			structureName = "WC Structure Name");
+
+		ProductMenu.gotoPortlet(
+			category = "Content &amp; Data",
+			portlet = "Web Content");
+
+		Navigator.gotoNavItem(navItem = "Templates");
+
+		WebContentTemplates.addCP(
+			structureName = "WC Structure Name",
+			templateDescription = "WC Template Description",
+			templateFieldNames = "Text",
+			templateName = "WC Template Name");
+
+		ProductMenu.gotoPortlet(
+			category = "Content &amp; Data",
+			portlet = "Web Content");
+
+		Navigator.gotoNavItem(navItem = "Templates");
+
+		WebContentTemplates.viewCP(
+			templateDescription = "WC Template Description",
+			templateName = "WC Template Name");
+
+		Navigator.gotoStagedSitePage(
+			pageName = "Staging Page",
+			siteName = "Staging Site Name");
+
+		Staging.gotoPublishToLive();
+
+		Staging.publishToLive();
+
+		ProductMenu.gotoLiveSite(site = "Staging Site Name");
+
+		ProductMenu.gotoPortlet(
+			category = "Content &amp; Data",
+			portlet = "Web Content");
+
+		Navigator.gotoNavItem(navItem = "Structures");
+
+		AssertElementNotPresent(locator1 = "Button#PLUS");
+
+		for (var menuItem : list "Edit,Edit Default Values,Permissions,Copy") {
+			LexiconEntry.viewNoEntryMenuItem(
+				menuItem = "${menuItem}",
+				rowEntry = "WC Structure Name");
+		}
+
+		Navigator.gotoNavItem(navItem = "Templates");
+
+		AssertElementNotPresent(locator1 = "Button#PLUS");
+
+		for (var menuItem : list "Edit,Permissions,Copy") {
+			LexiconEntry.viewNoEntryMenuItem(
+				menuItem = "${menuItem}",
+				rowEntry = "WC Template Name");
+		}
+	}
+
+}

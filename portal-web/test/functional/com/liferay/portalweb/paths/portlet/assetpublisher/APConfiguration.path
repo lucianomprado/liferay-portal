@@ -10,8 +10,18 @@
 <tbody>
 <!--ASSET_SELECTION-->
 <tr>
+	<td>ASSET_SELECTION_ASSET_LIST</td>
+	<td>//input[contains(@id,'selectionStyleAssetList')]</td>
+	<td></td>
+</tr>
+<tr>
 	<td>ASSET_SELECTION_DYNAMIC</td>
 	<td>//input[contains(@id,'selectionStyleDynamic')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>ASSET_SELECTION_INFO_LIST_PROVIDER</td>
+	<td>//input[contains(@id,'selectionStyleInfoListProvider')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -22,6 +32,12 @@
 <tr>
 	<td></td>
 	<td></td>
+	<td></td>
+</tr>
+<!--SELECT COLLECTION-->
+<tr>
+	<td>ASSET_SELECTION_ASSET_LIST_TITLE</td>
+	<td>//div[contains(@id,'assetListTitle')]</td>
 	<td></td>
 </tr>
 <!--SUBSCRIPTIONS-->
@@ -36,13 +52,30 @@
 	<td></td>
 </tr>
 <tr>
-	<td>SUBSCRIPTIONS_ENABLE_EMAIL_SUBSCRIPTION_LABEL</td>
-	<td>//label[contains(@for,'enableEmailSubscription')]</td>
+	<td></td>
+	<td></td>
+	<td></td>
+</tr>
+<!--RULE_BUILDER-->
+<tr>
+	<td>RULE_BUILDER_ADD_CONDITION</td>
+	<td>//button[contains(@class,'form-builder-rule-add-condition')]</td>
 	<td></td>
 </tr>
 <tr>
-	<td>SUBSCRIPTIONS_ENABLE_EMAIL_SUBSCRIPTION</td>
-	<td>//input[contains(@id,'enableEmailSubscription')]</td>
+	<td></td>
+	<td></td>
+	<td></td>
+</tr>
+<!--USER_SEGMENTS_FILTER-->
+<tr>
+	<td>ENABLE_USER_SEGMENTS_FILTER_LABEL</td>
+	<td>//label[contains(@for,'UserSegments')]/span[contains(@class,'label')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>ENABLE_USER_SEGMENTS_FILTER</td>
+	<td>//input[contains(@id,'UserSegments')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -77,8 +110,8 @@
 	<td></td>
 </tr>
 <tr>
-	<td>SOURCE_SCOPE_SELECT</td>
-	<td>//div[@class='select-asset-selector']/div/a[@title='Select']/span</td>
+	<td>SOURCE_SCOPE_ASSET_TYPE_OPTION</td>
+	<td>//div[contains(@class,'form-group') and contains(.,'Item Type')]/select//option[normalize-space(text())='${key_assetType}']</td>
 	<td></td>
 </tr>
 <tr>
@@ -98,7 +131,7 @@
 </tr>
 <tr>
 	<td>SOURCE_SCOPE_FIELD_FILTER_AND_VALUE</td>
-	<td>//span[@class='asset-subtypefields-message']</td>
+	<td>//span[@class='asset-subtypefields-message'][contains(.,'${key_text}')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -119,12 +152,28 @@
 </tr>
 <tr>
 	<td>SELECT_MORE_THAN_ONE_ASSET_TYPE_MOVE_AVAILABLE</td>
-	<td>//button[contains(@class,'move-left') and contains(@title,'Move selected items from Selected to Available.')]</td>
+	<td>//button[contains(@class,'move-right') and contains(@title,'Move selected items from Selected to Available.')]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>SELECT_MORE_THAN_ONE_ASSET_TYPE_MOVE_SELECTED</td>
-	<td>//button[contains(@class,'move-right') and contains(@title,'Move selected items from Available to Selected.')]</td>
+	<td>//button[contains(@class,'move-left') and contains(@title,'Move selected items from Available to Selected.')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td></td>
+	<td></td>
+	<td></td>
+</tr>
+<!--SELECT_MORE_THAN_ONE_ASSET_SUBTYPE-->
+<tr>
+	<td>SELECT_MORE_THAN_ONE_ASSET_SUBTYPE_MOVE_AVAILABLE</td>
+	<td>xpath=(//button[contains(@class,'move-right') and contains(@title,'Move selected items from Selected to Available.')])[3]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>SELECT_MORE_THAN_ONE_ASSET_SUBTYPE_MOVE_SELECTED</td>
+	<td>xpath=(//button[contains(@class,'move-left') and contains(@title,'Move selected items from Available to Selected.')])[3]</td>
 	<td></td>
 </tr>
 <tr>
@@ -145,42 +194,17 @@
 </tr>
 <tr>
 	<td>FILTER_CATEGORIZATION_SELECT</td>
-	<td>//select[contains(@class,'asset-query')]</td>
+	<td>//select[contains(@id,'queryName')]</td>
 	<td></td>
 </tr>
 <tr>
-	<td>FILTER_CATEGORIES_SELECT_BUTTON</td>
-	<td>//button[@title='Select Categories']</td>
+	<td>FILTER_QUERY_AND_OPERATOR</td>
+	<td>//select[contains(@id,'queryAndOperator')]</td>
 	<td></td>
 </tr>
 <tr>
-	<td>FILTER_TAGS_SELECT_BUTTON</td>
-	<td>//button[@title='Select Tags']</td>
-	<td></td>
-</tr>
-<tr>
-	<td>FILTER_CATEGORIES_CATEGORY_CHECKBOX</td>
-	<td>//div[contains(.,'${key_categoryName}')]/span[2]</td>
-	<td></td>
-</tr>
-<tr>
-	<td>FILTER_TAGS_CHECKBOX</td>
-	<td>//label[contains(.,'${key_tagName}')]//input[@type='checkbox']</td>
-	<td></td>
-</tr>
-<tr>
-	<td>FILTER_TAGS_FIELD</td>
-	<td>//input[@title='Add Tags']</td>
-	<td></td>
-</tr>
-<tr>
-	<td>FILTER_ONLY_LAYOUT_ASSETS_CHECKBOX</td>
-	<td>//input[contains(@id,'showOnlyLayoutAssets')]</td>
-	<td></td>
-</tr>
-<tr>
-	<td>FILTER_URL_TAGS_CHECKBOX</td>
-	<td>//input[contains(@id,'mergeUrlTags')]</td>
+	<td>FILTER_QUERY_CONTAINS</td>
+	<td>//select[contains(@id,'queryContains')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -216,33 +240,13 @@
 	<td></td>
 </tr>
 <tr>
-	<td>ORDERING_AND_GROUPING_SECTION_COLLAPSED</td>
-	<td>//div[contains(@class,'toggler-header-collapsed')]/div/span[contains(.,'Ordering and Grouping')]</td>
-	<td></td>
-</tr>
-<tr>
-	<td>ORDERING_AND_GROUPING_OPTIONS</td>
-	<td>//div[@id='assetPublisherOrderingAndGroupingPanelContent']/div[contains(@class,'toggler-header-expanded')]</td>
-	<td></td>
-</tr>
-<tr>
 	<td>ORDERING_AND_GROUPING_ORDER_BY_SELECT</td>
 	<td>//select[contains(@id,'orderByColumn1')]</td>
 	<td></td>
 </tr>
 <tr>
-	<td>ORDERING_AND_GROUPING_ORDER_DIRECTION_SELECT</td>
-	<td>//select[contains(@id,'orderByType1')]</td>
-	<td></td>
-</tr>
-<tr>
 	<td>ORDERING_AND_GROUPING_ORDER_DIRECTIONAL_ICON</td>
-	<td>//div[contains(@class,'order-by-type')]//a[contains(.,'${key_sortOrder}')]//*[name()='svg'][contains(@class,'icon-angle')]</td>
-	<td></td>
-</tr>
-<tr>
-	<td>ORDERING_AND_GROUPING_ORDER_GENERIC_ICON</td>
-	<td>//div[contains(@class,'order-by-type')]/span[not(contains(@class,'hide'))]//*[name()='svg'][contains(@class,'icon-angle')]</td>
+	<td>//div[contains(@class,'order-by-type')]//a[contains(.,'${key_sortOrder}')][span//*[name()='svg'][contains(@class,'icon-order-arrow')]]</td>
 	<td></td>
 </tr>
 <tr>
@@ -257,13 +261,19 @@
 	<td></td>
 </tr>
 <tr>
+	<td>ASSET_SELECTION_MANUAL_ASSET_ENTRIES_SELECT_IN_DEPOT</td>
+	<td>//div[contains(.,'Asset Entries')]/following-sibling::div//a[@title='Select in ${key_depotName}']</td>
+	<td></td>
+</tr>
+<tr>
 	<td>ASSET_SELECTION_MANUAL_ASSET_ENTRIES_ASSET</td>
 	<td>//a[@data-title='Select ${key_assetType}']</td>
 	<td></td>
 </tr>
+<!--COLLECTION_PROVIDER-->
 <tr>
-	<td>ASSET_SELECTION_MANUAL_ASSET_ENTRIES_SELECT_CONTENT_LINK</td>
-	<td>//a[@data-assettitle='${key_assetTitle}']</td>
+	<td>SELECT_COLLECTION_PROVIDER_FIELD</td>
+	<td>//select[contains(@id,'infoListProviderClassName')]</td>
 	<td></td>
 </tr>
 </tbody>

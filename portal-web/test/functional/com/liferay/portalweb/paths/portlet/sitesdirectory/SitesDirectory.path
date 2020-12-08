@@ -23,21 +23,10 @@
 	<td></td>
 	<td></td>
 </tr>
-<!--BREADCRUMB-->
-<tr>
-	<td>BREADCRUMB</td>
-	<td>//nav[@id='breadcrumbs']//ul/li[contains(.,'${key_breadcrumbName}')]/a</td>
-	<td></td>
-</tr>
-<tr>
-	<td></td>
-	<td></td>
-	<td></td>
-</tr>
 <!--DESCRIPTIVE-->
 <tr>
 	<td>DESCRIPTIVE_SITE_ENTRY</td>
-	<td>//div[contains(@class,'list-group-item-content')]/h5/span[contains(.,'${key_siteName}')] | //div[contains(@class,'list-group-item-content')]/h5/a[contains(.,'${key_siteName}')]</td>
+	<td>//*[@data-qa-id='rowItemContent']/h5/span[contains(.,'${key_siteName}')] | //*[@data-qa-id='rowItemContent']/h5/a[contains(.,'${key_siteName}')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -48,17 +37,17 @@
 <!--LIST_HIERARCHY-->
 <tr>
 	<td>LIST_HIERARCHY_PARENT_SITE_AVAILABLE</td>
-	<td>//ul[@class='sites level-1']/li[contains(.,'${key_siteName}')]/a</td>
+	<td>//ul[@class='level-1 sites']/li[contains(.,'${key_siteName}')]/a</td>
 	<td></td>
 </tr>
 <tr>
 	<td>LIST_HIERARCHY_PARENT_SITE_CURRENT</td>
-	<td>//ul[@class='sites level-1']/li[contains(.,'${key_siteName}')]/span</td>
+	<td>//ul[@class='level-1 sites']/li[contains(.,'${key_siteName}')]/span</td>
 	<td></td>
 </tr>
 <tr>
 	<td>LIST_HIERARCHY_CHILD_SITE</td>
-	<td>//ul[@class='sites level-1']/li[contains(.,'${key_siteName}')]/ul[@class='sites level-2']/li[contains(.,'${key_childSiteName}')]/a</td>
+	<td>//ul[@class='level-1 sites']/li[contains(.,'${key_siteName}')]/ul[@class='level-2 sites']/li[contains(.,'${key_childSiteName}')]/a</td>
 	<td></td>
 </tr>
 </tbody>

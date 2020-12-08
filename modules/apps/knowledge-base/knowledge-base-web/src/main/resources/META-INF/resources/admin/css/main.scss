@@ -1,15 +1,23 @@
-/* ---------- Portal ---------- */
+// ---------- Portal ----------
 
 #main-content .knowledge-base-portlet-admin .lfr-panel-container .lfr-panel,
-#main-content .knowledge-base-portlet-admin .lfr-panel-container .lfr-panel .lfr-panel-content {
+#main-content
+	.knowledge-base-portlet-admin
+	.lfr-panel-container
+	.lfr-panel
+	.lfr-panel-content {
 	background: none;
 }
 
-#main-content .knowledge-base-portlet-admin .lfr-panel-container .lfr-panel .lfr-panel-titlebar {
+#main-content
+	.knowledge-base-portlet-admin
+	.lfr-panel-container
+	.lfr-panel
+	.lfr-panel-titlebar {
 	border-bottom: none;
 }
 
-/* ---------- Portlet ---------- */
+// ---------- Portlet ----------
 
 .knowledge-base-portlet-admin .kb-admin-tools {
 	padding: 5px 5px 0 0;
@@ -28,11 +36,11 @@
 	width: inherit;
 }
 
-.knowledge-base-portlet-admin h5 span.kb-descriptive-details {
+.knowledge-base-portlet-admin span span.kb-descriptive-details {
 	margin-left: 24px;
 }
 
-.dialog-iframe-popup .knowledge-base-portlet-admin .lfr-dynamic-uploader {
+.portal-popup .knowledge-base-portlet-admin .lfr-dynamic-uploader {
 	position: relative;
 	top: 0;
 }

@@ -9,11 +9,6 @@
 </thead>
 <tbody>
 <tr>
-	<td>RSS_CONFIGURATION_IFRAME</td>
-	<td>//iframe[contains(@id,'com_liferay_rss_web_portlet_RSSPortlet') and contains(@class,'dialog-iframe-node')]</td>
-	<td></td>
-</tr>
-<tr>
 	<td>UNDO_LINK</td>
 	<td>//a[contains(@class,'action-undo')]</td>
 	<td></td>
@@ -47,11 +42,6 @@
 <tr>
 	<td>FEEDS_CONTENT</td>
 	<td>//div[contains(@class,'feed-entry-content')]</td>
-	<td></td>
-</tr>
-<tr>
-	<td>FEEDS_CONTENT_TITLE</td>
-	<td>//div[@class='panel-toggle']/span[contains(.,'${key_feedContentTitle}')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -96,18 +86,8 @@
 </tr>
 <!--DISPLAY_SETTINGS-->
 <tr>
-	<td>DISPLAY_SETTINGS_DISPLAY_TEMPLATE_OPTION</td>
-	<td>//select[contains(@id,'displayStyle')]</td>
-	<td></td>
-</tr>
-<tr>
 	<td>DISPLAY_SETTINGS_SHOW_FEED_TITLE</td>
 	<td>//input[contains(@id,'showFeedTitle')]</td>
-	<td></td>
-</tr>
-<tr>
-	<td>DISPLAY_SETTINGS_SHOW_FEED_PUBLISHED_DATE</td>
-	<td>//input[contains(@id,'showFeedPublishedDate')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -116,18 +96,8 @@
 	<td></td>
 </tr>
 <tr>
-	<td>DISPLAY_SETTINGS_SHOW_FEED_IMAGE</td>
-	<td>//input[contains(@id,'showFeedImage')]</td>
-	<td></td>
-</tr>
-<tr>
-	<td>DISPLAY_SETTINGS_SHOW_FEED_ITEM_AUTHOR</td>
-	<td>//input[contains(@id,'showFeedItemAuthor')]</td>
-	<td></td>
-</tr>
-<tr>
 	<td>FEED_TIME</td>
-	<td>//input[contains(@id,'feedTime')]</td>
+	<td>//input[contains(@name,'feedTime')]</td>
 	<td></td>
 </tr>
 <tr>

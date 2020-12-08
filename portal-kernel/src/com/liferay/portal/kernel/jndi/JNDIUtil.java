@@ -16,7 +16,6 @@ package com.liferay.portal.kernel.jndi;
 
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.security.pacl.permission.PortalRuntimePermission;
 import com.liferay.portal.kernel.util.StringUtil;
 
 import javax.naming.Context;
@@ -37,46 +36,44 @@ public class JNDIUtil {
 	private static Object _lookup(Context context, String location)
 		throws NamingException {
 
-		PortalRuntimePermission.checkGetBeanProperty(JNDIUtil.class);
-
 		if (_log.isDebugEnabled()) {
 			_log.debug("Lookup " + location);
 		}
 
-		Object obj = null;
+		Object object = null;
 
 		try {
-			obj = context.lookup(location);
+			object = context.lookup(location);
 		}
-		catch (NamingException ne1) {
+		catch (NamingException namingException1) {
 
 			// java:comp/env/ObjectName to ObjectName
 
 			if (location.contains("java:comp/env/")) {
 				try {
-					String newLocation = StringUtil.replace(
-						location, "java:comp/env/", "");
+					String newLocation = StringUtil.removeSubstring(
+						location, "java:comp/env/");
 
 					if (_log.isDebugEnabled()) {
-						_log.debug(ne1.getMessage());
+						_log.debug(namingException1.getMessage());
 						_log.debug("Attempt " + newLocation);
 					}
 
-					obj = context.lookup(newLocation);
+					object = context.lookup(newLocation);
 				}
-				catch (NamingException ne2) {
+				catch (NamingException namingException2) {
 
 					// java:comp/env/ObjectName to java:ObjectName
 
-					String newLocation = StringUtil.replace(
-						location, "comp/env/", "");
+					String newLocation = StringUtil.removeSubstring(
+						location, "comp/env/");
 
 					if (_log.isDebugEnabled()) {
-						_log.debug(ne2.getMessage());
+						_log.debug(namingException2.getMessage());
 						_log.debug("Attempt " + newLocation);
 					}
 
-					obj = context.lookup(newLocation);
+					object = context.lookup(newLocation);
 				}
 			}
 			else if (location.contains("java:")) {
@@ -84,17 +81,17 @@ public class JNDIUtil {
 				// java:ObjectName to ObjectName
 
 				try {
-					String newLocation = StringUtil.replace(
-						location, "java:", "");
+					String newLocation = StringUtil.removeSubstring(
+						location, "java:");
 
 					if (_log.isDebugEnabled()) {
-						_log.debug(ne1.getMessage());
+						_log.debug(namingException1.getMessage());
 						_log.debug("Attempt " + newLocation);
 					}
 
-					obj = context.lookup(newLocation);
+					object = context.lookup(newLocation);
 				}
-				catch (NamingException ne2) {
+				catch (NamingException namingException2) {
 
 					// java:ObjectName to java:comp/env/ObjectName
 
@@ -102,11 +99,11 @@ public class JNDIUtil {
 						location, "java:", "java:comp/env/");
 
 					if (_log.isDebugEnabled()) {
-						_log.debug(ne2.getMessage());
+						_log.debug(namingException2.getMessage());
 						_log.debug("Attempt " + newLocation);
 					}
 
-					obj = context.lookup(newLocation);
+					object = context.lookup(newLocation);
 				}
 			}
 			else if (!location.contains("java:")) {
@@ -117,24 +114,24 @@ public class JNDIUtil {
 					String newLocation = "java:" + location;
 
 					if (_log.isDebugEnabled()) {
-						_log.debug(ne1.getMessage());
+						_log.debug(namingException1.getMessage());
 						_log.debug("Attempt " + newLocation);
 					}
 
-					obj = context.lookup(newLocation);
+					object = context.lookup(newLocation);
 				}
-				catch (NamingException ne2) {
+				catch (NamingException namingException2) {
 
 					// ObjectName to java:comp/env/ObjectName
 
 					String newLocation = "java:comp/env/" + location;
 
 					if (_log.isDebugEnabled()) {
-						_log.debug(ne2.getMessage());
+						_log.debug(namingException2.getMessage());
 						_log.debug("Attempt " + newLocation);
 					}
 
-					obj = context.lookup(newLocation);
+					object = context.lookup(newLocation);
 				}
 			}
 			else {
@@ -142,7 +139,7 @@ public class JNDIUtil {
 			}
 		}
 
-		return obj;
+		return object;
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(JNDIUtil.class);

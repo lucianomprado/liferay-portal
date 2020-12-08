@@ -17,8 +17,6 @@
 <%@ include file="/admin/init.jsp" %>
 
 <%
-KBTemplate kbTemplate = (KBTemplate)request.getAttribute(KBWebKeys.KNOWLEDGE_BASE_KB_TEMPLATE);
-
 KBComment kbComment = (KBComment)request.getAttribute("template_comment.jsp-kb_comment");
 %>
 
@@ -61,13 +59,9 @@ KBComment kbComment = (KBComment)request.getAttribute("template_comment.jsp-kb_c
 				<c:if test="<%= KBCommentPermission.contains(permissionChecker, kbComment, KBActionKeys.DELETE) %>">
 					<br />
 
-					<%
-					String deleteURL = "javascript:" + renderResponse.getNamespace() + "deleteKBComment(" + kbComment.getKbCommentId() + ");";
-					%>
-
 					<liferay-ui:icon-delete
 						label="<%= true %>"
-						url="<%= deleteURL %>"
+						url='<%= "javascript:" + liferayPortletResponse.getNamespace() + "deleteKBComment(" + kbComment.getKbCommentId() + ");" %>'
 					/>
 				</c:if>
 			</td>

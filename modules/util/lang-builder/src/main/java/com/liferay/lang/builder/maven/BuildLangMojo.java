@@ -35,9 +35,16 @@ public class BuildLangMojo extends AbstractMojo {
 		try {
 			LangBuilderInvoker.invoke(baseDir, _langBuilderArgs);
 		}
-		catch (Exception e) {
-			throw new MojoExecutionException(e.getMessage(), e);
+		catch (Exception exception) {
+			throw new MojoExecutionException(exception.getMessage(), exception);
 		}
+	}
+
+	/**
+	 * @parameter
+	 */
+	public void setExcludedLanguageIds(String[] excludedLanguageIds) {
+		_langBuilderArgs.setExcludedLanguageIds(excludedLanguageIds);
 	}
 
 	/**
@@ -57,18 +64,8 @@ public class BuildLangMojo extends AbstractMojo {
 	/**
 	 * @parameter
 	 */
-	public void setPlugin(boolean plugin) {
-		_langBuilderArgs.setPlugin(plugin);
-	}
-
-	/**
-	 * @parameter
-	 */
-	public void setPortalLanguagePropertiesFileName(
-		String portalLanguagePropertiesFileName) {
-
-		_langBuilderArgs.setPortalLanguagePropertiesFileName(
-			portalLanguagePropertiesFileName);
+	public void setTitleCapitalization(boolean titleCapitalization) {
+		_langBuilderArgs.setTitleCapitalization(titleCapitalization);
 	}
 
 	/**

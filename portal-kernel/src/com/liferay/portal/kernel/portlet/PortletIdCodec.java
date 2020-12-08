@@ -11,13 +11,14 @@
  * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
  * details.
  */
+
 package com.liferay.portal.kernel.portlet;
 
-import com.liferay.portal.kernel.util.CharPool;
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.ObjectValuePair;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 
@@ -29,8 +30,9 @@ import java.security.InvalidParameterException;
 public class PortletIdCodec {
 
 	public static final int PORTLET_INSTANCE_KEY_MAX_LENGTH =
-		255 - PortletIdCodec._INSTANCE_SEPARATOR.length() +
-			PortletIdCodec._USER_SEPARATOR.length() + 39;
+		255 -
+			(PortletIdCodec._INSTANCE_SEPARATOR.length() +
+				PortletIdCodec._USER_SEPARATOR.length() + 31);
 
 	public static String decodeInstanceId(String portletId) {
 		int index = portletId.indexOf(_INSTANCE_SEPARATOR);
@@ -76,8 +78,8 @@ public class PortletIdCodec {
 			portletId.substring(x + _USER_SEPARATOR.length()));
 	}
 
-	public static ObjectValuePair<Long, String>
-		decodeUserIdAndInstanceId(String userIdAndInstanceId) {
+	public static ObjectValuePair<Long, String> decodeUserIdAndInstanceId(
+		String userIdAndInstanceId) {
 
 		if (userIdAndInstanceId == null) {
 			throw new InvalidParameterException(
@@ -200,8 +202,9 @@ public class PortletIdCodec {
 
 		if (keyword != null) {
 			throw new InvalidParameterException(
-				"The portlet name \"" + portletName +
-					"\" must not contain the keyword " + keyword);
+				StringBundler.concat(
+					"The portlet name \"", portletName,
+					"\" must not contain the keyword ", keyword));
 		}
 	}
 

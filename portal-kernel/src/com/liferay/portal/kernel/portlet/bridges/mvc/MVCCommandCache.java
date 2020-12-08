@@ -14,22 +14,20 @@
 
 package com.liferay.portal.kernel.portlet.bridges.mvc;
 
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.ClassUtil;
 import com.liferay.portal.kernel.util.InstanceFactory;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
-import com.liferay.registry.ServiceReference;
 import com.liferay.registry.collections.ServiceReferenceMapper;
 import com.liferay.registry.collections.ServiceTrackerCollections;
 import com.liferay.registry.collections.ServiceTrackerMap;
 import com.liferay.registry.util.StringPlus;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -39,11 +37,11 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Sergio González
  * @author Raymond Augé
  */
-public class MVCCommandCache {
+public class MVCCommandCache<T extends MVCCommand> {
 
 	public MVCCommandCache(
-		MVCCommand emptyMVCCommand, String packagePrefix, String portletName,
-		Class<? extends MVCCommand> mvcCommandClass, String mvcCommandPostFix) {
+		T emptyMVCCommand, String packagePrefix, String portletName,
+		Class<T> mvcCommandClass, String mvcCommandPostFix) {
 
 		this(
 			emptyMVCCommand, packagePrefix, portletName, portletName,
@@ -51,12 +49,12 @@ public class MVCCommandCache {
 	}
 
 	public MVCCommandCache(
-		MVCCommand emptyMVCCommand, String packagePrefix, String portletName,
-		String portletId, Class<? extends MVCCommand> mvcCommandClass,
-		String mvcCommandPostFix) {
+		T emptyMVCCommand, String packagePrefix, String portletName,
+		String portletId, Class<T> mvcCommandClass, String mvcCommandPostFix) {
 
 		_emptyMVCCommand = emptyMVCCommand;
-		_mvcComandPostFix = mvcCommandPostFix;
+		_mvcCommandClass = mvcCommandClass;
+		_mvcCommandPostFix = mvcCommandPostFix;
 
 		if (Validator.isNotNull(packagePrefix) &&
 			!packagePrefix.endsWith(StringPool.PERIOD)) {
@@ -66,55 +64,36 @@ public class MVCCommandCache {
 
 		_packagePrefix = packagePrefix;
 
-		_serviceTrackerMap = ServiceTrackerCollections.openSingleValueMap(
-			mvcCommandClass,
-			"(&(|(javax.portlet.name=" + portletName + ")(javax.portlet.name=" +
-				portletId +
-					"))(mvc.command.name=*))",
-			new ServiceReferenceMapper<String, MVCCommand>() {
-
-				@Override
-				public void map(
-					ServiceReference<MVCCommand> serviceReference,
-					Emitter<String> emitter) {
-
-					List<String> mvcCommandNames = StringPlus.asList(
-						serviceReference.getProperty("mvc.command.name"));
-
-					for (String mvcCommandName : mvcCommandNames) {
-						emitter.emit(mvcCommandName);
-					}
-				}
-
-			});
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link #MVCCommandCache(MVCCommand,
-	 *             String, String, Class, String)}
-	 */
-	@Deprecated
-	public MVCCommandCache(
-		MVCCommand emptyMVCCommand, String packagePrefix, String portletName,
-		String mvcCommandClassName, String mvcCommandPostFix) {
-
-		this(
-			emptyMVCCommand, packagePrefix, portletName,
-			_getMVCCommandClass(mvcCommandClassName), mvcCommandPostFix);
+		if (portletId.equals(portletName)) {
+			_filterString = StringBundler.concat(
+				"(&(mvc.command.name=*)(javax.portlet.name=", portletId, "))");
+		}
+		else {
+			_filterString = StringBundler.concat(
+				"(&(mvc.command.name=*)(|(javax.portlet.name=", portletName,
+				")(javax.portlet.name=", portletId, ")))");
+		}
 	}
 
 	public void close() {
-		_serviceTrackerMap.close();
+		ServiceTrackerMap<String, T> serviceTrackerMap = _serviceTrackerMap;
+
+		if (serviceTrackerMap != null) {
+			serviceTrackerMap.close();
+		}
 	}
 
-	public MVCCommand getMVCCommand(String mvcCommandName) {
-		String className = null;
+	public T getMVCCommand(String mvcCommandName) {
+		ServiceTrackerMap<String, T> serviceTrackerMap =
+			_getServiceTrackerMap();
 
-		MVCCommand mvcCommand = _serviceTrackerMap.getService(mvcCommandName);
+		T mvcCommand = serviceTrackerMap.getService(mvcCommandName);
 
 		if (mvcCommand != null) {
 			return mvcCommand;
 		}
+
+		String className = null;
 
 		try {
 			mvcCommand = _mvcCommandCache.get(mvcCommandName);
@@ -132,17 +111,17 @@ public class MVCCommandCache {
 			sb.append(_packagePrefix);
 			sb.append(Character.toUpperCase(mvcCommandName.charAt(0)));
 			sb.append(mvcCommandName.substring(1));
-			sb.append(_mvcComandPostFix);
+			sb.append(_mvcCommandPostFix);
 
 			className = sb.toString();
 
-			mvcCommand = (MVCCommand)InstanceFactory.newInstance(className);
+			mvcCommand = (T)InstanceFactory.newInstance(className);
 
 			_mvcCommandCache.put(mvcCommandName, mvcCommand);
 
 			return mvcCommand;
 		}
-		catch (Exception e) {
+		catch (Exception exception) {
 			if (_log.isWarnEnabled()) {
 				_log.warn("Unable to instantiate MVCCommand " + className);
 			}
@@ -154,11 +133,14 @@ public class MVCCommandCache {
 	}
 
 	public Set<String> getMVCCommandNames() {
-		return _serviceTrackerMap.keySet();
+		ServiceTrackerMap<String, T> serviceTrackerMap =
+			_getServiceTrackerMap();
+
+		return serviceTrackerMap.keySet();
 	}
 
-	public List<? extends MVCCommand> getMVCCommands(String key) {
-		List<MVCCommand> mvcCommands = _mvcCommands.get(key);
+	public List<T> getMVCCommands(String key) {
+		List<T> mvcCommands = _mvcCommands.get(key);
 
 		String[] mvcCommandNames = StringUtil.split(key);
 
@@ -171,7 +153,7 @@ public class MVCCommandCache {
 		mvcCommands = new ArrayList<>();
 
 		for (String mvcCommandName : mvcCommandNames) {
-			MVCCommand mvcCommand = getMVCCommand(mvcCommandName);
+			T mvcCommand = getMVCCommand(mvcCommandName);
 
 			if (mvcCommand != _emptyMVCCommand) {
 				mvcCommands.add(mvcCommand);
@@ -206,46 +188,47 @@ public class MVCCommandCache {
 		return _mvcCommandCache.isEmpty();
 	}
 
-	private static Class<? extends MVCCommand> _getMVCCommandClass(
-		String mvcCommandClassName) {
+	private ServiceTrackerMap<String, T> _getServiceTrackerMap() {
+		ServiceTrackerMap<String, T> serviceTrackerMap = _serviceTrackerMap;
 
-		Class<? extends MVCCommand> mvcCommandClass = null;
+		if (serviceTrackerMap == null) {
+			synchronized (this) {
+				if (_serviceTrackerMap == null) {
+					_serviceTrackerMap =
+						ServiceTrackerCollections.openSingleValueMap(
+							_mvcCommandClass, _filterString,
+							_SERVICE_REFERENCE_MAPPER);
+				}
 
-		for (Class<? extends MVCCommand> curMVCCommandClass :
-				_mvcCommandClasses) {
-
-			if (mvcCommandClassName.equals(curMVCCommandClass.getName())) {
-				mvcCommandClass = curMVCCommandClass;
-
-				break;
+				serviceTrackerMap = _serviceTrackerMap;
 			}
 		}
 
-		if (mvcCommandClass == null) {
-			throw new IllegalArgumentException();
-		}
-
-		return mvcCommandClass;
+		return serviceTrackerMap;
 	}
+
+	private static final ServiceReferenceMapper<String, MVCCommand>
+		_SERVICE_REFERENCE_MAPPER = (serviceReference, emitter) -> {
+			List<String> mvcCommandNames = StringPlus.asList(
+				serviceReference.getProperty("mvc.command.name"));
+
+			for (String mvcCommandName : mvcCommandNames) {
+				emitter.emit(mvcCommandName);
+			}
+		};
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		MVCCommandCache.class);
 
-	private static final List<Class<? extends MVCCommand>> _mvcCommandClasses =
-		Arrays.asList(
-			MVCActionCommand.class, MVCRenderCommand.class,
-			MVCResourceCommand.class);
-
-	private final MVCCommand _emptyMVCCommand;
-	private final String _mvcComandPostFix;
-	private final Map<String, MVCCommand> _mvcCommandCache =
-		new ConcurrentHashMap<>();
+	private final T _emptyMVCCommand;
+	private final String _filterString;
+	private final Map<String, T> _mvcCommandCache = new ConcurrentHashMap<>();
+	private final Class<T> _mvcCommandClass;
 	private final Map<String, List<String>> _mvcCommandKeys =
 		new ConcurrentHashMap<>();
-	private final Map<String, List<MVCCommand>> _mvcCommands =
-		new ConcurrentHashMap<>();
+	private final String _mvcCommandPostFix;
+	private final Map<String, List<T>> _mvcCommands = new ConcurrentHashMap<>();
 	private final String _packagePrefix;
-	private final ServiceTrackerMap<String, ? extends MVCCommand>
-		_serviceTrackerMap;
+	private volatile ServiceTrackerMap<String, T> _serviceTrackerMap;
 
 }

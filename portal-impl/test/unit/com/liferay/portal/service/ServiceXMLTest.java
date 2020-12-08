@@ -22,6 +22,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import org.junit.Assert;
@@ -49,8 +50,8 @@ public class ServiceXMLTest {
 				"Remove deprecated tx-required element from " + path,
 				stream.anyMatch(line -> line.contains("<tx-required>")));
 		}
-		catch (IOException ioe) {
-			throw new RuntimeException(ioe);
+		catch (IOException ioException) {
+			throw new RuntimeException(ioException);
 		}
 	}
 
@@ -59,7 +60,7 @@ public class ServiceXMLTest {
 
 		Path fileNamePath = path.getFileName();
 
-		if ("service.xml".equals(fileNamePath.toString())) {
+		if (Objects.equals(fileNamePath.toString(), "service.xml")) {
 			return true;
 		}
 

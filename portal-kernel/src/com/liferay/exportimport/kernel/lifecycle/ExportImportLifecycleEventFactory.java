@@ -14,22 +14,15 @@
 
 package com.liferay.exportimport.kernel.lifecycle;
 
-import aQute.bnd.annotation.ProviderType;
-
 import java.io.Serializable;
+
+import org.osgi.annotation.versioning.ProviderType;
 
 /**
  * @author Daniel Kocsis
  */
 @ProviderType
 public interface ExportImportLifecycleEventFactory {
-
-	/**
-	 * @deprecated As of 7.0.0
-	 */
-	@Deprecated
-	public ExportImportLifecycleEvent create(
-		int code, int processFlag, Serializable... attributes);
 
 	public ExportImportLifecycleEvent create(
 		int code, int processFlag, String processId,

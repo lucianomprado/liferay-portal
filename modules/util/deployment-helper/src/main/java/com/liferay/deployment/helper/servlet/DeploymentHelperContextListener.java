@@ -14,6 +14,7 @@
 
 package com.liferay.deployment.helper.servlet;
 
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.deploy.DeployManagerUtil;
 import com.liferay.portal.kernel.util.PropsUtil;
 
@@ -111,24 +112,26 @@ public class DeploymentHelperContextListener implements ServletContextListener {
 				copy(servletContext, inputStream, new FileOutputStream(file));
 
 				servletContext.log(
-					"Successfully copied " + deploymentFileName + " to " +
-						file.getAbsolutePath());
+					StringBundler.concat(
+						"Successfully copied ", deploymentFileName, " to ",
+						file.getAbsolutePath()));
 			}
-			catch (Exception e) {
+			catch (Exception exception) {
 				servletContext.log(
-					"Unable to process " + deploymentFileName + ":\n" +
-						e.getMessage(),
-					e);
+					StringBundler.concat(
+						"Unable to process ", deploymentFileName, ":\n",
+						exception.getMessage()),
+					exception);
 			}
 		}
 
 		try {
 			DeployManagerUtil.undeploy(servletContext.getServletContextName());
 		}
-		catch (Exception e) {
+		catch (Exception exception) {
 			servletContext.log(
 				"Unable to undeploy " + servletContext.getServletContextName(),
-				e);
+				exception);
 		}
 	}
 
@@ -160,8 +163,8 @@ public class DeploymentHelperContextListener implements ServletContextListener {
 					outputStream.flush();
 				}
 			}
-			catch (Exception e) {
-				servletContext.log(e.getMessage(), e);
+			catch (Exception exception) {
+				servletContext.log(exception.getMessage(), exception);
 			}
 
 			try {
@@ -169,8 +172,8 @@ public class DeploymentHelperContextListener implements ServletContextListener {
 					outputStream.close();
 				}
 			}
-			catch (Exception e) {
-				servletContext.log(e.getMessage(), e);
+			catch (Exception exception) {
+				servletContext.log(exception.getMessage(), exception);
 			}
 		}
 	}

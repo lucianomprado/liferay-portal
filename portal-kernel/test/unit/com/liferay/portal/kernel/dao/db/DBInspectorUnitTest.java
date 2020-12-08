@@ -16,13 +16,10 @@ package com.liferay.portal.kernel.dao.db;
 
 import com.liferay.portal.kernel.util.StringUtil;
 
-import com.mysql.jdbc.ResultSetMetaData;
-
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -33,7 +30,7 @@ import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
 /**
- * @author Mariano Alvaro Saiz
+ * @author Mariano Álvaro Sáiz
  */
 @RunWith(MockitoJUnitRunner.class)
 public class DBInspectorUnitTest {
@@ -107,19 +104,19 @@ public class DBInspectorUnitTest {
 	}
 
 	private void _mockTableWithColumn(String tableName, String columnName)
-		throws SQLException {
+		throws Exception {
 
 		_mockTableWithOrWithoutColumn(tableName, columnName, true);
 	}
 
 	private void _mockTableWithOrWithoutColumn(
 			String tableName, String columnName, boolean hasColumn)
-		throws SQLException {
+		throws Exception {
 
 		Mockito.when(
 			_connection.getMetaData()
 		).thenReturn(
-			_databaseMetadata
+			_databaseMetaData
 		);
 
 		Mockito.when(
@@ -135,7 +132,7 @@ public class DBInspectorUnitTest {
 		);
 
 		Mockito.when(
-			_databaseMetadata.getColumns(
+			_databaseMetaData.getColumns(
 				Mockito.anyString(), Mockito.anyString(),
 				Mockito.eq(StringUtil.toLowerCase(tableName)),
 				Mockito.eq(columnName))
@@ -144,15 +141,9 @@ public class DBInspectorUnitTest {
 		);
 
 		Mockito.when(
-			_databaseMetadata.storesLowerCaseIdentifiers()
+			_databaseMetaData.storesLowerCaseIdentifiers()
 		).thenReturn(
 			true
-		);
-
-		Mockito.when(
-			_resultSet.getMetaData()
-		).thenReturn(
-			_resultSetMetadata
 		);
 
 		Mockito.when(
@@ -163,7 +154,7 @@ public class DBInspectorUnitTest {
 	}
 
 	private void _mockTableWithoutColumn(String tableName, String columnName)
-		throws SQLException {
+		throws Exception {
 
 		_mockTableWithOrWithoutColumn(tableName, columnName, false);
 	}
@@ -176,15 +167,12 @@ public class DBInspectorUnitTest {
 	private Connection _connection;
 
 	@Mock
-	private DatabaseMetaData _databaseMetadata;
+	private DatabaseMetaData _databaseMetaData;
 
 	@Mock
 	private PreparedStatement _preparedStatement;
 
 	@Mock
 	private ResultSet _resultSet;
-
-	@Mock
-	private ResultSetMetaData _resultSetMetadata;
 
 }

@@ -14,18 +14,17 @@
 
 package com.liferay.taglib.theme;
 
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.ListMergeable;
 import com.liferay.portal.kernel.util.LocaleUtil;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
-
-import java.io.IOException;
+import com.liferay.taglib.util.IncludeTag;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletContext;
@@ -36,25 +35,27 @@ import javax.servlet.jsp.JspWriter;
 /**
  * @author Brian Wing Shun Chan
  */
-public class MetaTagsTag extends com.liferay.taglib.util.IncludeTag {
+public class MetaTagsTag extends IncludeTag {
 
 	public static void doTag(
-			ServletContext servletContext, HttpServletRequest request,
-			HttpServletResponse response)
+			ServletContext servletContext,
+			HttpServletRequest httpServletRequest,
+			HttpServletResponse httpServletResponse)
 		throws Exception {
 
-		doTag(_PAGE, servletContext, request, response);
+		doTag(_PAGE, servletContext, httpServletRequest, httpServletResponse);
 	}
 
 	public static void doTag(
 			String page, ServletContext servletContext,
-			HttpServletRequest request, HttpServletResponse response)
+			HttpServletRequest httpServletRequest,
+			HttpServletResponse httpServletResponse)
 		throws Exception {
 
 		RequestDispatcher requestDispatcher =
 			servletContext.getRequestDispatcher(page);
 
-		requestDispatcher.include(request, response);
+		requestDispatcher.include(httpServletRequest, httpServletResponse);
 	}
 
 	@Override
@@ -64,11 +65,12 @@ public class MetaTagsTag extends com.liferay.taglib.util.IncludeTag {
 
 	@Override
 	protected int processEndTag() throws Exception {
-		HttpServletRequest request =
+		HttpServletRequest httpServletRequest =
 			(HttpServletRequest)pageContext.getRequest();
 
-		ThemeDisplay themeDisplay = (ThemeDisplay)request.getAttribute(
-			WebKeys.THEME_DISPLAY);
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)httpServletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
 
 		if (themeDisplay == null) {
 			return EVAL_PAGE;
@@ -80,7 +82,8 @@ public class MetaTagsTag extends com.liferay.taglib.util.IncludeTag {
 			return EVAL_PAGE;
 		}
 
-		String currentLanguageId = LanguageUtil.getLanguageId(request);
+		String currentLanguageId = LanguageUtil.getLanguageId(
+			httpServletRequest);
 		String defaultLanguageId = LocaleUtil.toLanguageId(
 			LocaleUtil.getSiteDefault());
 
@@ -113,7 +116,7 @@ public class MetaTagsTag extends com.liferay.taglib.util.IncludeTag {
 		}
 
 		ListMergeable<String> pageDescriptionListMergeable =
-			(ListMergeable<String>)request.getAttribute(
+			(ListMergeable<String>)httpServletRequest.getAttribute(
 				WebKeys.PAGE_DESCRIPTION);
 
 		if (pageDescriptionListMergeable != null) {
@@ -151,23 +154,27 @@ public class MetaTagsTag extends com.liferay.taglib.util.IncludeTag {
 		}
 
 		ListMergeable<String> pageKeywordsListMergeable =
-			(ListMergeable<String>)request.getAttribute(WebKeys.PAGE_KEYWORDS);
+			(ListMergeable<String>)httpServletRequest.getAttribute(
+				WebKeys.PAGE_KEYWORDS);
 
 		if (pageKeywordsListMergeable != null) {
-			if (Validator.isNotNull(metaKeywords)) {
+			String pageKeywords = pageKeywordsListMergeable.mergeToString(
+				StringPool.COMMA);
+
+			if (Validator.isNotNull(pageKeywords) &&
+				Validator.isNotNull(metaKeywords)) {
+
 				StringBundler sb = new StringBundler(4);
 
-				sb.append(
-					pageKeywordsListMergeable.mergeToString(StringPool.COMMA));
+				sb.append(pageKeywords);
 				sb.append(StringPool.COMMA);
 				sb.append(StringPool.SPACE);
 				sb.append(metaKeywords);
 
 				metaKeywords = sb.toString();
 			}
-			else {
-				metaKeywords = pageKeywordsListMergeable.mergeToString(
-					StringPool.COMMA);
+			else if (Validator.isNull(metaKeywords)) {
+				metaKeywords = pageKeywords;
 			}
 		}
 
@@ -181,7 +188,7 @@ public class MetaTagsTag extends com.liferay.taglib.util.IncludeTag {
 	}
 
 	private void _writeMeta(String content, String lang, String name)
-		throws IOException {
+		throws Exception {
 
 		JspWriter jspWriter = pageContext.getOut();
 

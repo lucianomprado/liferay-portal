@@ -24,18 +24,6 @@ import java.lang.reflect.InvocationTargetException;
  */
 public class PortalClassInvoker {
 
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link #invoke(MethodKey,
-	 *             Object...)}
-	 */
-	@Deprecated
-	public static Object invoke(
-			boolean newInstance, MethodKey methodKey, Object... arguments)
-		throws Exception {
-
-		return invoke(methodKey, arguments);
-	}
-
 	public static Object invoke(MethodKey methodKey, Object... arguments)
 		throws Exception {
 
@@ -52,15 +40,14 @@ public class PortalClassInvoker {
 
 			return methodHandler.invoke();
 		}
-		catch (InvocationTargetException ite) {
-			Throwable cause = ite.getCause();
+		catch (InvocationTargetException invocationTargetException) {
+			Throwable throwable = invocationTargetException.getCause();
 
-			if (cause instanceof Error) {
-				throw new SystemException(ite);
+			if (throwable instanceof Error) {
+				throw new SystemException(invocationTargetException);
 			}
-			else {
-				throw (Exception)cause;
-			}
+
+			throw (Exception)throwable;
 		}
 		finally {
 			currentThread.setContextClassLoader(contextClassLoader);

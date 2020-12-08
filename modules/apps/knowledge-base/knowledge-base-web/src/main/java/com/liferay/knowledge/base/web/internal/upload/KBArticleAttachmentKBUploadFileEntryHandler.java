@@ -17,12 +17,12 @@ package com.liferay.knowledge.base.web.internal.upload;
 import com.liferay.knowledge.base.constants.KBActionKeys;
 import com.liferay.knowledge.base.model.KBArticle;
 import com.liferay.knowledge.base.service.KBArticleLocalService;
-import com.liferay.knowledge.base.service.permission.KBArticlePermission;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.portletfilerepository.PortletFileRepositoryUtil;
 import com.liferay.portal.kernel.repository.model.FileEntry;
+import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.upload.UploadPortletRequest;
 import com.liferay.portal.kernel.util.ParamUtil;
@@ -58,7 +58,7 @@ public class KBArticleAttachmentKBUploadFileEntryHandler
 		KBArticle kbArticle = _kbArticleLocalService.getLatestKBArticle(
 			resourcePrimKey, WorkflowConstants.STATUS_APPROVED);
 
-		KBArticlePermission.check(
+		_kbArticleModelResourcePermission.check(
 			themeDisplay.getPermissionChecker(), kbArticle,
 			KBActionKeys.UPDATE);
 
@@ -66,8 +66,8 @@ public class KBArticleAttachmentKBUploadFileEntryHandler
 		String contentType = uploadPortletRequest.getContentType(
 			_PARAMETER_NAME);
 
-		try (InputStream inputStream =
-				uploadPortletRequest.getFileAsStream(_PARAMETER_NAME)) {
+		try (InputStream inputStream = uploadPortletRequest.getFileAsStream(
+				_PARAMETER_NAME)) {
 
 			String uniqueFileName = _uniqueFileNameProvider.provide(
 				fileName,
@@ -83,21 +83,22 @@ public class KBArticleAttachmentKBUploadFileEntryHandler
 		ThemeDisplay themeDisplay, KBArticle kbArticle, String fileName) {
 
 		try {
-			if (PortletFileRepositoryUtil.getPortletFileEntry(
-					themeDisplay.getScopeGroupId(),
-					kbArticle.getAttachmentsFolderId(), fileName) != null) {
+			FileEntry fileEntry = PortletFileRepositoryUtil.getPortletFileEntry(
+				themeDisplay.getScopeGroupId(),
+				kbArticle.getAttachmentsFolderId(), fileName);
 
+			if (fileEntry != null) {
 				return true;
 			}
 
 			return false;
 		}
-		catch (PortalException pe) {
+		catch (PortalException portalException) {
 
 			// LPS-52675
 
 			if (_log.isDebugEnabled()) {
-				_log.debug(pe, pe);
+				_log.debug(portalException, portalException);
 			}
 
 			return false;
@@ -111,6 +112,12 @@ public class KBArticleAttachmentKBUploadFileEntryHandler
 
 	@Reference
 	private KBArticleLocalService _kbArticleLocalService;
+
+	@Reference(
+		target = "(model.class.name=com.liferay.knowledge.base.model.KBArticle)"
+	)
+	private ModelResourcePermission<KBArticle>
+		_kbArticleModelResourcePermission;
 
 	@Reference
 	private UniqueFileNameProvider _uniqueFileNameProvider;

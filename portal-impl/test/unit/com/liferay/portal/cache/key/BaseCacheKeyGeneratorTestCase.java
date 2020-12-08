@@ -14,8 +14,8 @@
 
 package com.liferay.portal.cache.key;
 
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.cache.key.CacheKeyGenerator;
-import com.liferay.portal.kernel.util.StringBundler;
 
 import java.io.Serializable;
 
@@ -59,7 +59,8 @@ public abstract class BaseCacheKeyGeneratorTestCase extends TestCase {
 			String oldValue = map.put(key, value);
 
 			assertNull(
-				oldValue + " and " + value + " generate the same key " + key,
+				StringBundler.concat(
+					oldValue, " and ", value, " generate the same key ", key),
 				oldValue);
 		}
 	}
@@ -76,7 +77,8 @@ public abstract class BaseCacheKeyGeneratorTestCase extends TestCase {
 			String oldValue = checkMap.put(key, Arrays.toString(values));
 
 			assertNull(
-				oldValue + " and " + value + " generate the same key " + key,
+				StringBundler.concat(
+					oldValue, " and ", value, " generate the same key ", key),
 				oldValue);
 		}
 	}

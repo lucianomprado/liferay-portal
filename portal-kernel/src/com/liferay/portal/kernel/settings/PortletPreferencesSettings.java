@@ -16,8 +16,6 @@ package com.liferay.portal.kernel.settings;
 
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.kernel.util.StringUtil;
 
 import java.io.IOException;
 
@@ -52,10 +50,10 @@ public class PortletPreferencesSettings extends BaseModifiableSettings {
 	public Collection<String> getModifiedKeys() {
 		Set<String> keys = new HashSet<>();
 
-		Enumeration<String> names = _portletPreferences.getNames();
+		Enumeration<String> enumeration = _portletPreferences.getNames();
 
-		while (names.hasMoreElements()) {
-			keys.add(names.nextElement());
+		while (enumeration.hasMoreElements()) {
+			keys.add(enumeration.nextElement());
 		}
 
 		return keys;
@@ -70,11 +68,11 @@ public class PortletPreferencesSettings extends BaseModifiableSettings {
 		try {
 			_portletPreferences.reset(key);
 		}
-		catch (ReadOnlyException roe) {
+		catch (ReadOnlyException readOnlyException) {
 			_log.error(
 				"Portlet preferences used to persist settings should never " +
 					"be read only",
-				roe);
+				readOnlyException);
 		}
 	}
 
@@ -83,11 +81,11 @@ public class PortletPreferencesSettings extends BaseModifiableSettings {
 		try {
 			_portletPreferences.setValue(key, value);
 		}
-		catch (ReadOnlyException roe) {
+		catch (ReadOnlyException readOnlyException) {
 			_log.error(
 				"Portlet preferences used to persist settings should never " +
 					"be read only",
-				roe);
+				readOnlyException);
 		}
 
 		return this;
@@ -98,11 +96,11 @@ public class PortletPreferencesSettings extends BaseModifiableSettings {
 		try {
 			_portletPreferences.setValues(key, values);
 		}
-		catch (ReadOnlyException roe) {
+		catch (ReadOnlyException readOnlyException) {
 			_log.error(
 				"Portlet preferences used to persist settings should never " +
 					"be read only",
-				roe);
+				readOnlyException);
 		}
 
 		return this;
@@ -122,60 +120,6 @@ public class PortletPreferencesSettings extends BaseModifiableSettings {
 	protected String[] doGetValues(String key) {
 		return _portletPreferences.getValues(key, null);
 	}
-
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	protected boolean isNull(String value) {
-		if ((value == null) || value.equals(_NULL_VALUE)) {
-			return true;
-		}
-
-		return false;
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	protected String normalizeValue(String value) {
-		if (isNull(value)) {
-			return null;
-		}
-
-		return StringUtil.replace(value, "[$NEW_LINE$]", StringPool.NEW_LINE);
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	protected String[] normalizeValues(String[] values) {
-		if (values == null) {
-			return null;
-		}
-
-		if (values.length == 1) {
-			String actualValue = normalizeValue(values[0]);
-
-			if (actualValue == null) {
-				return null;
-			}
-
-			return new String[] {actualValue};
-		}
-
-		String[] actualValues = new String[values.length];
-
-		for (int i = 0; i < actualValues.length; i++) {
-			actualValues[i] = normalizeValue(values[i]);
-		}
-
-		return actualValues;
-	}
-
-	private static final String _NULL_VALUE = "NULL_VALUE";
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		PortletPreferencesSettings.class);

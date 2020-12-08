@@ -14,8 +14,7 @@
 
 package com.liferay.asset.kernel.service;
 
-import aQute.bnd.annotation.ProviderType;
-
+import com.liferay.asset.kernel.model.AssetVocabulary;
 import com.liferay.portal.kernel.service.ServiceWrapper;
 
 /**
@@ -25,96 +24,181 @@ import com.liferay.portal.kernel.service.ServiceWrapper;
  * @see AssetVocabularyService
  * @generated
  */
-@ProviderType
-public class AssetVocabularyServiceWrapper implements AssetVocabularyService,
-	ServiceWrapper<AssetVocabularyService> {
+public class AssetVocabularyServiceWrapper
+	implements AssetVocabularyService, ServiceWrapper<AssetVocabularyService> {
+
 	public AssetVocabularyServiceWrapper(
 		AssetVocabularyService assetVocabularyService) {
+
 		_assetVocabularyService = assetVocabularyService;
 	}
 
 	@Override
-	public com.liferay.asset.kernel.model.AssetVocabulary addVocabulary(
-		long groupId, java.lang.String title,
-		com.liferay.portal.kernel.service.ServiceContext serviceContext)
+	public AssetVocabulary addVocabulary(
+			long groupId, String title,
+			java.util.Map<java.util.Locale, String> titleMap,
+			java.util.Map<java.util.Locale, String> descriptionMap,
+			String settings, int visibilityType,
+			com.liferay.portal.kernel.service.ServiceContext serviceContext)
 		throws com.liferay.portal.kernel.exception.PortalException {
-		return _assetVocabularyService.addVocabulary(groupId, title,
+
+		return _assetVocabularyService.addVocabulary(
+			groupId, title, titleMap, descriptionMap, settings, visibilityType,
 			serviceContext);
 	}
 
 	@Override
-	public com.liferay.asset.kernel.model.AssetVocabulary addVocabulary(
-		long groupId, java.lang.String title,
-		java.util.Map<java.util.Locale, java.lang.String> titleMap,
-		java.util.Map<java.util.Locale, java.lang.String> descriptionMap,
-		java.lang.String settings,
-		com.liferay.portal.kernel.service.ServiceContext serviceContext)
+	public AssetVocabulary addVocabulary(
+			long groupId, String title,
+			java.util.Map<java.util.Locale, String> titleMap,
+			java.util.Map<java.util.Locale, String> descriptionMap,
+			String settings,
+			com.liferay.portal.kernel.service.ServiceContext serviceContext)
 		throws com.liferay.portal.kernel.exception.PortalException {
-		return _assetVocabularyService.addVocabulary(groupId, title, titleMap,
-			descriptionMap, settings, serviceContext);
+
+		return _assetVocabularyService.addVocabulary(
+			groupId, title, titleMap, descriptionMap, settings, serviceContext);
 	}
 
 	@Override
-	public com.liferay.asset.kernel.model.AssetVocabulary fetchVocabulary(
-		long vocabularyId)
+	public AssetVocabulary addVocabulary(
+			long groupId, String title,
+			com.liferay.portal.kernel.service.ServiceContext serviceContext)
 		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _assetVocabularyService.addVocabulary(
+			groupId, title, serviceContext);
+	}
+
+	@Override
+	public AssetVocabulary addVocabulary(
+			long groupId, String name, String title,
+			java.util.Map<java.util.Locale, String> titleMap,
+			java.util.Map<java.util.Locale, String> descriptionMap,
+			String settings,
+			com.liferay.portal.kernel.service.ServiceContext serviceContext)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _assetVocabularyService.addVocabulary(
+			groupId, name, title, titleMap, descriptionMap, settings,
+			serviceContext);
+	}
+
+	@Override
+	public java.util.List<AssetVocabulary> deleteVocabularies(
+			long[] vocabularyIds,
+			com.liferay.portal.kernel.service.ServiceContext serviceContext)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _assetVocabularyService.deleteVocabularies(
+			vocabularyIds, serviceContext);
+	}
+
+	@Override
+	public void deleteVocabulary(long vocabularyId)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		_assetVocabularyService.deleteVocabulary(vocabularyId);
+	}
+
+	@Override
+	public AssetVocabulary fetchVocabulary(long vocabularyId)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
 		return _assetVocabularyService.fetchVocabulary(vocabularyId);
 	}
 
 	@Override
-	public com.liferay.asset.kernel.model.AssetVocabulary getVocabulary(
-		long vocabularyId)
-		throws com.liferay.portal.kernel.exception.PortalException {
-		return _assetVocabularyService.getVocabulary(vocabularyId);
+	public java.util.List<AssetVocabulary> getGroupsVocabularies(
+		long[] groupIds) {
+
+		return _assetVocabularyService.getGroupsVocabularies(groupIds);
 	}
 
 	@Override
-	public com.liferay.asset.kernel.model.AssetVocabulary updateVocabulary(
-		long vocabularyId, java.lang.String title,
-		java.util.Map<java.util.Locale, java.lang.String> titleMap,
-		java.util.Map<java.util.Locale, java.lang.String> descriptionMap,
-		java.lang.String settings,
-		com.liferay.portal.kernel.service.ServiceContext serviceContext)
-		throws com.liferay.portal.kernel.exception.PortalException {
-		return _assetVocabularyService.updateVocabulary(vocabularyId, title,
-			titleMap, descriptionMap, settings, serviceContext);
+	public java.util.List<AssetVocabulary> getGroupsVocabularies(
+		long[] groupIds, String className) {
+
+		return _assetVocabularyService.getGroupsVocabularies(
+			groupIds, className);
 	}
 
 	@Override
-	public com.liferay.asset.kernel.model.AssetVocabularyDisplay getGroupVocabulariesDisplay(
-		long groupId, java.lang.String name, int start, int end,
-		boolean addDefaultVocabulary,
-		com.liferay.portal.kernel.util.OrderByComparator<com.liferay.asset.kernel.model.AssetVocabulary> obc)
-		throws com.liferay.portal.kernel.exception.PortalException {
-		return _assetVocabularyService.getGroupVocabulariesDisplay(groupId,
-			name, start, end, addDefaultVocabulary, obc);
+	public java.util.List<AssetVocabulary> getGroupsVocabularies(
+		long[] groupIds, String className, long classTypePK) {
+
+		return _assetVocabularyService.getGroupsVocabularies(
+			groupIds, className, classTypePK);
 	}
 
 	@Override
-	public com.liferay.asset.kernel.model.AssetVocabularyDisplay getGroupVocabulariesDisplay(
-		long groupId, java.lang.String name, int start, int end,
-		com.liferay.portal.kernel.util.OrderByComparator<com.liferay.asset.kernel.model.AssetVocabulary> obc)
+	public java.util.List<AssetVocabulary> getGroupVocabularies(long groupId)
 		throws com.liferay.portal.kernel.exception.PortalException {
-		return _assetVocabularyService.getGroupVocabulariesDisplay(groupId,
-			name, start, end, obc);
+
+		return _assetVocabularyService.getGroupVocabularies(groupId);
 	}
 
 	@Override
-	public com.liferay.asset.kernel.model.AssetVocabularyDisplay searchVocabulariesDisplay(
-		long groupId, java.lang.String title, boolean addDefaultVocabulary,
-		int start, int end)
+	public java.util.List<AssetVocabulary> getGroupVocabularies(
+			long groupId, boolean createDefaultVocabulary)
 		throws com.liferay.portal.kernel.exception.PortalException {
-		return _assetVocabularyService.searchVocabulariesDisplay(groupId,
-			title, addDefaultVocabulary, start, end);
+
+		return _assetVocabularyService.getGroupVocabularies(
+			groupId, createDefaultVocabulary);
 	}
 
 	@Override
-	public com.liferay.asset.kernel.model.AssetVocabularyDisplay searchVocabulariesDisplay(
-		long groupId, java.lang.String title, boolean addDefaultVocabulary,
-		int start, int end, com.liferay.portal.kernel.search.Sort sort)
+	public java.util.List<AssetVocabulary> getGroupVocabularies(
+			long groupId, boolean createDefaultVocabulary, int start, int end,
+			com.liferay.portal.kernel.util.OrderByComparator<AssetVocabulary>
+				orderByComparator)
 		throws com.liferay.portal.kernel.exception.PortalException {
-		return _assetVocabularyService.searchVocabulariesDisplay(groupId,
-			title, addDefaultVocabulary, start, end, sort);
+
+		return _assetVocabularyService.getGroupVocabularies(
+			groupId, createDefaultVocabulary, start, end, orderByComparator);
+	}
+
+	@Override
+	public java.util.List<AssetVocabulary> getGroupVocabularies(
+		long groupId, int visibilityType) {
+
+		return _assetVocabularyService.getGroupVocabularies(
+			groupId, visibilityType);
+	}
+
+	@Override
+	public java.util.List<AssetVocabulary> getGroupVocabularies(
+		long groupId, int start, int end,
+		com.liferay.portal.kernel.util.OrderByComparator<AssetVocabulary>
+			orderByComparator) {
+
+		return _assetVocabularyService.getGroupVocabularies(
+			groupId, start, end, orderByComparator);
+	}
+
+	@Override
+	public java.util.List<AssetVocabulary> getGroupVocabularies(
+		long groupId, String name, int start, int end,
+		com.liferay.portal.kernel.util.OrderByComparator<AssetVocabulary>
+			orderByComparator) {
+
+		return _assetVocabularyService.getGroupVocabularies(
+			groupId, name, start, end, orderByComparator);
+	}
+
+	@Override
+	public java.util.List<AssetVocabulary> getGroupVocabularies(
+		long[] groupIds) {
+
+		return _assetVocabularyService.getGroupVocabularies(groupIds);
+	}
+
+	@Override
+	public java.util.List<AssetVocabulary> getGroupVocabularies(
+		long[] groupIds, int[] visibilityTypes) {
+
+		return _assetVocabularyService.getGroupVocabularies(
+			groupIds, visibilityTypes);
 	}
 
 	@Override
@@ -123,7 +207,7 @@ public class AssetVocabularyServiceWrapper implements AssetVocabularyService,
 	}
 
 	@Override
-	public int getGroupVocabulariesCount(long groupId, java.lang.String name) {
+	public int getGroupVocabulariesCount(long groupId, String name) {
 		return _assetVocabularyService.getGroupVocabulariesCount(groupId, name);
 	}
 
@@ -132,117 +216,118 @@ public class AssetVocabularyServiceWrapper implements AssetVocabularyService,
 		return _assetVocabularyService.getGroupVocabulariesCount(groupIds);
 	}
 
-	/**
-	* Returns the OSGi service identifier.
-	*
-	* @return the OSGi service identifier
-	*/
 	@Override
-	public java.lang.String getOSGiServiceIdentifier() {
+	public com.liferay.asset.kernel.model.AssetVocabularyDisplay
+			getGroupVocabulariesDisplay(
+				long groupId, String name, int start, int end,
+				boolean addDefaultVocabulary,
+				com.liferay.portal.kernel.util.OrderByComparator
+					<AssetVocabulary> orderByComparator)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _assetVocabularyService.getGroupVocabulariesDisplay(
+			groupId, name, start, end, addDefaultVocabulary, orderByComparator);
+	}
+
+	@Override
+	public com.liferay.asset.kernel.model.AssetVocabularyDisplay
+			getGroupVocabulariesDisplay(
+				long groupId, String name, int start, int end,
+				com.liferay.portal.kernel.util.OrderByComparator
+					<AssetVocabulary> orderByComparator)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _assetVocabularyService.getGroupVocabulariesDisplay(
+			groupId, name, start, end, orderByComparator);
+	}
+
+	/**
+	 * Returns the OSGi service identifier.
+	 *
+	 * @return the OSGi service identifier
+	 */
+	@Override
+	public String getOSGiServiceIdentifier() {
 		return _assetVocabularyService.getOSGiServiceIdentifier();
 	}
 
 	@Override
-	public java.util.List<com.liferay.asset.kernel.model.AssetVocabulary> deleteVocabularies(
-		long[] vocabularyIds,
-		com.liferay.portal.kernel.service.ServiceContext serviceContext)
+	public AssetVocabulary getVocabulary(long vocabularyId)
 		throws com.liferay.portal.kernel.exception.PortalException {
-		return _assetVocabularyService.deleteVocabularies(vocabularyIds,
+
+		return _assetVocabularyService.getVocabulary(vocabularyId);
+	}
+
+	@Override
+	public com.liferay.asset.kernel.model.AssetVocabularyDisplay
+			searchVocabulariesDisplay(
+				long groupId, String title, boolean addDefaultVocabulary,
+				int start, int end)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _assetVocabularyService.searchVocabulariesDisplay(
+			groupId, title, addDefaultVocabulary, start, end);
+	}
+
+	@Override
+	public com.liferay.asset.kernel.model.AssetVocabularyDisplay
+			searchVocabulariesDisplay(
+				long groupId, String title, boolean addDefaultVocabulary,
+				int start, int end, com.liferay.portal.kernel.search.Sort sort)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _assetVocabularyService.searchVocabulariesDisplay(
+			groupId, title, addDefaultVocabulary, start, end, sort);
+	}
+
+	@Override
+	public AssetVocabulary updateVocabulary(
+			long vocabularyId, java.util.Map<java.util.Locale, String> titleMap,
+			java.util.Map<java.util.Locale, String> descriptionMap,
+			String settings)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _assetVocabularyService.updateVocabulary(
+			vocabularyId, titleMap, descriptionMap, settings);
+	}
+
+	@Override
+	public AssetVocabulary updateVocabulary(
+			long vocabularyId, java.util.Map<java.util.Locale, String> titleMap,
+			java.util.Map<java.util.Locale, String> descriptionMap,
+			String settings, int visibilityType)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _assetVocabularyService.updateVocabulary(
+			vocabularyId, titleMap, descriptionMap, settings, visibilityType);
+	}
+
+	@Override
+	public AssetVocabulary updateVocabulary(
+			long vocabularyId, String title,
+			java.util.Map<java.util.Locale, String> titleMap,
+			java.util.Map<java.util.Locale, String> descriptionMap,
+			String settings,
+			com.liferay.portal.kernel.service.ServiceContext serviceContext)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _assetVocabularyService.updateVocabulary(
+			vocabularyId, title, titleMap, descriptionMap, settings,
 			serviceContext);
 	}
 
-	/**
-	* @deprecated As of 7.0.0, with no direct replacement
-	*/
-	@Deprecated
 	@Override
-	public java.util.List<com.liferay.asset.kernel.model.AssetVocabulary> getCompanyVocabularies(
-		long companyId)
+	public AssetVocabulary updateVocabulary(
+			long vocabularyId, String name, String title,
+			java.util.Map<java.util.Locale, String> titleMap,
+			java.util.Map<java.util.Locale, String> descriptionMap,
+			String settings,
+			com.liferay.portal.kernel.service.ServiceContext serviceContext)
 		throws com.liferay.portal.kernel.exception.PortalException {
-		return _assetVocabularyService.getCompanyVocabularies(companyId);
-	}
 
-	@Override
-	public java.util.List<com.liferay.asset.kernel.model.AssetVocabulary> getGroupVocabularies(
-		long groupId)
-		throws com.liferay.portal.kernel.exception.PortalException {
-		return _assetVocabularyService.getGroupVocabularies(groupId);
-	}
-
-	@Override
-	public java.util.List<com.liferay.asset.kernel.model.AssetVocabulary> getGroupVocabularies(
-		long groupId, boolean createDefaultVocabulary)
-		throws com.liferay.portal.kernel.exception.PortalException {
-		return _assetVocabularyService.getGroupVocabularies(groupId,
-			createDefaultVocabulary);
-	}
-
-	@Override
-	public java.util.List<com.liferay.asset.kernel.model.AssetVocabulary> getGroupVocabularies(
-		long groupId, boolean createDefaultVocabulary, int start, int end,
-		com.liferay.portal.kernel.util.OrderByComparator<com.liferay.asset.kernel.model.AssetVocabulary> obc)
-		throws com.liferay.portal.kernel.exception.PortalException {
-		return _assetVocabularyService.getGroupVocabularies(groupId,
-			createDefaultVocabulary, start, end, obc);
-	}
-
-	@Override
-	public java.util.List<com.liferay.asset.kernel.model.AssetVocabulary> getGroupVocabularies(
-		long groupId, int start, int end,
-		com.liferay.portal.kernel.util.OrderByComparator<com.liferay.asset.kernel.model.AssetVocabulary> obc) {
-		return _assetVocabularyService.getGroupVocabularies(groupId, start,
-			end, obc);
-	}
-
-	@Override
-	public java.util.List<com.liferay.asset.kernel.model.AssetVocabulary> getGroupVocabularies(
-		long groupId, java.lang.String name, int start, int end,
-		com.liferay.portal.kernel.util.OrderByComparator<com.liferay.asset.kernel.model.AssetVocabulary> obc) {
-		return _assetVocabularyService.getGroupVocabularies(groupId, name,
-			start, end, obc);
-	}
-
-	@Override
-	public java.util.List<com.liferay.asset.kernel.model.AssetVocabulary> getGroupVocabularies(
-		long[] groupIds) {
-		return _assetVocabularyService.getGroupVocabularies(groupIds);
-	}
-
-	@Override
-	public java.util.List<com.liferay.asset.kernel.model.AssetVocabulary> getGroupsVocabularies(
-		long[] groupIds) {
-		return _assetVocabularyService.getGroupsVocabularies(groupIds);
-	}
-
-	@Override
-	public java.util.List<com.liferay.asset.kernel.model.AssetVocabulary> getGroupsVocabularies(
-		long[] groupIds, java.lang.String className) {
-		return _assetVocabularyService.getGroupsVocabularies(groupIds, className);
-	}
-
-	@Override
-	public java.util.List<com.liferay.asset.kernel.model.AssetVocabulary> getGroupsVocabularies(
-		long[] groupIds, java.lang.String className, long classTypePK) {
-		return _assetVocabularyService.getGroupsVocabularies(groupIds,
-			className, classTypePK);
-	}
-
-	/**
-	* @deprecated As of 7.0.0, replaced by {@link
-	AssetUtil#filterVocabularyIds(PermissionChecker, long[])}
-	*/
-	@Deprecated
-	@Override
-	public java.util.List<com.liferay.asset.kernel.model.AssetVocabulary> getVocabularies(
-		long[] vocabularyIds)
-		throws com.liferay.portal.kernel.exception.PortalException {
-		return _assetVocabularyService.getVocabularies(vocabularyIds);
-	}
-
-	@Override
-	public void deleteVocabulary(long vocabularyId)
-		throws com.liferay.portal.kernel.exception.PortalException {
-		_assetVocabularyService.deleteVocabulary(vocabularyId);
+		return _assetVocabularyService.updateVocabulary(
+			vocabularyId, name, title, titleMap, descriptionMap, settings,
+			serviceContext);
 	}
 
 	@Override
@@ -251,9 +336,12 @@ public class AssetVocabularyServiceWrapper implements AssetVocabularyService,
 	}
 
 	@Override
-	public void setWrappedService(AssetVocabularyService assetVocabularyService) {
+	public void setWrappedService(
+		AssetVocabularyService assetVocabularyService) {
+
 		_assetVocabularyService = assetVocabularyService;
 	}
 
 	private AssetVocabularyService _assetVocabularyService;
+
 }

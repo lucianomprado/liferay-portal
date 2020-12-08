@@ -14,10 +14,9 @@
 
 package com.liferay.portal.kernel.mobile.device;
 
-import aQute.bnd.annotation.ProviderType;
-
-import java.util.Map;
 import java.util.Set;
+
+import org.osgi.annotation.versioning.ProviderType;
 
 /**
  * @author Milen Dyankov
@@ -29,12 +28,6 @@ public interface KnownDevices {
 	public Set<VersionableName> getBrands();
 
 	public Set<VersionableName> getBrowsers();
-
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	public Map<Capability, Set<String>> getDeviceIds();
 
 	public Set<VersionableName> getOperatingSystems();
 

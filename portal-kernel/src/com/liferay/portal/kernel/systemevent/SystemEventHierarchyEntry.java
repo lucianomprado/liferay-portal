@@ -14,10 +14,10 @@
 
 package com.liferay.portal.kernel.systemevent;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.util.PortalUtil;
-import com.liferay.portal.kernel.util.StringPool;
 
 /**
  * @author Zsolt Berentey
@@ -81,9 +81,7 @@ public class SystemEventHierarchyEntry {
 	}
 
 	public boolean hasTypedModel(String className, long classPK) {
-		long classNameId = PortalUtil.getClassNameId(className);
-
-		return hasTypedModel(classNameId, classPK);
+		return hasTypedModel(PortalUtil.getClassNameId(className), classPK);
 	}
 
 	public void setClassName(String className) {

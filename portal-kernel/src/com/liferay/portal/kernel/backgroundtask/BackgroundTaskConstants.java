@@ -14,12 +14,15 @@
 
 package com.liferay.portal.kernel.backgroundtask;
 
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.petra.string.StringPool;
 
 /**
- * @author Daniel Kocsis
- * @author Eduardo Garcia
+ * @author     Daniel Kocsis
+ * @author     Eduardo García
+ * @deprecated As of Athanasius (7.3.x), replaced by {@link
+ *             com.liferay.portal.kernel.backgroundtask.constants.BackgroundTaskConstants}
  */
+@Deprecated
 public class BackgroundTaskConstants {
 
 	public static final String BACKGROUND_TASK_ID = "backgroundTaskId";
@@ -101,9 +104,8 @@ public class BackgroundTaskConstants {
 		else if (status == STATUS_SUCCESSFUL) {
 			return LABEL_SUCCESSFUL;
 		}
-		else {
-			return StringPool.BLANK;
-		}
+
+		return StringPool.BLANK;
 	}
 
 }

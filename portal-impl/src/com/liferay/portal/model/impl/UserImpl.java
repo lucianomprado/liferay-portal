@@ -14,6 +14,8 @@
 
 package com.liferay.portal.model.impl;
 
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.bean.AutoEscape;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -55,6 +57,7 @@ import com.liferay.portal.kernel.service.WebsiteLocalServiceUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.Digester;
 import com.liferay.portal.kernel.util.DigesterUtil;
+import com.liferay.portal.kernel.util.FriendlyURLNormalizerUtil;
 import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.Portal;
@@ -62,8 +65,6 @@ import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.RemotePreference;
 import com.liferay.portal.kernel.util.SetUtil;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.TimeZoneUtil;
 import com.liferay.portal.kernel.util.Validator;
@@ -72,6 +73,7 @@ import com.liferay.portal.security.auth.EmailAddressGeneratorFactory;
 import com.liferay.portal.util.PrefsPropsUtil;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.portal.util.PropsValues;
+import com.liferay.users.admin.kernel.util.UserInitialsGeneratorUtil;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -118,6 +120,19 @@ public class UserImpl extends UserBaseImpl {
 		}
 
 		return _contact;
+	}
+
+	@Override
+	public String fetchPortraitURL(ThemeDisplay themeDisplay) {
+		Contact contact = fetchContact();
+
+		if (contact == null) {
+			return StringPool.BLANK;
+		}
+
+		return UserConstants.getPortraitURL(
+			themeDisplay.getPathImage(), contact.isMale(), getPortraitId(),
+			getUserUuid());
 	}
 
 	/**
@@ -247,93 +262,6 @@ public class UserImpl extends UserBaseImpl {
 	}
 
 	/**
-	 * Returns the user's display URL, discounting the URL of the user's default
-	 * intranet site home page.
-	 *
-	 * <p>
-	 * The logic for the display URL to return is as follows:
-	 * </p>
-	 *
-	 * <ol>
-	 * <li>
-	 * If the user is the guest user, return an empty string.
-	 * </li>
-	 * <li>
-	 * Else, if a friendly URL is available for the user's profile, return that
-	 * friendly URL.
-	 * </li>
-	 * <li>
-	 * Otherwise, return the URL of the user's default extranet site home page.
-	 * </li>
-	 * </ol>
-	 *
-	 * @param      portalURL the portal's URL
-	 * @param      mainPath the main path
-	 * @return     the user's display URL
-	 * @deprecated As of 7.0.0, replaced by {@link #getDisplayURL(ThemeDisplay)}
-	 */
-	@Deprecated
-	@Override
-	public String getDisplayURL(String portalURL, String mainPath)
-		throws PortalException {
-
-		return getDisplayURL(portalURL, mainPath, false);
-	}
-
-	/**
-	 * Returns the user's display URL.
-	 *
-	 * <p>
-	 * The logic for the display URL to return is as follows:
-	 * </p>
-	 *
-	 * <ol>
-	 * <li>
-	 * If the user is the guest user, return an empty string.
-	 * </li>
-	 * <li>
-	 * Else, if a friendly URL is available for the user's profile, return that
-	 * friendly URL.
-	 * </li>
-	 * <li>
-	 * Else, if <code>privateLayout</code> is <code>true</code>, return the URL
-	 * of the user's default intranet site home page.
-	 * </li>
-	 * <li>
-	 * Otherwise, return the URL of the user's default extranet site home page.
-	 * </li>
-	 * </ol>
-	 *
-	 * @param      portalURL the portal's URL
-	 * @param      mainPath the main path
-	 * @param      privateLayout whether to use the URL of the user's default
-	 *             intranet(versus extranet)  site home page, if no friendly URL
-	 *             is available for the user's profile
-	 * @return     the user's display URL
-	 * @throws     PortalException
-	 * @deprecated As of 7.0.0, replaced by {@link #getDisplayURL(ThemeDisplay)}
-	 */
-	@Deprecated
-	@Override
-	public String getDisplayURL(
-			String portalURL, String mainPath, boolean privateLayout)
-		throws PortalException {
-
-		if (isDefaultUser()) {
-			return StringPool.BLANK;
-		}
-
-		String profileFriendlyURL = getProfileFriendlyURL();
-
-		if (profileFriendlyURL != null) {
-			return portalURL.concat(PortalUtil.getPathContext()).concat(
-				profileFriendlyURL);
-		}
-
-		return StringPool.BLANK;
-	}
-
-	/**
 	 * Returns the user's display URL based on the theme display, discounting
 	 * the URL of the user's default intranet site home page.
 	 *
@@ -404,15 +332,16 @@ public class UserImpl extends UserBaseImpl {
 			return StringPool.BLANK;
 		}
 
-		String portalURL = themeDisplay.getPortalURL();
-
 		String profileFriendlyURL = getProfileFriendlyURL();
 
 		if (profileFriendlyURL != null) {
+			String portalURL = themeDisplay.getPortalURL();
+
 			return PortalUtil.addPreservedParameters(
 				themeDisplay,
-				portalURL.concat(
-					PortalUtil.getPathContext()).concat(profileFriendlyURL));
+				StringBundler.concat(
+					portalURL, PortalUtil.getPathContext(),
+					profileFriendlyURL));
 		}
 
 		Group group = getGroup();
@@ -514,10 +443,16 @@ public class UserImpl extends UserBaseImpl {
 
 	@Override
 	public String getInitials() {
-		String firstInitial = StringUtil.shorten(getFirstName(), 1);
-		String lastInitial = StringUtil.shorten(getLastName(), 1);
+		String initials = UserInitialsGeneratorUtil.getInitials(this);
 
-		return StringUtil.toUpperCase(firstInitial.concat(lastInitial));
+		if (initials == null) {
+			String firstInitial = StringUtil.shorten(getFirstName(), 1);
+			String lastInitial = StringUtil.shorten(getLastName(), 1);
+
+			initials = StringUtil.toUpperCase(firstInitial.concat(lastInitial));
+		}
+
+		return initials;
 	}
 
 	@Override
@@ -532,13 +467,15 @@ public class UserImpl extends UserBaseImpl {
 		Company company = CompanyLocalServiceUtil.getCompanyById(
 			getCompanyId());
 
-		if (company.getAuthType().equals(CompanyConstants.AUTH_TYPE_EA)) {
+		String authType = company.getAuthType();
+
+		if (authType.equals(CompanyConstants.AUTH_TYPE_EA)) {
 			login = getEmailAddress();
 		}
-		else if (company.getAuthType().equals(CompanyConstants.AUTH_TYPE_SN)) {
+		else if (authType.equals(CompanyConstants.AUTH_TYPE_SN)) {
 			login = getScreenName();
 		}
-		else if (company.getAuthType().equals(CompanyConstants.AUTH_TYPE_ID)) {
+		else if (authType.equals(CompanyConstants.AUTH_TYPE_ID)) {
 			login = String.valueOf(getUserId());
 		}
 
@@ -602,7 +539,7 @@ public class UserImpl extends UserBaseImpl {
 
 	@Override
 	public String getOriginalEmailAddress() {
-		return super.getOriginalEmailAddress();
+		return getColumnOriginalValue("emailAddress");
 	}
 
 	@Override
@@ -827,9 +764,8 @@ public class UserImpl extends UserBaseImpl {
 
 			return true;
 		}
-		else {
-			return false;
-		}
+
+		return false;
 	}
 
 	@Override
@@ -837,9 +773,8 @@ public class UserImpl extends UserBaseImpl {
 		if (getStatus() == WorkflowConstants.STATUS_APPROVED) {
 			return true;
 		}
-		else {
-			return false;
-		}
+
+		return false;
 	}
 
 	@Override
@@ -872,8 +807,8 @@ public class UserImpl extends UserBaseImpl {
 
 			emailAddressVerificationRequired = company.isStrangersVerify();
 		}
-		catch (PortalException pe) {
-			_log.error(pe, pe);
+		catch (PortalException portalException) {
+			_log.error(portalException, portalException);
 		}
 
 		if (emailAddressVerificationRequired) {
@@ -904,12 +839,11 @@ public class UserImpl extends UserBaseImpl {
 			return true;
 		}
 
-		if (PropsValues.USERS_REMINDER_QUERIES_ENABLED) {
-			if (Validator.isNull(getReminderQueryQuestion()) ||
-				Validator.isNull(getReminderQueryAnswer())) {
+		if (PropsValues.USERS_REMINDER_QUERIES_ENABLED &&
+			(Validator.isNull(getReminderQueryQuestion()) ||
+			 Validator.isNull(getReminderQueryAnswer()))) {
 
-				return false;
-			}
+			return false;
 		}
 
 		return true;
@@ -922,7 +856,7 @@ public class UserImpl extends UserBaseImpl {
 		}
 
 		if (isEmailAddressComplete() && isEmailAddressVerificationComplete() &&
-			!isPasswordReset() && isReminderQueryComplete() &&
+			!_isRequirePasswordReset() && isReminderQueryComplete() &&
 			isTermsOfUseComplete()) {
 
 			return true;
@@ -968,7 +902,9 @@ public class UserImpl extends UserBaseImpl {
 	@Override
 	public void setTimeZoneId(String timeZoneId) {
 		if (Validator.isNull(timeZoneId)) {
-			timeZoneId = TimeZoneUtil.getDefault().getID();
+			TimeZone defaultTimeZone = TimeZoneUtil.getDefault();
+
+			timeZoneId = defaultTimeZone.getID();
 		}
 
 		_timeZone = TimeZoneUtil.getTimeZone(timeZoneId);
@@ -977,24 +913,38 @@ public class UserImpl extends UserBaseImpl {
 	}
 
 	protected String getProfileFriendlyURL() {
-		if (!_hasUsersProfileFriendlyURL) {
+		if (!_HAS_USERS_PROFILE_FRIENDLY_URL) {
 			return null;
 		}
+
+		String normalizedScreenName = FriendlyURLNormalizerUtil.normalize(
+			getScreenName());
 
 		return StringUtil.replace(
 			PropsValues.USERS_PROFILE_FRIENDLY_URL,
 			new String[] {"${liferay:screenName}", "${liferay:userId}"},
 			new String[] {
-				HtmlUtil.escapeURL(getScreenName()), String.valueOf(getUserId())
+				HtmlUtil.escapeURL(normalizedScreenName),
+				String.valueOf(getUserId())
 			});
 	}
+
+	private boolean _isRequirePasswordReset() {
+		if (!isPasswordReset() ||
+			((_passwordPolicy != null) && !_passwordPolicy.isChangeable())) {
+
+			return false;
+		}
+
+		return true;
+	}
+
+	private static final boolean _HAS_USERS_PROFILE_FRIENDLY_URL =
+		Validator.isNotNull(PropsValues.USERS_PROFILE_FRIENDLY_URL);
 
 	private static final Contact _NULL_CONTACT = new ContactImpl();
 
 	private static final Log _log = LogFactoryUtil.getLog(UserImpl.class);
-
-	private static final boolean _hasUsersProfileFriendlyURL =
-		Validator.isNotNull(PropsValues.USERS_PROFILE_FRIENDLY_URL);
 
 	private Contact _contact;
 	private Locale _locale;

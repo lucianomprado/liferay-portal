@@ -77,8 +77,9 @@ public class WelderFactoryUtilTest {
 
 			Assert.fail();
 		}
-		catch (RuntimeException re) {
-			Assert.assertTrue(re.getCause() instanceof IllegalAccessException);
+		catch (RuntimeException runtimeException) {
+			Assert.assertTrue(
+				runtimeException.getCause() instanceof IllegalAccessException);
 		}
 		finally {
 			System.clearProperty(PropsKeys.INTRABAND_WELDER_IMPL);
@@ -94,8 +95,9 @@ public class WelderFactoryUtilTest {
 
 			Assert.fail();
 		}
-		catch (RuntimeException re) {
-			Assert.assertTrue(re.getCause() instanceof ClassNotFoundException);
+		catch (RuntimeException runtimeException) {
+			Assert.assertTrue(
+				runtimeException.getCause() instanceof ClassNotFoundException);
 		}
 		finally {
 			System.clearProperty(PropsKeys.INTRABAND_WELDER_IMPL);
@@ -118,7 +120,7 @@ public class WelderFactoryUtilTest {
 
 	@AdviseWith(adviceClasses = {FIFOUtilAdvice.class, OSDetectorAdvice.class})
 	@Test
-	public void testGetWelderClassOnNonWindowsWithFIFO() {
+	public void testGetWelderClassOnNonwindowsWithFIFO() {
 		FIFOUtilAdvice._fifoSupported = true;
 		OSDetectorAdvice._windows = false;
 
@@ -127,7 +129,7 @@ public class WelderFactoryUtilTest {
 
 	@AdviseWith(adviceClasses = {FIFOUtilAdvice.class, OSDetectorAdvice.class})
 	@Test
-	public void testGetWelderClassOnNonWindowsWithoutFIFO() {
+	public void testGetWelderClassOnnonWindowsWithoutFIFO() {
 		FIFOUtilAdvice._fifoSupported = false;
 		OSDetectorAdvice._windows = false;
 
@@ -135,7 +137,7 @@ public class WelderFactoryUtilTest {
 			SocketWelder.class, WelderFactoryUtil.getWelderClass());
 	}
 
-	@AdviseWith(adviceClasses = {OSDetectorAdvice.class})
+	@AdviseWith(adviceClasses = OSDetectorAdvice.class)
 	@Test
 	public void testGetWelderClassOnWindows() {
 		OSDetectorAdvice._windows = true;

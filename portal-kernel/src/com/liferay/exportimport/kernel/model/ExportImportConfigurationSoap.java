@@ -14,8 +14,6 @@
 
 package com.liferay.exportimport.kernel.model;
 
-import aQute.bnd.annotation.ProviderType;
-
 import java.io.Serializable;
 
 import java.util.ArrayList;
@@ -26,17 +24,21 @@ import java.util.List;
  * This class is used by SOAP remote services, specifically {@link com.liferay.portlet.exportimport.service.http.ExportImportConfigurationServiceSoap}.
  *
  * @author Brian Wing Shun Chan
- * @see com.liferay.portlet.exportimport.service.http.ExportImportConfigurationServiceSoap
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
-@ProviderType
+@Deprecated
 public class ExportImportConfigurationSoap implements Serializable {
+
 	public static ExportImportConfigurationSoap toSoapModel(
 		ExportImportConfiguration model) {
-		ExportImportConfigurationSoap soapModel = new ExportImportConfigurationSoap();
+
+		ExportImportConfigurationSoap soapModel =
+			new ExportImportConfigurationSoap();
 
 		soapModel.setMvccVersion(model.getMvccVersion());
-		soapModel.setExportImportConfigurationId(model.getExportImportConfigurationId());
+		soapModel.setExportImportConfigurationId(
+			model.getExportImportConfigurationId());
 		soapModel.setGroupId(model.getGroupId());
 		soapModel.setCompanyId(model.getCompanyId());
 		soapModel.setUserId(model.getUserId());
@@ -57,7 +59,9 @@ public class ExportImportConfigurationSoap implements Serializable {
 
 	public static ExportImportConfigurationSoap[] toSoapModels(
 		ExportImportConfiguration[] models) {
-		ExportImportConfigurationSoap[] soapModels = new ExportImportConfigurationSoap[models.length];
+
+		ExportImportConfigurationSoap[] soapModels =
+			new ExportImportConfigurationSoap[models.length];
 
 		for (int i = 0; i < models.length; i++) {
 			soapModels[i] = toSoapModel(models[i]);
@@ -68,10 +72,13 @@ public class ExportImportConfigurationSoap implements Serializable {
 
 	public static ExportImportConfigurationSoap[][] toSoapModels(
 		ExportImportConfiguration[][] models) {
+
 		ExportImportConfigurationSoap[][] soapModels = null;
 
 		if (models.length > 0) {
-			soapModels = new ExportImportConfigurationSoap[models.length][models[0].length];
+			soapModels =
+				new ExportImportConfigurationSoap
+					[models.length][models[0].length];
 		}
 		else {
 			soapModels = new ExportImportConfigurationSoap[0][0];
@@ -86,13 +93,16 @@ public class ExportImportConfigurationSoap implements Serializable {
 
 	public static ExportImportConfigurationSoap[] toSoapModels(
 		List<ExportImportConfiguration> models) {
-		List<ExportImportConfigurationSoap> soapModels = new ArrayList<ExportImportConfigurationSoap>(models.size());
+
+		List<ExportImportConfigurationSoap> soapModels =
+			new ArrayList<ExportImportConfigurationSoap>(models.size());
 
 		for (ExportImportConfiguration model : models) {
 			soapModels.add(toSoapModel(model));
 		}
 
-		return soapModels.toArray(new ExportImportConfigurationSoap[soapModels.size()]);
+		return soapModels.toArray(
+			new ExportImportConfigurationSoap[soapModels.size()]);
 	}
 
 	public ExportImportConfigurationSoap() {
@@ -118,7 +128,9 @@ public class ExportImportConfigurationSoap implements Serializable {
 		return _exportImportConfigurationId;
 	}
 
-	public void setExportImportConfigurationId(long exportImportConfigurationId) {
+	public void setExportImportConfigurationId(
+		long exportImportConfigurationId) {
+
 		_exportImportConfigurationId = exportImportConfigurationId;
 	}
 
@@ -250,4 +262,5 @@ public class ExportImportConfigurationSoap implements Serializable {
 	private long _statusByUserId;
 	private String _statusByUserName;
 	private Date _statusDate;
+
 }

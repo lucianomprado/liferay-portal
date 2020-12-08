@@ -1,80 +1,104 @@
-<definition>
-	<command name="_closeMessage">
-		<if>
-			<and>
-				<condition function="IsElementPresent" locator1="Message#${messageType}" />
-				<condition function="IsVisible" locator1="Message#${messageType}" />
-				<condition function="IsVisible" locator1="Icon#CLOSE" />
-			</and>
-			<then>
-				<execute function="Click" locator1="Icon#CLOSE" />
-			</then>
-		</if>
-	</command>
+definition {
 
-	<command name="closeMessageSpecific">
-		<var name="key_messageSpecific" value="${messageSpecific}" />
+	macro closeMessage {
+		if ((IsElementPresent(locator1 = "Message#${messageType}")) && (IsVisible(locator1 = "Message#${messageType}")) && (IsVisible(locator1 = "Icon#CLOSE"))) {
+			Click(locator1 = "Icon#CLOSE");
+		}
+	}
 
-		<execute function="Click" locator1="Icon#CLOSE_SPECIFIC" />
-	</command>
+	macro closePortalLocalizationWarning {
+		Alert.closeMessage(messageType = "PORTAL_LOCALIZATION");
 
-	<command name="closePortalLocalizationWarning">
-		<execute macro="Alert#_closeMessage">
-			<var name="messageType" value="PORTAL_LOCALIZATION" />
-		</execute>
+		Pause(locator1 = "2000");
+	}
 
-		<execute function="Pause" locator1="2000" />
-	</command>
+	macro viewErrorMessage {
+		AssertTextEquals.assertPartialText(
+			locator1 = "Message#ERROR",
+			value1 = "${errorMessage}");
+	}
 
-	<command name="viewEmptyFieldMessage">
-		<var name="key_fieldLabel" value="${fieldLabel}" />
+	macro viewExpireContentFailedMessage {
+		AssertTextEquals.assertPartialText(
+			locator1 = "Message#ERROR_1",
+			value1 = "Please enter a valid expiration date.");
+	}
 
-		<execute function="AssertTextEquals" locator1="Message#ERROR_EMPTY_FIELD" value1="At least one option should be set for field ${fieldLabel}." />
-	</command>
+	macro viewInfoMessage {
+		AssertTextEquals(
+			locator1 = "Message#INFO_2",
+			value1 = "${infoMessage}");
+	}
 
-	<command name="viewErrorMessage">
-		<execute function="AssertTextEquals" locator1="Message#ERROR" value1="${errorMessage}" />
+	macro viewInfoMessageSpecific {
+		AssertElementPresent(
+			key_infoMessage = "${infoMessage}",
+			locator1 = "Message#INFO_SPECIFIC");
+	}
 
-		<execute macro="Alert#_closeMessage">
-			<var name="messageType" value="ERROR" />
-		</execute>
-	</command>
+	macro viewLengthValidationField {
+		AssertTextEquals.assertPartialText(
+			locator1 = "TextInput#REQUIRED_ALERT",
+			value1 = "Please enter no more than");
+	}
 
-	<command name="viewExpireContentFailedMessage">
-		<execute function="AssertTextEquals#assertPartialText" locator1="Message#ERROR_2" value1="Please enter a valid expiration date." />
-	</command>
+	macro viewLocalizationMessage {
+		AssertTextEquals.assertPartialText(
+			locator1 = "Home#PORTAL_LOCALIZATION_TRANSLATION_LANGUAGE_MESSAGE",
+			value1 = "${translationLanguageLocalizationMessage}");
 
-	<command name="viewFailedSiteTemplateDeletionMessage">
-		<execute function="AssertTextEquals#assertPartialText" locator1="Message#ERROR_2" value1="You cannot delete site templates that are used by a site." />
-	</command>
+		if (isSet(defaultLanguageLocalizationMessage)) {
+			AssertTextEquals(
+				key_pageLocale = "${defaultLanguageLocalizationMessage}",
+				locator1 = "Home#PORTAL_LOCALIZATION_DEFAULT_LANGUAGE_MESSAGE",
+				value1 = "${defaultLanguageLocalizationMessage}");
+		}
 
-	<command name="viewRequestFailedToComplete">
-		<execute function="AssertTextEquals#assertPartialText" locator1="Message#ERROR_REQUEST_FAILED_TO_COMPLETE" value1="Your request failed to complete." />
-	</command>
+		AssertTextEquals(
+			locator1 = "Home#PORTAL_LOCALIZATION_PREFERRED_LANGUAGE_MESSAGE",
+			value1 = "${preferredLanguageLocalizationMessage}");
+	}
 
-	<command name="viewRequiredField">
-		<execute function="AssertTextEquals#assertPartialText" locator1="TextInput#REQUIRED_ALERT" value1="This field is required." />
-	</command>
+	macro viewMutedMessage {
+		AssertTextEquals.assertPartialText(
+			locator1 = "Message#EMPTY_INFO_DEPOT",
+			value1 = "${muteMessage}");
+	}
 
-	<command name="viewSuccessMessage">
-		<execute macro-mobile="MobileNavigator#clickRemoveIcon" />
+	macro viewRequestFailedToComplete {
+		AssertElementPresent(locator1 = "Message#ERROR_REQUEST_FAILED");
 
-		<execute function="AssertVisible" locator1="Message#SUCCESS" />
+		if (IsElementPresent(locator1 = "Button#CLOSE_MESSAGE_FLOAT")) {
+			Click(locator1 = "Button#CLOSE_MESSAGE_FLOAT");
+		}
+	}
 
-		<execute function="Pause" locator1="5000" />
+	macro viewRequiredField {
+		AssertTextEquals.assertPartialText(
+			locator1 = "TextInput#REQUIRED_ALERT",
+			value1 = "This field is required.");
+	}
 
-		<execute macro="Alert#_closeMessage">
-			<var name="messageType" value="SUCCESS" />
-		</execute>
-	</command>
+	macro viewSuccessMessage {
+		VerifyElementPresent(locator1 = "Message#SUCCESS_DISMISSIBLE");
 
-	<command name="viewSuccessMessageText">
-		<execute macro-mobile="MobileNavigator#clickRemoveIcon" />
+		if (IsElementPresent(locator1 = "Button#CLOSE_MESSAGE")) {
+			Click(locator1 = "Button#CLOSE_MESSAGE");
+		}
+	}
 
-		<execute macro="Button#clickPublish" />
+	macro viewSuccessMessageText {
+		VerifyVisible(locator1 = "Message#SUCCESS");
 
-		<execute function="AssertVisible" locator1="Message#SUCCESS" />
-		<execute function="AssertElementPresent" locator1="Message#SUCCESS" />
-		<execute function="AssertTextEquals" locator1="Message#SUCCESS" value1="${sucessMessage}" />
-	</command>
-</definition>
+		AssertTextEquals.assertPartialText(
+			locator1 = "Message#SUCCESS",
+			value1 = "${successMessage}");
+	}
+
+	macro viewWarningSpecific {
+		AssertElementPresent(
+			key_warningMessage = "${warningMessage}",
+			locator1 = "Message#WARNING_SPECIFIC");
+	}
+
+}

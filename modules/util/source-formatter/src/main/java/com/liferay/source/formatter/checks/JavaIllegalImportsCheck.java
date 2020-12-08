@@ -14,13 +14,17 @@
 
 package com.liferay.source.formatter.checks;
 
-import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringUtil;
 
 /**
  * @author Hugo Huijser
  */
 public class JavaIllegalImportsCheck extends BaseFileCheck {
+
+	@Override
+	public boolean isLiferaySourceCheck() {
+		return true;
+	}
 
 	@Override
 	protected String doProcess(
@@ -38,6 +42,20 @@ public class JavaIllegalImportsCheck extends BaseFileCheck {
 				"com.liferay.portal.kernel.exception.SystemException",
 				"com.liferay.portal.kernel.util.LocalizationUtil"
 			});
+
+		if (isAttributeValue(
+				_ENFORCE_JAVA_UTIL_FUNCTION_IMPORTS_KEY, absolutePath)) {
+
+			content = StringUtil.replace(
+				content,
+				new String[] {
+					"com.liferay.portal.kernel.util.Function",
+					"com.liferay.portal.kernel.util.Supplier"
+				},
+				new String[] {
+					"java.util.function.Function", "java.util.function.Supplier"
+				});
+		}
 
 		if (!isExcludedPath(RUN_OUTSIDE_PORTAL_EXCLUDES, absolutePath) &&
 			!isExcludedPath(_PROXY_EXCLUDES, absolutePath) &&
@@ -146,22 +164,6 @@ public class JavaIllegalImportsCheck extends BaseFileCheck {
 					"ServletResponseUtil.sendFile, see LPS-65229");
 		}
 
-		// LPS-69494
-
-		if (!fileName.endsWith("AbstractExtender.java") &&
-			content.contains(
-				"org.apache.felix.utils.extender.AbstractExtender")) {
-
-			StringBundler sb = new StringBundler(4);
-
-			sb.append("Use com.liferay.osgi.felix.util.AbstractExtender ");
-			sb.append("instead of ");
-			sb.append("org.apache.felix.utils.extender.AbstractExtender, see ");
-			sb.append("LPS-69494");
-
-			addMessage(fileName, sb.toString());
-		}
-
 		// LPS-70963
 
 		if (content.contains("java.util.WeakHashMap")) {
@@ -171,8 +173,20 @@ public class JavaIllegalImportsCheck extends BaseFileCheck {
 					"thread-safe, see LPS-70963");
 		}
 
+		if (!isExcludedPath(RUN_OUTSIDE_PORTAL_EXCLUDES, absolutePath) &&
+			content.contains("org.slf4j.Logger")) {
+
+			addMessage(
+				fileName,
+				"Use com.liferay.portal.kernel.log.Log instead of " +
+					"org.slf4j.Logger");
+		}
+
 		return content;
 	}
+
+	private static final String _ENFORCE_JAVA_UTIL_FUNCTION_IMPORTS_KEY =
+		"enforceJavaUtilFunctionImports";
 
 	private static final String _PROXY_EXCLUDES = "proxy.excludes";
 

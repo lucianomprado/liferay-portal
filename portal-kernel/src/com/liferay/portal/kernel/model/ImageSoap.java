@@ -14,8 +14,6 @@
 
 package com.liferay.portal.kernel.model;
 
-import aQute.bnd.annotation.ProviderType;
-
 import java.io.Serializable;
 
 import java.util.ArrayList;
@@ -26,15 +24,17 @@ import java.util.List;
  * This class is used by SOAP remote services, specifically {@link com.liferay.portal.service.http.ImageServiceSoap}.
  *
  * @author Brian Wing Shun Chan
- * @see com.liferay.portal.service.http.ImageServiceSoap
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
-@ProviderType
+@Deprecated
 public class ImageSoap implements Serializable {
+
 	public static ImageSoap toSoapModel(Image model) {
 		ImageSoap soapModel = new ImageSoap();
 
 		soapModel.setMvccVersion(model.getMvccVersion());
+		soapModel.setCtCollectionId(model.getCtCollectionId());
 		soapModel.setImageId(model.getImageId());
 		soapModel.setCompanyId(model.getCompanyId());
 		soapModel.setModifiedDate(model.getModifiedDate());
@@ -102,6 +102,14 @@ public class ImageSoap implements Serializable {
 		_mvccVersion = mvccVersion;
 	}
 
+	public long getCtCollectionId() {
+		return _ctCollectionId;
+	}
+
+	public void setCtCollectionId(long ctCollectionId) {
+		_ctCollectionId = ctCollectionId;
+	}
+
 	public long getImageId() {
 		return _imageId;
 	}
@@ -159,6 +167,7 @@ public class ImageSoap implements Serializable {
 	}
 
 	private long _mvccVersion;
+	private long _ctCollectionId;
 	private long _imageId;
 	private long _companyId;
 	private Date _modifiedDate;
@@ -166,4 +175,5 @@ public class ImageSoap implements Serializable {
 	private int _height;
 	private int _width;
 	private int _size;
+
 }

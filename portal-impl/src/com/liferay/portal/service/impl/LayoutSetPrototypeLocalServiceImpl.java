@@ -18,7 +18,6 @@ import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.RequiredLayoutSetPrototypeException;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.GroupConstants;
-import com.liferay.portal.kernel.model.LayoutConstants;
 import com.liferay.portal.kernel.model.LayoutSetPrototype;
 import com.liferay.portal.kernel.model.ResourceConstants;
 import com.liferay.portal.kernel.model.SystemEventConstants;
@@ -26,14 +25,11 @@ import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.systemevent.SystemEvent;
-import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.service.base.LayoutSetPrototypeLocalServiceBaseImpl;
 
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -72,15 +68,16 @@ public class LayoutSetPrototypeLocalServiceImpl
 		layoutSetPrototype.setDescriptionMap(descriptionMap);
 		layoutSetPrototype.setActive(active);
 
-		UnicodeProperties settingsProperties =
+		UnicodeProperties settingsUnicodeProperties =
 			layoutSetPrototype.getSettingsProperties();
 
-		settingsProperties.put(
+		settingsUnicodeProperties.put(
 			"layoutsUpdateable", String.valueOf(layoutsUpdateable));
 
-		layoutSetPrototype.setSettingsProperties(settingsProperties);
+		layoutSetPrototype.setSettingsProperties(settingsUnicodeProperties);
 
-		layoutSetPrototypePersistence.update(layoutSetPrototype);
+		layoutSetPrototype = layoutSetPrototypePersistence.update(
+			layoutSetPrototype);
 
 		// Resources
 
@@ -93,7 +90,7 @@ public class LayoutSetPrototypeLocalServiceImpl
 		String friendlyURL =
 			"/template-" + layoutSetPrototype.getLayoutSetPrototypeId();
 
-		Group group = groupLocalService.addGroup(
+		groupLocalService.addGroup(
 			userId, GroupConstants.DEFAULT_PARENT_GROUP_ID,
 			LayoutSetPrototype.class.getName(),
 			layoutSetPrototype.getLayoutSetPrototypeId(),
@@ -102,37 +99,7 @@ public class LayoutSetPrototypeLocalServiceImpl
 			GroupConstants.DEFAULT_MEMBERSHIP_RESTRICTION, friendlyURL, false,
 			true, serviceContext);
 
-		if (GetterUtil.getBoolean(
-				serviceContext.getAttribute("addDefaultLayout"), true)) {
-
-			layoutLocalService.addLayout(
-				userId, group.getGroupId(), true,
-				LayoutConstants.DEFAULT_PARENT_LAYOUT_ID, "home", null, null,
-				LayoutConstants.TYPE_PORTLET, false, "/home", serviceContext);
-		}
-
 		return layoutSetPrototype;
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link #addLayoutSetPrototype(long,
-	 *             long, Map, Map, boolean, boolean, ServiceContext)}
-	 */
-	@Deprecated
-	@Override
-	public LayoutSetPrototype addLayoutSetPrototype(
-			long userId, long companyId, Map<Locale, String> nameMap,
-			String description, boolean active, boolean layoutsUpdateable,
-			ServiceContext serviceContext)
-		throws PortalException {
-
-		Map<Locale, String> descriptionMap = new HashMap<>();
-
-		descriptionMap.put(LocaleUtil.getDefault(), description);
-
-		return addLayoutSetPrototype(
-			userId, companyId, nameMap, descriptionMap, active,
-			layoutsUpdateable, serviceContext);
 	}
 
 	@Override
@@ -146,16 +113,17 @@ public class LayoutSetPrototypeLocalServiceImpl
 
 		// Group
 
-		if (!CompanyThreadLocal.isDeleteInProcess() &&
-			(layoutSetPersistence.countByLayoutSetPrototypeUuid(
-				layoutSetPrototype.getUuid()) > 0)) {
+		if (!CompanyThreadLocal.isDeleteInProcess()) {
+			long count = layoutSetPersistence.countByC_L(
+				layoutSetPrototype.getCompanyId(),
+				layoutSetPrototype.getUuid());
 
-			throw new RequiredLayoutSetPrototypeException();
+			if (count > 0) {
+				throw new RequiredLayoutSetPrototypeException();
+			}
 		}
 
-		Group group = layoutSetPrototype.getGroup();
-
-		groupLocalService.deleteGroup(group);
+		groupLocalService.deleteGroup(layoutSetPrototype.getGroup());
 
 		// Resources
 
@@ -212,15 +180,6 @@ public class LayoutSetPrototypeLocalServiceImpl
 	}
 
 	@Override
-	public LayoutSetPrototype getLayoutSetPrototypeByUuidAndCompanyId(
-			String uuid, long companyId)
-		throws PortalException {
-
-		return layoutSetPrototypePersistence.findByUuid_C_First(
-			uuid, companyId, null);
-	}
-
-	@Override
 	public List<LayoutSetPrototype> getLayoutSetPrototypes(long companyId) {
 		return layoutSetPrototypePersistence.findByCompanyId(companyId);
 	}
@@ -228,16 +187,15 @@ public class LayoutSetPrototypeLocalServiceImpl
 	@Override
 	public List<LayoutSetPrototype> search(
 		long companyId, Boolean active, int start, int end,
-		OrderByComparator<LayoutSetPrototype> obc) {
+		OrderByComparator<LayoutSetPrototype> orderByComparator) {
 
 		if (active != null) {
 			return layoutSetPrototypePersistence.findByC_A(
-				companyId, active, start, end, obc);
+				companyId, active, start, end, orderByComparator);
 		}
-		else {
-			return layoutSetPrototypePersistence.findByCompanyId(
-				companyId, start, end, obc);
-		}
+
+		return layoutSetPrototypePersistence.findByCompanyId(
+			companyId, start, end, orderByComparator);
 	}
 
 	@Override
@@ -245,9 +203,8 @@ public class LayoutSetPrototypeLocalServiceImpl
 		if (active != null) {
 			return layoutSetPrototypePersistence.countByC_A(companyId, active);
 		}
-		else {
-			return layoutSetPrototypePersistence.countByCompanyId(companyId);
-		}
+
+		return layoutSetPrototypePersistence.countByCompanyId(companyId);
 	}
 
 	@Override
@@ -269,39 +226,15 @@ public class LayoutSetPrototypeLocalServiceImpl
 		layoutSetPrototype.setDescriptionMap(descriptionMap);
 		layoutSetPrototype.setActive(active);
 
-		UnicodeProperties settingsProperties =
+		UnicodeProperties settingsUnicodeProperties =
 			layoutSetPrototype.getSettingsProperties();
 
-		settingsProperties.put(
+		settingsUnicodeProperties.put(
 			"layoutsUpdateable", String.valueOf(layoutsUpdateable));
 
-		layoutSetPrototype.setSettingsProperties(settingsProperties);
+		layoutSetPrototype.setSettingsProperties(settingsUnicodeProperties);
 
-		layoutSetPrototypePersistence.update(layoutSetPrototype);
-
-		return layoutSetPrototype;
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link
-	 *             #updateLayoutSetPrototype(long, Map, Map, boolean, boolean,
-	 *             ServiceContext)}
-	 */
-	@Deprecated
-	@Override
-	public LayoutSetPrototype updateLayoutSetPrototype(
-			long layoutSetPrototypeId, Map<Locale, String> nameMap,
-			String description, boolean active, boolean layoutsUpdateable,
-			ServiceContext serviceContext)
-		throws PortalException {
-
-		Map<Locale, String> descriptionMap = new HashMap<>();
-
-		descriptionMap.put(LocaleUtil.getDefault(), description);
-
-		return updateLayoutSetPrototype(
-			layoutSetPrototypeId, nameMap, descriptionMap, active,
-			layoutsUpdateable, serviceContext);
+		return layoutSetPrototypePersistence.update(layoutSetPrototype);
 	}
 
 	@Override
@@ -318,28 +251,32 @@ public class LayoutSetPrototypeLocalServiceImpl
 		layoutSetPrototype.setModifiedDate(new Date());
 		layoutSetPrototype.setSettings(settings);
 
-		layoutSetPrototypePersistence.update(layoutSetPrototype);
+		layoutSetPrototype = layoutSetPrototypePersistence.update(
+			layoutSetPrototype);
 
 		// Group
 
-		UnicodeProperties settingsProperties =
+		UnicodeProperties settingsUnicodeProperties =
 			layoutSetPrototype.getSettingsProperties();
 
-		if (!settingsProperties.containsKey("customJspServletContextName")) {
+		if (!settingsUnicodeProperties.containsKey(
+				"customJspServletContextName")) {
+
 			return layoutSetPrototype;
 		}
 
 		Group group = groupLocalService.getLayoutSetPrototypeGroup(
 			layoutSetPrototype.getCompanyId(), layoutSetPrototypeId);
 
-		UnicodeProperties typeSettingsProperties =
+		UnicodeProperties typeSettingsUnicodeProperties =
 			group.getTypeSettingsProperties();
 
-		typeSettingsProperties.setProperty(
+		typeSettingsUnicodeProperties.setProperty(
 			"customJspServletContextName",
-			settingsProperties.getProperty("customJspServletContextName"));
+			settingsUnicodeProperties.getProperty(
+				"customJspServletContextName"));
 
-		group.setTypeSettings(typeSettingsProperties.toString());
+		group.setTypeSettings(typeSettingsUnicodeProperties.toString());
 
 		groupPersistence.update(group);
 

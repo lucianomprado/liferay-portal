@@ -16,24 +16,13 @@ package com.liferay.knowledge.base.web.internal.display.context;
 
 import com.liferay.knowledge.base.constants.KBArticleConstants;
 import com.liferay.knowledge.base.constants.KBCommentConstants;
-import com.liferay.knowledge.base.constants.KBFolderConstants;
-import com.liferay.knowledge.base.constants.KBPortletKeys;
 import com.liferay.knowledge.base.model.KBArticle;
 import com.liferay.knowledge.base.model.KBComment;
-import com.liferay.knowledge.base.model.KBFolder;
 import com.liferay.knowledge.base.service.KBCommentServiceUtil;
-import com.liferay.knowledge.base.service.KBFolderLocalServiceUtil;
 import com.liferay.knowledge.base.web.internal.KBUtil;
-import com.liferay.knowledge.base.web.internal.constants.KBWebKeys;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.theme.PortletDisplay;
-import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ParamUtil;
-import com.liferay.portal.kernel.util.Validator;
-
-import javax.portlet.PortletURL;
-import javax.portlet.RenderResponse;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -44,24 +33,28 @@ import javax.servlet.http.HttpServletRequest;
 public class KBSuggestionListDisplayContext {
 
 	public KBSuggestionListDisplayContext(
-		HttpServletRequest request, String templatePath, KBArticle kbArticle) {
+		HttpServletRequest httpServletRequest, String templatePath,
+		KBArticle kbArticle) {
 
-		_request = request;
+		_httpServletRequest = httpServletRequest;
 		_templatePath = templatePath;
 		_kbArticle = kbArticle;
 
 		_groupId = kbArticle.getGroupId();
-		_navigation = ParamUtil.getString(_request, "navigation", "all");
+		_navigation = ParamUtil.getString(
+			_httpServletRequest, "navigation", "all");
 	}
 
 	public KBSuggestionListDisplayContext(
-		HttpServletRequest request, String templatePath, long groupId) {
+		HttpServletRequest httpServletRequest, String templatePath,
+		long groupId) {
 
-		_request = request;
+		_httpServletRequest = httpServletRequest;
 		_templatePath = templatePath;
 		_groupId = groupId;
 
-		_navigation = ParamUtil.getString(_request, "navigation", "all");
+		_navigation = ParamUtil.getString(
+			_httpServletRequest, "navigation", "all");
 	}
 
 	public int getCompletedKBCommentsCount() throws PortalException {
@@ -94,75 +87,14 @@ public class KBSuggestionListDisplayContext {
 		if (_kbArticle == null) {
 			return KBCommentServiceUtil.getKBCommentsCount(_groupId, status);
 		}
-		else {
-			return KBCommentServiceUtil.getKBCommentsCount(
-				_groupId, KBArticleConstants.getClassName(),
-				_kbArticle.getResourcePrimKey(), status);
-		}
+
+		return KBCommentServiceUtil.getKBCommentsCount(
+			_groupId, KBArticleConstants.getClassName(),
+			_kbArticle.getResourcePrimKey(), status);
 	}
 
 	public int getNewKBCommentsCount() throws PortalException {
 		return getKBCommentsCount(KBCommentConstants.STATUS_NEW);
-	}
-
-	public String getViewSuggestionURL(PortletURL portletURL)
-		throws PortalException {
-
-		ThemeDisplay themeDisplay = (ThemeDisplay)_request.getAttribute(
-			KBWebKeys.THEME_DISPLAY);
-
-		PortletDisplay portletDisplay = themeDisplay.getPortletDisplay();
-
-		String portletId = portletDisplay.getId();
-
-		portletURL.setParameter("expanded", Boolean.TRUE.toString());
-
-		if (_kbArticle == null) {
-			if (portletId.equals(KBPortletKeys.KNOWLEDGE_BASE_ADMIN)) {
-				portletURL.setParameter(
-					"mvcPath", _templatePath + "view_suggestions.jsp");
-			}
-			else {
-				portletURL.setParameter(
-					"mvcPath", _templatePath + "view_suggestion.jsp");
-			}
-		}
-		else if (Validator.isNull(_kbArticle.getUrlTitle()) ||
-				 portletId.equals(KBPortletKeys.KNOWLEDGE_BASE_ADMIN)) {
-
-			if (portletId.equals(KBPortletKeys.KNOWLEDGE_BASE_ADMIN)) {
-				portletURL.setParameter(
-					"mvcPath", _templatePath + "view_article.jsp");
-			}
-
-			portletURL.setParameter(
-				"resourceClassNameId",
-				String.valueOf(_kbArticle.getClassNameId()));
-			portletURL.setParameter(
-				"resourcePrimKey",
-				String.valueOf(_kbArticle.getResourcePrimKey()));
-		}
-		else {
-			portletURL.setParameter("urlTitle", _kbArticle.getUrlTitle());
-
-			if (_kbArticle.getKbFolderId() !=
-					KBFolderConstants.DEFAULT_PARENT_FOLDER_ID) {
-
-				KBFolder kbFolder = KBFolderLocalServiceUtil.getKBFolder(
-					_kbArticle.getKbFolderId());
-
-				portletURL.setParameter(
-					"kbFolderUrlTitle", kbFolder.getUrlTitle());
-			}
-		}
-
-		return portletURL.toString() + "#kbSuggestions";
-	}
-
-	public String getViewSuggestionURL(RenderResponse renderResponse)
-		throws PortalException {
-
-		return getViewSuggestionURL(renderResponse.createRenderURL());
 	}
 
 	public boolean isShowKBArticleTitle() {
@@ -250,9 +182,9 @@ public class KBSuggestionListDisplayContext {
 	}
 
 	private final long _groupId;
+	private final HttpServletRequest _httpServletRequest;
 	private KBArticle _kbArticle;
 	private final String _navigation;
-	private final HttpServletRequest _request;
 	private final String _templatePath;
 
 }

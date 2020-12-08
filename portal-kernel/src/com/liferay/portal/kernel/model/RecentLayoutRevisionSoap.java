@@ -14,8 +14,6 @@
 
 package com.liferay.portal.kernel.model;
 
-import aQute.bnd.annotation.ProviderType;
-
 import java.io.Serializable;
 
 import java.util.ArrayList;
@@ -25,12 +23,15 @@ import java.util.List;
  * This class is used by SOAP remote services.
  *
  * @author Brian Wing Shun Chan
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
-@ProviderType
+@Deprecated
 public class RecentLayoutRevisionSoap implements Serializable {
+
 	public static RecentLayoutRevisionSoap toSoapModel(
 		RecentLayoutRevision model) {
+
 		RecentLayoutRevisionSoap soapModel = new RecentLayoutRevisionSoap();
 
 		soapModel.setMvccVersion(model.getMvccVersion());
@@ -47,7 +48,9 @@ public class RecentLayoutRevisionSoap implements Serializable {
 
 	public static RecentLayoutRevisionSoap[] toSoapModels(
 		RecentLayoutRevision[] models) {
-		RecentLayoutRevisionSoap[] soapModels = new RecentLayoutRevisionSoap[models.length];
+
+		RecentLayoutRevisionSoap[] soapModels =
+			new RecentLayoutRevisionSoap[models.length];
 
 		for (int i = 0; i < models.length; i++) {
 			soapModels[i] = toSoapModel(models[i]);
@@ -58,10 +61,12 @@ public class RecentLayoutRevisionSoap implements Serializable {
 
 	public static RecentLayoutRevisionSoap[][] toSoapModels(
 		RecentLayoutRevision[][] models) {
+
 		RecentLayoutRevisionSoap[][] soapModels = null;
 
 		if (models.length > 0) {
-			soapModels = new RecentLayoutRevisionSoap[models.length][models[0].length];
+			soapModels =
+				new RecentLayoutRevisionSoap[models.length][models[0].length];
 		}
 		else {
 			soapModels = new RecentLayoutRevisionSoap[0][0];
@@ -76,13 +81,16 @@ public class RecentLayoutRevisionSoap implements Serializable {
 
 	public static RecentLayoutRevisionSoap[] toSoapModels(
 		List<RecentLayoutRevision> models) {
-		List<RecentLayoutRevisionSoap> soapModels = new ArrayList<RecentLayoutRevisionSoap>(models.size());
+
+		List<RecentLayoutRevisionSoap> soapModels =
+			new ArrayList<RecentLayoutRevisionSoap>(models.size());
 
 		for (RecentLayoutRevision model : models) {
 			soapModels.add(toSoapModel(model));
 		}
 
-		return soapModels.toArray(new RecentLayoutRevisionSoap[soapModels.size()]);
+		return soapModels.toArray(
+			new RecentLayoutRevisionSoap[soapModels.size()]);
 	}
 
 	public RecentLayoutRevisionSoap() {
@@ -168,4 +176,5 @@ public class RecentLayoutRevisionSoap implements Serializable {
 	private long _layoutRevisionId;
 	private long _layoutSetBranchId;
 	private long _plid;
+
 }

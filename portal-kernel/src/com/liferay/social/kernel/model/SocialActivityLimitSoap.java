@@ -14,8 +14,6 @@
 
 package com.liferay.social.kernel.model;
 
-import aQute.bnd.annotation.ProviderType;
-
 import java.io.Serializable;
 
 import java.util.ArrayList;
@@ -25,13 +23,19 @@ import java.util.List;
  * This class is used by SOAP remote services.
  *
  * @author Brian Wing Shun Chan
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
-@ProviderType
+@Deprecated
 public class SocialActivityLimitSoap implements Serializable {
-	public static SocialActivityLimitSoap toSoapModel(SocialActivityLimit model) {
+
+	public static SocialActivityLimitSoap toSoapModel(
+		SocialActivityLimit model) {
+
 		SocialActivityLimitSoap soapModel = new SocialActivityLimitSoap();
 
+		soapModel.setMvccVersion(model.getMvccVersion());
+		soapModel.setCtCollectionId(model.getCtCollectionId());
 		soapModel.setActivityLimitId(model.getActivityLimitId());
 		soapModel.setGroupId(model.getGroupId());
 		soapModel.setCompanyId(model.getCompanyId());
@@ -47,7 +51,9 @@ public class SocialActivityLimitSoap implements Serializable {
 
 	public static SocialActivityLimitSoap[] toSoapModels(
 		SocialActivityLimit[] models) {
-		SocialActivityLimitSoap[] soapModels = new SocialActivityLimitSoap[models.length];
+
+		SocialActivityLimitSoap[] soapModels =
+			new SocialActivityLimitSoap[models.length];
 
 		for (int i = 0; i < models.length; i++) {
 			soapModels[i] = toSoapModel(models[i]);
@@ -58,10 +64,12 @@ public class SocialActivityLimitSoap implements Serializable {
 
 	public static SocialActivityLimitSoap[][] toSoapModels(
 		SocialActivityLimit[][] models) {
+
 		SocialActivityLimitSoap[][] soapModels = null;
 
 		if (models.length > 0) {
-			soapModels = new SocialActivityLimitSoap[models.length][models[0].length];
+			soapModels =
+				new SocialActivityLimitSoap[models.length][models[0].length];
 		}
 		else {
 			soapModels = new SocialActivityLimitSoap[0][0];
@@ -76,13 +84,16 @@ public class SocialActivityLimitSoap implements Serializable {
 
 	public static SocialActivityLimitSoap[] toSoapModels(
 		List<SocialActivityLimit> models) {
-		List<SocialActivityLimitSoap> soapModels = new ArrayList<SocialActivityLimitSoap>(models.size());
+
+		List<SocialActivityLimitSoap> soapModels =
+			new ArrayList<SocialActivityLimitSoap>(models.size());
 
 		for (SocialActivityLimit model : models) {
 			soapModels.add(toSoapModel(model));
 		}
 
-		return soapModels.toArray(new SocialActivityLimitSoap[soapModels.size()]);
+		return soapModels.toArray(
+			new SocialActivityLimitSoap[soapModels.size()]);
 	}
 
 	public SocialActivityLimitSoap() {
@@ -94,6 +105,22 @@ public class SocialActivityLimitSoap implements Serializable {
 
 	public void setPrimaryKey(long pk) {
 		setActivityLimitId(pk);
+	}
+
+	public long getMvccVersion() {
+		return _mvccVersion;
+	}
+
+	public void setMvccVersion(long mvccVersion) {
+		_mvccVersion = mvccVersion;
+	}
+
+	public long getCtCollectionId() {
+		return _ctCollectionId;
+	}
+
+	public void setCtCollectionId(long ctCollectionId) {
+		_ctCollectionId = ctCollectionId;
 	}
 
 	public long getActivityLimitId() {
@@ -168,6 +195,8 @@ public class SocialActivityLimitSoap implements Serializable {
 		_value = value;
 	}
 
+	private long _mvccVersion;
+	private long _ctCollectionId;
 	private long _activityLimitId;
 	private long _groupId;
 	private long _companyId;
@@ -177,4 +206,5 @@ public class SocialActivityLimitSoap implements Serializable {
 	private int _activityType;
 	private String _activityCounterName;
 	private String _value;
+
 }

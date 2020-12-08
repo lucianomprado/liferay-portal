@@ -14,9 +14,10 @@
 
 package com.liferay.portal.upgrade.v7_0_0;
 
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.upgrade.util.UpgradePortletId;
+import com.liferay.portal.kernel.upgrade.BaseUpgradePortletId;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -25,8 +26,7 @@ import java.sql.SQLException;
 /**
  * @author Cristina González
  */
-@SuppressWarnings("deprecation")
-public class UpgradeDocumentLibraryPortletId extends UpgradePortletId {
+public class UpgradeDocumentLibraryPortletId extends BaseUpgradePortletId {
 
 	protected void deleteDuplicateResourceActions() throws SQLException {
 		try (PreparedStatement ps1 = connection.prepareStatement(
@@ -50,8 +50,9 @@ public class UpgradeDocumentLibraryPortletId extends UpgradePortletId {
 
 	protected void deleteDuplicateResourcePermissions() throws SQLException {
 		try (PreparedStatement ps1 = connection.prepareStatement(
-				"select companyId, scope, primKey from ResourcePermission " +
-					"where name = '" + _PORTLET_ID_DOCUMENT_LIBRARY + "'");
+				StringBundler.concat(
+					"select companyId, scope, primKey from ResourcePermission ",
+					"where name = '", _PORTLET_ID_DOCUMENT_LIBRARY, "'"));
 			ResultSet rs = ps1.executeQuery()) {
 
 			while (rs.next()) {
@@ -73,7 +74,7 @@ public class UpgradeDocumentLibraryPortletId extends UpgradePortletId {
 	@Override
 	protected String[][] getRenamePortletIdsArray() {
 		return new String[][] {
-			new String[] {_PORTLET_ID_DL_DISPLAY, _PORTLET_ID_DOCUMENT_LIBRARY}
+			{_PORTLET_ID_DL_DISPLAY, _PORTLET_ID_DOCUMENT_LIBRARY}
 		};
 	}
 
@@ -90,9 +91,9 @@ public class UpgradeDocumentLibraryPortletId extends UpgradePortletId {
 			deleteDuplicateResourceActions();
 			deleteDuplicateResourcePermissions();
 		}
-		catch (Exception e) {
+		catch (Exception exception) {
 			if (_log.isWarnEnabled()) {
-				_log.warn(e, e);
+				_log.warn(exception, exception);
 			}
 		}
 

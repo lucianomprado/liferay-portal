@@ -14,9 +14,12 @@
 
 package com.liferay.source.formatter.checks;
 
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.tools.ImportsFormatter;
 import com.liferay.source.formatter.BNDImportsFormatter;
+
+import java.io.IOException;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -27,15 +30,23 @@ import java.util.regex.Pattern;
 public class BNDImportsCheck extends BaseFileCheck {
 
 	@Override
+	public boolean isLiferaySourceCheck() {
+		return true;
+	}
+
+	@Override
 	protected String doProcess(
 			String fileName, String absolutePath, String content)
-		throws Exception {
+		throws IOException {
 
 		_checkWildcardImports(
-			fileName, absolutePath, content, _conditionalPackagePattern);
+			fileName, absolutePath, content, "-conditionalpackage",
+			_conditionalPackagePattern);
 		_checkWildcardImports(
-			fileName, absolutePath, content, _exportContentsPattern);
-		_checkWildcardImports(fileName, absolutePath, content, _exportsPattern);
+			fileName, absolutePath, content, "-exportcontents",
+			_exportContentsPattern);
+		_checkWildcardImports(
+			fileName, absolutePath, content, "Export-Package", _exportsPattern);
 
 		ImportsFormatter importsFormatter = new BNDImportsFormatter();
 
@@ -53,9 +64,11 @@ public class BNDImportsCheck extends BaseFileCheck {
 	}
 
 	private void _checkWildcardImports(
-		String fileName, String absolutePath, String content, Pattern pattern) {
+		String fileName, String absolutePath, String content,
+		String instruction, Pattern pattern) {
 
 		if (absolutePath.contains("/portal-kernel/") ||
+			absolutePath.contains("/support-tomcat/") ||
 			absolutePath.contains("/third-party/") ||
 			absolutePath.contains("/util-bridges/") ||
 			absolutePath.contains("/util-java/") ||
@@ -79,10 +92,11 @@ public class BNDImportsCheck extends BaseFileCheck {
 			String wildcardImport = matcher.group(1);
 
 			if (wildcardImport.matches("^!?com\\.liferay\\..+")) {
-				addMessage(
-					fileName,
-					"Do not use wildcard in Export-Package '" + wildcardImport +
-						"'");
+				String message = StringBundler.concat(
+					"Do not use wildcard in ", instruction, ": '",
+					wildcardImport, "'");
+
+				addMessage(fileName, message);
 			}
 		}
 	}
@@ -108,24 +122,24 @@ public class BNDImportsCheck extends BaseFileCheck {
 		return StringUtil.replace(content, match, replacement);
 	}
 
-	private final Pattern _conditionalPackagePattern = Pattern.compile(
+	private static final Pattern _conditionalPackagePattern = Pattern.compile(
 		"\n-conditionalpackage:(\\\\\n| )((.*?)(\n[^\t]|\\Z))",
 		Pattern.DOTALL | Pattern.MULTILINE);
-	private final Pattern _exportContentsPattern = Pattern.compile(
+	private static final Pattern _exportContentsPattern = Pattern.compile(
 		"\n-exportcontents:(\\\\\n| )((.*?)(\n[^\t]|\\Z))",
 		Pattern.DOTALL | Pattern.MULTILINE);
-	private final Pattern _exportsPattern = Pattern.compile(
+	private static final Pattern _exportsPattern = Pattern.compile(
 		"\nExport-Package:(\\\\\n| )((.*?)(\n[^\t]|\\Z))",
 		Pattern.DOTALL | Pattern.MULTILINE);
-	private final Pattern _importsPattern = Pattern.compile(
+	private static final Pattern _importsPattern = Pattern.compile(
 		"\nImport-Package:(\\\\\n| )((.*?)(\n[^\t]|\\Z))",
 		Pattern.DOTALL | Pattern.MULTILINE);
-	private final Pattern _internalPrivatePackagePattern = Pattern.compile(
-		"(,\\\\\n\t|: )(.*\\.internal.*)(\n|\\Z)");
-	private final Pattern _privatePackagesPattern = Pattern.compile(
+	private static final Pattern _internalPrivatePackagePattern =
+		Pattern.compile("(,\\\\\n\t|: )(.*\\.internal.*)(\n|\\Z)");
+	private static final Pattern _privatePackagesPattern = Pattern.compile(
 		"\nPrivate-Package:(\\\\\n| )((.*?)(\n[^\t]|\\Z))",
 		Pattern.DOTALL | Pattern.MULTILINE);
-	private final Pattern _wilcardImportPattern = Pattern.compile(
+	private static final Pattern _wilcardImportPattern = Pattern.compile(
 		"(\\S+\\*)(,\\\\\n|\n|\\Z)");
 
 }

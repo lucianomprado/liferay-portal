@@ -14,10 +14,11 @@
 
 package com.liferay.portal.kernel.backgroundtask.display;
 
+import com.liferay.petra.io.unsync.UnsyncStringWriter;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.backgroundtask.BackgroundTask;
 import com.liferay.portal.kernel.backgroundtask.BackgroundTaskStatus;
 import com.liferay.portal.kernel.backgroundtask.BackgroundTaskStatusRegistryUtil;
-import com.liferay.portal.kernel.io.unsync.UnsyncStringWriter;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONException;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
@@ -32,7 +33,7 @@ import com.liferay.portal.kernel.template.TemplateManager;
 import com.liferay.portal.kernel.template.TemplateManagerUtil;
 import com.liferay.portal.kernel.template.TemplateResource;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.Validator;
 
 import java.io.Writer;
@@ -58,9 +59,9 @@ public abstract class BaseBackgroundTaskDisplay
 	}
 
 	@Override
-	public String getDisplayName(HttpServletRequest request) {
+	public String getDisplayName(HttpServletRequest httpServletRequest) {
 		if (Validator.isNull(backgroundTask.getName())) {
-			return LanguageUtil.get(request, "untitled");
+			return LanguageUtil.get(httpServletRequest, "untitled");
 		}
 
 		return backgroundTask.getName();
@@ -76,7 +77,7 @@ public abstract class BaseBackgroundTaskDisplay
 
 	@Override
 	public String getStatusLabel() {
-		return getStatusLabel(Locale.getDefault());
+		return getStatusLabel(LocaleUtil.getDefault());
 	}
 
 	@Override
@@ -95,7 +96,7 @@ public abstract class BaseBackgroundTaskDisplay
 
 	@Override
 	public String renderDisplayTemplate() {
-		return renderDisplayTemplate(Locale.getDefault());
+		return renderDisplayTemplate(LocaleUtil.getDefault());
 	}
 
 	@Override
@@ -129,9 +130,9 @@ public abstract class BaseBackgroundTaskDisplay
 		try {
 			template.processTemplate(writer);
 		}
-		catch (TemplateException te) {
+		catch (TemplateException templateException) {
 			if (_log.isDebugEnabled()) {
-				_log.debug(te, te);
+				_log.debug(templateException, templateException);
 			}
 
 			return StringPool.BLANK;
@@ -141,12 +142,20 @@ public abstract class BaseBackgroundTaskDisplay
 	}
 
 	protected long getBackgroundTaskStatusAttributeLong(String attributeKey) {
+		if (!hasBackgroundTaskStatus()) {
+			return 0;
+		}
+
 		return GetterUtil.getLong(
 			backgroundTaskStatus.getAttribute(attributeKey));
 	}
 
 	protected String getBackgroundTaskStatusAttributeString(
 		String attributeKey) {
+
+		if (!hasBackgroundTaskStatus()) {
+			return StringPool.BLANK;
+		}
 
 		return GetterUtil.getString(
 			backgroundTaskStatus.getAttribute(attributeKey));
@@ -159,9 +168,9 @@ public abstract class BaseBackgroundTaskDisplay
 			jsonObject = JSONFactoryUtil.createJSONObject(
 				backgroundTask.getStatusMessage());
 		}
-		catch (JSONException jsone) {
+		catch (JSONException jsonException) {
 			if (_log.isDebugEnabled()) {
-				_log.debug(jsone, jsone);
+				_log.debug(jsonException, jsonException);
 			}
 		}
 

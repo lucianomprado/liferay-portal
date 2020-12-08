@@ -14,8 +14,6 @@
 
 package com.liferay.asset.kernel.model;
 
-import aQute.bnd.annotation.ProviderType;
-
 import java.io.Serializable;
 
 import java.util.ArrayList;
@@ -26,14 +24,17 @@ import java.util.List;
  * This class is used by SOAP remote services, specifically {@link com.liferay.portlet.asset.service.http.AssetEntryServiceSoap}.
  *
  * @author Brian Wing Shun Chan
- * @see com.liferay.portlet.asset.service.http.AssetEntryServiceSoap
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
-@ProviderType
+@Deprecated
 public class AssetEntrySoap implements Serializable {
+
 	public static AssetEntrySoap toSoapModel(AssetEntry model) {
 		AssetEntrySoap soapModel = new AssetEntrySoap();
 
+		soapModel.setMvccVersion(model.getMvccVersion());
+		soapModel.setCtCollectionId(model.getCtCollectionId());
 		soapModel.setEntryId(model.getEntryId());
 		soapModel.setGroupId(model.getGroupId());
 		soapModel.setCompanyId(model.getCompanyId());
@@ -45,8 +46,8 @@ public class AssetEntrySoap implements Serializable {
 		soapModel.setClassPK(model.getClassPK());
 		soapModel.setClassUuid(model.getClassUuid());
 		soapModel.setClassTypeId(model.getClassTypeId());
-		soapModel.setListable(model.getListable());
-		soapModel.setVisible(model.getVisible());
+		soapModel.setListable(model.isListable());
+		soapModel.setVisible(model.isVisible());
 		soapModel.setStartDate(model.getStartDate());
 		soapModel.setEndDate(model.getEndDate());
 		soapModel.setPublishDate(model.getPublishDate());
@@ -60,7 +61,6 @@ public class AssetEntrySoap implements Serializable {
 		soapModel.setHeight(model.getHeight());
 		soapModel.setWidth(model.getWidth());
 		soapModel.setPriority(model.getPriority());
-		soapModel.setViewCount(model.getViewCount());
 
 		return soapModel;
 	}
@@ -93,7 +93,8 @@ public class AssetEntrySoap implements Serializable {
 	}
 
 	public static AssetEntrySoap[] toSoapModels(List<AssetEntry> models) {
-		List<AssetEntrySoap> soapModels = new ArrayList<AssetEntrySoap>(models.size());
+		List<AssetEntrySoap> soapModels = new ArrayList<AssetEntrySoap>(
+			models.size());
 
 		for (AssetEntry model : models) {
 			soapModels.add(toSoapModel(model));
@@ -111,6 +112,22 @@ public class AssetEntrySoap implements Serializable {
 
 	public void setPrimaryKey(long pk) {
 		setEntryId(pk);
+	}
+
+	public long getMvccVersion() {
+		return _mvccVersion;
+	}
+
+	public void setMvccVersion(long mvccVersion) {
+		_mvccVersion = mvccVersion;
+	}
+
+	public long getCtCollectionId() {
+		return _ctCollectionId;
+	}
+
+	public void setCtCollectionId(long ctCollectionId) {
+		_ctCollectionId = ctCollectionId;
 	}
 
 	public long getEntryId() {
@@ -329,14 +346,8 @@ public class AssetEntrySoap implements Serializable {
 		_priority = priority;
 	}
 
-	public int getViewCount() {
-		return _viewCount;
-	}
-
-	public void setViewCount(int viewCount) {
-		_viewCount = viewCount;
-	}
-
+	private long _mvccVersion;
+	private long _ctCollectionId;
 	private long _entryId;
 	private long _groupId;
 	private long _companyId;
@@ -363,5 +374,5 @@ public class AssetEntrySoap implements Serializable {
 	private int _height;
 	private int _width;
 	private double _priority;
-	private int _viewCount;
+
 }

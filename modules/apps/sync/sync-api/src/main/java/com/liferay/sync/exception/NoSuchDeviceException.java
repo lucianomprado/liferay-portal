@@ -14,14 +14,11 @@
 
 package com.liferay.sync.exception;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.portal.kernel.exception.NoSuchModelException;
 
 /**
  * @author Brian Wing Shun Chan
  */
-@ProviderType
 public class NoSuchDeviceException extends NoSuchModelException {
 
 	public NoSuchDeviceException() {
@@ -31,12 +28,12 @@ public class NoSuchDeviceException extends NoSuchModelException {
 		super(msg);
 	}
 
-	public NoSuchDeviceException(String msg, Throwable cause) {
-		super(msg, cause);
+	public NoSuchDeviceException(String msg, Throwable throwable) {
+		super(msg, throwable);
 	}
 
-	public NoSuchDeviceException(Throwable cause) {
-		super(cause);
+	public NoSuchDeviceException(Throwable throwable) {
+		super(throwable);
 	}
 
 }

@@ -14,9 +14,9 @@
 
 package com.liferay.portal.kernel.security.auth.http;
 
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.Base64;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
 
 import java.util.LinkedHashMap;
@@ -40,6 +40,8 @@ public class HttpAuthorizationHeader {
 	public static final String AUTH_PARAMETER_NAME_USERNAME = "username";
 
 	public static final String SCHEME_BASIC = "Basic";
+
+	public static final String SCHEME_BEARER = "Bearer";
 
 	public static final String SCHEME_DIGEST = "Digest";
 
@@ -84,7 +86,7 @@ public class HttpAuthorizationHeader {
 			return SCHEME_BASIC + StringPool.SPACE + encodedUserNameAndPassword;
 		}
 
-		StringBundler sb = new StringBundler(_authParameters.size() * 6 + 2);
+		StringBundler sb = new StringBundler((_authParameters.size() * 6) + 2);
 
 		sb.append(_scheme);
 		sb.append(StringPool.SPACE);

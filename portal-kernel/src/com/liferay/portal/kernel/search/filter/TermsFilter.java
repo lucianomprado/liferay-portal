@@ -14,7 +14,7 @@
 
 package com.liferay.portal.kernel.search.filter;
 
-import com.liferay.portal.kernel.util.StringBundler;
+import com.liferay.petra.string.StringBundler;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -52,7 +52,7 @@ public class TermsFilter extends BaseFilter {
 	}
 
 	public String[] getValues() {
-		return _values.toArray(new String[_values.size()]);
+		return _values.toArray(new String[0]);
 	}
 
 	public boolean isEmpty() {

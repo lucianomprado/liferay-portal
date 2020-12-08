@@ -39,14 +39,12 @@ public class IdentifiableOSGiServiceUtil {
 
 	private static final Map<String, IdentifiableOSGiService>
 		_identifiableOSGiServices = new ConcurrentHashMap<>();
-	private static final
-		ServiceTracker<IdentifiableOSGiService, IdentifiableOSGiService>
-			_serviceTracker;
+	private static final ServiceTracker
+		<IdentifiableOSGiService, IdentifiableOSGiService> _serviceTracker;
 
 	private static class IdentifiableOSGiServiceServiceTrackerCustomizer
-		implements
-			ServiceTrackerCustomizer
-				<IdentifiableOSGiService, IdentifiableOSGiService> {
+		implements ServiceTrackerCustomizer
+			<IdentifiableOSGiService, IdentifiableOSGiService> {
 
 		@Override
 		public IdentifiableOSGiService addingService(

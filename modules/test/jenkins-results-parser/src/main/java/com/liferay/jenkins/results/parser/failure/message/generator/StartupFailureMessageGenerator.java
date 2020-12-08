@@ -14,10 +14,7 @@
 
 package com.liferay.jenkins.results.parser.failure.message.generator;
 
-import com.liferay.jenkins.results.parser.Build;
 import com.liferay.jenkins.results.parser.Dom4JUtil;
-
-import java.util.Hashtable;
 
 import org.dom4j.Element;
 
@@ -28,40 +25,14 @@ public class StartupFailureMessageGenerator
 	extends BaseFailureMessageGenerator {
 
 	@Override
-	public String getMessage(
-		String buildURL, String consoleOutput, Hashtable<?, ?> properties) {
-
-		if (!consoleOutput.contains(_TOKEN_UNRESOLVED_REQUIREMENT)) {
-			return null;
-		}
-
-		StringBuilder sb = new StringBuilder();
-
-		sb.append(
-			"<p>Startup error: <strong>Unresolved Requirement(s)</strong></p>");
-
-		int start = consoleOutput.indexOf(_TOKEN_UNRESOLVED_REQUIREMENT);
-
-		start = consoleOutput.lastIndexOf("\n", start);
-
-		int end = consoleOutput.indexOf(_TOKEN_DELETING);
-
-		end = consoleOutput.lastIndexOf("\n", end);
-
-		sb.append(getConsoleOutputSnippet(consoleOutput, true, start, end));
-
-		return sb.toString();
-	}
-
-	@Override
-	public Element getMessageElement(Build build) {
-		String consoleText = build.getConsoleText();
-
+	public Element getMessageElement(String consoleText) {
 		if (!consoleText.contains(_TOKEN_UNRESOLVED_REQUIREMENT)) {
 			return null;
 		}
 
 		int start = consoleText.indexOf(_TOKEN_UNRESOLVED_REQUIREMENT);
+
+		start = consoleText.lastIndexOf(_TOKEN_COULD_NOT_RESOLVE_MODULE, start);
 
 		start = consoleText.lastIndexOf("\n", start);
 
@@ -75,8 +46,11 @@ public class StartupFailureMessageGenerator
 				"p", null, "Startup error: ",
 				Dom4JUtil.getNewElement(
 					"strong", null, "Unresolved Requirement(s)")),
-			getConsoleOutputSnippetElement(consoleText, true, start, end));
+			getConsoleTextSnippetElement(consoleText, true, start, end));
 	}
+
+	private static final String _TOKEN_COULD_NOT_RESOLVE_MODULE =
+		"Could not resolve module:";
 
 	private static final String _TOKEN_DELETING = "Deleting:";
 

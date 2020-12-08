@@ -16,16 +16,16 @@ package com.liferay.portal.kernel.util;
 
 import com.liferay.portal.kernel.test.CaptureHandler;
 import com.liferay.portal.kernel.test.JDKLoggerTestUtil;
-import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.rule.NewEnv;
 import com.liferay.portal.kernel.test.rule.NewEnvTestRule;
+import com.liferay.portal.kernel.test.util.PropsTestUtil;
 
 import java.text.Collator;
 import java.text.RuleBasedCollator;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
@@ -47,11 +47,7 @@ public class CollatorUtilTest {
 
 	@Test
 	public void testGetInstanceWithInvalidProperty() {
-		ReflectionTestUtil.setFieldValue(
-			PropsUtil.class, "_props",
-			ProxyUtil.newProxyInstance(
-				CollatorUtilTest.class.getClassLoader(),
-				new Class<?>[] {Props.class}, (proxy, method, args) -> "<<<"));
+		PropsTestUtil.setProps("collator.rules", "<<<");
 
 		try (CaptureHandler captureHandler =
 				JDKLoggerTestUtil.configureJDKLogger(
@@ -75,15 +71,11 @@ public class CollatorUtilTest {
 
 	@Test
 	public void testGetInstanceWithoutProperty() {
-		ReflectionTestUtil.setFieldValue(
-			PropsUtil.class, "_props",
-			ProxyUtil.newProxyInstance(
-				CollatorUtilTest.class.getClassLoader(),
-				new Class<?>[] {Props.class}, (proxy, method, args) -> null));
+		PropsTestUtil.setProps(Collections.emptyMap());
 
-		Collator collator = CollatorUtil.getInstance(Locale.US);
+		Collator collator = CollatorUtil.getInstance(LocaleUtil.US);
 
-		Assert.assertEquals(Collator.getInstance(Locale.US), collator);
+		Assert.assertEquals(Collator.getInstance(LocaleUtil.US), collator);
 
 		List<String> expected = new ArrayList<>();
 
@@ -102,11 +94,7 @@ public class CollatorUtilTest {
 
 	@Test
 	public void testGetInstanceWithProperty() {
-		ReflectionTestUtil.setFieldValue(
-			PropsUtil.class, "_props",
-			ProxyUtil.newProxyInstance(
-				CollatorUtilTest.class.getClassLoader(),
-				new Class<?>[] {Props.class}, (proxy, method, args) -> _RULES));
+		PropsTestUtil.setProps("collator.rules", _RULES);
 
 		Collator collator = CollatorUtil.getInstance(LocaleUtil.getDefault());
 

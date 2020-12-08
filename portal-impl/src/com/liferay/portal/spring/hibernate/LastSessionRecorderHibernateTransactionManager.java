@@ -14,7 +14,7 @@
 
 package com.liferay.portal.spring.hibernate;
 
-import com.liferay.portal.kernel.util.ReflectionUtil;
+import com.liferay.petra.reflect.ReflectionUtil;
 
 import java.lang.reflect.Field;
 
@@ -139,8 +139,8 @@ public class LastSessionRecorderHibernateTransactionManager
 
 			loggerField.set(null, dummyLog);
 		}
-		catch (Exception e) {
-			throw new ExceptionInInitializerError(e);
+		catch (Exception exception) {
+			throw new ExceptionInInitializerError(exception);
 		}
 	}
 

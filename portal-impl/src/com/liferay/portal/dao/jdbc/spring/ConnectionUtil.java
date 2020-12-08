@@ -37,22 +37,23 @@ public class ConnectionUtil {
 
 		if (connection != null) {
 			return (Connection)ProxyUtil.newProxyInstance(
-				ClassLoader.getSystemClassLoader(), _interfaces,
+				ClassLoader.getSystemClassLoader(), _INTERFACES,
 				new UncloseableInvocationHandler(connection));
 		}
 
 		return dataSource.getConnection();
 	}
 
+	private static final Class<?>[] _INTERFACES = {Connection.class};
+
 	private static final Method _closeMethod;
-	private static final Class<?>[] _interfaces = {Connection.class};
 
 	static {
 		try {
 			_closeMethod = Connection.class.getMethod("close");
 		}
-		catch (ReflectiveOperationException roe) {
-			throw new ExceptionInInitializerError(roe);
+		catch (ReflectiveOperationException reflectiveOperationException) {
+			throw new ExceptionInInitializerError(reflectiveOperationException);
 		}
 	}
 

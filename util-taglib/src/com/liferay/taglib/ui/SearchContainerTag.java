@@ -14,6 +14,7 @@
 
 package com.liferay.taglib.ui;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.search.DisplayTerms;
 import com.liferay.portal.kernel.dao.search.RowChecker;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
@@ -21,7 +22,6 @@ import com.liferay.portal.kernel.util.JavaConstants;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.ParamUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.taglib.util.ParamAndPropertyAncestorTagImpl;
@@ -33,6 +33,7 @@ import javax.portlet.PortletRequest;
 import javax.portlet.PortletResponse;
 import javax.portlet.PortletURL;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.JspException;
 
 /**
@@ -65,6 +66,7 @@ public class SearchContainerTag<R> extends ParamAndPropertyAncestorTagImpl {
 		_rowChecker = null;
 		_searchContainer = null;
 		_searchTerms = null;
+		_summary = null;
 		_total = 0;
 		_totalVar = SearchContainer.DEFAULT_TOTAL_VAR;
 		_var = SearchContainer.DEFAULT_VAR;
@@ -74,20 +76,24 @@ public class SearchContainerTag<R> extends ParamAndPropertyAncestorTagImpl {
 
 	@Override
 	public int doStartTag() throws JspException {
-		try {
-			PortletRequest portletRequest =
-				(PortletRequest)request.getAttribute(
-					JavaConstants.JAVAX_PORTLET_REQUEST);
-			PortletResponse portletResponse =
-				(PortletResponse)request.getAttribute(
-					JavaConstants.JAVAX_PORTLET_RESPONSE);
+		HttpServletRequest httpServletRequest = getRequest();
 
+		try {
 			if (_iteratorURL == null) {
-				_iteratorURL =
-					((MimeResponse)portletResponse).createRenderURL();
+				PortletResponse portletResponse =
+					(PortletResponse)httpServletRequest.getAttribute(
+						JavaConstants.JAVAX_PORTLET_RESPONSE);
+
+				MimeResponse mimeResponse = (MimeResponse)portletResponse;
+
+				_iteratorURL = mimeResponse.createRenderURL();
 			}
 
 			if (_searchContainer == null) {
+				PortletRequest portletRequest =
+					(PortletRequest)httpServletRequest.getAttribute(
+						JavaConstants.JAVAX_PORTLET_REQUEST);
+
 				_searchContainer = new SearchContainer<>(
 					portletRequest, _displayTerms, _searchTerms, getCurParam(),
 					getDelta(), _iteratorURL, null, _emptyResultsMessage);
@@ -125,7 +131,8 @@ public class SearchContainerTag<R> extends ParamAndPropertyAncestorTagImpl {
 			}
 			else {
 				String orderByCol = ParamUtil.getString(
-					request, _searchContainer.getOrderByColParam(), null);
+					httpServletRequest, _searchContainer.getOrderByColParam(),
+					null);
 
 				if (orderByCol != null) {
 					_searchContainer.setOrderByCol(orderByCol);
@@ -145,7 +152,8 @@ public class SearchContainerTag<R> extends ParamAndPropertyAncestorTagImpl {
 			}
 			else {
 				String orderByType = ParamUtil.getString(
-					request, _searchContainer.getOrderByTypeParam(), null);
+					httpServletRequest, _searchContainer.getOrderByTypeParam(),
+					null);
 
 				if (orderByType != null) {
 					_searchContainer.setOrderByType(orderByType);
@@ -154,6 +162,10 @@ public class SearchContainerTag<R> extends ParamAndPropertyAncestorTagImpl {
 
 			if (_rowChecker != null) {
 				_searchContainer.setRowChecker(_rowChecker);
+			}
+
+			if (Validator.isNotNull(_summary)) {
+				_searchContainer.setSummary(_summary);
 			}
 
 			if (_total != 0) {
@@ -170,8 +182,8 @@ public class SearchContainerTag<R> extends ParamAndPropertyAncestorTagImpl {
 
 			return EVAL_BODY_INCLUDE;
 		}
-		catch (Exception e) {
-			throw new JspException(e);
+		catch (Exception exception) {
+			throw new JspException(exception);
 		}
 	}
 
@@ -239,6 +251,10 @@ public class SearchContainerTag<R> extends ParamAndPropertyAncestorTagImpl {
 		return _searchTerms;
 	}
 
+	public String getSummary() {
+		return _summary;
+	}
+
 	public int getTotal() {
 		return _total;
 	}
@@ -300,7 +316,7 @@ public class SearchContainerTag<R> extends ParamAndPropertyAncestorTagImpl {
 	}
 
 	public void setHeaderNames(String headerNames) {
-		_headerNames = ListUtil.toList(StringUtil.split(headerNames));
+		_headerNames = ListUtil.fromArray(StringUtil.split(headerNames));
 	}
 
 	public void setId(String id) {
@@ -343,6 +359,10 @@ public class SearchContainerTag<R> extends ParamAndPropertyAncestorTagImpl {
 		_searchTerms = searchTerms;
 	}
 
+	public void setSummary(String summary) {
+		_summary = summary;
+	}
+
 	public void setTotal(int total) {
 		_total = total;
 	}
@@ -378,6 +398,7 @@ public class SearchContainerTag<R> extends ParamAndPropertyAncestorTagImpl {
 	private RowChecker _rowChecker;
 	private SearchContainer<R> _searchContainer;
 	private DisplayTerms _searchTerms;
+	private String _summary;
 	private int _total;
 	private String _totalVar = SearchContainer.DEFAULT_TOTAL_VAR;
 	private String _var = SearchContainer.DEFAULT_VAR;

@@ -14,15 +14,12 @@
 
 package com.liferay.marketplace.model.impl;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.portal.kernel.util.Validator;
 
 /**
  * @author Ryan Park
  * @author Joan Kim
  */
-@ProviderType
 public class ModuleImpl extends ModuleBaseImpl {
 
 	@Override

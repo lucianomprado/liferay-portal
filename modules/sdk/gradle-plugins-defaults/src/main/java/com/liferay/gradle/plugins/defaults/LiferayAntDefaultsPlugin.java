@@ -87,7 +87,8 @@ public class LiferayAntDefaultsPlugin implements Plugin<Project> {
 
 				@Override
 				public void execute(Project project) {
-					GradleUtil.setProjectSnapshotVersion(project);
+					GradlePluginsDefaultsUtil.setProjectSnapshotVersion(
+						project);
 
 					// setProjectSnapshotVersion must be called before
 					// configureTaskUploadArchives, because the latter one needs
@@ -141,7 +142,7 @@ public class LiferayAntDefaultsPlugin implements Plugin<Project> {
 
 	private Upload _addTaskInstall(Project project) {
 		Upload upload = GradleUtil.addTask(
-			project, MavenPlugin.INSTALL_TASK_NAME, Upload.class, true);
+			project, MavenPlugin.INSTALL_TASK_NAME, Upload.class);
 
 		Configuration configuration = GradleUtil.getConfiguration(
 			project, Dependency.ARCHIVES_CONFIGURATION);
@@ -154,6 +155,7 @@ public class LiferayAntDefaultsPlugin implements Plugin<Project> {
 		return upload;
 	}
 
+	@SuppressWarnings("serial")
 	private ReplaceRegexTask _addTaskUpdateVersion(final Project project) {
 		ReplaceRegexTask replaceRegexTask = GradleUtil.addTask(
 			project, LiferayRelengPlugin.UPDATE_VERSION_TASK_NAME,
@@ -195,16 +197,13 @@ public class LiferayAntDefaultsPlugin implements Plugin<Project> {
 	}
 
 	private void _configureProject(Project project) {
-		String group = GradleUtil.getGradlePropertiesValue(
-			project, "project.group", _GROUP);
-
-		project.setGroup(group);
+		project.setGroup(GradleUtil.getProjectGroup(project, _GROUP));
 	}
 
 	private void _configureTaskUploadArchives(
 		Project project, Task updatePluginVersionTask) {
 
-		if (GradleUtil.isSnapshot(project)) {
+		if (GradlePluginsDefaultsUtil.isSnapshot(project)) {
 			return;
 		}
 

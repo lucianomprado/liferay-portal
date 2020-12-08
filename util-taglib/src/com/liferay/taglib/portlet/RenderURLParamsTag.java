@@ -14,19 +14,17 @@
 
 package com.liferay.taglib.portlet;
 
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.io.unsync.UnsyncStringWriter;
 import com.liferay.portal.kernel.util.ArrayUtil;
-import com.liferay.portal.kernel.util.CharPool;
 import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.HttpUtil;
-import com.liferay.portal.kernel.util.ParamUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.taglib.servlet.PipingPageContext;
 
 import javax.portlet.PortletURL;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspWriter;
 import javax.servlet.jsp.PageContext;
@@ -68,8 +66,8 @@ public class RenderURLParamsTag extends TagSupport {
 
 			return EVAL_PAGE;
 		}
-		catch (Exception e) {
-			throw new JspException(e);
+		catch (Exception exception) {
+			throw new JspException(exception);
 		}
 	}
 
@@ -100,20 +98,10 @@ public class RenderURLParamsTag extends TagSupport {
 
 		String url = portletURL.toString();
 
-		HttpServletRequest request =
-			(HttpServletRequest)pageContext.getRequest();
-
-		if (ParamUtil.getBoolean(request, "wsrp")) {
-			int x = url.indexOf("/wsrp_rewrite");
-
-			url = url.substring(0, x);
-		}
-
 		JspWriter jspWriter = pageContext.getOut();
 
-		String queryString = HttpUtil.getQueryString(url);
-
-		String[] parameters = StringUtil.split(queryString, CharPool.AMPERSAND);
+		String[] parameters = StringUtil.split(
+			HttpUtil.getQueryString(url), CharPool.AMPERSAND);
 
 		for (String parameter : parameters) {
 			if (parameter.length() > 0) {
@@ -121,6 +109,7 @@ public class RenderURLParamsTag extends TagSupport {
 
 				if (ArrayUtil.isNotEmpty(kvp)) {
 					String key = kvp[0];
+
 					String value = StringPool.BLANK;
 
 					if (kvp.length > 1) {

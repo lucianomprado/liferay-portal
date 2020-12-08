@@ -14,9 +14,9 @@
 
 package com.liferay.portal.kernel.servlet;
 
+import com.liferay.petra.lang.HashUtil;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.CookieUtil;
-import com.liferay.portal.kernel.util.HashUtil;
-import com.liferay.portal.kernel.util.StringPool;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -41,50 +41,52 @@ public class Header implements Externalizable {
 	public Header() {
 	}
 
-	public Header(Cookie cookie) {
-		if (cookie == null) {
+	public Header(Cookie cookieValue) {
+		if (cookieValue == null) {
 			throw new IllegalArgumentException("Cookie is null");
 		}
 
 		_type = Type.COOKIE;
 
-		_cookieValue = cookie;
+		_cookieValue = cookieValue;
 	}
 
-	public Header(int integer) {
+	public Header(int intValue) {
 		_type = Type.INTEGER;
 
-		_intValue = integer;
+		_intValue = intValue;
 	}
 
-	public Header(long date) {
+	public Header(long dateValue) {
 		_type = Type.DATE;
 
-		_dateValue = date;
+		_dateValue = dateValue;
 	}
 
-	public Header(String string) {
-		if (string == null) {
+	public Header(String stringValue) {
+		if (stringValue == null) {
 			throw new IllegalArgumentException("String is null");
 		}
 
 		_type = Type.STRING;
 
-		_stringValue = string;
+		_stringValue = stringValue;
 	}
 
-	public void addToResponse(String key, HttpServletResponse response) {
+	public void addToResponse(
+		String key, HttpServletResponse httpServletResponse) {
+
 		if (_type == Type.COOKIE) {
-			response.addCookie(_cookieValue);
+			httpServletResponse.addCookie(_cookieValue);
 		}
 		else if (_type == Type.DATE) {
-			response.addDateHeader(key, _dateValue);
+			httpServletResponse.addDateHeader(key, _dateValue);
 		}
 		else if (_type == Type.INTEGER) {
-			response.addIntHeader(key, _intValue);
+			httpServletResponse.addIntHeader(key, _intValue);
 		}
 		else if (_type == Type.STRING) {
-			response.addHeader(key, _stringValue);
+			httpServletResponse.addHeader(key, _stringValue);
 		}
 		else {
 			throw new IllegalStateException("Invalid type " + _type);
@@ -92,16 +94,16 @@ public class Header implements Externalizable {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
+	public boolean equals(Object object) {
+		if (this == object) {
 			return true;
 		}
 
-		if (!(obj instanceof Header)) {
+		if (!(object instanceof Header)) {
 			return false;
 		}
 
-		Header header = (Header)obj;
+		Header header = (Header)object;
 
 		if (_type != header._type) {
 			return false;
@@ -175,18 +177,20 @@ public class Header implements Externalizable {
 		_type = Type.values()[objectInput.readInt()];
 	}
 
-	public void setToResponse(String key, HttpServletResponse response) {
+	public void setToResponse(
+		String key, HttpServletResponse httpServletResponse) {
+
 		if (_type == Type.COOKIE) {
-			response.addCookie(_cookieValue);
+			httpServletResponse.addCookie(_cookieValue);
 		}
 		else if (_type == Type.DATE) {
-			response.setDateHeader(key, _dateValue);
+			httpServletResponse.setDateHeader(key, _dateValue);
 		}
 		else if (_type == Type.INTEGER) {
-			response.setIntHeader(key, _intValue);
+			httpServletResponse.setIntHeader(key, _intValue);
 		}
 		else if (_type == Type.STRING) {
-			response.setHeader(key, _stringValue);
+			httpServletResponse.setHeader(key, _stringValue);
 		}
 		else {
 			throw new IllegalStateException("Invalid type " + _type);

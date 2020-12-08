@@ -41,7 +41,7 @@ renderResponse.setTitle((kbFolder == null) ? LanguageUtil.get(resourceBundle, "n
 
 <liferay-portlet:actionURL name="updateKBFolder" var="updateKBFolderURL" />
 
-<div class="container-fluid-1280">
+<clay:container-fluid>
 	<aui:form action="<%= updateKBFolderURL %>" method="post" name="fm">
 		<aui:input name="mvcPath" type="hidden" value="/admin/common/edit_folder.jsp" />
 		<aui:input name="<%= Constants.CMD %>" type="hidden" value="<%= (kbFolder == null) ? Constants.ADD : Constants.UPDATE %>" />
@@ -62,7 +62,9 @@ renderResponse.setTitle((kbFolder == null) ? LanguageUtil.get(resourceBundle, "n
 				<aui:input name="description" />
 			</aui:fieldset>
 
-			<liferay-expando:custom-attributes-available className="<%= KBFolder.class.getName() %>">
+			<liferay-expando:custom-attributes-available
+				className="<%= KBFolder.class.getName() %>"
+			>
 				<aui:fieldset collapsed="<%= true %>" collapsible="<%= true %>" label="custom-fields">
 					<liferay-expando:custom-attribute-list
 						className="<%= KBFolder.class.getName() %>"
@@ -85,9 +87,9 @@ renderResponse.setTitle((kbFolder == null) ? LanguageUtil.get(resourceBundle, "n
 		</aui:fieldset-group>
 
 		<aui:button-row>
-			<aui:button cssClass="btn-lg" type="submit" value="save" />
+			<aui:button type="submit" value="save" />
 
-			<aui:button cssClass="btn-lg" href="<%= redirect %>" type="cancel" />
+			<aui:button href="<%= redirect %>" type="cancel" />
 		</aui:button-row>
 	</aui:form>
-</div>
+</clay:container-fluid>

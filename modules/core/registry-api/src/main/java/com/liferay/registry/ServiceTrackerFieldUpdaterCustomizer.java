@@ -20,7 +20,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -129,16 +128,16 @@ public class ServiceTrackerFieldUpdaterCustomizer<S, T>
 				afterServiceUpdate(oldService, newService);
 			}
 		}
-		catch (IllegalAccessException iae) {
-			throw new RuntimeException(iae);
+		catch (IllegalAccessException illegalAccessException) {
+			throw new RuntimeException(illegalAccessException);
 		}
 	}
 
 	private void _updateService() {
-		Optional<Entry<ServiceReference<S>, T>> optionalEntry =
+		Optional<Map.Entry<ServiceReference<S>, T>> optionalEntry =
 			ServiceRankingUtil.getHighestRankingEntry(_trackedServices);
 
-		Optional<T> optionalService = optionalEntry.map(Entry::getValue);
+		Optional<T> optionalService = optionalEntry.map(Map.Entry::getValue);
 
 		doServiceUpdate(optionalService.orElse(_dummyTrackedService));
 	}

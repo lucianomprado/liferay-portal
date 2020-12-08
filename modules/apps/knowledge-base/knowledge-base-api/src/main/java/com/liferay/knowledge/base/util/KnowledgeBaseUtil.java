@@ -18,28 +18,30 @@ import com.liferay.knowledge.base.constants.KBFolderConstants;
 import com.liferay.knowledge.base.constants.KBPortletKeys;
 import com.liferay.knowledge.base.model.KBArticle;
 import com.liferay.knowledge.base.service.KBArticleLocalServiceUtil;
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.io.unsync.UnsyncByteArrayInputStream;
 import com.liferay.portal.kernel.json.JSONException;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.ModelHintsUtil;
 import com.liferay.portal.kernel.portlet.PortalPreferences;
 import com.liferay.portal.kernel.util.ArrayUtil;
-import com.liferay.portal.kernel.util.CharPool;
 import com.liferay.portal.kernel.util.FriendlyURLNormalizerUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.MimeTypesUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.PropsUtil;
-import com.liferay.portal.kernel.util.StreamUtil;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 
+import java.io.IOException;
 import java.io.InputStream;
 
 import java.util.HashMap;
@@ -51,10 +53,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * @author Brian Wing Shun Chan
  * @author Peter Shin
- * @author Jim Hinkey
- * @author David Zhang
+ * @author Brian Wing Shun Chan
  */
 public class KnowledgeBaseUtil {
 
@@ -111,14 +111,16 @@ public class KnowledgeBaseUtil {
 	}
 
 	public static String getMimeType(byte[] bytes, String fileName) {
-		InputStream inputStream = new UnsyncByteArrayInputStream(bytes);
-
-		try {
+		try (InputStream inputStream = new UnsyncByteArrayInputStream(bytes)) {
 			return MimeTypesUtil.getContentType(inputStream, fileName);
 		}
-		finally {
-			StreamUtil.cleanUp(inputStream);
+		catch (IOException ioException) {
+			if (_log.isWarnEnabled()) {
+				_log.warn(ioException, ioException);
+			}
 		}
+
+		return null;
 	}
 
 	public static Long[][] getParams(Long[] params) {
@@ -149,7 +151,8 @@ public class KnowledgeBaseUtil {
 			title = String.valueOf(id);
 		}
 		else {
-			title = FriendlyURLNormalizerUtil.normalizeWithEncoding(title);
+			title = FriendlyURLNormalizerUtil.normalizeWithPeriodsAndSlashes(
+				title);
 		}
 
 		return ModelHintsUtil.trimString(
@@ -244,11 +247,14 @@ public class KnowledgeBaseUtil {
 			x = x + 1;
 		}
 
-		return s.substring(x, s.length());
+		return s.substring(x);
 	}
 
 	private static final int _SQL_DATA_MAX_PARAMETERS = GetterUtil.getInteger(
 		PropsUtil.get(PropsKeys.SQL_DATA_MAX_PARAMETERS));
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		KnowledgeBaseUtil.class);
 
 	private static final Pattern _validFriendlyUrlPattern = Pattern.compile(
 		"/[a-z0-9_-]+");

@@ -23,27 +23,32 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
- * @author Shuyang Zhou
+ * @author     Shuyang Zhou
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  */
+@Deprecated
 public interface SPIAgent {
 
 	public void destroy();
 
 	public void init(SPI spi) throws PortalResiliencyException;
 
-	public HttpServletRequest prepareRequest(HttpServletRequest request)
+	public HttpServletRequest prepareRequest(
+			HttpServletRequest httpServletRequest)
 		throws IOException;
 
 	public HttpServletResponse prepareResponse(
-		HttpServletRequest request, HttpServletResponse response);
+		HttpServletRequest httpServletRequest,
+		HttpServletResponse httpServletResponse);
 
 	public void service(
-			HttpServletRequest request, HttpServletResponse response)
+			HttpServletRequest httpServletRequest,
+			HttpServletResponse httpServletResponse)
 		throws PortalResiliencyException;
 
 	public void transferResponse(
-			HttpServletRequest request, HttpServletResponse response,
-			Exception e)
+			HttpServletRequest httpServletRequest,
+			HttpServletResponse httpServletResponse, Exception exception)
 		throws IOException;
 
 	public enum Lifecycle {

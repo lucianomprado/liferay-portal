@@ -14,8 +14,6 @@
 
 package com.liferay.screens.service;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.portal.kernel.service.ServiceWrapper;
 
 /**
@@ -25,55 +23,62 @@ import com.liferay.portal.kernel.service.ServiceWrapper;
  * @see ScreensCommentService
  * @generated
  */
-@ProviderType
-public class ScreensCommentServiceWrapper implements ScreensCommentService,
-	ServiceWrapper<ScreensCommentService> {
+public class ScreensCommentServiceWrapper
+	implements ScreensCommentService, ServiceWrapper<ScreensCommentService> {
+
 	public ScreensCommentServiceWrapper(
 		ScreensCommentService screensCommentService) {
+
 		_screensCommentService = screensCommentService;
 	}
 
 	@Override
-	public com.liferay.portal.kernel.json.JSONArray getComments(
-		java.lang.String className, long classPK, int start, int end)
-		throws com.liferay.portal.kernel.exception.PortalException {
-		return _screensCommentService.getComments(className, classPK, start, end);
-	}
-
-	@Override
 	public com.liferay.portal.kernel.json.JSONObject addComment(
-		java.lang.String className, long classPK, java.lang.String body)
+			String className, long classPK, String body)
 		throws com.liferay.portal.kernel.exception.PortalException {
+
 		return _screensCommentService.addComment(className, classPK, body);
 	}
 
 	@Override
 	public com.liferay.portal.kernel.json.JSONObject getComment(long commentId)
 		throws com.liferay.portal.kernel.exception.PortalException {
+
 		return _screensCommentService.getComment(commentId);
 	}
 
 	@Override
-	public com.liferay.portal.kernel.json.JSONObject updateComment(
-		long commentId, java.lang.String body)
+	public com.liferay.portal.kernel.json.JSONArray getComments(
+			String className, long classPK, int start, int end)
 		throws com.liferay.portal.kernel.exception.PortalException {
-		return _screensCommentService.updateComment(commentId, body);
+
+		return _screensCommentService.getComments(
+			className, classPK, start, end);
 	}
 
 	@Override
-	public int getCommentsCount(java.lang.String className, long classPK)
+	public int getCommentsCount(String className, long classPK)
 		throws com.liferay.portal.kernel.exception.PortalException {
+
 		return _screensCommentService.getCommentsCount(className, classPK);
 	}
 
 	/**
-	* Returns the OSGi service identifier.
-	*
-	* @return the OSGi service identifier
-	*/
+	 * Returns the OSGi service identifier.
+	 *
+	 * @return the OSGi service identifier
+	 */
 	@Override
-	public java.lang.String getOSGiServiceIdentifier() {
+	public String getOSGiServiceIdentifier() {
 		return _screensCommentService.getOSGiServiceIdentifier();
+	}
+
+	@Override
+	public com.liferay.portal.kernel.json.JSONObject updateComment(
+			long commentId, String body)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _screensCommentService.updateComment(commentId, body);
 	}
 
 	@Override
@@ -87,4 +92,5 @@ public class ScreensCommentServiceWrapper implements ScreensCommentService,
 	}
 
 	private ScreensCommentService _screensCommentService;
+
 }

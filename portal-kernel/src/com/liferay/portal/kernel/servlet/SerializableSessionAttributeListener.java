@@ -35,7 +35,6 @@ public class SerializableSessionAttributeListener
 	public void attributeAdded(
 		HttpSessionBindingEvent httpSessionBindingEvent) {
 
-		String name = httpSessionBindingEvent.getName();
 		Object value = httpSessionBindingEvent.getValue();
 
 		if ((value instanceof Serializable) || (value == null)) {
@@ -63,7 +62,7 @@ public class SerializableSessionAttributeListener
 		if (_requiresSerializable) {
 			HttpSession session = httpSessionBindingEvent.getSession();
 
-			session.removeAttribute(name);
+			session.removeAttribute(httpSessionBindingEvent.getName());
 		}
 	}
 

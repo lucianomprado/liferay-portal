@@ -15,16 +15,14 @@
 package com.liferay.source.formatter.checkstyle.checks;
 
 import com.liferay.portal.kernel.util.NaturalOrderStringComparator;
-import com.liferay.source.formatter.checkstyle.util.DetailASTUtil;
 
-import com.puppycrawl.tools.checkstyle.api.AbstractCheck;
 import com.puppycrawl.tools.checkstyle.api.DetailAST;
 import com.puppycrawl.tools.checkstyle.api.TokenTypes;
 
 /**
  * @author Hugo Huijser
  */
-public class InstanceofOrderCheck extends AbstractCheck {
+public class InstanceofOrderCheck extends BaseCheck {
 
 	@Override
 	public int[] getDefaultTokens() {
@@ -32,25 +30,27 @@ public class InstanceofOrderCheck extends AbstractCheck {
 	}
 
 	@Override
-	public void visitToken(DetailAST detailAST) {
-		DetailAST parentAST = detailAST.getParent();
+	protected void doVisitToken(DetailAST detailAST) {
+		DetailAST parentDetailAST = detailAST.getParent();
 
-		if ((parentAST.getType() != TokenTypes.LAND) &&
-			(parentAST.getType() != TokenTypes.LOR)) {
+		if ((parentDetailAST.getType() != TokenTypes.LAND) &&
+			(parentDetailAST.getType() != TokenTypes.LOR)) {
 
 			return;
 		}
 
-		DetailAST nextConditionAST = _getNextConditionAST(detailAST);
+		DetailAST nextConditionDetailAST = _getNextConditionDetailAST(
+			detailAST);
 
-		if ((nextConditionAST == null) ||
-			(nextConditionAST.getType() != TokenTypes.LITERAL_INSTANCEOF)) {
+		if ((nextConditionDetailAST == null) ||
+			(nextConditionDetailAST.getType() !=
+				TokenTypes.LITERAL_INSTANCEOF)) {
 
 			return;
 		}
 
 		String variableName1 = _getVariableName(detailAST);
-		String variableName2 = _getVariableName(nextConditionAST);
+		String variableName2 = _getVariableName(nextConditionDetailAST);
 
 		if ((variableName1 == null) || !variableName1.equals(variableName2)) {
 			return;
@@ -59,37 +59,37 @@ public class InstanceofOrderCheck extends AbstractCheck {
 		NaturalOrderStringComparator comparator =
 			new NaturalOrderStringComparator();
 
-		String typeName1 = DetailASTUtil.getTypeName(detailAST);
-		String typeName2 = DetailASTUtil.getTypeName(nextConditionAST);
+		String typeName1 = getTypeName(detailAST, false);
+		String typeName2 = getTypeName(nextConditionDetailAST, false);
 
 		if (comparator.compare(typeName1, typeName2) > 0) {
 			log(
-				nextConditionAST.getLineNo(), _MSG_ORDER_INSTANCEOF, typeName2,
+				nextConditionDetailAST, _MSG_ORDER_INSTANCEOF, typeName2,
 				typeName1);
 		}
 	}
 
-	private DetailAST _getNextConditionAST(DetailAST detailAST) {
-		DetailAST nextSibling = detailAST.getNextSibling();
+	private DetailAST _getNextConditionDetailAST(DetailAST detailAST) {
+		DetailAST nextSiblingDetailAST = detailAST.getNextSibling();
 
-		if (nextSibling != null) {
-			return nextSibling;
+		if (nextSiblingDetailAST != null) {
+			return nextSiblingDetailAST;
 		}
 
-		DetailAST parentAST = detailAST.getParent();
+		DetailAST parentDetailAST = detailAST.getParent();
 
-		return parentAST.getNextSibling();
+		return parentDetailAST.getNextSibling();
 	}
 
-	private String _getVariableName(DetailAST literalInstanceOfAST) {
-		DetailAST nameAST = literalInstanceOfAST.findFirstToken(
+	private String _getVariableName(DetailAST literalInstanceofDetailAST) {
+		DetailAST nameDetailAST = literalInstanceofDetailAST.findFirstToken(
 			TokenTypes.IDENT);
 
-		if (nameAST == null) {
+		if (nameDetailAST == null) {
 			return null;
 		}
 
-		return nameAST.getText();
+		return nameDetailAST.getText();
 	}
 
 	private static final String _MSG_ORDER_INSTANCEOF = "instanceof.order";

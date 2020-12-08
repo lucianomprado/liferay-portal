@@ -14,23 +14,21 @@
 
 package com.liferay.screens.service.http;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.security.auth.HttpPrincipal;
 import com.liferay.portal.kernel.service.http.TunnelUtil;
 import com.liferay.portal.kernel.util.MethodHandler;
 import com.liferay.portal.kernel.util.MethodKey;
-
 import com.liferay.screens.service.ScreensCommentServiceUtil;
 
 /**
  * Provides the HTTP utility for the
- * {@link ScreensCommentServiceUtil} service utility. The
+ * <code>ScreensCommentServiceUtil</code> service
+ * utility. The
  * static methods of this class calls the same methods of the service utility.
  * However, the signatures are different because it requires an additional
- * {@link HttpPrincipal} parameter.
+ * <code>HttpPrincipal</code> parameter.
  *
  * <p>
  * The benefits of using the HTTP utility is that it is fast and allows for
@@ -49,187 +47,227 @@ import com.liferay.screens.service.ScreensCommentServiceUtil;
  *
  * @author José Manuel Navarro
  * @see ScreensCommentServiceSoap
- * @see HttpPrincipal
- * @see ScreensCommentServiceUtil
  * @generated
  */
-@ProviderType
 public class ScreensCommentServiceHttp {
-	public static com.liferay.portal.kernel.json.JSONObject addComment(
-		HttpPrincipal httpPrincipal, java.lang.String className, long classPK,
-		java.lang.String body)
-		throws com.liferay.portal.kernel.exception.PortalException {
-		try {
-			MethodKey methodKey = new MethodKey(ScreensCommentServiceUtil.class,
-					"addComment", _addCommentParameterTypes0);
 
-			MethodHandler methodHandler = new MethodHandler(methodKey,
-					className, classPK, body);
+	public static com.liferay.portal.kernel.json.JSONObject addComment(
+			HttpPrincipal httpPrincipal, String className, long classPK,
+			String body)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		try {
+			MethodKey methodKey = new MethodKey(
+				ScreensCommentServiceUtil.class, "addComment",
+				_addCommentParameterTypes0);
+
+			MethodHandler methodHandler = new MethodHandler(
+				methodKey, className, classPK, body);
 
 			Object returnObj = null;
 
 			try {
 				returnObj = TunnelUtil.invoke(httpPrincipal, methodHandler);
 			}
-			catch (Exception e) {
-				if (e instanceof com.liferay.portal.kernel.exception.PortalException) {
-					throw (com.liferay.portal.kernel.exception.PortalException)e;
+			catch (Exception exception) {
+				if (exception instanceof
+						com.liferay.portal.kernel.exception.PortalException) {
+
+					throw (com.liferay.portal.kernel.exception.PortalException)
+						exception;
 				}
 
-				throw new com.liferay.portal.kernel.exception.SystemException(e);
+				throw new com.liferay.portal.kernel.exception.SystemException(
+					exception);
 			}
 
 			return (com.liferay.portal.kernel.json.JSONObject)returnObj;
 		}
-		catch (com.liferay.portal.kernel.exception.SystemException se) {
-			_log.error(se, se);
+		catch (com.liferay.portal.kernel.exception.SystemException
+					systemException) {
 
-			throw se;
+			_log.error(systemException, systemException);
+
+			throw systemException;
 		}
 	}
 
 	public static com.liferay.portal.kernel.json.JSONObject getComment(
-		HttpPrincipal httpPrincipal, long commentId)
+			HttpPrincipal httpPrincipal, long commentId)
 		throws com.liferay.portal.kernel.exception.PortalException {
-		try {
-			MethodKey methodKey = new MethodKey(ScreensCommentServiceUtil.class,
-					"getComment", _getCommentParameterTypes1);
 
-			MethodHandler methodHandler = new MethodHandler(methodKey, commentId);
+		try {
+			MethodKey methodKey = new MethodKey(
+				ScreensCommentServiceUtil.class, "getComment",
+				_getCommentParameterTypes1);
+
+			MethodHandler methodHandler = new MethodHandler(
+				methodKey, commentId);
 
 			Object returnObj = null;
 
 			try {
 				returnObj = TunnelUtil.invoke(httpPrincipal, methodHandler);
 			}
-			catch (Exception e) {
-				if (e instanceof com.liferay.portal.kernel.exception.PortalException) {
-					throw (com.liferay.portal.kernel.exception.PortalException)e;
+			catch (Exception exception) {
+				if (exception instanceof
+						com.liferay.portal.kernel.exception.PortalException) {
+
+					throw (com.liferay.portal.kernel.exception.PortalException)
+						exception;
 				}
 
-				throw new com.liferay.portal.kernel.exception.SystemException(e);
+				throw new com.liferay.portal.kernel.exception.SystemException(
+					exception);
 			}
 
 			return (com.liferay.portal.kernel.json.JSONObject)returnObj;
 		}
-		catch (com.liferay.portal.kernel.exception.SystemException se) {
-			_log.error(se, se);
+		catch (com.liferay.portal.kernel.exception.SystemException
+					systemException) {
 
-			throw se;
+			_log.error(systemException, systemException);
+
+			throw systemException;
 		}
 	}
 
 	public static com.liferay.portal.kernel.json.JSONArray getComments(
-		HttpPrincipal httpPrincipal, java.lang.String className, long classPK,
-		int start, int end)
+			HttpPrincipal httpPrincipal, String className, long classPK,
+			int start, int end)
 		throws com.liferay.portal.kernel.exception.PortalException {
-		try {
-			MethodKey methodKey = new MethodKey(ScreensCommentServiceUtil.class,
-					"getComments", _getCommentsParameterTypes2);
 
-			MethodHandler methodHandler = new MethodHandler(methodKey,
-					className, classPK, start, end);
+		try {
+			MethodKey methodKey = new MethodKey(
+				ScreensCommentServiceUtil.class, "getComments",
+				_getCommentsParameterTypes2);
+
+			MethodHandler methodHandler = new MethodHandler(
+				methodKey, className, classPK, start, end);
 
 			Object returnObj = null;
 
 			try {
 				returnObj = TunnelUtil.invoke(httpPrincipal, methodHandler);
 			}
-			catch (Exception e) {
-				if (e instanceof com.liferay.portal.kernel.exception.PortalException) {
-					throw (com.liferay.portal.kernel.exception.PortalException)e;
+			catch (Exception exception) {
+				if (exception instanceof
+						com.liferay.portal.kernel.exception.PortalException) {
+
+					throw (com.liferay.portal.kernel.exception.PortalException)
+						exception;
 				}
 
-				throw new com.liferay.portal.kernel.exception.SystemException(e);
+				throw new com.liferay.portal.kernel.exception.SystemException(
+					exception);
 			}
 
 			return (com.liferay.portal.kernel.json.JSONArray)returnObj;
 		}
-		catch (com.liferay.portal.kernel.exception.SystemException se) {
-			_log.error(se, se);
+		catch (com.liferay.portal.kernel.exception.SystemException
+					systemException) {
 
-			throw se;
+			_log.error(systemException, systemException);
+
+			throw systemException;
 		}
 	}
 
-	public static int getCommentsCount(HttpPrincipal httpPrincipal,
-		java.lang.String className, long classPK)
+	public static int getCommentsCount(
+			HttpPrincipal httpPrincipal, String className, long classPK)
 		throws com.liferay.portal.kernel.exception.PortalException {
-		try {
-			MethodKey methodKey = new MethodKey(ScreensCommentServiceUtil.class,
-					"getCommentsCount", _getCommentsCountParameterTypes3);
 
-			MethodHandler methodHandler = new MethodHandler(methodKey,
-					className, classPK);
+		try {
+			MethodKey methodKey = new MethodKey(
+				ScreensCommentServiceUtil.class, "getCommentsCount",
+				_getCommentsCountParameterTypes3);
+
+			MethodHandler methodHandler = new MethodHandler(
+				methodKey, className, classPK);
 
 			Object returnObj = null;
 
 			try {
 				returnObj = TunnelUtil.invoke(httpPrincipal, methodHandler);
 			}
-			catch (Exception e) {
-				if (e instanceof com.liferay.portal.kernel.exception.PortalException) {
-					throw (com.liferay.portal.kernel.exception.PortalException)e;
+			catch (Exception exception) {
+				if (exception instanceof
+						com.liferay.portal.kernel.exception.PortalException) {
+
+					throw (com.liferay.portal.kernel.exception.PortalException)
+						exception;
 				}
 
-				throw new com.liferay.portal.kernel.exception.SystemException(e);
+				throw new com.liferay.portal.kernel.exception.SystemException(
+					exception);
 			}
 
 			return ((Integer)returnObj).intValue();
 		}
-		catch (com.liferay.portal.kernel.exception.SystemException se) {
-			_log.error(se, se);
+		catch (com.liferay.portal.kernel.exception.SystemException
+					systemException) {
 
-			throw se;
+			_log.error(systemException, systemException);
+
+			throw systemException;
 		}
 	}
 
 	public static com.liferay.portal.kernel.json.JSONObject updateComment(
-		HttpPrincipal httpPrincipal, long commentId, java.lang.String body)
+			HttpPrincipal httpPrincipal, long commentId, String body)
 		throws com.liferay.portal.kernel.exception.PortalException {
-		try {
-			MethodKey methodKey = new MethodKey(ScreensCommentServiceUtil.class,
-					"updateComment", _updateCommentParameterTypes4);
 
-			MethodHandler methodHandler = new MethodHandler(methodKey,
-					commentId, body);
+		try {
+			MethodKey methodKey = new MethodKey(
+				ScreensCommentServiceUtil.class, "updateComment",
+				_updateCommentParameterTypes4);
+
+			MethodHandler methodHandler = new MethodHandler(
+				methodKey, commentId, body);
 
 			Object returnObj = null;
 
 			try {
 				returnObj = TunnelUtil.invoke(httpPrincipal, methodHandler);
 			}
-			catch (Exception e) {
-				if (e instanceof com.liferay.portal.kernel.exception.PortalException) {
-					throw (com.liferay.portal.kernel.exception.PortalException)e;
+			catch (Exception exception) {
+				if (exception instanceof
+						com.liferay.portal.kernel.exception.PortalException) {
+
+					throw (com.liferay.portal.kernel.exception.PortalException)
+						exception;
 				}
 
-				throw new com.liferay.portal.kernel.exception.SystemException(e);
+				throw new com.liferay.portal.kernel.exception.SystemException(
+					exception);
 			}
 
 			return (com.liferay.portal.kernel.json.JSONObject)returnObj;
 		}
-		catch (com.liferay.portal.kernel.exception.SystemException se) {
-			_log.error(se, se);
+		catch (com.liferay.portal.kernel.exception.SystemException
+					systemException) {
 
-			throw se;
+			_log.error(systemException, systemException);
+
+			throw systemException;
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(ScreensCommentServiceHttp.class);
+	private static Log _log = LogFactoryUtil.getLog(
+		ScreensCommentServiceHttp.class);
+
 	private static final Class<?>[] _addCommentParameterTypes0 = new Class[] {
-			java.lang.String.class, long.class, java.lang.String.class
-		};
+		String.class, long.class, String.class
+	};
 	private static final Class<?>[] _getCommentParameterTypes1 = new Class[] {
-			long.class
-		};
+		long.class
+	};
 	private static final Class<?>[] _getCommentsParameterTypes2 = new Class[] {
-			java.lang.String.class, long.class, int.class, int.class
-		};
-	private static final Class<?>[] _getCommentsCountParameterTypes3 = new Class[] {
-			java.lang.String.class, long.class
-		};
-	private static final Class<?>[] _updateCommentParameterTypes4 = new Class[] {
-			long.class, java.lang.String.class
-		};
+		String.class, long.class, int.class, int.class
+	};
+	private static final Class<?>[] _getCommentsCountParameterTypes3 =
+		new Class[] {String.class, long.class};
+	private static final Class<?>[] _updateCommentParameterTypes4 =
+		new Class[] {long.class, String.class};
+
 }

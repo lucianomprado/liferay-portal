@@ -51,18 +51,15 @@ public class PasswordTrackerLocalServiceImpl
 			if (currentPwd.equals(newEncPwd)) {
 				return true;
 			}
-			else {
-				return false;
-			}
+
+			return false;
 		}
-		else {
-			if (currentPwd.equals(newClearTextPwd)) {
-				return true;
-			}
-			else {
-				return false;
-			}
+
+		if (currentPwd.equals(newClearTextPwd)) {
+			return true;
 		}
+
+		return false;
 	}
 
 	@Override
@@ -72,7 +69,7 @@ public class PasswordTrackerLocalServiceImpl
 		PasswordPolicy passwordPolicy =
 			passwordPolicyLocalService.getPasswordPolicyByUserId(userId);
 
-		if ((passwordPolicy == null) || !passwordPolicy.getHistory()) {
+		if ((passwordPolicy == null) || !passwordPolicy.isHistory()) {
 			return true;
 		}
 

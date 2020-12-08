@@ -14,8 +14,6 @@
 
 package com.liferay.knowledge.base.model.impl;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.exportimport.kernel.lar.StagedModelType;
 import com.liferay.knowledge.base.model.KBComment;
 
@@ -23,7 +21,6 @@ import com.liferay.knowledge.base.model.KBComment;
  * @author Peter Shin
  * @author Daniel Kocsis
  */
-@ProviderType
 public class KBCommentImpl extends KBCommentBaseImpl {
 
 	public KBCommentImpl() {

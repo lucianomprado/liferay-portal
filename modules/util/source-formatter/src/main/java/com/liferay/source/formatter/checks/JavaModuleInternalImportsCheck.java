@@ -28,7 +28,7 @@ import java.util.regex.Pattern;
 public class JavaModuleInternalImportsCheck extends BaseFileCheck {
 
 	@Override
-	public boolean isModulesCheck() {
+	public boolean isModuleSourceCheck() {
 		return true;
 	}
 
@@ -44,9 +44,9 @@ public class JavaModuleInternalImportsCheck extends BaseFileCheck {
 			return content;
 		}
 
-		String packagePath = JavaSourceUtil.getPackagePath(content);
+		String packageName = JavaSourceUtil.getPackageName(content);
 
-		if (!packagePath.startsWith("com.liferay")) {
+		if (!packageName.startsWith("com.liferay")) {
 			return content;
 		}
 
@@ -77,12 +77,12 @@ public class JavaModuleInternalImportsCheck extends BaseFileCheck {
 				addMessage(
 					fileName,
 					"Do not import internal class from another module",
-					getLineCount(content, matcher.start(1)));
+					getLineNumber(content, matcher.start(1)));
 			}
 		}
 	}
 
-	private final Pattern _internalImportPattern = Pattern.compile(
+	private static final Pattern _internalImportPattern = Pattern.compile(
 		"\nimport com\\.liferay\\.(.*\\.internal\\.([a-z].*?\\.)?[A-Z].*?)" +
 			"[\\.|;]");
 

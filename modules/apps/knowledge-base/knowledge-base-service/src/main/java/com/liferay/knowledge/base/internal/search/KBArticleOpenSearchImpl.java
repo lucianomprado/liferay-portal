@@ -36,12 +36,17 @@ import org.osgi.service.component.annotations.Component;
  * @author Peter Shin
  * @author Brian Wing Shun Chan
  */
-@Component(immediate = true, service = OpenSearch.class)
+@Component(service = OpenSearch.class)
 public class KBArticleOpenSearchImpl extends HitsOpenSearchImpl {
 
 	public static final String SEARCH_PATH = "/c/knowledge_base/open_search";
 
 	public static final String TITLE = "Liferay Knowledge Base Search: ";
+
+	@Override
+	public String getClassName() {
+		return KBArticle.class.getName();
+	}
 
 	@Override
 	public Indexer<KBArticle> getIndexer() {

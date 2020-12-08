@@ -14,31 +14,30 @@
 
 package com.liferay.portal.json;
 
-import com.liferay.dynamic.data.mapping.kernel.DDMStructure;
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONSerializer;
+import com.liferay.portal.kernel.model.UserTrackerPath;
+import com.liferay.portal.kernel.model.role.RoleConstants;
 import com.liferay.portal.kernel.search.Hits;
 import com.liferay.portal.kernel.search.HitsImpl;
 import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.service.permission.ModelPermissions;
+import com.liferay.portal.kernel.service.permission.ModelPermissionsFactory;
 import com.liferay.portal.kernel.util.LocalizationUtil;
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.model.impl.UserTrackerPathImpl;
 import com.liferay.portal.util.LocalizationImpl;
 
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-
-import org.mockito.Mock;
-
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 /**
  * @author Igor Spasic
  */
-@RunWith(PowerMockRunner.class)
-public class JSONSerializerTest extends PowerMockito {
+public class JSONSerializerTest {
 
 	@Before
 	public void setUp() throws Exception {
@@ -49,8 +48,6 @@ public class JSONSerializerTest extends PowerMockito {
 		LocalizationUtil localizationUtil = new LocalizationUtil();
 
 		localizationUtil.setLocalization(new LocalizationImpl());
-
-		setUpDDMStructure();
 	}
 
 	@Test
@@ -59,9 +56,34 @@ public class JSONSerializerTest extends PowerMockito {
 
 		jsonSerializer.exclude("*.class");
 
-		String json = jsonSerializer.serialize(_ddmStructure);
+		TestClass testClass = new TestClass();
 
-		Assert.assertTrue(json.contains("\"definition\":\"value\""));
+		testClass.setName("test name");
+
+		String json = jsonSerializer.serialize(testClass);
+
+		Assert.assertTrue(json, json.contains("\"name\":\"test name\""));
+	}
+
+	@Test
+	public void testSerializeEntityWithGetOriginal() {
+		JSONSerializer jsonSerializer = JSONFactoryUtil.createJSONSerializer();
+
+		UserTrackerPath userTrackerPath = new UserTrackerPathImpl();
+
+		String json = jsonSerializer.serialize(userTrackerPath);
+
+		Assert.assertTrue(
+			json, json.contains("\"originalUserTrackerId\":\"0\""));
+
+		userTrackerPath.setUserTrackerId(1L);
+
+		userTrackerPath.resetOriginalValues();
+
+		json = jsonSerializer.serialize(userTrackerPath);
+
+		Assert.assertTrue(
+			json, json.contains("\"originalUserTrackerId\":\"1\""));
 	}
 
 	@Test
@@ -72,42 +94,56 @@ public class JSONSerializerTest extends PowerMockito {
 
 		String json = jsonSerializer.serialize(hits);
 
-		json = json.replace(StringPool.SPACE, StringPool.BLANK);
+		json = StringUtil.replace(json, CharPool.SPACE, StringPool.BLANK);
 
-		Assert.assertTrue(json.contains("\"docs\":[]"));
-		Assert.assertFalse(json.contains("\"query\""));
-		Assert.assertTrue(json.contains("\"queryTerms\":null"));
-		Assert.assertTrue(json.contains("\"scores\":"));
-		Assert.assertTrue(json.contains("\"snippets\":["));
-		Assert.assertTrue(json.contains("\"start\":\"0\""));
-		Assert.assertTrue(json.contains("\"length\":0"));
+		Assert.assertTrue(json, json.contains("\"docs\":[]"));
+		Assert.assertFalse(json, json.contains("\"query\""));
+		Assert.assertTrue(json, json.contains("\"queryTerms\":null"));
+		Assert.assertTrue(json, json.contains("\"scores\":"));
+		Assert.assertTrue(json, json.contains("\"snippets\":["));
+		Assert.assertTrue(json, json.contains("\"start\":\"0\""));
+		Assert.assertTrue(json, json.contains("\"length\":0"));
 	}
 
 	@Test
 	public void testSerializeServiceContext() {
 		ServiceContext serviceContext = new ServiceContext();
 
-		String[] groupPermissions = new String[] {"VIEW"};
+		String[] groupPermissions = {"VIEW"};
 
 		serviceContext.setAttribute("groupPermissions", groupPermissions);
-		serviceContext.setGroupPermissions(groupPermissions);
+
+		ModelPermissions modelPermissions = ModelPermissionsFactory.create(
+			groupPermissions, null);
+
+		serviceContext.setModelPermissions(modelPermissions);
 
 		String json = JSONFactoryUtil.serialize(serviceContext);
 
 		ServiceContext deserializedServiceContext =
 			(ServiceContext)JSONFactoryUtil.deserialize(json);
 
-		Assert.assertNotNull(deserializedServiceContext.getGroupPermissions());
+		ModelPermissions deserializedModelPermissions =
+			deserializedServiceContext.getModelPermissions();
+
+		Assert.assertArrayEquals(
+			groupPermissions,
+			deserializedModelPermissions.getActionIds(
+				RoleConstants.PLACEHOLDER_DEFAULT_GROUP_ROLE));
 	}
 
 	@Test
 	public void testSerializeTwice() {
 		ServiceContext serviceContext = new ServiceContext();
 
-		String[] groupPermissions = new String[] {"VIEW"};
+		String[] groupPermissions = {"VIEW"};
 
 		serviceContext.setAttribute("groupPermissions", groupPermissions);
-		serviceContext.setGroupPermissions(groupPermissions);
+
+		ModelPermissions modelPermissions = ModelPermissionsFactory.create(
+			groupPermissions, null);
+
+		serviceContext.setModelPermissions(modelPermissions);
 
 		String json1 = JSONFactoryUtil.serialize(serviceContext);
 
@@ -119,15 +155,27 @@ public class JSONSerializerTest extends PowerMockito {
 		Assert.assertEquals(json1, json2);
 	}
 
-	protected void setUpDDMStructure() {
-		when(
-			_ddmStructure.getDefinition()
-		).thenReturn(
-			"value"
-		);
+	private class BaseTestClass {
+
+		public String getName() {
+			return _name;
+		}
+
+		public void setName(String name) {
+			_name = name;
+		}
+
+		private String _name;
+
 	}
 
-	@Mock
-	private DDMStructure _ddmStructure;
+	private class TestClass extends BaseTestClass {
+
+		@Override
+		public void setName(String name) {
+			super.setName(name);
+		}
+
+	}
 
 }

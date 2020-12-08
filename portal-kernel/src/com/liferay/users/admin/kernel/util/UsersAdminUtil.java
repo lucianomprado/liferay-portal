@@ -14,8 +14,6 @@
 
 package com.liferay.users.admin.kernel.util;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.Address;
 import com.liferay.portal.kernel.model.EmailAddress;
@@ -29,7 +27,6 @@ import com.liferay.portal.kernel.model.UserGroup;
 import com.liferay.portal.kernel.model.UserGroupRole;
 import com.liferay.portal.kernel.model.Website;
 import com.liferay.portal.kernel.search.Hits;
-import com.liferay.portal.kernel.security.pacl.permission.PortalRuntimePermission;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.util.Accessor;
 import com.liferay.portal.kernel.util.OrderByComparator;
@@ -48,22 +45,15 @@ import javax.servlet.http.HttpServletRequest;
  * @author Jorge Ferrer
  * @author Julio Camarero
  */
-@ProviderType
 public class UsersAdminUtil {
 
-	/**
-	 * @deprecated As of 6.2.0, replaced by {@link UsersAdmin#CUSTOM_QUESTION}
-	 */
-	@Deprecated
-	public static final String CUSTOM_QUESTION = "write-my-own-question";
-
 	public static void addPortletBreadcrumbEntries(
-			Organization organization, HttpServletRequest request,
+			Organization organization, HttpServletRequest httpServletRequest,
 			RenderResponse renderResponse)
 		throws Exception {
 
 		getUsersAdmin().addPortletBreadcrumbEntries(
-			organization, request, renderResponse);
+			organization, httpServletRequest, renderResponse);
 	}
 
 	public static long[] addRequiredRoles(long userId, long[] roleIds)
@@ -272,8 +262,6 @@ public class UsersAdminUtil {
 	}
 
 	public static UsersAdmin getUsersAdmin() {
-		PortalRuntimePermission.checkGetBeanProperty(UsersAdminUtil.class);
-
 		return _usersAdmin;
 	}
 
@@ -344,8 +332,6 @@ public class UsersAdminUtil {
 	}
 
 	public void setUsersAdmin(UsersAdmin usersAdmin) {
-		PortalRuntimePermission.checkSetBeanProperty(getClass());
-
 		_usersAdmin = usersAdmin;
 	}
 

@@ -46,6 +46,7 @@ public class RepositoryModelSizeComparator<T> extends OrderByComparator<T> {
 
 	public RepositoryModelSizeComparator(boolean ascending) {
 		_ascending = ascending;
+
 		_orderByModel = false;
 	}
 
@@ -86,9 +87,8 @@ public class RepositoryModelSizeComparator<T> extends OrderByComparator<T> {
 		if (_ascending) {
 			return value;
 		}
-		else {
-			return -value;
-		}
+
+		return -value;
 	}
 
 	@Override
@@ -97,18 +97,15 @@ public class RepositoryModelSizeComparator<T> extends OrderByComparator<T> {
 			if (_ascending) {
 				return ORDER_BY_MODEL_ASC;
 			}
-			else {
-				return ORDER_BY_MODEL_DESC;
-			}
+
+			return ORDER_BY_MODEL_DESC;
 		}
-		else {
-			if (_ascending) {
-				return ORDER_BY_ASC;
-			}
-			else {
-				return ORDER_BY_DESC;
-			}
+
+		if (_ascending) {
+			return ORDER_BY_ASC;
 		}
+
+		return ORDER_BY_DESC;
 	}
 
 	@Override
@@ -121,16 +118,16 @@ public class RepositoryModelSizeComparator<T> extends OrderByComparator<T> {
 		return _ascending;
 	}
 
-	protected long getFileShortcutSize(Object obj) {
+	protected long getFileShortcutSize(Object object) {
 		long toFileEntryId = 0;
 
-		if (obj instanceof FileShortcut) {
-			FileShortcut fileShortcut = (FileShortcut)obj;
+		if (object instanceof FileShortcut) {
+			FileShortcut fileShortcut = (FileShortcut)object;
 
 			toFileEntryId = fileShortcut.getToFileEntryId();
 		}
 		else {
-			DLFileShortcut dlFileShortcut = (DLFileShortcut)obj;
+			DLFileShortcut dlFileShortcut = (DLFileShortcut)object;
 
 			toFileEntryId = dlFileShortcut.getToFileEntryId();
 		}
@@ -141,25 +138,27 @@ public class RepositoryModelSizeComparator<T> extends OrderByComparator<T> {
 
 			return dlFileEntry.getSize();
 		}
-		catch (Exception e) {
+		catch (Exception exception) {
 			return 0;
 		}
 	}
 
-	protected long getSize(Object obj) {
-		if (obj instanceof DLFileEntry) {
-			DLFileEntry dlFileEntry = (DLFileEntry)obj;
+	protected long getSize(Object object) {
+		if (object instanceof DLFileEntry) {
+			DLFileEntry dlFileEntry = (DLFileEntry)object;
 
 			return dlFileEntry.getSize();
 		}
-		else if (obj instanceof DLFileShortcut || obj instanceof FileShortcut) {
-			return getFileShortcutSize(obj);
+		else if (object instanceof DLFileShortcut ||
+				 object instanceof FileShortcut) {
+
+			return getFileShortcutSize(object);
 		}
-		else if (obj instanceof DLFolder || obj instanceof Folder) {
+		else if (object instanceof DLFolder || object instanceof Folder) {
 			return 0;
 		}
 		else {
-			FileEntry fileEntry = (FileEntry)obj;
+			FileEntry fileEntry = (FileEntry)object;
 
 			return fileEntry.getSize();
 		}

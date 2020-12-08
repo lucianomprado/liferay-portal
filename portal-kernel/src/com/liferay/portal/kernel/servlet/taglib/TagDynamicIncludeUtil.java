@@ -14,11 +14,11 @@
 
 package com.liferay.portal.kernel.servlet.taglib;
 
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.util.CharPool;
 import com.liferay.portal.kernel.util.ListUtil;
-import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.registry.Registry;
 import com.liferay.registry.RegistryUtil;
 import com.liferay.registry.ServiceReference;
@@ -43,7 +43,7 @@ public class TagDynamicIncludeUtil {
 
 		String key = _getKey(tagClassName, tagDynamicId, tagPoint);
 
-		return _instance._tagDynamicIncludes.getService(key);
+		return _tagDynamicIncludeUtil._tagDynamicIncludes.getService(key);
 	}
 
 	public static boolean hasTagDynamicInclude(
@@ -60,9 +60,9 @@ public class TagDynamicIncludeUtil {
 	}
 
 	public static void include(
-		HttpServletRequest request, HttpServletResponse response,
-		String tagClassName, String tagDynamicId, String tagPoint,
-		boolean ascendingPriority) {
+		HttpServletRequest httpServletRequest,
+		HttpServletResponse httpServletResponse, String tagClassName,
+		String tagDynamicId, String tagPoint, boolean ascendingPriority) {
 
 		List<TagDynamicInclude> tagDynamicIncludes = getTagDynamicIncludes(
 			tagClassName, tagDynamicId, tagPoint);
@@ -85,10 +85,11 @@ public class TagDynamicIncludeUtil {
 
 			try {
 				tagDynamicInclude.include(
-					request, response, tagClassName, tagDynamicId, tagPoint);
+					httpServletRequest, httpServletResponse, tagClassName,
+					tagDynamicId, tagPoint);
 			}
-			catch (Exception e) {
-				_log.error(e, e);
+			catch (Exception exception) {
+				_log.error(exception, exception);
 			}
 		}
 	}
@@ -150,7 +151,7 @@ public class TagDynamicIncludeUtil {
 	private static final Log _log = LogFactoryUtil.getLog(
 		TagDynamicIncludeUtil.class);
 
-	private static final TagDynamicIncludeUtil _instance =
+	private static final TagDynamicIncludeUtil _tagDynamicIncludeUtil =
 		new TagDynamicIncludeUtil();
 
 	private final ServiceTrackerMap<String, List<TagDynamicInclude>>

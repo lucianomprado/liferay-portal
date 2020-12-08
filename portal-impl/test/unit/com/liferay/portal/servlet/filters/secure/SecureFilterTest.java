@@ -14,53 +14,42 @@
 
 package com.liferay.portal.servlet.filters.secure;
 
+import com.liferay.portal.kernel.util.ProxyFactory;
 import com.liferay.portal.util.PropsUtil;
+
+import javax.servlet.FilterConfig;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-
-import org.mockito.Mockito;
-
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 /**
- * @author Mariano Alvaro Saiz
+ * @author Mariano Álvaro Sáiz
  */
-@PrepareForTest(PropsUtil.class)
-@RunWith(PowerMockRunner.class)
 public class SecureFilterTest {
 
 	@Test
 	public void testSecureFilterIsEnabledIfDisabled() {
-		PowerMockito.mockStatic(PropsUtil.class);
-
-		Mockito.when(
-			PropsUtil.get(SecureFilter.class.getName())
-		).thenReturn(
-			"false"
-		);
+		PropsUtil.set(SecureFilter.class.getName(), "false");
 
 		SecureFilter secureFilter = new SecureFilter();
+
+		secureFilter.init(_filterConfig);
 
 		Assert.assertTrue(secureFilter.isFilterEnabled());
 	}
 
 	@Test
 	public void testSecureFilterIsEnabledIfEnabled() {
-		PowerMockito.mockStatic(PropsUtil.class);
-
-		Mockito.when(
-			PropsUtil.get(SecureFilter.class.getName())
-		).thenReturn(
-			"true"
-		);
+		PropsUtil.set(SecureFilter.class.getName(), "true");
 
 		SecureFilter secureFilter = new SecureFilter();
 
+		secureFilter.init(_filterConfig);
+
 		Assert.assertTrue(secureFilter.isFilterEnabled());
 	}
+
+	private final FilterConfig _filterConfig = ProxyFactory.newDummyInstance(
+		FilterConfig.class);
 
 }

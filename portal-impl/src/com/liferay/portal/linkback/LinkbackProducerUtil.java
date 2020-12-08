@@ -14,6 +14,7 @@
 
 package com.liferay.portal.linkback;
 
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.io.unsync.UnsyncStringReader;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -73,7 +74,6 @@ public class LinkbackProducerUtil {
 			if (time.before(expiration)) {
 				_pingbackQueue.remove(0);
 
-				String sourceUri = (String)tuple.getObject(1);
 				String targetUri = (String)tuple.getObject(2);
 
 				String serverUri = _discoverPingbackServer(targetUri);
@@ -82,10 +82,13 @@ public class LinkbackProducerUtil {
 					continue;
 				}
 
+				String sourceUri = (String)tuple.getObject(1);
+
 				if (_log.isInfoEnabled()) {
 					_log.info(
-						"XML-RPC pingback " + serverUri + ", source " +
-							sourceUri + ", target " + targetUri);
+						StringBundler.concat(
+							"XML-RPC pingback ", serverUri, ", source ",
+							sourceUri, ", target ", targetUri));
 				}
 
 				Response response = XmlRpcUtil.executeMethod(
@@ -174,13 +177,14 @@ public class LinkbackProducerUtil {
 				try {
 					xmlStreamReader.close();
 				}
-				catch (Exception e) {
+				catch (Exception exception) {
 				}
 			}
 		}
 
 		_log.error(
-			"Error while pinging trackback at " + trackback + ": " + error);
+			StringBundler.concat(
+				"Error while pinging trackback at ", trackback, ": ", error));
 
 		return false;
 	}
@@ -211,8 +215,8 @@ public class LinkbackProducerUtil {
 
 			serverUri = response.getHeader("X-Pingback");
 		}
-		catch (Exception e) {
-			_log.error("Unable to call HEAD of " + targetUri, e);
+		catch (Exception exception) {
+			_log.error("Unable to call HEAD of " + targetUri, exception);
 		}
 
 		if (Validator.isNotNull(serverUri)) {
@@ -236,8 +240,8 @@ public class LinkbackProducerUtil {
 				}
 			}
 		}
-		catch (Exception e) {
-			_log.error("Unable to call GET of " + targetUri, e);
+		catch (Exception exception) {
+			_log.error("Unable to call GET of " + targetUri, exception);
 		}
 
 		return serverUri;
@@ -245,7 +249,7 @@ public class LinkbackProducerUtil {
 
 	private static final boolean _HTTP_HEADER_VERSION_VERBOSITY_DEFAULT =
 		StringUtil.equalsIgnoreCase(
-			PropsValues.HTTP_HEADER_VERSION_VERBOSITY, ReleaseInfo.getName());
+			PropsValues.HTTP_HEADER_VERSION_VERBOSITY, "off");
 
 	private static final boolean _HTTP_HEADER_VERSION_VERBOSITY_PARTIAL =
 		StringUtil.equalsIgnoreCase(

@@ -21,12 +21,6 @@ import com.liferay.portal.kernel.plugin.PluginPackage;
  */
 public interface Plugin {
 
-	/**
-	 * @deprecated As of 6.2.0
-	 */
-	@Deprecated
-	public static final String TYPE_EXT = "ext";
-
 	public static final String TYPE_HOOK = "hook";
 
 	public static final String TYPE_LAYOUT_TEMPLATE = "layouttpl";

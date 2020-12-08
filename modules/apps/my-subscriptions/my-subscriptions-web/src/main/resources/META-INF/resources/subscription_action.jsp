@@ -21,10 +21,16 @@ ResultRow row = (ResultRow)request.getAttribute(WebKeys.SEARCH_CONTAINER_RESULT_
 
 Subscription subscription = (Subscription)row.getObject();
 
-AssetRenderer assetRenderer = MySubscriptionsUtil.getAssetRenderer(subscription.getClassName(), subscription.getClassPK());
+AssetRenderer<?> assetRenderer = MySubscriptionsUtil.getAssetRenderer(subscription.getClassName(), subscription.getClassPK());
 %>
 
-<liferay-ui:icon-menu direction="left-side" icon="<%= StringPool.BLANK %>" markupView="lexicon" message="<%= StringPool.BLANK %>" showWhenSingleIcon="<%= true %>">
+<liferay-ui:icon-menu
+	direction="left-side"
+	icon="<%= StringPool.BLANK %>"
+	markupView="lexicon"
+	message="actions"
+	showWhenSingleIcon="<%= true %>"
+>
 
 	<%
 	String viewURL = null;
@@ -39,7 +45,8 @@ AssetRenderer assetRenderer = MySubscriptionsUtil.getAssetRenderer(subscription.
 
 	<c:if test="<%= viewURL != null %>">
 		<liferay-ui:icon
-			iconCssClass="icon-search"
+			icon="search"
+			markupView="lexicon"
 			message="view"
 			url="<%= viewURL %>"
 		/>
@@ -69,7 +76,8 @@ AssetRenderer assetRenderer = MySubscriptionsUtil.getAssetRenderer(subscription.
 
 	<c:if test="<%= displayPopupHREF != null %>">
 		<liferay-ui:icon
-			iconCssClass="icon-list-alt"
+			icon="forms"
+			markupView="lexicon"
 			message="view-in-popup"
 			url="<%= displayPopupHREF %>"
 		/>
@@ -81,8 +89,9 @@ AssetRenderer assetRenderer = MySubscriptionsUtil.getAssetRenderer(subscription.
 	</portlet:actionURL>
 
 	<liferay-ui:icon
-		iconCssClass="icon-remove-sign"
+		icon="times-circle"
 		label="<%= true %>"
+		markupView="lexicon"
 		message="unsubscribe"
 		url="<%= unsubscribeURL %>"
 	/>

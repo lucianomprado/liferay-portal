@@ -15,7 +15,7 @@ error() {
 }
 
 help() {
-	info "Usage: ./push_to_subrepos.sh [-a] [-p PATTERN] [SUBREPO_NAME]"
+	info "Usage: ./verify_subrepo_contents.sh [-a] [-p PATTERN] [SUBREPO_NAME]"
 	info " -a: All subrepos. Must omit -p and SUBREPO_NAME."
 	info " -p: Verify subrepos matching a regex pattern. Must omit -a and SUBREPO_NAME."
 }
@@ -35,7 +35,7 @@ warn() {
 OPTION_ALL=
 PATTERN=
 
-while getopts "adfp:v" OPT
+while getopts "ap:" OPT
 do
 	case ${OPT} in
 	a)
@@ -108,9 +108,12 @@ fi
 #
 
 SUBREPO_SEARCH_PARAMETERS=(
-	"7.0.x:../..:modules/apps"
-	"ee-7.0.x:../../../liferay-portal-ee:modules/private/apps"
-	"master:../..:modules/apps"
+	"7.0.x:../../../liferay-portal-ee:modules"
+	"7.0.x-private:../../../liferay-portal-ee:modules/dxp"
+	"7.1.x:../../../liferay-portal-ee:modules"
+	"7.1.x-private:../../../liferay-portal-ee:modules/dxp"
+	"master-private:../../../liferay-portal-ee:modules/dxp"
+	"master:../..:modules"
 )
 
 for SUBREPO_SEARCH_PARAMETER in "${SUBREPO_SEARCH_PARAMETERS[@]}"
@@ -159,12 +162,6 @@ else
 		ALL_SUBREPOS=("${ALL_SUBREPOS[@]}" "${SUBREPO_SEARCH[@]}")
 	done
 
-	#
-	# Fix for ee-7.0.x.
-	#
-
-	ALL_SUBREPOS=($(printf '%s\n' "${ALL_SUBREPOS[@]}" | sed 's/^ee-7.0.x/7.0.x-private/'))
-
 	GITREPO_BRANCHES=($(printf '%s\n' "${ALL_SUBREPOS[@]}" | grep "^[^:]*:.*${PATTERN}"))
 
 	if [[ -z "$(echo "${GITREPO_BRANCHES[@]}" | grep '[a-zA-Z]')" ]]
@@ -186,25 +183,19 @@ info
 
 BRANCH_COUNTER=0
 
-for GITREPO_BRANCH in  "${GITREPO_BRANCHES[@]}"
+for GITREPO_BRANCH in "${GITREPO_BRANCHES[@]}"
 do
 	SUBREPO_BRANCH="${GITREPO_BRANCH%%:*}"
 	GITREPO_PATH="$(echo "${GITREPO_BRANCH}" | sed 's/:[^:]*$//' | sed 's/.*://')"
 	SUBREPO_NAME="${GITREPO_BRANCH##*:}"
 
-	CENTRAL_BRANCH="${SUBREPO_BRANCH}"
 	SUBREPO_PATH="../../../${SUBREPO_NAME}"
 
-	if [[ "${SUBREPO_BRANCH}" == "7.0.x-private" ]]
+	if [[ "${SUBREPO_BRANCH}" == "master" ]]
 	then
-		CENTRAL_BRANCH=ee-7.0.x
-	fi
-
-	if [[ "${SUBREPO_BRANCH}" == *-private ]]
-	then
-		CENTRAL_PATH="../../../liferay-portal-ee"
-	else
 		CENTRAL_PATH="../.."
+	else
+		CENTRAL_PATH="../../../liferay-portal-ee"
 	fi
 
 	if [[ ! -e "${SUBREPO_PATH}" ]]
@@ -216,34 +207,50 @@ do
 		)
 	fi
 
-	SUBREPO_COMMIT="$(git -C "${CENTRAL_PATH}" grep 'commit = ' "${CENTRAL_BRANCH}" -- "${GITREPO_PATH}" | sed 's/.* //')"
+	SUBREPO_COMMIT="$(git -C "${CENTRAL_PATH}" grep 'commit = ' "refs/remotes/upstream/${SUBREPO_BRANCH}" -- "${GITREPO_PATH}" | sed 's/.* //')"
 
 	if [[ -z "${SUBREPO_COMMIT}" ]]
 	then
 		warn "Skipping ${SUBREPO_NAME}:${SUBREPO_BRANCH}, failed to retrieve subrepo.commit sha at ${GITREPO_PATH}."
 
+		let BRANCH_COUNTER++
+
+		continue
+	elif [[ "${SUBREPO_COMMIT}" == "0000000000000000000000000000000000000000" ]]
+	then
 		continue
 	fi
 
-	CENTRAL_TREE=$(git -C "${CENTRAL_PATH}" ls-tree --full-tree -r "${CENTRAL_BRANCH}" "${GITREPO_PATH%/.gitrepo}" | sed "s@${GITREPO_PATH%/.gitrepo}/@@" | grep -v '.gitrepo' | sort -k 4)
+	CENTRAL_TREE=$(git -C "${CENTRAL_PATH}" ls-tree --full-tree -r "refs/remotes/upstream/${SUBREPO_BRANCH}" "${GITREPO_PATH%/.gitrepo}" | sed "s@${GITREPO_PATH%/.gitrepo}/@@" | grep -v '.gitrepo' | sort -k 4)
+
+	if [[ -z $(git -C "${SUBREPO_PATH}" ls-remote "git@github.com:liferay/${SUBREPO_NAME}.git" 2>/dev/null | grep "refs/heads/${SUBREPO_BRANCH}\$") ]]
+	then
+		warn "Skipping ${SUBREPO_NAME}:${SUBREPO_BRANCH}, ref not found in subrepo remote."
+
+		let BRANCH_COUNTER++
+
+		continue
+	fi
 
 	if [[ -z $(git -C "${SUBREPO_PATH}" show "${SUBREPO_COMMIT}" 2>/dev/null) ]]
 	then
-		git -C "${SUBREPO_PATH}" fetch -q "git@github.com:liferay/${SUBREPO_NAME}.git" "${SUBREPO_COMMIT}"
+		git -C "${SUBREPO_PATH}" fetch -q "git@github.com:liferay/${SUBREPO_NAME}.git" "${SUBREPO_BRANCH}"
 
 		if [[ -z $(git -C "${SUBREPO_PATH}" show "${SUBREPO_COMMIT}" 2>/dev/null) ]]
 		then
 			warn "Skipping ${SUBREPO_NAME}:${SUBREPO_BRANCH}, failed to fetch sha subrepo sha ${SUBREPO_COMMIT}"
 
+			let BRANCH_COUNTER++
+
 			continue
 		fi
 	fi
 
-	SUBREPO_TREE=$(git -C "${SUBREPO_PATH}" ls-tree --full-tree -r "${SUBREPO_COMMIT}" . | egrep -v '\sgradlew' | egrep -v '\sgradle/wrapper' | sort -k 4)
+	SUBREPO_TREE=$(git -C "${SUBREPO_PATH}" ls-tree --full-tree -r "${SUBREPO_COMMIT}" . | egrep -v '\sgradle.properties' | egrep -v '\sgradlew' | egrep -v '\sgradle/wrapper' | sort -k 4)
 
 	if [[ "${CENTRAL_TREE}" != "${SUBREPO_TREE}" ]]
 	then
-		info "${SUBREPO_BRANCH}:${SUBREPO_NAME} and ${CENTRAL_BRANCH}:${GITREPO_PATH%/.gitrepo} out-of-sync."
+		info "${SUBREPO_BRANCH}:${SUBREPO_NAME} and ${SUBREPO_BRANCH}:${GITREPO_PATH%/.gitrepo} out-of-sync."
 
 		diff -u <(echo "${CENTRAL_TREE}") <(echo "${SUBREPO_TREE}")
 

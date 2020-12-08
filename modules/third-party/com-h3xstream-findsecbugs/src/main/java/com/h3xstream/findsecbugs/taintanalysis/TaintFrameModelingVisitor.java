@@ -17,8 +17,12 @@
  */
 package com.h3xstream.findsecbugs.taintanalysis;
 
+import com.h3xstream.findsecbugs.BCELUtil;
 import com.h3xstream.findsecbugs.FindSecBugsGlobalConfig;
 import com.h3xstream.findsecbugs.common.ByteCode;
+import com.h3xstream.findsecbugs.taintanalysis.data.TaintLocation;
+import com.h3xstream.findsecbugs.taintanalysis.data.UnknownSource;
+import com.h3xstream.findsecbugs.taintanalysis.data.UnknownSourceType;
 import edu.umd.cs.findbugs.ba.AbstractFrameModelingVisitor;
 import edu.umd.cs.findbugs.ba.DataflowAnalysisException;
 import edu.umd.cs.findbugs.ba.InvalidBytecodeException;
@@ -26,39 +30,12 @@ import edu.umd.cs.findbugs.ba.generic.GenericSignatureParser;
 import edu.umd.cs.findbugs.classfile.MethodDescriptor;
 import edu.umd.cs.findbugs.util.ClassName;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import org.apache.bcel.Constants;
-import org.apache.bcel.generic.AALOAD;
-import org.apache.bcel.generic.AASTORE;
-import org.apache.bcel.generic.ACONST_NULL;
-import org.apache.bcel.generic.ANEWARRAY;
-import org.apache.bcel.generic.ARETURN;
-import org.apache.bcel.generic.BIPUSH;
-import org.apache.bcel.generic.CHECKCAST;
-import org.apache.bcel.generic.ConstantPoolGen;
-import org.apache.bcel.generic.GETFIELD;
-import org.apache.bcel.generic.GETSTATIC;
-import org.apache.bcel.generic.ICONST;
-import org.apache.bcel.generic.INVOKEINTERFACE;
-import org.apache.bcel.generic.INVOKESPECIAL;
-import org.apache.bcel.generic.INVOKESTATIC;
-import org.apache.bcel.generic.INVOKEVIRTUAL;
-import org.apache.bcel.generic.Instruction;
-import org.apache.bcel.generic.InvokeInstruction;
-import org.apache.bcel.generic.LDC;
-import org.apache.bcel.generic.LDC2_W;
-import org.apache.bcel.generic.LoadInstruction;
-import org.apache.bcel.generic.NEW;
-import org.apache.bcel.generic.ObjectType;
-import org.apache.bcel.generic.SIPUSH;
-import org.apache.bcel.generic.StoreInstruction;
+import org.apache.bcel.Const;
+import org.apache.bcel.generic.*;
 
 /**
  * Visitor to make instruction transfer of taint values easier
@@ -67,10 +44,16 @@ import org.apache.bcel.generic.StoreInstruction;
  */
 public class TaintFrameModelingVisitor extends AbstractFrameModelingVisitor<Taint, TaintFrame> {
 
+    private static final Logger LOG = Logger.getLogger(TaintFrameModelingVisitor.class.getName());
+
     private static final Map<String, Taint.Tag> REPLACE_TAGS;
     private final MethodDescriptor methodDescriptor;
     private final TaintConfig taintConfig;
     private final TaintMethodConfig analyzedMethodConfig;
+
+    private final List<TaintFrameAdditionalVisitor> visitors;
+    private final MethodGen methodGen;
+    private String regexValue;
 
     static {
         REPLACE_TAGS = new HashMap<String, Taint.Tag>();
@@ -90,7 +73,7 @@ public class TaintFrameModelingVisitor extends AbstractFrameModelingVisitor<Tain
      * @throws NullPointerException if arguments method or taintConfig is null
      */
     public TaintFrameModelingVisitor(ConstantPoolGen cpg, MethodDescriptor method,
-            TaintConfig taintConfig) {
+            TaintConfig taintConfig, List<TaintFrameAdditionalVisitor> visitors,MethodGen methodGen) {
         super(cpg);
         if (method == null) {
             throw new NullPointerException("null method descriptor");
@@ -101,6 +84,9 @@ public class TaintFrameModelingVisitor extends AbstractFrameModelingVisitor<Tain
         this.methodDescriptor = method;
         this.taintConfig = taintConfig;
         this.analyzedMethodConfig = new TaintMethodConfig(false);
+        analyzedMethodConfig.setTypeSignature(methodDescriptor.getClassDescriptor().getClassName() + "." + methodDescriptor.getName() + methodDescriptor.getSignature());
+        this.visitors = visitors;
+        this.methodGen = methodGen;
     }
 
     private Collection<Integer> getMutableStackIndices(String signature) {
@@ -135,6 +121,7 @@ public class TaintFrameModelingVisitor extends AbstractFrameModelingVisitor<Tain
         //Print the bytecode instruction if it is globally configured
         if (FindSecBugsGlobalConfig.getInstance().isDebugPrintInvocationVisited()
                 && ins instanceof InvokeInstruction) {
+            //System.out.println(getFrame().toString());
             ByteCode.printOpCode(ins, cpg);
         } else if (FindSecBugsGlobalConfig.getInstance().isDebugPrintInstructionVisited()) {
             ByteCode.printOpCode(ins, cpg);
@@ -204,7 +191,30 @@ public class TaintFrameModelingVisitor extends AbstractFrameModelingVisitor<Tain
                 getFrame().pushValue(new Taint(Taint.State.NULL));
             }
         } else {
-            super.visitGETSTATIC(obj);
+            Taint taint;
+
+            String fieldSig = BCELUtil.getSlashedClassName(cpg, obj)+"."+obj.getName(cpg);
+            Taint.State state = taintConfig.getFieldTaintState(fieldSig, Taint.State.INVALID);
+            if (state == Taint.State.INVALID) {
+                state = taintConfig.getClassTaintState(obj.getSignature(cpg), Taint.State.INVALID);
+            }
+            if (state == Taint.State.INVALID) {
+                taint = taintConfig.getStaticFieldTaint(fieldSig, getDefaultValue());
+            }
+            else {
+                taint = new Taint(state);
+            }
+
+            if (!state.equals(Taint.State.SAFE)){
+                taint.addLocation(getTaintLocation(), false);
+            }
+            taint.addSource(new UnknownSource(UnknownSourceType.FIELD,state).setSignatureField(fieldSig));
+
+            int numConsumed = getNumWordsConsumed(obj);
+            int numProduced = getNumWordsProduced(obj);
+            modelInstruction(obj, numConsumed, numProduced, taint);
+
+            notifyAdditionalVisitorField(obj, methodGen, getFrame(), taint, numProduced);
         }
     }
 
@@ -228,16 +238,75 @@ public class TaintFrameModelingVisitor extends AbstractFrameModelingVisitor<Tain
 
     @Override
     public void visitGETFIELD(GETFIELD obj) {
-        Taint.State state = taintConfig.getClassTaintState(obj.getSignature(cpg), Taint.State.UNKNOWN);
+        String fieldSig = BCELUtil.getSlashedClassName(cpg, obj)+"."+obj.getName(cpg);
+        Taint.State state = taintConfig.getFieldTaintState(fieldSig, Taint.State.INVALID);
+        if (state == Taint.State.INVALID) {
+            state = taintConfig.getClassTaintState(obj.getSignature(cpg), Taint.State.INVALID);
+        }
+        if (state == Taint.State.INVALID) {
+            state = Taint.State.UNKNOWN;
+        }
+
         Taint taint = new Taint(state);
 
         if (!state.equals(Taint.State.SAFE)){
             taint.addLocation(getTaintLocation(), false);
         }
+        taint.addSource(new UnknownSource(UnknownSourceType.FIELD,state).setSignatureField(fieldSig));
         if (FindSecBugsGlobalConfig.getInstance().isDebugTaintState()) {
             taint.setDebugInfo("." + obj.getFieldName(cpg));
         }
-        modelInstruction(obj, getNumWordsConsumed(obj), getNumWordsProduced(obj), taint);
+        int numConsumed = getNumWordsConsumed(obj);
+        int numProduced = getNumWordsProduced(obj);
+        modelInstruction(obj, numConsumed, numProduced, taint);
+
+
+        notifyAdditionalVisitorField(obj, methodGen, getFrame(), taint, numProduced);
+    }
+
+    @Override
+    public void visitPUTFIELD(PUTFIELD obj) {
+        visitPutFieldOp(obj);
+    }
+
+    @Override
+    public void visitPUTSTATIC(PUTSTATIC obj) {
+        try {
+            String fieldSig = BCELUtil.getSlashedClassName(cpg, obj)+"."+obj.getName(cpg);
+            Taint staticTaint = taintConfig.getStaticFieldTaint(fieldSig, null);
+            Taint t = getFrame().getTopValue();
+            t = Taint.merge(t, staticTaint);
+            taintConfig.putStaticFieldTaint(fieldSig, t);
+        } catch (DataflowAnalysisException e) {
+        }
+
+        visitPutFieldOp(obj);
+    }
+
+    public void visitPutFieldOp(FieldInstruction obj) {
+
+        //int numConsumed = getNumWordsConsumed(obj);
+        int numProduced = getNumWordsProduced(obj);
+        try {
+            Taint t = getFrame().getTopValue();
+            handleNormalInstruction(obj);
+            notifyAdditionalVisitorField(obj, methodGen, getFrame(), t, numProduced);
+        } catch (DataflowAnalysisException e) {
+
+        }
+
+    }
+
+    private void notifyAdditionalVisitorField(FieldInstruction instruction, MethodGen methodGen, TaintFrame frame,
+                                              Taint taintValue, int numProduced) {
+        for(TaintFrameAdditionalVisitor visitor : visitors) {
+            try {
+                visitor.visitField(instruction, methodGen, frame, taintValue, numProduced, cpg);
+            }
+            catch (Throwable e) {
+                LOG.log(Level.SEVERE,"Error while executing "+visitor.getClass().getName(),e);
+            }
+        }
     }
 
     @Override
@@ -255,12 +324,13 @@ public class TaintFrameModelingVisitor extends AbstractFrameModelingVisitor<Tain
     public void handleStoreInstruction(StoreInstruction obj) {
         try {
             int numConsumed = obj.consumeStack(cpg);
-            if (numConsumed == Constants.UNPREDICTABLE) {
+            if (numConsumed == Const.UNPREDICTABLE) {
                 throw new InvalidBytecodeException("Unpredictable stack consumption");
             }
             int index = obj.getIndex();
             while (numConsumed-- > 0) {
                 Taint value = new Taint(getFrame().popValue());
+//                Taint value = getFrame().popValue();
                 value.setVariableIndex(index);
                 getFrame().setValue(index++, value);
             }
@@ -270,17 +340,33 @@ public class TaintFrameModelingVisitor extends AbstractFrameModelingVisitor<Tain
     }
 
     @Override
-    public void handleLoadInstruction(LoadInstruction obj) {
-        int numProduced = obj.produceStack(cpg);
-        if (numProduced == Constants.UNPREDICTABLE) {
+    public void handleLoadInstruction(LoadInstruction load) {
+        int numProducedOrig = load.produceStack(cpg);
+        int numProduced = numProducedOrig;
+        if (numProduced == Const.UNPREDICTABLE) {
             throw new InvalidBytecodeException("Unpredictable stack production");
         }
-        int index = obj.getIndex() + numProduced;
+        int index = load.getIndex() + numProduced;
         while (numProduced-- > 0) {
             Taint value = getFrame().getValue(--index);
-            assert value.hasValidVariableIndex() : "index not set in " + methodDescriptor;
-            assert index == value.getVariableIndex() : "bad index in " + methodDescriptor;
-            getFrame().pushValue(new Taint(value));
+            //assert value.hasValidVariableIndex() :
+            if(!value.hasValidVariableIndex()) {
+                throw new RuntimeException("index not set in " + methodDescriptor);
+            }
+            if(index != value.getVariableIndex()) {
+                throw new RuntimeException("bad index in " + methodDescriptor);
+            }
+//            getFrame().pushValue(new Taint(value));
+            getFrame().pushValue(value);
+        }
+
+        for(TaintFrameAdditionalVisitor visitor : visitors) {
+            try {
+                visitor.visitLoad(load, methodGen, getFrame(), numProducedOrig, cpg);
+            }
+            catch (Throwable e) {
+                LOG.log(Level.SEVERE,"Error while executing "+visitor.getClass().getName(),e);
+            }
         }
     }
 
@@ -340,11 +426,11 @@ public class TaintFrameModelingVisitor extends AbstractFrameModelingVisitor<Tain
             String taintMethodConfigWithArgumentsAndLocationConfig =
                     "javax/servlet/jsp/PageContext.findAttribute(\"" + value + "\"):SAFE@" + methodDescriptor.getSlashedClassName();
 
-            taintConfig.load(new ByteArrayInputStream(taintMethodConfigWithArgumentsAndLocationConfig.getBytes()), false);
+            taintConfig.load(new java.io.ByteArrayInputStream(taintMethodConfigWithArgumentsAndLocationConfig.getBytes()), false);
 
         } catch (DataflowAnalysisException ex) {
             throw new InvalidBytecodeException("Not enough values on the stack", ex);
-        } catch (IOException ex) {
+        } catch (java.io.IOException ex) {
             throw new RuntimeException(ex);
         }
     }
@@ -366,9 +452,10 @@ public class TaintFrameModelingVisitor extends AbstractFrameModelingVisitor<Tain
     @Override
     public void visitAASTORE(AASTORE obj) {
         try {
-            Taint valueTaint = getFrame().popValue();
-            getFrame().popValue(); // array index
-            Taint arrayTaint = getFrame().popValue();
+            Taint valueTaint = getFrame().popValue(); //Value
+            getFrame().popValue(); //Array index
+            Taint arrayTaint = getFrame().popValue(); //Array ref
+
             Taint merge = Taint.merge(valueTaint, arrayTaint);
             setLocalVariableTaint(merge, arrayTaint);
             Taint stackTop = null;
@@ -376,7 +463,7 @@ public class TaintFrameModelingVisitor extends AbstractFrameModelingVisitor<Tain
                 stackTop = getFrame().getTopValue();
             }
             // varargs use duplicated values
-            if (stackTop == arrayTaint) {
+            if (arrayTaint.equals(stackTop)) {
                 getFrame().popValue();
                 getFrame().pushValue(new Taint(merge));
             }
@@ -420,15 +507,90 @@ public class TaintFrameModelingVisitor extends AbstractFrameModelingVisitor<Tain
     }
 
     @Override
+    public void visitReturnInstruction(ReturnInstruction obj) {
+        List<Integer> parametersLocalValueIndexes = new ArrayList<>();
+
+        GenericSignatureParser genericSignatureParser = new GenericSignatureParser(methodDescriptor.getSignature());
+        int localValueIndex = 0;
+        //  non-static methods have the class instance as the first index
+        if (!methodDescriptor.isStatic()) {
+            localValueIndex++;
+        }
+        for (Iterator<String> it = genericSignatureParser.parameterSignatureIterator(); it.hasNext();) {
+            String parameter = it.next();
+            switch (parameter.charAt(0)) {
+                case 'D':
+                case 'J':
+                    // double and long occupy two slots
+                    localValueIndex++;
+                    break;
+                case '[':
+                    // back-propagate array taints
+                    parametersLocalValueIndexes.add(localValueIndex);
+                    break;
+                case 'L':
+                    // back-propagate mutable class taints
+                    if (!taintConfig.isClassImmutable(parameter)) {
+                        parametersLocalValueIndexes.add(localValueIndex);
+                    }
+                    else {
+                        // back-propage immutable taints only when they transfer tags
+                        Taint taint = getFrame().getValue(localValueIndex);
+                        if (taint.hasTags() || taint.isRemovingTags()) {
+                            parametersLocalValueIndexes.add(localValueIndex);
+                        }
+                    }
+                    break;
+            }
+
+            localValueIndex++;
+        }
+
+        int parametersCount = localValueIndex;
+
+        for (int parameterLocalValueIndex : parametersLocalValueIndexes) {
+            Taint parameterTaint = getFrame().getValue(parameterLocalValueIndex);
+            int stackIndex = (parametersCount - 1) - parameterLocalValueIndex;
+
+            if (!parameterTaint.isUnknown()) {
+                analyzedMethodConfig.setParameterOutputTaint(stackIndex, parameterTaint);
+            }
+            else if (parameterTaint.getNonParametricState() != Taint.State.INVALID) {
+                analyzedMethodConfig.setParameterOutputTaint(stackIndex, parameterTaint);
+            }
+            else if (parameterTaint.hasTags() || parameterTaint.isRemovingTags()) {
+                analyzedMethodConfig.setParameterOutputTaint(stackIndex, parameterTaint);
+            }
+            else if (parameterTaint.getParameters().size() > 1) {
+                analyzedMethodConfig.setParameterOutputTaint(stackIndex, parameterTaint);
+            }
+        }
+
+        analyzedMethodConfig.setParametersOutputTaintsProcessed(true);
+
+        super.visitReturnInstruction(obj);
+    }
+
+    @Override
     public void visitARETURN(ARETURN obj) {
+        Taint returnTaint = null;
         try {
-            Taint returnTaint = getFrame().getTopValue();
+            returnTaint = getFrame().getTopValue();
             Taint currentTaint = analyzedMethodConfig.getOutputTaint();
             analyzedMethodConfig.setOuputTaint(Taint.merge(returnTaint, currentTaint));
         } catch (DataflowAnalysisException ex) {
             throw new InvalidBytecodeException("empty stack before reference return", ex);
         }
         handleNormalInstruction(obj);
+
+        for(TaintFrameAdditionalVisitor visitor : visitors) {
+            try {
+                visitor.visitReturn(methodGen, returnTaint, cpg);
+            }
+            catch (Throwable e) {
+                LOG.log(Level.SEVERE,"Error while executing "+visitor.getClass().getName(),e);
+            }
+        }
     }
 
     /**
@@ -441,22 +603,39 @@ public class TaintFrameModelingVisitor extends AbstractFrameModelingVisitor<Tain
         assert obj != null;
         try {
             TaintMethodConfig methodConfig = getMethodConfig(obj);
-            ObjectType realInstanceClass = (methodConfig == null) ?
-                    null : methodConfig.getOutputTaint().getRealInstanceClass();
             Taint taint = getMethodTaint(methodConfig);
             assert taint != null;
             if (FindSecBugsGlobalConfig.getInstance().isDebugTaintState()) {
-                taint.setDebugInfo(obj.getMethodName(cpg) + "()");
+                taint.setDebugInfo(obj.getMethodName(cpg) + "()"); //TODO: Deprecated debug info
             }
-            if (taint.isUnknown()) {
-                taint.addLocation(getTaintLocation(), false);
-            }
+            taint.addSource(new UnknownSource(UnknownSourceType.RETURN,taint.getState()).setSignatureMethod(BCELUtil.getSlashedClassName(cpg, obj)+"."+obj.getMethodName(cpg)+obj.getSignature(cpg)));
             taintMutableArguments(methodConfig, obj);
             transferTaintToMutables(methodConfig, taint); // adds variable index to taint too
-            Taint taintCopy = new Taint(taint);
+//            Taint taintCopy = new Taint(taint);
+            Taint taintCopy = taint;
             // return type is not always the instance type
-            taintCopy.setRealInstanceClass(realInstanceClass);
+            taintCopy.setRealInstanceClass(methodConfig != null && methodConfig.getOutputTaint() != null ? methodConfig.getOutputTaint().getRealInstanceClass() : null);
+
+            TaintFrame tf = getFrame();
+
+            int stackDepth = tf.getStackDepth();
+            int nbParam = getNumWordsConsumed(obj);
+            List<Taint> parameters = new ArrayList<>(nbParam);
+            for(int i=0;i<Math.min(stackDepth,nbParam);i++) {
+                parameters.add(new Taint(tf.getStackValue(i)));
+            }
+
             modelInstruction(obj, getNumWordsConsumed(obj), getNumWordsProduced(obj), taintCopy);
+
+            for(TaintFrameAdditionalVisitor visitor : visitors) {
+                try {
+                    visitor.visitInvoke(obj, methodGen, getFrame() , parameters, cpg);
+                }
+                catch (Throwable e) {
+                    LOG.log(Level.SEVERE,"Error while executing "+visitor.getClass().getName(),e);
+                }
+            }
+
         } catch (Exception e) {
             String className = ClassName.toSlashedClassName(obj.getReferenceType(cpg).toString());
             String methodName = obj.getMethodName(cpg);
@@ -485,11 +664,14 @@ public class TaintFrameModelingVisitor extends AbstractFrameModelingVisitor<Tain
         if (config != null) {
             return config;
         }
-        if (Constants.CONSTRUCTOR_NAME.equals(methodName)
-                && !taintConfig.isClassTaintSafe("L" + className + ";")) {
+        String classNameSignature = "L" + className + ";";
+        if (Const.CONSTRUCTOR_NAME.equals(methodName)
+                && !taintConfig.isClassTaintSafe(classNameSignature)) {
             try {
                 int stackSize = getFrame().getNumArgumentsIncludingObjectInstance(obj, cpg);
-                return TaintMethodConfig.getDefaultConstructorConfig(stackSize);
+                config = TaintMethodConfig.getDefaultConstructorConfig(stackSize);
+                config.setTypeSignature(className+"<init>()V");
+                return config;
             } catch (DataflowAnalysisException ex) {
                 throw new InvalidBytecodeException(ex.getMessage(), ex);
             }
@@ -497,36 +679,67 @@ public class TaintFrameModelingVisitor extends AbstractFrameModelingVisitor<Tain
         return null;
     }
 
-    private TaintMethodConfig getConfigWithReplaceTags(
-            TaintMethodConfig config, String className, String methodName) {
-        if (!"java/lang/String".equals(className)) {
+    private TaintMethodConfig getConfigWithReplaceTags(TaintMethodConfig config, String className, String methodName) {
+
+        ObjectConfiguration objectConfiguration = new ObjectConfiguration(className, methodName);
+
+        if (!objectConfiguration.isAClassThatCanReplaceString()) {
             return config;
         }
-        boolean isRegex = "replaceAll".equals(methodName);
-        if (!isRegex && !"replace".equals(methodName)) {
-            // not a replace method
+
+        /*
+          When Kotlin compiles the String replace method (when using regex values) Kotlin creates several instructions in its place.
+
+          One of the instructions is to create an instance of the Regex class (using the regex String as a parameter). The Regex instance is then used as a parameter to the replace method.
+          In order to have access to the regex value when the String replace method is called,
+          we need to store the value at the first pass (when the Regex instance is created) and then use it when the replace method is called.
+
+          The below if code is to identify when a Regex instance is being created and store the value, to retrieve on the next pass.
+
+         */
+        if (objectConfiguration.isKotlinRegexMethodAndConstructorMethod()) {
+            saveRegexValueForNextInstruction();
             return config;
         }
+
+        if (!objectConfiguration.isAReplaceMethod()) {
+            return config;
+        }
+
         try {
-            String toReplace = getFrame().getStackValue(1).getConstantValue();
+            String toReplace = objectConfiguration.getStringParameterForReplaceMethod();
+
             if (toReplace == null) {
                 // we don't know the exact value
                 return config;
             }
+
             Taint taint = config.getOutputTaint();
+
             for (Map.Entry<String, Taint.Tag> replaceTag : REPLACE_TAGS.entrySet()) {
                 String tagString = replaceTag.getKey();
-                if ((isRegex && toReplace.contains(tagString))
+                if ((objectConfiguration.isAReplaceMethodWithRegexParameter() && toReplace.contains(tagString))
                         || toReplace.equals(tagString)) {
                     taint.addTag(replaceTag.getValue());
                 }
             }
+
             TaintMethodConfig configCopy = new TaintMethodConfig(config);
             configCopy.setOuputTaint(taint);
             return configCopy;
         } catch (DataflowAnalysisException ex) {
             throw new InvalidBytecodeException(ex.getMessage(), ex);
         }
+    }
+
+    private String getRegexValueFromAPreviousInstruction() {
+        String tmp = regexValue;
+        regexValue = null; // clean up regex value so other instructions after the current one can't use it.
+        return tmp;
+    }
+
+    private void saveRegexValueForNextInstruction() {
+        regexValue = getFrame().getValue(getFrame().getNumSlots() - 1).getConstantValue();
     }
 
     private String getInstanceClassName(InvokeInstruction invoke) {
@@ -543,8 +756,7 @@ public class TaintFrameModelingVisitor extends AbstractFrameModelingVisitor<Tain
         } catch (DataflowAnalysisException ex) {
             assert false : ex.getMessage();
         }
-        String dottedClassName = invoke.getReferenceType(cpg).toString();
-        return ClassName.toSlashedClassName(dottedClassName);
+        return BCELUtil.getSlashedClassName(cpg, invoke);
     }
 
     private static String getReturnType(String signature) {
@@ -553,40 +765,100 @@ public class TaintFrameModelingVisitor extends AbstractFrameModelingVisitor<Tain
     }
 
     private Taint getMethodTaint(TaintMethodConfig methodConfig) {
-        if (methodConfig == null) {
+        if (methodConfig == null || methodConfig.getOutputTaint() == null) {
             return getDefaultValue();
         }
-        Taint taint = methodConfig.getOutputTaint();
-        assert taint != null;
-        assert taint != methodConfig.getOutputTaint() : "defensive copy not made";
-        Taint taintCopy = new Taint(taint); 
-        if (taint.isUnknown() && taint.hasParameters()) {
-            Taint merge = mergeTransferParameters(taint.getParameters());
-            assert merge != null;
-            // merge removes tags so we made a taint copy before
-            taint = Taint.merge(Taint.valueOf(taint.getNonParametricState()), merge);
-        }
+        Taint outputTaint = methodConfig.getOutputTaint();
+        assert outputTaint != null;
+        assert outputTaint != methodConfig.getOutputTaint() : "defensive copy not made";
+
+        Taint taint = mergeTaintWithStack(outputTaint);
+
         if (taint.isTainted()) {
             taint.addLocation(getTaintLocation(), true);
         }
-        // don't add tags to safe values
-        if (!taint.isSafe() && taintCopy.hasTags()) {
-            for (Taint.Tag tag : taintCopy.getTags()) {
-                taint.addTag(tag);
-            }
+        else if (taint.isUnknown()) {
+            taint.addLocation(getTaintLocation(), false);
         }
-        if (taintCopy.isRemovingTags()) {
-            for (Taint.Tag tag : taintCopy.getTagsToRemove()) {
-                taint.removeTag(tag);
-            }
-        }
+
         return taint;
+    }
+
+    private Taint mergeTaintWithStack(Taint taint) {
+        assert taint != null;
+        Taint result = taint;
+        if (taint.isUnknown() && taint.hasParameters()) {
+            // taint consisting of merged parameters only
+            Taint transferParametersTaint = mergeTransferParameters(taint.getParameters());
+            assert transferParametersTaint != null;
+
+            if (taint.getNonParametricState() != Taint.State.INVALID) {
+                // if the method body has own inner state then merge with parameters
+                result = Taint.merge(Taint.valueOf(taint.getNonParametricState()), transferParametersTaint);
+            }
+            else {
+                result = transferParametersTaint;
+            }
+
+            result.addAllSources(taint.getSources());
+
+            // merge removes tags so we made a taint copy before
+            for (TaintLocation unknownLocation : taint.getUnknownLocations()) {
+                result.addLocation(unknownLocation, false);
+            }
+            for (TaintLocation taintLocation : taint.getTaintedLocations()) {
+                result.addLocation(taintLocation, true);
+            }
+
+            // don't add tags to safe values
+            if (!result.isSafe() && taint.hasTags()) {
+                for (Taint.Tag tag : taint.getTags()) {
+                    result.addTag(tag);
+                }
+            }
+            if (taint.isRemovingTags()) {
+                for (Taint.Tag tag : taint.getTagsToRemove()) {
+                    result.removeTag(tag);
+                }
+            }
+        }
+        return result;
     }
 
     private void taintMutableArguments(TaintMethodConfig methodConfig, InvokeInstruction obj) {
         if (methodConfig != null && methodConfig.isConfigured()) {
             return;
         }
+
+        if (methodConfig != null && methodConfig.isParametersOutputTaintsProcessed()) {
+            for (Map.Entry<Integer, Taint> entry : methodConfig.getParametersOutputTaints().entrySet()) {
+                int stackIndex = entry.getKey();
+                assert stackIndex >= 0 && stackIndex < getFrame().getStackDepth();
+
+                Taint parameterTaint = entry.getValue();
+                assert parameterTaint != null;
+
+                try {
+                    Taint taint = new Taint(parameterTaint);
+                    taint = mergeTaintWithStack(taint);
+
+                    Taint stackValue = getFrame().getStackValue(stackIndex);
+                    if (stackValue.hasValidVariableIndex()) {
+                        // set back the index removed during merging
+                        taint.setVariableIndex(stackValue.getVariableIndex());
+                    }
+                    taint.setRealInstanceClass(stackValue.getRealInstanceClass());
+                    getFrame().setValue(getFrame().getStackLocation(stackIndex), taint);
+                    setLocalVariableTaint(taint, stackValue);
+                }
+                catch (DataflowAnalysisException ex) {
+                    throw new InvalidBytecodeException("Not enough values on the stack", ex);
+                }
+            }
+
+            return;
+        }
+
         Collection<Integer> mutableStackIndices = getMutableStackIndices(obj.getSignature(cpg));
         for (Integer index : mutableStackIndices) {
             assert index >= 0 && index < getFrame().getStackDepth();
@@ -610,15 +882,23 @@ public class TaintFrameModelingVisitor extends AbstractFrameModelingVisitor<Tain
     private Taint mergeTransferParameters(Collection<Integer> transferParameters) {
         assert transferParameters != null && !transferParameters.isEmpty();
         Taint taint = null;
+        Taint safeTaint = null;
         for (Integer transferParameter : transferParameters) {
             try {
                 Taint value = getFrame().getStackValue(transferParameter);
-                taint = Taint.merge(taint, value);
+                if (value.isSafe()) {
+                    safeTaint = Taint.merge(safeTaint, value);;
+                } else {
+                    taint = Taint.merge(taint, value);
+                }
             } catch (DataflowAnalysisException ex) {
                 throw new RuntimeException("Bad transfer parameter specification", ex);
             }
         }
-        assert taint != null;
+        assert taint != null || safeTaint != null;
+        if (taint == null) {
+            return safeTaint;
+        }
         return taint;
     }
 
@@ -632,9 +912,9 @@ public class TaintFrameModelingVisitor extends AbstractFrameModelingVisitor<Tain
             for (Integer mutableStackIndex : methodConfig.getMutableStackIndices()) {
                 assert mutableStackIndex >= 0;
                 if (mutableStackIndex >= stackDepth) {
-                    if (!Constants.CONSTRUCTOR_NAME.equals(methodDescriptor.getName())
-                            && !Constants.STATIC_INITIALIZER_NAME.equals(methodDescriptor.getName())) {
-                        assert false : "Out of bounds mutables in " + methodDescriptor;
+                    if (!Const.CONSTRUCTOR_NAME.equals(methodDescriptor.getName())
+                            && !Const.STATIC_INITIALIZER_NAME.equals(methodDescriptor.getName())) {
+                        assert false : "Out of bounds mutables in " + methodDescriptor + " Method Config: " + methodConfig.toString();
                     }
                     continue; // ignore if assertions disabled or if in constructor
                 }
@@ -660,6 +940,11 @@ public class TaintFrameModelingVisitor extends AbstractFrameModelingVisitor<Tain
             assert false : "Out of bounds local variable index in " + methodDescriptor;
             return; // ignore if assertions disabled
         }
+
+        if (valueTaint.hasValidVariableIndex() && valueTaint.getVariableIndex() != index) {
+            valueTaint = new Taint(valueTaint);
+        }
+
         valueTaint.setVariableIndex(index);
         getFrame().setValue(index, valueTaint);
     }
@@ -690,20 +975,14 @@ public class TaintFrameModelingVisitor extends AbstractFrameModelingVisitor<Tain
     public void finishAnalysis() {
         assert analyzedMethodConfig != null;
         Taint outputTaint = analyzedMethodConfig.getOutputTaint();
-        if (outputTaint == null) {
-            // void methods
-            return;
-        }
-        String returnType = getReturnType(methodDescriptor.getSignature());
-        if (taintConfig.isClassTaintSafe(returnType) && outputTaint.getState() != Taint.State.NULL) {
-            // we do not have to store summaries with safe output
-            return;
-        }
-        String realInstanceClassName = outputTaint.getRealInstanceClassName();
-        if (returnType.equals("L" + realInstanceClassName + ";")) {
-            // storing it in method summary is useless
-            outputTaint.setRealInstanceClass(null);
-            analyzedMethodConfig.setOuputTaint(outputTaint);
+        if (outputTaint != null) {
+            String returnType = getReturnType(methodDescriptor.getSignature());
+            String realInstanceClassName = outputTaint.getRealInstanceClassName();
+            if (returnType.equals("L" + realInstanceClassName + ";")) {
+                // storing it in method summary is useless
+                outputTaint.setRealInstanceClass(null);
+                analyzedMethodConfig.setOuputTaint(outputTaint);
+            }
         }
         String className = methodDescriptor.getSlashedClassName();
         String methodId = "." + methodDescriptor.getName() + methodDescriptor.getSignature();
@@ -717,36 +996,80 @@ public class TaintFrameModelingVisitor extends AbstractFrameModelingVisitor<Tain
         }
     }
 
-    /**
-     * For debugging purpose.
-     * Print the state of the stack with information about the values in place.
-     *
-     * Usage: Call this function from your debugger (From your IDE UI: See Watches/Expressions)
-     */
-    private void printStackState() {
-         printStackState(getFrame());
-    }
+    private class ObjectConfiguration {
 
-    public static void printStackState(TaintFrame frame) {
-        try {
-            System.out.println("============================");
-            if(!FindSecBugsGlobalConfig.getInstance().isDebugTaintState()) {
-                System.out.println(" /!\\ Warning : The taint debugging is not fully activated.");
+        private static final int JAVA_STRING_PARAMETER_INDEX = 1;
+        private static final int KOTLIN_STRING_PARAMETER_INDEX = 4;
+
+        private final String className;
+        private final String methodName;
+
+        private ObjectConfiguration(String className, String methodName) {
+            this.className = className;
+            this.methodName = methodName;
+        }
+
+        private boolean isJavaString() {
+            return "java/lang/String".equals(className);
+        }
+
+        private boolean isKotlinString() {
+            return "kotlin/text/StringsKt".equals(className);
+        }
+
+        private boolean isKotlinRegex() {
+            return "kotlin/text/Regex".equals(className);
+        }
+
+        private boolean isConstructor() {
+            return Const.CONSTRUCTOR_NAME.equals(methodName);
+        }
+
+        private boolean isKotlinRegexMethodAndConstructorMethod() {
+            return isKotlinRegex() && isConstructor();
+        }
+
+        private boolean isJavaStringWithSimpleReplace() {
+            return isJavaString() && "replace".equals(methodName);
+        }
+
+        private boolean isKotlinStringWithSimpleReplace() {
+            return isKotlinString() && "replace$default".equals(methodName);
+        }
+
+        private boolean isJavaStringWithRegexReplace() {
+            return isJavaString() && "replaceAll".equals(methodName);
+        }
+
+        private boolean isKotlinRegexWithReplace() {
+            return isKotlinRegex() && "replace".equals(methodName);
+        }
+
+        private boolean isAClassThatCanReplaceString() {
+            return isJavaString() || isKotlinString() || isKotlinRegex();
+        }
+
+        private boolean isAReplaceMethod() {
+            return isJavaStringWithRegexReplace() || isKotlinRegexWithReplace() || isJavaStringWithSimpleReplace() || isKotlinStringWithSimpleReplace();
+        }
+
+        private boolean isAReplaceMethodWithRegexParameter() {
+            return isJavaStringWithRegexReplace() || isKotlinRegexWithReplace();
+        }
+
+        private String getStringParameterForReplaceMethod() throws DataflowAnalysisException {
+
+            if (isJavaString()) {
+                return getFrame().getStackValue(JAVA_STRING_PARAMETER_INDEX).getConstantValue();
+            } else if (isKotlinString()) {
+                return getFrame().getStackValue(KOTLIN_STRING_PARAMETER_INDEX).getConstantValue();
+            } else if (isKotlinRegexWithReplace()) {
+                return getRegexValueFromAPreviousInstruction();
             }
-            System.out.println("[[ Stack ]]");
-            int stackDepth = frame.getStackDepth();
-            for (int i = 0; i < stackDepth; i++) {
-                Taint taintValue = frame.getStackValue(i);
-                System.out.println(String.format("%s. %s {%s}",
-                        i, taintValue.getState().toString(), taintValue.getDebugInfo()));
-            }
-            if (stackDepth == 0) {
-                System.out.println("Empty");
-            }
-            System.out.println("============================");
-        } catch (DataflowAnalysisException e) {
-            System.out.println("Oups "+e.getMessage());
+
+            return null;
         }
     }
+
 }
 /* @generated */

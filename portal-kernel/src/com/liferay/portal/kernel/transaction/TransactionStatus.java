@@ -14,7 +14,7 @@
 
 package com.liferay.portal.kernel.transaction;
 
-import aQute.bnd.annotation.ProviderType;
+import org.osgi.annotation.versioning.ProviderType;
 
 /**
  * @author Shuyang Zhou
@@ -22,12 +22,12 @@ import aQute.bnd.annotation.ProviderType;
 @ProviderType
 public interface TransactionStatus {
 
-	public Object getPlatformTransactionManager();
-
 	public boolean isCompleted();
 
 	public boolean isNewTransaction();
 
 	public boolean isRollbackOnly();
+
+	public void suppressLifecycleListenerThrowable(Throwable throwable);
 
 }

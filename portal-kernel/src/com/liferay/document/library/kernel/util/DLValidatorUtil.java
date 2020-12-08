@@ -31,82 +31,71 @@ import java.io.InputStream;
 public class DLValidatorUtil {
 
 	public static String fixName(String name) {
-		return getDLValidator().fixName(name);
-	}
-
-	public static DLValidator getDLValidator() {
-		return _dlValidator;
+		return _dlValidator.fixName(name);
 	}
 
 	public static long getMaxAllowableSize() {
-		return getDLValidator().getMaxAllowableSize();
+		return _dlValidator.getMaxAllowableSize();
 	}
 
 	public static boolean isValidName(String name) {
-		return getDLValidator().isValidName(name);
+		return _dlValidator.isValidName(name);
 	}
 
 	public static final void validateDirectoryName(String directoryName)
 		throws FolderNameException {
 
-		getDLValidator().validateDirectoryName(directoryName);
+		_dlValidator.validateDirectoryName(directoryName);
 	}
 
 	public static void validateFileExtension(String fileName)
 		throws FileExtensionException {
 
-		getDLValidator().validateFileExtension(fileName);
+		_dlValidator.validateFileExtension(fileName);
 	}
 
 	public static void validateFileName(String fileName)
 		throws FileNameException {
 
-		getDLValidator().validateFileName(fileName);
+		_dlValidator.validateFileName(fileName);
 	}
 
 	public static void validateFileSize(String fileName, byte[] bytes)
 		throws FileSizeException {
 
-		getDLValidator().validateFileSize(fileName, bytes);
+		_dlValidator.validateFileSize(fileName, bytes);
 	}
 
 	public static void validateFileSize(String fileName, File file)
 		throws FileSizeException {
 
-		getDLValidator().validateFileSize(fileName, file);
+		_dlValidator.validateFileSize(fileName, file);
 	}
 
-	public static void validateFileSize(String fileName, InputStream is)
+	public static void validateFileSize(
+			String fileName, InputStream inputStream)
 		throws FileSizeException {
 
-		getDLValidator().validateFileSize(fileName, is);
+		_dlValidator.validateFileSize(fileName, inputStream);
 	}
 
 	public static void validateFileSize(String fileName, long size)
 		throws FileSizeException {
 
-		getDLValidator().validateFileSize(fileName, size);
+		_dlValidator.validateFileSize(fileName, size);
 	}
 
 	public static void validateSourceFileExtension(
 			String fileExtension, String sourceFileName)
 		throws SourceFileNameException {
 
-		getDLValidator().validateSourceFileExtension(
-			fileExtension, sourceFileName);
+		_dlValidator.validateSourceFileExtension(fileExtension, sourceFileName);
 	}
 
 	public static void validateVersionLabel(String versionLabel)
 		throws InvalidFileVersionException {
 
-		getDLValidator().validateVersionLabel(versionLabel);
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	public void setDLValidator(DLValidator dlValidator) {
+		_dlValidator.validateVersionLabel(versionLabel);
 	}
 
 	private static volatile DLValidator _dlValidator =

@@ -31,14 +31,6 @@ public class IndexerRegistryUtil {
 		return _indexerRegistry.getIndexer(className);
 	}
 
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	public static IndexerRegistry getIndexerRegistry() {
-		return _indexerRegistry;
-	}
-
 	public static Set<Indexer<?>> getIndexers() {
 		return _indexerRegistry.getIndexers();
 	}
@@ -52,14 +44,6 @@ public class IndexerRegistryUtil {
 	}
 
 	public static void register(Indexer<?> indexer) {
-		_indexerRegistry.register(indexer);
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link #register(Indexer)}
-	 */
-	@Deprecated
-	public static void register(String className, Indexer<?> indexer) {
 		_indexerRegistry.register(indexer);
 	}
 

@@ -26,13 +26,6 @@
 	</div>
 
 	<div class="wiki-content">
-		<@liferay_ui["social-bookmarks"]
-			displayStyle="normal"
-			target="_blank"
-			title=entry.getTitle()
-			url=viewURL
-		/>
-
 		${formattedContent}
 	</div>
 
@@ -61,7 +54,7 @@
 		${viewCategorizedPagesURL.setParameter("struts_action", "/wiki/view_categorized_pages")}
 		${viewCategorizedPagesURL.setParameter("nodeId", entry.getNodeId()?string)}
 
-		<@liferay_ui["asset-categories-summary"]
+		<@liferay_asset["asset-categories-summary"]
 			className=wikiPageClassName
 			classPK=entry.getResourcePrimKey()
 			portletURL=viewCategorizedPagesURL
@@ -74,7 +67,7 @@
 		${viewTaggedPagesURL.setParameter("struts_action", "/wiki/view_tagged_pages")}
 		${viewTaggedPagesURL.setParameter("nodeId", entry.getNodeId()?string)}
 
-		<@liferay_ui["asset-tags-summary"]
+		<@liferay_asset["asset-tags-summary"]
 			className=wikiPageClassName
 			classPK=entry.getResourcePrimKey()
 			portletURL=viewTaggedPagesURL
@@ -240,7 +233,7 @@
 >
 	<#if wikiPortletInstanceConfiguration.enablePageRatings()>
 		<div class="${cssClass}">
-			<@liferay_ui["ratings"]
+			<@liferay_ratings["ratings"]
 				className=wikiPageClassName
 				classPK=entry.getResourcePrimKey()
 			/>
@@ -250,6 +243,6 @@
 
 <#macro getRelatedAssets>
 	<#if assetEntry?? && wikiPortletInstanceConfiguration.enableRelatedAssets()>
-		<@liferay_ui["asset-links"] assetEntryId=assetEntry.getEntryId() />
+		<@liferay_asset["asset-links"] assetEntryId=assetEntry.getEntryId() />
 	</#if>
 </#macro>

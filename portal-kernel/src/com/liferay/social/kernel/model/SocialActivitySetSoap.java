@@ -14,8 +14,6 @@
 
 package com.liferay.social.kernel.model;
 
-import aQute.bnd.annotation.ProviderType;
-
 import java.io.Serializable;
 
 import java.util.ArrayList;
@@ -25,13 +23,17 @@ import java.util.List;
  * This class is used by SOAP remote services.
  *
  * @author Brian Wing Shun Chan
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
-@ProviderType
+@Deprecated
 public class SocialActivitySetSoap implements Serializable {
+
 	public static SocialActivitySetSoap toSoapModel(SocialActivitySet model) {
 		SocialActivitySetSoap soapModel = new SocialActivitySetSoap();
 
+		soapModel.setMvccVersion(model.getMvccVersion());
+		soapModel.setCtCollectionId(model.getCtCollectionId());
 		soapModel.setActivitySetId(model.getActivitySetId());
 		soapModel.setGroupId(model.getGroupId());
 		soapModel.setCompanyId(model.getCompanyId());
@@ -49,7 +51,9 @@ public class SocialActivitySetSoap implements Serializable {
 
 	public static SocialActivitySetSoap[] toSoapModels(
 		SocialActivitySet[] models) {
-		SocialActivitySetSoap[] soapModels = new SocialActivitySetSoap[models.length];
+
+		SocialActivitySetSoap[] soapModels =
+			new SocialActivitySetSoap[models.length];
 
 		for (int i = 0; i < models.length; i++) {
 			soapModels[i] = toSoapModel(models[i]);
@@ -60,10 +64,12 @@ public class SocialActivitySetSoap implements Serializable {
 
 	public static SocialActivitySetSoap[][] toSoapModels(
 		SocialActivitySet[][] models) {
+
 		SocialActivitySetSoap[][] soapModels = null;
 
 		if (models.length > 0) {
-			soapModels = new SocialActivitySetSoap[models.length][models[0].length];
+			soapModels =
+				new SocialActivitySetSoap[models.length][models[0].length];
 		}
 		else {
 			soapModels = new SocialActivitySetSoap[0][0];
@@ -78,7 +84,9 @@ public class SocialActivitySetSoap implements Serializable {
 
 	public static SocialActivitySetSoap[] toSoapModels(
 		List<SocialActivitySet> models) {
-		List<SocialActivitySetSoap> soapModels = new ArrayList<SocialActivitySetSoap>(models.size());
+
+		List<SocialActivitySetSoap> soapModels =
+			new ArrayList<SocialActivitySetSoap>(models.size());
 
 		for (SocialActivitySet model : models) {
 			soapModels.add(toSoapModel(model));
@@ -96,6 +104,22 @@ public class SocialActivitySetSoap implements Serializable {
 
 	public void setPrimaryKey(long pk) {
 		setActivitySetId(pk);
+	}
+
+	public long getMvccVersion() {
+		return _mvccVersion;
+	}
+
+	public void setMvccVersion(long mvccVersion) {
+		_mvccVersion = mvccVersion;
+	}
+
+	public long getCtCollectionId() {
+		return _ctCollectionId;
+	}
+
+	public void setCtCollectionId(long ctCollectionId) {
+		_ctCollectionId = ctCollectionId;
 	}
 
 	public long getActivitySetId() {
@@ -186,6 +210,8 @@ public class SocialActivitySetSoap implements Serializable {
 		_activityCount = activityCount;
 	}
 
+	private long _mvccVersion;
+	private long _ctCollectionId;
 	private long _activitySetId;
 	private long _groupId;
 	private long _companyId;
@@ -197,4 +223,5 @@ public class SocialActivitySetSoap implements Serializable {
 	private int _type;
 	private String _extraData;
 	private int _activityCount;
+
 }

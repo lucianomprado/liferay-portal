@@ -14,13 +14,13 @@
 
 package com.liferay.portal.jsonwebservice;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleThreadLocal;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.PortalUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.URLCodec;
 import com.liferay.portal.servlet.JSONServlet;
 import com.liferay.portal.spring.context.PortalContextLoaderListener;
@@ -44,39 +44,43 @@ public class JSONWebServiceServlet extends JSONServlet {
 
 	@Override
 	public void service(
-			HttpServletRequest request, HttpServletResponse response)
+			HttpServletRequest httpServletRequest,
+			HttpServletResponse httpServletResponse)
 		throws IOException, ServletException {
 
-		String path = GetterUtil.getString(request.getPathInfo());
+		String path = GetterUtil.getString(httpServletRequest.getPathInfo());
 
 		if (!PropsValues.JSONWS_WEB_SERVICE_API_DISCOVERABLE ||
 			(!path.equals(StringPool.BLANK) &&
 			 !path.equals(StringPool.SLASH)) ||
-			(request.getParameter("discover") != null)) {
+			(httpServletRequest.getParameter("discover") != null)) {
 
-			Locale locale = PortalUtil.getLocale(request, response, true);
+			Locale locale = PortalUtil.getLocale(
+				httpServletRequest, httpServletResponse, true);
 
 			LocaleThreadLocal.setThemeDisplayLocale(locale);
 
-			super.service(request, response);
+			super.service(httpServletRequest, httpServletResponse);
 
 			return;
 		}
 
 		if (_log.isDebugEnabled()) {
-			_log.debug("Servlet context " + request.getContextPath());
+			_log.debug(
+				"Servlet context " + httpServletRequest.getContextPath());
 		}
 
 		String portalContextPath =
 			PortalContextLoaderListener.getPortalServletContextPath();
 
-		String requestContextPath = request.getContextPath();
+		String requestContextPath = httpServletRequest.getContextPath();
 
 		if (requestContextPath.equals(portalContextPath)) {
-			RequestDispatcher requestDispatcher = request.getRequestDispatcher(
-				Portal.PATH_MAIN + "/portal/api/jsonws");
+			RequestDispatcher requestDispatcher =
+				httpServletRequest.getRequestDispatcher(
+					Portal.PATH_MAIN + "/portal/api/jsonws");
 
-			requestDispatcher.forward(request, response);
+			requestDispatcher.forward(httpServletRequest, httpServletResponse);
 		}
 		else {
 			ServletContext servletContext = getServletContext();
@@ -85,7 +89,7 @@ public class JSONWebServiceServlet extends JSONServlet {
 				PortalUtil.getPathContext() + "/api/jsonws?contextName=" +
 					URLCodec.encodeURL(servletContext.getServletContextName());
 
-			response.sendRedirect(redirectPath);
+			httpServletResponse.sendRedirect(redirectPath);
 		}
 	}
 

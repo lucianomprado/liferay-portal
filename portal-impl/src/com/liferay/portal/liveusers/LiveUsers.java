@@ -15,8 +15,8 @@
 package com.liferay.portal.liveusers;
 
 import com.liferay.portal.kernel.cluster.ClusterExecutorUtil;
+import com.liferay.portal.kernel.cluster.ClusterMasterExecutorUtil;
 import com.liferay.portal.kernel.cluster.ClusterNode;
-import com.liferay.portal.kernel.concurrent.ConcurrentHashSet;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -26,13 +26,14 @@ import com.liferay.portal.kernel.service.GroupLocalServiceUtil;
 import com.liferay.portal.kernel.service.UserTrackerLocalServiceUtil;
 import com.liferay.portal.kernel.service.persistence.UserTrackerUtil;
 import com.liferay.portal.kernel.servlet.PortalSessionContext;
+import com.liferay.portal.kernel.util.LinkedHashMapBuilder;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.util.PropsValues;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -84,7 +85,9 @@ public class LiveUsers {
 	}
 
 	public static int getGroupUsersCount(long companyId, long groupId) {
-		return getGroupUsers(companyId, groupId).size();
+		Set<Long> groupUsers = getGroupUsers(companyId, groupId);
+
+		return groupUsers.size();
 	}
 
 	public static Map<Long, Map<Long, Set<String>>> getLocalClusterUsers() {
@@ -110,7 +113,9 @@ public class LiveUsers {
 	}
 
 	public static int getSessionUsersCount(long companyId) {
-		return getSessionUsers(companyId).size();
+		Map<String, UserTracker> sessionUsers = getSessionUsers(companyId);
+
+		return sessionUsers.size();
 	}
 
 	public static UserTracker getUserTracker(long companyId, String sessionId) {
@@ -122,9 +127,9 @@ public class LiveUsers {
 	public static void joinGroup(long companyId, long groupId, long userId) {
 		Map<Long, Set<Long>> liveUsers = _getLiveUsers(companyId);
 
-		Set<Long> groupUsers = _getGroupUsers(liveUsers, groupId);
-
 		if (_getUserTrackers(companyId, userId) != null) {
+			Set<Long> groupUsers = _getGroupUsers(liveUsers, groupId);
+
 			groupUsers.add(userId);
 		}
 	}
@@ -242,15 +247,17 @@ public class LiveUsers {
 		}
 
 		try {
-			UserTrackerLocalServiceUtil.addUserTracker(
-				userTracker.getCompanyId(), userTracker.getUserId(),
-				userTracker.getModifiedDate(), sessionId,
-				userTracker.getRemoteAddr(), userTracker.getRemoteHost(),
-				userTracker.getUserAgent(), userTracker.getPaths());
+			if (ClusterMasterExecutorUtil.isMaster()) {
+				UserTrackerLocalServiceUtil.addUserTracker(
+					userTracker.getCompanyId(), userTracker.getUserId(),
+					userTracker.getModifiedDate(), sessionId,
+					userTracker.getRemoteAddr(), userTracker.getRemoteHost(),
+					userTracker.getUserAgent(), userTracker.getPaths());
+			}
 		}
-		catch (Exception e) {
+		catch (Exception exception) {
 			if (_log.isWarnEnabled()) {
-				_log.warn(e.getMessage());
+				_log.warn(exception.getMessage());
 			}
 		}
 
@@ -261,7 +268,7 @@ public class LiveUsers {
 				session.invalidate();
 			}
 		}
-		catch (Exception e) {
+		catch (Exception exception) {
 		}
 
 		_removeUserTracker(companyId, userId, userTracker);
@@ -294,7 +301,7 @@ public class LiveUsers {
 		Set<String> userSessions = companyUsers.get(userId);
 
 		if (userSessions == null) {
-			userSessions = new ConcurrentHashSet<>();
+			userSessions = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
 			companyUsers.put(userId, userSessions);
 		}
@@ -328,7 +335,7 @@ public class LiveUsers {
 		Set<Long> groupUsers = liveUsers.get(groupId);
 
 		if (groupUsers == null) {
-			groupUsers = new ConcurrentHashSet<>();
+			groupUsers = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
 			liveUsers.put(groupId, groupUsers);
 		}
@@ -412,13 +419,13 @@ public class LiveUsers {
 
 		String sessionId = userTracker.getSessionId();
 
-		Iterator<UserTracker> itr = userTrackers.iterator();
+		Iterator<UserTracker> iterator = userTrackers.iterator();
 
-		while (itr.hasNext()) {
-			UserTracker curUserTracker = itr.next();
+		while (iterator.hasNext()) {
+			UserTracker curUserTracker = iterator.next();
 
 			if (sessionId.equals(curUserTracker.getSessionId())) {
-				itr.remove();
+				iterator.remove();
 			}
 		}
 
@@ -435,13 +442,12 @@ public class LiveUsers {
 
 		Map<Long, Set<Long>> liveUsers = _getLiveUsers(companyId);
 
-		LinkedHashMap<String, Object> groupParams = new LinkedHashMap<>();
-
-		groupParams.put("usersGroups", userId);
-
 		List<Group> groups = GroupLocalServiceUtil.search(
-			companyId, null, null, groupParams, QueryUtil.ALL_POS,
-			QueryUtil.ALL_POS);
+			companyId, null, null,
+			LinkedHashMapBuilder.<String, Object>put(
+				"usersGroups", userId
+			).build(),
+			QueryUtil.ALL_POS, QueryUtil.ALL_POS);
 
 		for (Group group : groups) {
 			Set<Long> groupUsers = _getGroupUsers(

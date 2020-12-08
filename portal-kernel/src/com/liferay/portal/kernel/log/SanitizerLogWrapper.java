@@ -14,7 +14,7 @@
 
 package com.liferay.portal.kernel.log;
 
-import com.liferay.portal.kernel.util.CharPool;
+import com.liferay.petra.string.CharPool;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.StringUtil;
@@ -56,8 +56,8 @@ public class SanitizerLogWrapper extends LogWrapper {
 			SystemProperties.get(
 				PropsKeys.LOG_SANITIZER_REPLACEMENT_CHARACTER));
 
-		for (int i = 0; i < _whitelistCharacters.length; i++) {
-			_whitelistCharacters[i] = 1;
+		for (int i = 0; i < _WHITELIST_CHARACTERS.length; i++) {
+			_WHITELIST_CHARACTERS[i] = 1;
 		}
 
 		int[] whitelistCharacters = GetterUtil.getIntegerValues(
@@ -67,9 +67,9 @@ public class SanitizerLogWrapper extends LogWrapper {
 
 		for (int whitelistCharacter : whitelistCharacters) {
 			if ((whitelistCharacter >= 0) &&
-				(whitelistCharacter < _whitelistCharacters.length)) {
+				(whitelistCharacter < _WHITELIST_CHARACTERS.length)) {
 
-				_whitelistCharacters[whitelistCharacter] = 0;
+				_WHITELIST_CHARACTERS[whitelistCharacter] = 0;
 			}
 			else {
 				System.err.println(
@@ -95,13 +95,13 @@ public class SanitizerLogWrapper extends LogWrapper {
 	}
 
 	@Override
-	public void debug(Object msg, Throwable t) {
-		super.debug(sanitize(msg), sanitize(t));
+	public void debug(Object msg, Throwable throwable) {
+		super.debug(sanitize(msg), sanitize(throwable));
 	}
 
 	@Override
-	public void debug(Throwable t) {
-		super.debug(sanitize(t));
+	public void debug(Throwable throwable) {
+		super.debug(sanitize(throwable));
 	}
 
 	@Override
@@ -110,13 +110,13 @@ public class SanitizerLogWrapper extends LogWrapper {
 	}
 
 	@Override
-	public void error(Object msg, Throwable t) {
-		super.error(sanitize(msg), sanitize(t));
+	public void error(Object msg, Throwable throwable) {
+		super.error(sanitize(msg), sanitize(throwable));
 	}
 
 	@Override
-	public void error(Throwable t) {
-		super.error(sanitize(t));
+	public void error(Throwable throwable) {
+		super.error(sanitize(throwable));
 	}
 
 	@Override
@@ -125,13 +125,13 @@ public class SanitizerLogWrapper extends LogWrapper {
 	}
 
 	@Override
-	public void fatal(Object msg, Throwable t) {
-		super.fatal(sanitize(msg), sanitize(t));
+	public void fatal(Object msg, Throwable throwable) {
+		super.fatal(sanitize(msg), sanitize(throwable));
 	}
 
 	@Override
-	public void fatal(Throwable t) {
-		super.fatal(sanitize(t));
+	public void fatal(Throwable throwable) {
+		super.fatal(sanitize(throwable));
 	}
 
 	@Override
@@ -140,13 +140,13 @@ public class SanitizerLogWrapper extends LogWrapper {
 	}
 
 	@Override
-	public void info(Object msg, Throwable t) {
-		super.info(sanitize(msg), sanitize(t));
+	public void info(Object msg, Throwable throwable) {
+		super.info(sanitize(msg), sanitize(throwable));
 	}
 
 	@Override
-	public void info(Throwable t) {
-		super.info(sanitize(t));
+	public void info(Throwable throwable) {
+		super.info(sanitize(throwable));
 	}
 
 	@Override
@@ -155,13 +155,13 @@ public class SanitizerLogWrapper extends LogWrapper {
 	}
 
 	@Override
-	public void trace(Object msg, Throwable t) {
-		super.trace(sanitize(msg), sanitize(t));
+	public void trace(Object msg, Throwable throwable) {
+		super.trace(sanitize(msg), sanitize(throwable));
 	}
 
 	@Override
-	public void trace(Throwable t) {
-		super.trace(sanitize(t));
+	public void trace(Throwable throwable) {
+		super.trace(sanitize(throwable));
 	}
 
 	@Override
@@ -170,21 +170,21 @@ public class SanitizerLogWrapper extends LogWrapper {
 	}
 
 	@Override
-	public void warn(Object msg, Throwable t) {
-		super.warn(sanitize(msg), sanitize(t));
+	public void warn(Object msg, Throwable throwable) {
+		super.warn(sanitize(msg), sanitize(throwable));
 	}
 
 	@Override
-	public void warn(Throwable t) {
-		super.warn(sanitize(t));
+	public void warn(Throwable throwable) {
+		super.warn(sanitize(throwable));
 	}
 
-	protected String sanitize(Object obj) {
-		if (obj == null) {
+	protected String sanitize(Object object) {
+		if (object == null) {
 			return null;
 		}
 
-		String message = obj.toString();
+		String message = object.toString();
 
 		return sanitize(message, message);
 	}
@@ -210,8 +210,8 @@ public class SanitizerLogWrapper extends LogWrapper {
 				continue;
 			}
 
-			if ((c >= 0) && (c < _whitelistCharacters.length) &&
-				(_whitelistCharacters[c] != 0)) {
+			if ((c >= 0) && (c < _WHITELIST_CHARACTERS.length) &&
+				(_WHITELIST_CHARACTERS[c] != 0)) {
 
 				chars[i] = _logSanitizerReplacementCharacter;
 				sanitized = true;
@@ -303,9 +303,10 @@ public class SanitizerLogWrapper extends LogWrapper {
 
 	private static final String _SANITIZED = " [Sanitized]";
 
+	private static final int[] _WHITELIST_CHARACTERS = new int[128];
+
 	private static boolean _logSanitizerEscapeHTMLEnabled;
 	private static char _logSanitizerReplacementCharacter = CharPool.UNDERLINE;
-	private static final int[] _whitelistCharacters = new int[128];
 
 	private boolean _allowCRLF;
 

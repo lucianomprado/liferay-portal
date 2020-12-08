@@ -20,7 +20,7 @@ import java.util.regex.Pattern;
 /**
  * @author Hugo Huijser
  */
-public class FTLIfStatementCheck extends IfStatementCheck {
+public class FTLIfStatementCheck extends BaseIfStatementCheck {
 
 	@Override
 	protected String doProcess(
@@ -32,13 +32,14 @@ public class FTLIfStatementCheck extends IfStatementCheck {
 			String ifClause = "if (" + matcher.group(2) + ") {";
 
 			checkIfClauseParentheses(
-				ifClause, fileName, getLineCount(content, matcher.start(2)));
+				ifClause, fileName, getLineNumber(content, matcher.start(2)),
+				true);
 		}
 
 		return content;
 	}
 
-	private final Pattern _ifStatementPattern = Pattern.compile(
+	private static final Pattern _ifStatementPattern = Pattern.compile(
 		"[\t\n]<#(else)?if ([^?\n]*)>\n");
 
 }

@@ -1,6 +1,8 @@
 package ${apiPackagePath}.model;
 
-import aQute.bnd.annotation.ProviderType;
+<#if entity.hasCompoundPK()>
+	import ${apiPackagePath}.service.persistence.${entity.name}PK;
+</#if>
 
 import java.sql.Blob;
 
@@ -11,33 +13,47 @@ import java.sql.Blob;
  * @see ${entity.name}
  * @generated
  */
-@ProviderType
 public class ${entity.name}${column.methodName}BlobModel {
 
 	public ${entity.name}${column.methodName}BlobModel() {
 	}
 
-	<#assign pkColumn = entity.getPKList()?first />
+	<#if entity.hasCompoundPK()>
+		<#assign
+			pkEntityMethodName = entity.PKClassName
+			pkEntityType = entity.PKClassName
+			pkEntityVariableName = entity.PKVariableName
+		/>
+
+	<#else>
+		<#assign
+			pkEntityColumn = entity.PKEntityColumns?first
+
+			pkEntityMethodName = pkEntityColumn.methodName
+			pkEntityType = pkEntityColumn.type
+			pkEntityVariableName = pkEntityColumn.name
+		/>
+	</#if>
 
 	public ${entity.name}${column.methodName}BlobModel(
-		${pkColumn.type} ${pkColumn.name}) {
+		${pkEntityType} ${pkEntityVariableName}) {
 
-		_${pkColumn.name} = ${pkColumn.name};
+		_${pkEntityVariableName} = ${pkEntityVariableName};
 	}
 
 	public ${entity.name}${column.methodName}BlobModel(
-		${pkColumn.type} ${pkColumn.name}, Blob ${column.name}Blob) {
+		${pkEntityType} ${pkEntityVariableName}, Blob ${column.name}Blob) {
 
-		_${pkColumn.name} = ${pkColumn.name};
+		_${pkEntityVariableName} = ${pkEntityVariableName};
 		_${column.name}Blob = ${column.name}Blob;
 	}
 
-	public ${entity.PKClassName} get${pkColumn.methodName}() {
-		return _${entity.PKVarName};
+	public ${pkEntityType} get${pkEntityMethodName}() {
+		return _${pkEntityVariableName};
 	}
 
-	public void set${pkColumn.methodName}(${entity.PKClassName} ${entity.PKVarName}) {
-		_${entity.PKVarName} = ${entity.PKVarName};
+	public void set${pkEntityMethodName}(${pkEntityType} ${pkEntityVariableName}) {
+		_${pkEntityVariableName} = ${pkEntityVariableName};
 	}
 
 	public Blob get${column.methodName}Blob() {
@@ -48,11 +64,7 @@ public class ${entity.name}${column.methodName}BlobModel {
 		_${column.name}Blob = ${column.name}Blob;
 	}
 
-	<#if entity.hasCompoundPK()>
-		private ${entity.PKClassName} _${entity.PKVarName};
-	<#else>
-		private ${pkColumn.type} _${pkColumn.name};
-	</#if>
+	private ${pkEntityType} _${pkEntityVariableName};
 
 	private Blob _${column.name}Blob;
 

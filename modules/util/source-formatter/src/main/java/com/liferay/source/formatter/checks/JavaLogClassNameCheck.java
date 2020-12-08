@@ -26,6 +26,11 @@ import java.util.regex.Pattern;
 public class JavaLogClassNameCheck extends BaseFileCheck {
 
 	@Override
+	public boolean isLiferaySourceCheck() {
+		return true;
+	}
+
+	@Override
 	protected String doProcess(
 		String fileName, String absolutePath, String content) {
 
@@ -44,7 +49,7 @@ public class JavaLogClassNameCheck extends BaseFileCheck {
 		return content;
 	}
 
-	private final Pattern _logPattern = Pattern.compile(
+	private static final Pattern _logPattern = Pattern.compile(
 		"\n\tprivate static final Log _log = LogFactoryUtil.getLog\\(\n*" +
 			"\t*(.+)\\.class\\)");
 

@@ -14,14 +14,11 @@
 
 package com.liferay.portal.model.impl;
 
-import aQute.bnd.annotation.ProviderType;
-
+import com.liferay.petra.lang.HashUtil;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.model.Address;
 import com.liferay.portal.kernel.model.CacheModel;
 import com.liferay.portal.kernel.model.MVCCModel;
-import com.liferay.portal.kernel.util.HashUtil;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -34,26 +31,26 @@ import java.util.Date;
  * The cache model class for representing Address in entity cache.
  *
  * @author Brian Wing Shun Chan
- * @see Address
  * @generated
  */
-@ProviderType
-public class AddressCacheModel implements CacheModel<Address>, Externalizable,
-	MVCCModel {
+public class AddressCacheModel
+	implements CacheModel<Address>, Externalizable, MVCCModel {
+
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
+	public boolean equals(Object object) {
+		if (this == object) {
 			return true;
 		}
 
-		if (!(obj instanceof AddressCacheModel)) {
+		if (!(object instanceof AddressCacheModel)) {
 			return false;
 		}
 
-		AddressCacheModel addressCacheModel = (AddressCacheModel)obj;
+		AddressCacheModel addressCacheModel = (AddressCacheModel)object;
 
 		if ((addressId == addressCacheModel.addressId) &&
-				(mvccVersion == addressCacheModel.mvccVersion)) {
+			(mvccVersion == addressCacheModel.mvccVersion)) {
+
 			return true;
 		}
 
@@ -79,12 +76,14 @@ public class AddressCacheModel implements CacheModel<Address>, Externalizable,
 
 	@Override
 	public String toString() {
-		StringBundler sb = new StringBundler(41);
+		StringBundler sb = new StringBundler(51);
 
 		sb.append("{mvccVersion=");
 		sb.append(mvccVersion);
 		sb.append(", uuid=");
 		sb.append(uuid);
+		sb.append(", externalReferenceCode=");
+		sb.append(externalReferenceCode);
 		sb.append(", addressId=");
 		sb.append(addressId);
 		sb.append(", companyId=");
@@ -101,6 +100,10 @@ public class AddressCacheModel implements CacheModel<Address>, Externalizable,
 		sb.append(classNameId);
 		sb.append(", classPK=");
 		sb.append(classPK);
+		sb.append(", name=");
+		sb.append(name);
+		sb.append(", description=");
+		sb.append(description);
 		sb.append(", street1=");
 		sb.append(street1);
 		sb.append(", street2=");
@@ -115,6 +118,10 @@ public class AddressCacheModel implements CacheModel<Address>, Externalizable,
 		sb.append(regionId);
 		sb.append(", countryId=");
 		sb.append(countryId);
+		sb.append(", latitude=");
+		sb.append(latitude);
+		sb.append(", longitude=");
+		sb.append(longitude);
 		sb.append(", typeId=");
 		sb.append(typeId);
 		sb.append(", mailing=");
@@ -133,10 +140,17 @@ public class AddressCacheModel implements CacheModel<Address>, Externalizable,
 		addressImpl.setMvccVersion(mvccVersion);
 
 		if (uuid == null) {
-			addressImpl.setUuid(StringPool.BLANK);
+			addressImpl.setUuid("");
 		}
 		else {
 			addressImpl.setUuid(uuid);
+		}
+
+		if (externalReferenceCode == null) {
+			addressImpl.setExternalReferenceCode("");
+		}
+		else {
+			addressImpl.setExternalReferenceCode(externalReferenceCode);
 		}
 
 		addressImpl.setAddressId(addressId);
@@ -144,7 +158,7 @@ public class AddressCacheModel implements CacheModel<Address>, Externalizable,
 		addressImpl.setUserId(userId);
 
 		if (userName == null) {
-			addressImpl.setUserName(StringPool.BLANK);
+			addressImpl.setUserName("");
 		}
 		else {
 			addressImpl.setUserName(userName);
@@ -167,36 +181,50 @@ public class AddressCacheModel implements CacheModel<Address>, Externalizable,
 		addressImpl.setClassNameId(classNameId);
 		addressImpl.setClassPK(classPK);
 
+		if (name == null) {
+			addressImpl.setName("");
+		}
+		else {
+			addressImpl.setName(name);
+		}
+
+		if (description == null) {
+			addressImpl.setDescription("");
+		}
+		else {
+			addressImpl.setDescription(description);
+		}
+
 		if (street1 == null) {
-			addressImpl.setStreet1(StringPool.BLANK);
+			addressImpl.setStreet1("");
 		}
 		else {
 			addressImpl.setStreet1(street1);
 		}
 
 		if (street2 == null) {
-			addressImpl.setStreet2(StringPool.BLANK);
+			addressImpl.setStreet2("");
 		}
 		else {
 			addressImpl.setStreet2(street2);
 		}
 
 		if (street3 == null) {
-			addressImpl.setStreet3(StringPool.BLANK);
+			addressImpl.setStreet3("");
 		}
 		else {
 			addressImpl.setStreet3(street3);
 		}
 
 		if (city == null) {
-			addressImpl.setCity(StringPool.BLANK);
+			addressImpl.setCity("");
 		}
 		else {
 			addressImpl.setCity(city);
 		}
 
 		if (zip == null) {
-			addressImpl.setZip(StringPool.BLANK);
+			addressImpl.setZip("");
 		}
 		else {
 			addressImpl.setZip(zip);
@@ -204,6 +232,8 @@ public class AddressCacheModel implements CacheModel<Address>, Externalizable,
 
 		addressImpl.setRegionId(regionId);
 		addressImpl.setCountryId(countryId);
+		addressImpl.setLatitude(latitude);
+		addressImpl.setLongitude(longitude);
 		addressImpl.setTypeId(typeId);
 		addressImpl.setMailing(mailing);
 		addressImpl.setPrimary(primary);
@@ -217,6 +247,7 @@ public class AddressCacheModel implements CacheModel<Address>, Externalizable,
 	public void readExternal(ObjectInput objectInput) throws IOException {
 		mvccVersion = objectInput.readLong();
 		uuid = objectInput.readUTF();
+		externalReferenceCode = objectInput.readUTF();
 
 		addressId = objectInput.readLong();
 
@@ -230,6 +261,8 @@ public class AddressCacheModel implements CacheModel<Address>, Externalizable,
 		classNameId = objectInput.readLong();
 
 		classPK = objectInput.readLong();
+		name = objectInput.readUTF();
+		description = objectInput.readUTF();
 		street1 = objectInput.readUTF();
 		street2 = objectInput.readUTF();
 		street3 = objectInput.readUTF();
@@ -240,6 +273,10 @@ public class AddressCacheModel implements CacheModel<Address>, Externalizable,
 
 		countryId = objectInput.readLong();
 
+		latitude = objectInput.readDouble();
+
+		longitude = objectInput.readDouble();
+
 		typeId = objectInput.readLong();
 
 		mailing = objectInput.readBoolean();
@@ -248,15 +285,21 @@ public class AddressCacheModel implements CacheModel<Address>, Externalizable,
 	}
 
 	@Override
-	public void writeExternal(ObjectOutput objectOutput)
-		throws IOException {
+	public void writeExternal(ObjectOutput objectOutput) throws IOException {
 		objectOutput.writeLong(mvccVersion);
 
 		if (uuid == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(uuid);
+		}
+
+		if (externalReferenceCode == null) {
+			objectOutput.writeUTF("");
+		}
+		else {
+			objectOutput.writeUTF(externalReferenceCode);
 		}
 
 		objectOutput.writeLong(addressId);
@@ -266,7 +309,7 @@ public class AddressCacheModel implements CacheModel<Address>, Externalizable,
 		objectOutput.writeLong(userId);
 
 		if (userName == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(userName);
@@ -279,36 +322,50 @@ public class AddressCacheModel implements CacheModel<Address>, Externalizable,
 
 		objectOutput.writeLong(classPK);
 
+		if (name == null) {
+			objectOutput.writeUTF("");
+		}
+		else {
+			objectOutput.writeUTF(name);
+		}
+
+		if (description == null) {
+			objectOutput.writeUTF("");
+		}
+		else {
+			objectOutput.writeUTF(description);
+		}
+
 		if (street1 == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(street1);
 		}
 
 		if (street2 == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(street2);
 		}
 
 		if (street3 == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(street3);
 		}
 
 		if (city == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(city);
 		}
 
 		if (zip == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(zip);
@@ -317,6 +374,10 @@ public class AddressCacheModel implements CacheModel<Address>, Externalizable,
 		objectOutput.writeLong(regionId);
 
 		objectOutput.writeLong(countryId);
+
+		objectOutput.writeDouble(latitude);
+
+		objectOutput.writeDouble(longitude);
 
 		objectOutput.writeLong(typeId);
 
@@ -327,6 +388,7 @@ public class AddressCacheModel implements CacheModel<Address>, Externalizable,
 
 	public long mvccVersion;
 	public String uuid;
+	public String externalReferenceCode;
 	public long addressId;
 	public long companyId;
 	public long userId;
@@ -335,6 +397,8 @@ public class AddressCacheModel implements CacheModel<Address>, Externalizable,
 	public long modifiedDate;
 	public long classNameId;
 	public long classPK;
+	public String name;
+	public String description;
 	public String street1;
 	public String street2;
 	public String street3;
@@ -342,7 +406,10 @@ public class AddressCacheModel implements CacheModel<Address>, Externalizable,
 	public String zip;
 	public long regionId;
 	public long countryId;
+	public double latitude;
+	public double longitude;
 	public long typeId;
 	public boolean mailing;
 	public boolean primary;
+
 }

@@ -14,12 +14,12 @@
 
 package com.liferay.portal.kernel.servlet;
 
-import aQute.bnd.annotation.ProviderType;
-
 import java.io.IOException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import org.osgi.annotation.versioning.ProviderType;
 
 /**
  * @author Drew Brokke
@@ -27,9 +27,13 @@ import javax.servlet.http.HttpServletResponse;
 @ProviderType
 public interface InactiveRequestHandler {
 
+	public default boolean isShowInactiveRequestMessage() {
+		return false;
+	}
+
 	public void processInactiveRequest(
-			HttpServletRequest request, HttpServletResponse response,
-			String messageKey)
+			HttpServletRequest httpServletRequest,
+			HttpServletResponse httpServletResponse, String messageKey)
 		throws IOException;
 
 }

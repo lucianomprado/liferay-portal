@@ -14,10 +14,12 @@
 
 package com.liferay.portal.kernel.util;
 
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.security.pacl.permission.PortalRuntimePermission;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -119,9 +121,7 @@ public class LocaleUtil {
 	}
 
 	public static LocaleUtil getInstance() {
-		PortalRuntimePermission.checkGetBeanProperty(LocaleUtil.class);
-
-		return _instance;
+		return _localeUtil;
 	}
 
 	public static Map<String, String> getISOLanguages(Locale locale) {
@@ -224,11 +224,10 @@ public class LocaleUtil {
 
 		if (languageId == null) {
 			if (useDefault) {
-				return _locale;
+				return _getDefault();
 			}
-			else {
-				return null;
-			}
+
+			return null;
 		}
 
 		Locale locale = _locales.get(languageId);
@@ -237,45 +236,52 @@ public class LocaleUtil {
 			return locale;
 		}
 
-		try {
-			int pos = languageId.indexOf(CharPool.UNDERLINE);
+		if (languageId.equals("zh-Hans-CN")) {
+			languageId = "zh_CN";
+		}
+		else if (languageId.equals("zh-Hant-TW")) {
+			languageId = "zh_TW";
+		}
+		else {
+			languageId = StringUtil.replace(
+				languageId, CharPool.MINUS, CharPool.UNDERLINE);
+		}
 
-			if (pos == -1) {
-				locale = new Locale(languageId);
+		int pos = languageId.indexOf(CharPool.UNDERLINE);
+
+		if (pos == -1) {
+			locale = new Locale(languageId);
+		}
+		else {
+			String[] languageIdParts = StringUtil.split(
+				languageId, CharPool.UNDERLINE);
+
+			String languageCode = languageIdParts[0];
+			String countryCode = languageIdParts[1];
+
+			String variant = null;
+
+			if (languageIdParts.length > 2) {
+				variant = languageIdParts[2];
+			}
+
+			if (Validator.isNotNull(variant)) {
+				locale = new Locale(languageCode, countryCode, variant);
 			}
 			else {
-				String[] languageIdParts = StringUtil.split(
-					languageId, CharPool.UNDERLINE);
-
-				String languageCode = languageIdParts[0];
-				String countryCode = languageIdParts[1];
-
-				String variant = null;
-
-				if (languageIdParts.length > 2) {
-					variant = languageIdParts[2];
-				}
-
-				if (Validator.isNotNull(variant)) {
-					locale = new Locale(languageCode, countryCode, variant);
-				}
-				else {
-					locale = new Locale(languageCode, countryCode);
-				}
+				locale = new Locale(languageCode, countryCode);
 			}
-
-			if (validate && !LanguageUtil.isAvailableLocale(locale)) {
-				throw new IllegalArgumentException("Invalid locale " + locale);
-			}
-
-			_locales.put(languageId, locale);
 		}
-		catch (Exception e) {
+
+		if (validate && !LanguageUtil.isAvailableLocale(locale)) {
 			locale = null;
 
 			if (_log.isWarnEnabled()) {
 				_log.warn(languageId + " is not a valid language id");
 			}
+		}
+		else {
+			_locales.put(languageId, locale);
 		}
 
 		if ((locale == null) && useDefault) {
@@ -378,10 +384,8 @@ public class LocaleUtil {
 			language = StringUtil.toUpperCase(language);
 		}
 
-		String country = locale.getCountry();
-
 		return _getDisplayName(
-			language, StringUtil.toUpperCase(country), locale,
+			language, StringUtil.toUpperCase(locale.getCountry()), locale,
 			duplicateLanguages);
 	}
 
@@ -397,8 +401,6 @@ public class LocaleUtil {
 
 	private void _setDefault(
 		String userLanguage, String userCountry, String userVariant) {
-
-		PortalRuntimePermission.checkSetBeanProperty(getClass());
 
 		if (Validator.isNotNull(userLanguage) &&
 			Validator.isNull(userCountry) && Validator.isNull(userVariant)) {
@@ -432,10 +434,9 @@ public class LocaleUtil {
 		else if (languageId.equals("zh_TW")) {
 			return "zh-Hant-TW";
 		}
-		else {
-			return StringUtil.replace(
-				languageId, CharPool.UNDERLINE, CharPool.MINUS);
-		}
+
+		return StringUtil.replace(
+			languageId, CharPool.UNDERLINE, CharPool.MINUS);
 	}
 
 	private String[] _toBCP47LanguageIds(Locale[] locales) {
@@ -563,7 +564,7 @@ public class LocaleUtil {
 
 	private static final Log _log = LogFactoryUtil.getLog(LocaleUtil.class);
 
-	private static final LocaleUtil _instance = new LocaleUtil();
+	private static final LocaleUtil _localeUtil = new LocaleUtil();
 
 	private Locale _locale;
 	private final Map<String, Locale> _locales = new HashMap<>();

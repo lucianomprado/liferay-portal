@@ -18,44 +18,24 @@
 
 <portlet:actionURL name="unsubscribe" var="unsubscribeURL" />
 
-<aui:nav-bar cssClass="collapse-basic-search" markupView="lexicon">
-	<aui:nav cssClass="navbar-nav">
-		<aui:nav-item label="subscriptions" selected="<%= true %>" />
-	</aui:nav>
-</aui:nav-bar>
-
 <%
-int subscriptionsCount = SubscriptionLocalServiceUtil.getUserSubscriptionsCount(user.getUserId());
+MySubscriptionsManagementToolbarDisplayContext mySubscriptionsManagementToolbarDisplayContext = new MySubscriptionsManagementToolbarDisplayContext(request, liferayPortletResponse, user);
 
-PortletURL displayStyleURL = renderResponse.createRenderURL();
-
-displayStyleURL.setParameter("mvcRenderCommandName", "/mysubscriptions/view");
+int subscriptionsCount = mySubscriptionsManagementToolbarDisplayContext.getTotalItems();
 %>
 
-<liferay-frontend:management-bar
-	disabled="<%= subscriptionsCount <= 0 %>"
-	includeCheckBox="<%= true %>"
+<clay:management-toolbar-v2
+	actionDropdownItems="<%= mySubscriptionsManagementToolbarDisplayContext.getActionDropdownItems() %>"
+	componentId="mySubscriptionsManagementToolbar"
+	disabled="<%= mySubscriptionsManagementToolbarDisplayContext.isDisabled() %>"
+	itemsTotal="<%= subscriptionsCount %>"
 	searchContainerId="subscriptions"
->
-	<liferay-frontend:management-bar-filters>
-		<liferay-frontend:management-bar-navigation
-			navigationKeys='<%= new String[] {"all"} %>'
-			navigationParam="entriesNavigation"
-			portletURL="<%= displayStyleURL %>"
-		/>
-	</liferay-frontend:management-bar-filters>
+	selectable="<%= mySubscriptionsManagementToolbarDisplayContext.isSelectable() %>"
+	showSearch="<%= mySubscriptionsManagementToolbarDisplayContext.isShowSearch() %>"
+/>
 
-	<liferay-frontend:management-bar-buttons>
-		<liferay-frontend:management-bar-display-buttons
-			displayViews='<%= new String[] {"list"} %>'
-			portletURL="<%= displayStyleURL %>"
-			selectedDisplayStyle="list"
-		/>
-	</liferay-frontend:management-bar-buttons>
-</liferay-frontend:management-bar>
-
-<div class="container-fluid-1280">
-	<aui:form action="<%= unsubscribeURL %>" method="get" name="fm" onSubmit='<%= "event.preventDefault(); " + renderResponse.getNamespace() + "unsubscribe();" %>'>
+<clay:container-fluid>
+	<aui:form action="<%= unsubscribeURL %>" method="get" name="fm" onSubmit='<%= "event.preventDefault(); " + liferayPortletResponse.getNamespace() + "unsubscribe();" %>'>
 		<liferay-portlet:renderURLParams varImpl="portletURL" />
 		<aui:input name="redirect" type="hidden" value="<%= currentURL %>" />
 		<aui:input name="subscriptionIds" type="hidden" />
@@ -87,7 +67,7 @@ displayStyleURL.setParameter("mvcRenderCommandName", "/mysubscriptions/view");
 				>
 
 					<%
-					AssetRenderer assetRenderer = MySubscriptionsUtil.getAssetRenderer(subscription.getClassName(), subscription.getClassPK());
+					AssetRenderer<?> assetRenderer = MySubscriptionsUtil.getAssetRenderer(subscription.getClassName(), subscription.getClassPK());
 
 					String rowURL = null;
 
@@ -124,53 +104,64 @@ displayStyleURL.setParameter("mvcRenderCommandName", "/mysubscriptions/view");
 					/>
 				</liferay-ui:search-container-row>
 
-				<liferay-ui:search-iterator markupView="lexicon" resultRowSplitter="<%= new MySubscriptionsResultRowSplitter(locale) %>" />
-
-				<c:if test="<%= !results.isEmpty() %>">
-					<aui:button-row cssName="unsubscribe-button-row">
-						<aui:button type="submit" value="unsubscribe" />
-					</aui:button-row>
-				</c:if>
+				<liferay-ui:search-iterator
+					markupView="lexicon"
+					resultRowSplitter="<%= new MySubscriptionsResultRowSplitter(locale) %>"
+				/>
 			</liferay-ui:search-container>
 		</aui:fieldset>
 	</aui:form>
-</div>
+</clay:container-fluid>
 
 <aui:script>
-	Liferay.provide(
-		window,
-		'<portlet:namespace />displayPopup',
-		function(url, title) {
-			var dialog = Liferay.Util.Window.getWindow(
-				{
-					dialog: {
-						align: {
-							node: null,
-							points: ['tc', 'tc']
-						},
-						constrain2view: true,
-						cssClass: 'portlet-my-subscription',
-						modal: true,
-						resizable: true,
-						width: 950
-					},
-					title: title,
-					uri: url
-				}
-			)
-		},
-		['liferay-util-window']
-	);
+	window['<portlet:namespace />displayPopup'] = function (url, title) {
+		Liferay.Util.openModal({
+			iframeBodyCssClass: 'portlet-my-subscription',
+			size: 'full-screen',
+			title: title,
+			url: url,
+		});
+	};
+</aui:script>
 
-	Liferay.provide(
-		window,
-		'<portlet:namespace />unsubscribe',
-		function() {
-			document.<portlet:namespace />fm.method = 'post';
-			document.<portlet:namespace />fm.<portlet:namespace />subscriptionIds.value = Liferay.Util.listCheckedExcept(document.<portlet:namespace />fm, '<portlet:namespace />allRowIds');
+<aui:script sandbox="<%= true %>">
+	var unsubscribe = function () {
+		var form = document.getElementById('<portlet:namespace />fm');
 
-			submitForm(document.<portlet:namespace />fm);
-		},
-		['liferay-util-list-fields']
-	);
+		if (form) {
+			form.setAttribute('method', 'post');
+
+			var subscriptionIds = form.querySelector(
+				'#<portlet:namespace />subscriptionIds'
+			);
+
+			if (subscriptionIds) {
+				subscriptionIds.setAttribute(
+					'value',
+					Liferay.Util.listCheckedExcept(
+						form,
+						'<portlet:namespace />allRowIds'
+					)
+				);
+
+				submitForm(form);
+			}
+		}
+	};
+
+	var ACTIONS = {
+		unsubscribe: unsubscribe,
+	};
+
+	Liferay.componentReady('mySubscriptionsManagementToolbar').then(function (
+		managementToolbar
+	) {
+		managementToolbar.on('actionItemClicked', function (event) {
+			var itemData = event.data.item.data;
+
+			if (itemData && itemData.action && ACTIONS[itemData.action]) {
+				ACTIONS[itemData.action]();
+			}
+		});
+	});
 </aui:script>

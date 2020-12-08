@@ -9,28 +9,23 @@
 </thead>
 <tbody>
 <tr>
-	<td>BREADCRUMB_ENTRY</td>
-	<td>//ul[@aria-label='Breadcrumb']</td>
+	<td>BREADCRUMB_FOLDER</td>
+	<td>//div[contains(@class,'portlet-body')]//form//ol[contains(@class,'breadcrumb')]//a[contains(.,'${key_breadcrumbName}')]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>BREADCRUMB_PAGE</td>
-	<td>//div[contains(@class,'portlet-content')]//ul[contains(@class,'breadcrumb') and contains(@class,'breadcrumb')]//a[contains(.,'${key_breadcrumbName}')]</td>
+	<td>//div[contains(@class,'portlet-content')]//ol[contains(@class,'breadcrumb') and contains(@class,'breadcrumb')]//a[contains(.,'${key_breadcrumbName}')]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>BREADCRUMB_PAGE_LINK</td>
-	<td>//div[contains(@id,'breadcrumb')]/ul/li/a[@href='${key_URL}']</td>
+	<td>//ol[contains(@class,'breadcrumb')]/li/a[@href='${key_URL}']</td>
 	<td></td>
 </tr>
 <tr>
-	<td>BREADCRUMB_CURRENT_LOCATION</td>
-	<td>//div/ul[contains(@class,'breadcrumb')]/li[contains(.,'${key_breadcrumbName}')]</td>
-	<td></td>
-</tr>
-<tr>
-	<td>BREADCRUMB_EMBEDDED</td>
-	<td>//div[contains(@id,'breadcrumb') and contains(@id,'site_navigation')]//a[contains(.,'${key_breadcrumbName}')]</td>
+	<td>BREADCRUMB</td>
+	<td>//div[contains(@id,'SiteNavigationBreadcrumbPortlet')]//ol[@class='breadcrumb']</td>
 	<td></td>
 </tr>
 <tr>

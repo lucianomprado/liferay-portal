@@ -14,10 +14,14 @@
 
 package com.liferay.source.formatter.checks;
 
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.io.unsync.UnsyncBufferedReader;
 import com.liferay.portal.kernel.io.unsync.UnsyncStringReader;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.portal.kernel.util.StringUtil;
+
+import java.io.IOException;
 
 /**
  * @author Hugo Huijser
@@ -27,7 +31,7 @@ public class PropertiesWhitespaceCheck extends WhitespaceCheck {
 	@Override
 	protected String doProcess(
 			String fileName, String absolutePath, String content)
-		throws Exception {
+		throws IOException {
 
 		StringBundler sb = new StringBundler();
 
@@ -37,72 +41,62 @@ public class PropertiesWhitespaceCheck extends WhitespaceCheck {
 			String line = null;
 			String previousLine = StringPool.BLANK;
 
-			int lineCount = 0;
-
 			while ((line = unsyncBufferedReader.readLine()) != null) {
-				lineCount++;
-
 				if (line.startsWith(StringPool.TAB)) {
-					line = line.replace(StringPool.TAB, StringPool.FOUR_SPACES);
+					line = StringUtil.replace(
+						line, CharPool.TAB, StringPool.FOUR_SPACES);
 				}
 
 				if (line.contains(" \t")) {
-					line = line.replace(" \t", " " + StringPool.FOUR_SPACES);
+					line = StringUtil.replace(
+						line, " \t", " " + StringPool.FOUR_SPACES);
+				}
+
+				if (previousLine.matches("\\s*[^\\s#].*[,=]\\\\")) {
+					String leadingSpaces = _getLeadingSpaces(line);
+
+					String expectedLeadingSpaces = _getLeadingSpaces(
+						previousLine);
+
+					if (previousLine.endsWith("=\\")) {
+						expectedLeadingSpaces += StringPool.FOUR_SPACES;
+					}
+
+					if (!leadingSpaces.equals(expectedLeadingSpaces)) {
+						line = StringUtil.replaceFirst(
+							line, leadingSpaces, expectedLeadingSpaces);
+					}
 				}
 
 				sb.append(line);
 				sb.append("\n");
 
-				if (!previousLine.matches("\\s+[^\\s#].*[,=]\\\\")) {
-					previousLine = line;
-
-					continue;
-				}
-
-				int leadingSpaceCount = _getLeadingSpaceCount(line);
-
-				int expectedLeadingSpaceCount = _getLeadingSpaceCount(
-					previousLine);
-
-				if (previousLine.endsWith("=\\")) {
-					expectedLeadingSpaceCount += 4;
-				}
-
-				if (leadingSpaceCount != expectedLeadingSpaceCount) {
-					StringBundler sb2 = new StringBundler(5);
-
-					sb2.append("Line starts with '");
-					sb2.append(leadingSpaceCount);
-					sb2.append("' spaces, but '");
-					sb2.append(expectedLeadingSpaceCount);
-					sb2.append("' spaces are expected");
-
-					addMessage(fileName, sb2.toString(), lineCount);
-				}
-
 				previousLine = line;
 			}
 		}
 
-		content = sb.toString();
-
-		if (content.endsWith("\n")) {
-			content = content.substring(0, content.length() - 1);
-		}
-
-		return super.doProcess(fileName, absolutePath, content);
+		return super.doProcess(fileName, absolutePath, sb.toString());
 	}
 
-	private int _getLeadingSpaceCount(String line) {
-		int leadingSpaceCount = 0;
+	@Override
+	protected boolean isAllowTrailingSpaces(String line) {
+		String trimmedLine = StringUtil.removeChar(line, CharPool.SPACE);
 
-		while (line.startsWith(StringPool.SPACE)) {
-			line = line.substring(1);
-
-			leadingSpaceCount++;
+		if (trimmedLine.endsWith(StringPool.EQUAL)) {
+			return true;
 		}
 
-		return leadingSpaceCount;
+		return false;
+	}
+
+	private String _getLeadingSpaces(String line) {
+		for (int i = 0; i < line.length(); i++) {
+			if (line.charAt(i) != CharPool.SPACE) {
+				return line.substring(0, i);
+			}
+		}
+
+		return line;
 	}
 
 }

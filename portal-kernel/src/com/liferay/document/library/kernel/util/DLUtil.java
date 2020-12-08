@@ -15,14 +15,12 @@
 package com.liferay.document.library.kernel.util;
 
 import com.liferay.document.library.kernel.model.DLFileEntryType;
-import com.liferay.document.library.kernel.model.DLFileShortcut;
 import com.liferay.document.library.kernel.model.DLFileVersion;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.repository.model.FileVersion;
 import com.liferay.portal.kernel.repository.model.Folder;
 import com.liferay.portal.kernel.search.Hits;
-import com.liferay.portal.kernel.security.pacl.permission.PortalRuntimePermission;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.OrderByComparator;
@@ -78,11 +76,15 @@ public class DLUtil {
 	}
 
 	public static DL getDL() {
-		PortalRuntimePermission.checkGetBeanProperty(DLUtil.class);
-
 		return _dl;
 	}
 
+	/**
+	 * @deprecated As of Mueller (7.2.x), replaced by {@link
+	 *             com.liferay.document.library.util.DLURLHelper#getFileEntryControlPanelLink(
+	 *             PortletRequest, long)}
+	 */
+	@Deprecated
 	public static String getDLFileEntryControlPanelLink(
 			PortletRequest portletRequest, long fileEntryId)
 		throws PortalException {
@@ -91,6 +93,12 @@ public class DLUtil {
 			portletRequest, fileEntryId);
 	}
 
+	/**
+	 * @deprecated As of Mueller (7.2.x), replaced by {@link
+	 *             com.liferay.document.library.util.DLURLHelper#getFolderControlPanelLink(
+	 *             PortletRequest, long)}
+	 */
+	@Deprecated
 	public static String getDLFolderControlPanelLink(
 			PortletRequest portletRequest, long folderId)
 		throws PortalException {
@@ -98,6 +106,12 @@ public class DLUtil {
 		return getDL().getDLFolderControlPanelLink(portletRequest, folderId);
 	}
 
+	/**
+	 * @deprecated As of Mueller (7.2.x), replaced by {@link
+	 *             com.liferay.document.library.util.DLURLHelper#getDownloadURL(
+	 *             FileEntry, FileVersion, ThemeDisplay, String)}
+	 */
+	@Deprecated
 	public static String getDownloadURL(
 		FileEntry fileEntry, FileVersion fileVersion, ThemeDisplay themeDisplay,
 		String queryString) {
@@ -106,6 +120,13 @@ public class DLUtil {
 			fileEntry, fileVersion, themeDisplay, queryString);
 	}
 
+	/**
+	 * @deprecated As of Mueller (7.2.x), replaced by {@link
+	 *             com.liferay.document.library.util.DLURLHelper#getDownloadURL(
+	 *             FileEntry, FileVersion, ThemeDisplay, String, boolean,
+	 *             boolean)}
+	 */
+	@Deprecated
 	public static String getDownloadURL(
 		FileEntry fileEntry, FileVersion fileVersion, ThemeDisplay themeDisplay,
 		String queryString, boolean appendVersion, boolean absoluteURL) {
@@ -116,17 +137,19 @@ public class DLUtil {
 	}
 
 	public static Map<String, String> getEmailDefinitionTerms(
-		RenderRequest request, String emailFromAddress, String emailFromName) {
+		RenderRequest renderRequest, String emailFromAddress,
+		String emailFromName) {
 
 		return getDL().getEmailDefinitionTerms(
-			request, emailFromAddress, emailFromName);
+			renderRequest, emailFromAddress, emailFromName);
 	}
 
 	public static Map<String, String> getEmailFromDefinitionTerms(
-		RenderRequest request, String emailFromAddress, String emailFromName) {
+		RenderRequest renderRequest, String emailFromAddress,
+		String emailFromName) {
 
 		return getDL().getEmailFromDefinitionTerms(
-			request, emailFromAddress, emailFromName);
+			renderRequest, emailFromAddress, emailFromName);
 	}
 
 	public static List<FileEntry> getFileEntries(Hits hits) {
@@ -137,14 +160,6 @@ public class DLUtil {
 		FileEntry fileEntry, ThemeDisplay themeDisplay) {
 
 		return getDL().getFileEntryImage(fileEntry, themeDisplay);
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	public static Set<Long> getFileEntryTypeSubscriptionClassPKs(long userId) {
-		return getDL().getFileEntryTypeSubscriptionClassPKs(userId);
 	}
 
 	public static String getFileIcon(String extension) {
@@ -159,6 +174,12 @@ public class DLUtil {
 		return getDL().getGenericName(extension);
 	}
 
+	/**
+	 * @deprecated As of Mueller (7.2.x), replaced by {@link
+	 *             com.liferay.document.library.util.DLURLHelper#getImagePreviewURL(
+	 *             FileEntry, FileVersion, ThemeDisplay)}
+	 */
+	@Deprecated
 	public static String getImagePreviewURL(
 			FileEntry fileEntry, FileVersion fileVersion,
 			ThemeDisplay themeDisplay)
@@ -167,6 +188,30 @@ public class DLUtil {
 		return getDL().getImagePreviewURL(fileEntry, fileVersion, themeDisplay);
 	}
 
+	/**
+	 * @deprecated As of Mueller (7.2.x), replaced by {@link
+	 *             com.liferay.document.library.util.DLURLHelper#getImagePreviewURL(
+	 *             FileEntry, FileVersion, ThemeDisplay, String, boolean,
+	 *             boolean)}
+	 */
+	@Deprecated
+	public static String getImagePreviewURL(
+			FileEntry fileEntry, FileVersion fileVersion,
+			ThemeDisplay themeDisplay, String queryString,
+			boolean appendVersion, boolean absoluteURL)
+		throws PortalException {
+
+		return getDL().getImagePreviewURL(
+			fileEntry, fileVersion, themeDisplay, queryString, appendVersion,
+			absoluteURL);
+	}
+
+	/**
+	 * @deprecated As of Mueller (7.2.x), replaced by {@link
+	 *             com.liferay.document.library.util.DLURLHelper#getImagePreviewURL(
+	 *             FileEntry, FileVersion, ThemeDisplay)}
+	 */
+	@Deprecated
 	public static String getImagePreviewURL(
 			FileEntry fileEntry, ThemeDisplay themeDisplay)
 		throws Exception {
@@ -174,6 +219,12 @@ public class DLUtil {
 		return getDL().getImagePreviewURL(fileEntry, themeDisplay);
 	}
 
+	/**
+	 * @deprecated As of Mueller (7.2.x), replaced by {@link
+	 *             com.liferay.document.library.util.DLURLHelper#getPreviewURL(
+	 *             FileEntry, FileVersion, ThemeDisplay, String)}
+	 */
+	@Deprecated
 	public static String getPreviewURL(
 		FileEntry fileEntry, FileVersion fileVersion, ThemeDisplay themeDisplay,
 		String queryString) {
@@ -182,6 +233,13 @@ public class DLUtil {
 			fileEntry, fileVersion, themeDisplay, queryString);
 	}
 
+	/**
+	 * @deprecated As of Mueller (7.2.x), replaced by {@link
+	 *             com.liferay.document.library.util.DLURLHelper#getPreviewURL(
+	 *             FileEntry, FileVersion, ThemeDisplay, String, boolean,
+	 *             boolean)}
+	 */
+	@Deprecated
 	public static String getPreviewURL(
 		FileEntry fileEntry, FileVersion fileVersion, ThemeDisplay themeDisplay,
 		String queryString, boolean appendVersion, boolean absoluteURL) {
@@ -220,32 +278,11 @@ public class DLUtil {
 	}
 
 	/**
-	 * @deprecated As of 7.0.0, replaced by {@link #getThumbnailSrc(FileEntry,
-	 *             ThemeDisplay)}
+	 * @deprecated As of Mueller (7.2.x), replaced by {@link
+	 *             com.liferay.document.library.util.DLURLHelper#getThumbnailSrc(
+	 *             FileEntry, FileVersion, ThemeDisplay)}
 	 */
 	@Deprecated
-	public static String getThumbnailSrc(
-			FileEntry fileEntry, DLFileShortcut dlFileShortcut,
-			ThemeDisplay themeDisplay)
-		throws Exception {
-
-		return getDL().getThumbnailSrc(fileEntry, dlFileShortcut, themeDisplay);
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link #getThumbnailSrc(FileEntry,
-	 *             FileVersion, ThemeDisplay)}
-	 */
-	@Deprecated
-	public static String getThumbnailSrc(
-			FileEntry fileEntry, FileVersion fileVersion,
-			DLFileShortcut dlFileShortcut, ThemeDisplay themeDisplay)
-		throws Exception {
-
-		return getDL().getThumbnailSrc(
-			fileEntry, fileVersion, dlFileShortcut, themeDisplay);
-	}
-
 	public static String getThumbnailSrc(
 			FileEntry fileEntry, FileVersion fileVersion,
 			ThemeDisplay themeDisplay)
@@ -254,6 +291,12 @@ public class DLUtil {
 		return getDL().getThumbnailSrc(fileEntry, fileVersion, themeDisplay);
 	}
 
+	/**
+	 * @deprecated As of Mueller (7.2.x), replaced by {@link
+	 *             com.liferay.document.library.util.DLURLHelper#getThumbnailSrc(
+	 *             FileEntry, ThemeDisplay)}
+	 */
+	@Deprecated
 	public static String getThumbnailSrc(
 			FileEntry fileEntry, ThemeDisplay themeDisplay)
 		throws Exception {
@@ -289,6 +332,12 @@ public class DLUtil {
 		return getDL().getUniqueFileName(groupId, folderId, fileName);
 	}
 
+	/**
+	 * @deprecated As of Mueller (7.2.x), replaced by {@link
+	 *             com.liferay.document.library.util.DLURLHelper#getWebDavURL(
+	 *             ThemeDisplay, Folder, FileEntry)}
+	 */
+	@Deprecated
 	public static String getWebDavURL(
 			ThemeDisplay themeDisplay, Folder folder, FileEntry fileEntry)
 		throws PortalException {
@@ -296,6 +345,12 @@ public class DLUtil {
 		return getDL().getWebDavURL(themeDisplay, folder, fileEntry);
 	}
 
+	/**
+	 * @deprecated As of Mueller (7.2.x), replaced by {@link
+	 *             com.liferay.document.library.util.DLURLHelper#getWebDavURL(
+	 *             ThemeDisplay, Folder, FileEntry, boolean)}
+	 */
+	@Deprecated
 	public static String getWebDavURL(
 			ThemeDisplay themeDisplay, Folder folder, FileEntry fileEntry,
 			boolean manualCheckInRequired)
@@ -305,6 +360,12 @@ public class DLUtil {
 			themeDisplay, folder, fileEntry, manualCheckInRequired);
 	}
 
+	/**
+	 * @deprecated As of Mueller (7.2.x), replaced by {@link
+	 *             com.liferay.document.library.util.DLURLHelper#getWebDavURL(
+	 *             ThemeDisplay, Folder, FileEntry, boolean, boolean)}
+	 */
+	@Deprecated
 	public static String getWebDavURL(
 			ThemeDisplay themeDisplay, Folder folder, FileEntry fileEntry,
 			boolean manualCheckInRequired, boolean officeExtensionRequired)
@@ -316,8 +377,7 @@ public class DLUtil {
 	}
 
 	public static boolean hasWorkflowDefinitionLink(
-			long companyId, long groupId, long folderId, long fileEntryTypeId)
-		throws Exception {
+		long companyId, long groupId, long folderId, long fileEntryTypeId) {
 
 		return getDL().hasWorkflowDefinitionLink(
 			companyId, groupId, folderId, fileEntryTypeId);
@@ -334,51 +394,6 @@ public class DLUtil {
 		return getDL().isOfficeExtension(extension);
 	}
 
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link
-	 *             com.liferay.document.library.web.internal.util.
-	 *             DLSubscriptionUtil#isSubscribedToFileEntryType(
-	 *             long, long, long, long)}
-	 */
-	@Deprecated
-	public static boolean isSubscribedToFileEntryType(
-		long companyId, long groupId, long userId, long fileEntryTypeId) {
-
-		return getDL().isSubscribedToFileEntryType(
-			companyId, groupId, userId, fileEntryTypeId);
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link
-	 *             com.liferay.document.library.web.internal.util.
-	 *             DLSubscriptionUtil#isSubscribedToFolder(
-	 *             long, long, long, long)}
-	 */
-	@Deprecated
-	public static boolean isSubscribedToFolder(
-			long companyId, long groupId, long userId, long folderId)
-		throws PortalException {
-
-		return getDL().isSubscribedToFolder(
-			companyId, groupId, userId, folderId);
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link
-	 *             com.liferay.document.library.web.internal.util.
-	 *             DLSubscriptionUtil#isSubscribedToFolder(
-	 *             long, long, long, long, boolean)}
-	 */
-	@Deprecated
-	public static boolean isSubscribedToFolder(
-			long companyId, long groupId, long userId, long folderId,
-			boolean recursive)
-		throws PortalException {
-
-		return getDL().isSubscribedToFolder(
-			companyId, groupId, userId, folderId, recursive);
-	}
-
 	public static boolean isValidVersion(String version) {
 		return getDL().isValidVersion(version);
 	}
@@ -393,8 +408,6 @@ public class DLUtil {
 	}
 
 	public void setDL(DL dl) {
-		PortalRuntimePermission.checkSetBeanProperty(getClass());
-
 		_dl = dl;
 	}
 

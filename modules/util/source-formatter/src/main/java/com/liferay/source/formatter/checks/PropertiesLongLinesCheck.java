@@ -14,10 +14,13 @@
 
 package com.liferay.source.formatter.checks;
 
-import com.liferay.portal.kernel.io.unsync.UnsyncBufferedReader;
-import com.liferay.portal.kernel.io.unsync.UnsyncStringReader;
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.petra.string.CharPool;
 import com.liferay.portal.kernel.util.StringUtil;
+
+import java.io.IOException;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author Hugo Huijser
@@ -27,56 +30,65 @@ public class PropertiesLongLinesCheck extends BaseFileCheck {
 	@Override
 	protected String doProcess(
 			String fileName, String absolutePath, String content)
-		throws Exception {
+		throws IOException {
 
-		try (UnsyncBufferedReader unsyncBufferedReader =
-				new UnsyncBufferedReader(new UnsyncStringReader(content))) {
+		if (absolutePath.endsWith("-portal.properties") ||
+			absolutePath.matches(
+				".*\\/portal-impl\\/src\\/portal[\\w-]+\\.properties")) {
 
-			int lineCount = 0;
+			return content;
+		}
 
-			String line = null;
+		Matcher matcher = _commentsPattern.matcher(content);
 
-			while ((line = unsyncBufferedReader.readLine()) != null) {
-				lineCount++;
+		while (matcher.find()) {
+			String match = matcher.group();
 
-				_checkMaxLineLength(line, fileName, lineCount);
+			String comment = StringUtil.removeSubstring(match, "\n    #");
+
+			comment = _splitComment(comment);
+
+			if (!StringUtil.equals(match, comment)) {
+				return StringUtil.replaceFirst(
+					content, match, comment, matcher.start());
 			}
 		}
 
 		return content;
 	}
 
-	private void _checkMaxLineLength(
-		String line, String fileName, int lineCount) {
-
-		String trimmedLine = StringUtil.trimLeading(line);
-
-		if (!trimmedLine.startsWith("# ")) {
-			return;
+	private String _splitComment(String comment) {
+		if (comment.length() <= getMaxLineLength()) {
+			return comment;
 		}
 
-		int lineLength = getLineLength(line);
+		int x = -1;
 
-		if (lineLength <= getMaxLineLength()) {
-			return;
+		if (comment.startsWith("    # See http:")) {
+			x = comment.indexOf(CharPool.SPACE, 10);
+		}
+		else {
+			x = comment.indexOf(CharPool.SPACE, 6);
 		}
 
-		int x = line.indexOf("# ");
-		int y = line.lastIndexOf(StringPool.SPACE, getMaxLineLength());
-
-		if ((x + 1) == y) {
-			return;
+		if (x == -1) {
+			return comment;
 		}
 
-		int z = line.indexOf(StringPool.SPACE, getMaxLineLength() + 1);
+		if (x > getMaxLineLength()) {
+			String s = "    # " + comment.substring(x + 1);
 
-		if (z == -1) {
-			z = lineLength;
+			return comment.substring(0, x) + "\n" + _splitComment(s);
 		}
 
-		if ((z - y + x + 2) <= getMaxLineLength()) {
-			addMessage(fileName, "> " + getMaxLineLength(), lineCount);
-		}
+		x = comment.lastIndexOf(CharPool.SPACE, getMaxLineLength());
+
+		String s = "    # " + comment.substring(x + 1);
+
+		return comment.substring(0, x) + "\n" + _splitComment(s);
 	}
+
+	private static final Pattern _commentsPattern = Pattern.compile(
+		"(    (?!# Env: )# (?! ).+)(\n    # (?! ).+)*");
 
 }

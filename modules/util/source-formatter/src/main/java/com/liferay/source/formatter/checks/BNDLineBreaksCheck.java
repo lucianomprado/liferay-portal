@@ -14,7 +14,7 @@
 
 package com.liferay.source.formatter.checks;
 
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.source.formatter.checks.util.BNDSourceUtil;
 
@@ -35,9 +35,7 @@ public class BNDLineBreaksCheck extends BaseFileCheck {
 
 		String shortFileName = fileName.substring(pos + 1);
 
-		content = _formatLineBreaks(shortFileName, content);
-
-		return content;
+		return _formatLineBreaks(shortFileName, content);
 	}
 
 	private String _formatLineBreaks(

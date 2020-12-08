@@ -14,7 +14,11 @@
 
 package com.liferay.portal.osgi.web.wab.extender.internal.adapter;
 
+import com.liferay.petra.io.BigEndianCodec;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.osgi.web.servlet.JSPServletFactory;
 import com.liferay.portal.osgi.web.servlet.context.helper.definition.FilterDefinition;
 import com.liferay.portal.osgi.web.servlet.context.helper.definition.ListenerDefinition;
 import com.liferay.portal.osgi.web.servlet.context.helper.definition.ServletDefinition;
@@ -22,9 +26,15 @@ import com.liferay.portal.osgi.web.servlet.context.helper.definition.WebXMLDefin
 import com.liferay.portal.osgi.web.wab.extender.internal.registration.FilterRegistrationImpl;
 import com.liferay.portal.osgi.web.wab.extender.internal.registration.ServletRegistrationImpl;
 
+import java.io.File;
+import java.io.IOException;
+
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+
+import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -34,19 +44,16 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 
 import javax.servlet.DispatcherType;
 import javax.servlet.Filter;
 import javax.servlet.FilterRegistration;
-import javax.servlet.Registration.Dynamic;
+import javax.servlet.Registration;
 import javax.servlet.Servlet;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRegistration;
-
-import org.apache.felix.utils.log.Logger;
 
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
@@ -58,25 +65,27 @@ public class ModifiableServletContextAdapter
 	implements InvocationHandler, ModifiableServletContext {
 
 	public static ServletContext createInstance(
-		ServletContext servletContext, BundleContext bundleContext,
-		WebXMLDefinition webXMLDefinition, Logger logger) {
+		BundleContext bundleContext, ServletContext servletContext,
+		JSPServletFactory jspServletFactory,
+		WebXMLDefinition webXMLDefinition) {
 
 		return (ServletContext)Proxy.newProxyInstance(
 			ModifiableServletContextAdapter.class.getClassLoader(), _INTERFACES,
 			new ModifiableServletContextAdapter(
-				servletContext, bundleContext, webXMLDefinition, logger));
+				servletContext, bundleContext, jspServletFactory,
+				webXMLDefinition));
 	}
 
 	public static ServletContext createInstance(
-		ServletContext servletContext, Map<String, Object> attributes,
+		BundleContext bundleContext, ServletContext servletContext,
+		JSPServletFactory jspServletFactory, WebXMLDefinition webXMLDefinition,
 		List<ListenerDefinition> listenerDefinitions,
 		Map<String, FilterRegistrationImpl> filterRegistrationImpls,
 		Map<String, ServletRegistrationImpl> servletRegistrationImpls,
-		BundleContext bundleContext, WebXMLDefinition webXMLDefinition,
-		Logger logger) {
+		Map<String, Object> attributes) {
 
 		ServletContext newServletContext = createInstance(
-			servletContext, bundleContext, webXMLDefinition, logger);
+			bundleContext, servletContext, jspServletFactory, webXMLDefinition);
 
 		Set<String> attributeNames = attributes.keySet();
 
@@ -101,12 +110,11 @@ public class ModifiableServletContextAdapter
 			Map<String, FilterRegistrationImpl> newFilterRegistrationImpls =
 				modifiableServletContext.getFilterRegistrationImpls();
 
-			for (String filterName : filterRegistrationImpls.keySet()) {
-				FilterRegistrationImpl filterRegistrationImpl =
-					filterRegistrationImpls.get(filterName);
+			for (Map.Entry<String, FilterRegistrationImpl> entry :
+					filterRegistrationImpls.entrySet()) {
 
 				newFilterRegistrationImpls.put(
-					filterName, filterRegistrationImpl);
+					entry.getKey(), entry.getValue());
 			}
 		}
 
@@ -114,12 +122,11 @@ public class ModifiableServletContextAdapter
 			Map<String, ServletRegistrationImpl> newServletRegistrationImpls =
 				modifiableServletContext.getServletRegistrationImpls();
 
-			for (String servletName : servletRegistrationImpls.keySet()) {
-				ServletRegistrationImpl servletRegistrationImpl =
-					servletRegistrationImpls.get(servletName);
+			for (Map.Entry<String, ServletRegistrationImpl> entry :
+					servletRegistrationImpls.entrySet()) {
 
 				newServletRegistrationImpls.put(
-					servletName, servletRegistrationImpl);
+					entry.getKey(), entry.getValue());
 			}
 		}
 
@@ -128,12 +135,13 @@ public class ModifiableServletContextAdapter
 
 	public ModifiableServletContextAdapter(
 		ServletContext servletContext, BundleContext bundleContext,
-		WebXMLDefinition webXMLDefinition, Logger logger) {
+		JSPServletFactory jspServletFactory,
+		WebXMLDefinition webXMLDefinition) {
 
 		_servletContext = servletContext;
 		_bundleContext = bundleContext;
+		_jspServletFactory = jspServletFactory;
 		_webXMLDefinition = webXMLDefinition;
-		_logger = logger;
 
 		_bundle = _bundleContext.getBundle();
 	}
@@ -201,12 +209,11 @@ public class ModifiableServletContextAdapter
 
 			_eventListeners.put(eventListenerClass, null);
 		}
-		catch (Exception e) {
-			_logger.log(
-				Logger.LOG_ERROR,
+		catch (Exception exception) {
+			_log.error(
 				"Bundle " + _bundle + " is unable to load filter " + className);
 
-			throw new IllegalArgumentException(e);
+			throw new IllegalArgumentException(exception);
 		}
 	}
 
@@ -214,13 +221,15 @@ public class ModifiableServletContextAdapter
 		_eventListeners.put(t.getClass(), t);
 	}
 
-	public Dynamic addServlet(
+	public Registration.Dynamic addServlet(
 		String servletName, Class<? extends Servlet> servletClass) {
 
 		return addServlet(servletName, servletClass.getName());
 	}
 
-	public Dynamic addServlet(String servletName, Servlet servlet) {
+	public Registration.Dynamic addServlet(
+		String servletName, Servlet servlet) {
+
 		ServletRegistrationImpl servletRegistrationImpl =
 			getServletRegistrationImpl(servletName);
 
@@ -240,7 +249,9 @@ public class ModifiableServletContextAdapter
 		return servletRegistrationImpl;
 	}
 
-	public Dynamic addServlet(String servletName, String className) {
+	public Registration.Dynamic addServlet(
+		String servletName, String className) {
+
 		ServletRegistrationImpl servletRegistrationImpl =
 			getServletRegistrationImpl(servletName);
 
@@ -262,11 +273,11 @@ public class ModifiableServletContextAdapter
 		try {
 			return clazz.newInstance();
 		}
-		catch (Throwable t) {
-			_logger.log(
-				Logger.LOG_ERROR,
+		catch (Throwable throwable) {
+			_log.error(
 				"Bundle " + _bundle + " is unable to load filter " + clazz);
-			throw new ServletException(t);
+
+			throw new ServletException(throwable);
 		}
 	}
 
@@ -276,12 +287,11 @@ public class ModifiableServletContextAdapter
 		try {
 			return clazz.newInstance();
 		}
-		catch (Throwable t) {
-			_logger.log(
-				Logger.LOG_ERROR,
+		catch (Throwable throwable) {
+			_log.error(
 				"Bundle " + _bundle + " is unable to load listener " + clazz);
 
-			throw new ServletException(t);
+			throw new ServletException(throwable);
 		}
 	}
 
@@ -291,32 +301,64 @@ public class ModifiableServletContextAdapter
 		try {
 			return clazz.newInstance();
 		}
-		catch (Throwable t) {
-			_logger.log(
-				Logger.LOG_ERROR,
+		catch (Throwable throwable) {
+			_log.error(
 				"Bundle " + _bundle + " is unable to load servlet " + clazz);
 
-			throw new ServletException(t);
+			throw new ServletException(throwable);
 		}
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		if (!(obj instanceof ServletContext)) {
+	public boolean equals(Object object) {
+		if (!(object instanceof ServletContext)) {
 			return true;
 		}
 
-		ServletContext servletContext = (ServletContext)obj;
+		ServletContext servletContext = (ServletContext)object;
 
-		if (obj instanceof ModifiableServletContext) {
+		if (object instanceof ModifiableServletContext) {
 			ModifiableServletContext modifiableServletContext =
-				(ModifiableServletContext)obj;
+				(ModifiableServletContext)object;
 
 			servletContext =
 				modifiableServletContext.getWrappedServletContext();
 		}
 
-		return servletContext.equals(_servletContext);
+		return _servletContext.equals(servletContext);
+	}
+
+	public Object getAttribute(String name) {
+		if (_LIFERAY_WAB_BUNDLE_RESOURCES_LAST_MODIFIED.equals(name)) {
+			File file = _bundle.getDataFile(
+				_LIFERAY_WAB_BUNDLE_RESOURCES_LAST_MODIFIED);
+
+			if ((file != null) && file.exists()) {
+				try {
+					byte[] data = Files.readAllBytes(file.toPath());
+
+					if (data.length == 16) {
+						long bundleLastModified = BigEndianCodec.getLong(
+							data, 0);
+
+						if (bundleLastModified == _bundle.getLastModified()) {
+							return BigEndianCodec.getLong(data, 8);
+						}
+					}
+
+					file.delete();
+				}
+				catch (IOException ioException) {
+					if (_log.isDebugEnabled()) {
+						_log.debug(ioException, ioException);
+					}
+				}
+
+				return null;
+			}
+		}
+
+		return _servletContext.getAttribute(name);
 	}
 
 	@Override
@@ -364,7 +406,7 @@ public class ModifiableServletContextAdapter
 	public List<ListenerDefinition> getListenerDefinitions() {
 		List<ListenerDefinition> listenerDefinitions = new ArrayList<>();
 
-		for (Entry<Class<? extends EventListener>, EventListener> entry :
+		for (Map.Entry<Class<? extends EventListener>, EventListener> entry :
 				_eventListeners.entrySet()) {
 
 			Class<? extends EventListener> eventListenerClass = entry.getKey();
@@ -383,9 +425,8 @@ public class ModifiableServletContextAdapter
 
 				listenerDefinitions.add(listenerDefinition);
 			}
-			catch (Exception e) {
-				_logger.log(
-					Logger.LOG_ERROR,
+			catch (Exception exception) {
+				_log.error(
 					"Bundle " + _bundle + " is unable to load listener " +
 						eventListenerClass);
 			}
@@ -501,9 +542,8 @@ public class ModifiableServletContextAdapter
 				filterDefinitions.put(
 					filterRegistrationImpl.getName(), filterDefinition);
 			}
-			catch (Exception e) {
-				_logger.log(
-					Logger.LOG_ERROR,
+			catch (Exception exception) {
+				_log.error(
 					"Bundle " + _bundle + " is unable to load filter " +
 						filterClassName);
 			}
@@ -529,13 +569,14 @@ public class ModifiableServletContextAdapter
 			String servletClassName = servletRegistrationImpl.getClassName();
 
 			try {
-				String jspFile = servletRegistrationImpl.getJspFile();
-
 				Servlet servlet = servletRegistrationImpl.getInstance();
 
 				if (servlet == null) {
+					String jspFile = servletRegistrationImpl.getJspFile();
+
 					if (Validator.isNotNull(jspFile)) {
-						servlet = new JspServletWrapper(jspFile);
+						servlet = new JspServletWrapper(
+							_jspServletFactory.createJSPServlet(), jspFile);
 					}
 					else {
 						Class<?> clazz = _bundle.loadClass(servletClassName);
@@ -565,9 +606,8 @@ public class ModifiableServletContextAdapter
 				servletDefinitions.put(
 					servletRegistrationImpl.getName(), servletDefinition);
 			}
-			catch (Exception e) {
-				_logger.log(
-					Logger.LOG_ERROR,
+			catch (Exception exception) {
+				_log.error(
 					"Bundle " + _bundle + " is unable to load servlet " +
 						servletClassName);
 			}
@@ -582,6 +622,36 @@ public class ModifiableServletContextAdapter
 				addServlet(servletDefinition.getName(), servlet);
 			}
 		}
+	}
+
+	public void setAttribute(String name, Object value) {
+		if (_LIFERAY_WAB_BUNDLE_RESOURCES_LAST_MODIFIED.equals(name)) {
+			File file = _bundle.getDataFile(
+				_LIFERAY_WAB_BUNDLE_RESOURCES_LAST_MODIFIED);
+
+			if (file != null) {
+				byte[] data = new byte[16];
+
+				BigEndianCodec.putLong(data, 0, _bundle.getLastModified());
+				BigEndianCodec.putLong(data, 8, (Long)value);
+
+				try {
+					Files.write(
+						file.toPath(), data, StandardOpenOption.CREATE,
+						StandardOpenOption.TRUNCATE_EXISTING,
+						StandardOpenOption.WRITE);
+				}
+				catch (IOException ioException) {
+					if (_log.isDebugEnabled()) {
+						_log.debug(ioException, ioException);
+					}
+				}
+			}
+
+			return;
+		}
+
+		_servletContext.setAttribute(name, value);
 	}
 
 	public boolean setInitParameter(String name, String value)
@@ -616,14 +686,14 @@ public class ModifiableServletContextAdapter
 
 				methods.put(method, adapterMethod);
 			}
-			catch (NoSuchMethodException nsme1) {
+			catch (NoSuchMethodException noSuchMethodException1) {
 				try {
 					Method method = ModifiableServletContext.class.getMethod(
 						name, parameterTypes);
 
 					methods.put(method, adapterMethod);
 				}
-				catch (NoSuchMethodException nsme2) {
+				catch (NoSuchMethodException noSuchMethodException2) {
 				}
 			}
 		}
@@ -647,7 +717,7 @@ public class ModifiableServletContextAdapter
 
 			methods.put(hashCodeMethod, hashCodeHandlerMethod);
 		}
-		catch (NoSuchMethodException nsme) {
+		catch (NoSuchMethodException noSuchMethodException) {
 		}
 
 		return Collections.unmodifiableMap(methods);
@@ -656,6 +726,12 @@ public class ModifiableServletContextAdapter
 	private static final Class<?>[] _INTERFACES = new Class<?>[] {
 		ModifiableServletContext.class, ServletContext.class
 	};
+
+	private static final String _LIFERAY_WAB_BUNDLE_RESOURCES_LAST_MODIFIED =
+		"LIFERAY_WAB_BUNDLE_RESOURCES_LAST_MODIFIED";
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		ModifiableServletContextAdapter.class);
 
 	private static final Map<Method, Method> _contextAdapterMethods;
 
@@ -670,7 +746,7 @@ public class ModifiableServletContextAdapter
 	private final Map<String, FilterRegistrationImpl> _filterRegistrationImpls =
 		new LinkedHashMap<>();
 	private final Map<String, String> _initParameters = new HashMap<>();
-	private final Logger _logger;
+	private final JSPServletFactory _jspServletFactory;
 	private final ServletContext _servletContext;
 	private final Map<String, ServletRegistrationImpl>
 		_servletRegistrationImpls = new LinkedHashMap<>();

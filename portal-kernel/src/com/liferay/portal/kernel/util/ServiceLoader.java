@@ -14,6 +14,9 @@
 
 package com.liferay.portal.kernel.util;
 
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 
@@ -37,49 +40,40 @@ import java.util.List;
 public class ServiceLoader {
 
 	public static <S> List<S> load(Class<S> clazz) throws Exception {
-		return load(clazz, _serviceLoaderCondition);
-	}
-
-	public static <S> List<S> load(
-			Class<S> clazz, ServiceLoaderCondition serviceLoaderCondition)
-		throws Exception {
-
 		Thread currentThread = Thread.currentThread();
 
 		ClassLoader classLoader = currentThread.getContextClassLoader();
 
-		return load(classLoader, clazz, serviceLoaderCondition);
+		return load(classLoader, clazz);
 	}
 
 	public static <S> List<S> load(ClassLoader classLoader, Class<S> clazz)
 		throws Exception {
 
-		return load(classLoader, clazz, _serviceLoaderCondition);
+		return load(classLoader, classLoader, clazz);
 	}
 
 	public static <S> List<S> load(
-			ClassLoader classLoader, Class<S> clazz,
-			ServiceLoaderCondition serviceLoaderCondition)
+			ClassLoader lookupClassLoader, ClassLoader defineClassLoader,
+			Class<S> clazz)
 		throws Exception {
 
-		Enumeration<URL> enu = classLoader.getResources(
+		Enumeration<URL> enumeration = lookupClassLoader.getResources(
 			"META-INF/services/" + clazz.getName());
 
 		List<S> services = new ArrayList<>();
 
-		while (enu.hasMoreElements()) {
-			URL url = enu.nextElement();
-
-			if (!serviceLoaderCondition.isLoad(url)) {
-				continue;
-			}
+		while (enumeration.hasMoreElements()) {
+			URL url = enumeration.nextElement();
 
 			try {
-				_load(services, classLoader, clazz, url);
+				_load(services, defineClassLoader, clazz, url);
 			}
-			catch (Exception e) {
+			catch (Exception exception) {
 				_log.error(
-					"Unable to load " + clazz + " with " + classLoader, e);
+					StringBundler.concat(
+						"Unable to load ", clazz, " with ", defineClassLoader),
+					exception);
 			}
 		}
 
@@ -129,8 +123,5 @@ public class ServiceLoader {
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(ServiceLoader.class);
-
-	private static final ServiceLoaderCondition _serviceLoaderCondition =
-		new DefaultServiceLoaderCondition();
 
 }

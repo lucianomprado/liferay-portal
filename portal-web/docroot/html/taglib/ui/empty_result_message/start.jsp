@@ -17,7 +17,6 @@
 <%@ include file="/html/taglib/ui/empty_result_message/init.jsp" %>
 
 <%
-String cssClass = (String)request.getAttribute("liferay-ui:empty-result-message:cssClass");
 String message = GetterUtil.getString((String)request.getAttribute("liferay-ui:empty-result-message:message"));
 %>
 
@@ -28,14 +27,13 @@ String message = GetterUtil.getString((String)request.getAttribute("liferay-ui:e
 		</p>
 	</c:when>
 	<c:otherwise>
-		<div class="card main-content-card taglib-empty-result-message">
-			<div class="card-row card-row-padded">
-				<div class="<%= cssClass %>"></div>
+		<div class="sheet taglib-empty-result-message">
+			<div class="<%= (String)request.getAttribute("liferay-ui:empty-result-message:cssClass") %>"></div>
 
-				<c:if test="<%= Validator.isNotNull(message) %>">
-					<div class="text-center text-muted">
-						<liferay-ui:message key="<%= message %>" />
-					</div>
-				</c:if>
+			<c:if test="<%= Validator.isNotNull(message) %>">
+				<div class="sheet-text text-center">
+					<liferay-ui:message key="<%= message %>" />
+				</div>
+			</c:if>
 	</c:otherwise>
 </c:choose>

@@ -14,14 +14,11 @@
 
 package com.liferay.portal.kernel.search;
 
-import aQute.bnd.annotation.ProviderType;
-
-import com.liferay.portal.kernel.util.AutoResetThreadLocal;
+import com.liferay.petra.lang.CentralizedThreadLocal;
 
 /**
  * @author Daniel Kocsis
  */
-@ProviderType
 public class IndexStatusManagerThreadLocal {
 
 	public static boolean isIndexReadOnly() {
@@ -33,7 +30,7 @@ public class IndexStatusManagerThreadLocal {
 	}
 
 	private static final ThreadLocal<Boolean> _indexReadOnly =
-		new AutoResetThreadLocal<>(
+		new CentralizedThreadLocal<>(
 			IndexStatusManagerThreadLocal.class + "._indexReadOnly",
 			() -> Boolean.FALSE);
 

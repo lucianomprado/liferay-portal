@@ -36,7 +36,10 @@ import javax.servlet.http.HttpServletResponse;
  * </p>
  *
  * @author Sergio González
+ * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+ *             com.liferay.frontend.taglib.form.navigator.FormNavigatorEntry}
  */
+@Deprecated
 public interface FormNavigatorEntry<T> {
 
 	/**
@@ -78,14 +81,15 @@ public interface FormNavigatorEntry<T> {
 	 * Renders the HTML that needs to be displayed when the form navigator entry
 	 * is displayed.
 	 *
-	 * @param  request the request with which the form navigator entry is
-	 *         rendered
-	 * @param  response the response with which the form navigator entry is
-	 *         rendered
+	 * @param  httpServletRequest the request with which the form navigator
+	 *         entry is rendered
+	 * @param  httpServletResponse the response with which the form navigator
+	 *         entry is rendered
 	 * @throws IOException if an IO exception occurs
 	 */
 	public void include(
-			HttpServletRequest request, HttpServletResponse response)
+			HttpServletRequest httpServletRequest,
+			HttpServletResponse httpServletResponse)
 		throws IOException;
 
 	/**

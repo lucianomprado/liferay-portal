@@ -14,10 +14,8 @@
 
 package com.liferay.source.formatter.checks;
 
-import com.liferay.portal.kernel.util.CharPool;
-import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.tools.ToolsUtil;
@@ -25,12 +23,12 @@ import com.liferay.source.formatter.BNDSettings;
 import com.liferay.source.formatter.checks.util.JavaSourceUtil;
 import com.liferay.source.formatter.parser.JavaClass;
 import com.liferay.source.formatter.parser.JavaClassParser;
-import com.liferay.source.formatter.parser.JavaConstructor;
-import com.liferay.source.formatter.parser.JavaMethod;
 import com.liferay.source.formatter.parser.JavaTerm;
+import com.liferay.source.formatter.parser.ParseException;
 import com.liferay.source.formatter.util.FileUtil;
 
 import java.io.File;
+import java.io.IOException;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -49,57 +47,36 @@ import java.util.regex.Pattern;
 public class JavaOSGiReferenceCheck extends BaseFileCheck {
 
 	@Override
-	public void init() throws Exception {
-		_moduleFileNamesMap = _getModuleFileNamesMap();
-		_serviceProxyFactoryUtilClassNames =
-			_getServiceProxyFactoryUtilClassNames();
-	}
-
-	@Override
-	public boolean isModulesCheck() {
+	public boolean isModuleSourceCheck() {
 		return true;
-	}
-
-	public void setServiceReferenceUtilClassNames(
-		String serviceReferenceUtilClassNames) {
-
-		_serviceReferenceUtilClassNames = StringUtil.split(
-			serviceReferenceUtilClassNames);
-
-		for (int i = 0; i < _serviceReferenceUtilClassNames.length; i++) {
-			_serviceReferenceUtilClassNames[i] = StringUtil.trim(
-				_serviceReferenceUtilClassNames[i]);
-		}
 	}
 
 	@Override
 	protected String doProcess(
 			String fileName, String absolutePath, String content)
-		throws Exception {
+		throws IOException, ParseException {
 
 		if (!content.contains("@Component")) {
 			return content;
 		}
 
-		String packagePath = JavaSourceUtil.getPackagePath(content);
+		String packageName = JavaSourceUtil.getPackageName(content);
 
-		if (!packagePath.startsWith("com.liferay")) {
+		if (!packageName.startsWith("com.liferay")) {
 			return content;
 		}
 
 		_checkMissingReference(fileName, content);
 
-		String className = JavaSourceUtil.getClassName(fileName);
-
 		String moduleSuperClassContent = _getModuleSuperClassContent(
-			content, className, packagePath);
+			content, JavaSourceUtil.getClassName(fileName), packageName);
 
 		content = _formatDuplicateReferenceMethods(
 			fileName, content, moduleSuperClassContent);
 
-		if (GetterUtil.getBoolean(getProperty("tom.wang.flag"))) {
+		if (!isExcludedPath("service.reference.util.excludes", absolutePath)) {
 			for (String serviceProxyFactoryUtilClassName :
-					_serviceProxyFactoryUtilClassNames) {
+					_getServiceProxyFactoryUtilClassNames()) {
 
 				_checkUtilUsage(
 					fileName, content, serviceProxyFactoryUtilClassName,
@@ -107,57 +84,42 @@ public class JavaOSGiReferenceCheck extends BaseFileCheck {
 			}
 		}
 
+		List<String> serviceReferenceUtilClassNames = getAttributeValues(
+			_SERVICE_REFERENCE_UTIL_CLASS_NAMES_KEY, absolutePath);
+
 		for (String serviceReferenceUtilClassName :
-				_serviceReferenceUtilClassNames) {
+				serviceReferenceUtilClassNames) {
 
 			_checkUtilUsage(
 				fileName, content, serviceReferenceUtilClassName,
 				moduleSuperClassContent);
 		}
 
-		Matcher matcher = _referenceMethodPattern.matcher(content);
-
-		while (matcher.find()) {
-			String methodName = matcher.group(4);
-
-			if (!methodName.startsWith("set")) {
-				continue;
-			}
-
-			String annotationParameters = matcher.group(1);
-			String methodContent = matcher.group();
-
-			content = _formatMissingUnbindAnnotation(
-				content, methodName, methodContent, annotationParameters);
-
-			String methodBody = matcher.group(6);
-			String typeName = matcher.group(5);
-
-			content = _formatVolatileReferenceVariable(
-				content, methodBody, typeName);
-		}
-
 		return content;
 	}
 
 	private void _checkMissingReference(String fileName, String content) {
-		String moduleServicePackagePath = null;
+		String moduleServicePackageName = null;
 
 		Matcher matcher = _serviceUtilImportPattern.matcher(content);
 
 		while (matcher.find()) {
 			String serviceUtilClassName = matcher.group(2);
 
-			if (moduleServicePackagePath == null) {
-				moduleServicePackagePath = _getModuleServicePackagePath(
+			if (serviceUtilClassName.equals("IdentifiableOSGiServiceUtil")) {
+				continue;
+			}
+
+			if (moduleServicePackageName == null) {
+				moduleServicePackageName = _getModuleServicePackageName(
 					fileName);
 			}
 
-			if (Validator.isNotNull(moduleServicePackagePath)) {
-				String serviceUtilClassPackagePath = matcher.group(1);
+			if (Validator.isNotNull(moduleServicePackageName)) {
+				String serviceUtilClassPackageName = matcher.group(1);
 
-				if (serviceUtilClassPackagePath.startsWith(
-						moduleServicePackagePath)) {
+				if (serviceUtilClassPackageName.startsWith(
+						moduleServicePackageName)) {
 
 					continue;
 				}
@@ -166,7 +128,7 @@ public class JavaOSGiReferenceCheck extends BaseFileCheck {
 			addMessage(
 				fileName,
 				"Use @Reference instead of calling " + serviceUtilClassName +
-					" directly, see LPS-59076");
+					" directly");
 		}
 	}
 
@@ -174,7 +136,7 @@ public class JavaOSGiReferenceCheck extends BaseFileCheck {
 			String fileName, String content,
 			String serviceReferenceUtilClassName,
 			String moduleSuperClassContent)
-		throws Exception {
+		throws IOException, ParseException {
 
 		if (!content.contains(serviceReferenceUtilClassName) ||
 			(Validator.isNotNull(moduleSuperClassContent) &&
@@ -192,8 +154,7 @@ public class JavaOSGiReferenceCheck extends BaseFileCheck {
 
 		for (JavaTerm javaTerm : javaClass.getChildJavaTerms()) {
 			if (!javaTerm.isStatic() &&
-				(javaTerm instanceof JavaConstructor ||
-				 javaTerm instanceof JavaMethod) &&
+				(javaTerm.isJavaConstructor() || javaTerm.isJavaMethod()) &&
 				!javaTerm.hasAnnotation("Reference")) {
 
 				String javaTermContent = javaTerm.getContent();
@@ -204,8 +165,7 @@ public class JavaOSGiReferenceCheck extends BaseFileCheck {
 					addMessage(
 						fileName,
 						"Use portal service reference instead of '" +
-							serviceReferenceUtilClassName +
-								"' in modules, see LPS-69661");
+							serviceReferenceUtilClassName + "' in modules");
 
 					return;
 				}
@@ -215,7 +175,7 @@ public class JavaOSGiReferenceCheck extends BaseFileCheck {
 
 	private String _formatDuplicateReferenceMethods(
 			String fileName, String content, String moduleSuperClassContent)
-		throws Exception {
+		throws IOException {
 
 		if (Validator.isNull(moduleSuperClassContent) ||
 			!moduleSuperClassContent.contains("@Component") ||
@@ -255,8 +215,7 @@ public class JavaOSGiReferenceCheck extends BaseFileCheck {
 
 				String entireMethod = content.substring(x + 1, y);
 
-				content = StringUtil.replace(
-					content, entireMethod, StringPool.BLANK);
+				content = StringUtil.removeSubstring(content, entireMethod);
 
 				bndInheritRequired = true;
 			}
@@ -287,8 +246,7 @@ public class JavaOSGiReferenceCheck extends BaseFileCheck {
 
 					String entireMethod = content.substring(x + 1, y);
 
-					content = StringUtil.replace(
-						content, entireMethod, StringPool.BLANK);
+					content = StringUtil.removeSubstring(content, entireMethod);
 
 					bndInheritRequired = true;
 				}
@@ -299,100 +257,23 @@ public class JavaOSGiReferenceCheck extends BaseFileCheck {
 			BNDSettings bndSettings = getBNDSettings(fileName);
 
 			String bndSettingsContent = bndSettings.getContent();
-			String bndFileName = bndSettings.getFileLocation() + "bnd.bnd";
 
 			if (!bndSettingsContent.contains(
 					"-dsannotations-options: inherit") &&
-				_bndFileNames.add(bndFileName)) {
+				_bndFileNames.add(bndSettings.getFileName())) {
 
 				addMessage(
 					fileName,
 					"Add '-dsannotations-options: inherit' to '" +
-						bndSettings.getFileLocation() + "bnd.bnd'");
+						bndSettings.getFileName());
 			}
 		}
 
 		return content;
 	}
 
-	private String _formatMissingUnbindAnnotation(
-		String content, String methodName, String methodContent,
-		String annotationParameters) {
-
-		if (annotationParameters.contains("unbind =") ||
-			content.contains("un" + methodName + "(")) {
-
-			return content;
-		}
-
-		if (Validator.isNull(annotationParameters)) {
-			String newMethodContent = StringUtil.replaceFirst(
-				methodContent, "@Reference", "@Reference(unbind = \"-\")");
-
-			return StringUtil.replace(content, methodContent, newMethodContent);
-		}
-
-		if (!annotationParameters.contains(StringPool.NEW_LINE)) {
-			String newAnnotationParameters = StringUtil.replaceLast(
-				annotationParameters, CharPool.CLOSE_PARENTHESIS,
-				", unbind = \"-\")");
-
-			String newMethodContent = StringUtil.replaceFirst(
-				methodContent, annotationParameters, newAnnotationParameters);
-
-			return StringUtil.replace(content, methodContent, newMethodContent);
-		}
-
-		if (!annotationParameters.contains("\n\n")) {
-			String newAnnotationParameters = StringUtil.replaceLast(
-				annotationParameters, "\n", ",\n\t\tunbind = \"-\"\n");
-
-			String newMethodContent = StringUtil.replaceFirst(
-				methodContent, annotationParameters, newAnnotationParameters);
-
-			return StringUtil.replace(content, methodContent, newMethodContent);
-		}
-
-		return content;
-	}
-
-	private String _formatVolatileReferenceVariable(
-		String content, String methodBody, String typeName) {
-
-		Matcher matcher = _referenceMethodContentPattern.matcher(methodBody);
-
-		if (!matcher.find()) {
-			return content;
-		}
-
-		String variableName = matcher.group(1);
-
-		StringBundler sb = new StringBundler(5);
-
-		sb.append("private volatile ");
-		sb.append(typeName);
-		sb.append("\\s+");
-		sb.append(variableName);
-		sb.append(StringPool.SEMICOLON);
-
-		Pattern privateVarPattern = Pattern.compile(sb.toString());
-
-		matcher = privateVarPattern.matcher(content);
-
-		if (matcher.find()) {
-			String match = matcher.group();
-
-			String replacement = StringUtil.replace(
-				match, "private volatile ", "private ");
-
-			return StringUtil.replace(content, match, replacement);
-		}
-
-		return content;
-	}
-
 	private String _getModuleClassContent(String fullClassName)
-		throws Exception {
+		throws IOException {
 
 		String classContent = _moduleFileContentsMap.get(fullClassName);
 
@@ -400,7 +281,9 @@ public class JavaOSGiReferenceCheck extends BaseFileCheck {
 			return classContent;
 		}
 
-		String moduleFileName = _moduleFileNamesMap.get(fullClassName);
+		Map<String, String> moduleFileNamesMap = _getModuleFileNamesMap();
+
+		String moduleFileName = moduleFileNamesMap.get(fullClassName);
 
 		if (moduleFileName == null) {
 			_moduleFileContentsMap.put(fullClassName, StringPool.BLANK);
@@ -419,8 +302,14 @@ public class JavaOSGiReferenceCheck extends BaseFileCheck {
 		return classContent;
 	}
 
-	private Map<String, String> _getModuleFileNamesMap() throws Exception {
-		Map<String, String> moduleFileNamesMap = new HashMap<>();
+	private synchronized Map<String, String> _getModuleFileNamesMap()
+		throws IOException {
+
+		if (_moduleFileNamesMap != null) {
+			return _moduleFileNamesMap;
+		}
+
+		_moduleFileNamesMap = new HashMap<>();
 
 		List<String> fileNames = new ArrayList<>();
 
@@ -451,13 +340,13 @@ public class JavaOSGiReferenceCheck extends BaseFileCheck {
 
 			className = className.substring(pos + 1, fileName.length() - 5);
 
-			moduleFileNamesMap.put(className, fileName);
+			_moduleFileNamesMap.put(className, fileName);
 		}
 
-		return moduleFileNamesMap;
+		return _moduleFileNamesMap;
 	}
 
-	private String _getModuleServicePackagePath(String fileName) {
+	private String _getModuleServicePackageName(String fileName) {
 		String serviceDirLocation = fileName;
 
 		while (true) {
@@ -496,8 +385,8 @@ public class JavaOSGiReferenceCheck extends BaseFileCheck {
 	}
 
 	private String _getModuleSuperClassContent(
-			String content, String className, String packagePath)
-		throws Exception {
+			String content, String className, String packageName)
+		throws IOException {
 
 		Pattern pattern = Pattern.compile(
 			" class " + className + "\\s+extends\\s+([\\w.]+) ");
@@ -518,36 +407,42 @@ public class JavaOSGiReferenceCheck extends BaseFileCheck {
 			return _getModuleClassContent(superClassName);
 		}
 
-		String superClassPackagePath = packagePath;
+		String superClassPackageName = packageName;
 
 		pattern = Pattern.compile("\nimport (.+?)\\." + superClassName + ";");
 
 		matcher = pattern.matcher(content);
 
 		if (matcher.find()) {
-			superClassPackagePath = matcher.group(1);
+			superClassPackageName = matcher.group(1);
 		}
 
-		if (!superClassPackagePath.startsWith("com.liferay")) {
+		if (!superClassPackageName.startsWith("com.liferay")) {
 			return null;
 		}
 
 		String superClassFullClassName =
-			superClassPackagePath + StringPool.PERIOD + superClassName;
+			superClassPackageName + StringPool.PERIOD + superClassName;
 
 		return _getModuleClassContent(superClassFullClassName);
 	}
 
-	private List<String> _getServiceProxyFactoryUtilClassNames()
-		throws Exception {
+	private synchronized List<String> _getServiceProxyFactoryUtilClassNames()
+		throws IOException {
+
+		if (_serviceProxyFactoryUtilClassNames != null) {
+			return _serviceProxyFactoryUtilClassNames;
+		}
 
 		if (!isPortalSource()) {
-			return Collections.emptyList();
+			_serviceProxyFactoryUtilClassNames = Collections.emptyList();
+
+			return _serviceProxyFactoryUtilClassNames;
 		}
 
 		String portalKernelLocation = "portal-kernel/";
 
-		for (int i = 0; i < ToolsUtil.PORTAL_MAX_DIR_LEVEL - 1; i++) {
+		for (int i = 0; i < (ToolsUtil.PORTAL_MAX_DIR_LEVEL - 1); i++) {
 			File file = new File(getBaseDirName() + portalKernelLocation);
 
 			if (!file.exists()) {
@@ -556,7 +451,7 @@ public class JavaOSGiReferenceCheck extends BaseFileCheck {
 				continue;
 			}
 
-			List<String> serviceProxyFactoryUtilClassNames = new ArrayList<>();
+			_serviceProxyFactoryUtilClassNames = new ArrayList<>();
 
 			List<String> utilFileNames = getFileNames(
 				getBaseDirName() + portalKernelLocation, new String[0],
@@ -571,30 +466,35 @@ public class JavaOSGiReferenceCheck extends BaseFileCheck {
 				if (content.contains(
 						"com.liferay.portal.kernel.util.ServiceProxyFactory")) {
 
-					serviceProxyFactoryUtilClassNames.add(
-						JavaSourceUtil.getPackagePath(content) + "." +
+					_serviceProxyFactoryUtilClassNames.add(
+						JavaSourceUtil.getPackageName(content) + "." +
 							JavaSourceUtil.getClassName(fileName));
 				}
 			}
 
-			return serviceProxyFactoryUtilClassNames;
+			return _serviceProxyFactoryUtilClassNames;
 		}
 
-		return Collections.emptyList();
+		_serviceProxyFactoryUtilClassNames = Collections.emptyList();
+
+		return _serviceProxyFactoryUtilClassNames;
 	}
+
+	private static final String _SERVICE_REFERENCE_UTIL_CLASS_NAMES_KEY =
+		"serviceReferenceUtilClassNames";
+
+	private static final Pattern _referenceMethodContentPattern =
+		Pattern.compile("^(\\w+) =\\s+\\w+;$");
+	private static final Pattern _referenceMethodPattern = Pattern.compile(
+		"\n\t@Reference([\\s\\S]*?)\\s+((protected|public) void (\\w+?))\\(" +
+			"\\s*([ ,<>?\\w]+)\\s+\\w+\\) \\{\\s+([\\s\\S]*?)\\s*?\n\t\\}\n");
+	private static final Pattern _serviceUtilImportPattern = Pattern.compile(
+		"\nimport ([A-Za-z1-9\\.]*)\\.([A-Za-z1-9]*ServiceUtil);");
 
 	private final Set<String> _bndFileNames = new CopyOnWriteArraySet<>();
 	private final Map<String, String> _moduleFileContentsMap =
 		new ConcurrentHashMap<>();
 	private Map<String, String> _moduleFileNamesMap;
-	private final Pattern _referenceMethodContentPattern = Pattern.compile(
-		"^(\\w+) =\\s+\\w+;$");
-	private final Pattern _referenceMethodPattern = Pattern.compile(
-		"\n\t@Reference([\\s\\S]*?)\\s+((protected|public) void (\\w+?))\\(" +
-			"\\s*([ ,<>\\w]+)\\s+\\w+\\) \\{\\s+([\\s\\S]*?)\\s*?\n\t\\}\n");
 	private List<String> _serviceProxyFactoryUtilClassNames;
-	private String[] _serviceReferenceUtilClassNames = new String[0];
-	private final Pattern _serviceUtilImportPattern = Pattern.compile(
-		"\nimport ([A-Za-z1-9\\.]*)\\.([A-Za-z1-9]*ServiceUtil);");
 
 }

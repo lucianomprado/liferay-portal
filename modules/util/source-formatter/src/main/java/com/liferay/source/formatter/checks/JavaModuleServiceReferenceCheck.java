@@ -14,7 +14,7 @@
 
 package com.liferay.source.formatter.checks;
 
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.petra.string.StringPool;
 import com.liferay.source.formatter.checks.util.JavaSourceUtil;
 
 import java.util.regex.Matcher;
@@ -26,7 +26,7 @@ import java.util.regex.Pattern;
 public class JavaModuleServiceReferenceCheck extends BaseFileCheck {
 
 	@Override
-	public boolean isModulesCheck() {
+	public boolean isModuleSourceCheck() {
 		return true;
 	}
 
@@ -34,42 +34,42 @@ public class JavaModuleServiceReferenceCheck extends BaseFileCheck {
 	protected String doProcess(
 		String fileName, String absolutePath, String content) {
 
-		String packagePath = JavaSourceUtil.getPackagePath(content);
+		String packageName = JavaSourceUtil.getPackageName(content);
 
-		int pos = packagePath.indexOf(".service.");
+		int pos = packageName.indexOf(".service.");
 
 		if (pos == -1) {
 			return content;
 		}
 
-		String servicePackagePath = packagePath.substring(0, pos + 8);
+		String servicePackageName = packageName.substring(0, pos + 8);
 
 		_checkServiceReferences(
-			fileName, content, packagePath, servicePackagePath);
+			fileName, content, packageName, servicePackageName);
 
 		return content;
 	}
 
 	private void _checkServiceReferences(
-		String fileName, String content, String packagePath,
-		String servicePackagePath) {
+		String fileName, String content, String packageName,
+		String servicePackageName) {
 
 		Matcher matcher = _serviceReferencePattern.matcher(content);
 
 		while (matcher.find()) {
 			String className = _getFullClassName(
-				content, matcher.group(1), packagePath);
+				content, matcher.group(1), packageName);
 
-			if (className.startsWith(servicePackagePath)) {
+			if (className.startsWith(servicePackageName)) {
 				addMessage(
 					fileName, "Use @BeanReference instead of @ServiceReference",
-					getLineCount(content, matcher.start()));
+					getLineNumber(content, matcher.start()));
 			}
 		}
 	}
 
 	private String _getFullClassName(
-		String content, String className, String packagePath) {
+		String content, String className, String packageName) {
 
 		if (className.contains(StringPool.PERIOD)) {
 			return className;
@@ -83,10 +83,10 @@ public class JavaModuleServiceReferenceCheck extends BaseFileCheck {
 			return matcher.group(1);
 		}
 
-		return packagePath + StringPool.PERIOD + className;
+		return packageName + StringPool.PERIOD + className;
 	}
 
-	private final Pattern _serviceReferencePattern = Pattern.compile(
+	private static final Pattern _serviceReferencePattern = Pattern.compile(
 		"@ServiceReference\\(\\s*type = ([\\w.]+)\\.class\\)\n");
 
 }

@@ -14,13 +14,13 @@
 
 package com.liferay.portlet;
 
-import com.liferay.portal.kernel.io.unsync.UnsyncStringWriter;
+import com.liferay.petra.io.unsync.UnsyncStringWriter;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.template.Template;
 import com.liferay.portal.kernel.template.TemplateConstants;
 import com.liferay.portal.kernel.template.TemplateManagerUtil;
 import com.liferay.portal.kernel.template.TemplateResource;
 import com.liferay.portal.kernel.template.TemplateResourceLoaderUtil;
-import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.struts.StrutsUtil;
 
@@ -62,8 +62,8 @@ public class VelocityPortlet extends GenericPortlet {
 		try {
 			mergeTemplate(_editTemplateId, renderRequest, renderResponse);
 		}
-		catch (Exception e) {
-			throw new PortletException(e);
+		catch (Exception exception) {
+			throw new PortletException(exception);
 		}
 	}
 
@@ -75,8 +75,8 @@ public class VelocityPortlet extends GenericPortlet {
 		try {
 			mergeTemplate(_helpTemplateId, renderRequest, renderResponse);
 		}
-		catch (Exception e) {
-			throw new PortletException(e);
+		catch (Exception exception) {
+			throw new PortletException(exception);
 		}
 	}
 
@@ -88,8 +88,8 @@ public class VelocityPortlet extends GenericPortlet {
 		try {
 			mergeTemplate(_viewTemplateId, renderRequest, renderResponse);
 		}
-		catch (Exception e) {
-			throw new PortletException(e);
+		catch (Exception exception) {
+			throw new PortletException(exception);
 		}
 	}
 
@@ -121,8 +121,8 @@ public class VelocityPortlet extends GenericPortlet {
 		try {
 			mergeTemplate(_actionTemplateId, actionRequest, actionResponse);
 		}
-		catch (Exception e) {
-			throw new PortletException(e);
+		catch (Exception exception) {
+			throw new PortletException(exception);
 		}
 	}
 
@@ -141,8 +141,8 @@ public class VelocityPortlet extends GenericPortlet {
 			mergeTemplate(
 				_resourceTemplateId, resourceRequest, resourceResponse);
 		}
-		catch (Exception e) {
-			throw new PortletException(e);
+		catch (Exception exception) {
+			throw new PortletException(exception);
 		}
 	}
 

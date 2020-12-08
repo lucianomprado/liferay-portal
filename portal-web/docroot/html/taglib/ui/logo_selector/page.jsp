@@ -19,12 +19,14 @@
 <%
 String randomNamespace = PortalUtil.generateRandomKey(request, "taglib_ui_logo_selector") + StringPool.UNDERLINE;
 
+int aspectRatio = GetterUtil.getInteger((String)request.getAttribute("liferay-ui:logo-selector:aspectRatio"));
 String currentLogoURL = (String)request.getAttribute("liferay-ui:logo-selector:currentLogoURL");
 boolean defaultLogo = GetterUtil.getBoolean((String)request.getAttribute("liferay-ui:logo-selector:defaultLogo"));
 String defaultLogoURL = (String)request.getAttribute("liferay-ui:logo-selector:defaultLogoURL");
 String editLogoFn = GetterUtil.getString((String)request.getAttribute("liferay-ui:logo-selector:editLogoFn"));
 String logoDisplaySelector = (String)request.getAttribute("liferay-ui:logo-selector:logoDisplaySelector");
 long maxFileSize = GetterUtil.getLong((String)request.getAttribute("liferay-ui:logo-selector:maxFileSize"));
+boolean preserveRatio = GetterUtil.getBoolean((String)request.getAttribute("liferay-ui:logo-selector:preserveRatio"));
 boolean showBackground = GetterUtil.getBoolean((String)request.getAttribute("liferay-ui:logo-selector:showBackground"));
 boolean showButtons = GetterUtil.getBoolean((String)request.getAttribute("liferay-ui:logo-selector:showButtons"));
 String tempImageFileName = (String)request.getAttribute("liferay-ui:logo-selector:tempImageFileName");
@@ -40,7 +42,7 @@ if (deleteLogo) {
 else if (fileEntryId > 0) {
 	ResourceURL previewURL = PortletURLFactoryUtil.create(portletRequest, PortletKeys.IMAGE_UPLOADER, PortletRequest.RESOURCE_PHASE);
 
-	previewURL.setParameter("mvcRenderCommandName", "/image_uploader/view");
+	previewURL.setParameter("mvcRenderCommandName", "/image_uploader/upload_image");
 	previewURL.setParameter(Constants.CMD, Constants.GET_TEMP);
 	previewURL.setParameter("tempImageFileName", tempImageFileName);
 
@@ -56,7 +58,7 @@ else {
 		<div class="taglib-logo-selector" id="<%= randomNamespace %>taglibLogoSelector">
 			<div class="taglib-logo-selector-content" id="<%= randomNamespace %>taglibLogoSelectorContent">
 				<a class="lfr-change-logo <%= showBackground ? "show-background" : StringPool.BLANK %>" href="javascript:;">
-					<img alt="<liferay-ui:message escapeAttribute="<%= true %>" key="current-image" />" class="avatar img-responsive" id="<%= randomNamespace %>avatar" src="<%= HtmlUtil.escape(imageURL) %>" />
+					<img alt="<liferay-ui:message escapeAttribute="<%= true %>" key="current-image" />" class="avatar img-fluid" id="<%= randomNamespace %>avatar" src="<%= HtmlUtil.escape(imageURL) %>" />
 				</a>
 
 				<c:if test='<%= Validator.isNull(imageURL) || imageURL.contains("/spacer.png") %>'>
@@ -67,9 +69,9 @@ else {
 
 				<div class="portrait-icons">
 					<div class="btn-group button-holder">
-						<aui:button cssClass="btn btn-default edit-logo modify-link" value="change" />
+						<aui:button cssClass="btn btn-secondary edit-logo modify-link" value="change" />
 
-						<aui:button cssClass="btn btn-default delete-logo modify-link" disabled="<%= defaultLogo && (fileEntryId == 0) %>" value="delete" />
+						<aui:button cssClass="btn btn-secondary delete-logo modify-link" disabled="<%= defaultLogo && (fileEntryId == 0) %>" value="delete" />
 					</div>
 
 					<aui:input name="deleteLogo" type="hidden" value="<%= deleteLogo %>" />
@@ -80,10 +82,12 @@ else {
 		</div>
 
 		<liferay-portlet:renderURL portletName="<%= PortletKeys.IMAGE_UPLOADER %>" var="uploadImageURL" windowState="<%= LiferayWindowState.POP_UP.toString() %>">
-			<liferay-portlet:param name="mvcRenderCommandName" value="/image_uploader/view" />
+			<liferay-portlet:param name="mvcRenderCommandName" value="/image_uploader/upload_image" />
+			<liferay-portlet:param name="randomNamespace" value="<%= randomNamespace %>" />
+			<liferay-portlet:param name="aspectRatio" value="<%= String.valueOf(aspectRatio) %>" />
 			<liferay-portlet:param name="currentLogoURL" value="<%= currentLogoURL %>" />
 			<liferay-portlet:param name="maxFileSize" value="<%= String.valueOf(maxFileSize) %>" />
-			<liferay-portlet:param name="randomNamespace" value="<%= randomNamespace %>" />
+			<liferay-portlet:param name="preserveRatio" value="<%= String.valueOf(preserveRatio) %>" />
 			<liferay-portlet:param name="tempImageFileName" value="<%= tempImageFileName %>" />
 		</liferay-portlet:renderURL>
 
@@ -92,6 +96,7 @@ else {
 				{
 					boundingBox: '#<%= randomNamespace %>taglibLogoSelector',
 					contentBox: '#<%= randomNamespace %>taglibLogoSelectorContent',
+					defaultLogo: '<%= defaultLogo %>',
 					defaultLogoURL: '<%= defaultLogoURL %>',
 					editLogoFn: '<%= editLogoFn %>',
 					editLogoURL: '<%= uploadImageURL %>',
@@ -106,7 +111,7 @@ else {
 		<div class="taglib-logo-selector" id="<%= randomNamespace %>taglibLogoSelector">
 			<div class="taglib-logo-selector-content" id="<%= randomNamespace %>taglibLogoSelectorContent">
 				<span class="lfr-change-logo <%= showBackground ? "show-background" : StringPool.BLANK %>">
-					<img alt="<liferay-ui:message escapeAttribute="<%= true %>" key="current-image" />" class="avatar img-responsive" id="<%= randomNamespace %>avatar" src="<%= HtmlUtil.escape(imageURL) %>" />
+					<img alt="<liferay-ui:message escapeAttribute="<%= true %>" key="current-image" />" class="avatar img-fluid" id="<%= randomNamespace %>avatar" src="<%= HtmlUtil.escape(imageURL) %>" />
 				</span>
 			</div>
 		</div>

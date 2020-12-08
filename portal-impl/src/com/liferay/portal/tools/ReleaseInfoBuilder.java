@@ -25,8 +25,10 @@ import java.util.Date;
 import java.util.Properties;
 
 /**
- * @author Brian Wing Shun Chan
+ * @author     Brian Wing Shun Chan
+ * @deprecated As of Wilberforce (7.0.x)
  */
+@Deprecated
 public class ReleaseInfoBuilder {
 
 	public static void main(String[] args) {
@@ -38,7 +40,7 @@ public class ReleaseInfoBuilder {
 
 			// Get version
 
-			Properties releaseProps = _fileUtil.toProperties(
+			Properties releaseProps = _fileImpl.toProperties(
 				"../release.properties");
 
 			String version = releaseProps.getProperty("lp.version");
@@ -47,7 +49,7 @@ public class ReleaseInfoBuilder {
 				"../portal-kernel/src/com/liferay/portal/kernel/util" +
 					"/ReleaseInfo.java");
 
-			String content = _fileUtil.read(file);
+			String content = _fileImpl.read(file);
 
 			int x = content.indexOf("String _VERSION = \"");
 
@@ -83,29 +85,13 @@ public class ReleaseInfoBuilder {
 
 			// Update ReleaseInfo.java
 
-			_fileUtil.write(file, content);
-
-			// Update portal-release.sql
-
-			file = new File("../sql/portal-data-release.sql");
-
-			content = _fileUtil.read(file);
-
-			x = content.indexOf("insert into Release_");
-
-			y = content.indexOf(", FALSE);", x);
-
-			x = content.lastIndexOf(" ", y - 1) + 1;
-
-			content = content.substring(0, x) + build + content.substring(y);
-
-			_fileUtil.write(file, content);
+			_fileImpl.write(file, content);
 		}
-		catch (Exception e) {
-			e.printStackTrace();
+		catch (Exception exception) {
+			exception.printStackTrace();
 		}
 	}
 
-	private static final FileImpl _fileUtil = FileImpl.getInstance();
+	private static final FileImpl _fileImpl = FileImpl.getInstance();
 
 }

@@ -29,7 +29,7 @@ public class KBObjectsViewCountComparator<T> extends OrderByComparator<T> {
 	public static final String ORDER_BY_DESC =
 		"modelFolder DESC, viewCount DESC, title ASC";
 
-	public static final String[] ORDER_BY_FIELDS = {"viewCount, title"};
+	public static final String[] ORDER_BY_FIELDS = {"viewCount", "title"};
 
 	public KBObjectsViewCountComparator() {
 		this(false);
@@ -49,7 +49,7 @@ public class KBObjectsViewCountComparator<T> extends OrderByComparator<T> {
 		String title1 = getName(t1);
 		String title2 = getName(t1);
 
-		if (t1 instanceof KBFolder && t2 instanceof KBFolder) {
+		if ((t1 instanceof KBFolder) && (t2 instanceof KBFolder)) {
 			value = title1.compareToIgnoreCase(title2);
 		}
 		else if (t1 instanceof KBFolder) {
@@ -73,9 +73,8 @@ public class KBObjectsViewCountComparator<T> extends OrderByComparator<T> {
 		if (_ascending) {
 			return value;
 		}
-		else {
-			return -value;
-		}
+
+		return -value;
 	}
 
 	@Override
@@ -83,9 +82,8 @@ public class KBObjectsViewCountComparator<T> extends OrderByComparator<T> {
 		if (_ascending) {
 			return ORDER_BY_ASC;
 		}
-		else {
-			return ORDER_BY_DESC;
-		}
+
+		return ORDER_BY_DESC;
 	}
 
 	@Override
@@ -98,28 +96,26 @@ public class KBObjectsViewCountComparator<T> extends OrderByComparator<T> {
 		return _ascending;
 	}
 
-	protected String getName(Object obj) {
-		if (obj instanceof KBArticle) {
-			KBArticle kbArticle = (KBArticle)obj;
+	protected String getName(Object object) {
+		if (object instanceof KBArticle) {
+			KBArticle kbArticle = (KBArticle)object;
 
 			return kbArticle.getTitle();
 		}
-		else {
-			KBFolder kbFolder = (KBFolder)obj;
 
-			return kbFolder.getName();
-		}
+		KBFolder kbFolder = (KBFolder)object;
+
+		return kbFolder.getName();
 	}
 
-	protected int getViewCount(Object obj) {
-		if (obj instanceof KBArticle) {
-			KBArticle kbArticle = (KBArticle)obj;
+	protected long getViewCount(Object object) {
+		if (object instanceof KBArticle) {
+			KBArticle kbArticle = (KBArticle)object;
 
 			return kbArticle.getViewCount();
 		}
-		else {
-			return 0;
-		}
+
+		return 0;
 	}
 
 	private final boolean _ascending;

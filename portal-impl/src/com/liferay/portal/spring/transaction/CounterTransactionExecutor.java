@@ -14,97 +14,75 @@
 
 package com.liferay.portal.spring.transaction;
 
-import org.aopalliance.intercept.MethodInvocation;
-
 import org.springframework.transaction.PlatformTransactionManager;
 
 /**
  * @author Shuyang Zhou
  */
-public class CounterTransactionExecutor
-	implements TransactionExecutor, TransactionHandler {
+public class CounterTransactionExecutor extends BaseTransactionExecutor {
+
+	public CounterTransactionExecutor(
+		PlatformTransactionManager platformTransactionManager) {
+
+		_platformTransactionManager = platformTransactionManager;
+	}
 
 	@Override
 	public void commit(
-		PlatformTransactionManager platformTransactionManager,
 		TransactionAttributeAdapter transactionAttributeAdapter,
 		TransactionStatusAdapter transactionStatusAdapter) {
 
-		platformTransactionManager.commit(
+		_platformTransactionManager.commit(
 			transactionStatusAdapter.getTransactionStatus());
 	}
 
 	@Override
-	public Object execute(
-			PlatformTransactionManager platformTransactionManager,
-			TransactionAttributeAdapter transactionAttributeAdapter,
-			MethodInvocation methodInvocation)
-		throws Throwable {
-
-		TransactionStatusAdapter transactionStatusAdapter = start(
-			platformTransactionManager, transactionAttributeAdapter);
-
-		Object returnValue = null;
-
-		try {
-			returnValue = methodInvocation.proceed();
-		}
-		catch (Throwable throwable) {
-			rollback(
-				platformTransactionManager, throwable,
-				transactionAttributeAdapter, transactionStatusAdapter);
-		}
-
-		commit(
-			platformTransactionManager, transactionAttributeAdapter,
-			transactionStatusAdapter);
-
-		return returnValue;
+	public PlatformTransactionManager getPlatformTransactionManager() {
+		return _platformTransactionManager;
 	}
 
 	@Override
 	public void rollback(
-			PlatformTransactionManager platformTransactionManager,
-			Throwable throwable,
+			Throwable throwable1,
 			TransactionAttributeAdapter transactionAttributeAdapter,
 			TransactionStatusAdapter transactionStatusAdapter)
 		throws Throwable {
 
-		if (transactionAttributeAdapter.rollbackOn(throwable)) {
+		if (transactionAttributeAdapter.rollbackOn(throwable1)) {
 			try {
-				platformTransactionManager.rollback(
+				_platformTransactionManager.rollback(
 					transactionStatusAdapter.getTransactionStatus());
 			}
-			catch (Throwable t) {
-				t.addSuppressed(throwable);
+			catch (Throwable throwable2) {
+				throwable2.addSuppressed(throwable1);
 
-				throw t;
+				throw throwable2;
 			}
 		}
 		else {
 			try {
-				platformTransactionManager.commit(
+				_platformTransactionManager.commit(
 					transactionStatusAdapter.getTransactionStatus());
 			}
-			catch (Throwable t) {
-				t.addSuppressed(throwable);
+			catch (Throwable throwable2) {
+				throwable2.addSuppressed(throwable1);
 
-				throw t;
+				throw throwable2;
 			}
 		}
 
-		throw throwable;
+		throw throwable1;
 	}
 
 	@Override
 	public TransactionStatusAdapter start(
-		PlatformTransactionManager platformTransactionManager,
 		TransactionAttributeAdapter transactionAttributeAdapter) {
 
 		return new TransactionStatusAdapter(
-			platformTransactionManager,
-			platformTransactionManager.getTransaction(
+			_platformTransactionManager.getTransaction(
 				transactionAttributeAdapter));
 	}
+
+	private final PlatformTransactionManager _platformTransactionManager;
 
 }

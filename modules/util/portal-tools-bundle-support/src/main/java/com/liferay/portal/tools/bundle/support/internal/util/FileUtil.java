@@ -17,6 +17,7 @@ package com.liferay.portal.tools.bundle.support.internal.util;
 import com.liferay.portal.tools.bundle.support.BundleSupport;
 
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -48,6 +49,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.compress.archivers.ArchiveEntry;
+import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry;
+import org.apache.commons.compress.archivers.sevenz.SevenZFile;
+import org.apache.commons.compress.archivers.sevenz.SevenZOutputFile;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
@@ -60,29 +65,6 @@ import org.apache.commons.compress.utils.IOUtils;
  * @author David Truong
  */
 public class FileUtil {
-
-	public static void appendTar(File entryFile, Path entryPath, File tarFile)
-		throws IOException {
-
-		try (TarArchiveOutputStream tarArchiveOutputStream =
-				new TarArchiveOutputStream(
-					new GzipCompressorOutputStream(
-						new BufferedOutputStream(
-							new FileOutputStream(tarFile))))) {
-
-			_appendTar(entryFile, entryPath, tarArchiveOutputStream);
-		}
-	}
-
-	public static void appendZip(File entryFile, Path entryPath, File zipFile)
-		throws Exception {
-
-		try (FileSystem fileSystem = _createFileSystem(
-				zipFile.toPath(), false)) {
-
-			_appendZip(entryFile, entryPath, fileSystem);
-		}
-	}
 
 	public static void copyDirectory(
 			final Path dirPath, final Path destinationDirPath)
@@ -113,7 +95,11 @@ public class FileUtil {
 	public static void copyFile(Path path, Path destinationPath)
 		throws IOException {
 
-		Files.createDirectories(destinationPath.getParent());
+		Path parentPath = destinationPath.getParent();
+
+		if (parentPath != null) {
+			Files.createDirectories(parentPath);
+		}
 
 		Files.copy(path, destinationPath, StandardCopyOption.REPLACE_EXISTING);
 
@@ -132,7 +118,7 @@ public class FileUtil {
 
 				@Override
 				public FileVisitResult postVisitDirectory(
-						Path path, IOException ioe)
+						Path path, IOException ioException)
 					throws IOException {
 
 					Files.delete(path);
@@ -194,6 +180,43 @@ public class FileUtil {
 			Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
 	}
 
+	public static void sevenZip(
+			Path sourcePath, File sevenZipFile, boolean includeFolder)
+		throws Exception {
+
+		final Path parentPath;
+
+		if (includeFolder) {
+			parentPath = sourcePath.getParent();
+		}
+		else {
+			parentPath = sourcePath;
+		}
+
+		try (SevenZOutputFile sevenZOutputFile = new SevenZOutputFile(
+				sevenZipFile)) {
+
+			Files.walkFileTree(
+				sourcePath,
+				new SimpleFileVisitor<Path>() {
+
+					@Override
+					public FileVisitResult visitFile(
+							Path path, BasicFileAttributes basicFileAttributes)
+						throws IOException {
+
+						Path entryPath = parentPath.relativize(path);
+
+						_appendSevenZip(
+							path.toFile(), entryPath, sevenZOutputFile);
+
+						return FileVisitResult.CONTINUE;
+					}
+
+				});
+		}
+	}
+
 	public static void tar(Path sourcePath, File tarFile, boolean includeFolder)
 		throws Exception {
 
@@ -211,6 +234,9 @@ public class FileUtil {
 					new GzipCompressorOutputStream(
 						new BufferedOutputStream(
 							new FileOutputStream(tarFile))))) {
+
+			tarArchiveOutputStream.setLongFileMode(
+				TarArchiveOutputStream.BIGNUMBER_POSIX);
 
 			Files.walkFileTree(
 				sourcePath,
@@ -246,6 +272,9 @@ public class FileUtil {
 		}
 		else if (fileName.endsWith(".zip")) {
 			_unzip(path, destinationDirPath, stripComponents);
+		}
+		else if (fileName.endsWith(".7z")) {
+			_unsevenZip(path, destinationDirPath, stripComponents);
 		}
 		else {
 			throw new UnsupportedOperationException(
@@ -290,6 +319,21 @@ public class FileUtil {
 		}
 	}
 
+	private static void _appendSevenZip(
+			File entryFile, Path entryPath, SevenZOutputFile sevenZOutputFile)
+		throws IOException {
+
+		SevenZArchiveEntry sevenZArchiveEntry =
+			sevenZOutputFile.createArchiveEntry(
+				entryFile, entryPath.toString());
+
+		sevenZOutputFile.putArchiveEntry(sevenZArchiveEntry);
+
+		sevenZOutputFile.write(Files.readAllBytes(entryFile.toPath()));
+
+		sevenZOutputFile.closeArchiveEntry();
+	}
+
 	private static void _appendTar(
 			File entryFile, Path entryPath,
 			TarArchiveOutputStream tarArchiveOutputStream)
@@ -307,15 +351,6 @@ public class FileUtil {
 		tarArchiveOutputStream.closeArchiveEntry();
 	}
 
-	private static void _appendZip(
-			File entryFile, Path entryPath, FileSystem fileSystem)
-		throws IOException {
-
-		Path zipPath = fileSystem.getPath(entryPath.toString());
-
-		copyFile(entryFile.toPath(), zipPath);
-	}
-
 	private static FileSystem _createFileSystem(Path path, boolean create)
 		throws Exception {
 
@@ -330,9 +365,60 @@ public class FileUtil {
 			new URI("jar:" + uri.getScheme(), uri.getPath(), null), properties);
 	}
 
+	private static Path _stripComponents(
+		Path path, int stripComponents, boolean directory) {
+
+		if (stripComponents > 0) {
+			int nameCount = path.getNameCount();
+
+			if (stripComponents < nameCount) {
+				return path.subpath(stripComponents, nameCount);
+			}
+			else if (directory && (stripComponents == nameCount)) {
+				return path.relativize(path);
+			}
+		}
+
+		return path;
+	}
+
+	private static void _unsevenZip(
+			Path sevenZipPath, Path destinationDirPath, int stripComponents)
+		throws Exception {
+
+		try (SevenZFile sevenZFile = new SevenZFile(sevenZipPath.toFile())) {
+			SevenZArchiveEntry sevenZArchiveEntry = null;
+
+			while ((sevenZArchiveEntry = sevenZFile.getNextEntry()) != null) {
+				Path destinationPath = destinationDirPath.resolve(
+					_stripComponents(
+						Paths.get(sevenZArchiveEntry.getName()),
+						stripComponents, sevenZArchiveEntry.isDirectory()));
+
+				if (sevenZArchiveEntry.isDirectory()) {
+					Files.createDirectories(destinationPath);
+
+					continue;
+				}
+
+				byte[] content = new byte[(int)sevenZArchiveEntry.getSize()];
+
+				sevenZFile.read(content, 0, content.length);
+
+				try (ByteArrayInputStream byteArrayInputStream =
+						new ByteArrayInputStream(content)) {
+
+					_writeArchiveEntryFile(
+						sevenZArchiveEntry, destinationPath,
+						byteArrayInputStream);
+				}
+			}
+		}
+	}
+
 	private static void _untar(
 			Path tarPath, Path destinationDirPath, int stripComponents)
-		throws IOException {
+		throws Exception {
 
 		try (InputStream inputStream = Files.newInputStream(tarPath);
 			TarArchiveInputStream tarArchiveInputStream =
@@ -344,25 +430,19 @@ public class FileUtil {
 			while ((tarArchiveEntry =
 						tarArchiveInputStream.getNextTarEntry()) != null) {
 
+				Path destinationPath = destinationDirPath.resolve(
+					_stripComponents(
+						Paths.get(tarArchiveEntry.getName()), stripComponents,
+						tarArchiveEntry.isDirectory()));
+
 				if (tarArchiveEntry.isDirectory()) {
+					Files.createDirectories(destinationPath);
+
 					continue;
 				}
 
-				Path destinationPath = Paths.get(tarArchiveEntry.getName());
-
-				destinationPath = destinationDirPath.resolve(
-					destinationPath.subpath(
-						stripComponents, destinationPath.getNameCount()));
-
-				Files.createDirectories(destinationPath.getParent());
-
-				Files.copy(tarArchiveInputStream, destinationPath);
-
-				Date lastModifiedDate = tarArchiveEntry.getLastModifiedDate();
-
-				Files.setLastModifiedTime(
-					destinationPath,
-					FileTime.fromMillis(lastModifiedDate.getTime()));
+				_writeArchiveEntryFile(
+					tarArchiveEntry, destinationPath, tarArchiveInputStream);
 			}
 		}
 	}
@@ -373,17 +453,37 @@ public class FileUtil {
 		throws Exception {
 
 		try (FileSystem fileSystem = _createFileSystem(zipPath, false)) {
+			final Path fileSystemPath = fileSystem.getPath("/");
+
 			Files.walkFileTree(
-				fileSystem.getPath("/"),
+				fileSystemPath,
 				new SimpleFileVisitor<Path>() {
+
+					@Override
+					public FileVisitResult preVisitDirectory(
+							Path path, BasicFileAttributes basicFileAttributes)
+						throws IOException {
+
+						Path relativePath = _stripComponents(
+							fileSystemPath.relativize(path), stripComponents,
+							true);
+
+						Path destinationPath = destinationDirPath.resolve(
+							relativePath.toString());
+
+						Files.createDirectories(destinationPath);
+
+						return FileVisitResult.CONTINUE;
+					}
 
 					@Override
 					public FileVisitResult visitFile(
 							Path path, BasicFileAttributes basicFileAttributes)
 						throws IOException {
 
-						Path relativePath = path.subpath(
-							stripComponents, path.getNameCount());
+						Path relativePath = _stripComponents(
+							fileSystemPath.relativize(path), stripComponents,
+							false);
 
 						Path destinationPath = destinationDirPath.resolve(
 							relativePath.toString());
@@ -395,6 +495,26 @@ public class FileUtil {
 
 				});
 		}
+	}
+
+	private static void _writeArchiveEntryFile(
+			ArchiveEntry archiveEntry, Path destinationPath,
+			InputStream inputStream)
+		throws IOException {
+
+		Path parentPath = destinationPath.getParent();
+
+		if (parentPath != null) {
+			Files.createDirectories(parentPath);
+		}
+
+		Files.copy(
+			inputStream, destinationPath, StandardCopyOption.REPLACE_EXISTING);
+
+		Date lastModifiedDate = archiveEntry.getLastModifiedDate();
+
+		Files.setLastModifiedTime(
+			destinationPath, FileTime.fromMillis(lastModifiedDate.getTime()));
 	}
 
 	private static final long _FILE_LENGTH_KB = 1024;

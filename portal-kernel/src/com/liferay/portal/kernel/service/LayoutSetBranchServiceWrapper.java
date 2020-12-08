@@ -14,8 +14,6 @@
 
 package com.liferay.portal.kernel.service;
 
-import aQute.bnd.annotation.ProviderType;
-
 /**
  * Provides a wrapper for {@link LayoutSetBranchService}.
  *
@@ -23,64 +21,80 @@ import aQute.bnd.annotation.ProviderType;
  * @see LayoutSetBranchService
  * @generated
  */
-@ProviderType
-public class LayoutSetBranchServiceWrapper implements LayoutSetBranchService,
-	ServiceWrapper<LayoutSetBranchService> {
+public class LayoutSetBranchServiceWrapper
+	implements LayoutSetBranchService, ServiceWrapper<LayoutSetBranchService> {
+
 	public LayoutSetBranchServiceWrapper(
 		LayoutSetBranchService layoutSetBranchService) {
+
 		_layoutSetBranchService = layoutSetBranchService;
 	}
 
 	@Override
 	public com.liferay.portal.kernel.model.LayoutSetBranch addLayoutSetBranch(
-		long groupId, boolean privateLayout, java.lang.String name,
-		java.lang.String description, boolean master,
-		long copyLayoutSetBranchId, ServiceContext serviceContext)
+			long groupId, boolean privateLayout, java.lang.String name,
+			java.lang.String description, boolean master,
+			long copyLayoutSetBranchId, ServiceContext serviceContext)
 		throws com.liferay.portal.kernel.exception.PortalException {
-		return _layoutSetBranchService.addLayoutSetBranch(groupId,
-			privateLayout, name, description, master, copyLayoutSetBranchId,
-			serviceContext);
+
+		return _layoutSetBranchService.addLayoutSetBranch(
+			groupId, privateLayout, name, description, master,
+			copyLayoutSetBranchId, serviceContext);
 	}
 
 	@Override
-	public com.liferay.portal.kernel.model.LayoutSetBranch mergeLayoutSetBranch(
-		long layoutSetBranchId, long mergeLayoutSetBranchId,
-		ServiceContext serviceContext)
+	public void deleteLayoutSetBranch(long layoutSetBranchId)
 		throws com.liferay.portal.kernel.exception.PortalException {
-		return _layoutSetBranchService.mergeLayoutSetBranch(layoutSetBranchId,
-			mergeLayoutSetBranchId, serviceContext);
+
+		_layoutSetBranchService.deleteLayoutSetBranch(layoutSetBranchId);
 	}
 
 	@Override
-	public com.liferay.portal.kernel.model.LayoutSetBranch updateLayoutSetBranch(
-		long groupId, long layoutSetBranchId, java.lang.String name,
-		java.lang.String description, ServiceContext serviceContext)
+	public void deleteLayoutSetBranch(
+			long currentLayoutPlid, long layoutSetBranchId)
 		throws com.liferay.portal.kernel.exception.PortalException {
-		return _layoutSetBranchService.updateLayoutSetBranch(groupId,
-			layoutSetBranchId, name, description, serviceContext);
+
+		_layoutSetBranchService.deleteLayoutSetBranch(
+			currentLayoutPlid, layoutSetBranchId);
+	}
+
+	@Override
+	public java.util.List<com.liferay.portal.kernel.model.LayoutSetBranch>
+		getLayoutSetBranches(long groupId, boolean privateLayout) {
+
+		return _layoutSetBranchService.getLayoutSetBranches(
+			groupId, privateLayout);
 	}
 
 	/**
-	* Returns the OSGi service identifier.
-	*
-	* @return the OSGi service identifier
-	*/
+	 * Returns the OSGi service identifier.
+	 *
+	 * @return the OSGi service identifier
+	 */
 	@Override
 	public java.lang.String getOSGiServiceIdentifier() {
 		return _layoutSetBranchService.getOSGiServiceIdentifier();
 	}
 
 	@Override
-	public java.util.List<com.liferay.portal.kernel.model.LayoutSetBranch> getLayoutSetBranches(
-		long groupId, boolean privateLayout) {
-		return _layoutSetBranchService.getLayoutSetBranches(groupId,
-			privateLayout);
+	public com.liferay.portal.kernel.model.LayoutSetBranch mergeLayoutSetBranch(
+			long layoutSetBranchId, long mergeLayoutSetBranchId,
+			ServiceContext serviceContext)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _layoutSetBranchService.mergeLayoutSetBranch(
+			layoutSetBranchId, mergeLayoutSetBranchId, serviceContext);
 	}
 
 	@Override
-	public void deleteLayoutSetBranch(long layoutSetBranchId)
+	public com.liferay.portal.kernel.model.LayoutSetBranch
+			updateLayoutSetBranch(
+				long groupId, long layoutSetBranchId, java.lang.String name,
+				java.lang.String description, ServiceContext serviceContext)
 		throws com.liferay.portal.kernel.exception.PortalException {
-		_layoutSetBranchService.deleteLayoutSetBranch(layoutSetBranchId);
+
+		return _layoutSetBranchService.updateLayoutSetBranch(
+			groupId, layoutSetBranchId, name, description, serviceContext);
 	}
 
 	@Override
@@ -89,9 +103,12 @@ public class LayoutSetBranchServiceWrapper implements LayoutSetBranchService,
 	}
 
 	@Override
-	public void setWrappedService(LayoutSetBranchService layoutSetBranchService) {
+	public void setWrappedService(
+		LayoutSetBranchService layoutSetBranchService) {
+
 		_layoutSetBranchService = layoutSetBranchService;
 	}
 
 	private LayoutSetBranchService _layoutSetBranchService;
+
 }

@@ -17,7 +17,7 @@ package com.liferay.portal.kernel.social;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.ClassedModel;
 import com.liferay.portal.kernel.model.GroupedModel;
-import com.liferay.portal.kernel.security.pacl.permission.PortalRuntimePermission;
+import com.liferay.portal.kernel.util.ServiceProxyFactory;
 
 import java.util.Date;
 
@@ -35,8 +35,8 @@ public class SocialActivityManagerUtil {
 			userId, classedModel, type, extraData, receiverUserId);
 	}
 
-	public static <T extends ClassedModel & GroupedModel>
-			void addUniqueActivity(
+	public static <T extends ClassedModel & GroupedModel> void
+			addUniqueActivity(
 				long userId, Date createDate, T classedModel, int type,
 				String extraData, long receiverUserId)
 		throws PortalException {
@@ -45,8 +45,8 @@ public class SocialActivityManagerUtil {
 			userId, createDate, classedModel, type, extraData, receiverUserId);
 	}
 
-	public static <T extends ClassedModel & GroupedModel>
-			void addUniqueActivity(
+	public static <T extends ClassedModel & GroupedModel> void
+			addUniqueActivity(
 				long userId, T classedModel, int type, String extraData,
 				long receiverUserId)
 		throws PortalException {
@@ -65,14 +65,11 @@ public class SocialActivityManagerUtil {
 	public static <T extends ClassedModel & GroupedModel>
 		SocialActivityManager<T> getSocialActivityManager() {
 
-		PortalRuntimePermission.checkGetBeanProperty(
-			SocialActivityManagerUtil.class);
-
 		return (SocialActivityManager<T>)_socialActivityManager;
 	}
 
-	public static <T extends ClassedModel & GroupedModel>
-			void updateLastSocialActivity(
+	public static <T extends ClassedModel & GroupedModel> void
+			updateLastSocialActivity(
 				long userId, T classedModel, int type, Date createDate)
 		throws PortalException {
 
@@ -80,15 +77,20 @@ public class SocialActivityManagerUtil {
 			userId, classedModel, type, createDate);
 	}
 
-	public <T extends ClassedModel & GroupedModel>
-		void setSocialActivityManager(
+	/**
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
+	 */
+	@Deprecated
+	public <T extends ClassedModel & GroupedModel> void
+		setSocialActivityManager(
 			SocialActivityManager<T> socialActivityManager) {
-
-		PortalRuntimePermission.checkSetBeanProperty(getClass());
 
 		_socialActivityManager = socialActivityManager;
 	}
 
-	private static SocialActivityManager<?> _socialActivityManager;
+	private static volatile SocialActivityManager<?> _socialActivityManager =
+		ServiceProxyFactory.newServiceTrackedInstance(
+			SocialActivityManager.class, SocialActivityManagerUtil.class,
+			"_socialActivityManager", "(!(model.class.name=*))", false, false);
 
 }

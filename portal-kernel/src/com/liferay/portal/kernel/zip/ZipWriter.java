@@ -18,10 +18,13 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.osgi.annotation.versioning.ProviderType;
+
 /**
  * @author Brian Wing Shun Chan
  * @author Raymond Augé
  */
+@ProviderType
 public interface ZipWriter {
 
 	public void addEntry(String name, byte[] bytes) throws IOException;
@@ -33,10 +36,24 @@ public interface ZipWriter {
 
 	public void addEntry(String name, StringBuilder sb) throws IOException;
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getFile()}
+	 */
+	@Deprecated
 	public byte[] finish() throws IOException;
 
 	public File getFile();
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getFile()}
+	 */
+	@Deprecated
 	public String getPath();
+
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getFile()}
+	 */
+	@Deprecated
+	public void umount();
 
 }

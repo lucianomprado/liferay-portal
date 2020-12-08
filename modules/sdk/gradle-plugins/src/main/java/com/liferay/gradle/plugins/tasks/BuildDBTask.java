@@ -16,6 +16,7 @@ package com.liferay.gradle.plugins.tasks;
 
 import com.liferay.gradle.plugins.internal.util.FileUtil;
 import com.liferay.gradle.plugins.internal.util.GradleUtil;
+import com.liferay.gradle.util.GUtil;
 
 import java.io.File;
 
@@ -25,16 +26,19 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.gradle.api.tasks.CacheableTask;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputDirectory;
 import org.gradle.api.tasks.JavaExec;
 import org.gradle.api.tasks.OutputDirectories;
+import org.gradle.api.tasks.PathSensitive;
+import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.util.CollectionUtils;
-import org.gradle.util.GUtil;
 
 /**
  * @author Andrea Di Giorgi
  */
+@CacheableTask
 public class BuildDBTask extends JavaExec {
 
 	public BuildDBTask() {
@@ -82,6 +86,7 @@ public class BuildDBTask extends JavaExec {
 	}
 
 	@InputDirectory
+	@PathSensitive(PathSensitivity.RELATIVE)
 	public File getSqlDir() {
 		return GradleUtil.toFile(getProject(), _sqlDir);
 	}

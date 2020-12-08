@@ -34,22 +34,6 @@ import java.util.List;
  */
 public class TeamServiceImpl extends TeamServiceBaseImpl {
 
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link #addTeam(long, String,
-	 *             String, ServiceContext)}
-	 */
-	@Deprecated
-	@Override
-	public Team addTeam(long groupId, String name, String description)
-		throws PortalException {
-
-		GroupPermissionUtil.check(
-			getPermissionChecker(), groupId, ActionKeys.MANAGE_TEAMS);
-
-		return teamLocalService.addTeam(
-			getUserId(), groupId, name, description);
-	}
-
 	@Override
 	public Team addTeam(
 			long groupId, String name, String description,
@@ -141,10 +125,10 @@ public class TeamServiceImpl extends TeamServiceBaseImpl {
 	public List<Team> search(
 		long groupId, String name, String description,
 		LinkedHashMap<String, Object> params, int start, int end,
-		OrderByComparator<Team> obc) {
+		OrderByComparator<Team> orderByComparator) {
 
 		return teamFinder.filterFindByG_N_D(
-			groupId, name, description, params, start, end, obc);
+			groupId, name, description, params, start, end, orderByComparator);
 	}
 
 	@Override

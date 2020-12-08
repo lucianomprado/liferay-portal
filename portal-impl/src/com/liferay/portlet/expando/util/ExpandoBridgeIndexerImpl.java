@@ -22,6 +22,8 @@ import com.liferay.expando.kernel.model.ExpandoValue;
 import com.liferay.expando.kernel.service.ExpandoColumnLocalServiceUtil;
 import com.liferay.expando.kernel.service.ExpandoValueLocalServiceUtil;
 import com.liferay.expando.kernel.util.ExpandoBridgeIndexer;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
@@ -29,11 +31,8 @@ import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.search.Document;
-import com.liferay.portal.kernel.security.pacl.DoPrivileged;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portlet.expando.model.impl.ExpandoValueImpl;
@@ -44,7 +43,6 @@ import java.util.List;
 /**
  * @author Raymond Augé
  */
-@DoPrivileged
 public class ExpandoBridgeIndexerImpl implements ExpandoBridgeIndexer {
 
 	@Override
@@ -56,20 +54,9 @@ public class ExpandoBridgeIndexerImpl implements ExpandoBridgeIndexer {
 		try {
 			doAddAttributes(document, expandoBridge);
 		}
-		catch (SystemException se) {
-			_log.error(se, se);
+		catch (SystemException systemException) {
+			_log.error(systemException, systemException);
 		}
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link #encodeFieldName(String,
-	 *             int)}
-	 */
-	@Deprecated
-	@Override
-	public String encodeFieldName(String columnName) {
-		return encodeFieldName(
-			columnName, ExpandoColumnConstants.INDEX_TYPE_TEXT);
 	}
 
 	@Override
@@ -192,7 +179,9 @@ public class ExpandoBridgeIndexerImpl implements ExpandoBridgeIndexer {
 			}
 		}
 		else if (type == ExpandoColumnConstants.NUMBER) {
-			document.addKeyword(fieldName, expandoValue.getNumber().toString());
+			Number number = expandoValue.getNumber();
+
+			document.addKeyword(fieldName, number.toString());
 		}
 		else if (type == ExpandoColumnConstants.NUMBER_ARRAY) {
 			if (!defaultValue) {
@@ -273,11 +262,11 @@ public class ExpandoBridgeIndexerImpl implements ExpandoBridgeIndexer {
 		List<ExpandoColumn> indexedColumns = new ArrayList<>();
 
 		for (ExpandoColumn expandoColumn : expandoColumns) {
-			UnicodeProperties properties =
+			UnicodeProperties unicodeProperties =
 				expandoColumn.getTypeSettingsProperties();
 
 			int indexType = GetterUtil.getInteger(
-				properties.get(ExpandoColumnConstants.INDEX_TYPE));
+				unicodeProperties.get(ExpandoColumnConstants.INDEX_TYPE));
 
 			if (indexType != ExpandoColumnConstants.INDEX_TYPE_NONE) {
 				indexedColumns.add(expandoColumn);
@@ -299,8 +288,8 @@ public class ExpandoBridgeIndexerImpl implements ExpandoBridgeIndexer {
 			try {
 				addAttribute(document, expandoColumn, expandoValues);
 			}
-			catch (Exception e) {
-				_log.error("Indexing " + expandoColumn.getName(), e);
+			catch (Exception exception) {
+				_log.error("Indexing " + expandoColumn.getName(), exception);
 			}
 		}
 	}

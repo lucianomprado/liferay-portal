@@ -14,7 +14,7 @@
 
 package com.liferay.portal.kernel.servlet;
 
-import com.liferay.portal.kernel.configuration.Filter;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.io.DummyOutputStream;
 import com.liferay.portal.kernel.io.DummyWriter;
 import com.liferay.portal.kernel.io.unsync.UnsyncByteArrayOutputStream;
@@ -22,10 +22,8 @@ import com.liferay.portal.kernel.io.unsync.UnsyncPrintWriter;
 import com.liferay.portal.kernel.io.unsync.UnsyncStringWriter;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.rule.CodeCoverageAssertor;
-import com.liferay.portal.kernel.util.Props;
-import com.liferay.portal.kernel.util.PropsUtil;
+import com.liferay.portal.kernel.test.util.PropsTestUtil;
 import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -34,7 +32,7 @@ import java.io.PrintWriter;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 
-import java.util.Properties;
+import java.util.Collections;
 
 import javax.servlet.ServletOutputStream;
 
@@ -164,8 +162,8 @@ public class BufferCacheServletResponseTest {
 
 			Assert.fail();
 		}
-		catch (RuntimeException re) {
-			Throwable throwable = re.getCause();
+		catch (RuntimeException runtimeException) {
+			Throwable throwable = runtimeException.getCause();
 
 			Assert.assertTrue(throwable instanceof IOException);
 			Assert.assertEquals("Forced IOException", throwable.getMessage());
@@ -415,7 +413,7 @@ public class BufferCacheServletResponseTest {
 		try {
 			bufferCacheServletResponse.getOutputStream();
 		}
-		catch (IllegalStateException ise) {
+		catch (IllegalStateException illegalStateException) {
 		}
 	}
 
@@ -617,7 +615,7 @@ public class BufferCacheServletResponseTest {
 		try {
 			bufferCacheServletResponse.getWriter();
 		}
-		catch (IllegalStateException ise) {
+		catch (IllegalStateException illegalStateException) {
 		}
 	}
 
@@ -698,47 +696,7 @@ public class BufferCacheServletResponseTest {
 
 			};
 
-		PropsUtil.setProps(
-			new Props() {
-
-				@Override
-				public boolean contains(String key) {
-					return false;
-				}
-
-				@Override
-				public String get(String key) {
-					return null;
-				}
-
-				@Override
-				public String get(String key, Filter filter) {
-					return null;
-				}
-
-				@Override
-				public String[] getArray(String key) {
-					return null;
-				}
-
-				@Override
-				public String[] getArray(String key, Filter filter) {
-					return null;
-				}
-
-				@Override
-				public Properties getProperties() {
-					return null;
-				}
-
-				@Override
-				public Properties getProperties(
-					String prefix, boolean removePrefix) {
-
-					return null;
-				}
-
-			});
+		PropsTestUtil.setProps(Collections.emptyMap());
 
 		// Clean
 
@@ -1032,7 +990,7 @@ public class BufferCacheServletResponseTest {
 
 			Assert.fail();
 		}
-		catch (IllegalStateException ise) {
+		catch (IllegalStateException illegalStateException) {
 		}
 	}
 
@@ -1045,6 +1003,17 @@ public class BufferCacheServletResponseTest {
 			new BufferCacheServletResponse(stubHttpServletResponse);
 
 		bufferCacheServletResponse.setContentLength(1024);
+	}
+
+	@Test
+	public void testSetContentLengthLong() {
+		StubHttpServletResponse stubHttpServletResponse =
+			new StubHttpServletResponse();
+
+		BufferCacheServletResponse bufferCacheServletResponse =
+			new BufferCacheServletResponse(stubHttpServletResponse);
+
+		bufferCacheServletResponse.setContentLengthLong(1024);
 	}
 
 	@Test

@@ -114,8 +114,31 @@ public class TextFormatterTest {
 	}
 
 	@Test
+	public void testFormatPlural() {
+		Assert.assertEquals("Boxes", TextFormatter.formatPlural("Box"));
+		Assert.assertEquals("Buses", TextFormatter.formatPlural("Bus"));
+		Assert.assertEquals("Bushes", TextFormatter.formatPlural("Bush"));
+		Assert.assertEquals("Companies", TextFormatter.formatPlural("Company"));
+		Assert.assertEquals("Lunches", TextFormatter.formatPlural("Lunch"));
+		Assert.assertEquals("Monkeys", TextFormatter.formatPlural("Monkey"));
+		Assert.assertEquals("Pianos", TextFormatter.formatPlural("Piano"));
+		Assert.assertEquals("Toys", TextFormatter.formatPlural("Toy"));
+		Assert.assertEquals("Users", TextFormatter.formatPlural("User"));
+	}
+
+	@Test
 	public void testFormatQ() {
 		_testFormat("FORMATId", "format-id", TextFormatter.Q);
+	}
+
+	@Test
+	public void testformatStorageSizeOneB() throws Exception {
+		long bytes = 1;
+
+		Assert.assertEquals(
+			"1 B", TextFormatter.formatStorageSize(bytes, LocaleUtil.SPAIN));
+		Assert.assertEquals(
+			"1 B", TextFormatter.formatStorageSize(bytes, LocaleUtil.US));
 	}
 
 	@Test
@@ -123,9 +146,9 @@ public class TextFormatterTest {
 		long bytes = 1024 * 1024 * 1024;
 
 		Assert.assertEquals(
-			"1GB", TextFormatter.formatStorageSize(bytes, LocaleUtil.SPAIN));
+			"1 GB", TextFormatter.formatStorageSize(bytes, LocaleUtil.SPAIN));
 		Assert.assertEquals(
-			"1GB", TextFormatter.formatStorageSize(bytes, LocaleUtil.US));
+			"1 GB", TextFormatter.formatStorageSize(bytes, LocaleUtil.US));
 	}
 
 	@Test
@@ -133,9 +156,9 @@ public class TextFormatterTest {
 		long bytes = 1024;
 
 		Assert.assertEquals(
-			"1KB", TextFormatter.formatStorageSize(bytes, LocaleUtil.SPAIN));
+			"1 KB", TextFormatter.formatStorageSize(bytes, LocaleUtil.SPAIN));
 		Assert.assertEquals(
-			"1KB", TextFormatter.formatStorageSize(bytes, LocaleUtil.US));
+			"1 KB", TextFormatter.formatStorageSize(bytes, LocaleUtil.US));
 	}
 
 	@Test
@@ -143,9 +166,9 @@ public class TextFormatterTest {
 		long bytes = 1024 * 1024;
 
 		Assert.assertEquals(
-			"1MB", TextFormatter.formatStorageSize(bytes, LocaleUtil.SPAIN));
+			"1 MB", TextFormatter.formatStorageSize(bytes, LocaleUtil.SPAIN));
 		Assert.assertEquals(
-			"1MB", TextFormatter.formatStorageSize(bytes, LocaleUtil.US));
+			"1 MB", TextFormatter.formatStorageSize(bytes, LocaleUtil.US));
 	}
 
 	private void _testFormat(String original, String expected, int style) {

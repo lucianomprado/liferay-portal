@@ -14,17 +14,12 @@
 
 package com.liferay.portal.kernel.model;
 
-import aQute.bnd.annotation.ProviderType;
+import com.liferay.exportimport.kernel.lar.StagedModelType;
+import com.liferay.portal.kernel.model.wrapper.BaseModelWrapper;
 
-import com.liferay.expando.kernel.model.ExpandoBridge;
-
-import com.liferay.portal.kernel.service.ServiceContext;
-
-import java.io.Serializable;
-
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * <p>
@@ -35,20 +30,11 @@ import java.util.Objects;
  * @see Region
  * @generated
  */
-@ProviderType
-public class RegionWrapper implements Region, ModelWrapper<Region> {
+public class RegionWrapper
+	extends BaseModelWrapper<Region> implements ModelWrapper<Region>, Region {
+
 	public RegionWrapper(Region region) {
-		_region = region;
-	}
-
-	@Override
-	public Class<?> getModelClass() {
-		return Region.class;
-	}
-
-	@Override
-	public String getModelClassName() {
-		return Region.class.getName();
+		super(region);
 	}
 
 	@Override
@@ -56,11 +42,19 @@ public class RegionWrapper implements Region, ModelWrapper<Region> {
 		Map<String, Object> attributes = new HashMap<String, Object>();
 
 		attributes.put("mvccVersion", getMvccVersion());
+		attributes.put("uuid", getUuid());
 		attributes.put("regionId", getRegionId());
+		attributes.put("companyId", getCompanyId());
+		attributes.put("userId", getUserId());
+		attributes.put("userName", getUserName());
+		attributes.put("createDate", getCreateDate());
+		attributes.put("modifiedDate", getModifiedDate());
 		attributes.put("countryId", getCountryId());
-		attributes.put("regionCode", getRegionCode());
+		attributes.put("active", isActive());
 		attributes.put("name", getName());
-		attributes.put("active", getActive());
+		attributes.put("position", getPosition());
+		attributes.put("regionCode", getRegionCode());
+		attributes.put("lastPublishDate", getLastPublishDate());
 
 		return attributes;
 	}
@@ -73,10 +67,46 @@ public class RegionWrapper implements Region, ModelWrapper<Region> {
 			setMvccVersion(mvccVersion);
 		}
 
+		String uuid = (String)attributes.get("uuid");
+
+		if (uuid != null) {
+			setUuid(uuid);
+		}
+
 		Long regionId = (Long)attributes.get("regionId");
 
 		if (regionId != null) {
 			setRegionId(regionId);
+		}
+
+		Long companyId = (Long)attributes.get("companyId");
+
+		if (companyId != null) {
+			setCompanyId(companyId);
+		}
+
+		Long userId = (Long)attributes.get("userId");
+
+		if (userId != null) {
+			setUserId(userId);
+		}
+
+		String userName = (String)attributes.get("userName");
+
+		if (userName != null) {
+			setUserName(userName);
+		}
+
+		Date createDate = (Date)attributes.get("createDate");
+
+		if (createDate != null) {
+			setCreateDate(createDate);
+		}
+
+		Date modifiedDate = (Date)attributes.get("modifiedDate");
+
+		if (modifiedDate != null) {
+			setModifiedDate(modifiedDate);
 		}
 
 		Long countryId = (Long)attributes.get("countryId");
@@ -85,10 +115,10 @@ public class RegionWrapper implements Region, ModelWrapper<Region> {
 			setCountryId(countryId);
 		}
 
-		String regionCode = (String)attributes.get("regionCode");
+		Boolean active = (Boolean)attributes.get("active");
 
-		if (regionCode != null) {
-			setRegionCode(regionCode);
+		if (active != null) {
+			setActive(active);
 		}
 
 		String name = (String)attributes.get("name");
@@ -97,296 +127,368 @@ public class RegionWrapper implements Region, ModelWrapper<Region> {
 			setName(name);
 		}
 
-		Boolean active = (Boolean)attributes.get("active");
+		Double position = (Double)attributes.get("position");
 
-		if (active != null) {
-			setActive(active);
+		if (position != null) {
+			setPosition(position);
+		}
+
+		String regionCode = (String)attributes.get("regionCode");
+
+		if (regionCode != null) {
+			setRegionCode(regionCode);
+		}
+
+		Date lastPublishDate = (Date)attributes.get("lastPublishDate");
+
+		if (lastPublishDate != null) {
+			setLastPublishDate(lastPublishDate);
 		}
 	}
 
-	@Override
-	public CacheModel<Region> toCacheModel() {
-		return _region.toCacheModel();
-	}
-
-	@Override
-	public Region toEscapedModel() {
-		return new RegionWrapper(_region.toEscapedModel());
-	}
-
-	@Override
-	public Region toUnescapedModel() {
-		return new RegionWrapper(_region.toUnescapedModel());
-	}
-
 	/**
-	* Returns the active of this region.
-	*
-	* @return the active of this region
-	*/
+	 * Returns the active of this region.
+	 *
+	 * @return the active of this region
+	 */
 	@Override
 	public boolean getActive() {
-		return _region.getActive();
+		return model.getActive();
 	}
 
 	/**
-	* Returns <code>true</code> if this region is active.
-	*
-	* @return <code>true</code> if this region is active; <code>false</code> otherwise
-	*/
+	 * Returns the company ID of this region.
+	 *
+	 * @return the company ID of this region
+	 */
 	@Override
-	public boolean isActive() {
-		return _region.isActive();
-	}
-
-	@Override
-	public boolean isCachedModel() {
-		return _region.isCachedModel();
-	}
-
-	@Override
-	public boolean isEscapedModel() {
-		return _region.isEscapedModel();
-	}
-
-	@Override
-	public boolean isNew() {
-		return _region.isNew();
-	}
-
-	@Override
-	public ExpandoBridge getExpandoBridge() {
-		return _region.getExpandoBridge();
-	}
-
-	@Override
-	public int compareTo(Region region) {
-		return _region.compareTo(region);
-	}
-
-	@Override
-	public int hashCode() {
-		return _region.hashCode();
-	}
-
-	@Override
-	public Serializable getPrimaryKeyObj() {
-		return _region.getPrimaryKeyObj();
-	}
-
-	@Override
-	public java.lang.Object clone() {
-		return new RegionWrapper((Region)_region.clone());
+	public long getCompanyId() {
+		return model.getCompanyId();
 	}
 
 	/**
-	* Returns the name of this region.
-	*
-	* @return the name of this region
-	*/
-	@Override
-	public java.lang.String getName() {
-		return _region.getName();
-	}
-
-	/**
-	* Returns the region code of this region.
-	*
-	* @return the region code of this region
-	*/
-	@Override
-	public java.lang.String getRegionCode() {
-		return _region.getRegionCode();
-	}
-
-	@Override
-	public java.lang.String toString() {
-		return _region.toString();
-	}
-
-	@Override
-	public java.lang.String toXmlString() {
-		return _region.toXmlString();
-	}
-
-	/**
-	* Returns the country ID of this region.
-	*
-	* @return the country ID of this region
-	*/
+	 * Returns the country ID of this region.
+	 *
+	 * @return the country ID of this region
+	 */
 	@Override
 	public long getCountryId() {
-		return _region.getCountryId();
+		return model.getCountryId();
 	}
 
 	/**
-	* Returns the mvcc version of this region.
-	*
-	* @return the mvcc version of this region
-	*/
+	 * Returns the create date of this region.
+	 *
+	 * @return the create date of this region
+	 */
+	@Override
+	public Date getCreateDate() {
+		return model.getCreateDate();
+	}
+
+	/**
+	 * Returns the last publish date of this region.
+	 *
+	 * @return the last publish date of this region
+	 */
+	@Override
+	public Date getLastPublishDate() {
+		return model.getLastPublishDate();
+	}
+
+	/**
+	 * Returns the modified date of this region.
+	 *
+	 * @return the modified date of this region
+	 */
+	@Override
+	public Date getModifiedDate() {
+		return model.getModifiedDate();
+	}
+
+	/**
+	 * Returns the mvcc version of this region.
+	 *
+	 * @return the mvcc version of this region
+	 */
 	@Override
 	public long getMvccVersion() {
-		return _region.getMvccVersion();
+		return model.getMvccVersion();
 	}
 
 	/**
-	* Returns the primary key of this region.
-	*
-	* @return the primary key of this region
-	*/
+	 * Returns the name of this region.
+	 *
+	 * @return the name of this region
+	 */
+	@Override
+	public String getName() {
+		return model.getName();
+	}
+
+	/**
+	 * Returns the position of this region.
+	 *
+	 * @return the position of this region
+	 */
+	@Override
+	public double getPosition() {
+		return model.getPosition();
+	}
+
+	/**
+	 * Returns the primary key of this region.
+	 *
+	 * @return the primary key of this region
+	 */
 	@Override
 	public long getPrimaryKey() {
-		return _region.getPrimaryKey();
+		return model.getPrimaryKey();
 	}
 
 	/**
-	* Returns the region ID of this region.
-	*
-	* @return the region ID of this region
-	*/
+	 * Returns the region code of this region.
+	 *
+	 * @return the region code of this region
+	 */
+	@Override
+	public String getRegionCode() {
+		return model.getRegionCode();
+	}
+
+	/**
+	 * Returns the region ID of this region.
+	 *
+	 * @return the region ID of this region
+	 */
 	@Override
 	public long getRegionId() {
-		return _region.getRegionId();
+		return model.getRegionId();
 	}
 
 	/**
-	* Sets whether this region is active.
-	*
-	* @param active the active of this region
-	*/
+	 * Returns the user ID of this region.
+	 *
+	 * @return the user ID of this region
+	 */
+	@Override
+	public long getUserId() {
+		return model.getUserId();
+	}
+
+	/**
+	 * Returns the user name of this region.
+	 *
+	 * @return the user name of this region
+	 */
+	@Override
+	public String getUserName() {
+		return model.getUserName();
+	}
+
+	/**
+	 * Returns the user uuid of this region.
+	 *
+	 * @return the user uuid of this region
+	 */
+	@Override
+	public String getUserUuid() {
+		return model.getUserUuid();
+	}
+
+	/**
+	 * Returns the uuid of this region.
+	 *
+	 * @return the uuid of this region
+	 */
+	@Override
+	public String getUuid() {
+		return model.getUuid();
+	}
+
+	/**
+	 * Returns <code>true</code> if this region is active.
+	 *
+	 * @return <code>true</code> if this region is active; <code>false</code> otherwise
+	 */
+	@Override
+	public boolean isActive() {
+		return model.isActive();
+	}
+
+	@Override
+	public void persist() {
+		model.persist();
+	}
+
+	/**
+	 * Sets whether this region is active.
+	 *
+	 * @param active the active of this region
+	 */
 	@Override
 	public void setActive(boolean active) {
-		_region.setActive(active);
-	}
-
-	@Override
-	public void setCachedModel(boolean cachedModel) {
-		_region.setCachedModel(cachedModel);
+		model.setActive(active);
 	}
 
 	/**
-	* Sets the country ID of this region.
-	*
-	* @param countryId the country ID of this region
-	*/
+	 * Sets the company ID of this region.
+	 *
+	 * @param companyId the company ID of this region
+	 */
+	@Override
+	public void setCompanyId(long companyId) {
+		model.setCompanyId(companyId);
+	}
+
+	/**
+	 * Sets the country ID of this region.
+	 *
+	 * @param countryId the country ID of this region
+	 */
 	@Override
 	public void setCountryId(long countryId) {
-		_region.setCountryId(countryId);
-	}
-
-	@Override
-	public void setExpandoBridgeAttributes(BaseModel<?> baseModel) {
-		_region.setExpandoBridgeAttributes(baseModel);
-	}
-
-	@Override
-	public void setExpandoBridgeAttributes(ExpandoBridge expandoBridge) {
-		_region.setExpandoBridgeAttributes(expandoBridge);
-	}
-
-	@Override
-	public void setExpandoBridgeAttributes(ServiceContext serviceContext) {
-		_region.setExpandoBridgeAttributes(serviceContext);
+		model.setCountryId(countryId);
 	}
 
 	/**
-	* Sets the mvcc version of this region.
-	*
-	* @param mvccVersion the mvcc version of this region
-	*/
+	 * Sets the create date of this region.
+	 *
+	 * @param createDate the create date of this region
+	 */
+	@Override
+	public void setCreateDate(Date createDate) {
+		model.setCreateDate(createDate);
+	}
+
+	/**
+	 * Sets the last publish date of this region.
+	 *
+	 * @param lastPublishDate the last publish date of this region
+	 */
+	@Override
+	public void setLastPublishDate(Date lastPublishDate) {
+		model.setLastPublishDate(lastPublishDate);
+	}
+
+	/**
+	 * Sets the modified date of this region.
+	 *
+	 * @param modifiedDate the modified date of this region
+	 */
+	@Override
+	public void setModifiedDate(Date modifiedDate) {
+		model.setModifiedDate(modifiedDate);
+	}
+
+	/**
+	 * Sets the mvcc version of this region.
+	 *
+	 * @param mvccVersion the mvcc version of this region
+	 */
 	@Override
 	public void setMvccVersion(long mvccVersion) {
-		_region.setMvccVersion(mvccVersion);
+		model.setMvccVersion(mvccVersion);
 	}
 
 	/**
-	* Sets the name of this region.
-	*
-	* @param name the name of this region
-	*/
+	 * Sets the name of this region.
+	 *
+	 * @param name the name of this region
+	 */
 	@Override
-	public void setName(java.lang.String name) {
-		_region.setName(name);
-	}
-
-	@Override
-	public void setNew(boolean n) {
-		_region.setNew(n);
+	public void setName(String name) {
+		model.setName(name);
 	}
 
 	/**
-	* Sets the primary key of this region.
-	*
-	* @param primaryKey the primary key of this region
-	*/
+	 * Sets the position of this region.
+	 *
+	 * @param position the position of this region
+	 */
+	@Override
+	public void setPosition(double position) {
+		model.setPosition(position);
+	}
+
+	/**
+	 * Sets the primary key of this region.
+	 *
+	 * @param primaryKey the primary key of this region
+	 */
 	@Override
 	public void setPrimaryKey(long primaryKey) {
-		_region.setPrimaryKey(primaryKey);
-	}
-
-	@Override
-	public void setPrimaryKeyObj(Serializable primaryKeyObj) {
-		_region.setPrimaryKeyObj(primaryKeyObj);
+		model.setPrimaryKey(primaryKey);
 	}
 
 	/**
-	* Sets the region code of this region.
-	*
-	* @param regionCode the region code of this region
-	*/
+	 * Sets the region code of this region.
+	 *
+	 * @param regionCode the region code of this region
+	 */
 	@Override
-	public void setRegionCode(java.lang.String regionCode) {
-		_region.setRegionCode(regionCode);
+	public void setRegionCode(String regionCode) {
+		model.setRegionCode(regionCode);
 	}
 
 	/**
-	* Sets the region ID of this region.
-	*
-	* @param regionId the region ID of this region
-	*/
+	 * Sets the region ID of this region.
+	 *
+	 * @param regionId the region ID of this region
+	 */
 	@Override
 	public void setRegionId(long regionId) {
-		_region.setRegionId(regionId);
+		model.setRegionId(regionId);
+	}
+
+	/**
+	 * Sets the user ID of this region.
+	 *
+	 * @param userId the user ID of this region
+	 */
+	@Override
+	public void setUserId(long userId) {
+		model.setUserId(userId);
+	}
+
+	/**
+	 * Sets the user name of this region.
+	 *
+	 * @param userName the user name of this region
+	 */
+	@Override
+	public void setUserName(String userName) {
+		model.setUserName(userName);
+	}
+
+	/**
+	 * Sets the user uuid of this region.
+	 *
+	 * @param userUuid the user uuid of this region
+	 */
+	@Override
+	public void setUserUuid(String userUuid) {
+		model.setUserUuid(userUuid);
+	}
+
+	/**
+	 * Sets the uuid of this region.
+	 *
+	 * @param uuid the uuid of this region
+	 */
+	@Override
+	public void setUuid(String uuid) {
+		model.setUuid(uuid);
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
-			return true;
-		}
-
-		if (!(obj instanceof RegionWrapper)) {
-			return false;
-		}
-
-		RegionWrapper regionWrapper = (RegionWrapper)obj;
-
-		if (Objects.equals(_region, regionWrapper._region)) {
-			return true;
-		}
-
-		return false;
+	public StagedModelType getStagedModelType() {
+		return model.getStagedModelType();
 	}
 
 	@Override
-	public Region getWrappedModel() {
-		return _region;
+	protected RegionWrapper wrap(Region region) {
+		return new RegionWrapper(region);
 	}
 
-	@Override
-	public boolean isEntityCacheEnabled() {
-		return _region.isEntityCacheEnabled();
-	}
-
-	@Override
-	public boolean isFinderCacheEnabled() {
-		return _region.isFinderCacheEnabled();
-	}
-
-	@Override
-	public void resetOriginalValues() {
-		_region.resetOriginalValues();
-	}
-
-	private final Region _region;
 }

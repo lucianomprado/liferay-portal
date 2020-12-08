@@ -45,23 +45,26 @@ public class UserSearch extends SearchContainer<User> {
 
 	public static final String EMPTY_RESULTS_MESSAGE = "no-users-were-found";
 
-	public static List<String> headerNames = new ArrayList<>();
-	public static Map<String, String> orderableHeaders = new HashMap<>();
-
-	static {
-		headerNames.add("first-name");
-		headerNames.add("last-name");
-		headerNames.add("screen-name");
-		//headerNames.add("email-address");
-		headerNames.add("job-title");
-		headerNames.add("organizations");
-
-		orderableHeaders.put("first-name", "first-name");
-		orderableHeaders.put("last-name", "last-name");
-		orderableHeaders.put("screen-name", "screen-name");
-		//orderableHeaders.put("email-address", "email-address");
-		orderableHeaders.put("job-title", "job-title");
-	}
+	public static List<String> headerNames = new ArrayList<String>() {
+		{
+			add("first-name");
+			add("last-name");
+			add("screen-name");
+			//add("email-address");
+			add("job-title");
+			add("organizations");
+		}
+	};
+	public static Map<String, String> orderableHeaders =
+		new HashMap<String, String>() {
+			{
+				put("first-name", "first-name");
+				put("last-name", "last-name");
+				put("screen-name", "screen-name");
+				//put("email-address", "email-address");
+				put("job-title", "job-title");
+			}
+		};
 
 	public UserSearch(PortletRequest portletRequest, PortletURL iteratorURL) {
 		this(portletRequest, DEFAULT_CUR_PARAM, iteratorURL);
@@ -81,14 +84,15 @@ public class UserSearch extends SearchContainer<User> {
 				JavaConstants.JAVAX_PORTLET_CONFIG);
 
 		UserDisplayTerms displayTerms = (UserDisplayTerms)getDisplayTerms();
-		UserSearchTerms searchTerms = (UserSearchTerms)getSearchTerms();
 
 		String portletId = PortletProviderUtil.getPortletId(
 			User.class.getName(), PortletProvider.Action.VIEW);
-		String portletName = portletConfig.getPortletName();
 
-		if (!portletId.equals(portletName)) {
+		if (!portletId.equals(portletConfig.getPortletName())) {
 			displayTerms.setStatus(WorkflowConstants.STATUS_APPROVED);
+
+			UserSearchTerms searchTerms = (UserSearchTerms)getSearchTerms();
+
 			searchTerms.setStatus(WorkflowConstants.STATUS_APPROVED);
 		}
 
@@ -148,8 +152,8 @@ public class UserSearch extends SearchContainer<User> {
 			setOrderByType(orderByType);
 			setOrderByComparator(orderByComparator);
 		}
-		catch (Exception e) {
-			_log.error("Unable to initialize user search", e);
+		catch (Exception exception) {
+			_log.error("Unable to initialize user search", exception);
 		}
 	}
 

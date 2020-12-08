@@ -14,11 +14,8 @@
 
 package com.liferay.portal.kernel.image;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.portal.kernel.exception.ImageResolutionException;
 import com.liferay.portal.kernel.model.Image;
-import com.liferay.portal.kernel.security.pacl.permission.PortalRuntimePermission;
 
 import java.awt.image.BufferedImage;
 import java.awt.image.RenderedImage;
@@ -36,7 +33,6 @@ import java.util.concurrent.Future;
  * @author Brian Wing Shun Chan
  * @author Alexander Chow
  */
-@ProviderType
 public class ImageToolUtil {
 
 	/**
@@ -82,26 +78,28 @@ public class ImageToolUtil {
 	 * Encodes the image using the GIF format.
 	 *
 	 * @param  renderedImage the image to encode
-	 * @param  os the stream to write to
+	 * @param  outputStream the stream to write to
 	 * @throws IOException if an IO exception occurred
 	 */
-	public static void encodeGIF(RenderedImage renderedImage, OutputStream os)
+	public static void encodeGIF(
+			RenderedImage renderedImage, OutputStream outputStream)
 		throws IOException {
 
-		getImageTool().encodeGIF(renderedImage, os);
+		getImageTool().encodeGIF(renderedImage, outputStream);
 	}
 
 	/**
 	 * Encodes the image using the WBMP format.
 	 *
 	 * @param  renderedImage the image to encode
-	 * @param  os the stream to write to
+	 * @param  outputStream the stream to write to
 	 * @throws IOException if an IO exception occurred
 	 */
-	public static void encodeWBMP(RenderedImage renderedImage, OutputStream os)
+	public static void encodeWBMP(
+			RenderedImage renderedImage, OutputStream outputStream)
 		throws IOException {
 
-		getImageTool().encodeWBMP(renderedImage, os);
+		getImageTool().encodeWBMP(renderedImage, outputStream);
 	}
 
 	public static RenderedImage flipHorizontal(RenderedImage renderedImage) {
@@ -158,6 +156,10 @@ public class ImageToolUtil {
 		return getImageTool().getDefaultUserMalePortrait();
 	}
 
+	public static Image getDefaultUserPortrait() {
+		return getImageTool().getDefaultUserPortrait();
+	}
+
 	public static Image getImage(byte[] bytes)
 		throws ImageResolutionException, IOException {
 
@@ -170,21 +172,19 @@ public class ImageToolUtil {
 		return getImageTool().getImage(file);
 	}
 
-	public static Image getImage(InputStream is)
+	public static Image getImage(InputStream inputStream)
 		throws ImageResolutionException, IOException {
 
-		return getImageTool().getImage(is);
+		return getImageTool().getImage(inputStream);
 	}
 
-	public static Image getImage(InputStream is, boolean cleanUpStream)
+	public static Image getImage(InputStream inputStream, boolean cleanUpStream)
 		throws ImageResolutionException, IOException {
 
-		return getImageTool().getImage(is, cleanUpStream);
+		return getImageTool().getImage(inputStream, cleanUpStream);
 	}
 
 	public static ImageTool getImageTool() {
-		PortalRuntimePermission.checkGetBeanProperty(ImageToolUtil.class);
-
 		return _imageTool;
 	}
 
@@ -274,19 +274,18 @@ public class ImageToolUtil {
 	 * @param  renderedImage the image to encode
 	 * @param  contentType the content type (e.g., "image/jpeg") or image type
 	 *         (e.g., "jpg") to use during encoding
-	 * @param  os the stream to write to
+	 * @param  outputStream the stream to write to
 	 * @throws IOException if an IO exception occurred
 	 */
 	public static void write(
-			RenderedImage renderedImage, String contentType, OutputStream os)
+			RenderedImage renderedImage, String contentType,
+			OutputStream outputStream)
 		throws IOException {
 
-		getImageTool().write(renderedImage, contentType, os);
+		getImageTool().write(renderedImage, contentType, outputStream);
 	}
 
 	public void setImageTool(ImageTool imageTool) {
-		PortalRuntimePermission.checkSetBeanProperty(getClass());
-
 		_imageTool = imageTool;
 	}
 

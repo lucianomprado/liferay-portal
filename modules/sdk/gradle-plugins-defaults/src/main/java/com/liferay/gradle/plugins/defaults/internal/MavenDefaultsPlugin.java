@@ -17,7 +17,9 @@ package com.liferay.gradle.plugins.defaults.internal;
 import com.liferay.gradle.plugins.BaseDefaultsPlugin;
 import com.liferay.gradle.plugins.defaults.LiferayOSGiDefaultsPlugin;
 import com.liferay.gradle.plugins.defaults.internal.util.FileUtil;
+import com.liferay.gradle.plugins.defaults.internal.util.GradlePluginsDefaultsUtil;
 import com.liferay.gradle.plugins.defaults.internal.util.GradleUtil;
+import com.liferay.gradle.plugins.defaults.internal.util.LiferayRelengUtil;
 
 import java.io.File;
 
@@ -37,7 +39,9 @@ public class MavenDefaultsPlugin extends BaseDefaultsPlugin<MavenPlugin> {
 	public static final Plugin<Project> INSTANCE = new MavenDefaultsPlugin();
 
 	@Override
-	protected void configureDefaults(Project project, MavenPlugin mavenPlugin) {
+	protected void applyPluginDefaults(
+		Project project, MavenPlugin mavenPlugin) {
+
 		_configureTaskUploadArchives(project);
 	}
 
@@ -53,9 +57,28 @@ public class MavenDefaultsPlugin extends BaseDefaultsPlugin<MavenPlugin> {
 			public void execute(Task task) {
 				Project project = task.getProject();
 
-				if (GradleUtil.isSnapshot(project) ||
-					FileUtil.exists(
-						project, LiferayRelengPlugin.RELENG_IGNORE_FILE_NAME)) {
+				File relengIgnoreDir = GradleUtil.getRootDir(
+					project, LiferayRelengPlugin.RELENG_IGNORE_FILE_NAME);
+
+				if (relengIgnoreDir != null) {
+					return;
+				}
+
+				File portalRootDir = GradleUtil.getRootDir(
+					project.getRootProject(), "portal-impl");
+
+				if (portalRootDir == null) {
+					return;
+				}
+
+				if (GradlePluginsDefaultsUtil.isSnapshot(project)) {
+					File relengDir = new File(portalRootDir, "modules/.releng");
+
+					if (relengDir.exists()) {
+						throw new GradleException(
+							"Please run this task from a master branch " +
+								"instead");
+					}
 
 					return;
 				}
@@ -73,13 +96,6 @@ public class MavenDefaultsPlugin extends BaseDefaultsPlugin<MavenPlugin> {
 								RELEASE_PORTAL_ROOT_DIR_PROPERTY_NAME + "\".");
 				}
 
-				File portalRootDir = GradleUtil.getRootDir(
-					project.getRootProject(), "portal-impl");
-
-				if (portalRootDir == null) {
-					return;
-				}
-
 				String relativePath = FileUtil.relativize(
 					project.getProjectDir(), portalRootDir);
 
@@ -90,11 +106,13 @@ public class MavenDefaultsPlugin extends BaseDefaultsPlugin<MavenPlugin> {
 					return;
 				}
 
-				File relengDir = LiferayRelengPlugin.getRelengDir(project);
-				File releaseRelengDir = LiferayRelengPlugin.getRelengDir(
+				File relengDir = LiferayRelengUtil.getRelengDir(project);
+				File releaseRelengDir = LiferayRelengUtil.getRelengDir(
 					releaseProjectDir);
 
-				if ((relengDir == null) && releaseRelengDir.isDirectory()) {
+				if ((relengDir == null) && (releaseRelengDir != null) &&
+					releaseRelengDir.isDirectory()) {
+
 					throw new GradleException(
 						"Please run this task from " + releaseProjectDir +
 							" instead");

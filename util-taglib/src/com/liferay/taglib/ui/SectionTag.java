@@ -14,8 +14,9 @@
 
 package com.liferay.taglib.ui;
 
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.JavaConstants;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.taglib.util.IncludeTag;
 
 import java.util.Map;
@@ -40,11 +41,11 @@ public class SectionTag extends IncludeTag {
 				throw new JspException();
 			}
 
-			HttpServletRequest request =
+			HttpServletRequest httpServletRequest =
 				(HttpServletRequest)pageContext.getRequest();
 
 			PortletResponse portletResponse =
-				(PortletResponse)request.getAttribute(
+				(PortletResponse)httpServletRequest.getAttribute(
 					JavaConstants.JAVAX_PORTLET_RESPONSE);
 
 			String namespace = StringPool.BLANK;
@@ -58,17 +59,19 @@ public class SectionTag extends IncludeTag {
 			_sectionSelected = Boolean.valueOf(_tabsTag.getSectionSelected());
 			String sectionScroll = namespace + sectionParam + "TabsScroll";
 
-			String sectionRedirectParams =
-				"&scroll=" + sectionScroll + "&" + sectionParam + "=" +
-					sectionName;
+			String sectionRedirectParams = StringBundler.concat(
+				"&scroll=", sectionScroll, "&", sectionParam, "=", sectionName);
 
 			_tabsTag.incrementSection();
 
-			request.setAttribute("liferay-ui:section:data", _data);
-			request.setAttribute("liferay-ui:section:name", sectionName);
-			request.setAttribute("liferay-ui:section:param", sectionParam);
-			request.setAttribute("liferay-ui:section:scroll", sectionScroll);
-			request.setAttribute(
+			httpServletRequest.setAttribute("liferay-ui:section:data", _data);
+			httpServletRequest.setAttribute(
+				"liferay-ui:section:name", sectionName);
+			httpServletRequest.setAttribute(
+				"liferay-ui:section:param", sectionParam);
+			httpServletRequest.setAttribute(
+				"liferay-ui:section:scroll", sectionScroll);
+			httpServletRequest.setAttribute(
 				"liferay-ui:section:selected", _sectionSelected);
 
 			pageContext.setAttribute("sectionName", sectionName);
@@ -83,13 +86,16 @@ public class SectionTag extends IncludeTag {
 			if (!_tabsTag.isRefresh() || _sectionSelected.booleanValue()) {
 				return EVAL_BODY_INCLUDE;
 			}
-			else {
-				return EVAL_PAGE;
-			}
+
+			return EVAL_PAGE;
 		}
-		catch (Exception e) {
-			throw new JspException(e);
+		catch (Exception exception) {
+			throw new JspException(exception);
 		}
+	}
+
+	public Map<String, Object> getData() {
+		return _data;
 	}
 
 	public void setData(Map<String, Object> data) {
@@ -98,6 +104,8 @@ public class SectionTag extends IncludeTag {
 
 	@Override
 	protected void cleanUp() {
+		super.cleanUp();
+
 		_data = null;
 		_sectionSelected = Boolean.FALSE;
 		_tabsTag = null;

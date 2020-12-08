@@ -35,24 +35,6 @@ public class SearchEngineProxyWrapper implements SearchEngine {
 		return _searchEngine.backup(companyId, backupName);
 	}
 
-	/**
-	 * @deprecated As of 7.0.0
-	 */
-	@Deprecated
-	@Override
-	public BooleanClauseFactory getBooleanClauseFactory() {
-		return _searchEngine.getBooleanClauseFactory();
-	}
-
-	/**
-	 * @deprecated As of 7.0.0
-	 */
-	@Deprecated
-	@Override
-	public BooleanQueryFactory getBooleanQueryFactory() {
-		return _searchEngine.getBooleanQueryFactory();
-	}
-
 	@Override
 	public IndexSearcher getIndexSearcher() {
 		return _indexSearcher;
@@ -65,24 +47,6 @@ public class SearchEngineProxyWrapper implements SearchEngine {
 
 	public SearchEngine getSearchEngine() {
 		return _searchEngine;
-	}
-
-	/**
-	 * @deprecated As of 7.0.0
-	 */
-	@Deprecated
-	@Override
-	public TermQueryFactory getTermQueryFactory() {
-		return _searchEngine.getTermQueryFactory();
-	}
-
-	/**
-	 * @deprecated As of 7.0.0
-	 */
-	@Deprecated
-	@Override
-	public TermRangeQueryFactory getTermRangeQueryFactory() {
-		return _searchEngine.getTermRangeQueryFactory();
 	}
 
 	@Override

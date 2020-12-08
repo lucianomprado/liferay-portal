@@ -15,8 +15,8 @@
 package com.liferay.gradle.plugins.defaults.tasks;
 
 import com.liferay.gradle.plugins.defaults.internal.util.GradleUtil;
+import com.liferay.gradle.plugins.defaults.internal.util.StringUtil;
 import com.liferay.gradle.plugins.defaults.internal.util.XMLUtil;
-import com.liferay.gradle.util.StringUtil;
 import com.liferay.gradle.util.Validator;
 import com.liferay.gradle.util.copy.RenameDependencyClosure;
 
@@ -54,6 +54,7 @@ import org.w3c.dom.NodeList;
  */
 public class CopyIvyDependenciesTask extends Copy {
 
+	@SuppressWarnings("serial")
 	public CopyIvyDependenciesTask() {
 		_configuration = _createConfiguration();
 
@@ -88,7 +89,7 @@ public class CopyIvyDependenciesTask extends Copy {
 		return _configuration;
 	}
 
-	public Closure<Map<String, String>> getDependencyTransformClosure() {
+	public Closure<Map<String, Object>> getDependencyTransformClosure() {
 		return _dependencyTransformClosure;
 	}
 
@@ -98,7 +99,7 @@ public class CopyIvyDependenciesTask extends Copy {
 	}
 
 	public void setDependencyTransformClosure(
-		Closure<Map<String, String>> dependencyVersionClosure) {
+		Closure<Map<String, Object>> dependencyVersionClosure) {
 
 		_dependencyTransformClosure = dependencyVersionClosure;
 	}
@@ -107,6 +108,7 @@ public class CopyIvyDependenciesTask extends Copy {
 		_inputFile = inputFile;
 	}
 
+	@SuppressWarnings("serial")
 	public void writeChecksumFile() {
 		Project project = getProject();
 
@@ -146,7 +148,7 @@ public class CopyIvyDependenciesTask extends Copy {
 				continue;
 			}
 
-			Map<String, String> dependencyNotation = new HashMap<>();
+			Map<String, Object> dependencyNotation = new HashMap<>();
 
 			dependencyNotation.put(
 				"group", dependencyElement.getAttribute("org"));
@@ -154,6 +156,13 @@ public class CopyIvyDependenciesTask extends Copy {
 				"name", dependencyElement.getAttribute("name"));
 			dependencyNotation.put(
 				"version", dependencyElement.getAttribute("rev"));
+
+			String transitive = dependencyElement.getAttribute("transitive");
+
+			if (Validator.isNotNull(transitive)) {
+				dependencyNotation.put(
+					"transitive", Boolean.parseBoolean(transitive));
+			}
 
 			dependencyNotation = _dependencyTransformClosure.call(
 				dependencyNotation);
@@ -200,11 +209,12 @@ public class CopyIvyDependenciesTask extends Copy {
 					try {
 						_addDependencies(dependencySet);
 					}
-					catch (IOException ioe) {
-						throw new UncheckedIOException(ioe);
+					catch (IOException ioException) {
+						throw new UncheckedIOException(ioException);
 					}
-					catch (Exception e) {
-						throw new GradleException(e.getMessage(), e);
+					catch (Exception exception) {
+						throw new GradleException(
+							exception.getMessage(), exception);
 					}
 				}
 
@@ -217,8 +227,11 @@ public class CopyIvyDependenciesTask extends Copy {
 	}
 
 	private final Configuration _configuration;
-	private Closure<Map<String, String>> _dependencyTransformClosure =
+
+	@SuppressWarnings("unchecked")
+	private Closure<Map<String, Object>> _dependencyTransformClosure =
 		Closure.IDENTITY;
+
 	private Object _inputFile;
 
 }

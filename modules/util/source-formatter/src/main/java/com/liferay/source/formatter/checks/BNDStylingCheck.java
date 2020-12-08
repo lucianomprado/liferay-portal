@@ -14,8 +14,8 @@
 
 package com.liferay.source.formatter.checks;
 
-import com.liferay.portal.kernel.util.CharPool;
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.tools.ToolsUtil;
 
@@ -37,10 +37,15 @@ public class BNDStylingCheck extends BaseFileCheck {
 
 		content = _fixIncorrectIndent(content);
 
+		content = _fixIncorrectLineBreak(content);
 		content = _fixTrailingSemiColon(content);
 
 		content = _formatMultipleValuesOnSingleLine(content);
 		content = _formatSingleValueOnMultipleLines(content);
+
+		if (!absolutePath.endsWith("/app.bnd")) {
+			content = _removeNoValueDefinitionKey(content);
+		}
 
 		return content;
 	}
@@ -51,6 +56,16 @@ public class BNDStylingCheck extends BaseFileCheck {
 		if (matcher.find()) {
 			return StringUtil.replaceFirst(
 				content, matcher.group(1), StringPool.TAB, matcher.start());
+		}
+
+		return content;
+	}
+
+	private String _fixIncorrectLineBreak(String content) {
+		Matcher matcher = _incorrectLineBreakPattern.matcher(content);
+
+		if (matcher.find()) {
+			return matcher.replaceAll("$1$2$3\\\\\n$2\t$4");
 		}
 
 		return content;
@@ -80,7 +95,9 @@ public class BNDStylingCheck extends BaseFileCheck {
 
 			String s = content.substring(x + 1, matcher.start());
 
-			if (s.contains("-Description: ")) {
+			if (s.contains("-Description:") ||
+				s.contains("Liferay-Versions:")) {
+
 				continue;
 			}
 
@@ -114,13 +131,27 @@ public class BNDStylingCheck extends BaseFileCheck {
 		return content;
 	}
 
-	private final Pattern _incorrectIndentPattern = Pattern.compile(
+	private String _removeNoValueDefinitionKey(String content) {
+		Matcher matcher = _noValueDefinitionKeyPattern.matcher(content);
+
+		if (matcher.find()) {
+			content = StringUtil.removeSubstring(content, matcher.group(2));
+		}
+
+		return content;
+	}
+
+	private static final Pattern _incorrectIndentPattern = Pattern.compile(
 		"\n[^\t].*:\\\\\n(\t{2,})[^\t]");
-	private final Pattern _multipleValuesOnSingleLinePattern = Pattern.compile(
-		",(?!\\\\(\n|\\Z)).");
-	private final Pattern _singleValueOnMultipleLinesPattern = Pattern.compile(
-		"\n.*:(\\\\\n\t).*(\n[^\t]|\\Z)");
-	private final Pattern _trailingSemiColonPattern = Pattern.compile(
+	private static final Pattern _incorrectLineBreakPattern = Pattern.compile(
+		"(\\A|[^\\\\]\n)(\t*)([-\\w]+:)\\s*(.*,\\\\(\n|\\Z))");
+	private static final Pattern _multipleValuesOnSingleLinePattern =
+		Pattern.compile(",(?!\\\\(\n|\\Z)).");
+	private static final Pattern _noValueDefinitionKeyPattern = Pattern.compile(
+		"(\\A|\n)(.*:\\s*(\n|\\Z))");
+	private static final Pattern _singleValueOnMultipleLinesPattern =
+		Pattern.compile("\n.*:(\\\\\n\t).*(\n[^\t]|\\Z)");
+	private static final Pattern _trailingSemiColonPattern = Pattern.compile(
 		";(\n|\\Z)");
 
 }

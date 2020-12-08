@@ -14,8 +14,6 @@
 
 package com.liferay.portal.kernel.model;
 
-import aQute.bnd.annotation.ProviderType;
-
 import java.io.Serializable;
 
 import java.util.ArrayList;
@@ -25,10 +23,12 @@ import java.util.List;
  * This class is used by SOAP remote services.
  *
  * @author Brian Wing Shun Chan
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
-@ProviderType
+@Deprecated
 public class ServiceComponentSoap implements Serializable {
+
 	public static ServiceComponentSoap toSoapModel(ServiceComponent model) {
 		ServiceComponentSoap soapModel = new ServiceComponentSoap();
 
@@ -42,8 +42,11 @@ public class ServiceComponentSoap implements Serializable {
 		return soapModel;
 	}
 
-	public static ServiceComponentSoap[] toSoapModels(ServiceComponent[] models) {
-		ServiceComponentSoap[] soapModels = new ServiceComponentSoap[models.length];
+	public static ServiceComponentSoap[] toSoapModels(
+		ServiceComponent[] models) {
+
+		ServiceComponentSoap[] soapModels =
+			new ServiceComponentSoap[models.length];
 
 		for (int i = 0; i < models.length; i++) {
 			soapModels[i] = toSoapModel(models[i]);
@@ -54,10 +57,12 @@ public class ServiceComponentSoap implements Serializable {
 
 	public static ServiceComponentSoap[][] toSoapModels(
 		ServiceComponent[][] models) {
+
 		ServiceComponentSoap[][] soapModels = null;
 
 		if (models.length > 0) {
-			soapModels = new ServiceComponentSoap[models.length][models[0].length];
+			soapModels =
+				new ServiceComponentSoap[models.length][models[0].length];
 		}
 		else {
 			soapModels = new ServiceComponentSoap[0][0];
@@ -72,7 +77,9 @@ public class ServiceComponentSoap implements Serializable {
 
 	public static ServiceComponentSoap[] toSoapModels(
 		List<ServiceComponent> models) {
-		List<ServiceComponentSoap> soapModels = new ArrayList<ServiceComponentSoap>(models.size());
+
+		List<ServiceComponentSoap> soapModels =
+			new ArrayList<ServiceComponentSoap>(models.size());
 
 		for (ServiceComponent model : models) {
 			soapModels.add(toSoapModel(model));
@@ -146,4 +153,5 @@ public class ServiceComponentSoap implements Serializable {
 	private long _buildNumber;
 	private long _buildDate;
 	private String _data;
+
 }

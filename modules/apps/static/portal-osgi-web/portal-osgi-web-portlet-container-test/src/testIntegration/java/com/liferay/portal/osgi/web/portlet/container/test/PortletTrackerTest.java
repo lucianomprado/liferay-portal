@@ -15,16 +15,15 @@
 package com.liferay.portal.osgi.web.portlet.container.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
+import com.liferay.layout.test.util.LayoutTestUtil;
 import com.liferay.portal.kernel.model.Portlet;
+import com.liferay.portal.kernel.portlet.PortletURLFactoryUtil;
 import com.liferay.portal.kernel.service.PortletLocalServiceUtil;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.util.HashMapDictionary;
+import com.liferay.portal.osgi.web.portlet.container.test.util.PortletContainerTestUtil;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
-import com.liferay.portal.util.test.LayoutTestUtil;
-import com.liferay.portal.util.test.PortletContainerTestUtil;
-import com.liferay.portal.util.test.PortletContainerTestUtil.Response;
-import com.liferay.portlet.PortletURLImpl;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -36,8 +35,6 @@ import javax.portlet.PortletRequest;
 import javax.portlet.PortletURL;
 import javax.portlet.RenderRequest;
 import javax.portlet.RenderResponse;
-
-import javax.servlet.http.HttpServletRequest;
 
 import junit.framework.Assert;
 
@@ -113,15 +110,12 @@ public class PortletTrackerTest extends BasePortletContainerTestCase {
 			TestPropsValues.getUserId(), layout, expectedPortletId, "column-1",
 			new HashMap<String, String[]>());
 
-		HttpServletRequest httpServletRequest =
-			PortletContainerTestUtil.getHttpServletRequest(group, layout);
+		PortletURL portletURL = PortletURLFactoryUtil.create(
+			PortletContainerTestUtil.getHttpServletRequest(group, layout),
+			expectedPortletId, layout.getPlid(), PortletRequest.RENDER_PHASE);
 
-		PortletURL portletURL = new PortletURLImpl(
-			httpServletRequest, expectedPortletId, layout.getPlid(),
-			PortletRequest.RENDER_PHASE);
-
-		Response response = PortletContainerTestUtil.request(
-			portletURL.toString());
+		PortletContainerTestUtil.Response response =
+			PortletContainerTestUtil.request(portletURL.toString());
 
 		Assert.assertEquals(200, response.getCode());
 

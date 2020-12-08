@@ -12,22 +12,22 @@
  * details.
  */
 
-/*
+/**
  * Copyright (c) 2000, Columbia University.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
  * 1. Redistributions of source code must retain the above copyright
- *	  notice, this list of conditions and the following disclaimer.
+ *    notice, this list of conditions and the following disclaimer.
  *
  * 2. Redistributions in binary form must reproduce the above copyright
- *	  notice, this list of conditions and the following disclaimer in the
- *	  documentation and/or other materials provided with the distribution.
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
  *
  * 3. Neither the name of the University nor the names of its contributors
- *	  may be used to endorse or promote products derived from this software
- *	  without specific prior written permission.
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS ``AS
  * IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
@@ -44,9 +44,8 @@
 
 package com.liferay.portal.kernel.cal;
 
-import com.liferay.portal.kernel.util.HashCode;
-import com.liferay.portal.kernel.util.HashCodeFactoryUtil;
-import com.liferay.portal.kernel.util.StringBundler;
+import com.liferay.petra.lang.HashUtil;
+import com.liferay.petra.string.StringBundler;
 
 import java.io.Serializable;
 
@@ -71,21 +70,15 @@ public class DayAndPosition implements Cloneable, Serializable {
 	 *         <code>false</code> otherwise
 	 */
 	public static boolean isValidDayOfWeek(int d) {
-		switch (d) {
+		if ((d == NO_WEEKDAY) || (d == Calendar.SUNDAY) ||
+			(d == Calendar.MONDAY) || (d == Calendar.TUESDAY) ||
+			(d == Calendar.WEDNESDAY) || (d == Calendar.THURSDAY) ||
+			(d == Calendar.FRIDAY) || (d == Calendar.SATURDAY)) {
 
-			case NO_WEEKDAY :
-			case Calendar.SUNDAY :
-			case Calendar.MONDAY :
-			case Calendar.TUESDAY :
-			case Calendar.WEDNESDAY :
-			case Calendar.THURSDAY :
-			case Calendar.FRIDAY :
-			case Calendar.SATURDAY :
-				return true;
-
-			default :
-				return false;
+			return true;
 		}
+
+		return false;
 	}
 
 	/**
@@ -114,17 +107,17 @@ public class DayAndPosition implements Cloneable, Serializable {
 	/**
 	 * Constructs a DayAndPosition with the day of the week and day position.
 	 */
-	public DayAndPosition(int d, int p) {
-		if (!isValidDayOfWeek(d)) {
+	public DayAndPosition(int day, int position) {
+		if (!isValidDayOfWeek(day)) {
 			throw new IllegalArgumentException("Invalid day of week");
 		}
 
-		if (!isValidDayPosition(p)) {
+		if (!isValidDayPosition(position)) {
 			throw new IllegalArgumentException("Invalid day position");
 		}
 
-		_day = d;
-		_position = p;
+		_day = day;
+		_position = position;
 	}
 
 	/**
@@ -142,7 +135,7 @@ public class DayAndPosition implements Cloneable, Serializable {
 
 			return other;
 		}
-		catch (CloneNotSupportedException cnse) {
+		catch (CloneNotSupportedException cloneNotSupportedException) {
 			throw new InternalError();
 		}
 	}
@@ -150,25 +143,25 @@ public class DayAndPosition implements Cloneable, Serializable {
 	/**
 	 * Returns <code>true</code> if the object equals this DayAndPosition.
 	 *
-	 * @param  obj the other object
+	 * @param  object the other object
 	 * @return <code>true</code> if the object equals this DayAndPosition,
 	 *         <code>false</code> otherwise
 	 */
 	@Override
-	public boolean equals(Object obj) {
-		if (obj == null) {
+	public boolean equals(Object object) {
+		if (object == null) {
 			return false;
 		}
 
-		if (this == obj) {
+		if (this == object) {
 			return true;
 		}
 
-		if (!(obj instanceof DayAndPosition)) {
+		if (!(object instanceof DayAndPosition)) {
 			return false;
 		}
 
-		DayAndPosition that = (DayAndPosition)obj;
+		DayAndPosition that = (DayAndPosition)object;
 
 		if ((getDayOfWeek() == that.getDayOfWeek()) &&
 			(getDayPosition() == that.getDayPosition())) {
@@ -204,12 +197,9 @@ public class DayAndPosition implements Cloneable, Serializable {
 	 */
 	@Override
 	public int hashCode() {
-		HashCode hashCode = HashCodeFactoryUtil.getHashCode();
+		int hashCode = HashUtil.hash(0, _day);
 
-		hashCode.append(_day);
-		hashCode.append(_position);
-
-		return hashCode.toHashCode();
+		return HashUtil.hash(hashCode, _position);
 	}
 
 	/**

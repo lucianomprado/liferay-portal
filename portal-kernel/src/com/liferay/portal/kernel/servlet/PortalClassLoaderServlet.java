@@ -79,8 +79,8 @@ public class PortalClassLoaderServlet
 
 			_servlet.init(_servletConfig);
 		}
-		catch (Exception e) {
-			_log.error(e, e);
+		catch (Exception exception) {
+			_log.error(exception, exception);
 		}
 		finally {
 			currentThread.setContextClassLoader(contextClassLoader);
@@ -89,7 +89,8 @@ public class PortalClassLoaderServlet
 
 	@Override
 	public void service(
-			HttpServletRequest request, HttpServletResponse response)
+			HttpServletRequest httpServletRequest,
+			HttpServletResponse httpServletResponse)
 		throws IOException, ServletException {
 
 		Thread currentThread = Thread.currentThread();
@@ -100,7 +101,7 @@ public class PortalClassLoaderServlet
 			currentThread.setContextClassLoader(
 				PortalClassLoaderUtil.getClassLoader());
 
-			_servlet.service(request, response);
+			_servlet.service(httpServletRequest, httpServletResponse);
 		}
 		finally {
 			currentThread.setContextClassLoader(contextClassLoader);

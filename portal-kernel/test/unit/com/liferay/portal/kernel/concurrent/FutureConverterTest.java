@@ -56,7 +56,7 @@ public class FutureConverterTest {
 
 			Assert.fail();
 		}
-		catch (CancellationException ce) {
+		catch (CancellationException cancellationException) {
 		}
 
 		try {
@@ -64,7 +64,7 @@ public class FutureConverterTest {
 
 			Assert.fail();
 		}
-		catch (CancellationException ce) {
+		catch (CancellationException cancellationException) {
 		}
 	}
 
@@ -87,7 +87,7 @@ public class FutureConverterTest {
 
 			Assert.fail();
 		}
-		catch (CancellationException ce) {
+		catch (CancellationException cancellationException) {
 		}
 
 		try {
@@ -95,7 +95,7 @@ public class FutureConverterTest {
 
 			Assert.fail();
 		}
-		catch (CancellationException ce) {
+		catch (CancellationException cancellationException) {
 		}
 	}
 
@@ -105,23 +105,23 @@ public class FutureConverterTest {
 
 		final Exception exception = new Exception();
 
-		Future<Object> future =
-			new FutureConverter<Object, Object>(_futureTask) {
+		Future<Object> future = new FutureConverter<Object, Object>(
+			_futureTask) {
 
-				@Override
-				protected Object convert(Object v) throws Exception {
-					throw exception;
-				}
+			@Override
+			protected Object convert(Object v) throws Exception {
+				throw exception;
+			}
 
-			};
+		};
 
 		try {
 			future.get();
 
 			Assert.fail();
 		}
-		catch (ExecutionException ee) {
-			Assert.assertSame(exception, ee.getCause());
+		catch (ExecutionException executionException) {
+			Assert.assertSame(exception, executionException.getCause());
 		}
 
 		try {
@@ -129,8 +129,8 @@ public class FutureConverterTest {
 
 			Assert.fail();
 		}
-		catch (ExecutionException ee) {
-			Assert.assertSame(exception, ee.getCause());
+		catch (ExecutionException executionException) {
+			Assert.assertSame(exception, executionException.getCause());
 		}
 	}
 
@@ -179,8 +179,8 @@ public class FutureConverterTest {
 
 			Assert.fail();
 		}
-		catch (ExecutionException ee) {
-			Assert.assertSame(exception, ee.getCause());
+		catch (ExecutionException executionException) {
+			Assert.assertSame(exception, executionException.getCause());
 		}
 
 		try {
@@ -188,8 +188,8 @@ public class FutureConverterTest {
 
 			Assert.fail();
 		}
-		catch (ExecutionException ee) {
-			Assert.assertSame(exception, ee.getCause());
+		catch (ExecutionException executionException) {
+			Assert.assertSame(exception, executionException.getCause());
 		}
 	}
 
@@ -206,7 +206,7 @@ public class FutureConverterTest {
 
 			Assert.fail();
 		}
-		catch (InterruptedException ie) {
+		catch (InterruptedException interruptedException) {
 		}
 
 		Assert.assertFalse(currentThread.isInterrupted());
@@ -218,7 +218,7 @@ public class FutureConverterTest {
 
 			Assert.fail();
 		}
-		catch (InterruptedException ie) {
+		catch (InterruptedException interruptedException) {
 		}
 
 		Assert.assertFalse(currentThread.isInterrupted());
@@ -233,7 +233,7 @@ public class FutureConverterTest {
 
 			Assert.fail();
 		}
-		catch (TimeoutException te) {
+		catch (TimeoutException timeoutException) {
 		}
 	}
 

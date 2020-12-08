@@ -92,10 +92,9 @@ public class ServiceDependencyManager {
 		Collection<Class<?>> serviceClasses, Collection<Filter> filters) {
 
 		synchronized (_serviceDependencies) {
-			doRegisterDependencies(
-				serviceClasses.toArray(new Class<?>[serviceClasses.size()]));
+			doRegisterDependencies(serviceClasses.toArray(new Class<?>[0]));
 
-			doRegisterDependencies(filters.toArray(new Filter[filters.size()]));
+			doRegisterDependencies(filters.toArray(new Filter[0]));
 
 			for (ServiceDependency serviceDependency : _serviceDependencies) {
 				serviceDependency.open();
@@ -174,7 +173,7 @@ public class ServiceDependencyManager {
 				try {
 					_serviceDependencies.wait(timeout);
 				}
-				catch (InterruptedException ie) {
+				catch (InterruptedException interruptedException) {
 				}
 			}
 		}

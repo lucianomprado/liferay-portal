@@ -21,11 +21,12 @@ import com.liferay.portal.kernel.social.BaseSocialActivityManager;
 import com.liferay.social.kernel.service.SocialActivityLocalService;
 
 /**
- * @author Adolfo Pérez
+ * @author     Adolfo Pérez
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  */
-public class DefaultSocialActivityManager
-	<T extends ClassedModel & GroupedModel>
-		extends BaseSocialActivityManager<T> {
+@Deprecated
+public class DefaultSocialActivityManager<T extends ClassedModel & GroupedModel>
+	extends BaseSocialActivityManager<T> {
 
 	@Override
 	protected SocialActivityLocalService getSocialActivityLocalService() {

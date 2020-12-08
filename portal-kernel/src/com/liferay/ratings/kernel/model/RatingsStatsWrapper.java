@@ -14,18 +14,14 @@
 
 package com.liferay.ratings.kernel.model;
 
-import aQute.bnd.annotation.ProviderType;
-
-import com.liferay.expando.kernel.model.ExpandoBridge;
-
 import com.liferay.portal.kernel.model.ModelWrapper;
-import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.model.wrapper.BaseModelWrapper;
 
-import java.io.Serializable;
-
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 /**
  * <p>
@@ -36,29 +32,24 @@ import java.util.Objects;
  * @see RatingsStats
  * @generated
  */
-@ProviderType
-public class RatingsStatsWrapper implements RatingsStats,
-	ModelWrapper<RatingsStats> {
+public class RatingsStatsWrapper
+	extends BaseModelWrapper<RatingsStats>
+	implements ModelWrapper<RatingsStats>, RatingsStats {
+
 	public RatingsStatsWrapper(RatingsStats ratingsStats) {
-		_ratingsStats = ratingsStats;
-	}
-
-	@Override
-	public Class<?> getModelClass() {
-		return RatingsStats.class;
-	}
-
-	@Override
-	public String getModelClassName() {
-		return RatingsStats.class.getName();
+		super(ratingsStats);
 	}
 
 	@Override
 	public Map<String, Object> getModelAttributes() {
 		Map<String, Object> attributes = new HashMap<String, Object>();
 
+		attributes.put("mvccVersion", getMvccVersion());
+		attributes.put("ctCollectionId", getCtCollectionId());
 		attributes.put("statsId", getStatsId());
 		attributes.put("companyId", getCompanyId());
+		attributes.put("createDate", getCreateDate());
+		attributes.put("modifiedDate", getModifiedDate());
 		attributes.put("classNameId", getClassNameId());
 		attributes.put("classPK", getClassPK());
 		attributes.put("totalEntries", getTotalEntries());
@@ -70,6 +61,18 @@ public class RatingsStatsWrapper implements RatingsStats,
 
 	@Override
 	public void setModelAttributes(Map<String, Object> attributes) {
+		Long mvccVersion = (Long)attributes.get("mvccVersion");
+
+		if (mvccVersion != null) {
+			setMvccVersion(mvccVersion);
+		}
+
+		Long ctCollectionId = (Long)attributes.get("ctCollectionId");
+
+		if (ctCollectionId != null) {
+			setCtCollectionId(ctCollectionId);
+		}
+
 		Long statsId = (Long)attributes.get("statsId");
 
 		if (statsId != null) {
@@ -80,6 +83,18 @@ public class RatingsStatsWrapper implements RatingsStats,
 
 		if (companyId != null) {
 			setCompanyId(companyId);
+		}
+
+		Date createDate = (Date)attributes.get("createDate");
+
+		if (createDate != null) {
+			setCreateDate(createDate);
+		}
+
+		Date modifiedDate = (Date)attributes.get("modifiedDate");
+
+		if (modifiedDate != null) {
+			setModifiedDate(modifiedDate);
 		}
 
 		Long classNameId = (Long)attributes.get("classNameId");
@@ -113,320 +128,283 @@ public class RatingsStatsWrapper implements RatingsStats,
 		}
 	}
 
-	@Override
-	public RatingsStats toEscapedModel() {
-		return new RatingsStatsWrapper(_ratingsStats.toEscapedModel());
-	}
-
-	@Override
-	public RatingsStats toUnescapedModel() {
-		return new RatingsStatsWrapper(_ratingsStats.toUnescapedModel());
-	}
-
-	@Override
-	public boolean isCachedModel() {
-		return _ratingsStats.isCachedModel();
-	}
-
-	@Override
-	public boolean isEscapedModel() {
-		return _ratingsStats.isEscapedModel();
-	}
-
-	@Override
-	public boolean isNew() {
-		return _ratingsStats.isNew();
-	}
-
-	@Override
-	public ExpandoBridge getExpandoBridge() {
-		return _ratingsStats.getExpandoBridge();
-	}
-
-	@Override
-	public com.liferay.portal.kernel.model.CacheModel<RatingsStats> toCacheModel() {
-		return _ratingsStats.toCacheModel();
-	}
-
 	/**
-	* Returns the average score of this ratings stats.
-	*
-	* @return the average score of this ratings stats
-	*/
+	 * Returns the average score of this ratings stats.
+	 *
+	 * @return the average score of this ratings stats
+	 */
 	@Override
 	public double getAverageScore() {
-		return _ratingsStats.getAverageScore();
+		return model.getAverageScore();
 	}
 
 	/**
-	* Returns the total score of this ratings stats.
-	*
-	* @return the total score of this ratings stats
-	*/
+	 * Returns the fully qualified class name of this ratings stats.
+	 *
+	 * @return the fully qualified class name of this ratings stats
+	 */
 	@Override
-	public double getTotalScore() {
-		return _ratingsStats.getTotalScore();
-	}
-
-	@Override
-	public int compareTo(RatingsStats ratingsStats) {
-		return _ratingsStats.compareTo(ratingsStats);
+	public String getClassName() {
+		return model.getClassName();
 	}
 
 	/**
-	* Returns the total entries of this ratings stats.
-	*
-	* @return the total entries of this ratings stats
-	*/
-	@Override
-	public int getTotalEntries() {
-		return _ratingsStats.getTotalEntries();
-	}
-
-	@Override
-	public int hashCode() {
-		return _ratingsStats.hashCode();
-	}
-
-	@Override
-	public Serializable getPrimaryKeyObj() {
-		return _ratingsStats.getPrimaryKeyObj();
-	}
-
-	@Override
-	public java.lang.Object clone() {
-		return new RatingsStatsWrapper((RatingsStats)_ratingsStats.clone());
-	}
-
-	/**
-	* Returns the fully qualified class name of this ratings stats.
-	*
-	* @return the fully qualified class name of this ratings stats
-	*/
-	@Override
-	public java.lang.String getClassName() {
-		return _ratingsStats.getClassName();
-	}
-
-	@Override
-	public java.lang.String toString() {
-		return _ratingsStats.toString();
-	}
-
-	@Override
-	public java.lang.String toXmlString() {
-		return _ratingsStats.toXmlString();
-	}
-
-	/**
-	* Returns the class name ID of this ratings stats.
-	*
-	* @return the class name ID of this ratings stats
-	*/
+	 * Returns the class name ID of this ratings stats.
+	 *
+	 * @return the class name ID of this ratings stats
+	 */
 	@Override
 	public long getClassNameId() {
-		return _ratingsStats.getClassNameId();
+		return model.getClassNameId();
 	}
 
 	/**
-	* Returns the class pk of this ratings stats.
-	*
-	* @return the class pk of this ratings stats
-	*/
+	 * Returns the class pk of this ratings stats.
+	 *
+	 * @return the class pk of this ratings stats
+	 */
 	@Override
 	public long getClassPK() {
-		return _ratingsStats.getClassPK();
+		return model.getClassPK();
 	}
 
 	/**
-	* Returns the company ID of this ratings stats.
-	*
-	* @return the company ID of this ratings stats
-	*/
+	 * Returns the company ID of this ratings stats.
+	 *
+	 * @return the company ID of this ratings stats
+	 */
 	@Override
 	public long getCompanyId() {
-		return _ratingsStats.getCompanyId();
+		return model.getCompanyId();
 	}
 
 	/**
-	* Returns the primary key of this ratings stats.
-	*
-	* @return the primary key of this ratings stats
-	*/
+	 * Returns the create date of this ratings stats.
+	 *
+	 * @return the create date of this ratings stats
+	 */
+	@Override
+	public Date getCreateDate() {
+		return model.getCreateDate();
+	}
+
+	/**
+	 * Returns the ct collection ID of this ratings stats.
+	 *
+	 * @return the ct collection ID of this ratings stats
+	 */
+	@Override
+	public long getCtCollectionId() {
+		return model.getCtCollectionId();
+	}
+
+	/**
+	 * Returns the modified date of this ratings stats.
+	 *
+	 * @return the modified date of this ratings stats
+	 */
+	@Override
+	public Date getModifiedDate() {
+		return model.getModifiedDate();
+	}
+
+	/**
+	 * Returns the mvcc version of this ratings stats.
+	 *
+	 * @return the mvcc version of this ratings stats
+	 */
+	@Override
+	public long getMvccVersion() {
+		return model.getMvccVersion();
+	}
+
+	/**
+	 * Returns the primary key of this ratings stats.
+	 *
+	 * @return the primary key of this ratings stats
+	 */
 	@Override
 	public long getPrimaryKey() {
-		return _ratingsStats.getPrimaryKey();
+		return model.getPrimaryKey();
 	}
 
 	/**
-	* Returns the stats ID of this ratings stats.
-	*
-	* @return the stats ID of this ratings stats
-	*/
+	 * Returns the stats ID of this ratings stats.
+	 *
+	 * @return the stats ID of this ratings stats
+	 */
 	@Override
 	public long getStatsId() {
-		return _ratingsStats.getStatsId();
+		return model.getStatsId();
+	}
+
+	/**
+	 * Returns the total entries of this ratings stats.
+	 *
+	 * @return the total entries of this ratings stats
+	 */
+	@Override
+	public int getTotalEntries() {
+		return model.getTotalEntries();
+	}
+
+	/**
+	 * Returns the total score of this ratings stats.
+	 *
+	 * @return the total score of this ratings stats
+	 */
+	@Override
+	public double getTotalScore() {
+		return model.getTotalScore();
 	}
 
 	@Override
 	public void persist() {
-		_ratingsStats.persist();
+		model.persist();
 	}
 
 	/**
-	* Sets the average score of this ratings stats.
-	*
-	* @param averageScore the average score of this ratings stats
-	*/
+	 * Sets the average score of this ratings stats.
+	 *
+	 * @param averageScore the average score of this ratings stats
+	 */
 	@Override
 	public void setAverageScore(double averageScore) {
-		_ratingsStats.setAverageScore(averageScore);
+		model.setAverageScore(averageScore);
 	}
 
 	@Override
-	public void setCachedModel(boolean cachedModel) {
-		_ratingsStats.setCachedModel(cachedModel);
-	}
-
-	@Override
-	public void setClassName(java.lang.String className) {
-		_ratingsStats.setClassName(className);
+	public void setClassName(String className) {
+		model.setClassName(className);
 	}
 
 	/**
-	* Sets the class name ID of this ratings stats.
-	*
-	* @param classNameId the class name ID of this ratings stats
-	*/
+	 * Sets the class name ID of this ratings stats.
+	 *
+	 * @param classNameId the class name ID of this ratings stats
+	 */
 	@Override
 	public void setClassNameId(long classNameId) {
-		_ratingsStats.setClassNameId(classNameId);
+		model.setClassNameId(classNameId);
 	}
 
 	/**
-	* Sets the class pk of this ratings stats.
-	*
-	* @param classPK the class pk of this ratings stats
-	*/
+	 * Sets the class pk of this ratings stats.
+	 *
+	 * @param classPK the class pk of this ratings stats
+	 */
 	@Override
 	public void setClassPK(long classPK) {
-		_ratingsStats.setClassPK(classPK);
+		model.setClassPK(classPK);
 	}
 
 	/**
-	* Sets the company ID of this ratings stats.
-	*
-	* @param companyId the company ID of this ratings stats
-	*/
+	 * Sets the company ID of this ratings stats.
+	 *
+	 * @param companyId the company ID of this ratings stats
+	 */
 	@Override
 	public void setCompanyId(long companyId) {
-		_ratingsStats.setCompanyId(companyId);
-	}
-
-	@Override
-	public void setExpandoBridgeAttributes(ExpandoBridge expandoBridge) {
-		_ratingsStats.setExpandoBridgeAttributes(expandoBridge);
-	}
-
-	@Override
-	public void setExpandoBridgeAttributes(
-		com.liferay.portal.kernel.model.BaseModel<?> baseModel) {
-		_ratingsStats.setExpandoBridgeAttributes(baseModel);
-	}
-
-	@Override
-	public void setExpandoBridgeAttributes(ServiceContext serviceContext) {
-		_ratingsStats.setExpandoBridgeAttributes(serviceContext);
-	}
-
-	@Override
-	public void setNew(boolean n) {
-		_ratingsStats.setNew(n);
+		model.setCompanyId(companyId);
 	}
 
 	/**
-	* Sets the primary key of this ratings stats.
-	*
-	* @param primaryKey the primary key of this ratings stats
-	*/
+	 * Sets the create date of this ratings stats.
+	 *
+	 * @param createDate the create date of this ratings stats
+	 */
+	@Override
+	public void setCreateDate(Date createDate) {
+		model.setCreateDate(createDate);
+	}
+
+	/**
+	 * Sets the ct collection ID of this ratings stats.
+	 *
+	 * @param ctCollectionId the ct collection ID of this ratings stats
+	 */
+	@Override
+	public void setCtCollectionId(long ctCollectionId) {
+		model.setCtCollectionId(ctCollectionId);
+	}
+
+	/**
+	 * Sets the modified date of this ratings stats.
+	 *
+	 * @param modifiedDate the modified date of this ratings stats
+	 */
+	@Override
+	public void setModifiedDate(Date modifiedDate) {
+		model.setModifiedDate(modifiedDate);
+	}
+
+	/**
+	 * Sets the mvcc version of this ratings stats.
+	 *
+	 * @param mvccVersion the mvcc version of this ratings stats
+	 */
+	@Override
+	public void setMvccVersion(long mvccVersion) {
+		model.setMvccVersion(mvccVersion);
+	}
+
+	/**
+	 * Sets the primary key of this ratings stats.
+	 *
+	 * @param primaryKey the primary key of this ratings stats
+	 */
 	@Override
 	public void setPrimaryKey(long primaryKey) {
-		_ratingsStats.setPrimaryKey(primaryKey);
-	}
-
-	@Override
-	public void setPrimaryKeyObj(Serializable primaryKeyObj) {
-		_ratingsStats.setPrimaryKeyObj(primaryKeyObj);
+		model.setPrimaryKey(primaryKey);
 	}
 
 	/**
-	* Sets the stats ID of this ratings stats.
-	*
-	* @param statsId the stats ID of this ratings stats
-	*/
+	 * Sets the stats ID of this ratings stats.
+	 *
+	 * @param statsId the stats ID of this ratings stats
+	 */
 	@Override
 	public void setStatsId(long statsId) {
-		_ratingsStats.setStatsId(statsId);
+		model.setStatsId(statsId);
 	}
 
 	/**
-	* Sets the total entries of this ratings stats.
-	*
-	* @param totalEntries the total entries of this ratings stats
-	*/
+	 * Sets the total entries of this ratings stats.
+	 *
+	 * @param totalEntries the total entries of this ratings stats
+	 */
 	@Override
 	public void setTotalEntries(int totalEntries) {
-		_ratingsStats.setTotalEntries(totalEntries);
+		model.setTotalEntries(totalEntries);
 	}
 
 	/**
-	* Sets the total score of this ratings stats.
-	*
-	* @param totalScore the total score of this ratings stats
-	*/
+	 * Sets the total score of this ratings stats.
+	 *
+	 * @param totalScore the total score of this ratings stats
+	 */
 	@Override
 	public void setTotalScore(double totalScore) {
-		_ratingsStats.setTotalScore(totalScore);
+		model.setTotalScore(totalScore);
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
-			return true;
-		}
+	public Map<String, Function<RatingsStats, Object>>
+		getAttributeGetterFunctions() {
 
-		if (!(obj instanceof RatingsStatsWrapper)) {
-			return false;
-		}
-
-		RatingsStatsWrapper ratingsStatsWrapper = (RatingsStatsWrapper)obj;
-
-		if (Objects.equals(_ratingsStats, ratingsStatsWrapper._ratingsStats)) {
-			return true;
-		}
-
-		return false;
+		return model.getAttributeGetterFunctions();
 	}
 
 	@Override
-	public RatingsStats getWrappedModel() {
-		return _ratingsStats;
+	public Map<String, BiConsumer<RatingsStats, Object>>
+		getAttributeSetterBiConsumers() {
+
+		return model.getAttributeSetterBiConsumers();
 	}
 
 	@Override
-	public boolean isEntityCacheEnabled() {
-		return _ratingsStats.isEntityCacheEnabled();
+	protected RatingsStatsWrapper wrap(RatingsStats ratingsStats) {
+		return new RatingsStatsWrapper(ratingsStats);
 	}
 
-	@Override
-	public boolean isFinderCacheEnabled() {
-		return _ratingsStats.isFinderCacheEnabled();
-	}
-
-	@Override
-	public void resetOriginalValues() {
-		_ratingsStats.resetOriginalValues();
-	}
-
-	private final RatingsStats _ratingsStats;
 }

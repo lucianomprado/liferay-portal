@@ -39,14 +39,14 @@ public class TaskQueueTest {
 
 			Assert.fail();
 		}
-		catch (IllegalArgumentException iae) {
+		catch (IllegalArgumentException illegalArgumentException) {
 		}
 
 		try {
 			new TaskQueue<Object>(-1);
 			Assert.fail();
 		}
-		catch (IllegalArgumentException iae) {
+		catch (IllegalArgumentException illegalArgumentException) {
 		}
 
 		TaskQueue<Object> taskQueue = new TaskQueue<>(10);
@@ -67,7 +67,7 @@ public class TaskQueueTest {
 
 			Assert.fail();
 		}
-		catch (NullPointerException npe) {
+		catch (NullPointerException nullPointerException) {
 		}
 
 		Object object1 = new Object();
@@ -87,10 +87,10 @@ public class TaskQueueTest {
 		taskQueue.drainTo(set);
 
 		Assert.assertEquals(set.toString(), 4, set.size());
-		Assert.assertTrue(set.contains(object1));
-		Assert.assertTrue(set.contains(object2));
-		Assert.assertTrue(set.contains(object3));
-		Assert.assertTrue(set.contains(object4));
+		Assert.assertTrue(set.toString(), set.contains(object1));
+		Assert.assertTrue(set.toString(), set.contains(object2));
+		Assert.assertTrue(set.toString(), set.contains(object3));
+		Assert.assertTrue(set.toString(), set.contains(object4));
 
 		object1 = new Object();
 		object2 = new Object();
@@ -122,7 +122,7 @@ public class TaskQueueTest {
 
 			Assert.fail();
 		}
-		catch (IllegalStateException ise) {
+		catch (IllegalStateException illegalStateException) {
 		}
 
 		Assert.assertEquals(list.toString(), 2, list.size());
@@ -153,7 +153,7 @@ public class TaskQueueTest {
 
 			Assert.fail();
 		}
-		catch (NullPointerException npe) {
+		catch (NullPointerException nullPointerException) {
 		}
 
 		taskQueue = new TaskQueue<>(10);
@@ -163,7 +163,7 @@ public class TaskQueueTest {
 
 			Assert.fail();
 		}
-		catch (NullPointerException npe) {
+		catch (NullPointerException nullPointerException) {
 		}
 
 		taskQueue = new TaskQueue<>(10);
@@ -173,7 +173,7 @@ public class TaskQueueTest {
 
 			Assert.fail();
 		}
-		catch (IllegalArgumentException iae) {
+		catch (IllegalArgumentException illegalArgumentException) {
 		}
 
 		taskQueue = new TaskQueue<>(10);
@@ -308,7 +308,7 @@ public class TaskQueueTest {
 
 							Assert.fail();
 						}
-						catch (InterruptedException ie) {
+						catch (InterruptedException interruptedException) {
 						}
 
 						return null;

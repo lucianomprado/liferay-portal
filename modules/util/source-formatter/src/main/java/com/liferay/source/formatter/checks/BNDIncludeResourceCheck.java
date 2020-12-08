@@ -14,9 +14,10 @@
 
 package com.liferay.source.formatter.checks;
 
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.tools.ImportPackage;
+import com.liferay.source.formatter.checks.util.BNDSourceUtil;
 
 import java.util.Comparator;
 import java.util.regex.Matcher;
@@ -28,7 +29,7 @@ import java.util.regex.Pattern;
 public class BNDIncludeResourceCheck extends BaseFileCheck {
 
 	@Override
-	public boolean isModulesCheck() {
+	public boolean isModuleSourceCheck() {
 		return true;
 	}
 
@@ -37,26 +38,60 @@ public class BNDIncludeResourceCheck extends BaseFileCheck {
 		String fileName, String absolutePath, String content) {
 
 		if (!fileName.endsWith("test-bnd.bnd")) {
-			content = _formatIncludeResource(content);
+			content = _formatIncludeResource(fileName, content);
+		}
+
+		if (fileName.endsWith("-test/bnd.bnd") &&
+			isAttributeValue(_CHECK_TEST_INCLUDE_RESOURCE_KEY, absolutePath)) {
+
+			_checkIncludeResource(fileName, content);
 		}
 
 		return content;
 	}
 
-	private String _formatIncludeResource(String content) {
-		Matcher matcher = _includeResourcePattern.matcher(content);
+	private void _checkIncludeResource(String fileName, String content) {
+		String includeResource = BNDSourceUtil.getDefinitionValue(
+			content, "-includeresource");
 
-		if (!matcher.find()) {
+		if ((includeResource != null) &&
+			includeResource.contains("test-classes/integration")) {
+
+			addMessage(
+				fileName,
+				"Do not use 'test-classes/integration' in bnd.bnd in test " +
+					"modules");
+		}
+	}
+
+	private String _formatIncludeResource(String fileName, String content) {
+		if (fileName.endsWith("/bnd.bnd") &&
+			!fileName.endsWith("-test/bnd.bnd")) {
+
+			Matcher matcher = _includeDashResourcePattern.matcher(content);
+
+			if (matcher.find()) {
+				String replacement = StringUtil.replace(
+					matcher.group(), "Include-Resource:", "-includeresource:");
+
+				return StringUtil.replace(
+					content, matcher.group(), replacement);
+			}
+		}
+
+		Matcher matcher1 = _includeResourcePattern.matcher(content);
+
+		if (!matcher1.find()) {
 			return content;
 		}
 
-		String includeResources = matcher.group();
+		String includeResources = matcher1.group();
 
-		matcher = _includeResourceJarPattern.matcher(includeResources);
+		matcher1 = _includeResourceJarPattern.matcher(includeResources);
 
-		if (matcher.find()) {
+		if (matcher1.find()) {
 			String replacement = StringUtil.replace(
-				includeResources, matcher.group(), "-[0-9]*.jar");
+				includeResources, matcher1.group(), "-[0-9]*.jar");
 
 			return StringUtil.replace(content, includeResources, replacement);
 		}
@@ -75,18 +110,18 @@ public class BNDIncludeResourceCheck extends BaseFileCheck {
 			String beforeIncludeResourceDir = matcher2.group(1);
 
 			if (!beforeIncludeResourceDir.equals("\t")) {
-				return StringUtil.replace(
-					content, includeResources, StringPool.BLANK);
+				return StringUtil.removeSubstring(content, includeResources);
 			}
 
 			String afterIncludeResourceDir = matcher2.group(2);
 
 			int x = includeResources.lastIndexOf("\\", matcher2.start());
-			int y = matcher2.end();
 
 			String replacement = null;
 
 			if (afterIncludeResourceDir.equals(",\\\n")) {
+				int y = matcher2.end();
+
 				replacement =
 					includeResources.substring(0, x + 1) +
 						includeResources.substring(y - 1);
@@ -144,17 +179,20 @@ public class BNDIncludeResourceCheck extends BaseFileCheck {
 		return content;
 	}
 
-	private static final String[] _INCLUDE_RESOURCE_DIRS_BLACKLIST =
-		new String[] {
-			"classes",
-			"META-INF/resources=src/main/resources/META-INF/resources",
-			"META-INF/resources/content=src/main/resources/content",
-			"WEB-INF=src/main/resources/WEB-INF"
-		};
+	private static final String _CHECK_TEST_INCLUDE_RESOURCE_KEY =
+		"checkTestIncludeResource";
 
-	private final Pattern _includeResourceJarPattern = Pattern.compile(
+	private static final String[] _INCLUDE_RESOURCE_DIRS_BLACKLIST = {
+		"classes", "META-INF/resources=src/main/resources/META-INF/resources",
+		"META-INF/resources/content=src/main/resources/content",
+		"WEB-INF=src/main/resources/WEB-INF"
+	};
+
+	private static final Pattern _includeDashResourcePattern = Pattern.compile(
+		"^Include-Resource:.+", Pattern.MULTILINE);
+	private static final Pattern _includeResourceJarPattern = Pattern.compile(
 		"-[0-9\\.]+\\.jar");
-	private final Pattern _includeResourcePattern = Pattern.compile(
+	private static final Pattern _includeResourcePattern = Pattern.compile(
 		"^(-includeresource|Include-Resource):[\\s\\S]*?([^\\\\]\n|\\Z)",
 		Pattern.MULTILINE);
 

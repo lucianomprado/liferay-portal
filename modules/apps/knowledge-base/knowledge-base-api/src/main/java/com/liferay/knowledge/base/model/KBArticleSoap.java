@@ -14,8 +14,6 @@
 
 package com.liferay.knowledge.base.model;
 
-import aQute.bnd.annotation.ProviderType;
-
 import java.io.Serializable;
 
 import java.util.ArrayList;
@@ -26,14 +24,16 @@ import java.util.List;
  * This class is used by SOAP remote services, specifically {@link com.liferay.knowledge.base.service.http.KBArticleServiceSoap}.
  *
  * @author Brian Wing Shun Chan
- * @see com.liferay.knowledge.base.service.http.KBArticleServiceSoap
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
-@ProviderType
+@Deprecated
 public class KBArticleSoap implements Serializable {
+
 	public static KBArticleSoap toSoapModel(KBArticle model) {
 		KBArticleSoap soapModel = new KBArticleSoap();
 
+		soapModel.setMvccVersion(model.getMvccVersion());
 		soapModel.setUuid(model.getUuid());
 		soapModel.setKbArticleId(model.getKbArticleId());
 		soapModel.setResourcePrimKey(model.getResourcePrimKey());
@@ -44,7 +44,8 @@ public class KBArticleSoap implements Serializable {
 		soapModel.setCreateDate(model.getCreateDate());
 		soapModel.setModifiedDate(model.getModifiedDate());
 		soapModel.setRootResourcePrimKey(model.getRootResourcePrimKey());
-		soapModel.setParentResourceClassNameId(model.getParentResourceClassNameId());
+		soapModel.setParentResourceClassNameId(
+			model.getParentResourceClassNameId());
 		soapModel.setParentResourcePrimKey(model.getParentResourcePrimKey());
 		soapModel.setKbFolderId(model.getKbFolderId());
 		soapModel.setVersion(model.getVersion());
@@ -54,9 +55,8 @@ public class KBArticleSoap implements Serializable {
 		soapModel.setDescription(model.getDescription());
 		soapModel.setPriority(model.getPriority());
 		soapModel.setSections(model.getSections());
-		soapModel.setViewCount(model.getViewCount());
-		soapModel.setLatest(model.getLatest());
-		soapModel.setMain(model.getMain());
+		soapModel.setLatest(model.isLatest());
+		soapModel.setMain(model.isMain());
 		soapModel.setSourceURL(model.getSourceURL());
 		soapModel.setLastPublishDate(model.getLastPublishDate());
 		soapModel.setStatus(model.getStatus());
@@ -95,7 +95,8 @@ public class KBArticleSoap implements Serializable {
 	}
 
 	public static KBArticleSoap[] toSoapModels(List<KBArticle> models) {
-		List<KBArticleSoap> soapModels = new ArrayList<KBArticleSoap>(models.size());
+		List<KBArticleSoap> soapModels = new ArrayList<KBArticleSoap>(
+			models.size());
 
 		for (KBArticle model : models) {
 			soapModels.add(toSoapModel(model));
@@ -113,6 +114,14 @@ public class KBArticleSoap implements Serializable {
 
 	public void setPrimaryKey(long pk) {
 		setKbArticleId(pk);
+	}
+
+	public long getMvccVersion() {
+		return _mvccVersion;
+	}
+
+	public void setMvccVersion(long mvccVersion) {
+		_mvccVersion = mvccVersion;
 	}
 
 	public String getUuid() {
@@ -275,14 +284,6 @@ public class KBArticleSoap implements Serializable {
 		_sections = sections;
 	}
 
-	public int getViewCount() {
-		return _viewCount;
-	}
-
-	public void setViewCount(int viewCount) {
-		_viewCount = viewCount;
-	}
-
 	public boolean getLatest() {
 		return _latest;
 	}
@@ -355,6 +356,7 @@ public class KBArticleSoap implements Serializable {
 		_statusDate = statusDate;
 	}
 
+	private long _mvccVersion;
 	private String _uuid;
 	private long _kbArticleId;
 	private long _resourcePrimKey;
@@ -375,7 +377,6 @@ public class KBArticleSoap implements Serializable {
 	private String _description;
 	private double _priority;
 	private String _sections;
-	private int _viewCount;
 	private boolean _latest;
 	private boolean _main;
 	private String _sourceURL;
@@ -384,4 +385,5 @@ public class KBArticleSoap implements Serializable {
 	private long _statusByUserId;
 	private String _statusByUserName;
 	private Date _statusDate;
+
 }

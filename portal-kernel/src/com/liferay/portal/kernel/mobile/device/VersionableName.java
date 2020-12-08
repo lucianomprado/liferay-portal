@@ -14,9 +14,7 @@
 
 package com.liferay.portal.kernel.mobile.device;
 
-import aQute.bnd.annotation.ProviderType;
-
-import com.liferay.portal.kernel.util.StringBundler;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 
@@ -32,7 +30,6 @@ import java.util.TreeSet;
  * @author Milen Dyankov
  * @author Michael C. Han
  */
-@ProviderType
 public class VersionableName
 	implements Comparable<VersionableName>, Serializable {
 
@@ -72,21 +69,23 @@ public class VersionableName
 
 	@Override
 	public int compareTo(VersionableName versionableName) {
-		return StringUtil.toUpperCase(_name).compareTo(
+		String upperCaseName = StringUtil.toUpperCase(_name);
+
+		return upperCaseName.compareTo(
 			StringUtil.toUpperCase(versionableName.getName()));
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
+	public boolean equals(Object object) {
+		if (this == object) {
 			return true;
 		}
 
-		if (!(obj instanceof VersionableName)) {
+		if (!(object instanceof VersionableName)) {
 			return false;
 		}
 
-		VersionableName versionableName = (VersionableName)obj;
+		VersionableName versionableName = (VersionableName)object;
 
 		if (Objects.equals(_name, versionableName._name)) {
 			return true;
@@ -112,9 +111,8 @@ public class VersionableName
 		if (_name != null) {
 			return _name.hashCode();
 		}
-		else {
-			return 0;
-		}
+
+		return 0;
 	}
 
 	@Override

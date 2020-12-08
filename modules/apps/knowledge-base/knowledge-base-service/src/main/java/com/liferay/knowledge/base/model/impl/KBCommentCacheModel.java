@@ -14,14 +14,11 @@
 
 package com.liferay.knowledge.base.model.impl;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.knowledge.base.model.KBComment;
-
+import com.liferay.petra.lang.HashUtil;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.model.CacheModel;
-import com.liferay.portal.kernel.util.HashUtil;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.portal.kernel.model.MVCCModel;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -34,25 +31,26 @@ import java.util.Date;
  * The cache model class for representing KBComment in entity cache.
  *
  * @author Brian Wing Shun Chan
- * @see KBComment
  * @generated
  */
-@ProviderType
-public class KBCommentCacheModel implements CacheModel<KBComment>,
-	Externalizable {
+public class KBCommentCacheModel
+	implements CacheModel<KBComment>, Externalizable, MVCCModel {
+
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
+	public boolean equals(Object object) {
+		if (this == object) {
 			return true;
 		}
 
-		if (!(obj instanceof KBCommentCacheModel)) {
+		if (!(object instanceof KBCommentCacheModel)) {
 			return false;
 		}
 
-		KBCommentCacheModel kbCommentCacheModel = (KBCommentCacheModel)obj;
+		KBCommentCacheModel kbCommentCacheModel = (KBCommentCacheModel)object;
 
-		if (kbCommentId == kbCommentCacheModel.kbCommentId) {
+		if ((kbCommentId == kbCommentCacheModel.kbCommentId) &&
+			(mvccVersion == kbCommentCacheModel.mvccVersion)) {
+
 			return true;
 		}
 
@@ -61,14 +59,28 @@ public class KBCommentCacheModel implements CacheModel<KBComment>,
 
 	@Override
 	public int hashCode() {
-		return HashUtil.hash(0, kbCommentId);
+		int hashCode = HashUtil.hash(0, kbCommentId);
+
+		return HashUtil.hash(hashCode, mvccVersion);
+	}
+
+	@Override
+	public long getMvccVersion() {
+		return mvccVersion;
+	}
+
+	@Override
+	public void setMvccVersion(long mvccVersion) {
+		this.mvccVersion = mvccVersion;
 	}
 
 	@Override
 	public String toString() {
-		StringBundler sb = new StringBundler(29);
+		StringBundler sb = new StringBundler(31);
 
-		sb.append("{uuid=");
+		sb.append("{mvccVersion=");
+		sb.append(mvccVersion);
+		sb.append(", uuid=");
 		sb.append(uuid);
 		sb.append(", kbCommentId=");
 		sb.append(kbCommentId);
@@ -105,8 +117,10 @@ public class KBCommentCacheModel implements CacheModel<KBComment>,
 	public KBComment toEntityModel() {
 		KBCommentImpl kbCommentImpl = new KBCommentImpl();
 
+		kbCommentImpl.setMvccVersion(mvccVersion);
+
 		if (uuid == null) {
-			kbCommentImpl.setUuid(StringPool.BLANK);
+			kbCommentImpl.setUuid("");
 		}
 		else {
 			kbCommentImpl.setUuid(uuid);
@@ -118,7 +132,7 @@ public class KBCommentCacheModel implements CacheModel<KBComment>,
 		kbCommentImpl.setUserId(userId);
 
 		if (userName == null) {
-			kbCommentImpl.setUserName(StringPool.BLANK);
+			kbCommentImpl.setUserName("");
 		}
 		else {
 			kbCommentImpl.setUserName(userName);
@@ -142,7 +156,7 @@ public class KBCommentCacheModel implements CacheModel<KBComment>,
 		kbCommentImpl.setClassPK(classPK);
 
 		if (content == null) {
-			kbCommentImpl.setContent(StringPool.BLANK);
+			kbCommentImpl.setContent("");
 		}
 		else {
 			kbCommentImpl.setContent(content);
@@ -166,6 +180,7 @@ public class KBCommentCacheModel implements CacheModel<KBComment>,
 
 	@Override
 	public void readExternal(ObjectInput objectInput) throws IOException {
+		mvccVersion = objectInput.readLong();
 		uuid = objectInput.readUTF();
 
 		kbCommentId = objectInput.readLong();
@@ -191,10 +206,11 @@ public class KBCommentCacheModel implements CacheModel<KBComment>,
 	}
 
 	@Override
-	public void writeExternal(ObjectOutput objectOutput)
-		throws IOException {
+	public void writeExternal(ObjectOutput objectOutput) throws IOException {
+		objectOutput.writeLong(mvccVersion);
+
 		if (uuid == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(uuid);
@@ -209,7 +225,7 @@ public class KBCommentCacheModel implements CacheModel<KBComment>,
 		objectOutput.writeLong(userId);
 
 		if (userName == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(userName);
@@ -223,7 +239,7 @@ public class KBCommentCacheModel implements CacheModel<KBComment>,
 		objectOutput.writeLong(classPK);
 
 		if (content == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(content);
@@ -235,6 +251,7 @@ public class KBCommentCacheModel implements CacheModel<KBComment>,
 		objectOutput.writeInt(status);
 	}
 
+	public long mvccVersion;
 	public String uuid;
 	public long kbCommentId;
 	public long groupId;
@@ -249,4 +266,5 @@ public class KBCommentCacheModel implements CacheModel<KBComment>,
 	public int userRating;
 	public long lastPublishDate;
 	public int status;
+
 }

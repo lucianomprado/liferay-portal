@@ -14,8 +14,6 @@
 
 package com.liferay.portal.model.impl;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.portal.kernel.model.PortletItem;
 import com.liferay.portal.kernel.service.PortletItemLocalServiceUtil;
 
@@ -31,13 +29,13 @@ import com.liferay.portal.kernel.service.PortletItemLocalServiceUtil;
  * @see PortletItem
  * @generated
  */
-@ProviderType
-public abstract class PortletItemBaseImpl extends PortletItemModelImpl
-	implements PortletItem {
+public abstract class PortletItemBaseImpl
+	extends PortletItemModelImpl implements PortletItem {
+
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. All methods that expect a portlet item model instance should use the {@link PortletItem} interface instead.
+	 * Never modify or reference this class directly. All methods that expect a portlet item model instance should use the <code>PortletItem</code> interface instead.
 	 */
 	@Override
 	public void persist() {
@@ -48,4 +46,5 @@ public abstract class PortletItemBaseImpl extends PortletItemModelImpl
 			PortletItemLocalServiceUtil.updatePortletItem(this);
 		}
 	}
+
 }

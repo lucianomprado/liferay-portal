@@ -14,9 +14,11 @@
 
 package com.liferay.portal.fabric.netty.fileserver;
 
+import com.liferay.petra.io.BigEndianCodec;
+import com.liferay.petra.io.unsync.UnsyncByteArrayInputStream;
+import com.liferay.petra.reflect.ReflectionUtil;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.fabric.netty.fileserver.handlers.FileServerTestUtil;
-import com.liferay.portal.kernel.io.BigEndianCodec;
-import com.liferay.portal.kernel.io.unsync.UnsyncByteArrayInputStream;
 import com.liferay.portal.kernel.nio.FileSystemProviderWrapper;
 import com.liferay.portal.kernel.nio.FileSystemWrapper;
 import com.liferay.portal.kernel.nio.PathWrapper;
@@ -24,8 +26,6 @@ import com.liferay.portal.kernel.test.CaptureHandler;
 import com.liferay.portal.kernel.test.JDKLoggerTestUtil;
 import com.liferay.portal.kernel.test.SwappableSecurityManager;
 import com.liferay.portal.kernel.test.rule.CodeCoverageAssertor;
-import com.liferay.portal.kernel.util.JavaDetector;
-import com.liferay.portal.kernel.util.ReflectionUtil;
 
 import java.io.File;
 import java.io.IOException;
@@ -140,13 +140,8 @@ public class FileHelperUtilTest {
 
 			Assert.fail();
 		}
-		catch (Exception e) {
-			if (JavaDetector.isJDK8()) {
-				Assert.assertSame(ioException, e.getCause());
-			}
-			else {
-				Assert.assertSame(ioException, e);
-			}
+		catch (Exception exception) {
+			Assert.assertSame(ioException, exception.getCause());
 		}
 		finally {
 			Files.delete(undeleteableFilePath);
@@ -213,8 +208,9 @@ public class FileHelperUtilTest {
 
 			Assert.fail();
 		}
-		catch (Exception e) {
-			Assert.assertSame(DirectoryNotEmptyException.class, e.getClass());
+		catch (Exception exception) {
+			Assert.assertSame(
+				DirectoryNotEmptyException.class, exception.getClass());
 		}
 		finally {
 			Files.delete(newRegularFilePath);
@@ -249,8 +245,8 @@ public class FileHelperUtilTest {
 
 			Assert.fail();
 		}
-		catch (Exception e) {
-			Assert.assertSame(ioException, e);
+		catch (Exception exception) {
+			Assert.assertSame(ioException, exception);
 		}
 		finally {
 			Files.delete(undeleteableFilePath);
@@ -284,8 +280,8 @@ public class FileHelperUtilTest {
 
 			Assert.fail();
 		}
-		catch (Exception e) {
-			Assert.assertSame(ioException, e);
+		catch (Exception exception) {
+			Assert.assertSame(ioException, exception);
 		}
 		finally {
 			Files.delete(unreadableFilePath);
@@ -304,8 +300,9 @@ public class FileHelperUtilTest {
 
 			Assert.fail();
 		}
-		catch (IOException ioe) {
-			Assert.assertSame(NoSuchFileException.class, ioe.getClass());
+		catch (IOException ioException) {
+			Assert.assertSame(
+				NoSuchFileException.class, ioException.getClass());
 		}
 
 		try {
@@ -313,8 +310,9 @@ public class FileHelperUtilTest {
 
 			Assert.fail();
 		}
-		catch (IOException ioe) {
-			Assert.assertSame(NoSuchFileException.class, ioe.getClass());
+		catch (IOException ioException) {
+			Assert.assertSame(
+				NoSuchFileException.class, ioException.getClass());
 		}
 	}
 
@@ -470,7 +468,7 @@ public class FileHelperUtilTest {
 
 			Assert.fail();
 		}
-		catch (DirectoryNotEmptyException dnee) {
+		catch (DirectoryNotEmptyException directoryNotEmptyException) {
 		}
 		finally {
 			Assert.assertTrue(Files.exists(regularToFilePath));
@@ -510,13 +508,13 @@ public class FileHelperUtilTest {
 
 			Assert.fail();
 		}
-		catch (IOException ioe) {
+		catch (IOException ioException) {
 			Assert.assertEquals(
 				"Source path " + unmoveableFromDirectoryPath +
 					" was left in an inconsistent state",
-				ioe.getMessage());
+				ioException.getMessage());
 
-			Throwable throwable = ioe.getCause();
+			Throwable throwable = ioException.getCause();
 
 			Assert.assertSame(
 				DirectoryNotEmptyException.class, throwable.getClass());
@@ -566,11 +564,12 @@ public class FileHelperUtilTest {
 
 			Assert.fail();
 		}
-		catch (IOException ioe) {
+		catch (IOException ioException) {
 			Assert.assertEquals(
-				"Zip stream for entry " + fileEntryName + " is " + actualSize +
-					" bytes but should " + annotatedSize + " bytes",
-				ioe.getMessage());
+				StringBundler.concat(
+					"Zip stream for entry ", fileEntryName, " is ", actualSize,
+					" bytes but should ", annotatedSize, " bytes"),
+				ioException.getMessage());
 		}
 	}
 
@@ -578,30 +577,30 @@ public class FileHelperUtilTest {
 	public void testUnzipImpossibleScenario() throws IOException {
 		FileSystem fileSystem = FileSystems.getDefault();
 
-		FileSystemProvider fileSystemProvider =
-			new FileSystemProviderWrapper(fileSystem.provider()) {
+		FileSystemProvider fileSystemProvider = new FileSystemProviderWrapper(
+			fileSystem.provider()) {
 
-				@Override
-				public InputStream newInputStream(
-					Path path, OpenOption... options) {
+			@Override
+			public InputStream newInputStream(
+				Path path, OpenOption... options) {
 
-					return null;
-				}
+				return null;
+			}
 
-			};
+		};
 
-		Path impossiableSourceFilePath = Paths.get("ImpossibleSourceFilePath");
+		Path impossibleSourceFilePath = Paths.get("ImpossibleSourceFilePath");
 
-		impossiableSourceFilePath = fileSystemProvider.getPath(
-			impossiableSourceFilePath.toUri());
+		impossibleSourceFilePath = fileSystemProvider.getPath(
+			impossibleSourceFilePath.toUri());
 
 		try {
 			FileHelperUtil.unzip(
-				impossiableSourceFilePath, FileHelperUtil.TEMP_DIR_PATH);
+				impossibleSourceFilePath, FileHelperUtil.TEMP_DIR_PATH);
 
 			Assert.fail();
 		}
-		catch (NullPointerException npe) {
+		catch (NullPointerException nullPointerException) {
 		}
 	}
 
@@ -611,8 +610,9 @@ public class FileHelperUtilTest {
 			FileHelperUtil.unzip(
 				Paths.get("NoSuchFile"), FileHelperUtil.TEMP_DIR_PATH);
 		}
-		catch (IOException ioe) {
-			Assert.assertSame(NoSuchFileException.class, ioe.getClass());
+		catch (IOException ioException) {
+			Assert.assertSame(
+				NoSuchFileException.class, ioException.getClass());
 		}
 	}
 
@@ -623,13 +623,13 @@ public class FileHelperUtilTest {
 
 			Assert.fail();
 		}
-		catch (NullPointerException npe) {
+		catch (NullPointerException nullPointerException) {
 		}
 	}
 
 	@Test
 	public void testUnzipUnreadableInputStream() {
-		final IOException ioException = new IOException();
+		final IOException ioException1 = new IOException();
 
 		try {
 			FileHelperUtil.unzip(
@@ -638,14 +638,14 @@ public class FileHelperUtilTest {
 
 					@Override
 					public int read() throws IOException {
-						throw ioException;
+						throw ioException1;
 					}
 
 				},
 				null);
 		}
-		catch (IOException ioe) {
-			Assert.assertSame(ioException, ioe);
+		catch (IOException ioException2) {
+			Assert.assertSame(ioException1, ioException2);
 		}
 	}
 
@@ -718,7 +718,7 @@ public class FileHelperUtilTest {
 
 			List<LogRecord> logRecords = captureHandler.getLogRecords();
 
-			Assert.assertTrue(logRecords.isEmpty());
+			Assert.assertTrue(logRecords.toString(), logRecords.isEmpty());
 
 			try (FileSystem fileSystem = FileSystems.newFileSystem(
 					zipFilePath, null)) {
@@ -733,7 +733,7 @@ public class FileHelperUtilTest {
 				FileHelperUtil.unzip(
 					zipFilePath, FileHelperUtil.TEMP_DIR_PATH));
 
-			Assert.assertTrue(logRecords.isEmpty());
+			Assert.assertTrue(logRecords.toString(), logRecords.isEmpty());
 
 			FileServerTestUtil.assertFileEquals(folderPath, unzipFolderPath);
 		}
@@ -743,17 +743,17 @@ public class FileHelperUtilTest {
 	public void testZipImpossibleScenario() throws IOException {
 		FileSystem fileSystem = FileSystems.getDefault();
 
-		FileSystemProvider fileSystemProvider =
-			new FileSystemProviderWrapper(fileSystem.provider()) {
+		FileSystemProvider fileSystemProvider = new FileSystemProviderWrapper(
+			fileSystem.provider()) {
 
-				@Override
-				public OutputStream newOutputStream(
-					Path path, OpenOption... options) {
+			@Override
+			public OutputStream newOutputStream(
+				Path path, OpenOption... options) {
 
-					return null;
-				}
+				return null;
+			}
 
-			};
+		};
 
 		Path impossiableDestDirPath = new PathWrapper(
 			FileHelperUtil.TEMP_DIR_PATH,
@@ -765,7 +765,7 @@ public class FileHelperUtilTest {
 
 			Assert.fail();
 		}
-		catch (NullPointerException npe) {
+		catch (NullPointerException nullPointerException) {
 		}
 	}
 
@@ -776,8 +776,9 @@ public class FileHelperUtilTest {
 				Paths.get("NoSuchFile"), FileHelperUtil.TEMP_DIR_PATH,
 				CompressionLevel.NO_COMPRESSION);
 		}
-		catch (IOException ioe) {
-			Assert.assertSame(NoSuchFileException.class, ioe.getClass());
+		catch (IOException ioException) {
+			Assert.assertSame(
+				NoSuchFileException.class, ioException.getClass());
 		}
 	}
 
@@ -791,7 +792,7 @@ public class FileHelperUtilTest {
 
 			Assert.fail();
 		}
-		catch (NullPointerException npe) {
+		catch (NullPointerException nullPointerException) {
 		}
 	}
 
@@ -819,8 +820,8 @@ public class FileHelperUtilTest {
 				file.deleteOnExit();
 			}
 		}
-		catch (IOException ioe) {
-			ReflectionUtil.throwException(ioe);
+		catch (IOException ioException) {
+			ReflectionUtil.throwException(ioException);
 		}
 	}
 

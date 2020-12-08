@@ -14,17 +14,17 @@
 
 package com.liferay.source.formatter.checkstyle.checks;
 
+import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.StringUtil;
-import com.liferay.source.formatter.checkstyle.util.DetailASTUtil;
 
-import com.puppycrawl.tools.checkstyle.api.AbstractCheck;
 import com.puppycrawl.tools.checkstyle.api.DetailAST;
 import com.puppycrawl.tools.checkstyle.api.TokenTypes;
+import com.puppycrawl.tools.checkstyle.utils.AnnotationUtil;
 
 /**
  * @author Hugo Huijser
  */
-public class JSONNamingCheck extends AbstractCheck {
+public class JSONNamingCheck extends BaseCheck {
 
 	@Override
 	public int[] getDefaultTokens() {
@@ -35,8 +35,14 @@ public class JSONNamingCheck extends AbstractCheck {
 	}
 
 	@Override
-	public void visitToken(DetailAST detailAST) {
-		String typeName = DetailASTUtil.getTypeName(detailAST);
+	protected void doVisitToken(DetailAST detailAST) {
+		if ((detailAST.getType() == TokenTypes.METHOD_DEF) &&
+			AnnotationUtil.containsAnnotation(detailAST, "Override")) {
+
+			return;
+		}
+
+		String typeName = getTypeName(detailAST, false);
 
 		if (typeName.equals("boolean") || typeName.equals("void")) {
 			return;
@@ -47,23 +53,48 @@ public class JSONNamingCheck extends AbstractCheck {
 
 		_checkName(
 			name, typeName, tokenTypeName, "String", "JSON", "Json",
-			detailAST.getLineNo());
+			detailAST.getLineNo(), _TOKEN_TYPE_NAMES);
 		_checkName(
 			name, typeName, tokenTypeName, "JSONArray", "JSONArray",
-			"JsonArray", detailAST.getLineNo());
+			"JsonArray", detailAST.getLineNo(), _TOKEN_TYPE_NAMES);
 		_checkName(
 			name, typeName, tokenTypeName, "JSONObject", "JSONObject",
-			"JsonObject", detailAST.getLineNo());
+			"JsonObject", detailAST.getLineNo(), _TOKEN_TYPE_NAMES);
+
+		_checkName(
+			name, typeName, tokenTypeName, "JSON", "JSONString",
+			detailAST.getLineNo(), new String[] {_TOKEN_TYPE_NAME_VARIABLE});
+		_checkName(
+			name, typeName, tokenTypeName, "JSON", "JsonString",
+			detailAST.getLineNo(), new String[] {_TOKEN_TYPE_NAME_VARIABLE});
+	}
+
+	private void _checkName(
+		String name, String typeName, String tokenTypeName,
+		String validNameEnding, String incorrectNameEnding, int lineNo,
+		String[] checkTokenTypeNames) {
+
+		if (name.endsWith(incorrectNameEnding) &&
+			!StringUtil.endsWith(name, typeName) &&
+			ArrayUtil.contains(checkTokenTypeNames, tokenTypeName)) {
+
+			log(
+				lineNo, _MSG_RENAME_VARIABLE,
+				StringUtil.toLowerCase(tokenTypeName), name,
+				StringUtil.replaceLast(
+					name, incorrectNameEnding, validNameEnding));
+		}
 	}
 
 	private void _checkName(
 		String name, String typeName, String tokenTypeName, String type,
-		String reservedNameEnding, String incorrectNameEnding, int lineNo) {
+		String reservedNameEnding, String incorrectNameEnding, int lineNo,
+		String[] checkTokenTypeNames) {
 
 		String lowerCaseName = StringUtil.toLowerCase(name);
 
 		if (!lowerCaseName.endsWith(
-				StringUtil.toLowerCase(reservedNameEnding))) {
+				StringUtil.toLowerCase(incorrectNameEnding))) {
 
 			return;
 		}
@@ -80,36 +111,43 @@ public class JSONNamingCheck extends AbstractCheck {
 			return;
 		}
 
-		if (name.endsWith(incorrectNameEnding)) {
-			log(
-				lineNo, _MSG_RENAME_VARIABLE,
-				StringUtil.toLowerCase(tokenTypeName), name,
-				StringUtil.replaceLast(
-					name, incorrectNameEnding, reservedNameEnding));
-		}
+		_checkName(
+			name, typeName, tokenTypeName, reservedNameEnding,
+			incorrectNameEnding, lineNo, checkTokenTypeNames);
 	}
 
 	private String _getName(DetailAST detailAST) {
-		DetailAST nameAST = detailAST.findFirstToken(TokenTypes.IDENT);
+		DetailAST nameDetailAST = detailAST.findFirstToken(TokenTypes.IDENT);
 
-		return nameAST.getText();
+		return nameDetailAST.getText();
 	}
 
 	private String _getTokenTypeName(DetailAST detailAST) {
 		if (detailAST.getType() == TokenTypes.METHOD_DEF) {
-			return "Method";
+			return _TOKEN_TYPE_NAME_METHOD;
 		}
 
 		if (detailAST.getType() == TokenTypes.PARAMETER_DEF) {
-			return "Parameter";
+			return _TOKEN_TYPE_NAME_PARAMETER;
 		}
 
-		return "Variable";
+		return _TOKEN_TYPE_NAME_VARIABLE;
 	}
 
 	private static final String _MSG_RENAME_VARIABLE = "variable.rename";
 
 	private static final String _MSG_RESERVED_VARIABLE_NAME =
 		"variable.name.reserved";
+
+	private static final String _TOKEN_TYPE_NAME_METHOD = "Method";
+
+	private static final String _TOKEN_TYPE_NAME_PARAMETER = "Parameter";
+
+	private static final String _TOKEN_TYPE_NAME_VARIABLE = "Variable";
+
+	private static final String[] _TOKEN_TYPE_NAMES = {
+		_TOKEN_TYPE_NAME_METHOD, _TOKEN_TYPE_NAME_PARAMETER,
+		_TOKEN_TYPE_NAME_VARIABLE
+	};
 
 }

@@ -17,6 +17,7 @@ package com.liferay.portlet.rolesadmin.search;
 import com.liferay.portal.kernel.dao.search.EmptyOnClickRowChecker;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Role;
 import com.liferay.portal.kernel.model.UserGroup;
 import com.liferay.portal.kernel.service.GroupLocalServiceUtil;
@@ -35,23 +36,25 @@ public class UserGroupRoleChecker extends EmptyOnClickRowChecker {
 	}
 
 	@Override
-	public boolean isChecked(Object obj) {
-		UserGroup userGroup = (UserGroup)obj;
+	public boolean isChecked(Object object) {
+		UserGroup userGroup = (UserGroup)object;
 
 		try {
+			Group userGroupGroup = userGroup.getGroup();
+
 			return GroupLocalServiceUtil.hasRoleGroup(
-				_role.getRoleId(), userGroup.getGroup().getGroupId());
+				_role.getRoleId(), userGroupGroup.getGroupId());
 		}
-		catch (Exception e) {
-			_log.error(e, e);
+		catch (Exception exception) {
+			_log.error(exception, exception);
 
 			return false;
 		}
 	}
 
 	@Override
-	public boolean isDisabled(Object obj) {
-		UserGroup userGroup = (UserGroup)obj;
+	public boolean isDisabled(Object object) {
+		UserGroup userGroup = (UserGroup)object;
 
 		return isChecked(userGroup);
 	}

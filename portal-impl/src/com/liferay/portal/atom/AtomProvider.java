@@ -55,7 +55,7 @@ public class AtomProvider extends AbstractWorkspaceProvider {
 			path = path.substring(0, index);
 		}
 
-		String baseUri = request.getBaseUri().toString();
+		String baseUriString = String.valueOf(request.getBaseUri());
 
 		for (WorkspaceInfo workspaceInfo : workspaces) {
 			Collection<CollectionInfo> collections =
@@ -68,8 +68,8 @@ public class AtomProvider extends AbstractWorkspaceProvider {
 					continue;
 				}
 
-				if (href.startsWith(baseUri)) {
-					href = href.substring(baseUri.length() - 1);
+				if (href.startsWith(baseUriString)) {
+					href = href.substring(baseUriString.length() - 1);
 				}
 
 				index = href.indexOf('?');

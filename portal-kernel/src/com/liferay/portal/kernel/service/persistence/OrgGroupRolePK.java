@@ -14,11 +14,8 @@
 
 package com.liferay.portal.kernel.service.persistence;
 
-import aQute.bnd.annotation.ProviderType;
-
-import com.liferay.portal.kernel.util.HashUtil;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.petra.lang.HashUtil;
+import com.liferay.petra.string.StringBundler;
 
 import java.io.Serializable;
 
@@ -26,8 +23,9 @@ import java.io.Serializable;
  * @author Brian Wing Shun Chan
  * @generated
  */
-@ProviderType
-public class OrgGroupRolePK implements Comparable<OrgGroupRolePK>, Serializable {
+public class OrgGroupRolePK
+	implements Comparable<OrgGroupRolePK>, Serializable {
+
 	public long organizationId;
 	public long groupId;
 	public long roleId;
@@ -119,19 +117,20 @@ public class OrgGroupRolePK implements Comparable<OrgGroupRolePK>, Serializable 
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
+	public boolean equals(Object object) {
+		if (this == object) {
 			return true;
 		}
 
-		if (!(obj instanceof OrgGroupRolePK)) {
+		if (!(object instanceof OrgGroupRolePK)) {
 			return false;
 		}
 
-		OrgGroupRolePK pk = (OrgGroupRolePK)obj;
+		OrgGroupRolePK pk = (OrgGroupRolePK)object;
 
 		if ((organizationId == pk.organizationId) && (groupId == pk.groupId) &&
-				(roleId == pk.roleId)) {
+			(roleId == pk.roleId)) {
+
 			return true;
 		}
 		else {
@@ -152,28 +151,23 @@ public class OrgGroupRolePK implements Comparable<OrgGroupRolePK>, Serializable 
 
 	@Override
 	public String toString() {
-		StringBundler sb = new StringBundler(15);
+		StringBundler sb = new StringBundler(8);
 
-		sb.append(StringPool.OPEN_CURLY_BRACE);
+		sb.append("{");
 
-		sb.append("organizationId");
-		sb.append(StringPool.EQUAL);
+		sb.append("organizationId=");
+
 		sb.append(organizationId);
+		sb.append(", groupId=");
 
-		sb.append(StringPool.COMMA);
-		sb.append(StringPool.SPACE);
-		sb.append("groupId");
-		sb.append(StringPool.EQUAL);
 		sb.append(groupId);
+		sb.append(", roleId=");
 
-		sb.append(StringPool.COMMA);
-		sb.append(StringPool.SPACE);
-		sb.append("roleId");
-		sb.append(StringPool.EQUAL);
 		sb.append(roleId);
 
-		sb.append(StringPool.CLOSE_CURLY_BRACE);
+		sb.append("}");
 
 		return sb.toString();
 	}
+
 }

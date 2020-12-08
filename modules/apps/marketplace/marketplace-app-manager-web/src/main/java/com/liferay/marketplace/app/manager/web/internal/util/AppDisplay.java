@@ -35,21 +35,21 @@ public interface AppDisplay extends Comparable<AppDisplay> {
 
 	public String getDescription();
 
+	public String getDisplaySuiteTitle();
+
+	public String getDisplayTitle();
+
 	public String getDisplayURL(MimeResponse mimeResponse);
 
-	public String getIconURL(HttpServletRequest request);
-
-	public List<ModuleGroupDisplay> getModuleGroupDisplays();
+	public String getIconURL(HttpServletRequest httpServletRequest);
 
 	public int getState();
 
-	public String getStoreURL(HttpServletRequest request);
+	public String getStoreURL(HttpServletRequest httpServletRequest);
 
 	public String getTitle();
 
 	public String getVersion();
-
-	public boolean hasModuleGroups();
 
 	public boolean isRequired();
 

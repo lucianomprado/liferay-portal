@@ -8,11 +8,6 @@
 <tr><td rowspan="1" colspan="3">PortalSettingsAuthentication</td></tr>
 </thead>
 <tbody>
-<tr>
-	<td></td>
-	<td></td>
-	<td></td>
-</tr>
 <!--AUTHENTICATION_GENERAL-->
 <tr>
 	<td>AUTHENTICATION_GENERAL_ALLOW_USERS_TO_AUTOMATICALLY_LOGIN_CHECKBOX</td>
@@ -127,7 +122,12 @@
 </tr>
 <tr>
 	<td>AUTHENTICATION_CAS_TEST_CAS_CONFIGURATION_BUTTON</td>
-	<td>//button[contains(.,'Test CAS Configuration')]</td>
+	<td>//span[contains(.,'Test CAS Configuration')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>VERTICAL_ELLIPSIS</td>
+	<td>//a[span/*[contains(@class,'lexicon-icon-ellipsis-v')]]</td>
 	<td></td>
 </tr>
 <tr>
@@ -199,36 +199,6 @@
 </tr>
 <!--AUTHENTICATION_LDAP-->
 <tr>
-	<td>AUTHENTICATION_LDAP_ENABLED_CHECKBOX</td>
-	<td>//input[contains(@name,'ldap--enabled')]</td>
-	<td></td>
-</tr>
-<tr>
-	<td>AUTHENTICATION_LDAP_REQUIRED_CHECKBOX</td>
-	<td>//input[contains(@name,'ldap--required')]</td>
-	<td></td>
-</tr>
-<tr>
-	<td>AUTHENTICATION_LDAP_IMPORT_ENABLED_CHECKBOX</td>
-	<td>//input[contains(@id,'ldapImportEnabled')]</td>
-	<td></td>
-</tr>
-<tr>
-	<td>AUTHENTICATION_LDAP_IMPORT_ON_STARTUP_ENABLED_CHECKBOX</td>
-	<td>//input[contains(@id,'importOnStartup')]</td>
-	<td></td>
-</tr>
-<tr>
-	<td>AUTHENTICATION_LDAP_EXPORT_ENABLED_CHECKBOX</td>
-	<td>//input[contains(@id,'ldapExportEnabled')]</td>
-	<td></td>
-</tr>
-<tr>
-	<td>AUTHENTICATION_LDAP_USE_LDAP_PASSWORD_POLICY_CHECKBOX</td>
-	<td>//input[contains(@name,'ldap--passwordPolicyEnabled')]</td>
-	<td></td>
-</tr>
-<tr>
 	<td>AUTHENTICATION_LDAP_ADD_BUTTON</td>
 	<td>//a[contains(@id,'addButton')]</td>
 	<td></td>
@@ -240,18 +210,8 @@
 </tr>
 <!--LDAP_SERVERS_TABLE-->
 <tr>
-	<td>LDAP_SERVERS_TABLE_LDAP_SERVER_ID</td>
-	<td>//tr[contains(.,'${key_LDAPServerName}')]/td[1]</td>
-	<td></td>
-</tr>
-<tr>
-	<td>LDAP_SERVERS_TABLE_NAME</td>
-	<td>//tr[contains(.,'${key_LDAPServerName}')]/td[2]</td>
-	<td></td>
-</tr>
-<tr>
 	<td>LDAP_SERVERS_TABLE_EDIT</td>
-	<td>//tr[contains(.,'${key_LDAPServerName}')]/td[3]//span[.='Edit']/preceding-sibling::i</td>
+	<td>//tr[contains(.,'${key_LDAPServerName}')]/td[3]//span[.='Edit']/preceding-sibling::span</td>
 	<td></td>
 </tr>
 <tr>
@@ -396,10 +356,15 @@
 	<td></td>
 	<td></td>
 </tr>
-<!--AUTHENTICATION_OPEN_ID-->
+<!--AUTHENTICATION_OPEN_ID_CONNECT-->
 <tr>
-	<td>AUTHENTICATION_OPEN_ID_ENABLED_CHECKBOX</td>
-	<td>//input[contains(@name,'openid_enabled')]</td>
+	<td>AUTHENTICATION_OPEN_ID_CONNECT_ENABLED_CHECKBOX</td>
+	<td>//input[contains(@name,'openid_connect_enabled')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>AUTHENTICATION_OPEN_ID_CONNECT_ENABLED_CHECKBOX_SYSTEM_LEVEL</td>
+	<td>//input[contains(@name,'enabled')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -490,7 +455,7 @@
 </tr>
 <tr>
 	<td>AUTHENTICATION_OPEN_SSO_TEST_OPEN_SSO_CONFIGURATION_BUTTON</td>
-	<td>//button[contains(.,'Test OpenSSO Configuration')]</td>
+	<td>//a[contains(.,'Test OpenSSO Configuration')]</td>
 	<td></td>
 </tr>
 </tbody>

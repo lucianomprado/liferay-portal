@@ -14,10 +14,9 @@
 
 package com.liferay.document.library.kernel.antivirus;
 
-import com.liferay.portal.kernel.security.pacl.permission.PortalRuntimePermission;
+import com.liferay.portal.kernel.util.ServiceProxyFactory;
 
 import java.io.File;
-import java.io.InputStream;
 
 /**
  * @author Michael C. Han
@@ -25,49 +24,25 @@ import java.io.InputStream;
  */
 public class AntivirusScannerUtil {
 
-	public static AntivirusScanner getAntivirusScanner() {
-		PortalRuntimePermission.checkGetBeanProperty(
-			AntivirusScannerUtil.class);
-
-		return _antivirusScanner;
-	}
-
 	public static boolean isActive() {
-		AntivirusScanner antivirusScanner = getAntivirusScanner();
-
-		if (antivirusScanner == null) {
-			return false;
-		}
-
-		return antivirusScanner.isActive();
+		return _antivirusScanner.isActive();
 	}
 
 	public static void scan(byte[] bytes) throws AntivirusScannerException {
 		if (isActive()) {
-			getAntivirusScanner().scan(bytes);
+			_antivirusScanner.scan(bytes);
 		}
 	}
 
 	public static void scan(File file) throws AntivirusScannerException {
 		if (isActive()) {
-			getAntivirusScanner().scan(file);
+			_antivirusScanner.scan(file);
 		}
 	}
 
-	public static void scan(InputStream inputStream)
-		throws AntivirusScannerException {
-
-		if (isActive()) {
-			getAntivirusScanner().scan(inputStream);
-		}
-	}
-
-	public void setAntivirusScanner(AntivirusScanner antiVirusScanner) {
-		PortalRuntimePermission.checkSetBeanProperty(getClass());
-
-		_antivirusScanner = antiVirusScanner;
-	}
-
-	private static AntivirusScanner _antivirusScanner;
+	private static volatile AntivirusScanner _antivirusScanner =
+		ServiceProxyFactory.newServiceTrackedInstance(
+			AntivirusScanner.class, AntivirusScannerUtil.class,
+			"_antivirusScanner", false);
 
 }

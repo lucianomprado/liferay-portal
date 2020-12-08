@@ -1,134 +1,152 @@
-<definition component-name="portal-mobile-device-rules">
-	<property name="portal.release" value="true" />
-	<property name="portal.upstream" value="true" />
-	<property name="testray.main.component.name" value="Mobile Device Rules" />
+@component-name = "portal-mobile-device-rules"
+definition {
 
-	<set-up>
-		<execute macro="TestCase#setUpPortalInstance" />
+	property osgi.app.includes = "portal-mobile-device-detection-fiftyonedegrees-enterprise";
+	property osgi.module.configuration.file.names = "com.liferay.portal.bundle.blacklist.internal.configuration.BundleBlacklistConfiguration.config";
+	property osgi.module.configurations = "blacklistBundleSymbolicNames=";
+	property portal.release = "false";
+	property portal.upstream = "true";
+	property test.run.environment = "EE";
+	property testray.main.component.name = "Mobile Device Rules";
 
-		<execute macro="User#firstLoginPG" />
-	</set-up>
+	setUp {
+		TestCase.setUpPortalInstance();
 
-	<tear-down>
-		<var method="TestPropsUtil#get('test.portal.instance')" name="testPortalInstance" />
+		User.firstLoginPG();
+	}
 
-		<if>
-			<equals arg1="${testPortalInstance}" arg2="true" />
-			<then>
-				<execute macro="PortalInstances#tearDownCP" />
-			</then>
-			<else>
-				<execute macro="PortalInstances#tearDownCP" />
+	tearDown {
+		var testPortalInstance = PropsUtil.get("test.portal.instance");
 
-				<execute macro="Page#tearDownPG" />
-			</else>
-		</if>
-	</tear-down>
+		if ("${testPortalInstance}" == "true") {
+			PortalInstances.tearDownCP();
+		}
+		else {
+			PortalInstances.tearDownCP();
 
-	<command name="AssertMobileDeviceRuleActionOnSitePage" priority="5">
-		<execute macro="ProductMenu#gotoControlPanelSites">
-			<var name="portlet" value="Sites" />
-		</execute>
+			Page.tearDownCP();
+		}
+	}
 
-		<execute macro="Site#addBlankCP">
-			<var name="siteName" value="Site Name" />
-		</execute>
+	@description = "This is a use case for LPS-42381."
+	@priority = "5"
+	test AssertMobileDeviceRuleActionOnSitePage {
+		property portal.acceptance = "quarantine";
+		property portal.upstream = "quarantine";
+		property test.name.skip.portal.instance = "MobileDeviceFamilies#AssertMobileDeviceRuleActionOnSitePage";
 
-		<execute macro="Page#add">
-			<var name="pageName" value="Page for Linux" />
-		</execute>
+		JSONGroup.addGroup(groupName = "Site Name");
 
-		<execute macro="Page#add">
-			<var name="pageName" value="Page for Windows" />
-		</execute>
+		JSONLayout.addPublicLayout(
+			groupName = "Site Name",
+			layoutName = "Page for Linux");
 
-		<execute macro="Navigator#openURL" />
+		JSONLayout.addPublicLayout(
+			groupName = "Site Name",
+			layoutName = "Page for Windows");
 
-		<execute macro="ProductMenu#gotoSitesConfiguration">
-			<var name="portlet" value="Mobile Device Families" />
-		</execute>
+		Navigator.openSiteURL(siteName = "Site Name");
 
-		<execute macro="MobileDevice#addDeviceFamilyCP">
-			<var name="deviceFamilyName" value="Linux Family Name" />
-		</execute>
+		ProductMenu.gotoPortlet(
+			category = "Configuration",
+			portlet = "Mobile Device Families");
 
-		<execute macro="ProductMenu#gotoSitesConfiguration">
-			<var name="portlet" value="Mobile Device Families" />
-		</execute>
+		MobileDevice.addDeviceFamilyCP(deviceFamilyName = "Linux Family Name");
 
-		<execute macro="MobileDevice#addClassificationRuleCP">
-			<var name="classificationName" value="Classification Name" />
-			<var name="deviceType" value="Any" />
-			<var name="mobileDeviceFamilyName" value="Linux Family Name" />
-			<var name="ruleOSScope" value="Linux" />
-		</execute>
+		ProductMenu.gotoPortlet(
+			category = "Configuration",
+			portlet = "Mobile Device Families");
 
-		<execute macro="ProductMenu#gotoSitesConfiguration">
-			<var name="portlet" value="Mobile Device Families" />
-		</execute>
+		MobileDevice.addClassificationRuleCP(
+			classificationName = "Classification Name",
+			deviceType = "Any",
+			mobileDeviceFamilyName = "Linux Family Name",
+			ruleOSScope = "Linux");
 
-		<execute macro="MobileDevice#addDeviceFamilyCP">
-			<var name="deviceFamilyName" value="Windows Device Family Name" />
-		</execute>
+		ProductMenu.gotoPortlet(
+			category = "Configuration",
+			portlet = "Mobile Device Families");
 
-		<execute macro="ProductMenu#gotoSitesConfiguration">
-			<var name="portlet" value="Mobile Device Families" />
-		</execute>
+		MobileDevice.addDeviceFamilyCP(deviceFamilyName = "Windows Device Family Name");
 
-		<execute macro="MobileDevice#addClassificationRuleCP">
-			<var name="classificationName" value="Classification Name" />
-			<var name="deviceType" value="Any" />
-			<var name="mobileDeviceFamilyName" value="Windows Device Family Name" />
-			<var name="ruleOSScope" value="Windows" />
-		</execute>
+		ProductMenu.gotoPortlet(
+			category = "Configuration",
+			portlet = "Mobile Device Families");
 
-		<execute macro="Page#add">
-			<var name="pageName" value="Mobile Device Family Test Page" />
-		</execute>
+		MobileDevice.addClassificationRuleCP(
+			classificationName = "Classification Name",
+			deviceType = "Any",
+			mobileDeviceFamilyName = "Windows Device Family Name",
+			ruleOSScope = "Windows");
 
-		<execute macro="SitePageNavigator#gotoEditPage">
-			<var name="page" value="Mobile Device Family Test Page" />
-		</execute>
+		JSONLayout.addPublicLayout(
+			groupName = "Site Name",
+			layoutName = "Mobile Device Family Test Page");
 
-		<execute macro="Navigator#gotoNavTab">
-			<var name="navTab" value="Advanced" />
-		</execute>
+		ProductMenu.gotoPortlet(
+			category = "Site Builder",
+			portlet = "Pages");
 
-		<execute macro="Panel#expandPanel">
-			<var name="panelHeading" value="Mobile Device Rules" />
-		</execute>
+		SitePages.gotoPageMenuItem(
+			menuItem = "Configure",
+			pageName = "Mobile Device Family Test Page");
 
-		<execute macro="Page#disableMobileDeviceRulesAreInheritedFromPublicPages" />
+		Navigator.gotoNavTab(navTab = "Advanced");
 
-		<execute macro="Page#selectMobileDeviceFamily">
-			<var name="deviceFamilyName" value="Linux Family Name" />
-		</execute>
+		Panel.expandPanel(panel = "Mobile Device Rules");
 
-		<execute macro="Page#manageDeviceFamilyActions">
-			<var name="actionName" value="Mobile Device Family Test Action" />
-			<var name="actionType" value="Redirect to Site" />
-			<var name="pageName" value="Page for Linux" />
-			<var name="siteName" value="Site Name" />
-		</execute>
+		Page.disableMobileDeviceRulesAreInheritedFromPublicPages();
 
-		<execute macro="Page#selectMobileDeviceFamily">
-			<var name="deviceFamilyName" value="Windows Device Family Name" />
-		</execute>
+		Page.selectMobileDeviceFamily(deviceFamilyName = "Linux Family Name");
 
-		<execute macro="Page#manageDeviceFamilyActions">
-			<var name="actionName" value="Windows Device Family Test Action" />
-			<var name="actionType" value="Redirect to Site" />
-			<var name="pageName" value="Page for Windows" />
-			<var name="siteName" value="Site Name" />
-		</execute>
+		// Workaround for LPS-92083
 
-		<execute macro="PortletEntry#save" />
+		Refresh();
 
-		<execute macro="Navigator#openURL" />
+		LexiconEntry.gotoEntryMenuItem(
+			menuItem = "Permissions",
+			rowEntry = "Linux Family Name");
 
-		<execute macro="MobileDevice#assertRedirectActionPG">
-			<var name="pageName" value="Mobile Device Family Test Page" />
-			<var name="redirectPageName" value="Page for Linux" />
-		</execute>
-	</command>
-</definition>
+		IFrame.selectPermissionsFrame();
+
+		Role.viewPermissionPG(
+			permissionDefinitionKey = "CONTENT_PERMISSIONS_VIEW_CHECKBOX",
+			permissionFlagged = "true",
+			roleTitle = "Owner");
+
+		IFrame.closeFrame();
+
+		Page.manageDeviceFamilyActions(
+			actionName = "Mobile Device Family Test Action",
+			actionType = "Redirect to Site",
+			deviceFamilyName = "Linux Family Name",
+			pageName = "Page for Linux",
+			siteName = "Site Name");
+
+		Refresh();
+
+		Page.selectMobileDeviceFamily(deviceFamilyName = "Windows Device Family Name");
+
+		// Workaround for LPS-92083
+
+		Refresh();
+
+		WaitForLiferayEvent.initializeLiferayEventLog();
+
+		Page.manageDeviceFamilyActions(
+			actionName = "Windows Device Family Test Action",
+			actionType = "Redirect to Site",
+			deviceFamilyName = "Windows Device Family Name",
+			pageName = "Page for Windows",
+			siteName = "Site Name");
+
+		PortletEntry.save();
+
+		Navigator.openSiteURL(siteName = "Site Name");
+
+		MobileDevice.assertRedirectActionPG(
+			pageName = "Mobile Device Family Test Page",
+			redirectPageName = "Page for Linux");
+	}
+
+}

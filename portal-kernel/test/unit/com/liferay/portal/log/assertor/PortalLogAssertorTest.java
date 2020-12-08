@@ -14,9 +14,9 @@
 
 package com.liferay.portal.log.assertor;
 
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.io.unsync.UnsyncStringReader;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 
 import java.io.IOException;
@@ -78,9 +78,7 @@ public class PortalLogAssertorTest {
 			}
 		}
 
-		if (sb.index() != 0) {
-			Assert.fail(sb.toString());
-		}
+		Assert.assertTrue(sb.toString(), sb.index() == 0);
 	}
 
 	@Test
@@ -107,9 +105,14 @@ public class PortalLogAssertorTest {
 	}
 
 	protected void scanXMLLogFile(Path path) throws IOException {
-		String content = StringUtil.replace(
-			new String(Files.readAllBytes(path), StringPool.UTF8), "log4j:",
-			"");
+		String content = StringUtil.removeSubstring(
+			new String(Files.readAllBytes(path), StringPool.UTF8), "log4j:");
+
+		int index = content.lastIndexOf("</event>");
+
+		if (index != -1) {
+			content = content.substring(0, index + "</event>".length());
+		}
 
 		content = "<log4j>" + content + "</log4j>";
 
@@ -123,10 +126,10 @@ public class PortalLogAssertorTest {
 			Document document = documentBuilder.parse(
 				new InputSource(new UnsyncStringReader(content)));
 
-			NodeList nodelist = document.getElementsByTagName("event");
+			NodeList nodeList = document.getElementsByTagName("event");
 
-			for (int i = 0; i < nodelist.getLength(); i++) {
-				Node node = nodelist.item(i);
+			for (int i = 0; i < nodeList.getLength(); i++) {
+				Node node = nodeList.item(i);
 
 				NamedNodeMap namedNodeMap = node.getAttributes();
 
@@ -137,14 +140,14 @@ public class PortalLogAssertorTest {
 				if (levelString.equals("ERROR") ||
 					levelString.equals("FATAL") || levelString.equals("WARN")) {
 
-					NodeList childNodelist = node.getChildNodes();
+					NodeList childNodeList = node.getChildNodes();
 
 					String message =
 						"\nPortal log assert failure, see above log for more " +
 							"information: \n";
 
-					for (int j = 0; j < childNodelist.getLength(); j++) {
-						Node childNode = childNodelist.item(j);
+					for (int j = 0; j < childNodeList.getLength(); j++) {
+						Node childNode = childNodeList.item(j);
 
 						String nodeName = childNode.getNodeName();
 
@@ -157,7 +160,7 @@ public class PortalLogAssertorTest {
 					}
 
 					System.out.println(
-						"Detected error, dumpping full log for reference:");
+						"Error detected, dumping the full log for reference:");
 
 					Files.copy(
 						Paths.get(
@@ -165,12 +168,16 @@ public class PortalLogAssertorTest {
 								path.toString(), ".xml", ".log")),
 						System.out);
 
-					Assert.fail(message);
+					Assert.assertFalse(
+						message,
+						levelString.equals("ERROR") ||
+						levelString.equals("FATAL") ||
+						levelString.equals("WARN"));
 				}
 			}
 		}
-		catch (Exception e) {
-			throw new IOException(e);
+		catch (Exception exception) {
+			throw new IOException(exception);
 		}
 	}
 

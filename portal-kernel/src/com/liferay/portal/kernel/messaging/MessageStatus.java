@@ -14,8 +14,8 @@
 
 package com.liferay.portal.kernel.messaging;
 
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.util.StackTraceUtil;
-import com.liferay.portal.kernel.util.StringBundler;
 
 import java.io.Serializable;
 
@@ -44,14 +44,13 @@ public class MessageStatus implements Serializable {
 		if (_exceptionStackTrace != null) {
 			return true;
 		}
-		else {
-			return false;
-		}
+
+		return false;
 	}
 
-	public void setException(Exception e) {
-		_exceptionMessage = e.getMessage();
-		_exceptionStackTrace = StackTraceUtil.getStackTrace(e);
+	public void setException(Exception exception) {
+		_exceptionMessage = exception.getMessage();
+		_exceptionStackTrace = StackTraceUtil.getStackTrace(exception);
 	}
 
 	public void setPayload(Object payload) {

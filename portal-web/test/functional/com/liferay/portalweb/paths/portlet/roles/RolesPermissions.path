@@ -10,12 +10,7 @@
 <tbody>
 <tr>
 	<td>PERMISSION_HEADER</td>
-	<td>//form/h3[contains(.,'${permissionNavigationValue}')]</td>
-	<td></td>
-</tr>
-<tr>
-	<td>SUCCESS_MESSAGE</td>
-	<td>//div[contains(@class,'alert') and contains(@class,'alert-success')]</td>
+	<td>//form//h3[contains(.,'${permissionNavigationValue}')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -163,7 +158,12 @@
 <!--CONTROL_PANEL_SITES_SITES_GENERAL_PERMISSIONS-->
 <tr>
 	<td>CONTROL_PANEL_SITES_SITES_GENERAL_PERMISSIONS_ACCESS_IN_CONTROL_PANEL_CHECKBOX</td>
-	<td>//input[contains(@value,'ACCESS_IN_CONTROL_PANEL')]</td>
+	<td>//input[contains(@value,'SiteAdminPortletACCESS_IN_CONTROL_PANEL')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>CONTROL_PANEL_SITES_SITES_GENERAL_PERMISSIONS_VIEW_CHECKBOX</td>
+	<td>//input[contains(@value,'SiteAdminPortletVIEW')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -207,10 +207,31 @@
 	<td></td>
 	<td></td>
 </tr>
+<!--SITE_ADMIN_BUILDER_COLLECTIONS_ASSET_LIST_ENTRY-->
+<tr>
+	<td>SITE_ADMIN_BUILDER_COLLECTIONS_ASSET_LIST_ENTRY_DELETE_CHECKBOX</td>
+	<td>//tbody//input[contains(@value,'AssetListEntryDELETE')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>SITE_ADMIN_BUILDER_COLLECTIONS_ASSET_LIST_ENTRY_DELETE_CHANGE_LINK</td>
+	<td>//span[contains(@id,'AssetListEntryDELETE')]/button[contains(.,'Change')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>SITE_ADMIN_BUILDER_COLLECTIONS_ASSET_LIST_ENTRY_DELETE_SITE_SCOPE</td>
+	<td>//span[contains(@id,'AssetListEntryDELETE')]/span[contains(.,'${key_siteNameScope}')]/span</td>
+	<td></td>
+</tr>
 <!--SITE_ADMIN_CONFIGURATION_SITE_SETTINGS_RESOURCE_PERMISSIONS-->
 <tr>
 	<td>SITE_ADMIN_CONFIGURATION_SITE_SETTINGS_RESOURCE_PERMISSIONS_SITE_VIEW_SITE_ADMINISTRATION_MENU_CHECKBOX</td>
 	<td>//input[@type='checkbox' and contains(@value,'GroupVIEW_SITE_ADMINISTRATION')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td></td>
+	<td></td>
 	<td></td>
 </tr>
 <!--SITE_ADMIN_PAGES_SITE_PAGES_GENERAL_PERMISSIONS-->
@@ -232,7 +253,7 @@
 <!--SITE_ADMIN_PAGES_SITE_PAGES_RESOURCE_PERMISSIONS_SITE-->
 <tr>
 	<td>SITE_ADMIN_PAGES_SITE_PAGES_RESOURCE_PERMISSIONS_SITE_ACTION_CHECKBOX</td>
-	<td>xpath=(//input[contains(@name,'allRowIds')])[2]</td>
+	<td>xpath=(//h5[contains(.,'Site')]//following::input[contains(@name,'allRowIds')])[1]</td>
 	<td></td>
 </tr>
 <tr>
@@ -273,7 +294,7 @@
 <!--SITE_ADMIN_PAGES_SITE_PAGES_RESOURCE_PERMISSIONS_PAGE-->
 <tr>
 	<td>SITE_ADMIN_PAGES_SITE_PAGES_RESOURCE_PERMISSIONS_PAGE_ACTION_CHECKBOX</td>
-	<td>xpath=(//input[contains(@name,'allRowIds')])[3]</td>
+	<td>xpath=(//h5[contains(.,'Page')]//following::input[contains(@name,'allRowIds')])[2]</td>
 	<td></td>
 </tr>
 <tr>
@@ -294,7 +315,7 @@
 <!--SITE_ADMIN_PAGES_SITE_PAGES_RESOURCE_PERMISSIONS_PAGE_VARIATION-->
 <tr>
 	<td>SITE_ADMIN_PAGES_SITE_PAGES_RESOURCE_PERMISSIONS_PAGE_VARIATION_ACTION_CHECKBOX</td>
-	<td>xpath=(//input[contains(@name,'allRowIds')])[4]</td>
+	<td>xpath=(//h5[contains(.,'Page Variation')]//following::input[contains(@name,'allRowIds')])[1]</td>
 	<td></td>
 </tr>
 <tr>
@@ -305,7 +326,7 @@
 <!--SITE_ADMIN_PAGES_SITE_PAGES_RESOURCE_PERMISSIONS_SITE_PAGE_VARIATION-->
 <tr>
 	<td>SITE_ADMIN_PAGES_SITE_PAGES_RESOURCE_PERMISSIONS_SITE_PAGES_VARIATION_ACTION_CHECKBOX</td>
-	<td>xpath=(//input[contains(@name,'allRowIds')])[5]</td>
+	<td>xpath=(//h5[contains(.,'Site Pages Variation')]//following::input[contains(@name,'allRowIds')])</td>
 	<td></td>
 </tr>
 <tr>
@@ -327,6 +348,16 @@
 <tr>
 	<td>SITE_ADMIN_CONTENT_WEB_CONTENT_GENERAL_PERMISSIONS_VIEW_CHECKBOX</td>
 	<td>//input[contains(@value,'PortletVIEW')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>SITE_ADMIN_CONTENT_WEB_CONTENT_GENERAL_PERMISSIONS_VIEW_CHANGE_LINK</td>
+	<td>//span[contains(@id,'PortletVIEW')]/button[contains(.,'Change')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>SITE_ADMIN_CONTENT_WEB_CONTENT_GENERAL_PERMISSIONS_VIEW_SITE_SCOPE</td>
+	<td>//span[contains(@id,'groupHTMLcom_liferay_journal_web_portlet_JournalPortletVIEW')]/span[contains(.,'${key_siteNameScope}')]/span</td>
 	<td></td>
 </tr>
 <tr>
@@ -361,6 +392,16 @@
 	<td></td>
 </tr>
 <tr>
+	<td>SITE_ADMIN_CONTENT_WEB_CONTENT_RESOURCE_PERMISSIONS_WEB_CONTENT_ADD_WEB_CONTENT_CHANGE_LINK</td>
+	<td>//span[contains(@id,'journalADD_ARTICLE')]/button[contains(.,'Change')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>SITE_ADMIN_CONTENT_WEB_CONTENT_RESOURCE_PERMISSIONS_WEB_CONTENT_ADD_WEB_CONTENT_SITE_SCOPE</td>
+	<td>//span[contains(@id,'journalADD_ARTICLE')]/span[contains(.,'${key_siteNameScope}')]</td>
+	<td></td>
+</tr>
+<tr>
 	<td>SITE_ADMIN_CONTENT_WEB_CONTENT_RESOURCE_PERMISSIONS_WEB_CONTENT_VIEW_CHECKBOX</td>
 	<td>//input[contains(@value,'journalVIEW')]</td>
 	<td></td>
@@ -377,6 +418,21 @@
 	<td></td>
 </tr>
 <tr>
+	<td>SITE_ADMIN_CONTENT_WEB_CONTENT_RESOURCE_PERMISSIONS_WEB_CONTENT_FOLDER_ADD_SUBFOLDER_CHECKBOX</td>
+	<td>//tbody//input[contains(@value,'JournalFolderADD_SUBFOLDER')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>SITE_ADMIN_CONTENT_WEB_CONTENT_RESOURCE_PERMISSIONS_WEB_CONTENT_FOLDER_ADD_WEB_CONTENT_CHECKBOX</td>
+	<td>//tbody//input[contains(@value,'JournalFolderADD_ARTICLE')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>SITE_ADMIN_CONTENT_WEB_CONTENT_RESOURCE_PERMISSIONS_WEB_CONTENT_FOLDER_VIEW_CHECKBOX</td>
+	<td>//input[contains(@value,'JournalFolderVIEW')]</td>
+	<td></td>
+</tr>
+<tr>
 	<td></td>
 	<td></td>
 	<td></td>
@@ -385,6 +441,26 @@
 <tr>
 	<td>SITE_ADMIN_CONTENT_WEB_CONTENT_RESOURCE_PERMISSIONS_WEB_CONTENT_ARTICLE_ACTION_CHECKBOX</td>
 	<td>xpath=(//input[contains(@name,'allRowIds')])[4]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>SITE_ADMIN_CONTENT_WEB_CONTENT_RESOURCE_PERMISSIONS_WEB_CONTENT_ARTICLE_UPDATE_CHECKBOX</td>
+	<td>//tbody//input[contains(@value,'JournalArticleUPDATE')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>SITE_ADMIN_CONTENT_WEB_CONTENT_RESOURCE_PERMISSIONS_WEB_CONTENT_ARTICLE_VIEW_CHECKBOX</td>
+	<td>//tbody//input[contains(@value,'JournalArticleVIEW')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>SITE_ADMIN_CONTENT_WEB_CONTENT_RESOURCE_PERMISSIONS_WEB_CONTENT_ARTICLE_VIEW_CHANGE_LINK</td>
+	<td>//span[contains(@id,'JournalArticleVIEW')]/button[contains(.,'Change')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>SITE_ADMIN_CONTENT_WEB_CONTENT_RESOURCE_PERMISSIONS_WEB_CONTENT_ARTICLE_VIEW_SITE_SCOPE</td>
+	<td>//span[contains(@id,'groupHTMLcom.liferay.journal.model.JournalArticleVIEW')]/span[contains(.,'${key_siteNameScope}')]/span</td>
 	<td></td>
 </tr>
 <tr>
@@ -453,8 +529,23 @@
 	<td></td>
 </tr>
 <tr>
+	<td>SITE_ADMIN_CONTENT_DOCUMENTS_AND_MEDIA_RESOURCE_PERMISSIONS_DOCUMENTS_ADD_DOCUMENT_CHANGE_LINK</td>
+	<td>//span[contains(@id,'document.libraryADD_DOCUMENT')]/button[contains(.,'Change')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>SITE_ADMIN_CONTENT_DOCUMENTS_AND_MEDIA_RESOURCE_PERMISSIONS_DOCUMENTS_ADD_DOCUMENT_SITE_SCOPE</td>
+	<td>//span[contains(@id,'document.libraryADD_DOCUMENT')]/span[contains(.,'${key_siteNameScope}')]/span</td>
+	<td></td>
+</tr>
+<tr>
 	<td>SITE_ADMIN_CONTENT_DOCUMENTS_AND_MEDIA_RESOURCE_PERMISSIONS_DOCUMENTS_ADD_FOLDER_CHECKBOX</td>
 	<td>//input[contains(@value,'document.libraryADD_FOLDER')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>SITE_ADMIN_CONTENT_DOCUMENTS_AND_MEDIA_RESOURCE_PERMISSIONS_DOCUMENTS_VIEW_CHECKBOX</td>
+	<td>//input[contains(@value,'document.libraryVIEW')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -476,6 +567,11 @@
 <tr>
 	<td>SITE_ADMIN_CONTENT_DOCUMENTS_AND_MEDIA_RESOURCE_PERMISSIONS_DOCUMENTS_FOLDER_UPDATE_CHECKBOX</td>
 	<td>//input[contains(@value,'DLFolderUPDATE')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>SITE_ADMIN_CONTENT_DOCUMENTS_AND_MEDIA_RESOURCE_PERMISSIONS_DOCUMENTS_FOLDER_VIEW_CHECKBOX</td>
+	<td>//input[contains(@value,'DLFolderVIEW')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -645,10 +741,20 @@
 	<td>//input[contains(@value,'FormAdminPortletACCESS_IN_CONTROL_PANEL')]</td>
 	<td></td>
 </tr>
+<tr>
+	<td></td>
+	<td></td>
+	<td></td>
+</tr>
 <!--SITE_ADMIN_CONTENT_FORMS_RESOURCE_PERMISSIONS-->
 <tr>
 	<td>SITE_ADMIN_CONTENT_FORMS_ADMIN_RESOURCE_PERMISSIONS_LISTS_ACTION_CHECKBOX</td>
 	<td>//h4[contains(.,'Resource')]/following-sibling::div/h5[contains(.,'Lists')][1]/..//div[contains(@class,'search-container')][1]//input[contains(@name,'allRowIds')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td></td>
+	<td></td>
 	<td></td>
 </tr>
 <!--SITE_ADMIN_CONTENT_KALEO_FORMS_ADMIN_GENERAL_PERMISSIONS-->
@@ -793,19 +899,19 @@
 	<td></td>
 	<td></td>
 </tr>
-<!--SITE_ADMIN_CONTENT_CATEGORIES_GENERAL_PERMISSIONS-->
+<!--SITE_ADMIN_CATEGORIES_GENERAL_PERMISSIONS-->
 <tr>
-	<td>SITE_ADMIN_CONTENT_CATEGORIES_GENERAL_PERMISSIONS_ACCESS_IN_SITE_ADMINISTRATION_CHECKBOX</td>
+	<td>SITE_ADMIN_CATEGORIES_GENERAL_PERMISSIONS_ACCESS_IN_SITE_ADMINISTRATION_CHECKBOX</td>
 	<td>//input[contains(@value,'AssetCategoriesAdminPortletACCESS_IN_CONTROL_PANEL')]</td>
 	<td></td>
 </tr>
 <tr>
-	<td>SITE_ADMIN_CONTENT_CATEGORIES_GENERAL_PERMISSIONS_CONFIGURATION_CHECKBOX</td>
+	<td>SITE_ADMIN_CATEGORIES_GENERAL_PERMISSIONS_CONFIGURATION_CHECKBOX</td>
 	<td>//input[contains(@value,'AssetCategoriesAdminPortletCONFIGURATION')]</td>
 	<td></td>
 </tr>
 <tr>
-	<td>SITE_ADMIN_CONTENT_CATEGORIES_GENERAL_PERMISSIONS_VIEW_CHECKBOX</td>
+	<td>SITE_ADMIN_CATEGORIES_GENERAL_PERMISSIONS_VIEW_CHECKBOX</td>
 	<td>//input[contains(@value,'AssetCategoriesAdminPortletVIEW')]</td>
 	<td></td>
 </tr>
@@ -814,19 +920,19 @@
 	<td></td>
 	<td></td>
 </tr>
-<!--SITE_ADMIN_CONTENT_CATEGORIES_RESOURCE_PERMISSIONS_ASSET_ENTRIES-->
+<!--SITE_ADMIN_CATEGORIES_RESOURCE_PERMISSIONS_ASSET_ENTRIES-->
 <tr>
-	<td>SITE_ADMIN_CONTENT_CATEGORIES_RESOURCE_PERMISSIONS_ASSET_ENTRIES_ADD_CATEGORY_CHECKBOX</td>
+	<td>SITE_ADMIN_CATEGORIES_RESOURCE_PERMISSIONS_ASSET_ENTRIES_ADD_CATEGORY_CHECKBOX</td>
 	<td>//label/input[contains(@value,'categoriesADD_CATEGORY')]</td>
 	<td></td>
 </tr>
 <tr>
-	<td>SITE_ADMIN_CONTENT_CATEGORIES_RESOURCE_PERMISSIONS_ASSET_ENTRIES_ADD_VOCABULARY_CHECKBOX</td>
+	<td>SITE_ADMIN_CATEGORIES_RESOURCE_PERMISSIONS_ASSET_ENTRIES_ADD_VOCABULARY_CHECKBOX</td>
 	<td>//input[contains(@value,'categoriesADD_VOCABULARY')]</td>
 	<td></td>
 </tr>
 <tr>
-	<td>SITE_ADMIN_CONTENT_CATEGORIES_RESOURCE_PERMISSIONS_ASSET_ENTRIES_ADD_TAG_CHECKBOX</td>
+	<td>SITE_ADMIN_CATEGORIES_RESOURCE_PERMISSIONS_ASSET_ENTRIES_ADD_TAG_CHECKBOX</td>
 	<td>//input[contains(@value,'assetADD_TAG')]</td>
 	<td></td>
 </tr>
@@ -835,9 +941,9 @@
 	<td></td>
 	<td></td>
 </tr>
-<!--SITE_ADMIN_CONTENT_CATEGORIES_RESOURCE_PERMISSIONS_CATEGORY_VOCABULARY-->
+<!--SITE_ADMIN_CATEGORIES_RESOURCE_PERMISSIONS_CATEGORY_VOCABULARY-->
 <tr>
-	<td>SITE_ADMIN_CONTENT_CATEGORIES_RESOURCE_PERMISSIONS_CATEGORY_VOCABULARY_VIEW_CHECKBOX</td>
+	<td>SITE_ADMIN_CATEGORIES_RESOURCE_PERMISSIONS_CATEGORY_VOCABULARY_VIEW_CHECKBOX</td>
 	<td>//input[contains(@value,'AssetVocabularyVIEW')]</td>
 	<td></td>
 </tr>
@@ -846,9 +952,9 @@
 	<td></td>
 	<td></td>
 </tr>
-<!--SITE_ADMIN_CONTENT_CATEGORIES_RESOURCE_PERMISSIONS_CATEGORY-->
+<!--SITE_ADMIN_CATEGORIES_RESOURCE_PERMISSIONS_CATEGORY-->
 <tr>
-	<td>SITE_ADMIN_CONTENT_CATEGORIES_RESOURCE_PERMISSIONS_CATEGORY_ADD_CATEGORY_CHECKBOX</td>
+	<td>SITE_ADMIN_CATEGORIES_RESOURCE_PERMISSIONS_CATEGORY_ADD_CATEGORY_CHECKBOX</td>
 	<td>//label/input[contains(@value,'AssetCategoryADD_CATEGORY')]</td>
 	<td></td>
 </tr>
@@ -961,7 +1067,7 @@
 </tr>
 <tr>
 	<td>SITE_ADMIN_APPLICATIONS_BOOKMARKS_RESOURCE_PERMISSIONS_BOOKMARKS_ENTRY_VIEW_CHANGE_LINK</td>
-	<td>//a[contains(@id,'BookmarksEntryVIEW')]/span[contains(.,'Change')]</td>
+	<td>//span[contains(@id,'BookmarksEntryVIEW')]/button[contains(.,'Change')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -1007,6 +1113,16 @@
 	<td></td>
 </tr>
 <!--SITE_ADMIN_APPLICATIONS_DOCUMENTS_AND_MEDIA_RESOURCE_PERMISSIONS_DOCUMENTS-->
+<tr>
+	<td>SITE_ADMIN_APPLICATIONS_DOCUMENTS_AND_MEDIA_RESOURCE_PERMISSIONS_DOCUMENT_VIEW_CHANGE_LINK</td>
+	<td>//span[contains(@id,'DLFileEntryVIEW')]/button[contains(.,'Change')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>SITE_ADMIN_APPLICATIONS_DOCUMENTS_AND_MEDIA_RESOURCE_PERMISSIONS_DOCUMENT_VIEW_SITE_SCOPE</td>
+	<td>//span[contains(@id,'DLFileEntryVIEW')]/span[contains(.,'${key_siteNameScope}')]/span</td>
+	<td></td>
+</tr>
 <tr>
 	<td>SITE_ADMIN_APPLICATIONS_DOCUMENTS_AND_MEDIA_RESOURCE_PERMISSIONS_DOCUMENTS_ACTION_CHECKBOX</td>
 	<td>xpath=(//input[contains(@name,'allRowIds')])[2]</td>
@@ -1106,6 +1222,28 @@
 <tr>
 	<td>USER_MY_ACCOUNT_MY_WORKFLOW_TASKS_VIEW_CHECKBOX</td>
 	<td>//input[contains(@value,'MyWorkflowTaskPortletVIEW')]</td>
+	<td></td>
+</tr>
+<!--SITE_ADMIN_CONFIGURATION_REDIRECTION_GENERAL_PERMISSIONS-->
+<tr>
+	<td>SITE_ADMIN_CONFIGURATION_REDIRECTION_GENERAL_PERMISSIONS_ACCESS_IN_SITE_ADMINISTRATION_CHECKBOX</td>
+	<td>//tbody//input[contains(@value,'RedirectPortletACCESS_IN_CONTROL_PANEL')]</td>
+	<td></td>
+</tr>
+<!--SITE_ADMIN_CONFIGURATION_REDIRECTION_RESOURCE_PERMISSIONS-->
+<tr>
+	<td>SITE_ADMIN_CONFIGURATION_REDIRECTION_RESOURCE_PERMISSIONS_REDIRECT_ADD_ENTRY_CHECKBOX</td>
+	<td>//input[contains(@value,'redirectADD_ENTRY')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>SITE_ADMIN_CONFIGURATION_REDIRECTION_RESOURCE_PERMISSIONS_REDIRECT_ENTRY_DELETE_CHECKBOX</td>
+	<td>//input[contains(@value,'RedirectEntryDELETE')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>SITE_ADMIN_CONFIGURATION_REDIRECTION_RESOURCE_PERMISSIONS_REDIRECT_ENTRY_VIEW_CHECKBOX</td>
+	<td>//input[contains(@value,'RedirectEntryVIEW')]</td>
 	<td></td>
 </tr>
 </tbody>

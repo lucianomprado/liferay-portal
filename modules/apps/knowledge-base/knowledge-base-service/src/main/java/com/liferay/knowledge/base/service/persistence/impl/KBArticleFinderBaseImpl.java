@@ -16,69 +16,73 @@ package com.liferay.knowledge.base.service.persistence.impl;
 
 import com.liferay.knowledge.base.model.KBArticle;
 import com.liferay.knowledge.base.service.persistence.KBArticlePersistence;
-
-import com.liferay.portal.kernel.bean.BeanReference;
+import com.liferay.knowledge.base.service.persistence.impl.constants.KBPersistenceConstants;
+import com.liferay.portal.kernel.configuration.Configuration;
+import com.liferay.portal.kernel.dao.orm.SessionFactory;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.service.persistence.impl.BasePersistenceImpl;
-import com.liferay.portal.kernel.util.ReflectionUtil;
-
-import java.lang.reflect.Field;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import javax.sql.DataSource;
+
+import org.osgi.service.component.annotations.Reference;
+
 /**
  * @author Brian Wing Shun Chan
  * @generated
  */
-public class KBArticleFinderBaseImpl extends BasePersistenceImpl<KBArticle> {
+public abstract class KBArticleFinderBaseImpl
+	extends BasePersistenceImpl<KBArticle> {
+
 	public KBArticleFinderBaseImpl() {
 		setModelClass(KBArticle.class);
 
-		try {
-			Field field = ReflectionUtil.getDeclaredField(BasePersistenceImpl.class,
-					"_dbColumnNames");
+		Map<String, String> dbColumnNames = new HashMap<String, String>();
 
-			Map<String, String> dbColumnNames = new HashMap<String, String>();
+		dbColumnNames.put("uuid", "uuid_");
 
-			dbColumnNames.put("uuid", "uuid_");
-
-			field.set(this, dbColumnNames);
-		}
-		catch (Exception e) {
-			if (_log.isDebugEnabled()) {
-				_log.debug(e, e);
-			}
-		}
+		setDBColumnNames(dbColumnNames);
 	}
 
 	@Override
 	public Set<String> getBadColumnNames() {
-		return getKBArticlePersistence().getBadColumnNames();
+		return kbArticlePersistence.getBadColumnNames();
 	}
 
-	/**
-	 * Returns the kb article persistence.
-	 *
-	 * @return the kb article persistence
-	 */
-	public KBArticlePersistence getKBArticlePersistence() {
-		return kbArticlePersistence;
+	@Override
+	@Reference(
+		target = KBPersistenceConstants.SERVICE_CONFIGURATION_FILTER,
+		unbind = "-"
+	)
+	public void setConfiguration(Configuration configuration) {
 	}
 
-	/**
-	 * Sets the kb article persistence.
-	 *
-	 * @param kbArticlePersistence the kb article persistence
-	 */
-	public void setKBArticlePersistence(
-		KBArticlePersistence kbArticlePersistence) {
-		this.kbArticlePersistence = kbArticlePersistence;
+	@Override
+	@Reference(
+		target = KBPersistenceConstants.ORIGIN_BUNDLE_SYMBOLIC_NAME_FILTER,
+		unbind = "-"
+	)
+	public void setDataSource(DataSource dataSource) {
+		super.setDataSource(dataSource);
 	}
 
-	@BeanReference(type = KBArticlePersistence.class)
+	@Override
+	@Reference(
+		target = KBPersistenceConstants.ORIGIN_BUNDLE_SYMBOLIC_NAME_FILTER,
+		unbind = "-"
+	)
+	public void setSessionFactory(SessionFactory sessionFactory) {
+		super.setSessionFactory(sessionFactory);
+	}
+
+	@Reference
 	protected KBArticlePersistence kbArticlePersistence;
-	private static final Log _log = LogFactoryUtil.getLog(KBArticleFinderBaseImpl.class);
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		KBArticleFinderBaseImpl.class);
+
 }

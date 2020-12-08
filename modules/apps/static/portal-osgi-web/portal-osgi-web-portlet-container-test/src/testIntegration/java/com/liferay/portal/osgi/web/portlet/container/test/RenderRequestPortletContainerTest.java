@@ -15,21 +15,25 @@
 package com.liferay.portal.osgi.web.portlet.container.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.portlet.PortletURLFactoryUtil;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.util.HashMapDictionary;
 import com.liferay.portal.kernel.util.HttpUtil;
 import com.liferay.portal.kernel.util.MapUtil;
+import com.liferay.portal.kernel.util.URLCodec;
+import com.liferay.portal.osgi.web.portlet.container.test.util.PortletContainerTestUtil;
+import com.liferay.portal.test.log.CaptureAppender;
+import com.liferay.portal.test.log.Log4JLoggerTestUtil;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
-import com.liferay.portal.util.test.PortletContainerTestUtil;
-import com.liferay.portal.util.test.PortletContainerTestUtil.Response;
-import com.liferay.portlet.PortletURLImpl;
+import com.liferay.portlet.SecurityPortletContainerWrapper;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 
 import java.util.Collections;
 import java.util.Dictionary;
+import java.util.List;
 import java.util.Map;
 
 import javax.portlet.PortletContext;
@@ -44,6 +48,9 @@ import javax.portlet.ResourceResponse;
 import javax.portlet.WindowState;
 
 import javax.servlet.http.HttpServletRequest;
+
+import org.apache.log4j.Level;
+import org.apache.log4j.spi.LoggingEvent;
 
 import org.junit.Assert;
 import org.junit.ClassRule;
@@ -62,6 +69,43 @@ public class RenderRequestPortletContainerTest
 	@Rule
 	public static final AggregateTestRule aggregateTestRule =
 		new LiferayIntegrationTestRule();
+
+	@Test
+	public void testInvalidPortletId() throws Exception {
+		String url = StringBundler.concat(
+			layout.getRegularURL(
+				PortletContainerTestUtil.getHttpServletRequest(group, layout)),
+			"?p_p_id=", URLCodec.encodeURL("'\"><script>alert(1)</script>"),
+			"&p_p_lifecycle=0&p_p_state=exclusive");
+
+		try (CaptureAppender captureAppender =
+				Log4JLoggerTestUtil.configureLog4JLogger(
+					SecurityPortletContainerWrapper.class.getName(),
+					Level.WARN)) {
+
+			PortletContainerTestUtil.Response response =
+				PortletContainerTestUtil.request(url);
+
+			List<LoggingEvent> loggingEvents =
+				captureAppender.getLoggingEvents();
+
+			int totalExpectedEvents = 2;
+
+			Assert.assertEquals(
+				loggingEvents.toString(), totalExpectedEvents,
+				loggingEvents.size());
+
+			for (int i = 0; i < totalExpectedEvents; i++) {
+				LoggingEvent loggingEvent = loggingEvents.get(i);
+
+				Assert.assertEquals(
+					"Invalid portlet ID '\"><script>alert(1)</script>",
+					loggingEvent.getMessage());
+			}
+
+			Assert.assertEquals(200, response.getCode());
+		}
+	}
 
 	@Test
 	public void testIsAccessGrantedByPortletAuthenticationToken()
@@ -116,19 +160,19 @@ public class RenderRequestPortletContainerTest
 		HttpServletRequest httpServletRequest =
 			PortletContainerTestUtil.getHttpServletRequest(group, layout);
 
-		PortletURL portletURL = new PortletURLImpl(
+		PortletURL portletURL = PortletURLFactoryUtil.create(
 			httpServletRequest, TEST_PORTLET_ID, layout.getPlid(),
 			PortletRequest.RESOURCE_PHASE);
 
-		Response response = PortletContainerTestUtil.request(
-			portletURL.toString());
+		PortletContainerTestUtil.Response response =
+			PortletContainerTestUtil.request(portletURL.toString());
 
 		testTargetPortlet.reset();
 
 		// Make a render request to the target portlet using the portlet
 		// authentication token
 
-		portletURL = new PortletURLImpl(
+		portletURL = PortletURLFactoryUtil.create(
 			httpServletRequest, testTargetPortletId, layout.getPlid(),
 			PortletRequest.RENDER_PHASE);
 
@@ -152,15 +196,12 @@ public class RenderRequestPortletContainerTest
 			testPortlet, new HashMapDictionary<String, Object>(),
 			TEST_PORTLET_ID);
 
-		HttpServletRequest httpServletRequest =
-			PortletContainerTestUtil.getHttpServletRequest(group, layout);
+		PortletURL portletURL = PortletURLFactoryUtil.create(
+			PortletContainerTestUtil.getHttpServletRequest(group, layout),
+			TEST_PORTLET_ID, layout.getPlid(), PortletRequest.RENDER_PHASE);
 
-		PortletURL portletURL = new PortletURLImpl(
-			httpServletRequest, TEST_PORTLET_ID, layout.getPlid(),
-			PortletRequest.RENDER_PHASE);
-
-		Response response = PortletContainerTestUtil.request(
-			portletURL.toString());
+		PortletContainerTestUtil.Response response =
+			PortletContainerTestUtil.request(portletURL.toString());
 
 		Assert.assertEquals(200, response.getCode());
 
@@ -190,12 +231,9 @@ public class RenderRequestPortletContainerTest
 			testPortlet, new HashMapDictionary<String, Object>(),
 			TEST_PORTLET_ID);
 
-		HttpServletRequest httpServletRequest =
-			PortletContainerTestUtil.getHttpServletRequest(group, layout);
-
-		PortletURL portletURL = new PortletURLImpl(
-			httpServletRequest, TEST_PORTLET_ID, layout.getPlid(),
-			PortletRequest.RENDER_PHASE);
+		PortletURL portletURL = PortletURLFactoryUtil.create(
+			PortletContainerTestUtil.getHttpServletRequest(group, layout),
+			TEST_PORTLET_ID, layout.getPlid(), PortletRequest.RENDER_PHASE);
 
 		TestPortlet testRuntimePortlet = new TestPortlet();
 		String testRuntimePortletId = "testRuntimePortletId";
@@ -206,8 +244,8 @@ public class RenderRequestPortletContainerTest
 
 		portletURL.setParameter("testRuntimePortletId", testRuntimePortletId);
 
-		Response response = PortletContainerTestUtil.request(
-			portletURL.toString());
+		PortletContainerTestUtil.Response response =
+			PortletContainerTestUtil.request(portletURL.toString());
 
 		Assert.assertEquals(200, response.getCode());
 

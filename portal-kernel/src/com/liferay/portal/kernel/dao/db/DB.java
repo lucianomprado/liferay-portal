@@ -14,8 +14,6 @@
 
 package com.liferay.portal.kernel.dao.db;
 
-import aQute.bnd.annotation.ProviderType;
-
 import java.io.IOException;
 
 import java.sql.Connection;
@@ -26,29 +24,51 @@ import java.util.Set;
 
 import javax.naming.NamingException;
 
+import org.osgi.annotation.versioning.ProviderType;
+
 /**
  * @author Brian Wing Shun Chan
  */
 @ProviderType
 public interface DB {
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
+	 */
+	@Deprecated
 	public static final int BARE = 0;
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
+	 */
+	@Deprecated
 	public static final int DEFAULT = 1;
 
 	public void addIndexes(
 			Connection con, String indexesSQL, Set<String> validIndexNames)
 		throws IOException;
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
+	 */
+	@Deprecated
 	public void buildCreateFile(String sqlDir, String databaseName)
 		throws IOException;
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
+	 */
+	@Deprecated
 	public void buildCreateFile(
 			String sqlDir, String databaseName, int population)
 		throws IOException;
 
-	public String buildSQL(String template) throws IOException;
+	public String buildSQL(String template) throws IOException, SQLException;
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
+	 */
+	@Deprecated
 	public void buildSQLFile(String sqlDir, String fileName) throws IOException;
 
 	public DBType getDBType();
@@ -59,6 +79,16 @@ public interface DB {
 
 	public int getMinorVersion();
 
+	public default String getNewUuidFunctionName() {
+		return null;
+	}
+
+	public String getPopulateSQL(String databaseName, String sqlContent);
+
+	public String getRecreateSQL(String databaseName);
+
+	public Integer getSQLType(String templateType);
+
 	public String getTemplateBlob();
 
 	public String getTemplateFalse();
@@ -67,10 +97,25 @@ public interface DB {
 
 	public String getVersionString();
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *             CounterLocalServiceUtil#increment()}
+	 */
+	@Deprecated
 	public long increment();
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *             CounterLocalServiceUtil#increment(String)}
+	 */
+	@Deprecated
 	public long increment(String name);
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *             CounterLocalServiceUtil#increment(String, int)}
+	 */
+	@Deprecated
 	public long increment(String name, int size);
 
 	public boolean isSupportsAlterColumnName();
@@ -78,6 +123,10 @@ public interface DB {
 	public boolean isSupportsAlterColumnType();
 
 	public boolean isSupportsInlineDistinct();
+
+	public default boolean isSupportsNewUuidFunction() {
+		return false;
+	}
 
 	public boolean isSupportsQueryingAfterException();
 
@@ -113,17 +162,44 @@ public interface DB {
 
 	public void runSQL(String[] sqls) throws IOException, SQLException;
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *             DBProcess#runSQLTemplate(String)}
+	 */
+	@Deprecated
 	public void runSQLTemplate(String path)
 		throws IOException, NamingException, SQLException;
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *             DBProcess#runSQLTemplate(String, boolean)}
+	 */
+	@Deprecated
 	public void runSQLTemplate(String path, boolean failOnError)
 		throws IOException, NamingException, SQLException;
 
+	public void runSQLTemplateString(
+			Connection connection, String template, boolean failOnError)
+		throws IOException, NamingException, SQLException;
+
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *             #runSQLTemplateString(Connection, String, boolean)}
+	 */
+	@Deprecated
 	public void runSQLTemplateString(
 			Connection connection, String template, boolean evaluate,
 			boolean failOnError)
 		throws IOException, NamingException, SQLException;
 
+	public void runSQLTemplateString(String template, boolean failOnError)
+		throws IOException, NamingException, SQLException;
+
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *             #runSQLTemplateString(String, boolean)}
+	 */
+	@Deprecated
 	public void runSQLTemplateString(
 			String template, boolean evaluate, boolean failOnError)
 		throws IOException, NamingException, SQLException;

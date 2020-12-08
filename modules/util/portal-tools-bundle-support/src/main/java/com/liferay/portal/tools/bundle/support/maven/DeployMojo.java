@@ -19,13 +19,14 @@ import com.liferay.portal.tools.bundle.support.commands.DeployCommand;
 import java.io.File;
 
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 
 /**
  * @author David Truong
  */
-@Mojo(name = "deploy")
+@Mojo(defaultPhase = LifecyclePhase.PACKAGE, name = "deploy")
 public class DeployMojo extends AbstractLiferayMojo {
 
 	@Override
@@ -45,9 +46,9 @@ public class DeployMojo extends AbstractLiferayMojo {
 
 			deployCommand.execute();
 		}
-		catch (Exception e) {
+		catch (Exception exception) {
 			throw new MojoExecutionException(
-				"Unable to deploy " + outputFileName, e);
+				"Unable to deploy " + outputFileName, exception);
 		}
 	}
 

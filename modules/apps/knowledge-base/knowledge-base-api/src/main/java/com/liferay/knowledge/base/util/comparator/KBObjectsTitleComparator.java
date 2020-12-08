@@ -76,9 +76,8 @@ public class KBObjectsTitleComparator<T> extends OrderByComparator<T> {
 		if (_ascending) {
 			return value;
 		}
-		else {
-			return -value;
-		}
+
+		return -value;
 	}
 
 	@Override
@@ -87,18 +86,15 @@ public class KBObjectsTitleComparator<T> extends OrderByComparator<T> {
 			if (_ascending) {
 				return ORDER_BY_MODEL_ASC;
 			}
-			else {
-				return ORDER_BY_MODEL_DESC;
-			}
+
+			return ORDER_BY_MODEL_DESC;
 		}
-		else {
-			if (_ascending) {
-				return ORDER_BY_ASC;
-			}
-			else {
-				return ORDER_BY_DESC;
-			}
+
+		if (_ascending) {
+			return ORDER_BY_ASC;
 		}
+
+		return ORDER_BY_DESC;
 	}
 
 	@Override
@@ -111,17 +107,16 @@ public class KBObjectsTitleComparator<T> extends OrderByComparator<T> {
 		return _ascending;
 	}
 
-	protected String getTitle(Object obj) {
-		if (obj instanceof KBArticle) {
-			KBArticle kbArticle = (KBArticle)obj;
+	protected String getTitle(Object object) {
+		if (object instanceof KBArticle) {
+			KBArticle kbArticle = (KBArticle)object;
 
 			return kbArticle.getTitle();
 		}
-		else {
-			KBFolder kbFolder = (KBFolder)obj;
 
-			return kbFolder.getName();
-		}
+		KBFolder kbFolder = (KBFolder)object;
+
+		return kbFolder.getName();
 	}
 
 	private final boolean _ascending;

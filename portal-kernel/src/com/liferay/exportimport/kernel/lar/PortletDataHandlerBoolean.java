@@ -14,12 +14,9 @@
 
 package com.liferay.exportimport.kernel.lar;
 
-import aQute.bnd.annotation.ProviderType;
-
 /**
  * @author Raymond Augé
  */
-@ProviderType
 public class PortletDataHandlerBoolean extends PortletDataHandlerControl {
 
 	public PortletDataHandlerBoolean(String namespace, String controlName) {

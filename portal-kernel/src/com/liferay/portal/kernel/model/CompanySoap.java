@@ -14,8 +14,6 @@
 
 package com.liferay.portal.kernel.model;
 
-import aQute.bnd.annotation.ProviderType;
-
 import java.io.Serializable;
 
 import java.util.ArrayList;
@@ -25,11 +23,12 @@ import java.util.List;
  * This class is used by SOAP remote services, specifically {@link com.liferay.portal.service.http.CompanyServiceSoap}.
  *
  * @author Brian Wing Shun Chan
- * @see com.liferay.portal.service.http.CompanyServiceSoap
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
-@ProviderType
+@Deprecated
 public class CompanySoap implements Serializable {
+
 	public static CompanySoap toSoapModel(Company model) {
 		CompanySoap soapModel = new CompanySoap();
 
@@ -37,13 +36,12 @@ public class CompanySoap implements Serializable {
 		soapModel.setCompanyId(model.getCompanyId());
 		soapModel.setAccountId(model.getAccountId());
 		soapModel.setWebId(model.getWebId());
-		soapModel.setKey(model.getKey());
 		soapModel.setMx(model.getMx());
 		soapModel.setHomeURL(model.getHomeURL());
 		soapModel.setLogoId(model.getLogoId());
-		soapModel.setSystem(model.getSystem());
+		soapModel.setSystem(model.isSystem());
 		soapModel.setMaxUsers(model.getMaxUsers());
-		soapModel.setActive(model.getActive());
+		soapModel.setActive(model.isActive());
 
 		return soapModel;
 	}
@@ -76,7 +74,8 @@ public class CompanySoap implements Serializable {
 	}
 
 	public static CompanySoap[] toSoapModels(List<Company> models) {
-		List<CompanySoap> soapModels = new ArrayList<CompanySoap>(models.size());
+		List<CompanySoap> soapModels = new ArrayList<CompanySoap>(
+			models.size());
 
 		for (Company model : models) {
 			soapModels.add(toSoapModel(model));
@@ -126,14 +125,6 @@ public class CompanySoap implements Serializable {
 
 	public void setWebId(String webId) {
 		_webId = webId;
-	}
-
-	public String getKey() {
-		return _key;
-	}
-
-	public void setKey(String key) {
-		_key = key;
 	}
 
 	public String getMx() {
@@ -196,11 +187,11 @@ public class CompanySoap implements Serializable {
 	private long _companyId;
 	private long _accountId;
 	private String _webId;
-	private String _key;
 	private String _mx;
 	private String _homeURL;
 	private long _logoId;
 	private boolean _system;
 	private int _maxUsers;
 	private boolean _active;
+
 }

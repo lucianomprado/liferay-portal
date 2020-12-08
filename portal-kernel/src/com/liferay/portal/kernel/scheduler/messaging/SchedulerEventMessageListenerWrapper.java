@@ -14,6 +14,7 @@
 
 package com.liferay.portal.kernel.scheduler.messaging;
 
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.messaging.DestinationNames;
@@ -30,8 +31,13 @@ import com.liferay.portal.kernel.scheduler.StorageType;
 import com.liferay.portal.kernel.scheduler.Trigger;
 import com.liferay.portal.kernel.scheduler.TriggerState;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.PropsKeys;
+import com.liferay.portal.kernel.util.PropsUtil;
 
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * @author Shuyang Zhou
@@ -61,18 +67,73 @@ public class SchedulerEventMessageListenerWrapper
 			}
 		}
 
+		if (_SCHEDULER_EVENT_MESSAGE_LISTENER_LOCK_TIMEOUT <= 0) {
+			_lock.lock();
+		}
+		else {
+			try {
+				if (!_lock.tryLock(
+						_SCHEDULER_EVENT_MESSAGE_LISTENER_LOCK_TIMEOUT,
+						TimeUnit.MILLISECONDS)) {
+
+					MessageBusUtil.sendMessage(destinationName, message);
+
+					return;
+				}
+			}
+			catch (InterruptedException interruptedException) {
+				if (_log.isInfoEnabled()) {
+					_log.info(
+						"Unable to wait " +
+							_SCHEDULER_EVENT_MESSAGE_LISTENER_LOCK_TIMEOUT +
+								" milliseconds before retry",
+						interruptedException);
+				}
+
+				return;
+			}
+		}
+
+		try {
+			_processMessage(message, destinationName, jobName, groupName);
+		}
+		finally {
+			_lock.unlock();
+		}
+	}
+
+	public void setMessageListener(MessageListener messageListener) {
+		_messageListener = messageListener;
+	}
+
+	public void setSchedulerEntry(SchedulerEntry schedulerEntry) {
+		_schedulerEntry = schedulerEntry;
+	}
+
+	protected void handleException(Message message, Exception exception) {
+		JobState jobState = (JobState)message.get(SchedulerEngine.JOB_STATE);
+
+		if (jobState != null) {
+			jobState.addException(exception, new Date());
+		}
+	}
+
+	private void _processMessage(
+			Message message, String destinationName, String jobName,
+			String groupName)
+		throws MessageListenerException {
+
 		try {
 			_messageListener.receive(message);
 		}
-		catch (Exception e) {
-			handleException(message, e);
+		catch (Exception exception) {
+			handleException(message, exception);
 
-			if (e instanceof MessageListenerException) {
-				throw (MessageListenerException)e;
+			if (exception instanceof MessageListenerException) {
+				throw (MessageListenerException)exception;
 			}
-			else {
-				throw new MessageListenerException(e);
-			}
+
+			throw new MessageListenerException(exception);
 		}
 		finally {
 			TriggerState triggerState = null;
@@ -94,12 +155,13 @@ public class SchedulerEventMessageListenerWrapper
 					SchedulerEngineHelperUtil.delete(
 						jobName, groupName, storageType);
 				}
-				catch (SchedulerException se) {
+				catch (SchedulerException schedulerException) {
 					if (_log.isInfoEnabled()) {
 						_log.info(
-							"Unable to delete job " + jobName + " in group " +
-								groupName,
-							se);
+							StringBundler.concat(
+								"Unable to delete job ", jobName, " in group ",
+								groupName),
+							schedulerException);
 					}
 				}
 			}
@@ -111,63 +173,23 @@ public class SchedulerEventMessageListenerWrapper
 				SchedulerEngineHelperUtil.auditSchedulerJobs(
 					message, triggerState);
 			}
-			catch (Exception e) {
+			catch (Exception exception) {
 				if (_log.isInfoEnabled()) {
-					_log.info("Unable to send audit message", e);
+					_log.info("Unable to send audit message", exception);
 				}
 			}
 		}
 	}
 
-	/**
-	 * @deprecated As of 7.0.0
-	 */
-	@Deprecated
-	public void setGroupName(String groupName) {
-		_groupName = groupName;
-	}
-
-	/**
-	 * @deprecated As of 7.0.0
-	 */
-	@Deprecated
-	public void setJobName(String jobName) {
-		_jobName = jobName;
-	}
-
-	public void setMessageListener(MessageListener messageListener) {
-		_messageListener = messageListener;
-	}
-
-	public void setSchedulerEntry(SchedulerEntry schedulerEntry) {
-		_schedulerEntry = schedulerEntry;
-	}
-
-	protected void handleException(Message message, Exception exception) {
-		JobState jobState = (JobState)message.get(SchedulerEngine.JOB_STATE);
-
-		if (jobState != null) {
-			jobState.addException(exception, new Date());
-		}
-	}
+	private static final int _SCHEDULER_EVENT_MESSAGE_LISTENER_LOCK_TIMEOUT =
+		GetterUtil.getInteger(
+			PropsUtil.get(
+				PropsKeys.SCHEDULER_EVENT_MESSAGE_LISTENER_LOCK_TIMEOUT));
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		SchedulerEventMessageListenerWrapper.class);
 
-	/**
-	 * @deprecated As of 7.0.0
-	 */
-	@Deprecated
-	@SuppressWarnings("unused")
-	private String _groupName;
-
-	/**
-	 * @deprecated As of 7.0.0
-	 */
-	@Deprecated
-	@SuppressWarnings("unused")
-	private String _jobName;
-
+	private final Lock _lock = new ReentrantLock();
 	private MessageListener _messageListener;
 	private volatile SchedulerEntry _schedulerEntry;
 

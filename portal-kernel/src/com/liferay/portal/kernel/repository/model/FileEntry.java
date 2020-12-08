@@ -14,8 +14,6 @@
 
 package com.liferay.portal.kernel.repository.model;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSON;
 import com.liferay.portal.kernel.lock.Lock;
@@ -27,6 +25,8 @@ import java.io.InputStream;
 
 import java.util.Date;
 import java.util.List;
+
+import org.osgi.annotation.versioning.ProviderType;
 
 /**
  * @author Alexander Chow
@@ -150,7 +150,7 @@ public interface FileEntry extends RepositoryEntry, RepositoryModel<FileEntry> {
 	@Override
 	public Date getModifiedDate();
 
-	public int getReadCount();
+	public long getReadCount();
 
 	public <T extends Capability> T getRepositoryCapability(
 		Class<T> capabilityClass);
@@ -174,12 +174,6 @@ public interface FileEntry extends RepositoryEntry, RepositoryModel<FileEntry> {
 	public String getUuid();
 
 	public String getVersion();
-
-	public long getVersionUserId();
-
-	public String getVersionUserName();
-
-	public String getVersionUserUuid();
 
 	public boolean hasLock();
 

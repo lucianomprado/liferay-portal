@@ -14,10 +14,13 @@
 
 package com.liferay.source.formatter.parser;
 
-import com.liferay.portal.kernel.util.CharPool;
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
-import com.liferay.source.formatter.checks.util.JavaSourceUtil;
+import com.liferay.portal.tools.ToolsUtil;
+
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * @author Hugo Huijser
@@ -55,23 +58,49 @@ public class JavaSignatureParser {
 
 			parameters = content.substring(x + 1, y);
 
-			if (JavaSourceUtil.getLevel(parameters) == 0) {
+			if (ToolsUtil.getLevel(parameters) == 0) {
 				break;
 			}
 		}
+
+		boolean isFinal = false;
+		Set<String> parameterAnnotations = new TreeSet<>();
 
 		parameters = StringUtil.replace(
 			parameters, new String[] {"\t", ".\n", "\n"},
 			new String[] {"", ".", " "});
 
 		for (x = 0;;) {
-			parameters = StringUtil.trim(parameters);
+			int pos = -1;
 
-			if (parameters.startsWith(StringPool.AT)) {
-				parameters = _stripAnnotation(parameters);
+			while (true) {
+				parameters = StringUtil.trim(parameters);
+
+				if (!parameters.startsWith(StringPool.AT)) {
+					break;
+				}
+
+				pos = parameters.indexOf(CharPool.SPACE, pos + 1);
+
+				if (pos == -1) {
+					break;
+				}
+
+				String annotation = parameters.substring(0, pos);
+
+				if ((ToolsUtil.getLevel(annotation) == 0) &&
+					(ToolsUtil.getLevel(annotation, "<", ">") == 0)) {
+
+					parameterAnnotations.add(annotation);
+
+					parameters = parameters.substring(pos + 1);
+
+					pos = -1;
+				}
 			}
 
 			if (parameters.startsWith("final ")) {
+				isFinal = true;
 				parameters = parameters.substring(6);
 			}
 
@@ -83,7 +112,7 @@ public class JavaSignatureParser {
 
 			String parameterType = parameters.substring(0, x);
 
-			if (JavaSourceUtil.getLevel(parameterType, "<", ">") != 0) {
+			if (ToolsUtil.getLevel(parameterType, "<", ">") != 0) {
 				continue;
 			}
 
@@ -92,15 +121,20 @@ public class JavaSignatureParser {
 			if (y == -1) {
 				String parameterName = parameters.substring(x + 1);
 
-				javaSignature.addParameter(parameterName, parameterType);
+				javaSignature.addParameter(
+					parameterName, parameterType, parameterAnnotations,
+					isFinal);
 
 				return javaSignature;
 			}
 
 			String parameterName = parameters.substring(x + 1, y);
 
-			javaSignature.addParameter(parameterName, parameterType);
+			javaSignature.addParameter(
+				parameterName, parameterType, parameterAnnotations, isFinal);
 
+			isFinal = false;
+			parameterAnnotations = new TreeSet<>();
 			parameters = parameters.substring(y + 1);
 
 			x = 0;
@@ -122,7 +156,7 @@ public class JavaSignatureParser {
 
 			returnType = s.substring(z + 1);
 
-			if (JavaSourceUtil.getLevel(returnType, "<", ">") == 0) {
+			if (ToolsUtil.getLevel(returnType, "<", ">") == 0) {
 				break;
 			}
 		}
@@ -132,26 +166,6 @@ public class JavaSignatureParser {
 		}
 
 		return returnType;
-	}
-
-	private static String _stripAnnotation(String parameters) {
-		int pos = -1;
-
-		while (true) {
-			pos = parameters.indexOf(CharPool.SPACE, pos + 1);
-
-			if (pos == -1) {
-				return parameters;
-			}
-
-			String annotation = parameters.substring(0, pos);
-
-			if ((JavaSourceUtil.getLevel(annotation) == 0) &&
-				(JavaSourceUtil.getLevel(annotation, "<", ">") == 0)) {
-
-				return parameters.substring(pos + 1);
-			}
-		}
 	}
 
 }

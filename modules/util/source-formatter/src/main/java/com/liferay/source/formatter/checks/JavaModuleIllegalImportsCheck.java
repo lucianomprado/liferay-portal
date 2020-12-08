@@ -14,7 +14,6 @@
 
 package com.liferay.source.formatter.checks;
 
-import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.source.formatter.checks.util.JavaSourceUtil;
 
 import java.util.regex.Matcher;
@@ -26,24 +25,17 @@ import java.util.regex.Pattern;
 public class JavaModuleIllegalImportsCheck extends BaseFileCheck {
 
 	@Override
-	public boolean isModulesCheck() {
+	public boolean isModuleSourceCheck() {
 		return true;
-	}
-
-	public void setCheckRegistryInTestClasses(
-		String checkRegistryInTestClasses) {
-
-		_checkRegistryInTestClasses = GetterUtil.getBoolean(
-			checkRegistryInTestClasses);
 	}
 
 	@Override
 	protected String doProcess(
 		String fileName, String absolutePath, String content) {
 
-		String packagePath = JavaSourceUtil.getPackagePath(content);
+		String packageName = JavaSourceUtil.getPackageName(content);
 
-		if (!packagePath.startsWith("com.liferay")) {
+		if (!packageName.startsWith("com.liferay")) {
 			return content;
 		}
 
@@ -53,7 +45,8 @@ public class JavaModuleIllegalImportsCheck extends BaseFileCheck {
 			!absolutePath.contains("/modules/core/portal-bootstrap") &&
 			!absolutePath.contains("/modules/core/registry-") &&
 			!absolutePath.contains("/modules/core/slim-runtime") &&
-			(_checkRegistryInTestClasses ||
+			(isAttributeValue(
+				_CHECK_REGISTRY_IN_TEST_CLASSES_KEY, absolutePath) ||
 			 (!absolutePath.contains("/test/") &&
 			  !absolutePath.contains("/testIntegration/")))) {
 
@@ -73,7 +66,7 @@ public class JavaModuleIllegalImportsCheck extends BaseFileCheck {
 			addMessage(
 				fileName,
 				"Do not use com.liferay.util.dao.orm.CustomSQLUtil in " +
-					"modules, see LPS-64238");
+					"modules, see LPS-77361");
 		}
 
 		// LPS-64335
@@ -88,8 +81,10 @@ public class JavaModuleIllegalImportsCheck extends BaseFileCheck {
 		return content;
 	}
 
-	private boolean _checkRegistryInTestClasses;
-	private final Pattern _registryImportPattern = Pattern.compile(
+	private static final String _CHECK_REGISTRY_IN_TEST_CLASSES_KEY =
+		"checkRegistryInTestClasses";
+
+	private static final Pattern _registryImportPattern = Pattern.compile(
 		"\nimport (com\\.liferay\\.registry\\..+);");
 
 }

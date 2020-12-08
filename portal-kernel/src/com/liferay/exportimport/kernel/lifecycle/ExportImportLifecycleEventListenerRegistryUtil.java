@@ -14,9 +14,6 @@
 
 package com.liferay.exportimport.kernel.lifecycle;
 
-import aQute.bnd.annotation.ProviderType;
-
-import com.liferay.portal.kernel.concurrent.ConcurrentHashSet;
 import com.liferay.registry.Registry;
 import com.liferay.registry.RegistryUtil;
 import com.liferay.registry.ServiceReference;
@@ -26,37 +23,42 @@ import com.liferay.registry.ServiceTrackerCustomizer;
 import com.liferay.registry.collections.ServiceRegistrationMap;
 import com.liferay.registry.collections.ServiceRegistrationMapImpl;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author Daniel Kocsis
  */
-@ProviderType
 public class ExportImportLifecycleEventListenerRegistryUtil {
 
 	public static Set<ExportImportLifecycleListener>
 		getAsyncExportImportLifecycleListeners() {
 
-		return _instance._getAsyncExportImportLifecycleListeners();
+		return _exportImportLifecycleEventListenerRegistryUtil.
+			_getAsyncExportImportLifecycleListeners();
 	}
 
 	public static Set<ExportImportLifecycleListener>
 		getSyncExportImportLifecycleListeners() {
 
-		return _instance._getSyncExportImportLifecycleListeners();
+		return _exportImportLifecycleEventListenerRegistryUtil.
+			_getSyncExportImportLifecycleListeners();
 	}
 
 	public static void register(
 		ExportImportLifecycleListener exportImportLifecycleListener) {
 
-		_instance._register(exportImportLifecycleListener);
+		_exportImportLifecycleEventListenerRegistryUtil._register(
+			exportImportLifecycleListener);
 	}
 
 	public static void unregister(
 		ExportImportLifecycleListener exportImportLifecycleListener) {
 
-		_instance._unregister(exportImportLifecycleListener);
+		_exportImportLifecycleEventListenerRegistryUtil._unregister(
+			exportImportLifecycleListener);
 	}
 
 	public static void unregister(
@@ -117,17 +119,20 @@ public class ExportImportLifecycleEventListenerRegistryUtil {
 	}
 
 	private static final ExportImportLifecycleEventListenerRegistryUtil
-		_instance = new ExportImportLifecycleEventListenerRegistryUtil();
+		_exportImportLifecycleEventListenerRegistryUtil =
+			new ExportImportLifecycleEventListenerRegistryUtil();
 
 	private final Set<ExportImportLifecycleListener>
-		_asyncExportImportLifecycleListeners = new ConcurrentHashSet<>();
+		_asyncExportImportLifecycleListeners = Collections.newSetFromMap(
+			new ConcurrentHashMap<>());
 	private final ServiceRegistrationMap<ExportImportLifecycleListener>
 		_serviceRegistrations = new ServiceRegistrationMapImpl<>();
 	private final ServiceTracker
 		<ExportImportLifecycleListener, ExportImportLifecycleListener>
 			_serviceTracker;
 	private final Set<ExportImportLifecycleListener>
-		_syncExportImportLifecycleListeners = new ConcurrentHashSet<>();
+		_syncExportImportLifecycleListeners = Collections.newSetFromMap(
+			new ConcurrentHashMap<>());
 
 	private class ExportImportLifecycleListenerServiceTrackerCustomizer
 		implements ServiceTrackerCustomizer

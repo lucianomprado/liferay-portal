@@ -14,21 +14,20 @@
 
 package com.liferay.marketplace.app.manager.web.internal.util.comparator;
 
-import com.liferay.marketplace.app.manager.web.internal.constants.BundleConstants;
 import com.liferay.marketplace.app.manager.web.internal.util.AppDisplay;
-import com.liferay.marketplace.app.manager.web.internal.util.ModuleGroupDisplay;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.StringPool;
 
 import java.util.Comparator;
 import java.util.Dictionary;
 
 import org.osgi.framework.Bundle;
+import org.osgi.framework.Constants;
 
 /**
  * @author Ryan Park
  */
-public class MarketplaceAppManagerComparator implements Comparator {
+public class MarketplaceAppManagerComparator implements Comparator<Object> {
 
 	public MarketplaceAppManagerComparator(String orderByType) {
 		_orderByType = orderByType;
@@ -52,9 +51,8 @@ public class MarketplaceAppManagerComparator implements Comparator {
 		if (_ascending) {
 			return value;
 		}
-		else {
-			return -value;
-		}
+
+		return -value;
 	}
 
 	protected int compareClass(Object object1, Object object2) {
@@ -68,9 +66,8 @@ public class MarketplaceAppManagerComparator implements Comparator {
 		if (value1 > value2) {
 			return 1;
 		}
-		else {
-			return 0;
-		}
+
+		return 0;
 	}
 
 	protected int compareTitle(Object object1, Object object2) {
@@ -82,16 +79,6 @@ public class MarketplaceAppManagerComparator implements Comparator {
 
 	protected int getClassValue(Object object) {
 		if (object instanceof AppDisplay) {
-			AppDisplay appDisplay = (AppDisplay)object;
-
-			if (appDisplay.hasModuleGroups()) {
-				return 1;
-			}
-			else {
-				return 2;
-			}
-		}
-		else if (object instanceof ModuleGroupDisplay) {
 			return 2;
 		}
 		else if (object instanceof Bundle) {
@@ -105,20 +92,15 @@ public class MarketplaceAppManagerComparator implements Comparator {
 		if (object instanceof AppDisplay) {
 			AppDisplay appDisplay = (AppDisplay)object;
 
-			return appDisplay.getTitle();
+			return appDisplay.getDisplayTitle();
 		}
 		else if (object instanceof Bundle) {
 			Bundle bundle = (Bundle)object;
 
-			Dictionary<String, String> headers = bundle.getHeaders();
+			Dictionary<String, String> headers = bundle.getHeaders(
+				StringPool.BLANK);
 
-			return GetterUtil.getString(
-				headers.get(BundleConstants.BUNDLE_NAME));
-		}
-		else if (object instanceof ModuleGroupDisplay) {
-			ModuleGroupDisplay moduleGroupDisplay = (ModuleGroupDisplay)object;
-
-			return moduleGroupDisplay.getTitle();
+			return GetterUtil.getString(headers.get(Constants.BUNDLE_NAME));
 		}
 
 		return StringPool.BLANK;

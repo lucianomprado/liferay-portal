@@ -15,13 +15,13 @@
 package com.liferay.sync.service.persistence.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
-
 import com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery;
 import com.liferay.portal.kernel.dao.orm.DynamicQuery;
 import com.liferay.portal.kernel.dao.orm.DynamicQueryFactoryUtil;
 import com.liferay.portal.kernel.dao.orm.ProjectionFactoryUtil;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.dao.orm.RestrictionsFactoryUtil;
+import com.liferay.portal.kernel.dao.orm.Session;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
@@ -33,21 +33,11 @@ import com.liferay.portal.kernel.util.Time;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PersistenceTestRule;
 import com.liferay.portal.test.rule.TransactionalTestRule;
-
 import com.liferay.sync.exception.NoSuchDLFileVersionDiffException;
 import com.liferay.sync.model.SyncDLFileVersionDiff;
 import com.liferay.sync.service.SyncDLFileVersionDiffLocalServiceUtil;
 import com.liferay.sync.service.persistence.SyncDLFileVersionDiffPersistence;
 import com.liferay.sync.service.persistence.SyncDLFileVersionDiffUtil;
-
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
-
-import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 
@@ -58,17 +48,27 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
 /**
  * @generated
  */
 @RunWith(Arquillian.class)
 public class SyncDLFileVersionDiffPersistenceTest {
+
 	@ClassRule
 	@Rule
-	public static final AggregateTestRule aggregateTestRule = new AggregateTestRule(new LiferayIntegrationTestRule(),
-			PersistenceTestRule.INSTANCE,
-			new TransactionalTestRule(Propagation.REQUIRED,
-				"com.liferay.sync.service"));
+	public static final AggregateTestRule aggregateTestRule =
+		new AggregateTestRule(
+			new LiferayIntegrationTestRule(), PersistenceTestRule.INSTANCE,
+			new TransactionalTestRule(
+				Propagation.REQUIRED, "com.liferay.sync.service"));
 
 	@Before
 	public void setUp() {
@@ -81,7 +81,8 @@ public class SyncDLFileVersionDiffPersistenceTest {
 
 	@After
 	public void tearDown() throws Exception {
-		Iterator<SyncDLFileVersionDiff> iterator = _syncDLFileVersionDiffs.iterator();
+		Iterator<SyncDLFileVersionDiff> iterator =
+			_syncDLFileVersionDiffs.iterator();
 
 		while (iterator.hasNext()) {
 			_persistence.remove(iterator.next());
@@ -103,11 +104,14 @@ public class SyncDLFileVersionDiffPersistenceTest {
 
 	@Test
 	public void testRemove() throws Exception {
-		SyncDLFileVersionDiff newSyncDLFileVersionDiff = addSyncDLFileVersionDiff();
+		SyncDLFileVersionDiff newSyncDLFileVersionDiff =
+			addSyncDLFileVersionDiff();
 
 		_persistence.remove(newSyncDLFileVersionDiff);
 
-		SyncDLFileVersionDiff existingSyncDLFileVersionDiff = _persistence.fetchByPrimaryKey(newSyncDLFileVersionDiff.getPrimaryKey());
+		SyncDLFileVersionDiff existingSyncDLFileVersionDiff =
+			_persistence.fetchByPrimaryKey(
+				newSyncDLFileVersionDiff.getPrimaryKey());
 
 		Assert.assertNull(existingSyncDLFileVersionDiff);
 	}
@@ -121,13 +125,18 @@ public class SyncDLFileVersionDiffPersistenceTest {
 	public void testUpdateExisting() throws Exception {
 		long pk = RandomTestUtil.nextLong();
 
-		SyncDLFileVersionDiff newSyncDLFileVersionDiff = _persistence.create(pk);
+		SyncDLFileVersionDiff newSyncDLFileVersionDiff = _persistence.create(
+			pk);
+
+		newSyncDLFileVersionDiff.setCompanyId(RandomTestUtil.nextLong());
 
 		newSyncDLFileVersionDiff.setFileEntryId(RandomTestUtil.nextLong());
 
-		newSyncDLFileVersionDiff.setSourceFileVersionId(RandomTestUtil.nextLong());
+		newSyncDLFileVersionDiff.setSourceFileVersionId(
+			RandomTestUtil.nextLong());
 
-		newSyncDLFileVersionDiff.setTargetFileVersionId(RandomTestUtil.nextLong());
+		newSyncDLFileVersionDiff.setTargetFileVersionId(
+			RandomTestUtil.nextLong());
 
 		newSyncDLFileVersionDiff.setDataFileEntryId(RandomTestUtil.nextLong());
 
@@ -135,26 +144,39 @@ public class SyncDLFileVersionDiffPersistenceTest {
 
 		newSyncDLFileVersionDiff.setExpirationDate(RandomTestUtil.nextDate());
 
-		_syncDLFileVersionDiffs.add(_persistence.update(
-				newSyncDLFileVersionDiff));
+		_syncDLFileVersionDiffs.add(
+			_persistence.update(newSyncDLFileVersionDiff));
 
-		SyncDLFileVersionDiff existingSyncDLFileVersionDiff = _persistence.findByPrimaryKey(newSyncDLFileVersionDiff.getPrimaryKey());
+		SyncDLFileVersionDiff existingSyncDLFileVersionDiff =
+			_persistence.findByPrimaryKey(
+				newSyncDLFileVersionDiff.getPrimaryKey());
 
-		Assert.assertEquals(existingSyncDLFileVersionDiff.getSyncDLFileVersionDiffId(),
+		Assert.assertEquals(
+			existingSyncDLFileVersionDiff.getSyncDLFileVersionDiffId(),
 			newSyncDLFileVersionDiff.getSyncDLFileVersionDiffId());
-		Assert.assertEquals(existingSyncDLFileVersionDiff.getFileEntryId(),
+		Assert.assertEquals(
+			existingSyncDLFileVersionDiff.getCompanyId(),
+			newSyncDLFileVersionDiff.getCompanyId());
+		Assert.assertEquals(
+			existingSyncDLFileVersionDiff.getFileEntryId(),
 			newSyncDLFileVersionDiff.getFileEntryId());
-		Assert.assertEquals(existingSyncDLFileVersionDiff.getSourceFileVersionId(),
+		Assert.assertEquals(
+			existingSyncDLFileVersionDiff.getSourceFileVersionId(),
 			newSyncDLFileVersionDiff.getSourceFileVersionId());
-		Assert.assertEquals(existingSyncDLFileVersionDiff.getTargetFileVersionId(),
+		Assert.assertEquals(
+			existingSyncDLFileVersionDiff.getTargetFileVersionId(),
 			newSyncDLFileVersionDiff.getTargetFileVersionId());
-		Assert.assertEquals(existingSyncDLFileVersionDiff.getDataFileEntryId(),
+		Assert.assertEquals(
+			existingSyncDLFileVersionDiff.getDataFileEntryId(),
 			newSyncDLFileVersionDiff.getDataFileEntryId());
-		Assert.assertEquals(existingSyncDLFileVersionDiff.getSize(),
+		Assert.assertEquals(
+			existingSyncDLFileVersionDiff.getSize(),
 			newSyncDLFileVersionDiff.getSize());
-		Assert.assertEquals(Time.getShortTimestamp(
+		Assert.assertEquals(
+			Time.getShortTimestamp(
 				existingSyncDLFileVersionDiff.getExpirationDate()),
-			Time.getShortTimestamp(newSyncDLFileVersionDiff.getExpirationDate()));
+			Time.getShortTimestamp(
+				newSyncDLFileVersionDiff.getExpirationDate()));
 	}
 
 	@Test
@@ -173,20 +195,24 @@ public class SyncDLFileVersionDiffPersistenceTest {
 
 	@Test
 	public void testCountByF_S_T() throws Exception {
-		_persistence.countByF_S_T(RandomTestUtil.nextLong(),
-			RandomTestUtil.nextLong(), RandomTestUtil.nextLong());
+		_persistence.countByF_S_T(
+			RandomTestUtil.nextLong(), RandomTestUtil.nextLong(),
+			RandomTestUtil.nextLong());
 
 		_persistence.countByF_S_T(0L, 0L, 0L);
 	}
 
 	@Test
 	public void testFindByPrimaryKeyExisting() throws Exception {
-		SyncDLFileVersionDiff newSyncDLFileVersionDiff = addSyncDLFileVersionDiff();
+		SyncDLFileVersionDiff newSyncDLFileVersionDiff =
+			addSyncDLFileVersionDiff();
 
-		SyncDLFileVersionDiff existingSyncDLFileVersionDiff = _persistence.findByPrimaryKey(newSyncDLFileVersionDiff.getPrimaryKey());
+		SyncDLFileVersionDiff existingSyncDLFileVersionDiff =
+			_persistence.findByPrimaryKey(
+				newSyncDLFileVersionDiff.getPrimaryKey());
 
-		Assert.assertEquals(existingSyncDLFileVersionDiff,
-			newSyncDLFileVersionDiff);
+		Assert.assertEquals(
+			existingSyncDLFileVersionDiff, newSyncDLFileVersionDiff);
 	}
 
 	@Test(expected = NoSuchDLFileVersionDiffException.class)
@@ -198,32 +224,37 @@ public class SyncDLFileVersionDiffPersistenceTest {
 
 	@Test
 	public void testFindAll() throws Exception {
-		_persistence.findAll(QueryUtil.ALL_POS, QueryUtil.ALL_POS,
-			getOrderByComparator());
+		_persistence.findAll(
+			QueryUtil.ALL_POS, QueryUtil.ALL_POS, getOrderByComparator());
 	}
 
 	protected OrderByComparator<SyncDLFileVersionDiff> getOrderByComparator() {
-		return OrderByComparatorFactoryUtil.create("SyncDLFileVersionDiff",
-			"syncDLFileVersionDiffId", true, "fileEntryId", true,
-			"sourceFileVersionId", true, "targetFileVersionId", true,
-			"dataFileEntryId", true, "size", true, "expirationDate", true);
+		return OrderByComparatorFactoryUtil.create(
+			"SyncDLFileVersionDiff", "syncDLFileVersionDiffId", true,
+			"companyId", true, "fileEntryId", true, "sourceFileVersionId", true,
+			"targetFileVersionId", true, "dataFileEntryId", true, "size", true,
+			"expirationDate", true);
 	}
 
 	@Test
 	public void testFetchByPrimaryKeyExisting() throws Exception {
-		SyncDLFileVersionDiff newSyncDLFileVersionDiff = addSyncDLFileVersionDiff();
+		SyncDLFileVersionDiff newSyncDLFileVersionDiff =
+			addSyncDLFileVersionDiff();
 
-		SyncDLFileVersionDiff existingSyncDLFileVersionDiff = _persistence.fetchByPrimaryKey(newSyncDLFileVersionDiff.getPrimaryKey());
+		SyncDLFileVersionDiff existingSyncDLFileVersionDiff =
+			_persistence.fetchByPrimaryKey(
+				newSyncDLFileVersionDiff.getPrimaryKey());
 
-		Assert.assertEquals(existingSyncDLFileVersionDiff,
-			newSyncDLFileVersionDiff);
+		Assert.assertEquals(
+			existingSyncDLFileVersionDiff, newSyncDLFileVersionDiff);
 	}
 
 	@Test
 	public void testFetchByPrimaryKeyMissing() throws Exception {
 		long pk = RandomTestUtil.nextLong();
 
-		SyncDLFileVersionDiff missingSyncDLFileVersionDiff = _persistence.fetchByPrimaryKey(pk);
+		SyncDLFileVersionDiff missingSyncDLFileVersionDiff =
+			_persistence.fetchByPrimaryKey(pk);
 
 		Assert.assertNull(missingSyncDLFileVersionDiff);
 	}
@@ -231,21 +262,27 @@ public class SyncDLFileVersionDiffPersistenceTest {
 	@Test
 	public void testFetchByPrimaryKeysWithMultiplePrimaryKeysWhereAllPrimaryKeysExist()
 		throws Exception {
-		SyncDLFileVersionDiff newSyncDLFileVersionDiff1 = addSyncDLFileVersionDiff();
-		SyncDLFileVersionDiff newSyncDLFileVersionDiff2 = addSyncDLFileVersionDiff();
+
+		SyncDLFileVersionDiff newSyncDLFileVersionDiff1 =
+			addSyncDLFileVersionDiff();
+		SyncDLFileVersionDiff newSyncDLFileVersionDiff2 =
+			addSyncDLFileVersionDiff();
 
 		Set<Serializable> primaryKeys = new HashSet<Serializable>();
 
 		primaryKeys.add(newSyncDLFileVersionDiff1.getPrimaryKey());
 		primaryKeys.add(newSyncDLFileVersionDiff2.getPrimaryKey());
 
-		Map<Serializable, SyncDLFileVersionDiff> syncDLFileVersionDiffs = _persistence.fetchByPrimaryKeys(primaryKeys);
+		Map<Serializable, SyncDLFileVersionDiff> syncDLFileVersionDiffs =
+			_persistence.fetchByPrimaryKeys(primaryKeys);
 
 		Assert.assertEquals(2, syncDLFileVersionDiffs.size());
-		Assert.assertEquals(newSyncDLFileVersionDiff1,
+		Assert.assertEquals(
+			newSyncDLFileVersionDiff1,
 			syncDLFileVersionDiffs.get(
 				newSyncDLFileVersionDiff1.getPrimaryKey()));
-		Assert.assertEquals(newSyncDLFileVersionDiff2,
+		Assert.assertEquals(
+			newSyncDLFileVersionDiff2,
 			syncDLFileVersionDiffs.get(
 				newSyncDLFileVersionDiff2.getPrimaryKey()));
 	}
@@ -253,6 +290,7 @@ public class SyncDLFileVersionDiffPersistenceTest {
 	@Test
 	public void testFetchByPrimaryKeysWithMultiplePrimaryKeysWhereNoPrimaryKeysExist()
 		throws Exception {
+
 		long pk1 = RandomTestUtil.nextLong();
 
 		long pk2 = RandomTestUtil.nextLong();
@@ -262,7 +300,8 @@ public class SyncDLFileVersionDiffPersistenceTest {
 		primaryKeys.add(pk1);
 		primaryKeys.add(pk2);
 
-		Map<Serializable, SyncDLFileVersionDiff> syncDLFileVersionDiffs = _persistence.fetchByPrimaryKeys(primaryKeys);
+		Map<Serializable, SyncDLFileVersionDiff> syncDLFileVersionDiffs =
+			_persistence.fetchByPrimaryKeys(primaryKeys);
 
 		Assert.assertTrue(syncDLFileVersionDiffs.isEmpty());
 	}
@@ -270,7 +309,9 @@ public class SyncDLFileVersionDiffPersistenceTest {
 	@Test
 	public void testFetchByPrimaryKeysWithMultiplePrimaryKeysWhereSomePrimaryKeysExist()
 		throws Exception {
-		SyncDLFileVersionDiff newSyncDLFileVersionDiff = addSyncDLFileVersionDiff();
+
+		SyncDLFileVersionDiff newSyncDLFileVersionDiff =
+			addSyncDLFileVersionDiff();
 
 		long pk = RandomTestUtil.nextLong();
 
@@ -279,53 +320,65 @@ public class SyncDLFileVersionDiffPersistenceTest {
 		primaryKeys.add(newSyncDLFileVersionDiff.getPrimaryKey());
 		primaryKeys.add(pk);
 
-		Map<Serializable, SyncDLFileVersionDiff> syncDLFileVersionDiffs = _persistence.fetchByPrimaryKeys(primaryKeys);
+		Map<Serializable, SyncDLFileVersionDiff> syncDLFileVersionDiffs =
+			_persistence.fetchByPrimaryKeys(primaryKeys);
 
 		Assert.assertEquals(1, syncDLFileVersionDiffs.size());
-		Assert.assertEquals(newSyncDLFileVersionDiff,
-			syncDLFileVersionDiffs.get(newSyncDLFileVersionDiff.getPrimaryKey()));
+		Assert.assertEquals(
+			newSyncDLFileVersionDiff,
+			syncDLFileVersionDiffs.get(
+				newSyncDLFileVersionDiff.getPrimaryKey()));
 	}
 
 	@Test
-	public void testFetchByPrimaryKeysWithNoPrimaryKeys()
-		throws Exception {
+	public void testFetchByPrimaryKeysWithNoPrimaryKeys() throws Exception {
 		Set<Serializable> primaryKeys = new HashSet<Serializable>();
 
-		Map<Serializable, SyncDLFileVersionDiff> syncDLFileVersionDiffs = _persistence.fetchByPrimaryKeys(primaryKeys);
+		Map<Serializable, SyncDLFileVersionDiff> syncDLFileVersionDiffs =
+			_persistence.fetchByPrimaryKeys(primaryKeys);
 
 		Assert.assertTrue(syncDLFileVersionDiffs.isEmpty());
 	}
 
 	@Test
-	public void testFetchByPrimaryKeysWithOnePrimaryKey()
-		throws Exception {
-		SyncDLFileVersionDiff newSyncDLFileVersionDiff = addSyncDLFileVersionDiff();
+	public void testFetchByPrimaryKeysWithOnePrimaryKey() throws Exception {
+		SyncDLFileVersionDiff newSyncDLFileVersionDiff =
+			addSyncDLFileVersionDiff();
 
 		Set<Serializable> primaryKeys = new HashSet<Serializable>();
 
 		primaryKeys.add(newSyncDLFileVersionDiff.getPrimaryKey());
 
-		Map<Serializable, SyncDLFileVersionDiff> syncDLFileVersionDiffs = _persistence.fetchByPrimaryKeys(primaryKeys);
+		Map<Serializable, SyncDLFileVersionDiff> syncDLFileVersionDiffs =
+			_persistence.fetchByPrimaryKeys(primaryKeys);
 
 		Assert.assertEquals(1, syncDLFileVersionDiffs.size());
-		Assert.assertEquals(newSyncDLFileVersionDiff,
-			syncDLFileVersionDiffs.get(newSyncDLFileVersionDiff.getPrimaryKey()));
+		Assert.assertEquals(
+			newSyncDLFileVersionDiff,
+			syncDLFileVersionDiffs.get(
+				newSyncDLFileVersionDiff.getPrimaryKey()));
 	}
 
 	@Test
 	public void testActionableDynamicQuery() throws Exception {
 		final IntegerWrapper count = new IntegerWrapper();
 
-		ActionableDynamicQuery actionableDynamicQuery = SyncDLFileVersionDiffLocalServiceUtil.getActionableDynamicQuery();
+		ActionableDynamicQuery actionableDynamicQuery =
+			SyncDLFileVersionDiffLocalServiceUtil.getActionableDynamicQuery();
 
-		actionableDynamicQuery.setPerformActionMethod(new ActionableDynamicQuery.PerformActionMethod<SyncDLFileVersionDiff>() {
+		actionableDynamicQuery.setPerformActionMethod(
+			new ActionableDynamicQuery.PerformActionMethod
+				<SyncDLFileVersionDiff>() {
+
 				@Override
 				public void performAction(
 					SyncDLFileVersionDiff syncDLFileVersionDiff) {
+
 					Assert.assertNotNull(syncDLFileVersionDiff);
 
 					count.increment();
 				}
+
 			});
 
 		actionableDynamicQuery.performActions();
@@ -334,54 +387,62 @@ public class SyncDLFileVersionDiffPersistenceTest {
 	}
 
 	@Test
-	public void testDynamicQueryByPrimaryKeyExisting()
-		throws Exception {
-		SyncDLFileVersionDiff newSyncDLFileVersionDiff = addSyncDLFileVersionDiff();
+	public void testDynamicQueryByPrimaryKeyExisting() throws Exception {
+		SyncDLFileVersionDiff newSyncDLFileVersionDiff =
+			addSyncDLFileVersionDiff();
 
-		DynamicQuery dynamicQuery = DynamicQueryFactoryUtil.forClass(SyncDLFileVersionDiff.class,
-				_dynamicQueryClassLoader);
+		DynamicQuery dynamicQuery = DynamicQueryFactoryUtil.forClass(
+			SyncDLFileVersionDiff.class, _dynamicQueryClassLoader);
 
-		dynamicQuery.add(RestrictionsFactoryUtil.eq("syncDLFileVersionDiffId",
+		dynamicQuery.add(
+			RestrictionsFactoryUtil.eq(
+				"syncDLFileVersionDiffId",
 				newSyncDLFileVersionDiff.getSyncDLFileVersionDiffId()));
 
-		List<SyncDLFileVersionDiff> result = _persistence.findWithDynamicQuery(dynamicQuery);
+		List<SyncDLFileVersionDiff> result = _persistence.findWithDynamicQuery(
+			dynamicQuery);
 
 		Assert.assertEquals(1, result.size());
 
 		SyncDLFileVersionDiff existingSyncDLFileVersionDiff = result.get(0);
 
-		Assert.assertEquals(existingSyncDLFileVersionDiff,
-			newSyncDLFileVersionDiff);
+		Assert.assertEquals(
+			existingSyncDLFileVersionDiff, newSyncDLFileVersionDiff);
 	}
 
 	@Test
 	public void testDynamicQueryByPrimaryKeyMissing() throws Exception {
-		DynamicQuery dynamicQuery = DynamicQueryFactoryUtil.forClass(SyncDLFileVersionDiff.class,
-				_dynamicQueryClassLoader);
+		DynamicQuery dynamicQuery = DynamicQueryFactoryUtil.forClass(
+			SyncDLFileVersionDiff.class, _dynamicQueryClassLoader);
 
-		dynamicQuery.add(RestrictionsFactoryUtil.eq("syncDLFileVersionDiffId",
-				RandomTestUtil.nextLong()));
+		dynamicQuery.add(
+			RestrictionsFactoryUtil.eq(
+				"syncDLFileVersionDiffId", RandomTestUtil.nextLong()));
 
-		List<SyncDLFileVersionDiff> result = _persistence.findWithDynamicQuery(dynamicQuery);
+		List<SyncDLFileVersionDiff> result = _persistence.findWithDynamicQuery(
+			dynamicQuery);
 
 		Assert.assertEquals(0, result.size());
 	}
 
 	@Test
-	public void testDynamicQueryByProjectionExisting()
-		throws Exception {
-		SyncDLFileVersionDiff newSyncDLFileVersionDiff = addSyncDLFileVersionDiff();
+	public void testDynamicQueryByProjectionExisting() throws Exception {
+		SyncDLFileVersionDiff newSyncDLFileVersionDiff =
+			addSyncDLFileVersionDiff();
 
-		DynamicQuery dynamicQuery = DynamicQueryFactoryUtil.forClass(SyncDLFileVersionDiff.class,
-				_dynamicQueryClassLoader);
+		DynamicQuery dynamicQuery = DynamicQueryFactoryUtil.forClass(
+			SyncDLFileVersionDiff.class, _dynamicQueryClassLoader);
 
-		dynamicQuery.setProjection(ProjectionFactoryUtil.property(
-				"syncDLFileVersionDiffId"));
+		dynamicQuery.setProjection(
+			ProjectionFactoryUtil.property("syncDLFileVersionDiffId"));
 
-		Object newSyncDLFileVersionDiffId = newSyncDLFileVersionDiff.getSyncDLFileVersionDiffId();
+		Object newSyncDLFileVersionDiffId =
+			newSyncDLFileVersionDiff.getSyncDLFileVersionDiffId();
 
-		dynamicQuery.add(RestrictionsFactoryUtil.in("syncDLFileVersionDiffId",
-				new Object[] { newSyncDLFileVersionDiffId }));
+		dynamicQuery.add(
+			RestrictionsFactoryUtil.in(
+				"syncDLFileVersionDiffId",
+				new Object[] {newSyncDLFileVersionDiffId}));
 
 		List<Object> result = _persistence.findWithDynamicQuery(dynamicQuery);
 
@@ -389,20 +450,22 @@ public class SyncDLFileVersionDiffPersistenceTest {
 
 		Object existingSyncDLFileVersionDiffId = result.get(0);
 
-		Assert.assertEquals(existingSyncDLFileVersionDiffId,
-			newSyncDLFileVersionDiffId);
+		Assert.assertEquals(
+			existingSyncDLFileVersionDiffId, newSyncDLFileVersionDiffId);
 	}
 
 	@Test
 	public void testDynamicQueryByProjectionMissing() throws Exception {
-		DynamicQuery dynamicQuery = DynamicQueryFactoryUtil.forClass(SyncDLFileVersionDiff.class,
-				_dynamicQueryClassLoader);
+		DynamicQuery dynamicQuery = DynamicQueryFactoryUtil.forClass(
+			SyncDLFileVersionDiff.class, _dynamicQueryClassLoader);
 
-		dynamicQuery.setProjection(ProjectionFactoryUtil.property(
-				"syncDLFileVersionDiffId"));
+		dynamicQuery.setProjection(
+			ProjectionFactoryUtil.property("syncDLFileVersionDiffId"));
 
-		dynamicQuery.add(RestrictionsFactoryUtil.in("syncDLFileVersionDiffId",
-				new Object[] { RandomTestUtil.nextLong() }));
+		dynamicQuery.add(
+			RestrictionsFactoryUtil.in(
+				"syncDLFileVersionDiffId",
+				new Object[] {RandomTestUtil.nextLong()}));
 
 		List<Object> result = _persistence.findWithDynamicQuery(dynamicQuery);
 
@@ -411,31 +474,86 @@ public class SyncDLFileVersionDiffPersistenceTest {
 
 	@Test
 	public void testResetOriginalValues() throws Exception {
-		SyncDLFileVersionDiff newSyncDLFileVersionDiff = addSyncDLFileVersionDiff();
+		SyncDLFileVersionDiff newSyncDLFileVersionDiff =
+			addSyncDLFileVersionDiff();
 
 		_persistence.clearCache();
 
-		SyncDLFileVersionDiff existingSyncDLFileVersionDiff = _persistence.findByPrimaryKey(newSyncDLFileVersionDiff.getPrimaryKey());
+		_assertOriginalValues(
+			_persistence.findByPrimaryKey(
+				newSyncDLFileVersionDiff.getPrimaryKey()));
+	}
 
-		Assert.assertEquals(Long.valueOf(
-				existingSyncDLFileVersionDiff.getFileEntryId()),
-			ReflectionTestUtil.<Long>invoke(existingSyncDLFileVersionDiff,
-				"getOriginalFileEntryId", new Class<?>[0]));
-		Assert.assertEquals(Long.valueOf(
-				existingSyncDLFileVersionDiff.getSourceFileVersionId()),
-			ReflectionTestUtil.<Long>invoke(existingSyncDLFileVersionDiff,
-				"getOriginalSourceFileVersionId", new Class<?>[0]));
-		Assert.assertEquals(Long.valueOf(
-				existingSyncDLFileVersionDiff.getTargetFileVersionId()),
-			ReflectionTestUtil.<Long>invoke(existingSyncDLFileVersionDiff,
-				"getOriginalTargetFileVersionId", new Class<?>[0]));
+	@Test
+	public void testResetOriginalValuesWithDynamicQueryLoadFromDatabase()
+		throws Exception {
+
+		_testResetOriginalValuesWithDynamicQuery(true);
+	}
+
+	@Test
+	public void testResetOriginalValuesWithDynamicQueryLoadFromSession()
+		throws Exception {
+
+		_testResetOriginalValuesWithDynamicQuery(false);
+	}
+
+	private void _testResetOriginalValuesWithDynamicQuery(boolean clearSession)
+		throws Exception {
+
+		SyncDLFileVersionDiff newSyncDLFileVersionDiff =
+			addSyncDLFileVersionDiff();
+
+		if (clearSession) {
+			Session session = _persistence.openSession();
+
+			session.flush();
+
+			session.clear();
+		}
+
+		DynamicQuery dynamicQuery = DynamicQueryFactoryUtil.forClass(
+			SyncDLFileVersionDiff.class, _dynamicQueryClassLoader);
+
+		dynamicQuery.add(
+			RestrictionsFactoryUtil.eq(
+				"syncDLFileVersionDiffId",
+				newSyncDLFileVersionDiff.getSyncDLFileVersionDiffId()));
+
+		List<SyncDLFileVersionDiff> result = _persistence.findWithDynamicQuery(
+			dynamicQuery);
+
+		_assertOriginalValues(result.get(0));
+	}
+
+	private void _assertOriginalValues(
+		SyncDLFileVersionDiff syncDLFileVersionDiff) {
+
+		Assert.assertEquals(
+			Long.valueOf(syncDLFileVersionDiff.getFileEntryId()),
+			ReflectionTestUtil.<Long>invoke(
+				syncDLFileVersionDiff, "getColumnOriginalValue",
+				new Class<?>[] {String.class}, "fileEntryId"));
+		Assert.assertEquals(
+			Long.valueOf(syncDLFileVersionDiff.getSourceFileVersionId()),
+			ReflectionTestUtil.<Long>invoke(
+				syncDLFileVersionDiff, "getColumnOriginalValue",
+				new Class<?>[] {String.class}, "sourceFileVersionId"));
+		Assert.assertEquals(
+			Long.valueOf(syncDLFileVersionDiff.getTargetFileVersionId()),
+			ReflectionTestUtil.<Long>invoke(
+				syncDLFileVersionDiff, "getColumnOriginalValue",
+				new Class<?>[] {String.class}, "targetFileVersionId"));
 	}
 
 	protected SyncDLFileVersionDiff addSyncDLFileVersionDiff()
 		throws Exception {
+
 		long pk = RandomTestUtil.nextLong();
 
 		SyncDLFileVersionDiff syncDLFileVersionDiff = _persistence.create(pk);
+
+		syncDLFileVersionDiff.setCompanyId(RandomTestUtil.nextLong());
 
 		syncDLFileVersionDiff.setFileEntryId(RandomTestUtil.nextLong());
 
@@ -454,7 +572,9 @@ public class SyncDLFileVersionDiffPersistenceTest {
 		return syncDLFileVersionDiff;
 	}
 
-	private List<SyncDLFileVersionDiff> _syncDLFileVersionDiffs = new ArrayList<SyncDLFileVersionDiff>();
+	private List<SyncDLFileVersionDiff> _syncDLFileVersionDiffs =
+		new ArrayList<SyncDLFileVersionDiff>();
 	private SyncDLFileVersionDiffPersistence _persistence;
 	private ClassLoader _dynamicQueryClassLoader;
+
 }

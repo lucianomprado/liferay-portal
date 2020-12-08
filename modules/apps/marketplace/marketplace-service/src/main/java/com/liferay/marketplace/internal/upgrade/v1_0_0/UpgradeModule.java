@@ -14,7 +14,8 @@
 
 package com.liferay.marketplace.internal.upgrade.v1_0_0;
 
-import com.liferay.marketplace.util.ContextUtil;
+import com.liferay.marketplace.internal.util.ContextUtil;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
@@ -62,19 +63,21 @@ public class UpgradeModule extends UpgradeProcess {
 					newContextName = ContextUtil.getContextName(contextName);
 
 					runSQL(
-						"update Marketplace_Module set contextName = '" +
-							newContextName + "' where moduleId = " + moduleId);
+						StringBundler.concat(
+							"update Marketplace_Module set contextName = '",
+							newContextName, "' where moduleId = ", moduleId));
 				}
-				catch (IOException ioe) {
+				catch (IOException ioException) {
 					_log.error(
-						"Unable to update module + " + moduleId +
-							" with the new context name " + newContextName,
-						ioe);
+						StringBundler.concat(
+							"Unable to update module + ", moduleId,
+							" with the new context name ", newContextName),
+						ioException);
 				}
 			}
 		}
-		catch (SQLException sqle) {
-			_log.error("Unable to update modules", sqle);
+		catch (SQLException sqlException) {
+			_log.error("Unable to update modules", sqlException);
 		}
 	}
 

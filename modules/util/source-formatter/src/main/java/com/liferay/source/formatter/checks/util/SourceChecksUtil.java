@@ -14,20 +14,28 @@
 
 package com.liferay.source.formatter.checks.util;
 
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.portal.json.JSONObjectImpl;
+import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.util.ListUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.source.formatter.SourceFormatterMessage;
 import com.liferay.source.formatter.checks.FileCheck;
+import com.liferay.source.formatter.checks.GradleFileCheck;
 import com.liferay.source.formatter.checks.JavaTermCheck;
 import com.liferay.source.formatter.checks.SourceCheck;
-import com.liferay.source.formatter.checks.configuration.ConfigurationLoader;
 import com.liferay.source.formatter.checks.configuration.SourceCheckConfiguration;
 import com.liferay.source.formatter.checks.configuration.SourceChecksResult;
-import com.liferay.source.formatter.checks.configuration.SourceChecksSuppressions;
 import com.liferay.source.formatter.checks.configuration.SourceFormatterConfiguration;
+import com.liferay.source.formatter.checks.configuration.SourceFormatterSuppressions;
+import com.liferay.source.formatter.parser.GradleFile;
+import com.liferay.source.formatter.parser.GradleFileParser;
 import com.liferay.source.formatter.parser.JavaClass;
 import com.liferay.source.formatter.parser.JavaClassParser;
 import com.liferay.source.formatter.parser.ParseException;
+import com.liferay.source.formatter.util.CheckType;
+import com.liferay.source.formatter.util.DebugUtil;
+import com.liferay.source.formatter.util.SourceFormatterCheckUtil;
 import com.liferay.source.formatter.util.SourceFormatterUtil;
 
 import java.io.File;
@@ -36,8 +44,9 @@ import java.lang.reflect.Constructor;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import org.apache.commons.beanutils.BeanUtils;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 
 /**
  * @author Hugo Huijser
@@ -45,29 +54,33 @@ import org.apache.commons.beanutils.BeanUtils;
 public class SourceChecksUtil {
 
 	public static List<SourceCheck> getSourceChecks(
-			String sourceProcessorName, boolean portalSource,
-			boolean subrepository, boolean includeModuleChecks)
+			SourceFormatterConfiguration sourceFormatterConfiguration,
+			String sourceProcessorName, Map<String, Properties> propertiesMap,
+			List<String> skipCheckNames, boolean portalSource,
+			boolean subrepository, boolean includeModuleChecks,
+			String checkName)
 		throws Exception {
 
-		SourceFormatterConfiguration sourceFormatterConfiguration =
-			ConfigurationLoader.loadConfiguration("sourcechecks.xml");
-
 		List<SourceCheck> sourceChecks = _getSourceChecks(
-			sourceFormatterConfiguration, sourceProcessorName, portalSource,
-			subrepository, includeModuleChecks);
+			sourceFormatterConfiguration, sourceProcessorName, propertiesMap,
+			skipCheckNames, portalSource, subrepository, includeModuleChecks,
+			checkName);
 
 		sourceChecks.addAll(
 			_getSourceChecks(
-				sourceFormatterConfiguration, "all", includeModuleChecks,
-				subrepository, includeModuleChecks));
+				sourceFormatterConfiguration, "all", propertiesMap,
+				skipCheckNames, includeModuleChecks, subrepository,
+				includeModuleChecks, checkName));
 
 		return sourceChecks;
 	}
 
 	public static SourceChecksResult processSourceChecks(
 			File file, String fileName, String absolutePath, String content,
-			boolean modulesFile, List<SourceCheck> sourceChecks,
-			SourceChecksSuppressions sourceChecksSuppressions)
+			Set<String> modifiedMessages, boolean modulesFile,
+			List<SourceCheck> sourceChecks,
+			SourceFormatterSuppressions sourceFormatterSuppressions,
+			boolean showDebugInformation)
 		throws Exception {
 
 		SourceChecksResult sourceChecksResult = new SourceChecksResult(content);
@@ -76,26 +89,41 @@ public class SourceChecksUtil {
 			return sourceChecksResult;
 		}
 
+		GradleFile gradleFile = null;
 		JavaClass javaClass = null;
 		List<JavaClass> anonymousClasses = null;
 
 		for (SourceCheck sourceCheck : sourceChecks) {
-			if (sourceCheck.isModulesCheck() && !modulesFile) {
+			if (!sourceCheck.isEnabled(absolutePath) ||
+				(sourceCheck.isModuleSourceCheck() && !modulesFile)) {
+
 				continue;
 			}
 
 			Class<?> clazz = sourceCheck.getClass();
 
-			if (sourceChecksSuppressions.isSuppressed(
+			if (sourceFormatterSuppressions.isSuppressed(
 					clazz.getSimpleName(), absolutePath)) {
 
 				continue;
 			}
 
+			long startTime = System.currentTimeMillis();
+
 			if (sourceCheck instanceof FileCheck) {
 				sourceChecksResult = _processFileCheck(
 					sourceChecksResult, (FileCheck)sourceCheck, fileName,
 					absolutePath);
+			}
+			else if (sourceCheck instanceof GradleFileCheck) {
+				if (gradleFile == null) {
+					gradleFile = GradleFileParser.parse(
+						fileName, sourceChecksResult.getContent());
+				}
+
+				sourceChecksResult = _processGradleFileCheck(
+					sourceChecksResult, (GradleFileCheck)sourceCheck,
+					gradleFile, fileName, absolutePath);
 			}
 			else {
 				if (javaClass == null) {
@@ -106,10 +134,13 @@ public class SourceChecksUtil {
 						javaClass = JavaClassParser.parseJavaClass(
 							fileName, sourceChecksResult.getContent());
 					}
-					catch (ParseException pe) {
+					catch (ParseException parseException) {
 						sourceChecksResult.addSourceFormatterMessage(
 							new SourceFormatterMessage(
-								fileName, pe.getMessage(), null, -1));
+								fileName, parseException.getMessage(),
+								CheckType.SOURCE_CHECK,
+								JavaClassParser.class.getSimpleName(), null,
+								-1));
 
 						continue;
 					}
@@ -120,18 +151,77 @@ public class SourceChecksUtil {
 					anonymousClasses, fileName, absolutePath);
 			}
 
-			if (!content.equals(sourceChecksResult.getContent())) {
-				return sourceChecksResult;
+			sourceChecksResult.setMostRecentProcessedSourceCheck(sourceCheck);
+
+			if (showDebugInformation) {
+				long endTime = System.currentTimeMillis();
+
+				DebugUtil.increaseProcessingTime(
+					clazz.getSimpleName(), endTime - startTime);
 			}
+
+			if (content.equals(sourceChecksResult.getContent())) {
+				continue;
+			}
+
+			StringBundler sb = new StringBundler(7);
+
+			sb.append(file.toString());
+			sb.append(CharPool.SPACE);
+			sb.append(CharPool.OPEN_PARENTHESIS);
+
+			CheckType checkType = CheckType.SOURCE_CHECK;
+
+			sb.append(checkType.getValue());
+
+			sb.append(CharPool.COLON);
+			sb.append(clazz.getSimpleName());
+			sb.append(CharPool.CLOSE_PARENTHESIS);
+
+			modifiedMessages.add(sb.toString());
+
+			if (showDebugInformation) {
+				DebugUtil.printContentModifications(
+					clazz.getSimpleName(), fileName, content,
+					sourceChecksResult.getContent());
+			}
+
+			return sourceChecksResult;
 		}
 
 		return sourceChecksResult;
 	}
 
+	private static JSONObject _getAttributesJSONObject(
+		Map<String, Properties> propertiesMap, String checkName,
+		SourceCheckConfiguration sourceCheckConfiguration) {
+
+		JSONObject attributesJSONObject = new JSONObjectImpl();
+
+		JSONObject configurationAttributesJSONObject =
+			sourceCheckConfiguration.getAttributesJSONObject();
+
+		if (configurationAttributesJSONObject.length() != 0) {
+			attributesJSONObject.put(
+				SourceFormatterCheckUtil.CONFIGURATION_FILE_LOCATION,
+				configurationAttributesJSONObject);
+		}
+
+		attributesJSONObject = SourceFormatterCheckUtil.addPropertiesAttributes(
+			attributesJSONObject, propertiesMap,
+			SourceFormatterUtil.GIT_LIFERAY_PORTAL_BRANCH);
+
+		return SourceFormatterCheckUtil.addPropertiesAttributes(
+			attributesJSONObject, propertiesMap, CheckType.SOURCE_CHECK,
+			checkName);
+	}
+
 	private static List<SourceCheck> _getSourceChecks(
 			SourceFormatterConfiguration sourceFormatterConfiguration,
-			String sourceProcessorName, boolean portalSource,
-			boolean subrepository, boolean includeModuleChecks)
+			String sourceProcessorName, Map<String, Properties> propertiesMap,
+			List<String> skipCheckNames, boolean portalSource,
+			boolean subrepository, boolean includeModuleChecks,
+			String checkName)
 		throws Exception {
 
 		List<SourceCheck> sourceChecks = new ArrayList<>();
@@ -144,22 +234,28 @@ public class SourceChecksUtil {
 			return sourceChecks;
 		}
 
+		JSONObject excludesJSONObject =
+			SourceFormatterCheckUtil.getExcludesJSONObject(propertiesMap);
+
 		for (SourceCheckConfiguration sourceCheckConfiguration :
 				sourceCheckConfigurations) {
 
-			String sourceCheckName = sourceCheckConfiguration.getName();
+			String sourceCheckName = SourceFormatterUtil.getSimpleName(
+				sourceCheckConfiguration.getName());
 
-			if (!sourceCheckName.contains(StringPool.PERIOD)) {
-				sourceCheckName =
-					"com.liferay.source.formatter.checks." + sourceCheckName;
+			if ((checkName != null) && !checkName.equals(sourceCheckName)) {
+				continue;
 			}
+
+			sourceCheckName =
+				"com.liferay.source.formatter.checks." + sourceCheckName;
 
 			Class<?> sourceCheckClass = null;
 
 			try {
 				sourceCheckClass = Class.forName(sourceCheckName);
 			}
-			catch (ClassNotFoundException cnfe) {
+			catch (ClassNotFoundException classNotFoundException) {
 				SourceFormatterUtil.printError(
 					"sourcechecks.xml",
 					"sourcechecks.xml: Class " + sourceCheckName +
@@ -180,18 +276,27 @@ public class SourceChecksUtil {
 			SourceCheck sourceCheck = (SourceCheck)instance;
 
 			if ((!portalSource && !subrepository &&
-				 sourceCheck.isPortalCheck()) ||
-				(!includeModuleChecks && sourceCheck.isModulesCheck())) {
+				 sourceCheck.isLiferaySourceCheck()) ||
+				(!includeModuleChecks && sourceCheck.isModuleSourceCheck())) {
 
 				continue;
 			}
 
-			for (String attributeName :
-					sourceCheckConfiguration.attributeNames()) {
+			Class<?> clazz = sourceCheck.getClass();
 
-				BeanUtils.setProperty(
-					sourceCheck, attributeName,
-					sourceCheckConfiguration.getAttributeValue(attributeName));
+			if (skipCheckNames.contains(clazz.getSimpleName())) {
+				continue;
+			}
+
+			if (excludesJSONObject.length() != 0) {
+				sourceCheck.setExcludes(excludesJSONObject.toString());
+			}
+
+			JSONObject attributesJSONObject = _getAttributesJSONObject(
+				propertiesMap, clazz.getSimpleName(), sourceCheckConfiguration);
+
+			if (attributesJSONObject.length() != 0) {
+				sourceCheck.setAttributes(attributesJSONObject.toString());
 			}
 
 			sourceChecks.add(sourceCheck);
@@ -211,6 +316,28 @@ public class SourceChecksUtil {
 
 		for (SourceFormatterMessage sourceFormatterMessage :
 				fileCheck.getSourceFormatterMessages(fileName)) {
+
+			sourceChecksResult.addSourceFormatterMessage(
+				sourceFormatterMessage);
+		}
+
+		return sourceChecksResult;
+	}
+
+	private static SourceChecksResult _processGradleFileCheck(
+			SourceChecksResult sourceChecksResult,
+			GradleFileCheck gradleFileCheck, GradleFile gradleFile,
+			String fileName, String absolutePath)
+		throws Exception {
+
+		String content = gradleFileCheck.process(
+			fileName, absolutePath, gradleFile,
+			sourceChecksResult.getContent());
+
+		sourceChecksResult.setContent(content);
+
+		for (SourceFormatterMessage sourceFormatterMessage :
+				gradleFileCheck.getSourceFormatterMessages(fileName)) {
 
 			sourceChecksResult.addSourceFormatterMessage(
 				sourceFormatterMessage);

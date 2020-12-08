@@ -37,12 +37,6 @@ public interface Query extends Serializable {
 
 	public QueryConfig getQueryConfig();
 
-	/**
-	 * @deprecated As of 7.0.0
-	 */
-	@Deprecated
-	public Object getWrappedQuery();
-
 	public boolean hasChildren();
 
 	public boolean isDefaultBoost();

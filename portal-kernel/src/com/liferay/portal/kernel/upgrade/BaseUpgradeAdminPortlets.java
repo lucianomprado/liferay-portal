@@ -14,6 +14,7 @@
 
 package com.liferay.portal.kernel.upgrade;
 
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.model.GroupConstants;
 import com.liferay.portal.kernel.model.ResourcePermission;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
@@ -99,34 +100,38 @@ public abstract class BaseUpgradeAdminPortlets extends UpgradeProcess {
 
 				try (ResultSet rs = ps.executeQuery()) {
 					while (rs.next()) {
-						long resourcePermissionId = rs.getLong(
-							"resourcePermissionId");
 						long actionIds = rs.getLong("actionIds");
 
-						if ((actionIds & bitwiseValue) != 0) {
-							actionIds = actionIds & (~bitwiseValue);
-
-							runSQL(
-								"update ResourcePermission set actionIds = " +
-									actionIds + " where resourcePermissionId " +
-										"= " + resourcePermissionId);
-
-							resourcePermissionId = increment(
-								ResourcePermission.class.getName());
-
-							long companyId = rs.getLong("companyId");
-							int scope = rs.getInt("scope");
-							String primKey = rs.getString("primKey");
-							long roleId = rs.getLong("roleId");
-
-							actionIds = rs.getLong("actionIds");
-
-							actionIds |= bitwiseValue;
-
-							addResourcePermission(
-								resourcePermissionId, companyId, portletTo,
-								scope, primKey, roleId, actionIds);
+						if ((actionIds & bitwiseValue) == 0) {
+							continue;
 						}
+
+						actionIds = actionIds & ~bitwiseValue;
+
+						long resourcePermissionId = rs.getLong(
+							"resourcePermissionId");
+
+						runSQL(
+							StringBundler.concat(
+								"update ResourcePermission set actionIds = ",
+								actionIds, " where resourcePermissionId = ",
+								resourcePermissionId));
+
+						resourcePermissionId = increment(
+							ResourcePermission.class.getName());
+
+						long companyId = rs.getLong("companyId");
+						int scope = rs.getInt("scope");
+						String primKey = rs.getString("primKey");
+						long roleId = rs.getLong("roleId");
+
+						actionIds = rs.getLong("actionIds");
+
+						actionIds |= bitwiseValue;
+
+						addResourcePermission(
+							resourcePermissionId, companyId, portletTo, scope,
+							primKey, roleId, actionIds);
 					}
 				}
 			}

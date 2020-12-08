@@ -14,6 +14,7 @@
 
 package com.liferay.portal.kernel.servlet;
 
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.ClassUtil;
@@ -278,15 +279,16 @@ public class SecurePluginContextListener
 					servletContextListener.contextDestroyed(
 						servletContextEvent);
 				}
-				catch (Throwable t) {
+				catch (Throwable throwable) {
 					String className = ClassUtil.getClassName(
 						servletContextListener.getClass());
 
 					_log.error(
-						className + " is unable to process a context " +
-							"destroyed event for " +
-								servletContext.getServletContextName(),
-						t);
+						StringBundler.concat(
+							className, " is unable to process a context ",
+							"destroyed event for ",
+							servletContext.getServletContextName()),
+						throwable);
 				}
 			}
 		}

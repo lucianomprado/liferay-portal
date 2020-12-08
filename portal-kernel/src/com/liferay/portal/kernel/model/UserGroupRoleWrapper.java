@@ -14,17 +14,12 @@
 
 package com.liferay.portal.kernel.model;
 
-import aQute.bnd.annotation.ProviderType;
-
-import com.liferay.expando.kernel.model.ExpandoBridge;
-
-import com.liferay.portal.kernel.service.ServiceContext;
-
-import java.io.Serializable;
+import com.liferay.portal.kernel.model.wrapper.BaseModelWrapper;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 /**
  * <p>
@@ -35,21 +30,12 @@ import java.util.Objects;
  * @see UserGroupRole
  * @generated
  */
-@ProviderType
-public class UserGroupRoleWrapper implements UserGroupRole,
-	ModelWrapper<UserGroupRole> {
+public class UserGroupRoleWrapper
+	extends BaseModelWrapper<UserGroupRole>
+	implements ModelWrapper<UserGroupRole>, UserGroupRole {
+
 	public UserGroupRoleWrapper(UserGroupRole userGroupRole) {
-		_userGroupRole = userGroupRole;
-	}
-
-	@Override
-	public Class<?> getModelClass() {
-		return UserGroupRole.class;
-	}
-
-	@Override
-	public String getModelClassName() {
-		return UserGroupRole.class.getName();
+		super(userGroupRole);
 	}
 
 	@Override
@@ -57,10 +43,12 @@ public class UserGroupRoleWrapper implements UserGroupRole,
 		Map<String, Object> attributes = new HashMap<String, Object>();
 
 		attributes.put("mvccVersion", getMvccVersion());
+		attributes.put("ctCollectionId", getCtCollectionId());
+		attributes.put("userGroupRoleId", getUserGroupRoleId());
+		attributes.put("companyId", getCompanyId());
 		attributes.put("userId", getUserId());
 		attributes.put("groupId", getGroupId());
 		attributes.put("roleId", getRoleId());
-		attributes.put("companyId", getCompanyId());
 
 		return attributes;
 	}
@@ -71,6 +59,24 @@ public class UserGroupRoleWrapper implements UserGroupRole,
 
 		if (mvccVersion != null) {
 			setMvccVersion(mvccVersion);
+		}
+
+		Long ctCollectionId = (Long)attributes.get("ctCollectionId");
+
+		if (ctCollectionId != null) {
+			setCtCollectionId(ctCollectionId);
+		}
+
+		Long userGroupRoleId = (Long)attributes.get("userGroupRoleId");
+
+		if (userGroupRoleId != null) {
+			setUserGroupRoleId(userGroupRoleId);
+		}
+
+		Long companyId = (Long)attributes.get("companyId");
+
+		if (companyId != null) {
+			setCompanyId(companyId);
 		}
 
 		Long userId = (Long)attributes.get("userId");
@@ -90,311 +96,241 @@ public class UserGroupRoleWrapper implements UserGroupRole,
 		if (roleId != null) {
 			setRoleId(roleId);
 		}
-
-		Long companyId = (Long)attributes.get("companyId");
-
-		if (companyId != null) {
-			setCompanyId(companyId);
-		}
 	}
 
 	@Override
-	public CacheModel<UserGroupRole> toCacheModel() {
-		return _userGroupRole.toCacheModel();
+	public boolean equals(Object object) {
+		return model.equals(object);
+	}
+
+	/**
+	 * Returns the company ID of this user group role.
+	 *
+	 * @return the company ID of this user group role
+	 */
+	@Override
+	public long getCompanyId() {
+		return model.getCompanyId();
+	}
+
+	/**
+	 * Returns the ct collection ID of this user group role.
+	 *
+	 * @return the ct collection ID of this user group role
+	 */
+	@Override
+	public long getCtCollectionId() {
+		return model.getCtCollectionId();
 	}
 
 	@Override
 	public Group getGroup()
 		throws com.liferay.portal.kernel.exception.PortalException {
-		return _userGroupRole.getGroup();
+
+		return model.getGroup();
+	}
+
+	/**
+	 * Returns the group ID of this user group role.
+	 *
+	 * @return the group ID of this user group role
+	 */
+	@Override
+	public long getGroupId() {
+		return model.getGroupId();
+	}
+
+	/**
+	 * Returns the mvcc version of this user group role.
+	 *
+	 * @return the mvcc version of this user group role
+	 */
+	@Override
+	public long getMvccVersion() {
+		return model.getMvccVersion();
+	}
+
+	/**
+	 * Returns the primary key of this user group role.
+	 *
+	 * @return the primary key of this user group role
+	 */
+	@Override
+	public long getPrimaryKey() {
+		return model.getPrimaryKey();
 	}
 
 	@Override
 	public Role getRole()
 		throws com.liferay.portal.kernel.exception.PortalException {
-		return _userGroupRole.getRole();
+
+		return model.getRole();
+	}
+
+	/**
+	 * Returns the role ID of this user group role.
+	 *
+	 * @return the role ID of this user group role
+	 */
+	@Override
+	public long getRoleId() {
+		return model.getRoleId();
 	}
 
 	@Override
 	public User getUser()
 		throws com.liferay.portal.kernel.exception.PortalException {
-		return _userGroupRole.getUser();
-	}
 
-	@Override
-	public UserGroupRole toEscapedModel() {
-		return new UserGroupRoleWrapper(_userGroupRole.toEscapedModel());
-	}
-
-	@Override
-	public UserGroupRole toUnescapedModel() {
-		return new UserGroupRoleWrapper(_userGroupRole.toUnescapedModel());
-	}
-
-	@Override
-	public boolean isCachedModel() {
-		return _userGroupRole.isCachedModel();
-	}
-
-	@Override
-	public boolean isEscapedModel() {
-		return _userGroupRole.isEscapedModel();
-	}
-
-	@Override
-	public boolean isNew() {
-		return _userGroupRole.isNew();
-	}
-
-	@Override
-	public ExpandoBridge getExpandoBridge() {
-		return _userGroupRole.getExpandoBridge();
+		return model.getUser();
 	}
 
 	/**
-	* Returns the primary key of this user group role.
-	*
-	* @return the primary key of this user group role
-	*/
+	 * Returns the user group role ID of this user group role.
+	 *
+	 * @return the user group role ID of this user group role
+	 */
 	@Override
-	public com.liferay.portal.kernel.service.persistence.UserGroupRolePK getPrimaryKey() {
-		return _userGroupRole.getPrimaryKey();
+	public long getUserGroupRoleId() {
+		return model.getUserGroupRoleId();
 	}
 
+	/**
+	 * Returns the user ID of this user group role.
+	 *
+	 * @return the user ID of this user group role
+	 */
 	@Override
-	public int compareTo(UserGroupRole userGroupRole) {
-		return _userGroupRole.compareTo(userGroupRole);
+	public long getUserId() {
+		return model.getUserId();
+	}
+
+	/**
+	 * Returns the user uuid of this user group role.
+	 *
+	 * @return the user uuid of this user group role
+	 */
+	@Override
+	public String getUserUuid() {
+		return model.getUserUuid();
 	}
 
 	@Override
 	public int hashCode() {
-		return _userGroupRole.hashCode();
-	}
-
-	@Override
-	public Serializable getPrimaryKeyObj() {
-		return _userGroupRole.getPrimaryKeyObj();
-	}
-
-	@Override
-	public java.lang.Object clone() {
-		return new UserGroupRoleWrapper((UserGroupRole)_userGroupRole.clone());
-	}
-
-	/**
-	* Returns the user uuid of this user group role.
-	*
-	* @return the user uuid of this user group role
-	*/
-	@Override
-	public java.lang.String getUserUuid() {
-		return _userGroupRole.getUserUuid();
-	}
-
-	@Override
-	public java.lang.String toString() {
-		return _userGroupRole.toString();
-	}
-
-	@Override
-	public java.lang.String toXmlString() {
-		return _userGroupRole.toXmlString();
-	}
-
-	/**
-	* Returns the company ID of this user group role.
-	*
-	* @return the company ID of this user group role
-	*/
-	@Override
-	public long getCompanyId() {
-		return _userGroupRole.getCompanyId();
-	}
-
-	/**
-	* Returns the group ID of this user group role.
-	*
-	* @return the group ID of this user group role
-	*/
-	@Override
-	public long getGroupId() {
-		return _userGroupRole.getGroupId();
-	}
-
-	/**
-	* Returns the mvcc version of this user group role.
-	*
-	* @return the mvcc version of this user group role
-	*/
-	@Override
-	public long getMvccVersion() {
-		return _userGroupRole.getMvccVersion();
-	}
-
-	/**
-	* Returns the role ID of this user group role.
-	*
-	* @return the role ID of this user group role
-	*/
-	@Override
-	public long getRoleId() {
-		return _userGroupRole.getRoleId();
-	}
-
-	/**
-	* Returns the user ID of this user group role.
-	*
-	* @return the user ID of this user group role
-	*/
-	@Override
-	public long getUserId() {
-		return _userGroupRole.getUserId();
+		return model.hashCode();
 	}
 
 	@Override
 	public void persist() {
-		_userGroupRole.persist();
-	}
-
-	@Override
-	public void setCachedModel(boolean cachedModel) {
-		_userGroupRole.setCachedModel(cachedModel);
+		model.persist();
 	}
 
 	/**
-	* Sets the company ID of this user group role.
-	*
-	* @param companyId the company ID of this user group role
-	*/
+	 * Sets the company ID of this user group role.
+	 *
+	 * @param companyId the company ID of this user group role
+	 */
 	@Override
 	public void setCompanyId(long companyId) {
-		_userGroupRole.setCompanyId(companyId);
-	}
-
-	@Override
-	public void setExpandoBridgeAttributes(BaseModel<?> baseModel) {
-		_userGroupRole.setExpandoBridgeAttributes(baseModel);
-	}
-
-	@Override
-	public void setExpandoBridgeAttributes(ExpandoBridge expandoBridge) {
-		_userGroupRole.setExpandoBridgeAttributes(expandoBridge);
-	}
-
-	@Override
-	public void setExpandoBridgeAttributes(ServiceContext serviceContext) {
-		_userGroupRole.setExpandoBridgeAttributes(serviceContext);
+		model.setCompanyId(companyId);
 	}
 
 	/**
-	* Sets the group ID of this user group role.
-	*
-	* @param groupId the group ID of this user group role
-	*/
+	 * Sets the ct collection ID of this user group role.
+	 *
+	 * @param ctCollectionId the ct collection ID of this user group role
+	 */
+	@Override
+	public void setCtCollectionId(long ctCollectionId) {
+		model.setCtCollectionId(ctCollectionId);
+	}
+
+	/**
+	 * Sets the group ID of this user group role.
+	 *
+	 * @param groupId the group ID of this user group role
+	 */
 	@Override
 	public void setGroupId(long groupId) {
-		_userGroupRole.setGroupId(groupId);
+		model.setGroupId(groupId);
 	}
 
 	/**
-	* Sets the mvcc version of this user group role.
-	*
-	* @param mvccVersion the mvcc version of this user group role
-	*/
+	 * Sets the mvcc version of this user group role.
+	 *
+	 * @param mvccVersion the mvcc version of this user group role
+	 */
 	@Override
 	public void setMvccVersion(long mvccVersion) {
-		_userGroupRole.setMvccVersion(mvccVersion);
-	}
-
-	@Override
-	public void setNew(boolean n) {
-		_userGroupRole.setNew(n);
+		model.setMvccVersion(mvccVersion);
 	}
 
 	/**
-	* Sets the primary key of this user group role.
-	*
-	* @param primaryKey the primary key of this user group role
-	*/
+	 * Sets the primary key of this user group role.
+	 *
+	 * @param primaryKey the primary key of this user group role
+	 */
 	@Override
-	public void setPrimaryKey(
-		com.liferay.portal.kernel.service.persistence.UserGroupRolePK primaryKey) {
-		_userGroupRole.setPrimaryKey(primaryKey);
-	}
-
-	@Override
-	public void setPrimaryKeyObj(Serializable primaryKeyObj) {
-		_userGroupRole.setPrimaryKeyObj(primaryKeyObj);
+	public void setPrimaryKey(long primaryKey) {
+		model.setPrimaryKey(primaryKey);
 	}
 
 	/**
-	* Sets the role ID of this user group role.
-	*
-	* @param roleId the role ID of this user group role
-	*/
+	 * Sets the role ID of this user group role.
+	 *
+	 * @param roleId the role ID of this user group role
+	 */
 	@Override
 	public void setRoleId(long roleId) {
-		_userGroupRole.setRoleId(roleId);
+		model.setRoleId(roleId);
 	}
 
 	/**
-	* Sets the user ID of this user group role.
-	*
-	* @param userId the user ID of this user group role
-	*/
+	 * Sets the user group role ID of this user group role.
+	 *
+	 * @param userGroupRoleId the user group role ID of this user group role
+	 */
+	@Override
+	public void setUserGroupRoleId(long userGroupRoleId) {
+		model.setUserGroupRoleId(userGroupRoleId);
+	}
+
+	/**
+	 * Sets the user ID of this user group role.
+	 *
+	 * @param userId the user ID of this user group role
+	 */
 	@Override
 	public void setUserId(long userId) {
-		_userGroupRole.setUserId(userId);
+		model.setUserId(userId);
 	}
 
 	/**
-	* Sets the user uuid of this user group role.
-	*
-	* @param userUuid the user uuid of this user group role
-	*/
+	 * Sets the user uuid of this user group role.
+	 *
+	 * @param userUuid the user uuid of this user group role
+	 */
 	@Override
-	public void setUserUuid(java.lang.String userUuid) {
-		_userGroupRole.setUserUuid(userUuid);
+	public void setUserUuid(String userUuid) {
+		model.setUserUuid(userUuid);
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
-			return true;
-		}
+	public Map<String, Function<UserGroupRole, Object>>
+		getAttributeGetterFunctions() {
 
-		if (!(obj instanceof UserGroupRoleWrapper)) {
-			return false;
-		}
-
-		UserGroupRoleWrapper userGroupRoleWrapper = (UserGroupRoleWrapper)obj;
-
-		if (Objects.equals(_userGroupRole, userGroupRoleWrapper._userGroupRole)) {
-			return true;
-		}
-
-		return false;
+		return model.getAttributeGetterFunctions();
 	}
 
 	@Override
-	public UserGroupRole getWrappedModel() {
-		return _userGroupRole;
+	public Map<String, BiConsumer<UserGroupRole, Object>>
+		getAttributeSetterBiConsumers() {
+
+		return model.getAttributeSetterBiConsumers();
 	}
 
 	@Override
-	public boolean isEntityCacheEnabled() {
-		return _userGroupRole.isEntityCacheEnabled();
+	protected UserGroupRoleWrapper wrap(UserGroupRole userGroupRole) {
+		return new UserGroupRoleWrapper(userGroupRole);
 	}
 
-	@Override
-	public boolean isFinderCacheEnabled() {
-		return _userGroupRole.isFinderCacheEnabled();
-	}
-
-	@Override
-	public void resetOriginalValues() {
-		_userGroupRole.resetOriginalValues();
-	}
-
-	private final UserGroupRole _userGroupRole;
 }

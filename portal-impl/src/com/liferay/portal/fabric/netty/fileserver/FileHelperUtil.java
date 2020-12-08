@@ -14,11 +14,11 @@
 
 package com.liferay.portal.fabric.netty.fileserver;
 
-import com.liferay.portal.kernel.io.BigEndianCodec;
+import com.liferay.petra.io.BigEndianCodec;
+import com.liferay.petra.reflect.ReflectionUtil;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.util.ReflectionUtil;
-import com.liferay.portal.kernel.util.StringBundler;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -60,11 +60,11 @@ public class FileHelperUtil {
 
 						@Override
 						public FileVisitResult postVisitDirectory(
-								Path dir, IOException ioe)
+								Path dir, IOException ioException)
 							throws IOException {
 
-							if ((ioe != null) && !quiet) {
-								throw ioe;
+							if ((ioException != null) && !quiet) {
+								throw ioException;
 							}
 
 							Files.delete(dir);
@@ -85,22 +85,24 @@ public class FileHelperUtil {
 
 						@Override
 						public FileVisitResult visitFileFailed(
-								Path file, IOException ioe)
+								Path file, IOException ioException)
 							throws IOException {
 
-							if (quiet || (ioe instanceof NoSuchFileException)) {
+							if (quiet ||
+								(ioException instanceof NoSuchFileException)) {
+
 								return FileVisitResult.CONTINUE;
 							}
 
-							throw ioe;
+							throw ioException;
 						}
 
 					});
 			}
 		}
-		catch (IOException ioe) {
+		catch (IOException ioException) {
 			if (!quiet) {
-				ReflectionUtil.throwException(ioe);
+				ReflectionUtil.throwException(ioException);
 			}
 		}
 	}
@@ -130,7 +132,7 @@ public class FileHelperUtil {
 
 					@Override
 					public FileVisitResult postVisitDirectory(
-							Path dir, IOException ioe)
+							Path dir, IOException ioException)
 						throws IOException {
 
 						Files.setLastModifiedTime(
@@ -177,7 +179,9 @@ public class FileHelperUtil {
 
 								return FileVisitResult.CONTINUE;
 							}
-							catch (AtomicMoveNotSupportedException amnse) {
+							catch (AtomicMoveNotSupportedException
+										atomicMoveNotSupportedException) {
+
 								atomicMove.set(false);
 							}
 						}
@@ -191,17 +195,18 @@ public class FileHelperUtil {
 
 				});
 		}
-		catch (IOException ioe) {
+		catch (IOException ioException) {
 			delete(true, toPath);
 
 			if (touched.get()) {
 				throw new IOException(
-					"Source path " + fromPath + " was left in an " +
-						"inconsistent state",
-					ioe);
+					StringBundler.concat(
+						"Source path ", fromPath,
+						" was left in an inconsistent state"),
+					ioException);
 			}
 
-			throw ioe;
+			throw ioException;
 		}
 
 		if (!atomicMove.get()) {
@@ -245,10 +250,10 @@ public class FileHelperUtil {
 				_log.debug(sb.toString());
 			}
 		}
-		catch (IOException ioe) {
+		catch (IOException ioException) {
 			delete(destPath);
 
-			throw ioe;
+			throw ioException;
 		}
 
 		return destPath;
@@ -286,8 +291,9 @@ public class FileHelperUtil {
 
 				if (size != length) {
 					throw new IOException(
-						"Zip stream for entry " + zipEntry.getName() + " is " +
-							size + " bytes but should " + length + " bytes");
+						StringBundler.concat(
+							"Zip stream for entry ", zipEntry.getName(), " is ",
+							size, " bytes but should ", length, " bytes"));
 				}
 			}
 		}
@@ -337,10 +343,10 @@ public class FileHelperUtil {
 				_log.debug(sb.toString());
 			}
 		}
-		catch (IOException ioe) {
+		catch (IOException ioException) {
 			Files.delete(zipPath);
 
-			throw ioe;
+			throw ioException;
 		}
 
 		return zipPath;

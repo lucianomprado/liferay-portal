@@ -14,8 +14,6 @@
 
 package com.liferay.portal.kernel.model;
 
-import aQute.bnd.annotation.ProviderType;
-
 import java.io.Serializable;
 
 import java.util.ArrayList;
@@ -26,16 +24,21 @@ import java.util.List;
  * This class is used by SOAP remote services.
  *
  * @author Brian Wing Shun Chan
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
-@ProviderType
+@Deprecated
 public class WorkflowDefinitionLinkSoap implements Serializable {
+
 	public static WorkflowDefinitionLinkSoap toSoapModel(
 		WorkflowDefinitionLink model) {
+
 		WorkflowDefinitionLinkSoap soapModel = new WorkflowDefinitionLinkSoap();
 
 		soapModel.setMvccVersion(model.getMvccVersion());
-		soapModel.setWorkflowDefinitionLinkId(model.getWorkflowDefinitionLinkId());
+		soapModel.setCtCollectionId(model.getCtCollectionId());
+		soapModel.setWorkflowDefinitionLinkId(
+			model.getWorkflowDefinitionLinkId());
 		soapModel.setGroupId(model.getGroupId());
 		soapModel.setCompanyId(model.getCompanyId());
 		soapModel.setUserId(model.getUserId());
@@ -46,14 +49,17 @@ public class WorkflowDefinitionLinkSoap implements Serializable {
 		soapModel.setClassPK(model.getClassPK());
 		soapModel.setTypePK(model.getTypePK());
 		soapModel.setWorkflowDefinitionName(model.getWorkflowDefinitionName());
-		soapModel.setWorkflowDefinitionVersion(model.getWorkflowDefinitionVersion());
+		soapModel.setWorkflowDefinitionVersion(
+			model.getWorkflowDefinitionVersion());
 
 		return soapModel;
 	}
 
 	public static WorkflowDefinitionLinkSoap[] toSoapModels(
 		WorkflowDefinitionLink[] models) {
-		WorkflowDefinitionLinkSoap[] soapModels = new WorkflowDefinitionLinkSoap[models.length];
+
+		WorkflowDefinitionLinkSoap[] soapModels =
+			new WorkflowDefinitionLinkSoap[models.length];
 
 		for (int i = 0; i < models.length; i++) {
 			soapModels[i] = toSoapModel(models[i]);
@@ -64,10 +70,12 @@ public class WorkflowDefinitionLinkSoap implements Serializable {
 
 	public static WorkflowDefinitionLinkSoap[][] toSoapModels(
 		WorkflowDefinitionLink[][] models) {
+
 		WorkflowDefinitionLinkSoap[][] soapModels = null;
 
 		if (models.length > 0) {
-			soapModels = new WorkflowDefinitionLinkSoap[models.length][models[0].length];
+			soapModels =
+				new WorkflowDefinitionLinkSoap[models.length][models[0].length];
 		}
 		else {
 			soapModels = new WorkflowDefinitionLinkSoap[0][0];
@@ -82,13 +90,16 @@ public class WorkflowDefinitionLinkSoap implements Serializable {
 
 	public static WorkflowDefinitionLinkSoap[] toSoapModels(
 		List<WorkflowDefinitionLink> models) {
-		List<WorkflowDefinitionLinkSoap> soapModels = new ArrayList<WorkflowDefinitionLinkSoap>(models.size());
+
+		List<WorkflowDefinitionLinkSoap> soapModels =
+			new ArrayList<WorkflowDefinitionLinkSoap>(models.size());
 
 		for (WorkflowDefinitionLink model : models) {
 			soapModels.add(toSoapModel(model));
 		}
 
-		return soapModels.toArray(new WorkflowDefinitionLinkSoap[soapModels.size()]);
+		return soapModels.toArray(
+			new WorkflowDefinitionLinkSoap[soapModels.size()]);
 	}
 
 	public WorkflowDefinitionLinkSoap() {
@@ -108,6 +119,14 @@ public class WorkflowDefinitionLinkSoap implements Serializable {
 
 	public void setMvccVersion(long mvccVersion) {
 		_mvccVersion = mvccVersion;
+	}
+
+	public long getCtCollectionId() {
+		return _ctCollectionId;
+	}
+
+	public void setCtCollectionId(long ctCollectionId) {
+		_ctCollectionId = ctCollectionId;
 	}
 
 	public long getWorkflowDefinitionLinkId() {
@@ -207,6 +226,7 @@ public class WorkflowDefinitionLinkSoap implements Serializable {
 	}
 
 	private long _mvccVersion;
+	private long _ctCollectionId;
 	private long _workflowDefinitionLinkId;
 	private long _groupId;
 	private long _companyId;
@@ -219,4 +239,5 @@ public class WorkflowDefinitionLinkSoap implements Serializable {
 	private long _typePK;
 	private String _workflowDefinitionName;
 	private int _workflowDefinitionVersion;
+
 }

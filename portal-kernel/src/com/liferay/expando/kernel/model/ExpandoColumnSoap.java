@@ -14,8 +14,6 @@
 
 package com.liferay.expando.kernel.model;
 
-import aQute.bnd.annotation.ProviderType;
-
 import java.io.Serializable;
 
 import java.util.ArrayList;
@@ -25,14 +23,17 @@ import java.util.List;
  * This class is used by SOAP remote services, specifically {@link com.liferay.portlet.expando.service.http.ExpandoColumnServiceSoap}.
  *
  * @author Brian Wing Shun Chan
- * @see com.liferay.portlet.expando.service.http.ExpandoColumnServiceSoap
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
-@ProviderType
+@Deprecated
 public class ExpandoColumnSoap implements Serializable {
+
 	public static ExpandoColumnSoap toSoapModel(ExpandoColumn model) {
 		ExpandoColumnSoap soapModel = new ExpandoColumnSoap();
 
+		soapModel.setMvccVersion(model.getMvccVersion());
+		soapModel.setCtCollectionId(model.getCtCollectionId());
 		soapModel.setColumnId(model.getColumnId());
 		soapModel.setCompanyId(model.getCompanyId());
 		soapModel.setTableId(model.getTableId());
@@ -72,7 +73,8 @@ public class ExpandoColumnSoap implements Serializable {
 	}
 
 	public static ExpandoColumnSoap[] toSoapModels(List<ExpandoColumn> models) {
-		List<ExpandoColumnSoap> soapModels = new ArrayList<ExpandoColumnSoap>(models.size());
+		List<ExpandoColumnSoap> soapModels = new ArrayList<ExpandoColumnSoap>(
+			models.size());
 
 		for (ExpandoColumn model : models) {
 			soapModels.add(toSoapModel(model));
@@ -90,6 +92,22 @@ public class ExpandoColumnSoap implements Serializable {
 
 	public void setPrimaryKey(long pk) {
 		setColumnId(pk);
+	}
+
+	public long getMvccVersion() {
+		return _mvccVersion;
+	}
+
+	public void setMvccVersion(long mvccVersion) {
+		_mvccVersion = mvccVersion;
+	}
+
+	public long getCtCollectionId() {
+		return _ctCollectionId;
+	}
+
+	public void setCtCollectionId(long ctCollectionId) {
+		_ctCollectionId = ctCollectionId;
 	}
 
 	public long getColumnId() {
@@ -148,6 +166,8 @@ public class ExpandoColumnSoap implements Serializable {
 		_typeSettings = typeSettings;
 	}
 
+	private long _mvccVersion;
+	private long _ctCollectionId;
 	private long _columnId;
 	private long _companyId;
 	private long _tableId;
@@ -155,4 +175,5 @@ public class ExpandoColumnSoap implements Serializable {
 	private int _type;
 	private String _defaultData;
 	private String _typeSettings;
+
 }

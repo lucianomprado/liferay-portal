@@ -14,6 +14,8 @@
 
 package com.liferay.sites.kernel.util;
 
+import com.liferay.expando.kernel.model.ExpandoBridge;
+import com.liferay.expando.kernel.util.ExpandoBridgeFactoryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Layout;
@@ -26,6 +28,7 @@ import com.liferay.portal.kernel.service.ServiceContext;
 
 import java.io.File;
 import java.io.InputStream;
+import java.io.Serializable;
 
 import java.util.List;
 import java.util.Map;
@@ -61,6 +64,8 @@ public interface Sites {
 
 	public static final String LAST_MERGE_TIME = "last-merge-time";
 
+	public static final String LAST_MERGE_VERSION = "last-merge-version";
+
 	public static final String LAST_RESET_TIME = "last-reset-time";
 
 	public static final String LAYOUT_UPDATEABLE = "layoutUpdateable";
@@ -70,27 +75,52 @@ public interface Sites {
 	public static final String MERGE_FAIL_FRIENDLY_URL_LAYOUTS =
 		"merge-fail-friendly-url-layouts";
 
+	public static final String SHOW_SITE_NAME = "showSiteName";
+
 	public void addMergeFailFriendlyURLLayout(Layout layout)
 		throws PortalException;
 
 	public void addPortletBreadcrumbEntries(
-			Group group, HttpServletRequest request, PortletURL portletURL)
+			Group group, HttpServletRequest httpServletRequest,
+			PortletURL portletURL)
 		throws Exception;
 
 	public void addPortletBreadcrumbEntries(
-			Group group, HttpServletRequest request,
+			Group group, HttpServletRequest httpServletRequest,
 			RenderResponse renderResponse)
 		throws Exception;
 
 	public void addPortletBreadcrumbEntries(
 			Group group, String pagesName, PortletURL redirectURL,
-			HttpServletRequest request, RenderResponse renderResponse)
+			HttpServletRequest httpServletRequest,
+			RenderResponse renderResponse)
 		throws Exception;
 
 	public void applyLayoutPrototype(
 			LayoutPrototype layoutPrototype, Layout targetLayout,
 			boolean linkEnabled)
 		throws Exception;
+
+	public default void copyExpandoBridgeAttributes(
+		Layout sourceLayout, Layout targetLayout) {
+
+		ExpandoBridge sourceExpandoBridge =
+			ExpandoBridgeFactoryUtil.getExpandoBridge(
+				sourceLayout.getCompanyId(), Layout.class.getName(),
+				sourceLayout.getPlid());
+
+		ExpandoBridge targetExpandoBridge =
+			ExpandoBridgeFactoryUtil.getExpandoBridge(
+				targetLayout.getCompanyId(), Layout.class.getName(),
+				targetLayout.getPlid());
+
+		Map<String, Serializable> attributes =
+			sourceExpandoBridge.getAttributes();
+
+		for (Map.Entry<String, Serializable> entry : attributes.entrySet()) {
+			targetExpandoBridge.setAttribute(entry.getKey(), entry.getValue());
+		}
+	}
 
 	public void copyLayout(
 			long userId, Layout sourceLayout, Layout targetLayout,
@@ -110,7 +140,8 @@ public interface Sites {
 		throws Exception;
 
 	public Object[] deleteLayout(
-			HttpServletRequest request, HttpServletResponse response)
+			HttpServletRequest httpServletRequest,
+			HttpServletResponse httpServletResponse)
 		throws Exception;
 
 	public Object[] deleteLayout(
@@ -184,7 +215,8 @@ public interface Sites {
 	public void mergeLayoutSetPrototypeLayouts(Group group, LayoutSet layoutSet)
 		throws Exception;
 
-	public void removeMergeFailFriendlyURLLayouts(LayoutSet layoutSet);
+	public void removeMergeFailFriendlyURLLayouts(LayoutSet layoutSet)
+		throws PortalException;
 
 	public void resetPrototype(Layout layout) throws PortalException;
 

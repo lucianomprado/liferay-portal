@@ -14,6 +14,8 @@
 
 package com.liferay.portal.service.impl;
 
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.bean.BeanReference;
 import com.liferay.portal.kernel.exception.LayoutFriendlyURLException;
 import com.liferay.portal.kernel.exception.LayoutFriendlyURLsException;
@@ -33,11 +35,13 @@ import com.liferay.portal.kernel.model.LayoutSet;
 import com.liferay.portal.kernel.model.LayoutSetPrototype;
 import com.liferay.portal.kernel.model.LayoutType;
 import com.liferay.portal.kernel.model.LayoutTypeController;
+import com.liferay.portal.kernel.model.ModelHintsUtil;
 import com.liferay.portal.kernel.model.ResourceConstants;
 import com.liferay.portal.kernel.model.Role;
-import com.liferay.portal.kernel.model.RoleConstants;
+import com.liferay.portal.kernel.model.role.RoleConstants;
 import com.liferay.portal.kernel.module.framework.service.IdentifiableOSGiService;
 import com.liferay.portal.kernel.portlet.FriendlyURLMapper;
+import com.liferay.portal.kernel.portlet.FriendlyURLResolverRegistryUtil;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.service.PortletLocalServiceUtil;
 import com.liferay.portal.kernel.service.ResourcePermissionLocalService;
@@ -51,7 +55,6 @@ import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.PortalUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.comparator.LayoutPriorityComparator;
@@ -63,6 +66,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author Raymond Augé
@@ -91,8 +96,8 @@ public class LayoutLocalServiceHelper implements IdentifiableOSGiService {
 
 				break;
 			}
-			catch (LayoutFriendlyURLException lfurle) {
-				int type = lfurle.getType();
+			catch (LayoutFriendlyURLException layoutFriendlyURLException) {
+				int type = layoutFriendlyURLException.getType();
 
 				if (type == LayoutFriendlyURLException.DUPLICATE) {
 					friendlyURL = originalFriendlyURL + i;
@@ -175,12 +180,12 @@ public class LayoutLocalServiceHelper implements IdentifiableOSGiService {
 
 			return priority;
 		}
-		catch (NoSuchLayoutException nsle) {
+		catch (NoSuchLayoutException noSuchLayoutException) {
 
 			// LPS-52675
 
 			if (_log.isDebugEnabled()) {
-				_log.debug(nsle, nsle);
+				_log.debug(noSuchLayoutException, noSuchLayoutException);
 			}
 
 			return 0;
@@ -242,7 +247,9 @@ public class LayoutLocalServiceHelper implements IdentifiableOSGiService {
 				firstLayout = true;
 			}
 			else {
-				long firstLayoutId = layouts.get(0).getLayoutId();
+				Layout layout = layouts.get(0);
+
+				long firstLayoutId = layout.getLayoutId();
 
 				if (firstLayoutId == layoutId) {
 					firstLayout = true;
@@ -286,9 +293,10 @@ public class LayoutLocalServiceHelper implements IdentifiableOSGiService {
 		}
 
 		if (!layoutTypeController.isParentable()) {
-			if (layoutPersistence.countByG_P_P(
-					groupId, privateLayout, layoutId) > 0) {
+			int count = layoutPersistence.countByG_P_P(
+				groupId, privateLayout, layoutId);
 
+			if (count > 0) {
 				throw new LayoutTypeException(
 					LayoutTypeException.NOT_PARENTABLE);
 			}
@@ -303,10 +311,10 @@ public class LayoutLocalServiceHelper implements IdentifiableOSGiService {
 		if (group.isGuest() && layout.isPublicLayout() &&
 			!hasGuestViewPermission(layout)) {
 
-			LayoutTypeException lte = new LayoutTypeException(
+			LayoutTypeException layoutTypeException = new LayoutTypeException(
 				LayoutTypeException.FIRST_LAYOUT_PERMISSION);
 
-			throw lte;
+			throw layoutTypeException;
 		}
 
 		validateFirstLayout(layout.getType());
@@ -317,12 +325,12 @@ public class LayoutLocalServiceHelper implements IdentifiableOSGiService {
 			LayoutTypeControllerTracker.getLayoutTypeController(type);
 
 		if (Validator.isNull(type) || !layoutTypeController.isFirstPageable()) {
-			LayoutTypeException lte = new LayoutTypeException(
+			LayoutTypeException layoutTypeException = new LayoutTypeException(
 				LayoutTypeException.FIRST_LAYOUT);
 
-			lte.setLayoutType(type);
+			layoutTypeException.setLayoutType(type);
 
-			throw lte;
+			throw layoutTypeException;
 		}
 	}
 
@@ -350,14 +358,16 @@ public class LayoutLocalServiceHelper implements IdentifiableOSGiService {
 				layoutFriendlyURL.getPlid());
 
 			if (layout.getLayoutId() != layoutId) {
-				LayoutFriendlyURLException lfurle =
+				LayoutFriendlyURLException layoutFriendlyURLException =
 					new LayoutFriendlyURLException(
 						LayoutFriendlyURLException.DUPLICATE);
 
-				lfurle.setDuplicateClassPK(layout.getPlid());
-				lfurle.setDuplicateClassName(Layout.class.getName());
+				layoutFriendlyURLException.setDuplicateClassPK(
+					layout.getPlid());
+				layoutFriendlyURLException.setDuplicateClassName(
+					Layout.class.getName());
 
-				throw lfurle;
+				throw layoutFriendlyURLException;
 			}
 		}
 
@@ -366,12 +376,41 @@ public class LayoutLocalServiceHelper implements IdentifiableOSGiService {
 		if (friendlyURL.contains(Portal.FRIENDLY_URL_SEPARATOR) ||
 			friendlyURL.endsWith(_FRIENDLY_URL_SEPARATOR_HEAD)) {
 
-			LayoutFriendlyURLException lfurle = new LayoutFriendlyURLException(
-				LayoutFriendlyURLException.KEYWORD_CONFLICT);
+			LayoutFriendlyURLException layoutFriendlyURLException =
+				new LayoutFriendlyURLException(
+					LayoutFriendlyURLException.KEYWORD_CONFLICT);
 
-			lfurle.setKeywordConflict(Portal.FRIENDLY_URL_SEPARATOR);
+			layoutFriendlyURLException.setKeywordConflict(
+				Portal.FRIENDLY_URL_SEPARATOR);
 
-			throw lfurle;
+			throw layoutFriendlyURLException;
+		}
+
+		Matcher matcher = _urlSeparatorPattern.matcher(friendlyURL);
+
+		if (matcher.matches()) {
+			LayoutFriendlyURLException layoutFriendlyURLException =
+				new LayoutFriendlyURLException(
+					LayoutFriendlyURLException.KEYWORD_CONFLICT);
+
+			layoutFriendlyURLException.setKeywordConflict(friendlyURL);
+
+			throw layoutFriendlyURLException;
+		}
+
+		String[] urlSeparators =
+			FriendlyURLResolverRegistryUtil.getURLSeparators();
+
+		for (String urlSeparator : urlSeparators) {
+			if (urlSeparator.contains(friendlyURL)) {
+				LayoutFriendlyURLException layoutFriendlyURLException =
+					new LayoutFriendlyURLException(
+						LayoutFriendlyURLException.KEYWORD_CONFLICT);
+
+				layoutFriendlyURLException.setKeywordConflict(urlSeparator);
+
+				throw layoutFriendlyURLException;
+			}
 		}
 
 		List<FriendlyURLMapper> friendlyURLMappers =
@@ -387,13 +426,14 @@ public class LayoutLocalServiceHelper implements IdentifiableOSGiService {
 			if (friendlyURL.contains(mapping + StringPool.SLASH) ||
 				friendlyURL.endsWith(mapping)) {
 
-				LayoutFriendlyURLException lfurle =
+				LayoutFriendlyURLException layoutFriendlyURLException =
 					new LayoutFriendlyURLException(
 						LayoutFriendlyURLException.KEYWORD_CONFLICT);
 
-				lfurle.setKeywordConflict(friendlyURLMapper.getMapping());
+				layoutFriendlyURLException.setKeywordConflict(
+					friendlyURLMapper.getMapping());
 
-				throw lfurle;
+				throw layoutFriendlyURLException;
 			}
 		}
 
@@ -405,19 +445,26 @@ public class LayoutLocalServiceHelper implements IdentifiableOSGiService {
 				StringPool.SLASH +
 					PortalUtil.getI18nPathLanguageId(locale, languageId);
 
+			String underlineI18nPathLanguageId = StringUtil.replace(
+				i18nPathLanguageId, CharPool.DASH, CharPool.UNDERLINE);
+
 			if (friendlyURL.startsWith(i18nPathLanguageId + StringPool.SLASH) ||
+				friendlyURL.startsWith(
+					underlineI18nPathLanguageId + StringPool.SLASH) ||
 				friendlyURL.startsWith(
 					StringPool.SLASH + languageId + StringPool.SLASH) ||
 				friendlyURL.equals(i18nPathLanguageId) ||
+				friendlyURL.equals(underlineI18nPathLanguageId) ||
 				friendlyURL.equals(StringPool.SLASH + languageId)) {
 
-				LayoutFriendlyURLException lfurle =
+				LayoutFriendlyURLException layoutFriendlyURLException =
 					new LayoutFriendlyURLException(
 						LayoutFriendlyURLException.KEYWORD_CONFLICT);
 
-				lfurle.setKeywordConflict(i18nPathLanguageId);
+				layoutFriendlyURLException.setKeywordConflict(
+					i18nPathLanguageId);
 
-				throw lfurle;
+				throw layoutFriendlyURLException;
 			}
 		}
 
@@ -426,12 +473,13 @@ public class LayoutLocalServiceHelper implements IdentifiableOSGiService {
 		if (Validator.isNumber(layoutIdFriendlyURL) &&
 			!layoutIdFriendlyURL.equals(String.valueOf(layoutId))) {
 
-			LayoutFriendlyURLException lfurle = new LayoutFriendlyURLException(
-				LayoutFriendlyURLException.POSSIBLE_DUPLICATE);
+			LayoutFriendlyURLException layoutFriendlyURLException =
+				new LayoutFriendlyURLException(
+					LayoutFriendlyURLException.POSSIBLE_DUPLICATE);
 
-			lfurle.setKeywordConflict(layoutIdFriendlyURL);
+			layoutFriendlyURLException.setKeywordConflict(layoutIdFriendlyURL);
 
-			throw lfurle;
+			throw layoutFriendlyURLException;
 		}
 	}
 
@@ -449,19 +497,21 @@ public class LayoutLocalServiceHelper implements IdentifiableOSGiService {
 				validateFriendlyURL(
 					groupId, privateLayout, layoutId, friendlyURL);
 			}
-			catch (LayoutFriendlyURLException lfurle) {
+			catch (LayoutFriendlyURLException layoutFriendlyURLException) {
 				Locale locale = entry.getKey();
 
 				if (layoutFriendlyURLsException == null) {
 					layoutFriendlyURLsException =
-						new LayoutFriendlyURLsException(lfurle);
+						new LayoutFriendlyURLsException(
+							layoutFriendlyURLException);
 				}
 				else {
-					layoutFriendlyURLsException.addSuppressed(lfurle);
+					layoutFriendlyURLsException.addSuppressed(
+						layoutFriendlyURLException);
 				}
 
 				layoutFriendlyURLsException.addLocalizedException(
-					locale, lfurle);
+					locale, layoutFriendlyURLException);
 			}
 		}
 
@@ -473,6 +523,13 @@ public class LayoutLocalServiceHelper implements IdentifiableOSGiService {
 	public void validateName(String name) throws PortalException {
 		if (Validator.isNull(name)) {
 			throw new LayoutNameException();
+		}
+
+		int maxLength = ModelHintsUtil.getMaxLength(
+			Layout.class.getName(), "friendlyURL");
+
+		if (name.length() > maxLength) {
+			throw new LayoutNameException(LayoutNameException.TOO_LONG);
 		}
 	}
 
@@ -536,29 +593,33 @@ public class LayoutLocalServiceHelper implements IdentifiableOSGiService {
 
 		// If layout is moved, the new first layout must be valid
 
-		if (layout.getParentLayoutId() ==
+		if (layout.getParentLayoutId() !=
 				LayoutConstants.DEFAULT_PARENT_LAYOUT_ID) {
 
-			List<Layout> layouts = layoutPersistence.findByG_P_P(
-				groupId, privateLayout,
-				LayoutConstants.DEFAULT_PARENT_LAYOUT_ID, 0, 2);
+			return;
+		}
 
-			// You can only reach this point if there are more than two layouts
-			// at the root level because of the descendant check
+		List<Layout> layouts = layoutPersistence.findByG_P_P(
+			groupId, privateLayout, LayoutConstants.DEFAULT_PARENT_LAYOUT_ID, 0,
+			2);
 
-			long firstLayoutId = layouts.get(0).getLayoutId();
+		// You can only reach this point if there are more than two layouts
+		// at the root level because of the descendant check
 
-			if (firstLayoutId == layoutId) {
-				Layout secondLayout = layouts.get(1);
+		Layout firstLayout = layouts.get(0);
 
-				LayoutType layoutType = secondLayout.getLayoutType();
+		long firstLayoutId = firstLayout.getLayoutId();
 
-				if (Validator.isNull(secondLayout.getType()) ||
-					!layoutType.isFirstPageable()) {
+		if (firstLayoutId == layoutId) {
+			Layout secondLayout = layouts.get(1);
 
-					throw new LayoutParentLayoutIdException(
-						LayoutParentLayoutIdException.FIRST_LAYOUT_TYPE);
-				}
+			LayoutType layoutType = secondLayout.getLayoutType();
+
+			if (Validator.isNull(secondLayout.getType()) ||
+				!layoutType.isFirstPageable()) {
+
+				throw new LayoutParentLayoutIdException(
+					LayoutParentLayoutIdException.FIRST_LAYOUT_TYPE);
 			}
 		}
 	}
@@ -596,5 +657,8 @@ public class LayoutLocalServiceHelper implements IdentifiableOSGiService {
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		LayoutLocalServiceHelper.class);
+
+	private static final Pattern _urlSeparatorPattern = Pattern.compile(
+		"/[A-Za-z]");
 
 }

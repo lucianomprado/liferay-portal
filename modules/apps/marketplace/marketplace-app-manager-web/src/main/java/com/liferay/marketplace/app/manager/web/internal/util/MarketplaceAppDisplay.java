@@ -14,12 +14,12 @@
 
 package com.liferay.marketplace.app.manager.web.internal.util;
 
+import com.liferay.marketplace.constants.MarketplaceStorePortletKeys;
 import com.liferay.marketplace.model.App;
-import com.liferay.marketplace.store.web.constants.MarketplaceStorePortletKeys;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.portlet.LiferayWindowState;
 import com.liferay.portal.kernel.portlet.PortletURLFactoryUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.WebKeys;
 
 import javax.portlet.MimeResponse;
@@ -54,12 +54,7 @@ public class MarketplaceAppDisplay extends BaseAppDisplay {
 	public String getDisplayURL(MimeResponse mimeResponse) {
 		PortletURL portletURL = mimeResponse.createRenderURL();
 
-		if (hasModuleGroups()) {
-			portletURL.setParameter("mvcPath", "/view_module_groups.jsp");
-		}
-		else {
-			portletURL.setParameter("mvcPath", "/view_modules.jsp");
-		}
+		portletURL.setParameter("mvcPath", "/view_modules.jsp");
 
 		portletURL.setParameter("app", String.valueOf(_app.getAppId()));
 
@@ -67,18 +62,20 @@ public class MarketplaceAppDisplay extends BaseAppDisplay {
 	}
 
 	@Override
-	public String getIconURL(HttpServletRequest request) {
+	public String getIconURL(HttpServletRequest httpServletRequest) {
 		return _app.getIconURL();
 	}
 
 	@Override
-	public String getStoreURL(HttpServletRequest request) {
+	public String getStoreURL(HttpServletRequest httpServletRequest) {
 		try {
-			ThemeDisplay themeDisplay = (ThemeDisplay)request.getAttribute(
-				WebKeys.THEME_DISPLAY);
+			ThemeDisplay themeDisplay =
+				(ThemeDisplay)httpServletRequest.getAttribute(
+					WebKeys.THEME_DISPLAY);
 
 			PortletURL portletURL = PortletURLFactoryUtil.create(
-				request, MarketplaceStorePortletKeys.MARKETPLACE_STORE,
+				httpServletRequest,
+				MarketplaceStorePortletKeys.MARKETPLACE_STORE,
 				themeDisplay.getPlid(), PortletRequest.RENDER_PHASE);
 
 			portletURL.setParameter(
@@ -87,7 +84,7 @@ public class MarketplaceAppDisplay extends BaseAppDisplay {
 
 			return portletURL.toString();
 		}
-		catch (Exception e) {
+		catch (Exception exception) {
 		}
 
 		return StringPool.BLANK;

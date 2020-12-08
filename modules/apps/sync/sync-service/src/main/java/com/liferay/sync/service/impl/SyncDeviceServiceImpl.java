@@ -14,17 +14,27 @@
 
 package com.liferay.sync.service.impl;
 
+import com.liferay.portal.aop.AopService;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.security.auth.PrincipalException;
 import com.liferay.sync.constants.SyncDeviceConstants;
+import com.liferay.sync.internal.util.SyncDeviceThreadLocal;
 import com.liferay.sync.model.SyncDevice;
 import com.liferay.sync.service.base.SyncDeviceServiceBaseImpl;
-import com.liferay.sync.util.SyncDeviceThreadLocal;
+
+import org.osgi.service.component.annotations.Component;
 
 /**
  * @author Shinn Lok
  */
+@Component(
+	property = {
+		"json.web.service.context.name=sync",
+		"json.web.service.context.path=SyncDevice"
+	},
+	service = AopService.class
+)
 public class SyncDeviceServiceImpl extends SyncDeviceServiceBaseImpl {
 
 	@Override

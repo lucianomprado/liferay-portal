@@ -21,6 +21,7 @@ import com.liferay.gradle.plugins.workspace.internal.util.FileUtil;
 import com.liferay.gradle.plugins.workspace.internal.util.GradleUtil;
 import com.liferay.gradle.plugins.workspace.tasks.UpdatePropertiesTask;
 import com.liferay.gradle.util.StringUtil;
+import com.liferay.gradle.util.Validator;
 import com.liferay.gradle.util.copy.StripPathSegmentsAction;
 
 import groovy.lang.Closure;
@@ -30,7 +31,9 @@ import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 
 import org.gradle.api.Action;
@@ -65,6 +68,22 @@ public class PluginsProjectConfigurator extends BaseProjectConfigurator {
 
 	public PluginsProjectConfigurator(Settings settings) {
 		super(settings);
+
+		String defaultRootDirNames = GradleUtil.getProperty(
+			settings, getDefaultRootDirPropertyName(), (String)null);
+
+		if (Validator.isNotNull(defaultRootDirNames)) {
+			_defaultRootDirs = new HashSet<>();
+
+			for (String dirName : defaultRootDirNames.split("\\s*,\\s*")) {
+				_defaultRootDirs.add(new File(settings.getRootDir(), dirName));
+			}
+		}
+		else {
+			File dir = new File(settings.getRootDir(), getDefaultRootDirName());
+
+			_defaultRootDirs = Collections.singleton(dir);
+		}
 	}
 
 	@Override
@@ -102,8 +121,13 @@ public class PluginsProjectConfigurator extends BaseProjectConfigurator {
 	}
 
 	@Override
+	public Iterable<File> getDefaultRootDirs() {
+		return _defaultRootDirs;
+	}
+
+	@Override
 	public String getName() {
-		return _NAME;
+		return NAME;
 	}
 
 	@Override
@@ -126,6 +150,8 @@ public class PluginsProjectConfigurator extends BaseProjectConfigurator {
 	protected String getDefaultRootDirPropertyName() {
 		return _DEFAULT_ROOT_DIR_PROPERTY_NAME;
 	}
+
+	protected static final String NAME = "plugins";
 
 	private Configuration _addRootConfigurationPluginsSDK(
 		final Project project) {
@@ -170,8 +196,7 @@ public class PluginsProjectConfigurator extends BaseProjectConfigurator {
 		WorkspaceExtension workspaceExtension) {
 
 		ProjectConfigurator projectConfigurator =
-			workspaceExtension.propertyMissing(
-				PluginsProjectConfigurator._NAME);
+			workspaceExtension.propertyMissing(PluginsProjectConfigurator.NAME);
 
 		Collection<File> dirs =
 			(Collection<File>)projectConfigurator.getDefaultRootDirs();
@@ -201,6 +226,7 @@ public class PluginsProjectConfigurator extends BaseProjectConfigurator {
 		return task;
 	}
 
+	@SuppressWarnings("serial")
 	private Copy _addRootTaskUpgradePluginsSDK(
 		final Project project, String taskName, File dir,
 		final Configuration pluginsSDKConfiguration) {
@@ -282,6 +308,7 @@ public class PluginsProjectConfigurator extends BaseProjectConfigurator {
 		antBuilder.importBuild("build.xml");
 	}
 
+	@SuppressWarnings("serial")
 	private void _configureRootTaskDistBundle(final Task warTask) {
 		Project project = warTask.getProject();
 
@@ -337,6 +364,6 @@ public class PluginsProjectConfigurator extends BaseProjectConfigurator {
 	private static final String _DEFAULT_ROOT_DIR_PROPERTY_NAME =
 		WorkspacePlugin.PROPERTY_PREFIX + "plugins.sdk.dir";
 
-	private static final String _NAME = "plugins";
+	private final Set<File> _defaultRootDirs;
 
 }

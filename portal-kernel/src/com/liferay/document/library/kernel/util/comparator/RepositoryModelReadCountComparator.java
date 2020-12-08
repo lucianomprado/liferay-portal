@@ -48,6 +48,7 @@ public class RepositoryModelReadCountComparator<T>
 
 	public RepositoryModelReadCountComparator(boolean ascending) {
 		_ascending = ascending;
+
 		_orderByModel = false;
 	}
 
@@ -88,9 +89,8 @@ public class RepositoryModelReadCountComparator<T>
 		if (_ascending) {
 			return value;
 		}
-		else {
-			return -value;
-		}
+
+		return -value;
 	}
 
 	@Override
@@ -99,18 +99,15 @@ public class RepositoryModelReadCountComparator<T>
 			if (_ascending) {
 				return ORDER_BY_MODEL_ASC;
 			}
-			else {
-				return ORDER_BY_MODEL_DESC;
-			}
+
+			return ORDER_BY_MODEL_DESC;
 		}
-		else {
-			if (_ascending) {
-				return ORDER_BY_ASC;
-			}
-			else {
-				return ORDER_BY_DESC;
-			}
+
+		if (_ascending) {
+			return ORDER_BY_ASC;
 		}
+
+		return ORDER_BY_DESC;
 	}
 
 	@Override
@@ -123,16 +120,16 @@ public class RepositoryModelReadCountComparator<T>
 		return _ascending;
 	}
 
-	protected long getFileShortcutReadCount(Object obj) {
+	protected long getFileShortcutReadCount(Object object) {
 		long toFileEntryId = 0;
 
-		if (obj instanceof FileShortcut) {
-			FileShortcut fileShortcut = (FileShortcut)obj;
+		if (object instanceof FileShortcut) {
+			FileShortcut fileShortcut = (FileShortcut)object;
 
 			toFileEntryId = fileShortcut.getToFileEntryId();
 		}
 		else {
-			DLFileShortcut fileShortcut = (DLFileShortcut)obj;
+			DLFileShortcut fileShortcut = (DLFileShortcut)object;
 
 			toFileEntryId = fileShortcut.getToFileEntryId();
 		}
@@ -143,25 +140,27 @@ public class RepositoryModelReadCountComparator<T>
 
 			return dlFileEntry.getReadCount();
 		}
-		catch (Exception e) {
+		catch (Exception exception) {
 			return 0;
 		}
 	}
 
-	protected long getReadCount(Object obj) {
-		if (obj instanceof DLFileEntry) {
-			DLFileEntry dlFileEntry = (DLFileEntry)obj;
+	protected long getReadCount(Object object) {
+		if (object instanceof DLFileEntry) {
+			DLFileEntry dlFileEntry = (DLFileEntry)object;
 
 			return dlFileEntry.getReadCount();
 		}
-		else if (obj instanceof DLFileShortcut || obj instanceof FileShortcut) {
-			return getFileShortcutReadCount(obj);
+		else if (object instanceof DLFileShortcut ||
+				 object instanceof FileShortcut) {
+
+			return getFileShortcutReadCount(object);
 		}
-		else if (obj instanceof DLFolder || obj instanceof Folder) {
+		else if (object instanceof DLFolder || object instanceof Folder) {
 			return 0;
 		}
 		else {
-			FileEntry fileEntry = (FileEntry)obj;
+			FileEntry fileEntry = (FileEntry)object;
 
 			return fileEntry.getReadCount();
 		}

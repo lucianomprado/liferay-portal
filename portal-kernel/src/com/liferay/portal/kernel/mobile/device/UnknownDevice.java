@@ -14,21 +14,15 @@
 
 package com.liferay.portal.kernel.mobile.device;
 
-import aQute.bnd.annotation.ProviderType;
-
-import java.util.Collections;
-import java.util.Map;
-
 /**
  * Class represents unknown device
  *
  * @author Milen Dyankov
  */
-@ProviderType
-public class UnknownDevice extends AbstractDevice {
+public class UnknownDevice extends BaseDevice {
 
 	public static UnknownDevice getInstance() {
-		return _instance;
+		return _unknownDevice;
 	}
 
 	@Override
@@ -44,24 +38,6 @@ public class UnknownDevice extends AbstractDevice {
 	@Override
 	public String getBrowserVersion() {
 		return VersionableName.UNKNOWN.getName();
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	@Override
-	public Map<String, Capability> getCapabilities() {
-		return Collections.emptyMap();
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	@Override
-	public String getCapability(String name) {
-		return null;
 	}
 
 	@Override
@@ -107,6 +83,6 @@ public class UnknownDevice extends AbstractDevice {
 	private UnknownDevice() {
 	}
 
-	private static final UnknownDevice _instance = new UnknownDevice();
+	private static final UnknownDevice _unknownDevice = new UnknownDevice();
 
 }

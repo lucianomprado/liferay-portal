@@ -25,7 +25,10 @@ import javax.servlet.http.HttpServletResponse;
 
 /**
  * @author Sergio González
+ * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+ *             com.liferay.frontend.taglib.form.navigator.BaseFormNavigatorEntry}
  */
+@Deprecated
 public abstract class BaseFormNavigatorEntry<T>
 	implements FormNavigatorEntry<T> {
 
@@ -43,7 +46,8 @@ public abstract class BaseFormNavigatorEntry<T>
 
 	@Override
 	public abstract void include(
-			HttpServletRequest request, HttpServletResponse response)
+			HttpServletRequest httpServletRequest,
+			HttpServletResponse httpServletResponse)
 		throws IOException;
 
 	@Override

@@ -16,99 +16,130 @@ package com.liferay.portal.spring.transaction;
 
 import com.liferay.portal.kernel.transaction.TransactionLifecycleManager;
 
-import org.aopalliance.intercept.MethodInvocation;
-
 import org.springframework.transaction.PlatformTransactionManager;
 
 /**
  * @author Michael C. Han
  * @author Shuyang Zhou
  */
-public class DefaultTransactionExecutor
-	implements TransactionExecutor, TransactionHandler {
+public class DefaultTransactionExecutor extends BaseTransactionExecutor {
 
-	@Override
-	public void commit(
-		PlatformTransactionManager platformTransactionManager,
-		TransactionAttributeAdapter transactionAttributeAdapter,
-		TransactionStatusAdapter transactionStatusAdapter) {
+	public DefaultTransactionExecutor(
+		PlatformTransactionManager platformTransactionManager) {
 
-		_commit(
-			platformTransactionManager, transactionAttributeAdapter,
-			transactionStatusAdapter, null);
+		_platformTransactionManager = platformTransactionManager;
 	}
 
 	@Override
-	public Object execute(
-			PlatformTransactionManager platformTransactionManager,
-			TransactionAttributeAdapter transactionAttributeAdapter,
-			MethodInvocation methodInvocation)
-		throws Throwable {
+	public void commit(
+		TransactionAttributeAdapter transactionAttributeAdapter,
+		TransactionStatusAdapter transactionStatusAdapter) {
 
-		TransactionStatusAdapter transactionStatusAdapter = start(
-			platformTransactionManager, transactionAttributeAdapter);
-
-		Object returnValue = null;
+		Throwable transactionManagerThrowable = null;
 
 		try {
-			returnValue = methodInvocation.proceed();
+			_platformTransactionManager.commit(
+				transactionStatusAdapter.getTransactionStatus());
 		}
 		catch (Throwable throwable) {
-			rollback(
-				platformTransactionManager, throwable,
-				transactionAttributeAdapter, transactionStatusAdapter);
+			transactionManagerThrowable = throwable;
+
+			throw throwable;
 		}
+		finally {
+			if (transactionManagerThrowable == null) {
+				TransactionLifecycleManager.fireTransactionCommittedEvent(
+					transactionAttributeAdapter, transactionStatusAdapter);
+			}
+			else {
+				TransactionLifecycleManager.fireTransactionRollbackedEvent(
+					transactionAttributeAdapter, transactionStatusAdapter,
+					transactionManagerThrowable);
+			}
 
-		commit(
-			platformTransactionManager, transactionAttributeAdapter,
-			transactionStatusAdapter);
+			TransactionExecutorThreadLocal.popTransactionExecutor();
 
-		return returnValue;
+			transactionStatusAdapter.reportLifecycleListenerThrowables(
+				transactionManagerThrowable);
+		}
+	}
+
+	@Override
+	public PlatformTransactionManager getPlatformTransactionManager() {
+		return _platformTransactionManager;
 	}
 
 	@Override
 	public void rollback(
-			PlatformTransactionManager platformTransactionManager,
-			Throwable throwable,
+			Throwable throwable1,
 			TransactionAttributeAdapter transactionAttributeAdapter,
 			TransactionStatusAdapter transactionStatusAdapter)
 		throws Throwable {
 
-		if (transactionAttributeAdapter.rollbackOn(throwable)) {
-			try {
-				platformTransactionManager.rollback(
+		boolean rollback = transactionAttributeAdapter.rollbackOn(throwable1);
+
+		Throwable transactionManagerThrowable = null;
+
+		try {
+			if (rollback) {
+				_platformTransactionManager.rollback(
 					transactionStatusAdapter.getTransactionStatus());
 			}
-			catch (Throwable t) {
-				t.addSuppressed(throwable);
-
-				throw t;
+			else {
+				_platformTransactionManager.commit(
+					transactionStatusAdapter.getTransactionStatus());
 			}
-			finally {
+
+			throw throwable1;
+		}
+		catch (Throwable throwable2) {
+			if (throwable2 != throwable1) {
+				throwable2.addSuppressed(throwable1);
+
+				transactionManagerThrowable = throwable2;
+			}
+
+			throw throwable2;
+		}
+		finally {
+			if (rollback) {
 				TransactionLifecycleManager.fireTransactionRollbackedEvent(
 					transactionAttributeAdapter, transactionStatusAdapter,
-					throwable);
+					throwable1);
+			}
+			else if (transactionManagerThrowable == null) {
+				TransactionLifecycleManager.fireTransactionCommittedEvent(
+					transactionAttributeAdapter, transactionStatusAdapter);
+			}
+			else {
+				TransactionLifecycleManager.fireTransactionRollbackedEvent(
+					transactionAttributeAdapter, transactionStatusAdapter,
+					transactionManagerThrowable);
+			}
+
+			TransactionExecutorThreadLocal.popTransactionExecutor();
+
+			if (transactionManagerThrowable == null) {
+				transactionStatusAdapter.reportLifecycleListenerThrowables(
+					throwable1);
+			}
+			else {
+				transactionStatusAdapter.reportLifecycleListenerThrowables(
+					transactionManagerThrowable);
 			}
 		}
-		else {
-			_commit(
-				platformTransactionManager, transactionAttributeAdapter,
-				transactionStatusAdapter, throwable);
-		}
-
-		throw throwable;
 	}
 
 	@Override
 	public TransactionStatusAdapter start(
-		PlatformTransactionManager platformTransactionManager,
 		TransactionAttributeAdapter transactionAttributeAdapter) {
 
 		TransactionStatusAdapter transactionStatusAdapter =
 			new TransactionStatusAdapter(
-				platformTransactionManager,
-				platformTransactionManager.getTransaction(
+				_platformTransactionManager.getTransaction(
 					transactionAttributeAdapter));
+
+		TransactionExecutorThreadLocal.pushTransactionExecutor(this);
 
 		TransactionLifecycleManager.fireTransactionCreatedEvent(
 			transactionAttributeAdapter, transactionStatusAdapter);
@@ -116,38 +147,6 @@ public class DefaultTransactionExecutor
 		return transactionStatusAdapter;
 	}
 
-	private void _commit(
-		PlatformTransactionManager platformTransactionManager,
-		TransactionAttributeAdapter transactionAttributeAdapter,
-		TransactionStatusAdapter transactionStatusAdapter,
-		Throwable applicationThrowable) {
-
-		Throwable throwable = null;
-
-		try {
-			platformTransactionManager.commit(
-				transactionStatusAdapter.getTransactionStatus());
-		}
-		catch (Throwable t) {
-			if (applicationThrowable != null) {
-				t.addSuppressed(applicationThrowable);
-			}
-
-			throwable = t;
-
-			throw t;
-		}
-		finally {
-			if (throwable != null) {
-				TransactionLifecycleManager.fireTransactionRollbackedEvent(
-					transactionAttributeAdapter, transactionStatusAdapter,
-					throwable);
-			}
-			else {
-				TransactionLifecycleManager.fireTransactionCommittedEvent(
-					transactionAttributeAdapter, transactionStatusAdapter);
-			}
-		}
-	}
+	private final PlatformTransactionManager _platformTransactionManager;
 
 }

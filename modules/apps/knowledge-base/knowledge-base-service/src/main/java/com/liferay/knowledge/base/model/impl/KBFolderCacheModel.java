@@ -14,14 +14,11 @@
 
 package com.liferay.knowledge.base.model.impl;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.knowledge.base.model.KBFolder;
-
+import com.liferay.petra.lang.HashUtil;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.model.CacheModel;
-import com.liferay.portal.kernel.util.HashUtil;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.portal.kernel.model.MVCCModel;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -34,24 +31,26 @@ import java.util.Date;
  * The cache model class for representing KBFolder in entity cache.
  *
  * @author Brian Wing Shun Chan
- * @see KBFolder
  * @generated
  */
-@ProviderType
-public class KBFolderCacheModel implements CacheModel<KBFolder>, Externalizable {
+public class KBFolderCacheModel
+	implements CacheModel<KBFolder>, Externalizable, MVCCModel {
+
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
+	public boolean equals(Object object) {
+		if (this == object) {
 			return true;
 		}
 
-		if (!(obj instanceof KBFolderCacheModel)) {
+		if (!(object instanceof KBFolderCacheModel)) {
 			return false;
 		}
 
-		KBFolderCacheModel kbFolderCacheModel = (KBFolderCacheModel)obj;
+		KBFolderCacheModel kbFolderCacheModel = (KBFolderCacheModel)object;
 
-		if (kbFolderId == kbFolderCacheModel.kbFolderId) {
+		if ((kbFolderId == kbFolderCacheModel.kbFolderId) &&
+			(mvccVersion == kbFolderCacheModel.mvccVersion)) {
+
 			return true;
 		}
 
@@ -60,14 +59,28 @@ public class KBFolderCacheModel implements CacheModel<KBFolder>, Externalizable 
 
 	@Override
 	public int hashCode() {
-		return HashUtil.hash(0, kbFolderId);
+		int hashCode = HashUtil.hash(0, kbFolderId);
+
+		return HashUtil.hash(hashCode, mvccVersion);
+	}
+
+	@Override
+	public long getMvccVersion() {
+		return mvccVersion;
+	}
+
+	@Override
+	public void setMvccVersion(long mvccVersion) {
+		this.mvccVersion = mvccVersion;
 	}
 
 	@Override
 	public String toString() {
-		StringBundler sb = new StringBundler(27);
+		StringBundler sb = new StringBundler(29);
 
-		sb.append("{uuid=");
+		sb.append("{mvccVersion=");
+		sb.append(mvccVersion);
+		sb.append(", uuid=");
 		sb.append(uuid);
 		sb.append(", kbFolderId=");
 		sb.append(kbFolderId);
@@ -102,8 +115,10 @@ public class KBFolderCacheModel implements CacheModel<KBFolder>, Externalizable 
 	public KBFolder toEntityModel() {
 		KBFolderImpl kbFolderImpl = new KBFolderImpl();
 
+		kbFolderImpl.setMvccVersion(mvccVersion);
+
 		if (uuid == null) {
-			kbFolderImpl.setUuid(StringPool.BLANK);
+			kbFolderImpl.setUuid("");
 		}
 		else {
 			kbFolderImpl.setUuid(uuid);
@@ -115,7 +130,7 @@ public class KBFolderCacheModel implements CacheModel<KBFolder>, Externalizable 
 		kbFolderImpl.setUserId(userId);
 
 		if (userName == null) {
-			kbFolderImpl.setUserName(StringPool.BLANK);
+			kbFolderImpl.setUserName("");
 		}
 		else {
 			kbFolderImpl.setUserName(userName);
@@ -138,21 +153,21 @@ public class KBFolderCacheModel implements CacheModel<KBFolder>, Externalizable 
 		kbFolderImpl.setParentKBFolderId(parentKBFolderId);
 
 		if (name == null) {
-			kbFolderImpl.setName(StringPool.BLANK);
+			kbFolderImpl.setName("");
 		}
 		else {
 			kbFolderImpl.setName(name);
 		}
 
 		if (urlTitle == null) {
-			kbFolderImpl.setUrlTitle(StringPool.BLANK);
+			kbFolderImpl.setUrlTitle("");
 		}
 		else {
 			kbFolderImpl.setUrlTitle(urlTitle);
 		}
 
 		if (description == null) {
-			kbFolderImpl.setDescription(StringPool.BLANK);
+			kbFolderImpl.setDescription("");
 		}
 		else {
 			kbFolderImpl.setDescription(description);
@@ -172,6 +187,7 @@ public class KBFolderCacheModel implements CacheModel<KBFolder>, Externalizable 
 
 	@Override
 	public void readExternal(ObjectInput objectInput) throws IOException {
+		mvccVersion = objectInput.readLong();
 		uuid = objectInput.readUTF();
 
 		kbFolderId = objectInput.readLong();
@@ -193,10 +209,11 @@ public class KBFolderCacheModel implements CacheModel<KBFolder>, Externalizable 
 	}
 
 	@Override
-	public void writeExternal(ObjectOutput objectOutput)
-		throws IOException {
+	public void writeExternal(ObjectOutput objectOutput) throws IOException {
+		objectOutput.writeLong(mvccVersion);
+
 		if (uuid == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(uuid);
@@ -211,7 +228,7 @@ public class KBFolderCacheModel implements CacheModel<KBFolder>, Externalizable 
 		objectOutput.writeLong(userId);
 
 		if (userName == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(userName);
@@ -223,21 +240,21 @@ public class KBFolderCacheModel implements CacheModel<KBFolder>, Externalizable 
 		objectOutput.writeLong(parentKBFolderId);
 
 		if (name == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(name);
 		}
 
 		if (urlTitle == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(urlTitle);
 		}
 
 		if (description == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(description);
@@ -246,6 +263,7 @@ public class KBFolderCacheModel implements CacheModel<KBFolder>, Externalizable 
 		objectOutput.writeLong(lastPublishDate);
 	}
 
+	public long mvccVersion;
 	public String uuid;
 	public long kbFolderId;
 	public long groupId;
@@ -259,4 +277,5 @@ public class KBFolderCacheModel implements CacheModel<KBFolder>, Externalizable 
 	public String urlTitle;
 	public String description;
 	public long lastPublishDate;
+
 }

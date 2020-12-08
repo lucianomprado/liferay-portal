@@ -14,10 +14,8 @@
 
 package com.liferay.portal.kernel.cluster;
 
-import aQute.bnd.annotation.ProviderType;
-
-import com.liferay.portal.kernel.util.HashUtil;
-import com.liferay.portal.kernel.util.StringBundler;
+import com.liferay.petra.lang.HashUtil;
+import com.liferay.petra.string.StringBundler;
 
 import java.io.Serializable;
 
@@ -29,7 +27,6 @@ import java.util.Objects;
 /**
  * @author Tina Tian
  */
-@ProviderType
 public class ClusterNode implements Serializable {
 
 	public ClusterNode(String clusterNodeId, InetAddress bindInetAddress) {
@@ -46,16 +43,16 @@ public class ClusterNode implements Serializable {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
+	public boolean equals(Object object) {
+		if (this == object) {
 			return true;
 		}
 
-		if (!(obj instanceof ClusterNode)) {
+		if (!(object instanceof ClusterNode)) {
 			return false;
 		}
 
-		ClusterNode clusterNode = (ClusterNode)obj;
+		ClusterNode clusterNode = (ClusterNode)object;
 
 		if (Objects.equals(_clusterNodeId, clusterNode._clusterNodeId) &&
 			Objects.equals(_bindInetAddress, clusterNode._bindInetAddress) &&

@@ -14,11 +14,11 @@
 
 package com.liferay.portal.osgi.web.servlet.jsp.compiler.internal;
 
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.FileUtil;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.util.PropsValues;
 
 import java.io.File;
@@ -34,7 +34,7 @@ import org.osgi.service.component.annotations.Deactivate;
 /**
  * @author Matthew Tambara
  */
-@Component(immediate = true)
+@Component(immediate = true, service = {})
 public class JspReloader {
 
 	@Activate
@@ -49,7 +49,7 @@ public class JspReloader {
 		_bundleContext.removeBundleListener(_jspReloadBundleListener);
 	}
 
-	private static String _toString(BundleEvent bundleEvent) {
+	private String _toString(BundleEvent bundleEvent) {
 		StringBundler sb = new StringBundler(6);
 
 		sb.append("{bundle=");
@@ -68,8 +68,8 @@ public class JspReloader {
 		return sb.toString();
 	}
 
-	private static final String _WORK_DIR =
-		PropsValues.LIFERAY_HOME + File.separator + "work" + File.separator;
+	private static final String _WORK_DIR = StringBundler.concat(
+		PropsValues.LIFERAY_HOME, File.separator, "work", File.separator);
 
 	private static final Log _log = LogFactoryUtil.getLog(JspReloader.class);
 
@@ -98,10 +98,19 @@ public class JspReloader {
 				if (file.exists()) {
 					FileUtil.deltree(file);
 
-					if (_log.isDebugEnabled()) {
+					if (PropsValues.WORK_DIR_OVERRIDE_ENABLED &&
+						_log.isInfoEnabled()) {
+
+						_log.info(
+							StringBundler.concat(
+								"Removed Jasper work dir ", file, " on event ",
+								_toString(bundleEvent)));
+					}
+					else if (_log.isDebugEnabled()) {
 						_log.debug(
-							"Removed Jasper work dir " + file + " on event " +
-								_toString(bundleEvent));
+							StringBundler.concat(
+								"Removed Jasper work dir ", file, " on event ",
+								_toString(bundleEvent)));
 					}
 				}
 			}

@@ -32,13 +32,65 @@ public class JSPSourceProcessorTest extends BaseSourceProcessorTestCase {
 	}
 
 	@Test
+	public void testFormatSelfClosingTags() throws Exception {
+		test("FormatSelfClosingTags.testjsp");
+	}
+
+	@Test
+	public void testFormatTagAttributes() throws Exception {
+		test("FormatTagAttributes.testjsp");
+	}
+
+	@Test
 	public void testFormatTaglibs() throws Exception {
 		test("FormatTaglibs.testjsp");
 	}
 
 	@Test
+	public void testFormatTagLineBreaks() throws Exception {
+		test("FormatTagLineBreaks.testjsp");
+	}
+
+	@Test
+	public void testIncorrectEmptyLine() throws Exception {
+		test("IncorrectEmptyLine.testjsp");
+	}
+
+	@Test
+	public void testIncorrectIndentation() throws Exception {
+		test("IncorrectIndentation.testjsp");
+	}
+
+	@Test
+	public void testIncorrectMethodCalls() throws Exception {
+		test(
+			"IncorrectMethodCalls.testjsp",
+			new String[] {
+				"Use type 'LiferayPortletResponse' to call 'getNamespace()'",
+				"Use type 'LiferayPortletResponse' to call 'getNamespace()'"
+			},
+			new Integer[] {21, 28});
+	}
+
+	@Test
 	public void testMisplacedImport() throws Exception {
 		test("MisplacedImport.testjsp", "Move imports to init.jsp");
+	}
+
+	@Test
+	public void testMissingTaglibs() throws Exception {
+		test(
+			"MissingTaglibs.testjsp",
+			new String[] {
+				"Missing taglib for tag with prefix 'aui'",
+				"Missing taglib for tag with prefix 'liferay-portlet'",
+				"Missing taglib for tag with prefix 'liferay-ui'"
+			});
+	}
+
+	@Test
+	public void testSortTagAttributes() throws Exception {
+		test("SortTagAttributes.testjsp");
 	}
 
 }

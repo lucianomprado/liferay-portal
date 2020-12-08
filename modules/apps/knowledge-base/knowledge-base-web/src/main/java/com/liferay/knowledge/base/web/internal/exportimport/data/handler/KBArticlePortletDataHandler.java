@@ -20,8 +20,8 @@ import com.liferay.exportimport.kernel.lar.PortletDataContext;
 import com.liferay.exportimport.kernel.lar.PortletDataHandler;
 import com.liferay.exportimport.kernel.lar.PortletDataHandlerControl;
 import com.liferay.knowledge.base.constants.KBPortletKeys;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.module.framework.ModuleServiceLifecycle;
-import com.liferay.portal.kernel.util.StringPool;
 
 import javax.portlet.PortletPreferences;
 
@@ -34,12 +34,12 @@ import org.osgi.service.component.annotations.Reference;
  * @author Tamas Molnar
  */
 @Component(
-	property = {"javax.portlet.name=" + KBPortletKeys.KNOWLEDGE_BASE_ARTICLE},
+	property = "javax.portlet.name=" + KBPortletKeys.KNOWLEDGE_BASE_ARTICLE,
 	service = PortletDataHandler.class
 )
 public class KBArticlePortletDataHandler extends BasePortletDataHandler {
 
-	public static final String SCHEMA_VERSION = "2.0.0";
+	public static final String SCHEMA_VERSION = "4.0.0";
 
 	@Override
 	public String getSchemaVersion() {

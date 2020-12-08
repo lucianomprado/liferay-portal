@@ -1,6 +1,6 @@
 Bundle-Name: Liferay Portal Tools DB Support
 Bundle-SymbolicName: com.liferay.portal.tools.db.support
-Bundle-Version: 1.0.5
+Bundle-Version: 1.0.9
 Export-Package:\
 	com.liferay.portal.tools.db.support,\
 	com.liferay.portal.tools.db.support.ant,\
@@ -12,4 +12,4 @@ Import-Package:\
 	\
 	*
 Main-Class: com.liferay.portal.tools.db.support.DBSupport
--includeresource: @com.liferay.portal.tools.service.builder-[0-9]*.jar!/com/liferay/portal/tools/service/builder/dependencies/bad_table_names.txt
+-includeresource: @com.liferay.portal.tools.service.builder-*.jar!/com/liferay/portal/tools/service/builder/dependencies/bad_table_names.txt

@@ -14,7 +14,7 @@
 
 package com.liferay.users.admin.kernel.file.uploads;
 
-import aQute.bnd.annotation.ProviderType;
+import org.osgi.annotation.versioning.ProviderType;
 
 /**
  * @author Drew Brokke
@@ -30,6 +30,10 @@ public interface UserFileUploadsSettings {
 
 	public boolean isImageCheckToken();
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x)
+	 */
+	@Deprecated
 	public boolean isImageDefaultUseInitials();
 
 }

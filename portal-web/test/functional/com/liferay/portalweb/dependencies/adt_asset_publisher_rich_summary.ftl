@@ -68,14 +68,9 @@
 	<#if getterUtil.getBoolean(enableComments) && assetRenderer.isCommentable()>
 		<br />
 
-		<#assign discussionURL = renderResponse.createActionURL() />
-
-		${discussionURL.setParameter("javax.portlet.action", "invokeTaglibDiscussion")}
-
 		<@liferay_comment["discussion"]
 			className=entry.getClassName()
 			classPK=entry.getClassPK()
-			formAction=discussionURL?string
 			formName="fm" + entry.getClassPK()
 			ratingsEnabled=getterUtil.getBoolean(enableCommentRatings)
 			redirect=currentURL
@@ -86,12 +81,7 @@
 
 <#macro getEditIcon>
 	<#if assetRenderer.hasEditPermission(themeDisplay.getPermissionChecker())>
-		<#assign redirectURL = renderResponse.createRenderURL() />
-
-		${redirectURL.setParameter("mvcPath", "/add_asset_redirect.jsp")}
-		${redirectURL.setWindowState("pop_up")}
-
-		<#assign editPortletURL = assetRenderer.getURLEdit(renderRequest, renderResponse, windowStateFactory.getWindowState("pop_up"), redirectURL)!"" />
+		<#assign editPortletURL = assetRenderer.getURLEdit(renderRequest, renderResponse, windowStateFactory.getWindowState("NORMAL"), themeDisplay.getURLCurrent())!"" />
 
 		<#if validator.isNotNull(editPortletURL)>
 			<#assign title = languageUtil.format(locale, "edit-x", entryTitle, false) />
@@ -127,7 +117,7 @@
 			<#if stringUtil.equals(fieldName, "author")>
 				<@liferay.language key="by" /> ${portalUtil.getUserName(assetRenderer.getUserId(), assetRenderer.getUserName())}
 			<#elseif stringUtil.equals(fieldName, "categories")>
-				<@liferay_ui["asset-categories-summary"]
+				<@liferay_asset["asset-categories-summary"]
 					className=entry.getClassName()
 					classPK=entry.getClassPK()
 					portletURL=renderResponse.createRenderURL()
@@ -143,7 +133,7 @@
 			<#elseif stringUtil.equals(fieldName, "publish-date")>
 				${dateUtil.getDate(entry.getPublishDate(), dateFormat, locale)}
 			<#elseif stringUtil.equals(fieldName, "tags")>
-				<@liferay_ui["asset-tags-summary"]
+				<@liferay_asset["asset-tags-summary"]
 					className=entry.getClassName()
 					classPK=entry.getClassPK()
 					portletURL=renderResponse.createRenderURL()
@@ -163,15 +153,6 @@
 		${printURL.setParameter("assetEntryId", entry.getEntryId()?string)}
 		${printURL.setParameter("viewMode", "print")}
 		${printURL.setParameter("type", entry.getAssetRendererFactory().getType())}
-
-		<#if (assetRenderer.getUrlTitle()??) && validator.isNotNull(assetRenderer.getUrlTitle())>
-			<#if assetRenderer.getGroupId() != themeDisplay.getScopeGroupId()>
-				${printURL.setParameter("groupId", assetRenderer.getGroupId()?string)}
-			</#if>
-
-			${printURL.setParameter("urlTitle", assetRenderer.getUrlTitle())}
-		</#if>
-
 		${printURL.setWindowState("pop_up")}
 
 		<@liferay_ui["icon"]
@@ -185,7 +166,7 @@
 <#macro getRatings>
 	<#if getterUtil.getBoolean(enableRatings) && assetRenderer.isRatable()>
 		<div class="asset-ratings">
-			<@liferay_ui["ratings"]
+			<@liferay_ratings["ratings"]
 				className=entry.getClassName()
 				classPK=entry.getClassPK()
 			/>
@@ -195,17 +176,21 @@
 
 <#macro getRelatedAssets>
 	<#if getterUtil.getBoolean(enableRelatedAssets)>
-		<@liferay_ui["asset-links"] assetEntryId=entry.getEntryId() />
+		<@liferay_asset["asset-links"]
+			assetEntryId=entry.getEntryId()
+			viewInContext=!stringUtil.equals(assetLinkBehavior, "showFullContent")
+		/>
 	</#if>
 </#macro>
 
 <#macro getSocialBookmarks>
-	<#if getterUtil.getBoolean(enableSocialBookmarks)>
-		<@liferay_ui["social-bookmarks"]
-			displayStyle="${socialBookmarksDisplayStyle}"
-			target="_blank"
-			title=entry.getTitle(locale)
-			url=viewURL
-		/>
-	</#if>
+	<@liferay_social_bookmarks["bookmarks"]
+		className=entry.getClassName()
+		classPK=entry.getClassPK()
+		displayStyle="${socialBookmarksDisplayStyle}"
+		target="_blank"
+		title=entry.getTitle(locale)
+		types="${socialBookmarksTypes}"
+		url=viewURL
+	/>
 </#macro>

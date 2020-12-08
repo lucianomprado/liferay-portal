@@ -14,13 +14,13 @@
 
 package com.liferay.portal.kernel.search;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.kernel.util.SetUtil;
-import com.liferay.portal.kernel.util.StringPool;
 
 import java.io.Serializable;
 
@@ -47,8 +47,7 @@ public class QueryConfig implements Serializable {
 
 		_attributes.put(
 			_HIGHLIGHT_FIELD_NAMES,
-			highlightFieldNamesSet.toArray(
-				new String[highlightFieldNamesSet.size()]));
+			highlightFieldNamesSet.toArray(new String[0]));
 	}
 
 	public void addSelectedFieldNames(String... selectedFieldNames) {
@@ -59,8 +58,7 @@ public class QueryConfig implements Serializable {
 
 		_attributes.put(
 			_SELECTED_FIELD_NAMES,
-			selectedFieldNamesSet.toArray(
-				new String[selectedFieldNamesSet.size()]));
+			selectedFieldNamesSet.toArray(new String[0]));
 	}
 
 	public String getAlternateUidFieldName() {
@@ -315,6 +313,11 @@ public class QueryConfig implements Serializable {
 			querySuggestionEnabled);
 	}
 
+	public void setQuerySuggestionMax(int querySuggestionMax) {
+		_attributes.put(
+			PropsKeys.INDEX_SEARCH_QUERY_SUGGESTION_MAX, querySuggestionMax);
+	}
+
 	public void setQuerySuggestionScoresThreshold(
 		int querySuggestionScoresThreshold) {
 
@@ -323,9 +326,13 @@ public class QueryConfig implements Serializable {
 			querySuggestionScoresThreshold);
 	}
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *             #setQuerySuggestionMax(String)}
+	 */
+	@Deprecated
 	public void setQuerySuggestionsMax(int querySuggestionMax) {
-		_attributes.put(
-			PropsKeys.INDEX_SEARCH_QUERY_SUGGESTION_MAX, querySuggestionMax);
+		setQuerySuggestionMax(querySuggestionMax);
 	}
 
 	public void setScoreEnabled(boolean scoreEnabled) {

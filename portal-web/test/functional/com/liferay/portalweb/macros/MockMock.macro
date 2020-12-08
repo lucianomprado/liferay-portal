@@ -1,94 +1,187 @@
-<definition>
-	<command name="_backtoInbox">
-		<execute function="AssertClick#assertPartialTextClickAt" locator1="MockMock#MOCKMOCK_HOME_LINK" value1="Home" />
-	</command>
+definition {
 
-	<command name="_gotoMail">
-		<execute function="Open" locator1="http://localhost:8282" />
+	macro _backtoInbox {
+		AssertClick.assertPartialTextClickAt(
+			locator1 = "MockMock#MOCKMOCK_HOME_LINK",
+			value1 = "Home");
+	}
 
-		<execute function="AssertTextEquals#assertPartialText" locator1="MockMock#MOCKMOCK_HEADER_LINK" value1="MockMock" />
-	</command>
+	macro _gotoMail {
+		Navigator.openSpecificURL(url = "http://localhost:8282");
 
-	<command name="_gotoMailMessage">
-		<var name="key_columnEntry" value="${asset}" />
+		AssertTextEquals.assertPartialText(
+			locator1 = "MockMock#MOCKMOCK_HEADER_LINK",
+			value1 = "MockMock");
+	}
 
-		<if>
-			<isset var="recipient" />
-			<then>
-				<var name="key_recipient" value="${recipient}" />
+	macro _gotoMailMessage {
+		var key_columnEntry = "${asset}";
 
-				<execute function="AssertClick#assertPartialTextClickAt" locator1="MockMock#MOCKMOCK_SPECIFIC_RECIPIENT_SUBJECT_FIELD_LINK" value1="${asset}" />
-			</then>
-			<else>
-				<execute function="AssertClick#assertPartialTextClickAt" locator1="MockMock#MOCKMOCK_SUBJECT_FIELD_LINK" value1="${asset}" />
-			</else>
-		</if>
-	</command>
+		if (isSet(recipient)) {
+			var key_recipient = "${recipient}";
 
-	<command name="_viewMailFromInbox">
-		<var name="key_columnEntry" value="${asset}" />
-		<var name="key_recipient" value="${recipient}" />
-		<var name="key_sender" value="${sender}" />
+			AssertClick.assertPartialTextClickAt(
+				locator1 = "MockMock#MOCKMOCK_SPECIFIC_RECIPIENT_SUBJECT_FIELD_LINK",
+				value1 = "${asset}");
+		}
+		else {
+			AssertClick.assertPartialTextClickAt(
+				locator1 = "MockMock#MOCKMOCK_SUBJECT_FIELD_LINK",
+				value1 = "${asset}");
+		}
+	}
 
-		<execute function="AssertTextEquals#assertPartialText" locator1="MockMock#MOCKMOCK_HAVE_EMAILS_MESSAGE" value1="You have" />
-		<execute function="AssertTextEquals#assertPartialText" locator1="MockMock#MOCKMOCK_FROM_FIELD" value1="${sender}" />
-		<execute function="AssertTextEquals#assertPartialText" locator1="MockMock#MOCKMOCK_TO_FIELD" value1="${recipient}" />
-		<execute function="AssertTextEquals#assertPartialText" locator1="MockMock#MOCKMOCK_SUBJECT_FIELD" value1="${asset}" />
-	</command>
+	macro _viewMailFromInbox {
+		var key_columnEntry = "${asset}";
+		var key_recipient = "${recipient}";
+		var key_sender = "${sender}";
 
-	<command name="_viewMailMessage">
-		<var name="key_asset" value="${subject}" />
+		AssertTextEquals.assertPartialText(
+			locator1 = "MockMock#MOCKMOCK_HAVE_EMAILS_MESSAGE",
+			value1 = "You have");
 
-		<execute function="AssertTextEquals#assertPartialText" locator1="MockMock#MOCKMOCK_MESSAGE_BODY" value1="${subject}" />
-		<execute function="AssertTextEquals#assertPartialText" locator1="MockMock#MOCKMOCK_MESSAGE_BODY" value1="${content}" />
-	</command>
+		AssertTextEquals.assertPartialText(
+			locator1 = "MockMock#MOCKMOCK_FROM_FIELD",
+			value1 = "${sender}");
 
-	<command name="clickBodyLink">
-		<execute macro="MockMock#_gotoMailMessage">
-			<var name="asset" value="${asset}" />
-		</execute>
+		AssertTextEquals.assertPartialText(
+			locator1 = "MockMock#MOCKMOCK_TO_FIELD",
+			value1 = "${recipient}");
 
-		<var name="key_bodyLink" value="${bodyLink}" />
+		AssertTextEquals.assertPartialText(
+			locator1 = "MockMock#MOCKMOCK_SUBJECT_FIELD",
+			value1 = "${asset}");
+	}
 
-		<execute function="AssertClick" locator1="MockMock#MOCKMOCK_HTML_BODY_LINK" value1="${bodyLink}" />
-	</command>
+	macro _viewMailMessage {
+		var key_asset = "${subject}";
 
-	<command name="viewMail">
-		<execute macro="MockMock#_gotoMail" />
+		AssertTextEquals.assertPartialText(
+			locator1 = "MockMock#MOCKMOCK_MESSAGE_BODY",
+			value1 = "${subject}");
 
-		<execute macro="MockMock#_viewMailFromInbox">
-			<var name="asset" value="${asset}" />
-			<var name="recipient" value="${recipient}" />
-			<var name="sender" value="${sender}" />
-		</execute>
+		AssertTextEquals.assertPartialText(
+			locator1 = "MockMock#MOCKMOCK_MESSAGE_BODY",
+			value1 = "${content}");
+	}
 
-		<execute macro="MockMock#_gotoMailMessage">
-			<var name="asset" value="${asset}" />
-			<var name="recipient" value="${recipient}" />
-		</execute>
+	macro clickBodyLink {
+		MockMock._gotoMailMessage(asset = "${asset}");
 
-		<execute macro="MockMock#_viewMailMessage">
-			<var name="content" value="${content}" />
-			<var name="subject" value="${subject}" />
-		</execute>
+		var key_bodyLink = "${bodyLink}";
 
-		<execute macro="MockMock#_backtoInbox" />
-	</command>
+		AssertClick(
+			locator1 = "MockMock#MOCKMOCK_HTML_BODY_LINK",
+			value1 = "${bodyLink}");
+	}
 
-	<command name="viewMailCount">
-		<var name="key_emailCount" value="${emailCount}" />
+	macro deleteMail {
+		var key_columnEntry = "${asset}";
 
-		<execute function="AssertTextEquals#assertPartialText" locator1="MockMock#MOCKMOCK_EMAIL_COUNT_MESSAGE" value1="You have ${emailCount}!" />
-	</command>
+		MockMock._gotoMail();
 
-	<command name="viewNoMailCount">
-		<execute function="AssertTextEquals#assertPartialText" locator1="MockMock#MOCKMOCK_NO_EMAILS_MESSAGE" value1="No emails in queue" />
-	</command>
+		AssertTextEquals.assertPartialText(
+			locator1 = "MockMock#MOCKMOCK_SUBJECT_FIELD_LINK",
+			value1 = "${asset}");
 
-	<command name="viewNoMailFromInbox">
-		<var name="key_columnEntry" value="${asset}" />
-		<var name="key_recipient" value="${recipient}" />
+		AssertClick(
+			locator1 = "MockMock#MOCKMOCK_DELETE_FIELD",
+			value1 = "Delete");
 
-		<execute function="AssertTextNotPresent" locator1="MockMock#MOCKMOCK_TO_FIELD" value1="${recipient}" />
-	</command>
-</definition>
+		AssertElementNotPresent(locator1 = "MockMock#MOCKMOCK_SUBJECT_FIELD_LINK");
+	}
+
+	macro getBodySpecificText {
+		var key_asset = "${asset}";
+		var key_columnEntry = "${asset}";
+
+		MockMock._gotoMail();
+
+		MockMock._gotoMailMessage(asset = "${asset}");
+
+		MockMock._viewMailMessage(
+			content = "${content}",
+			subject = "${subject}");
+
+		if (isSet(enableOTP)) {
+			var bodyContent = selenium.getText("MockMock#MOCKMOCK_MESSAGE_BODY");
+			var bodyContent = StringUtil.extractLast("${bodyContent}", "${specificText}");
+			var bodySpecificText = StringUtil.extractFirst("${bodyContent}", "</pre>");
+
+			echo("Your one-time password is: ${bodySpecificText}");
+		}
+		else {
+			var bodyContent = selenium.getText("MockMock#MOCKMOCK_MESSAGE_BODY");
+			var bodyContent = StringUtil.extractLast("${bodyContent}", "${specificText}");
+			var bodySpecificText = StringUtil.extractFirst("${bodyContent}", "${extractFirstText}");
+			var bodySpecificText = StringUtil.trim("${bodySpecificText}");
+		}
+
+		return "${bodySpecificText}";
+
+		while (IsElementPresent(locator1 = "MockMock#MOCKMOCK_SUBJECT_FIELD_LINK")) {
+			MockMock.deleteMail(asset = "${asset}");
+		}
+	}
+
+	macro openBodyLink {
+		var key_asset = "${asset}";
+
+		MockMock._gotoMail();
+
+		MockMock._gotoMailMessage(asset = "${asset}");
+
+		MockMock._viewMailMessage(
+			content = "${content}",
+			subject = "${subject}");
+
+		var bodyContent = selenium.getText("MockMock#MOCKMOCK_MESSAGE_BODY");
+		var bodyContent = StringUtil.extractLast("${bodyContent}", " at ");
+		var bodyURL = StringUtil.extractFirst("${bodyContent}", ".");
+
+		Navigator.openSpecificURL(url = "${bodyURL}");
+	}
+
+	macro viewMail {
+		MockMock._gotoMail();
+
+		MockMock._viewMailFromInbox(
+			asset = "${asset}",
+			recipient = "${recipient}",
+			sender = "${sender}");
+
+		MockMock._gotoMailMessage(
+			asset = "${asset}",
+			recipient = "${recipient}");
+
+		MockMock._viewMailMessage(
+			content = "${content}",
+			subject = "${subject}");
+
+		MockMock._backtoInbox();
+	}
+
+	macro viewMailForOTP {
+		MockMock._gotoMail();
+
+		var key_columnEntry = "${subject}";
+		var key_sender = "${sender}";
+
+		AssertTextEquals(
+			locator1 = "MockMock#MOCKMOCK_FROM_FIELD",
+			value1 = "${sender}");
+
+		AssertTextEquals(
+			locator1 = "MockMock#MOCKMOCK_SUBJECT_FIELD",
+			value1 = "${subject}");
+
+		MockMock._gotoMailMessage(asset = "${subject}");
+
+		var key_asset = "${content}";
+
+		AssertTextEquals.assertPartialText(
+			locator1 = "MockMock#MOCKMOCK_MESSAGE_BODY",
+			value1 = "${content}");
+	}
+
+}

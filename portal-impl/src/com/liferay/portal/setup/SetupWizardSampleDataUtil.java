@@ -14,6 +14,8 @@
 
 package com.liferay.portal.setup;
 
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
@@ -41,8 +43,6 @@ import com.liferay.portal.kernel.util.CalendarFactoryUtil;
 import com.liferay.portal.kernel.util.FriendlyURLNormalizerUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.security.auth.ScreenNameGeneratorFactory;
 import com.liferay.portal.util.PropsValues;
@@ -79,17 +79,20 @@ public class SetupWizardSampleDataUtil {
 			_log.info("Adding sample data");
 		}
 
-		Company company = updateCompany(
-			CompanyLocalServiceUtil.getCompanyById(companyId), companyName,
-			LocaleUtil.toLanguageId(LocaleUtil.getDefault()));
+		Company company = CompanyLocalServiceUtil.getCompanyById(companyId);
+
+		User defaultUser = company.getDefaultUser();
+
+		company = updateCompany(
+			company, companyName,
+			LocaleUtil.toLanguageId(LocaleUtil.getDefault()),
+			defaultUser.getTimeZoneId());
 
 		User adminUser = updateAdminUser(
 			company, LocaleUtil.getDefault(),
 			LocaleUtil.toLanguageId(LocaleUtil.getDefault()),
 			adminUserEmailAddress, adminUserFirstName, adminUserLastName,
 			resetPassword);
-
-		User defaultUser = company.getDefaultUser();
 
 		Account account = company.getAccount();
 
@@ -149,7 +152,7 @@ public class SetupWizardSampleDataUtil {
 		try {
 			screenName = screenNameGenerator.generate(0, 0, emailAddress);
 		}
-		catch (Exception e) {
+		catch (Exception exception) {
 		}
 
 		User adminUser = UserLocalServiceUtil.fetchUserByEmailAddress(
@@ -218,7 +221,8 @@ public class SetupWizardSampleDataUtil {
 	}
 
 	public static Company updateCompany(
-			Company company, String companyName, String languageId)
+			Company company, String companyName, String languageId,
+			String timeZoneId)
 		throws Exception {
 
 		Account account = company.getAccount();
@@ -228,11 +232,8 @@ public class SetupWizardSampleDataUtil {
 
 		AccountLocalServiceUtil.updateAccount(account);
 
-		User defaultUser = company.getDefaultUser();
-
-		defaultUser.setLanguageId(languageId);
-
-		UserLocalServiceUtil.updateUser(defaultUser);
+		CompanyLocalServiceUtil.updateDisplay(
+			company.getCompanyId(), languageId, timeZoneId);
 
 		return company;
 	}

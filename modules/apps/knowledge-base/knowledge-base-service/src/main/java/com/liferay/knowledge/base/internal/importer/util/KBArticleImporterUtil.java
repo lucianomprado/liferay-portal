@@ -16,17 +16,19 @@ package com.liferay.knowledge.base.internal.importer.util;
 
 import com.liferay.document.library.kernel.exception.NoSuchFileEntryException;
 import com.liferay.knowledge.base.configuration.KBGroupServiceConfiguration;
+import com.liferay.knowledge.base.constants.KBConstants;
 import com.liferay.knowledge.base.constants.KBPortletKeys;
 import com.liferay.knowledge.base.exception.KBArticleImportException;
 import com.liferay.knowledge.base.model.KBArticle;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.module.configuration.ConfigurationProviderUtil;
 import com.liferay.portal.kernel.portletfilerepository.PortletFileRepositoryUtil;
 import com.liferay.portal.kernel.repository.model.FileEntry;
+import com.liferay.portal.kernel.settings.GroupServiceSettingsLocator;
 import com.liferay.portal.kernel.util.MimeTypesUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.zip.ZipReader;
@@ -47,8 +49,10 @@ public class KBArticleImporterUtil {
 		throws PortalException {
 
 		KBGroupServiceConfiguration kbGroupServiceConfiguration =
-			ConfigurationProviderUtil.getGroupConfiguration(
-				KBGroupServiceConfiguration.class, kbArticle.getGroupId());
+			ConfigurationProviderUtil.getConfiguration(
+				KBGroupServiceConfiguration.class,
+				new GroupServiceSettingsLocator(
+					kbArticle.getGroupId(), KBConstants.SERVICE_NAME));
 
 		try {
 			validateImageFileExtension(
@@ -56,7 +60,7 @@ public class KBArticleImporterUtil {
 				kbGroupServiceConfiguration.
 					markdownImporterImageFileExtensions());
 		}
-		catch (KBArticleImportException kbaie) {
+		catch (KBArticleImportException kbArticleImportException) {
 			if (_log.isWarnEnabled()) {
 				_log.warn(
 					"Unsupported image file suffix used in ZIP file " +
@@ -74,13 +78,13 @@ public class KBArticleImporterUtil {
 				zipReader.getEntryAsInputStream(zipReaderFileName),
 				fileEntriesMap);
 		}
-		catch (Exception e) {
+		catch (Exception exception) {
 			StringBuilder sb = new StringBuilder(4);
 
 			sb.append("Unable to import image file ");
 			sb.append(imageFileName);
 			sb.append(": ");
-			sb.append(e.getLocalizedMessage());
+			sb.append(exception.getLocalizedMessage());
 
 			throw new KBArticleImportException(sb.toString());
 		}
@@ -166,12 +170,12 @@ public class KBArticleImporterUtil {
 				kbArticle.getGroupId(), kbArticle.getAttachmentsFolderId(),
 				imageFileName);
 		}
-		catch (NoSuchFileEntryException nsfee) {
+		catch (NoSuchFileEntryException noSuchFileEntryException) {
 
 			// LPS-52675
 
 			if (_log.isDebugEnabled()) {
-				_log.debug(nsfee, nsfee);
+				_log.debug(noSuchFileEntryException, noSuchFileEntryException);
 			}
 		}
 
@@ -192,9 +196,8 @@ public class KBArticleImporterUtil {
 		if (dirName.endsWith(StringPool.SLASH)) {
 			return dirName + fileName;
 		}
-		else {
-			return dirName + StringPool.SLASH + fileName;
-		}
+
+		return dirName + StringPool.SLASH + fileName;
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(

@@ -14,23 +14,21 @@
 
 package com.liferay.taglib.aui;
 
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.search.DisplayTerms;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
-import com.liferay.portal.kernel.util.CharPool;
 import com.liferay.portal.kernel.util.JavaConstants;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.taglib.aui.base.BaseNavTag;
 import com.liferay.taglib.util.TagResourceBundleUtil;
-
-import java.util.ResourceBundle;
 
 import javax.portlet.PortletResponse;
 
@@ -58,8 +56,11 @@ public class NavTag extends BaseNavTag implements BodyTag {
 
 			navBarTag.setDataTarget(_getNamespacedId());
 
-			ThemeDisplay themeDisplay = (ThemeDisplay)request.getAttribute(
-				WebKeys.THEME_DISPLAY);
+			HttpServletRequest httpServletRequest = getRequest();
+
+			ThemeDisplay themeDisplay =
+				(ThemeDisplay)httpServletRequest.getAttribute(
+					WebKeys.THEME_DISPLAY);
 
 			StringBundler sb = navBarTag.getResponsiveButtonsSB();
 
@@ -71,9 +72,9 @@ public class NavTag extends BaseNavTag implements BodyTag {
 				String[] cssClassParts = StringUtil.split(
 					cssClass, CharPool.SPACE);
 
-				for (int i = 0; i < cssClassParts.length; i++) {
+				for (String cssClassPart : cssClassParts) {
 					sb.append(StringPool.SPACE);
-					sb.append(cssClassParts[i]);
+					sb.append(cssClassPart);
 					sb.append("-btn");
 				}
 			}
@@ -97,10 +98,11 @@ public class NavTag extends BaseNavTag implements BodyTag {
 				try {
 					sb.append("<img alt=\"");
 
-					ResourceBundle resourceBundle =
-						TagResourceBundleUtil.getResourceBundle(pageContext);
-
-					sb.append(LanguageUtil.get(resourceBundle, "my-account"));
+					sb.append(
+						LanguageUtil.get(
+							TagResourceBundleUtil.getResourceBundle(
+								pageContext),
+							"my-account"));
 
 					sb.append("\" class=\"user-avatar-image\" src=\"");
 
@@ -110,8 +112,8 @@ public class NavTag extends BaseNavTag implements BodyTag {
 
 					sb.append("\">");
 				}
-				catch (Exception e) {
-					throw new JspException(e);
+				catch (Exception exception) {
+					throw new JspException(exception);
 				}
 			}
 			else {
@@ -169,10 +171,10 @@ public class NavTag extends BaseNavTag implements BodyTag {
 	}
 
 	@Override
-	protected void setAttributes(HttpServletRequest request) {
-		super.setAttributes(request);
+	protected void setAttributes(HttpServletRequest httpServletRequest) {
+		super.setAttributes(httpServletRequest);
 
-		setNamespacedAttribute(request, "id", _getNamespacedId());
+		setNamespacedAttribute(httpServletRequest, "id", _getNamespacedId());
 	}
 
 	private String _getNamespacedId() {
@@ -182,16 +184,18 @@ public class NavTag extends BaseNavTag implements BodyTag {
 
 		_namespacedId = getId();
 
-		HttpServletRequest request =
+		HttpServletRequest httpServletRequest =
 			(HttpServletRequest)pageContext.getRequest();
 
 		if (Validator.isNull(_namespacedId)) {
 			_namespacedId = PortalUtil.getUniqueElementId(
-				request, StringPool.BLANK, AUIUtil.normalizeId("navTag"));
+				httpServletRequest, StringPool.BLANK,
+				AUIUtil.normalizeId("navTag"));
 		}
 
-		PortletResponse portletResponse = (PortletResponse)request.getAttribute(
-			JavaConstants.JAVAX_PORTLET_RESPONSE);
+		PortletResponse portletResponse =
+			(PortletResponse)httpServletRequest.getAttribute(
+				JavaConstants.JAVAX_PORTLET_RESPONSE);
 
 		if ((portletResponse != null) && getUseNamespace()) {
 			_namespacedId = portletResponse.getNamespace() + _namespacedId;

@@ -17,8 +17,6 @@ package com.liferay.jenkins.results.parser.failure.message.generator;
 import com.liferay.jenkins.results.parser.Build;
 import com.liferay.jenkins.results.parser.Dom4JUtil;
 
-import java.util.Hashtable;
-
 import org.dom4j.Element;
 
 /**
@@ -27,60 +25,22 @@ import org.dom4j.Element;
 public class RebaseFailureMessageGenerator extends BaseFailureMessageGenerator {
 
 	@Override
-	public String getMessage(
-		String buildURL, String consoleOutput, Hashtable<?, ?> properties) {
-
-		if (!consoleOutput.contains(_TOKEN_REBASE_END) ||
-			!consoleOutput.contains(_TOKEN_REBASE_START)) {
-
-			return null;
-		}
-
-		StringBuilder sb = new StringBuilder();
-
-		sb.append("<p>Please fix <strong>rebase errors</strong> on <strong>");
-		sb.append("<a href=\"https://github.com/");
-		sb.append(properties.get("github.origin.name"));
-		sb.append("/");
-		sb.append(properties.get("repository"));
-		sb.append("/tree/");
-		sb.append(properties.get("github.sender.branch.name"));
-		sb.append("\">");
-		sb.append(properties.get("github.origin.name"));
-		sb.append("/");
-		sb.append(properties.get("github.sender.branch.name"));
-		sb.append("</a></strong>.</p>");
-
-		int end = consoleOutput.indexOf(_TOKEN_REBASE_END);
-
-		end = consoleOutput.lastIndexOf("\n", end);
-
-		int start = consoleOutput.lastIndexOf(_TOKEN_REBASE_START, end);
-
-		start = consoleOutput.lastIndexOf("\n", start);
-
-		sb.append(getConsoleOutputSnippet(consoleOutput, true, start, end));
-
-		return sb.toString();
-	}
-
-	@Override
 	public Element getMessageElement(Build build) {
 		String consoleText = build.getConsoleText();
 
-		if (!consoleText.contains(_TOKEN_REBASE_END) ||
-			!consoleText.contains(_TOKEN_REBASE_START)) {
+		if (!consoleText.contains(_TOKEN_FAILED_TO_MERGE) ||
+			!consoleText.contains(_TOKEN_UNABLE_TO_REBASE)) {
 
 			return null;
 		}
 
-		int end = consoleText.indexOf(_TOKEN_REBASE_END);
-
-		end = consoleText.lastIndexOf("\n", end);
-
-		int start = consoleText.lastIndexOf(_TOKEN_REBASE_START, end);
+		int start = consoleText.lastIndexOf(_TOKEN_UNABLE_TO_REBASE);
 
 		start = consoleText.lastIndexOf("\n", start);
+
+		int end = consoleText.indexOf(_TOKEN_FAILED_TO_MERGE, start);
+
+		end = consoleText.indexOf("\n", end);
 
 		return Dom4JUtil.getNewElement(
 			"div", null,
@@ -91,11 +51,12 @@ public class RebaseFailureMessageGenerator extends BaseFailureMessageGenerator {
 				Dom4JUtil.getNewElement(
 					"strong", null,
 					getBaseBranchAnchorElement(build.getTopLevelBuild())),
-				getConsoleOutputSnippetElement(consoleText, true, start, end)));
+				getConsoleTextSnippetElement(consoleText, false, start, end)));
 	}
 
-	private static final String _TOKEN_REBASE_END = "Aborting rebase ABORT";
+	private static final String _TOKEN_FAILED_TO_MERGE =
+		"Failed to merge in the changes";
 
-	private static final String _TOKEN_REBASE_START = "Unable to rebase";
+	private static final String _TOKEN_UNABLE_TO_REBASE = "Unable to rebase";
 
 }

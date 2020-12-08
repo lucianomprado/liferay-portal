@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
-<!DOCTYPE service-builder PUBLIC "-//Liferay//DTD Service Builder 7.0.0//EN" "http://www.liferay.com/dtd/liferay-service-builder_7_0_0.dtd">
+<!DOCTYPE service-builder PUBLIC "-//Liferay//DTD Service Builder 7.4.0//EN" "http://www.liferay.com/dtd/liferay-service-builder_7_4_0.dtd">
 
-<service-builder api-package-path="com.liferay.social.kernel" auto-import-default-references="false" package-path="com.liferay.portlet.social">
+<service-builder api-package-path="com.liferay.social.kernel" auto-import-default-references="false" change-tracking-enabled="true" mvcc-enabled="true" package-path="com.liferay.portlet.social">
 	<namespace>Social</namespace>
 	<entity dynamic-update-enabled="true" local-service="true" name="SocialActivity" remote-service="true">
 
@@ -53,9 +53,6 @@
 		</finder>
 		<finder name="MirrorActivityId" return-type="SocialActivity">
 			<finder-column name="mirrorActivityId" />
-		</finder>
-		<finder name="ClassNameId" return-type="Collection">
-			<finder-column name="classNameId" />
 		</finder>
 		<finder name="ReceiverUserId" return-type="Collection">
 			<finder-column name="receiverUserId" />
@@ -156,7 +153,6 @@
 
 		<!-- References -->
 
-		<reference entity="Group" package-path="com.liferay.portal" />
 		<reference entity="User" package-path="com.liferay.portal" />
 		<reference entity="SocialActivityCounter" package-path="com.liferay.portlet.social" />
 	</entity>
@@ -281,7 +277,6 @@
 
 		<!-- References -->
 
-		<reference entity="Group" package-path="com.liferay.portal" />
 		<reference entity="User" package-path="com.liferay.portal" />
 	</entity>
 	<entity local-service="true" name="SocialActivitySet" remote-service="false">
@@ -456,7 +451,6 @@
 
 		<!-- References -->
 
-		<reference entity="ClassName" package-path="com.liferay.portal" />
 		<reference entity="User" package-path="com.liferay.portal" />
 	</entity>
 	<entity local-service="true" name="SocialRequest" remote-service="true" uuid="true">

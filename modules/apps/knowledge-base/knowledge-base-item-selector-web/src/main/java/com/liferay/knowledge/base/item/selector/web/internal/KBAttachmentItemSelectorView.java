@@ -14,7 +14,6 @@
 
 package com.liferay.knowledge.base.item.selector.web.internal;
 
-import com.liferay.document.library.display.context.DLMimeTypeDisplayContext;
 import com.liferay.item.selector.ItemSelectorReturnType;
 import com.liferay.item.selector.ItemSelectorReturnTypeResolverHandler;
 import com.liferay.item.selector.ItemSelectorView;
@@ -23,12 +22,8 @@ import com.liferay.item.selector.criteria.URLItemSelectorReturnType;
 import com.liferay.knowledge.base.item.selector.criterion.KBAttachmentItemSelectorCriterion;
 import com.liferay.knowledge.base.item.selector.web.internal.constants.KBItemSelectorWebKeys;
 import com.liferay.knowledge.base.item.selector.web.internal.display.context.KBAttachmentItemSelectorViewDisplayContext;
-import com.liferay.portal.kernel.theme.ThemeDisplay;
-import com.liferay.portal.kernel.util.AggregateResourceBundleLoader;
 import com.liferay.portal.kernel.util.ListUtil;
-import com.liferay.portal.kernel.util.ResourceBundleLoader;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
-import com.liferay.portal.language.LanguageResources;
 
 import java.io.IOException;
 
@@ -44,17 +39,15 @@ import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
-import org.osgi.service.component.annotations.ReferenceCardinality;
-import org.osgi.service.component.annotations.ReferencePolicy;
-import org.osgi.service.component.annotations.ReferencePolicyOption;
 
 /**
  * @author Roberto Díaz
  */
-@Component
+@Component(service = ItemSelectorView.class)
 public class KBAttachmentItemSelectorView
 	implements ItemSelectorView<KBAttachmentItemSelectorCriterion> {
 
@@ -76,26 +69,16 @@ public class KBAttachmentItemSelectorView
 
 	@Override
 	public String getTitle(Locale locale) {
-		ResourceBundle resourceBundle =
-			_resourceBundleLoader.loadResourceBundle(locale);
+		ResourceBundle resourceBundle = ResourceBundleUtil.getBundle(
+			locale, KBAttachmentItemSelectorView.class);
 
 		return ResourceBundleUtil.getString(
 			resourceBundle, "article-attachments");
 	}
 
 	@Override
-	public boolean isShowSearch() {
-		return true;
-	}
-
-	@Override
-	public boolean isVisible(ThemeDisplay themeDisplay) {
-		return true;
-	}
-
-	@Override
 	public void renderHTML(
-			ServletRequest request, ServletResponse response,
+			ServletRequest servletRequest, ServletResponse servletResponse,
 			KBAttachmentItemSelectorCriterion kbAttachmentItemSelectorCriterion,
 			PortletURL portletURL, String itemSelectedEventName, boolean search)
 		throws IOException, ServletException {
@@ -103,36 +86,22 @@ public class KBAttachmentItemSelectorView
 		KBAttachmentItemSelectorViewDisplayContext
 			kbAttachmentItemSelectorViewDisplayContext =
 				new KBAttachmentItemSelectorViewDisplayContext(
-					kbAttachmentItemSelectorCriterion, this,
+					(HttpServletRequest)servletRequest, itemSelectedEventName,
 					_itemSelectorReturnTypeResolverHandler,
-					itemSelectedEventName, search, portletURL);
+					kbAttachmentItemSelectorCriterion, this, portletURL,
+					search);
 
-		request.setAttribute(
+		servletRequest.setAttribute(
 			KBItemSelectorWebKeys.
 				KB_ATTACHMENT_ITEM_SELECTOR_VIEW_DISPLAY_CONTEXT,
 			kbAttachmentItemSelectorViewDisplayContext);
-
-		request.setAttribute(
-			KBItemSelectorWebKeys.DL_MIME_TYPE_DISPLAY_CONTEXT,
-			_dlMimeTypeDisplayContext);
 
 		ServletContext servletContext = getServletContext();
 
 		RequestDispatcher requestDispatcher =
 			servletContext.getRequestDispatcher("/kb_article_attachments.jsp");
 
-		requestDispatcher.include(request, response);
-	}
-
-	@Reference(
-		cardinality = ReferenceCardinality.OPTIONAL,
-		policy = ReferencePolicy.DYNAMIC,
-		policyOption = ReferencePolicyOption.GREEDY
-	)
-	public void setDLMimeTypeDisplayContext(
-		DLMimeTypeDisplayContext dlMimeTypeDisplayContext) {
-
-		_dlMimeTypeDisplayContext = dlMimeTypeDisplayContext;
+		requestDispatcher.include(servletRequest, servletResponse);
 	}
 
 	@Reference(unbind = "-")
@@ -152,35 +121,14 @@ public class KBAttachmentItemSelectorView
 		_servletContext = servletContext;
 	}
 
-	public void unsetDLMimeTypeDisplayContext(
-		DLMimeTypeDisplayContext dlMimeTypeDisplayContext) {
-
-		_dlMimeTypeDisplayContext = null;
-	}
-
-	@Reference(
-		target = "(bundle.symbolic.name=com.liferay.knowledge.base.item.selector.web)",
-		unbind = "-"
-	)
-	protected void setResourceBundleLoader(
-		ResourceBundleLoader resourceBundleLoader) {
-
-		_resourceBundleLoader = new AggregateResourceBundleLoader(
-			resourceBundleLoader, LanguageResources.RESOURCE_BUNDLE_LOADER);
-	}
-
 	private static final List<ItemSelectorReturnType>
 		_supportedItemSelectorReturnTypes = Collections.unmodifiableList(
 			ListUtil.fromArray(
-				new ItemSelectorReturnType[] {
-					new FileEntryItemSelectorReturnType(),
-					new URLItemSelectorReturnType()
-				}));
+				new FileEntryItemSelectorReturnType(),
+				new URLItemSelectorReturnType()));
 
-	private DLMimeTypeDisplayContext _dlMimeTypeDisplayContext;
 	private ItemSelectorReturnTypeResolverHandler
 		_itemSelectorReturnTypeResolverHandler;
-	private ResourceBundleLoader _resourceBundleLoader;
 	private ServletContext _servletContext;
 
 }

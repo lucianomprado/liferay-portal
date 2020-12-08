@@ -14,8 +14,6 @@
 
 package com.liferay.portal.model.impl;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.portal.kernel.model.LayoutPrototype;
 import com.liferay.portal.kernel.service.LayoutPrototypeLocalServiceUtil;
 
@@ -31,13 +29,13 @@ import com.liferay.portal.kernel.service.LayoutPrototypeLocalServiceUtil;
  * @see LayoutPrototype
  * @generated
  */
-@ProviderType
-public abstract class LayoutPrototypeBaseImpl extends LayoutPrototypeModelImpl
-	implements LayoutPrototype {
+public abstract class LayoutPrototypeBaseImpl
+	extends LayoutPrototypeModelImpl implements LayoutPrototype {
+
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. All methods that expect a layout prototype model instance should use the {@link LayoutPrototype} interface instead.
+	 * Never modify or reference this class directly. All methods that expect a layout prototype model instance should use the <code>LayoutPrototype</code> interface instead.
 	 */
 	@Override
 	public void persist() {
@@ -48,4 +46,5 @@ public abstract class LayoutPrototypeBaseImpl extends LayoutPrototypeModelImpl
 			LayoutPrototypeLocalServiceUtil.updateLayoutPrototype(this);
 		}
 	}
+
 }

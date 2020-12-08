@@ -14,14 +14,11 @@
 
 package com.liferay.portlet.documentlibrary.model.impl;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.document.library.kernel.model.DLFolder;
-
+import com.liferay.petra.lang.HashUtil;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.model.CacheModel;
-import com.liferay.portal.kernel.util.HashUtil;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.portal.kernel.model.MVCCModel;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -34,24 +31,26 @@ import java.util.Date;
  * The cache model class for representing DLFolder in entity cache.
  *
  * @author Brian Wing Shun Chan
- * @see DLFolder
  * @generated
  */
-@ProviderType
-public class DLFolderCacheModel implements CacheModel<DLFolder>, Externalizable {
+public class DLFolderCacheModel
+	implements CacheModel<DLFolder>, Externalizable, MVCCModel {
+
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
+	public boolean equals(Object object) {
+		if (this == object) {
 			return true;
 		}
 
-		if (!(obj instanceof DLFolderCacheModel)) {
+		if (!(object instanceof DLFolderCacheModel)) {
 			return false;
 		}
 
-		DLFolderCacheModel dlFolderCacheModel = (DLFolderCacheModel)obj;
+		DLFolderCacheModel dlFolderCacheModel = (DLFolderCacheModel)object;
 
-		if (folderId == dlFolderCacheModel.folderId) {
+		if ((folderId == dlFolderCacheModel.folderId) &&
+			(mvccVersion == dlFolderCacheModel.mvccVersion)) {
+
 			return true;
 		}
 
@@ -60,14 +59,30 @@ public class DLFolderCacheModel implements CacheModel<DLFolder>, Externalizable 
 
 	@Override
 	public int hashCode() {
-		return HashUtil.hash(0, folderId);
+		int hashCode = HashUtil.hash(0, folderId);
+
+		return HashUtil.hash(hashCode, mvccVersion);
+	}
+
+	@Override
+	public long getMvccVersion() {
+		return mvccVersion;
+	}
+
+	@Override
+	public void setMvccVersion(long mvccVersion) {
+		this.mvccVersion = mvccVersion;
 	}
 
 	@Override
 	public String toString() {
-		StringBundler sb = new StringBundler(47);
+		StringBundler sb = new StringBundler(51);
 
-		sb.append("{uuid=");
+		sb.append("{mvccVersion=");
+		sb.append(mvccVersion);
+		sb.append(", ctCollectionId=");
+		sb.append(ctCollectionId);
+		sb.append(", uuid=");
 		sb.append(uuid);
 		sb.append(", folderId=");
 		sb.append(folderId);
@@ -122,8 +137,11 @@ public class DLFolderCacheModel implements CacheModel<DLFolder>, Externalizable 
 	public DLFolder toEntityModel() {
 		DLFolderImpl dlFolderImpl = new DLFolderImpl();
 
+		dlFolderImpl.setMvccVersion(mvccVersion);
+		dlFolderImpl.setCtCollectionId(ctCollectionId);
+
 		if (uuid == null) {
-			dlFolderImpl.setUuid(StringPool.BLANK);
+			dlFolderImpl.setUuid("");
 		}
 		else {
 			dlFolderImpl.setUuid(uuid);
@@ -135,7 +153,7 @@ public class DLFolderCacheModel implements CacheModel<DLFolder>, Externalizable 
 		dlFolderImpl.setUserId(userId);
 
 		if (userName == null) {
-			dlFolderImpl.setUserName(StringPool.BLANK);
+			dlFolderImpl.setUserName("");
 		}
 		else {
 			dlFolderImpl.setUserName(userName);
@@ -160,21 +178,21 @@ public class DLFolderCacheModel implements CacheModel<DLFolder>, Externalizable 
 		dlFolderImpl.setParentFolderId(parentFolderId);
 
 		if (treePath == null) {
-			dlFolderImpl.setTreePath(StringPool.BLANK);
+			dlFolderImpl.setTreePath("");
 		}
 		else {
 			dlFolderImpl.setTreePath(treePath);
 		}
 
 		if (name == null) {
-			dlFolderImpl.setName(StringPool.BLANK);
+			dlFolderImpl.setName("");
 		}
 		else {
 			dlFolderImpl.setName(name);
 		}
 
 		if (description == null) {
-			dlFolderImpl.setDescription(StringPool.BLANK);
+			dlFolderImpl.setDescription("");
 		}
 		else {
 			dlFolderImpl.setDescription(description);
@@ -202,7 +220,7 @@ public class DLFolderCacheModel implements CacheModel<DLFolder>, Externalizable 
 		dlFolderImpl.setStatusByUserId(statusByUserId);
 
 		if (statusByUserName == null) {
-			dlFolderImpl.setStatusByUserName(StringPool.BLANK);
+			dlFolderImpl.setStatusByUserName("");
 		}
 		else {
 			dlFolderImpl.setStatusByUserName(statusByUserName);
@@ -222,6 +240,9 @@ public class DLFolderCacheModel implements CacheModel<DLFolder>, Externalizable 
 
 	@Override
 	public void readExternal(ObjectInput objectInput) throws IOException {
+		mvccVersion = objectInput.readLong();
+
+		ctCollectionId = objectInput.readLong();
 		uuid = objectInput.readUTF();
 
 		folderId = objectInput.readLong();
@@ -260,10 +281,13 @@ public class DLFolderCacheModel implements CacheModel<DLFolder>, Externalizable 
 	}
 
 	@Override
-	public void writeExternal(ObjectOutput objectOutput)
-		throws IOException {
+	public void writeExternal(ObjectOutput objectOutput) throws IOException {
+		objectOutput.writeLong(mvccVersion);
+
+		objectOutput.writeLong(ctCollectionId);
+
 		if (uuid == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(uuid);
@@ -278,7 +302,7 @@ public class DLFolderCacheModel implements CacheModel<DLFolder>, Externalizable 
 		objectOutput.writeLong(userId);
 
 		if (userName == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(userName);
@@ -294,21 +318,21 @@ public class DLFolderCacheModel implements CacheModel<DLFolder>, Externalizable 
 		objectOutput.writeLong(parentFolderId);
 
 		if (treePath == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(treePath);
 		}
 
 		if (name == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(name);
 		}
 
 		if (description == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(description);
@@ -328,7 +352,7 @@ public class DLFolderCacheModel implements CacheModel<DLFolder>, Externalizable 
 		objectOutput.writeLong(statusByUserId);
 
 		if (statusByUserName == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(statusByUserName);
@@ -337,6 +361,8 @@ public class DLFolderCacheModel implements CacheModel<DLFolder>, Externalizable 
 		objectOutput.writeLong(statusDate);
 	}
 
+	public long mvccVersion;
+	public long ctCollectionId;
 	public String uuid;
 	public long folderId;
 	public long groupId;
@@ -360,4 +386,5 @@ public class DLFolderCacheModel implements CacheModel<DLFolder>, Externalizable 
 	public long statusByUserId;
 	public String statusByUserName;
 	public long statusDate;
+
 }

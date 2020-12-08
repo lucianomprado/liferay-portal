@@ -14,13 +14,13 @@
 
 package com.liferay.taglib.aui;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.model.ModelHintsUtil;
 import com.liferay.portal.kernel.servlet.taglib.aui.ValidatorTag;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.LocalizationUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.TextFormatter;
 import com.liferay.portal.kernel.util.Tuple;
 import com.liferay.portal.kernel.util.Validator;
@@ -108,9 +108,7 @@ public class InputTag extends BaseInputTag {
 
 		Class<?> model = getModel();
 
-		String type = getType();
-
-		if ((model != null) && Validator.isNull(type)) {
+		if ((model != null) && Validator.isNull(getType())) {
 			String fieldParam = getFieldParam();
 
 			if (Validator.isNotNull(fieldParam)) {
@@ -167,8 +165,8 @@ public class InputTag extends BaseInputTag {
 	}
 
 	@Override
-	protected void setAttributes(HttpServletRequest request) {
-		super.setAttributes(request);
+	protected void setAttributes(HttpServletRequest httpServletRequest) {
+		super.setAttributes(httpServletRequest);
 
 		Object bean = getBean();
 
@@ -185,16 +183,15 @@ public class InputTag extends BaseInputTag {
 				"aui:model-context:defaultLanguageId");
 		}
 
-		if (Validator.isNull(defaultLanguageId)) {
-			if ((model != null) &&
-				ModelHintsUtil.hasField(model.getName(), "groupId")) {
+		if (Validator.isNull(defaultLanguageId) && (model != null) &&
+			ModelHintsUtil.hasField(model.getName(), "groupId")) {
 
-				ThemeDisplay themeDisplay = (ThemeDisplay)request.getAttribute(
+			ThemeDisplay themeDisplay =
+				(ThemeDisplay)httpServletRequest.getAttribute(
 					WebKeys.THEME_DISPLAY);
 
-				defaultLanguageId = LocaleUtil.toLanguageId(
-					themeDisplay.getSiteDefaultLocale());
-			}
+			defaultLanguageId = LocaleUtil.toLanguageId(
+				themeDisplay.getSiteDefaultLocale());
 		}
 
 		if (Validator.isNull(defaultLanguageId)) {
@@ -246,7 +243,8 @@ public class InputTag extends BaseInputTag {
 			}
 			else {
 				id = PortalUtil.getUniqueElementId(
-					request, StringPool.BLANK, AUIUtil.normalizeId(name));
+					httpServletRequest, StringPool.BLANK,
+					AUIUtil.normalizeId(name));
 			}
 		}
 
@@ -285,19 +283,23 @@ public class InputTag extends BaseInputTag {
 			wrappedField = true;
 		}
 
-		setNamespacedAttribute(request, "baseType", getBaseType());
-		setNamespacedAttribute(request, "bean", bean);
-		setNamespacedAttribute(request, "defaultLanguageId", defaultLanguageId);
-		setNamespacedAttribute(request, "field", field);
-		setNamespacedAttribute(request, "forLabel", forLabel);
-		setNamespacedAttribute(request, "formName", formName);
-		setNamespacedAttribute(request, "id", id);
-		setNamespacedAttribute(request, "label", label);
-		setNamespacedAttribute(request, "model", model);
-		setNamespacedAttribute(request, "title", String.valueOf(title));
-		setNamespacedAttribute(request, "wrappedField", wrappedField);
+		setNamespacedAttribute(httpServletRequest, "baseType", getBaseType());
+		setNamespacedAttribute(httpServletRequest, "bean", bean);
+		setNamespacedAttribute(
+			httpServletRequest, "defaultLanguageId", defaultLanguageId);
+		setNamespacedAttribute(httpServletRequest, "field", field);
+		setNamespacedAttribute(httpServletRequest, "forLabel", forLabel);
+		setNamespacedAttribute(httpServletRequest, "formName", formName);
+		setNamespacedAttribute(httpServletRequest, "id", id);
+		setNamespacedAttribute(httpServletRequest, "label", label);
+		setNamespacedAttribute(httpServletRequest, "model", model);
+		setNamespacedAttribute(
+			httpServletRequest, "title", String.valueOf(title));
+		setNamespacedAttribute(
+			httpServletRequest, "wrappedField", wrappedField);
 
-		request.setAttribute(getAttributeNamespace() + "value", getValue());
+		httpServletRequest.setAttribute(
+			getAttributeNamespace() + "value", getValue());
 
 		Map<String, ValidatorTag> validatorTags = getValidatorTags();
 
@@ -305,7 +307,7 @@ public class InputTag extends BaseInputTag {
 			(validatorTags.get("required") != null)) {
 
 			setNamespacedAttribute(
-				request, "required", Boolean.TRUE.toString());
+				httpServletRequest, "required", Boolean.TRUE.toString());
 		}
 	}
 
@@ -314,8 +316,11 @@ public class InputTag extends BaseInputTag {
 			return;
 		}
 
-		List<String> checkboxNames = (List<String>)request.getAttribute(
-			"LIFERAY_SHARED_aui:form:checkboxNames");
+		HttpServletRequest httpServletRequest = getRequest();
+
+		List<String> checkboxNames =
+			(List<String>)httpServletRequest.getAttribute(
+				"LIFERAY_SHARED_aui:form:checkboxNames");
 
 		if (checkboxNames != null) {
 			String inputName = getInputName();

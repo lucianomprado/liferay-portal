@@ -16,7 +16,6 @@ package com.liferay.portal.kernel.model;
 
 import com.liferay.portal.kernel.bean.ClassLoaderBeanHandler;
 import com.liferay.portal.kernel.util.ProxyUtil;
-import com.liferay.portal.kernel.util.ReflectionUtil;
 import com.liferay.registry.Filter;
 import com.liferay.registry.Registry;
 import com.liferay.registry.RegistryUtil;
@@ -26,6 +25,8 @@ import com.liferay.registry.ServiceTracker;
 import com.liferay.registry.ServiceTrackerCustomizer;
 
 import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,19 +40,20 @@ import java.util.concurrent.ConcurrentMap;
 public class ModelListenerRegistrationUtil {
 
 	public static <T> ModelListener<T>[] getModelListeners(Class<T> clazz) {
-		return _instance._getModelListeners(clazz);
+		return _modelListenerRegistrationUtil._getModelListeners(clazz);
 	}
 
 	public static void register(ModelListener<?> modelListener) {
 		Class<?> clazz = modelListener.getClass();
 
-		_instance._register(clazz.getName(), modelListener);
+		_modelListenerRegistrationUtil._register(
+			clazz.getName(), modelListener);
 	}
 
 	public static void unregister(ModelListener<?> modelListener) {
 		Class<?> clazz = modelListener.getClass();
 
-		_instance._unregister(clazz.getName());
+		_modelListenerRegistrationUtil._unregister(clazz.getName());
 	}
 
 	private ModelListenerRegistrationUtil() {
@@ -70,17 +72,10 @@ public class ModelListenerRegistrationUtil {
 		List<ModelListener<?>> modelListeners = _modelListeners.get(clazz);
 
 		if (modelListeners == null) {
-			modelListeners = new ArrayList<>();
-
-			List<ModelListener<?>> previousModelListeners =
-				_modelListeners.putIfAbsent(clazz, modelListeners);
-
-			if (previousModelListeners != null) {
-				modelListeners = previousModelListeners;
-			}
+			return new ModelListener[0];
 		}
 
-		return modelListeners.toArray(new ModelListener[modelListeners.size()]);
+		return modelListeners.toArray(new ModelListener[0]);
 	}
 
 	private <T> void _register(
@@ -103,8 +98,8 @@ public class ModelListenerRegistrationUtil {
 		}
 	}
 
-	private static final ModelListenerRegistrationUtil _instance =
-		new ModelListenerRegistrationUtil();
+	private static final ModelListenerRegistrationUtil
+		_modelListenerRegistrationUtil = new ModelListenerRegistrationUtil();
 
 	private final ConcurrentMap<Class<?>, List<ModelListener<?>>>
 		_modelListeners = new ConcurrentHashMap<>();
@@ -114,8 +109,8 @@ public class ModelListenerRegistrationUtil {
 		_serviceTracker;
 
 	private class ModelListenerTrackerCustomizer
-		implements
-			ServiceTrackerCustomizer<ModelListener<?>, ModelListener<?>> {
+		implements ServiceTrackerCustomizer
+			<ModelListener<?>, ModelListener<?>> {
 
 		@Override
 		public ModelListener<?> addingService(
@@ -173,7 +168,28 @@ public class ModelListenerRegistrationUtil {
 
 			if (modelListeners != null) {
 				modelListeners.remove(modelListener);
+
+				if (modelListeners.isEmpty()) {
+					_modelListeners.remove(modelClass);
+				}
 			}
+		}
+
+		private Class<?> _getGenericSuperType(Class<?> clazz) {
+			try {
+				ParameterizedType parameterizedType =
+					(ParameterizedType)clazz.getGenericSuperclass();
+
+				Type[] types = parameterizedType.getActualTypeArguments();
+
+				if (types.length > 0) {
+					return (Class<?>)types[0];
+				}
+			}
+			catch (Throwable throwable) {
+			}
+
+			return null;
 		}
 
 		private Class<?> _getModelClass(ModelListener<?> modelListener) {
@@ -193,7 +209,7 @@ public class ModelListenerRegistrationUtil {
 				}
 			}
 
-			return ReflectionUtil.getGenericSuperType(clazz);
+			return _getGenericSuperType(clazz);
 		}
 
 	}

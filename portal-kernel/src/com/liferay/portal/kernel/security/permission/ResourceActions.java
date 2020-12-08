@@ -14,19 +14,20 @@
 
 package com.liferay.portal.kernel.security.permission;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.portal.kernel.exception.NoSuchResourceActionException;
+import com.liferay.portal.kernel.exception.ResourceActionsException;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Portlet;
 import com.liferay.portal.kernel.model.Role;
-
-import java.io.InputStream;
+import com.liferay.portal.kernel.xml.Document;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
+
+import org.osgi.annotation.versioning.ProviderType;
 
 /**
  * @author Brian Wing Shun Chan
@@ -35,30 +36,31 @@ import javax.servlet.http.HttpServletRequest;
 @ProviderType
 public interface ResourceActions {
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #check(String)}
+	 */
+	@Deprecated
+	public void check(Portlet portlet);
+
 	public void check(String portletName);
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
+	 */
+	@Deprecated
 	public void checkAction(String name, String actionId)
 		throws NoSuchResourceActionException;
 
-	public String getAction(HttpServletRequest request, String action);
+	public String getAction(
+		HttpServletRequest httpServletRequest, String action);
 
 	public String getAction(Locale locale, String action);
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
+	 */
+	@Deprecated
 	public String getActionNamePrefix();
-
-	/**
-	 * @deprecated As of 7.0.0
-	 */
-	@Deprecated
-	public List<String> getActionsNames(
-		HttpServletRequest request, List<String> actions);
-
-	/**
-	 * @deprecated As of 7.0.0
-	 */
-	@Deprecated
-	public List<String> getActionsNames(
-		HttpServletRequest request, String name, long actionIds);
 
 	public String getCompositeModelName(String... classNames);
 
@@ -68,7 +70,8 @@ public interface ResourceActions {
 
 	public List<String> getModelPortletResources(String name);
 
-	public String getModelResource(HttpServletRequest request, String name);
+	public String getModelResource(
+		HttpServletRequest httpServletRequest, String name);
 
 	public String getModelResource(Locale locale, String name);
 
@@ -86,16 +89,32 @@ public interface ResourceActions {
 
 	public Double getModelResourceWeight(String name);
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
+	 */
+	@Deprecated
 	public String[] getOrganizationModelResources();
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
+	 */
+	@Deprecated
 	public String[] getPortalModelResources();
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
+	 */
+	@Deprecated
 	public String getPortletBaseResource(String portletName);
 
 	public List<String> getPortletModelResources(String portletName);
 
 	public List<String> getPortletNames();
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
+	 */
+	@Deprecated
 	public List<String> getPortletResourceActions(Portlet portlet);
 
 	public List<String> getPortletResourceActions(String name);
@@ -115,6 +134,10 @@ public interface ResourceActions {
 	public List<String> getResourceActions(
 		String portletResource, String modelResource);
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
+	 */
+	@Deprecated
 	public List<String> getResourceGroupDefaultActions(String name);
 
 	public List<String> getResourceGuestUnsupportedActions(
@@ -123,37 +146,79 @@ public interface ResourceActions {
 	public List<Role> getRoles(
 		long companyId, Group group, String modelResource, int[] roleTypes);
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
+	 */
+	@Deprecated
 	public String[] getRootModelResources();
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
+	 */
+	@Deprecated
 	public boolean hasModelResourceActions(String name);
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
+	 */
+	@Deprecated
 	public boolean isOrganizationModelResource(String modelResource);
 
 	public boolean isPortalModelResource(String modelResource);
 
 	public boolean isRootModelResource(String modelResource);
 
+	public void read(ClassLoader classLoader, String source)
+		throws ResourceActionsException;
+
+	public void read(ClassLoader classLoader, String... sources)
+		throws ResourceActionsException;
+
+	public void read(Document document, Set<String> portletNames)
+		throws ResourceActionsException;
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
 	public void read(
 			String servletContextName, ClassLoader classLoader, String source)
-		throws Exception;
+		throws ResourceActionsException;
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
 	public void read(
 			String servletContextName, ClassLoader classLoader,
 			String... sources)
-		throws Exception;
+		throws ResourceActionsException;
 
 	/**
-	 * @deprecated As of 7.0.0
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
 	 */
 	@Deprecated
-	public void read(String servletContextName, InputStream inputStream)
-		throws Exception;
+	public void read(
+			String servletContextName, Document document,
+			Set<String> portletNames)
+		throws ResourceActionsException;
 
+	public void readAndCheck(ClassLoader classLoader, String... sources)
+		throws ResourceActionsException;
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
 	public void readAndCheck(
 			String servletContextName, ClassLoader classLoader,
 			String... sources)
-		throws Exception;
+		throws ResourceActionsException;
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
+	 */
+	@Deprecated
 	public void removePortletResource(String portletName);
 
 }

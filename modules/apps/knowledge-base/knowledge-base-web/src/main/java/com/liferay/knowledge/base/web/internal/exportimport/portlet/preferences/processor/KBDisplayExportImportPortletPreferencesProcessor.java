@@ -19,7 +19,6 @@ import com.liferay.exportimport.kernel.lar.PortletDataException;
 import com.liferay.exportimport.kernel.lar.StagedModelDataHandlerUtil;
 import com.liferay.exportimport.portlet.preferences.processor.Capability;
 import com.liferay.exportimport.portlet.preferences.processor.ExportImportPortletPreferencesProcessor;
-import com.liferay.exportimport.portlet.preferences.processor.capability.ReferencedStagedModelImporterCapability;
 import com.liferay.knowledge.base.constants.KBArticleConstants;
 import com.liferay.knowledge.base.constants.KBFolderConstants;
 import com.liferay.knowledge.base.constants.KBPortletKeys;
@@ -27,12 +26,12 @@ import com.liferay.knowledge.base.model.KBArticle;
 import com.liferay.knowledge.base.model.KBFolder;
 import com.liferay.knowledge.base.service.KBArticleLocalService;
 import com.liferay.knowledge.base.service.KBFolderLocalService;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.Portal;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 
 import java.util.HashMap;
@@ -50,7 +49,7 @@ import org.osgi.service.component.annotations.Reference;
  */
 @Component(
 	immediate = true,
-	property = {"javax.portlet.name=" + KBPortletKeys.KNOWLEDGE_BASE_DISPLAY},
+	property = "javax.portlet.name=" + KBPortletKeys.KNOWLEDGE_BASE_DISPLAY,
 	service = ExportImportPortletPreferencesProcessor.class
 )
 public class KBDisplayExportImportPortletPreferencesProcessor
@@ -63,8 +62,7 @@ public class KBDisplayExportImportPortletPreferencesProcessor
 
 	@Override
 	public List<Capability> getImportCapabilities() {
-		return ListUtil.toList(
-			new Capability[] {_referencedStagedModelImporterCapability});
+		return ListUtil.fromArray(_capability);
 	}
 
 	@Override
@@ -96,7 +94,7 @@ public class KBDisplayExportImportPortletPreferencesProcessor
 			portletPreferences.setValue(
 				"resourceClassNameId", resourceClassName);
 		}
-		catch (ReadOnlyException roe) {
+		catch (ReadOnlyException readOnlyException) {
 			StringBundler sb = new StringBundler(7);
 
 			sb.append("Unable to save converted portlet preference ");
@@ -107,7 +105,7 @@ public class KBDisplayExportImportPortletPreferencesProcessor
 			sb.append(" while exporting KB Display portlet ");
 			sb.append(portletDataContext.getPortletId());
 
-			throw new PortletDataException(sb.toString(), roe);
+			throw new PortletDataException(sb.toString(), readOnlyException);
 		}
 
 		if (resourceClassName.equals(KBArticleConstants.getClassName())) {
@@ -167,7 +165,7 @@ public class KBDisplayExportImportPortletPreferencesProcessor
 				"resourceClassNameId",
 				String.valueOf(_portal.getClassNameId(resourceClassName)));
 		}
-		catch (ReadOnlyException roe) {
+		catch (ReadOnlyException readOnlyException) {
 			StringBundler sb = new StringBundler(7);
 
 			sb.append("Unable to save reconverted portlet preference ");
@@ -178,7 +176,7 @@ public class KBDisplayExportImportPortletPreferencesProcessor
 			sb.append(" while importing KB Display portlet ");
 			sb.append(portletDataContext.getPortletId());
 
-			throw new PortletDataException(sb.toString(), roe);
+			throw new PortletDataException(sb.toString(), readOnlyException);
 		}
 
 		long resourcePrimKey = GetterUtil.getLong(
@@ -204,7 +202,7 @@ public class KBDisplayExportImportPortletPreferencesProcessor
 			portletPreferences.setValue(
 				"resourcePrimKey", String.valueOf(resourcePrimKey));
 		}
-		catch (ReadOnlyException roe) {
+		catch (ReadOnlyException readOnlyException) {
 			StringBundler sb = new StringBundler(5);
 
 			sb.append("Unable to save converted portlet preference ");
@@ -213,7 +211,7 @@ public class KBDisplayExportImportPortletPreferencesProcessor
 			sb.append(" while importing KB Display portlet ");
 			sb.append(portletDataContext.getPortletId());
 
-			throw new PortletDataException(sb.toString(), roe);
+			throw new PortletDataException(sb.toString(), readOnlyException);
 		}
 
 		return portletPreferences;
@@ -233,22 +231,13 @@ public class KBDisplayExportImportPortletPreferencesProcessor
 		_kbFolderLocalService = kbFolderLocalService;
 	}
 
-	@Reference(unbind = "-")
-	protected void setReferencedStagedModelImporterCapability(
-		ReferencedStagedModelImporterCapability
-			referencedStagedModelImporterCapability) {
-
-		_referencedStagedModelImporterCapability =
-			referencedStagedModelImporterCapability;
-	}
+	@Reference(target = "(name=ReferencedStagedModelImporter)")
+	private Capability _capability;
 
 	private KBArticleLocalService _kbArticleLocalService;
 	private KBFolderLocalService _kbFolderLocalService;
 
 	@Reference
 	private Portal _portal;
-
-	private ReferencedStagedModelImporterCapability
-		_referencedStagedModelImporterCapability;
 
 }

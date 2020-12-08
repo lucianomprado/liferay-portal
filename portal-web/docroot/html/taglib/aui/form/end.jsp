@@ -47,14 +47,14 @@ String fullName = namespace + HtmlUtil.escapeJS(name);
 						for (ValidatorTag validatorTag : validatorTags) {
 					%>
 
-							<%= i != 0 ? StringPool.COMMA : StringPool.BLANK %>
+							<%= (i != 0) ? StringPool.COMMA : StringPool.BLANK %>
 
 							{
 								body: <%= validatorTag.getBody() %>,
 								custom: <%= validatorTag.isCustom() %>,
 								errorMessage: '<%= UnicodeLanguageUtil.get(resourceBundle, validatorTag.getErrorMessage()) %>',
 								fieldName: '<%= namespace + HtmlUtil.escapeJS(fieldName) %>',
-								validatorName: '<%= validatorTag.getName() %>'
+								validatorName: '<%= HtmlUtil.escapeJS(validatorTag.getName()) %>'
 							}
 
 					<%
@@ -71,11 +71,13 @@ String fullName = namespace + HtmlUtil.escapeJS(name);
 					<%= onSubmit %>
 				}
 			</c:if>
+
+			, validateOnBlur: <%= validateOnBlur %>
 		}
 	);
 
 	var onDestroyPortlet = function(event) {
-		if (event.portletId === '<%= portletDisplay.getRootPortletId() %>') {
+		if (event.portletId === '<%= portletDisplay.getId() %>') {
 			delete Liferay.Form._INSTANCES['<%= fullName %>'];
 		}
 	};

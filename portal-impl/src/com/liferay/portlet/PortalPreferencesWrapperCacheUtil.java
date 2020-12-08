@@ -14,9 +14,9 @@
 
 package com.liferay.portlet;
 
-import com.liferay.portal.kernel.cache.MultiVMPoolUtil;
 import com.liferay.portal.kernel.cache.PortalCache;
 import com.liferay.portal.kernel.cache.PortalCacheHelperUtil;
+import com.liferay.portal.kernel.cache.PortalCacheManagerNames;
 import com.liferay.portal.kernel.util.StringUtil;
 
 /**
@@ -53,13 +53,12 @@ public class PortalPreferencesWrapperCacheUtil {
 	private static String _getCacheKey(long ownerId, int ownerType) {
 		String cacheKey = StringUtil.toHexString(ownerId);
 
-		cacheKey = cacheKey.concat(StringUtil.toHexString(ownerType));
-
-		return cacheKey;
+		return cacheKey.concat(StringUtil.toHexString(ownerType));
 	}
 
 	private static final PortalCache<String, PortalPreferencesWrapper>
-		_portalPreferencesWrapperPortalCache = MultiVMPoolUtil.getPortalCache(
-			CACHE_NAME, false, true);
+		_portalPreferencesWrapperPortalCache =
+			PortalCacheHelperUtil.getPortalCache(
+				PortalCacheManagerNames.MULTI_VM, CACHE_NAME, false, true);
 
 }

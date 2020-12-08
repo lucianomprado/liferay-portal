@@ -14,23 +14,32 @@
 
 package com.liferay.portal.kernel.theme;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.module.configuration.ConfigurationException;
 import com.liferay.portal.kernel.module.configuration.ConfigurationProviderUtil;
 import com.liferay.portal.kernel.portlet.configuration.icon.PortletConfigurationIconMenu;
 import com.liferay.portal.kernel.portlet.toolbar.PortletToolbar;
-import com.liferay.portal.kernel.util.HtmlUtil;
+import com.liferay.portal.kernel.util.Constants;
+import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.Http;
+import com.liferay.portal.kernel.util.HttpUtil;
+import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.kernel.util.WebKeys;
 
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.Writer;
 
 import javax.portlet.PortletPreferences;
+
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * Provides general configuration methods for the portlet, providing access to
@@ -64,7 +73,7 @@ public class PortletDisplay implements Cloneable, Serializable {
 		_columnCount = master.getColumnCount();
 		_columnId = master.getColumnId();
 		_columnPos = master.getColumnPos();
-		_content = master.getContent();
+		_contentSB = master.getContent();
 		_customCSSClassName = master.getCustomCSSClassName();
 		_description = master.getDescription();
 		_id = master.getId();
@@ -136,7 +145,7 @@ public class PortletDisplay implements Cloneable, Serializable {
 		slave.setColumnCount(_columnCount);
 		slave.setColumnId(_columnId);
 		slave.setColumnPos(_columnPos);
-		slave.setContent(_content);
+		slave.setContent(_contentSB);
 		slave.setCustomCSSClassName(_customCSSClassName);
 		slave.setDescription(_description);
 		slave.setId(_id);
@@ -216,7 +225,7 @@ public class PortletDisplay implements Cloneable, Serializable {
 	}
 
 	public StringBundler getContent() {
-		return _content;
+		return _contentSB;
 	}
 
 	public String getCustomCSSClassName() {
@@ -363,14 +372,6 @@ public class PortletDisplay implements Cloneable, Serializable {
 		return _urlStaging;
 	}
 
-	/**
-	 * @deprecated As of 6.2.0, with no direct replacement
-	 */
-	@Deprecated
-	public boolean isAccess() {
-		return true;
-	}
-
 	public boolean isActive() {
 		return _active;
 	}
@@ -467,6 +468,56 @@ public class PortletDisplay implements Cloneable, Serializable {
 		return _showPortletIcon;
 	}
 
+	public boolean isShowPortletTitle() {
+		if (Validator.isNull(getPortletDecoratorId())) {
+			return false;
+		}
+
+		if (StringUtil.equals(getPortletDecoratorId(), "barebone")) {
+			return false;
+		}
+
+		PortletPreferences portletSetup = getPortletSetup();
+
+		String portletSetupPortletDecoratorId = portletSetup.getValue(
+			"portletSetupPortletDecoratorId", StringPool.BLANK);
+
+		Layout layout = _themeDisplay.getLayout();
+
+		if (Validator.isNull(portletSetupPortletDecoratorId) &&
+			(layout.isTypeAssetDisplay() || layout.isTypeContent())) {
+
+			return false;
+		}
+
+		return true;
+	}
+
+	public boolean isShowPortletTopper() {
+		HttpServletRequest httpServletRequest = _themeDisplay.getRequest();
+
+		String layoutMode = ParamUtil.getString(
+			httpServletRequest, "p_l_mode", Constants.VIEW);
+
+		Layout layout = _themeDisplay.getLayout();
+
+		boolean showPortletTopper = GetterUtil.getBoolean(
+			httpServletRequest.getAttribute(WebKeys.SHOW_PORTLET_TOPPER));
+
+		if (layoutMode.equals(Constants.VIEW) &&
+			(layout.isTypeAssetDisplay() || layout.isTypeContent()) &&
+			showPortletTopper) {
+
+			return false;
+		}
+
+		if (layoutMode.equals(Constants.PREVIEW)) {
+			return false;
+		}
+
+		return true;
+	}
+
 	public boolean isShowPrintIcon() {
 		return _showPrintIcon;
 	}
@@ -512,7 +563,7 @@ public class PortletDisplay implements Cloneable, Serializable {
 		_columnCount = 0;
 		_columnId = StringPool.BLANK;
 		_columnPos = 0;
-		_content.setIndex(0);
+		_contentSB.setIndex(0);
 		_customCSSClassName = StringPool.BLANK;
 		_description = StringPool.BLANK;
 		_id = StringPool.BLANK;
@@ -570,13 +621,6 @@ public class PortletDisplay implements Cloneable, Serializable {
 		_webDAVEnabled = false;
 	}
 
-	/**
-	 * @deprecated As of 6.2.0, with no direct replacement
-	 */
-	@Deprecated
-	public void setAccess(boolean access) {
-	}
-
 	public void setActive(boolean active) {
 		_active = active;
 	}
@@ -593,12 +637,12 @@ public class PortletDisplay implements Cloneable, Serializable {
 		_columnPos = columnPos;
 	}
 
-	public void setContent(StringBundler content) {
-		if (content == null) {
-			_content = _blankStringBundler;
+	public void setContent(StringBundler contentSB) {
+		if (contentSB == null) {
+			_contentSB = _blankSB;
 		}
 		else {
-			_content = content;
+			_contentSB = contentSB;
 		}
 	}
 
@@ -607,8 +651,6 @@ public class PortletDisplay implements Cloneable, Serializable {
 	}
 
 	public void setDescription(String description) {
-		description = HtmlUtil.escape(description);
-
 		_description = description;
 	}
 
@@ -802,6 +844,13 @@ public class PortletDisplay implements Cloneable, Serializable {
 		if (_urlBack == null) {
 			_urlBack = StringPool.BLANK;
 		}
+		else if (_urlBack.length() > Http.URL_MAXIMUM_LENGTH) {
+			_urlBack = HttpUtil.shortenURL(_urlBack);
+
+			if (_urlBack.length() > Http.URL_MAXIMUM_LENGTH) {
+				_urlBack = StringPool.BLANK;
+			}
+		}
 	}
 
 	public void setURLClose(String urlClose) {
@@ -869,19 +918,19 @@ public class PortletDisplay implements Cloneable, Serializable {
 	}
 
 	public void writeContent(Writer writer) throws IOException {
-		_content.writeTo(writer);
+		_contentSB.writeTo(writer);
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(PortletDisplay.class);
 
-	private static final StringBundler _blankStringBundler = new StringBundler(
+	private static final StringBundler _blankSB = new StringBundler(
 		StringPool.BLANK);
 
 	private boolean _active;
 	private int _columnCount;
 	private String _columnId = StringPool.BLANK;
 	private int _columnPos;
-	private StringBundler _content = _blankStringBundler;
+	private StringBundler _contentSB = _blankSB;
 	private String _customCSSClassName = StringPool.BLANK;
 	private String _description = StringPool.BLANK;
 	private String _id = StringPool.BLANK;

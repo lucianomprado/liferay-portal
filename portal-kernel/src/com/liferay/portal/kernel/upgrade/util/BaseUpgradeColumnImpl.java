@@ -51,9 +51,8 @@ public abstract class BaseUpgradeColumnImpl implements UpgradeColumn {
 		if (_oldColumnType == null) {
 			return defaultType;
 		}
-		else {
-			return _oldColumnType;
-		}
+
+		return _oldColumnType;
 	}
 
 	@Override
@@ -61,6 +60,11 @@ public abstract class BaseUpgradeColumnImpl implements UpgradeColumn {
 		return _oldValue;
 	}
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *             CounterLocalServiceUtil#increment()}
+	 */
+	@Deprecated
 	@Override
 	public long increment() {
 		DB db = DBManagerUtil.getDB();
@@ -73,9 +77,8 @@ public abstract class BaseUpgradeColumnImpl implements UpgradeColumn {
 		if (_name.equals(name)) {
 			return true;
 		}
-		else {
-			return false;
-		}
+
+		return false;
 	}
 
 	@Override

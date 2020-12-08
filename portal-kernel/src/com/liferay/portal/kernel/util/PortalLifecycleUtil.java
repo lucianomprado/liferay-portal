@@ -15,6 +15,7 @@
 package com.liferay.portal.kernel.util;
 
 import com.liferay.portal.kernel.deploy.hot.HotDeployUtil;
+import com.liferay.portal.kernel.servlet.ServletContextClassLoaderPool;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -50,8 +51,6 @@ public class PortalLifecycleUtil {
 				portalLifecycle.portalInit();
 			}
 		}
-
-		PortalInitableUtil.flushInitables();
 	}
 
 	public static void register(PortalLifecycle portalLifecycle) {
@@ -69,7 +68,8 @@ public class PortalLifecycleUtil {
 
 				if (PortalClassLoaderUtil.isPortalClassLoader(classLoader) ||
 					!HotDeployUtil.registerDependentPortalLifecycle(
-						ClassLoaderPool.getContextName(classLoader),
+						ServletContextClassLoaderPool.getServletContextName(
+							classLoader),
 						portalLifecycle)) {
 
 					portalLifecycle.portalInit();

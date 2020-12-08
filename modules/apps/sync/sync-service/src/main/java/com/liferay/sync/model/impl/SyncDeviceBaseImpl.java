@@ -14,8 +14,6 @@
 
 package com.liferay.sync.model.impl;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.sync.model.SyncDevice;
 import com.liferay.sync.service.SyncDeviceLocalServiceUtil;
 
@@ -31,13 +29,13 @@ import com.liferay.sync.service.SyncDeviceLocalServiceUtil;
  * @see SyncDevice
  * @generated
  */
-@ProviderType
-public abstract class SyncDeviceBaseImpl extends SyncDeviceModelImpl
-	implements SyncDevice {
+public abstract class SyncDeviceBaseImpl
+	extends SyncDeviceModelImpl implements SyncDevice {
+
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. All methods that expect a sync device model instance should use the {@link SyncDevice} interface instead.
+	 * Never modify or reference this class directly. All methods that expect a sync device model instance should use the <code>SyncDevice</code> interface instead.
 	 */
 	@Override
 	public void persist() {
@@ -48,4 +46,5 @@ public abstract class SyncDeviceBaseImpl extends SyncDeviceModelImpl
 			SyncDeviceLocalServiceUtil.updateSyncDevice(this);
 		}
 	}
+
 }

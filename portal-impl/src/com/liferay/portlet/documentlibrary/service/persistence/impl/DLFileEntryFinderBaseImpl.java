@@ -16,14 +16,10 @@ package com.liferay.portlet.documentlibrary.service.persistence.impl;
 
 import com.liferay.document.library.kernel.model.DLFileEntry;
 import com.liferay.document.library.kernel.service.persistence.DLFileEntryPersistence;
-
 import com.liferay.portal.kernel.bean.BeanReference;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.service.persistence.impl.BasePersistenceImpl;
-import com.liferay.portal.kernel.util.ReflectionUtil;
-
-import java.lang.reflect.Field;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -33,26 +29,18 @@ import java.util.Set;
  * @author Brian Wing Shun Chan
  * @generated
  */
-public class DLFileEntryFinderBaseImpl extends BasePersistenceImpl<DLFileEntry> {
+public class DLFileEntryFinderBaseImpl
+	extends BasePersistenceImpl<DLFileEntry> {
+
 	public DLFileEntryFinderBaseImpl() {
 		setModelClass(DLFileEntry.class);
 
-		try {
-			Field field = ReflectionUtil.getDeclaredField(BasePersistenceImpl.class,
-					"_dbColumnNames");
+		Map<String, String> dbColumnNames = new HashMap<String, String>();
 
-			Map<String, String> dbColumnNames = new HashMap<String, String>();
+		dbColumnNames.put("uuid", "uuid_");
+		dbColumnNames.put("size", "size_");
 
-			dbColumnNames.put("uuid", "uuid_");
-			dbColumnNames.put("size", "size_");
-
-			field.set(this, dbColumnNames);
-		}
-		catch (Exception e) {
-			if (_log.isDebugEnabled()) {
-				_log.debug(e, e);
-			}
-		}
+		setDBColumnNames(dbColumnNames);
 	}
 
 	@Override
@@ -76,10 +64,14 @@ public class DLFileEntryFinderBaseImpl extends BasePersistenceImpl<DLFileEntry> 
 	 */
 	public void setDLFileEntryPersistence(
 		DLFileEntryPersistence dlFileEntryPersistence) {
+
 		this.dlFileEntryPersistence = dlFileEntryPersistence;
 	}
 
 	@BeanReference(type = DLFileEntryPersistence.class)
 	protected DLFileEntryPersistence dlFileEntryPersistence;
-	private static final Log _log = LogFactoryUtil.getLog(DLFileEntryFinderBaseImpl.class);
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		DLFileEntryFinderBaseImpl.class);
+
 }

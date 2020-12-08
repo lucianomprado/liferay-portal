@@ -20,8 +20,8 @@
 	<td></td>
 </tr>
 <tr>
-	<td>PERMISSION_TABLE_VERTICAL_ELLIPSIS</td>
-	<td>//tr[contains(.,'${key_permissionNavigationValue}') and contains(.,'${key_permissionDefinitionValue}')]//a[contains(@class,'dropdown-toggle')]</td>
+	<td>PERMISSION_TABLE_SCOPE</td>
+	<td>//tr[contains(.,'${key_permissionNavigationValue}') and contains(.,'${key_permissionDefinitionValue}')]/td[contains(.,'${siteNameScope}')]</td>
 	<td></td>
 </tr>
 </tbody>

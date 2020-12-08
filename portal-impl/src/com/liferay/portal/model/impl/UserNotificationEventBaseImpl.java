@@ -14,8 +14,6 @@
 
 package com.liferay.portal.model.impl;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.portal.kernel.model.UserNotificationEvent;
 import com.liferay.portal.kernel.service.UserNotificationEventLocalServiceUtil;
 
@@ -31,21 +29,24 @@ import com.liferay.portal.kernel.service.UserNotificationEventLocalServiceUtil;
  * @see UserNotificationEvent
  * @generated
  */
-@ProviderType
 public abstract class UserNotificationEventBaseImpl
 	extends UserNotificationEventModelImpl implements UserNotificationEvent {
+
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. All methods that expect a user notification event model instance should use the {@link UserNotificationEvent} interface instead.
+	 * Never modify or reference this class directly. All methods that expect a user notification event model instance should use the <code>UserNotificationEvent</code> interface instead.
 	 */
 	@Override
 	public void persist() {
 		if (this.isNew()) {
-			UserNotificationEventLocalServiceUtil.addUserNotificationEvent(this);
+			UserNotificationEventLocalServiceUtil.addUserNotificationEvent(
+				this);
 		}
 		else {
-			UserNotificationEventLocalServiceUtil.updateUserNotificationEvent(this);
+			UserNotificationEventLocalServiceUtil.updateUserNotificationEvent(
+				this);
 		}
 	}
+
 }

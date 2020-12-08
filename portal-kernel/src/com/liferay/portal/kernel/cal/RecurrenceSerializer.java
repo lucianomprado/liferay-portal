@@ -14,11 +14,11 @@
 
 package com.liferay.portal.kernel.cal;
 
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.CalendarFactoryUtil;
 import com.liferay.portal.kernel.util.FastDateFormatFactoryUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 
 import java.text.Format;
@@ -38,7 +38,6 @@ public class RecurrenceSerializer {
 
 		DayAndPosition[] byDay = recurrence.getByDay();
 		int[] byMonthDay = recurrence.getByMonthDay();
-		int[] byMonth = recurrence.getByMonth();
 
 		String startDateSecond = String.valueOf(dtStart.get(Calendar.SECOND));
 		String startDateMinute = String.valueOf(dtStart.get(Calendar.MINUTE));
@@ -65,6 +64,7 @@ public class RecurrenceSerializer {
 
 			if (byDay != null) {
 				dayOfMonth = StringPool.QUESTION;
+
 				dayOfWeek = StringPool.BLANK;
 
 				for (int i = 0; i < byDay.length; i++) {
@@ -116,6 +116,8 @@ public class RecurrenceSerializer {
 			}
 		}
 		else if (frequency == Recurrence.YEARLY) {
+			int[] byMonth = recurrence.getByMonth();
+
 			dayOfMonth = StringPool.QUESTION;
 			dayOfWeek = StringPool.QUESTION;
 			year += _getIntervalValue(interval, Recurrence.YEARLY);

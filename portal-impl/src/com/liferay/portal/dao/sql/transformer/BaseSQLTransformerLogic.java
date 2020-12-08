@@ -14,6 +14,8 @@
 
 package com.liferay.portal.dao.sql.transformer;
 
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.internal.dao.sql.transformer.SQLFunctionTransformer;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.util.StringUtil;
 
@@ -85,6 +87,26 @@ public abstract class BaseSQLTransformerLogic implements SQLTransformerLogic {
 			"CAST_TEXT\\((.+?)\\)", Pattern.CASE_INSENSITIVE);
 	}
 
+	protected Function<String, String> getConcatFunction() {
+		SQLFunctionTransformer sqlFunctionTransformer =
+			new SQLFunctionTransformer(
+				"CONCAT(", StringPool.BLANK, " + ", StringPool.BLANK);
+
+		return sqlFunctionTransformer::transform;
+	}
+
+	protected Function<String, String> getDropTableIfExistsTextFunction() {
+		Pattern pattern = getDropTableIfExistsTextPattern();
+
+		return (String sql) -> replaceDropTableIfExistsText(
+			pattern.matcher(sql));
+	}
+
+	protected Pattern getDropTableIfExistsTextPattern() {
+		return Pattern.compile(
+			"DROP_TABLE_IF_EXISTS\\((.+?)\\)", Pattern.CASE_INSENSITIVE);
+	}
+
 	protected Function<String, String> getInstrFunction() {
 		Pattern pattern = getInstrPattern();
 
@@ -106,6 +128,50 @@ public abstract class BaseSQLTransformerLogic implements SQLTransformerLogic {
 		return Pattern.compile(
 			"INTEGER_DIV\\(\\s*(.+?)\\s*,\\s*(.+?)\\s*\\)",
 			Pattern.CASE_INSENSITIVE);
+	}
+
+	protected Function<String, String> getLengthFunction() {
+		return (String sql) -> StringUtil.replace(sql, "LENGTH(", "LEN(");
+	}
+
+	protected Function<String, String> getLowerFunction() {
+		return (String sql) -> {
+			int x = sql.indexOf(_LOWER_OPEN);
+
+			if (x == -1) {
+				return sql;
+			}
+
+			StringBuilder sb = new StringBuilder(sql.length());
+
+			int y = 0;
+
+			while (true) {
+				sb.append(sql.substring(y, x));
+
+				y = sql.indexOf(_LOWER_CLOSE, x);
+
+				if (y == -1) {
+					sb.append(sql.substring(x));
+
+					break;
+				}
+
+				sb.append(sql.substring(x + _LOWER_OPEN.length(), y));
+
+				y++;
+
+				x = sql.indexOf(_LOWER_OPEN, y);
+
+				if (x == -1) {
+					sb.append(sql.substring(y));
+
+					break;
+				}
+			}
+
+			return sb.toString();
+		};
 	}
 
 	protected Function<String, String> getModFunction() {
@@ -151,6 +217,10 @@ public abstract class BaseSQLTransformerLogic implements SQLTransformerLogic {
 		return matcher.replaceAll("$1");
 	}
 
+	protected String replaceDropTableIfExistsText(Matcher matcher) {
+		return matcher.replaceAll("DROP TABLE IF EXISTS $1");
+	}
+
 	protected String replaceInstr(Matcher matcher) {
 		return matcher.replaceAll("CHARINDEX($2, $1)");
 	}
@@ -170,6 +240,10 @@ public abstract class BaseSQLTransformerLogic implements SQLTransformerLogic {
 	protected void setFunctions(Function... functions) {
 		_functions = functions;
 	}
+
+	private static final String _LOWER_CLOSE = StringPool.CLOSE_PARENTHESIS;
+
+	private static final String _LOWER_OPEN = "lower(";
 
 	private final DB _db;
 	private Function[] _functions;

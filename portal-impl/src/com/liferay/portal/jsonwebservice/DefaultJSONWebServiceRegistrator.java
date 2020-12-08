@@ -14,7 +14,7 @@
 
 package com.liferay.portal.jsonwebservice;
 
-import com.liferay.portal.kernel.annotation.AnnotationLocator;
+import com.liferay.petra.reflect.AnnotationLocator;
 import com.liferay.portal.kernel.bean.BeanLocator;
 import com.liferay.portal.kernel.bean.BeanLocatorException;
 import com.liferay.portal.kernel.bean.ClassLoaderBeanHandler;
@@ -29,8 +29,7 @@ import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.service.ServiceWrapper;
 import com.liferay.portal.kernel.util.ProxyUtil;
-import com.liferay.portal.spring.aop.AdvisedSupportProxy;
-import com.liferay.portal.spring.aop.ServiceBeanAopProxy;
+import com.liferay.portal.spring.aop.AopInvocationHandler;
 import com.liferay.portal.util.PropsValues;
 
 import java.lang.reflect.InvocationHandler;
@@ -38,9 +37,6 @@ import java.lang.reflect.Method;
 
 import java.util.HashMap;
 import java.util.Map;
-
-import org.springframework.aop.TargetSource;
-import org.springframework.aop.framework.AdvisedSupport;
 
 /**
  * @author Igor Spasic
@@ -105,7 +101,7 @@ public class DefaultJSONWebServiceRegistrator
 		try {
 			bean = beanLocator.locate(beanName);
 		}
-		catch (BeanLocatorException ble) {
+		catch (BeanLocatorException beanLocatorException) {
 			return;
 		}
 
@@ -113,30 +109,16 @@ public class DefaultJSONWebServiceRegistrator
 			return;
 		}
 
-		Class<?> targetClass = null;
-
-		try {
-			targetClass = getTargetClass(bean);
-		}
-		catch (Exception e) {
-			_log.error(
-				"Unable to compute target class of bean " + beanName +
-					" with type " + bean.getClass(),
-				e);
-
-			return;
-		}
-
 		JSONWebService jsonWebService = AnnotationLocator.locate(
-			targetClass, JSONWebService.class);
+			getTargetClass(bean), JSONWebService.class);
 
 		if (jsonWebService != null) {
 			try {
 				onJSONWebServiceBean(
 					contextName, contextPath, bean, jsonWebService);
 			}
-			catch (Exception e) {
-				_log.error(e, e);
+			catch (Exception exception) {
+				_log.error(exception, exception);
 			}
 		}
 	}
@@ -160,8 +142,8 @@ public class DefaultJSONWebServiceRegistrator
 			onJSONWebServiceBean(
 				contextName, contextPath, bean, jsonWebService);
 		}
-		catch (Exception e) {
-			_log.error(e, e);
+		catch (Exception exception) {
+			_log.error(exception, exception);
 		}
 	}
 
@@ -169,18 +151,16 @@ public class DefaultJSONWebServiceRegistrator
 		_wireViaUtil = wireViaUtil;
 	}
 
-	protected Class<?> getTargetClass(Object service) throws Exception {
+	protected Class<?> getTargetClass(Object service) {
 		while (ProxyUtil.isProxyClass(service.getClass())) {
 			InvocationHandler invocationHandler =
 				ProxyUtil.getInvocationHandler(service);
 
-			if (invocationHandler instanceof AdvisedSupportProxy) {
-				AdvisedSupport advisedSupport =
-					ServiceBeanAopProxy.getAdvisedSupport(service);
+			if (invocationHandler instanceof AopInvocationHandler) {
+				AopInvocationHandler aopInvocationHandler =
+					(AopInvocationHandler)invocationHandler;
 
-				TargetSource targetSource = advisedSupport.getTargetSource();
-
-				service = targetSource.getTarget();
+				service = aopInvocationHandler.getTarget();
 			}
 			else if (invocationHandler instanceof ClassLoaderBeanHandler) {
 				ClassLoaderBeanHandler classLoaderBeanHandler =
@@ -274,14 +254,14 @@ public class DefaultJSONWebServiceRegistrator
 				}
 			}
 
-			Class<?> serviceBeanClass = methodDescriptor.getDeclaringClass();
-
 			String httpMethod =
 				_jsonWebServiceMappingResolver.resolveHttpMethod(method);
 
 			if (!_jsonWebServiceNaming.isValidHttpMethod(httpMethod)) {
 				continue;
 			}
+
+			Class<?> serviceBeanClass = methodDescriptor.getDeclaringClass();
 
 			if (_wireViaUtil) {
 				Class<?> utilClass = loadUtilClass(serviceBeanClass);
@@ -290,7 +270,7 @@ public class DefaultJSONWebServiceRegistrator
 					method = utilClass.getMethod(
 						method.getName(), method.getParameterTypes());
 				}
-				catch (NoSuchMethodException nsme) {
+				catch (NoSuchMethodException noSuchMethodException) {
 					continue;
 				}
 			}

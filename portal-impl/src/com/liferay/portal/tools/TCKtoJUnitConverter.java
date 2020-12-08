@@ -14,20 +14,20 @@
 
 package com.liferay.portal.tools;
 
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.io.unsync.UnsyncBufferedReader;
-import com.liferay.portal.kernel.util.CharPool;
 import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HtmlUtil;
-import com.liferay.portal.kernel.util.SortedProperties;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 
 import java.io.File;
 import java.io.FileReader;
 
-import java.util.Enumeration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 /**
@@ -50,8 +50,8 @@ public class TCKtoJUnitConverter {
 		try {
 			_convert(new File(inputFile), new File(outputDir));
 		}
-		catch (Exception e) {
-			e.printStackTrace();
+		catch (Exception exception) {
+			exception.printStackTrace();
 		}
 	}
 
@@ -135,20 +135,18 @@ public class TCKtoJUnitConverter {
 		sb.append("\">\n");
 		sb.append("\t<properties>\n");
 
-		Properties properties = new SortedProperties(System.getProperties());
+		Properties properties = System.getProperties();
 
-		Enumeration<String> keys =
-			(Enumeration<String>)properties.propertyNames();
+		List<String> propertyNames = new ArrayList<>(
+			properties.stringPropertyNames());
 
-		while (keys.hasMoreElements()) {
-			String key = keys.nextElement();
+		propertyNames.sort(null);
 
-			String value = properties.getProperty(key);
-
+		for (String propertyName : propertyNames) {
 			sb.append("\t\t<property name=\"");
-			sb.append(HtmlUtil.escape(key));
+			sb.append(HtmlUtil.escape(propertyName));
 			sb.append("\" value=\"");
-			sb.append(HtmlUtil.escape(value));
+			sb.append(HtmlUtil.escape(properties.getProperty(propertyName)));
 			sb.append("\" />\n");
 		}
 
@@ -177,7 +175,8 @@ public class TCKtoJUnitConverter {
 		sb.append("</testsuite>");
 
 		FileUtil.write(
-			outputDir + "/TEST-" + className + ".xml", sb.toString());
+			StringBundler.concat(outputDir, "/TEST-", className, ".xml"),
+			sb.toString());
 	}
 
 }

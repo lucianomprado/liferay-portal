@@ -14,8 +14,6 @@
 
 package com.liferay.portal.kernel.model;
 
-import aQute.bnd.annotation.ProviderType;
-
 import java.io.Serializable;
 
 import java.util.ArrayList;
@@ -25,11 +23,12 @@ import java.util.List;
  * This class is used by SOAP remote services, specifically {@link com.liferay.portal.service.http.LayoutBranchServiceSoap}.
  *
  * @author Brian Wing Shun Chan
- * @see com.liferay.portal.service.http.LayoutBranchServiceSoap
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
-@ProviderType
+@Deprecated
 public class LayoutBranchSoap implements Serializable {
+
 	public static LayoutBranchSoap toSoapModel(LayoutBranch model) {
 		LayoutBranchSoap soapModel = new LayoutBranchSoap();
 
@@ -43,7 +42,7 @@ public class LayoutBranchSoap implements Serializable {
 		soapModel.setPlid(model.getPlid());
 		soapModel.setName(model.getName());
 		soapModel.setDescription(model.getDescription());
-		soapModel.setMaster(model.getMaster());
+		soapModel.setMaster(model.isMaster());
 
 		return soapModel;
 	}
@@ -76,7 +75,8 @@ public class LayoutBranchSoap implements Serializable {
 	}
 
 	public static LayoutBranchSoap[] toSoapModels(List<LayoutBranch> models) {
-		List<LayoutBranchSoap> soapModels = new ArrayList<LayoutBranchSoap>(models.size());
+		List<LayoutBranchSoap> soapModels = new ArrayList<LayoutBranchSoap>(
+			models.size());
 
 		for (LayoutBranch model : models) {
 			soapModels.add(toSoapModel(model));
@@ -199,4 +199,5 @@ public class LayoutBranchSoap implements Serializable {
 	private String _name;
 	private String _description;
 	private boolean _master;
+
 }

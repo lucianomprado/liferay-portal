@@ -29,13 +29,13 @@ import org.osgi.service.component.annotations.Reference;
  */
 @Component(
 	immediate = true,
-	property = {"javax.portlet.name=" + KBPortletKeys.KNOWLEDGE_BASE_SEARCH},
+	property = "javax.portlet.name=" + KBPortletKeys.KNOWLEDGE_BASE_SEARCH,
 	service = ConfigurationAction.class
 )
 public class SearchConfigurationAction extends DefaultConfigurationAction {
 
 	@Override
-	public String getJspPath(HttpServletRequest request) {
+	public String getJspPath(HttpServletRequest httpServletRequest) {
 		return "/search/configuration.jsp";
 	}
 

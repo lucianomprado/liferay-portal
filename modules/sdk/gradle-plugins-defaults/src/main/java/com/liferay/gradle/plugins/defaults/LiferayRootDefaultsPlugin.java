@@ -18,6 +18,7 @@ import com.liferay.gradle.plugins.SourceFormatterDefaultsPlugin;
 import com.liferay.gradle.plugins.defaults.internal.util.FileUtil;
 import com.liferay.gradle.plugins.defaults.internal.util.GradlePluginsDefaultsUtil;
 import com.liferay.gradle.plugins.defaults.internal.util.GradleUtil;
+import com.liferay.gradle.plugins.python.PythonPlugin;
 import com.liferay.gradle.plugins.source.formatter.SourceFormatterPlugin;
 
 import java.io.File;
@@ -33,11 +34,12 @@ import org.gradle.api.Project;
 public class LiferayRootDefaultsPlugin implements Plugin<Project> {
 
 	@Override
-	public void apply(Project project) {
+	public void apply(final Project project) {
 		if (FileUtil.exists(project, "app.bnd")) {
 			GradleUtil.applyPlugin(project, LiferayAppDefaultsPlugin.class);
 		}
 
+		GradleUtil.applyPlugin(project, PythonPlugin.class);
 		GradleUtil.applyPlugin(project, SourceFormatterPlugin.class);
 		SourceFormatterDefaultsPlugin.INSTANCE.apply(project);
 

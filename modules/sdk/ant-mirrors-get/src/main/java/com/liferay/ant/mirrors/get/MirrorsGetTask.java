@@ -16,15 +16,17 @@ package com.liferay.ant.mirrors.get;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
 
+import java.util.Base64;
 import java.util.Enumeration;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -45,13 +47,22 @@ public class MirrorsGetTask extends Task {
 		try {
 			doExecute();
 		}
-		catch (IOException ioe) {
-			throw new BuildException(ioe);
+		catch (IOException ioException) {
+			throw new BuildException(ioException);
 		}
 	}
 
 	public void setDest(File dest) {
-		_dest = dest;
+		String destPath = dest.getPath();
+
+		if (destPath.matches(".*\\$\\{.+\\}.*")) {
+			Project project = getProject();
+
+			_dest = new File(project.replaceProperties(destPath));
+		}
+		else {
+			_dest = dest;
+		}
 	}
 
 	public void setForce(boolean force) {
@@ -62,22 +73,50 @@ public class MirrorsGetTask extends Task {
 		_ignoreErrors = ignoreErrors;
 	}
 
+	public void setPassword(String password) {
+		if (_password == null) {
+			_password = password;
+		}
+	}
+
+	public void setRetries(int retries) {
+		_retries = retries;
+	}
+
 	public void setSkipChecksum(boolean skipChecksum) {
 		_skipChecksum = skipChecksum;
 	}
 
 	public void setSrc(String src) {
-		Matcher matcher = _pattern.matcher(src);
+		Matcher matcher = _basicAuthenticationURLPattern.matcher(src);
+
+		if (matcher.matches()) {
+			_username = matcher.group(2);
+			_password = matcher.group(3);
+
+			src = matcher.group(1) + matcher.group(4);
+		}
+
+		Project project = getProject();
+
+		_src = project.replaceProperties(src);
+
+		if (_src.startsWith("file:")) {
+			return;
+		}
+
+		matcher = _srcPattern.matcher(_src);
 
 		if (!matcher.find()) {
-			throw new RuntimeException("Invalid src attribute: " + src);
+			throw new RuntimeException("Invalid src attribute: " + _src);
 		}
 
 		_fileName = matcher.group(2);
+
 		_path = matcher.group(1);
 
 		if (_path.startsWith("mirrors/")) {
-			_path = _path.replace("mirrors/", _HOSTNAME);
+			_path = _path.replaceFirst("mirrors", getMirrorsHostname());
 		}
 
 		while (_path.endsWith("/")) {
@@ -85,8 +124,18 @@ public class MirrorsGetTask extends Task {
 		}
 	}
 
+	public void setSSL(boolean ssl) {
+		_ssl = ssl;
+	}
+
 	public void setTryLocalNetwork(boolean tryLocalNetwork) {
 		_tryLocalNetwork = tryLocalNetwork;
+	}
+
+	public void setUsername(String username) {
+		if (_username == null) {
+			_username = username;
+		}
 	}
 
 	public void setVerbose(boolean verbose) {
@@ -106,11 +155,11 @@ public class MirrorsGetTask extends Task {
 
 		System.out.println(sb.toString());
 
-		URL sourceFileURL = new URL("file:" + sourceFile.getAbsolutePath());
+		URI sourceFileURI = sourceFile.toURI();
 
 		long time = System.currentTimeMillis();
 
-		int size = toFile(sourceFileURL, targetFile);
+		int size = toFile(sourceFileURI.toURL(), targetFile);
 
 		if (_verbose) {
 			sb = new StringBuilder();
@@ -126,12 +175,30 @@ public class MirrorsGetTask extends Task {
 	}
 
 	protected void doExecute() throws IOException {
-		if (_tryLocalNetwork && _path.startsWith(_HOSTNAME)) {
+		if (_src.startsWith("file:")) {
+			File srcFile = new File(_src.substring("file:".length()));
+
+			File targetFile = _dest;
+
+			if (_dest.exists() && _dest.isDirectory()) {
+				targetFile = new File(_dest, srcFile.getName());
+			}
+
+			copyFile(srcFile, targetFile);
+
+			return;
+		}
+
+		Matcher matcher = _mirrorsHostNamePattern.matcher(_path);
+
+		if (_tryLocalNetwork && matcher.find()) {
+			String hostname = matcher.group();
+
 			System.out.println(
 				"The src attribute has an unnecessary reference to " +
-					_HOSTNAME);
+					hostname);
 
-			_path = _path.substring(_HOSTNAME.length());
+			_path = _path.substring(hostname.length());
 
 			while (_path.startsWith("/")) {
 				_path = _path.substring(1);
@@ -161,47 +228,35 @@ public class MirrorsGetTask extends Task {
 		}
 
 		if (!localCacheFile.exists()) {
-			URL sourceURL = null;
+			String mirrorsHostname = getMirrorsHostname();
 
-			if (_tryLocalNetwork) {
+			if (_tryLocalNetwork && !mirrorsHostname.isEmpty()) {
 				sb = new StringBuilder();
 
-				sb.append("http://");
-				sb.append(_HOSTNAME);
+				sb.append(getURLScheme());
+				sb.append(mirrorsHostname);
 				sb.append("/");
 				sb.append(_path);
 				sb.append("/");
 				sb.append(_fileName);
 
-				sourceURL = new URL(sb.toString());
+				URL sourceURL = new URL(sb.toString());
 
 				try {
-					downloadFile(sourceURL, localCacheFile);
+					downloadFile(sourceURL, localCacheFile, _retries);
 				}
-				catch (IOException ioe) {
-					sb = new StringBuilder();
+				catch (IOException ioException) {
+					URL defaultURL = new URL(_src);
 
-					sb.append("http://");
-					sb.append(_path);
-					sb.append("/");
-					sb.append(_fileName);
+					System.out.println(
+						"Unable to connect to " + sourceURL +
+							", defaulting to " + defaultURL);
 
-					sourceURL = new URL(sb.toString());
-
-					downloadFile(sourceURL, localCacheFile);
+					downloadFile(defaultURL, localCacheFile);
 				}
 			}
 			else {
-				sb = new StringBuilder();
-
-				sb.append("http://");
-				sb.append(_path);
-				sb.append("/");
-				sb.append(_fileName);
-
-				sourceURL = new URL(sb.toString());
-
-				downloadFile(sourceURL, localCacheFile);
+				downloadFile(new URL(_src), localCacheFile);
 			}
 		}
 
@@ -216,61 +271,63 @@ public class MirrorsGetTask extends Task {
 	protected void downloadFile(URL sourceURL, File targetFile)
 		throws IOException {
 
-		StringBuilder sb = new StringBuilder();
+		downloadFile(sourceURL, targetFile, 0);
+	}
 
-		sb.append("Downloading ");
-		sb.append(sourceURL.toExternalForm());
-		sb.append(" to ");
-		sb.append(targetFile.getPath());
-		sb.append(".");
+	protected void downloadFile(URL sourceURL, File targetFile, int retries)
+		throws IOException {
 
-		System.out.println(sb.toString());
+		if (retries > 0) {
+			for (int i = 0; i < retries; i++) {
+				try {
+					_downloadFile(sourceURL, targetFile);
 
-		long time = System.currentTimeMillis();
+					return;
+				}
+				catch (IOException ioException) {
+					System.out.println(
+						"Unable to connect to " + sourceURL +
+							", will retry in 30 seconds.");
 
-		int size = 0;
-
-		try {
-			size = toFile(sourceURL, targetFile);
-		}
-		catch (IOException ioe) {
-			if (!_ignoreErrors) {
-				throw ioe;
+					try {
+						Thread.sleep(30000);
+					}
+					catch (InterruptedException interruptedException) {
+						interruptedException.printStackTrace();
+					}
+				}
 			}
-			else {
-				ioe.printStackTrace();
-			}
 		}
 
-		if (_verbose) {
-			sb = new StringBuilder();
+		_downloadFile(sourceURL, targetFile);
+	}
 
-			sb.append("Downloaded ");
-			sb.append(sourceURL.toExternalForm());
-			sb.append(". ");
-			sb.append(size);
-			sb.append(" bytes in ");
-			sb.append(System.currentTimeMillis() - time);
-			sb.append(" milliseconds.");
-
-			System.out.println(sb.toString());
+	protected String getMirrorsHostname() {
+		if (_mirrorsHostname != null) {
+			return _mirrorsHostname;
 		}
 
-		if (!isValidMD5(
-				targetFile, new URL(sourceURL.toExternalForm() + ".md5"))) {
+		Project project = getProject();
 
-			targetFile.delete();
+		_mirrorsHostname = project.getProperty("mirrors.hostname");
 
-			throw new IOException(
-				targetFile.getAbsolutePath() + " failed checksum.");
+		if (_mirrorsHostname == null) {
+			_mirrorsHostname = "";
 		}
 
-		if (isZipFileName(targetFile.getName()) && !isValidZip(targetFile)) {
-			targetFile.delete();
+		return _mirrorsHostname;
+	}
 
-			throw new IOException(
-				targetFile.getAbsolutePath() + " is an invalid zip file.");
+	protected String getPassword() {
+		if (_password != null) {
+			return _password;
 		}
+
+		Project project = getProject();
+
+		_password = project.getProperty("mirrors.password");
+
+		return _password;
 	}
 
 	protected String getPlatformIndependentPath(String path) {
@@ -283,6 +340,36 @@ public class MirrorsGetTask extends Task {
 		}
 
 		return path;
+	}
+
+	protected String getURLScheme() {
+		Project project = getProject();
+
+		boolean ssl = _ssl;
+
+		String mirrorsSSL = project.getProperty("mirrors.ssl");
+
+		if ((mirrorsSSL != null) && !mirrorsSSL.isEmpty()) {
+			ssl = Boolean.parseBoolean(mirrorsSSL);
+		}
+
+		if (ssl) {
+			return "https://";
+		}
+
+		return "http://";
+	}
+
+	protected String getUsername() {
+		if (_username != null) {
+			return _username;
+		}
+
+		Project project = getProject();
+
+		_username = project.getProperty("mirrors.username");
+
+		return _username;
 	}
 
 	protected boolean isValidMD5(File file, URL url) throws IOException {
@@ -299,9 +386,9 @@ public class MirrorsGetTask extends Task {
 		try {
 			remoteMD5 = toString(url);
 		}
-		catch (FileNotFoundException fnfe) {
+		catch (Exception exception) {
 			if (_verbose) {
-				System.out.println("URL does not point to a valid MD5 file.");
+				System.out.println("Unable to access MD5 file");
 			}
 
 			return true;
@@ -354,7 +441,7 @@ public class MirrorsGetTask extends Task {
 
 			return true;
 		}
-		catch (IOException ioe) {
+		catch (IOException ioException) {
 			System.out.println(file.getPath() + " is an invalid zip file.");
 
 			return false;
@@ -376,6 +463,45 @@ public class MirrorsGetTask extends Task {
 		return false;
 	}
 
+	protected URLConnection openConnection(URL url) throws IOException {
+		URLConnection urlConnection = null;
+
+		while (true) {
+			urlConnection = url.openConnection();
+
+			if (!(urlConnection instanceof HttpURLConnection)) {
+				break;
+			}
+
+			HttpURLConnection httpURLConnection =
+				(HttpURLConnection)urlConnection;
+
+			String password = getPassword();
+			String username = getUsername();
+
+			if ((password != null) && (username != null)) {
+				String auth = username + ":" + password;
+				Base64.Encoder encoder = Base64.getEncoder();
+
+				httpURLConnection.setRequestProperty(
+					"Authorization",
+					"Basic " + encoder.encodeToString(auth.getBytes()));
+			}
+
+			int responseCode = httpURLConnection.getResponseCode();
+
+			if ((responseCode != HttpURLConnection.HTTP_MOVED_PERM) &&
+				(responseCode != HttpURLConnection.HTTP_MOVED_TEMP)) {
+
+				break;
+			}
+
+			url = new URL(httpURLConnection.getHeaderField("Location"));
+		}
+
+		return urlConnection;
+	}
+
 	protected int toFile(URL url, File file) throws IOException {
 		if (file.exists()) {
 			file.delete();
@@ -392,12 +518,12 @@ public class MirrorsGetTask extends Task {
 		try {
 			return toOutputStream(url, outputStream);
 		}
-		catch (IOException ioe) {
+		catch (IOException ioException) {
 			if (file.exists()) {
 				file.delete();
 			}
 
-			throw ioe;
+			throw ioException;
 		}
 		finally {
 			if (outputStream != null) {
@@ -409,7 +535,7 @@ public class MirrorsGetTask extends Task {
 	protected int toOutputStream(URL url, OutputStream outputStream)
 		throws IOException {
 
-		URLConnection urlConnection = url.openConnection();
+		URLConnection urlConnection = openConnection(url);
 
 		InputStream inputStream = urlConnection.getInputStream();
 
@@ -458,18 +584,87 @@ public class MirrorsGetTask extends Task {
 		}
 	}
 
-	private static final String _HOSTNAME = "mirrors.lax.liferay.com";
+	private void _downloadFile(URL sourceURL, File targetFile)
+		throws IOException {
 
-	private static final Pattern _pattern = Pattern.compile(
+		StringBuilder sb = new StringBuilder();
+
+		sb.append("Downloading ");
+		sb.append(sourceURL.toExternalForm());
+		sb.append(" to ");
+		sb.append(targetFile.getPath());
+		sb.append(".");
+
+		System.out.println(sb.toString());
+
+		long time = System.currentTimeMillis();
+
+		int size = 0;
+
+		try {
+			size = toFile(sourceURL, targetFile);
+		}
+		catch (IOException ioException) {
+			targetFile.delete();
+
+			if (!_ignoreErrors) {
+				throw ioException;
+			}
+
+			ioException.printStackTrace();
+		}
+
+		if (_verbose) {
+			sb = new StringBuilder();
+
+			sb.append("Downloaded ");
+			sb.append(sourceURL.toExternalForm());
+			sb.append(". ");
+			sb.append(size);
+			sb.append(" bytes in ");
+			sb.append(System.currentTimeMillis() - time);
+			sb.append(" milliseconds.");
+
+			System.out.println(sb.toString());
+		}
+
+		if (!isValidMD5(
+				targetFile, new URL(sourceURL.toExternalForm() + ".md5"))) {
+
+			targetFile.delete();
+
+			throw new IOException(
+				targetFile.getAbsolutePath() + " failed checksum.");
+		}
+
+		if (isZipFileName(targetFile.getName()) && !isValidZip(targetFile)) {
+			targetFile.delete();
+
+			throw new IOException(
+				targetFile.getAbsolutePath() + " is an invalid zip file.");
+		}
+	}
+
+	private static final Pattern _basicAuthenticationURLPattern =
+		Pattern.compile("(https?://)([^:]+):([^@]+)@(.+)");
+	private static final Pattern _mirrorsHostNamePattern = Pattern.compile(
+		"^mirrors\\.[^\\.]+\\.liferay.com/");
+	private static final Pattern _srcPattern = Pattern.compile(
 		"https?://(.+/)(.+)");
 
 	private File _dest;
 	private String _fileName;
 	private boolean _force;
 	private boolean _ignoreErrors;
+	private String _mirrorsHostname;
+	private String _password;
 	private String _path;
+	private int _retries = 1;
 	private boolean _skipChecksum;
+	private String _src;
+	private boolean _ssl;
 	private boolean _tryLocalNetwork = true;
+	private String _username;
 	private boolean _verbose;
 
 }

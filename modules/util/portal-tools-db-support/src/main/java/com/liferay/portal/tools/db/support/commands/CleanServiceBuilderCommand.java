@@ -26,11 +26,13 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.sql.ResultSet;
 import java.sql.Statement;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -125,11 +127,11 @@ public class CleanServiceBuilderCommand extends BaseCommand {
 		_deleteServiceComponentRows(connection, namespace);
 	}
 
-	private void _deleteReleaseRows(Connection connection) throws SQLException {
+	private void _deleteReleaseRows(Connection connection) throws Exception {
 		String sql = "delete from Release_ where servletContextName = ?";
 
-		try (PreparedStatement preparedStatement =
-				connection.prepareStatement(sql)) {
+		try (PreparedStatement preparedStatement = connection.prepareStatement(
+				sql)) {
 
 			preparedStatement.setString(1, _servletContextName);
 
@@ -139,12 +141,12 @@ public class CleanServiceBuilderCommand extends BaseCommand {
 
 	private void _deleteServiceComponentRows(
 			Connection connection, String namespace)
-		throws SQLException {
+		throws Exception {
 
 		String sql = "delete from ServiceComponent where buildNamespace = ?";
 
-		try (PreparedStatement preparedStatement =
-				connection.prepareStatement(sql)) {
+		try (PreparedStatement preparedStatement = connection.prepareStatement(
+				sql)) {
 
 			preparedStatement.setString(1, namespace);
 
@@ -153,10 +155,27 @@ public class CleanServiceBuilderCommand extends BaseCommand {
 	}
 
 	private void _dropTable(Connection connection, String tableName)
-		throws SQLException {
+		throws Exception {
 
-		try (Statement statement = connection.createStatement()) {
-			statement.executeUpdate("DROP TABLE IF EXISTS " + tableName);
+		DatabaseMetaData databaseMetaData = connection.getMetaData();
+
+		try (Statement statement = connection.createStatement();
+			ResultSet rs1 = databaseMetaData.getTables(
+				null, null, tableName, new String[] {"TABLE"})) {
+
+			if (rs1.next()) {
+				statement.executeUpdate("DROP TABLE " + tableName);
+			}
+			else {
+				try (ResultSet rs2 = databaseMetaData.getTables(
+						null, null, tableName.toUpperCase(),
+						new String[] {"TABLE"})) {
+
+					if (rs2.next()) {
+						statement.executeUpdate("DROP TABLE " + tableName);
+					}
+				}
+			}
 		}
 	}
 
@@ -168,7 +187,7 @@ public class CleanServiceBuilderCommand extends BaseCommand {
 
 			String localized = columnElement.getAttribute("localized");
 
-			if ("extra-table".equals(localized)) {
+			if (Objects.equals(localized, "extra-table")) {
 				return true;
 			}
 		}
@@ -176,29 +195,29 @@ public class CleanServiceBuilderCommand extends BaseCommand {
 		return false;
 	}
 
-	private static final Set<String> _badTableNames = new HashSet<>();
+	private static final Set<String> _badTableNames = new HashSet<String>() {
+		{
+			ClassLoader classLoader =
+				CleanServiceBuilderCommand.class.getClassLoader();
 
-	static {
-		ClassLoader classLoader =
-			CleanServiceBuilderCommand.class.getClassLoader();
+			try (BufferedReader bufferedReader = new BufferedReader(
+					new InputStreamReader(
+						classLoader.getResourceAsStream(
+							"com/liferay/portal/tools/service/builder" +
+								"/dependencies/bad_table_names.txt"),
+						StandardCharsets.UTF_8))) {
 
-		try (BufferedReader bufferedReader = new BufferedReader(
-				new InputStreamReader(
-					classLoader.getResourceAsStream(
-						"com/liferay/portal/tools/service/builder" +
-							"/dependencies/bad_table_names.txt"),
-					StandardCharsets.UTF_8))) {
+				String line = null;
 
-			String line = null;
-
-			while ((line = bufferedReader.readLine()) != null) {
-				_badTableNames.add(line);
+				while ((line = bufferedReader.readLine()) != null) {
+					add(line);
+				}
+			}
+			catch (IOException ioException) {
+				throw new ExceptionInInitializerError(ioException);
 			}
 		}
-		catch (IOException ioe) {
-			throw new ExceptionInInitializerError(ioe);
-		}
-	}
+	};
 
 	@Parameter(
 		converter = FileConverter.class, description = "The service.xml file.",

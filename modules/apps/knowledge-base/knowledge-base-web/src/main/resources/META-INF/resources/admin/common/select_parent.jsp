@@ -62,21 +62,27 @@ if (parentResourcePrimKey != KBFolderConstants.DEFAULT_PARENT_FOLDER_ID) {
 	}
 }
 
-SearchContainer kbObjectSearchContainer = new SearchContainer(renderRequest, null, null, SearchContainer.DEFAULT_CUR_PARAM, SearchContainer.DEFAULT_DELTA, currentURLObj, null, "there-are-no-entries");
+SearchContainer<Object> kbObjectSearchContainer = new SearchContainer(renderRequest, null, null, SearchContainer.DEFAULT_CUR_PARAM, SearchContainer.DEFAULT_DELTA, currentURLObj, null, "there-are-no-entries");
 
-boolean kbFolderView = (resourceClassNameId == kbFolderClassNameId);
+boolean kbFolderView = resourceClassNameId == kbFolderClassNameId;
+
+List<Object> results = new ArrayList<>();
 
 if (kbFolderView) {
 	kbObjectSearchContainer.setTotal(KBFolderServiceUtil.getKBFoldersCount(scopeGroupId, parentResourcePrimKey));
-	kbObjectSearchContainer.setResults(KBFolderServiceUtil.getKBFolders(scopeGroupId, parentResourcePrimKey, kbObjectSearchContainer.getStart(), kbObjectSearchContainer.getEnd()));
+
+	results.addAll(KBFolderServiceUtil.getKBFolders(scopeGroupId, parentResourcePrimKey, kbObjectSearchContainer.getStart(), kbObjectSearchContainer.getEnd()));
 }
 else {
 	kbObjectSearchContainer.setTotal(KBFolderServiceUtil.getKBFoldersAndKBArticlesCount(scopeGroupId, parentResourcePrimKey, targetStatus));
-	kbObjectSearchContainer.setResults(KBFolderServiceUtil.getKBFoldersAndKBArticles(scopeGroupId, parentResourcePrimKey, targetStatus, kbObjectSearchContainer.getStart(), kbObjectSearchContainer.getEnd(), new KBObjectsTitleComparator<Object>()));
+
+	results.addAll(KBFolderServiceUtil.getKBFoldersAndKBArticles(scopeGroupId, parentResourcePrimKey, targetStatus, kbObjectSearchContainer.getStart(), kbObjectSearchContainer.getEnd(), new KBObjectsTitleComparator<Object>()));
 }
+
+kbObjectSearchContainer.setResults(results);
 %>
 
-<div class="container-fluid-1280">
+<clay:container-fluid>
 	<aui:form method="post" name="fm">
 
 		<%
@@ -94,17 +100,21 @@ else {
 
 		<c:if test="<%= ArrayUtil.contains(selectableClassNameIds, parentResourceClassNameId) && ((parentResourceClassNameId != kbArticleClassNameId) || (parentResourcePrimKey != 0)) %>">
 			<aui:button-row cssClass="input-append">
-
-				<%
-				Map<String, Object> data = new HashMap<String, Object>();
-
-				data.put("priority", priority);
-				data.put("resourceClassNameId", parentResourceClassNameId);
-				data.put("resourcePrimKey", parentResourcePrimKey);
-				data.put("title", parentTitle);
-				%>
-
-				<aui:button cssClass="selector-button" data="<%= data %>" value='<%= (parentResourceClassNameId == kbFolderClassNameId) ? "choose-this-folder" : "choose-this-article" %>' />
+				<aui:button
+					cssClass="selector-button"
+					data='<%=
+						HashMapBuilder.<String, Object>put(
+							"priority", priority
+						).put(
+							"resourceClassNameId", parentResourceClassNameId
+						).put(
+							"resourcePrimKey", parentResourcePrimKey
+						).put(
+							"title", parentTitle
+						).build()
+					%>'
+					value='<%= (parentResourceClassNameId == kbFolderClassNameId) ? "choose-this-folder" : "choose-this-article" %>'
+				/>
 			</aui:button-row>
 		</c:if>
 
@@ -122,18 +132,19 @@ else {
 						KBFolder kbFolder = (KBFolder)kbObject;
 						%>
 
-						<liferay-portlet:renderURL var="rowURL" windowState="<%= LiferayWindowState.POP_UP.toString() %>">
+						<liferay-portlet:renderURL varImpl="rowURL" windowState="<%= LiferayWindowState.POP_UP.toString() %>">
 							<portlet:param name="mvcPath" value='<%= templatePath + "select_parent.jsp" %>' />
 							<portlet:param name="resourceClassNameId" value="<%= String.valueOf(resourceClassNameId) %>" />
 							<portlet:param name="resourcePrimKey" value="<%= String.valueOf(resourcePrimKey) %>" />
 							<portlet:param name="parentResourceClassNameId" value="<%= String.valueOf(kbFolder.getClassNameId()) %>" />
 							<portlet:param name="parentResourcePrimKey" value="<%= String.valueOf(kbFolder.getKbFolderId()) %>" />
 							<portlet:param name="originalParentResourcePrimKey" value="<%= String.valueOf(originalParentResourcePrimKey) %>" />
-							<portlet:param name="selectableClassNameIds" value="<%= StringUtil.merge(selectableClassNameIds) %>" />
 							<portlet:param name="eventName" value="<%= eventName %>" />
 						</liferay-portlet:renderURL>
 
 						<%
+						rowURL.setParameter("selectableClassNameIds", ArrayUtil.toStringArray(selectableClassNameIds));
+
 						int kbArticlesCount = KBArticleServiceUtil.getKBArticlesCount(scopeGroupId, kbFolder.getKbFolderId(), status);
 						int kbFoldersCount = KBFolderServiceUtil.getKBFoldersCount(scopeGroupId, kbFolder.getKbFolderId());
 
@@ -144,8 +155,8 @@ else {
 
 						<liferay-ui:search-container-column-text>
 							<c:choose>
-								<c:when test="<%= Validator.isNotNull(rowURL) %>">
-									<aui:a href="<%= rowURL %>">
+								<c:when test="<%= rowURL != null %>">
+									<aui:a href="<%= rowURL.toString() %>">
 										<%= HtmlUtil.escape(kbFolder.getName()) %>
 									</aui:a>
 								</c:when>
@@ -156,13 +167,15 @@ else {
 						</liferay-ui:search-container-column-text>
 
 						<liferay-ui:search-container-column-text
-							href="<%= rowURL %>"
+							align="right"
+							href="<%= (rowURL == null) ? StringPool.BLANK : rowURL.toString() %>"
 							name="num-of-kb-folders"
 							value="<%= String.valueOf(kbFoldersCount) %>"
 						/>
 
 						<liferay-ui:search-container-column-text
-							href="<%= rowURL %>"
+							align="right"
+							href="<%= (rowURL == null) ? StringPool.BLANK : rowURL.toString() %>"
 							name="num-of-kb-articles"
 							value="<%= String.valueOf(kbArticlesCount) %>"
 						/>
@@ -170,21 +183,21 @@ else {
 						<liferay-ui:search-container-column-text
 							align="right"
 						>
-
-							<%
-							Map<String, Object> data = new HashMap<String, Object>();
-
-							data.put("priority", KBArticleConstants.DEFAULT_PRIORITY);
-							data.put("resourceClassNameId", kbFolder.getClassNameId());
-							data.put("resourcePrimKey", kbFolder.getKbFolderId());
-							data.put("title", kbFolder.getName());
-							%>
-
 							<aui:button
 								cssClass="selector-button"
-								data="<%= data %>"
+								data='<%=
+									HashMapBuilder.<String, Object>put(
+										"priority", KBArticleConstants.DEFAULT_PRIORITY
+									).put(
+										"resourceClassNameId", kbFolder.getClassNameId()
+									).put(
+										"resourcePrimKey", kbFolder.getKbFolderId()
+									).put(
+										"title", kbFolder.getName()
+									).build()
+								%>'
 								disabled="<%= (kbFolder.getKbFolderId() == resourcePrimKey) || (kbFolder.getKbFolderId() == originalParentResourcePrimKey) || !ArrayUtil.contains(selectableClassNameIds, kbFolderClassNameId) %>"
-								value="choose"
+								value="select"
 							/>
 						</liferay-ui:search-container-column-text>
 					</c:when>
@@ -194,20 +207,21 @@ else {
 						KBArticle kbArticle = (KBArticle)kbObject;
 						%>
 
-						<liferay-portlet:renderURL var="rowURL" windowState="<%= LiferayWindowState.POP_UP.toString() %>">
+						<liferay-portlet:renderURL varImpl="rowURL" windowState="<%= LiferayWindowState.POP_UP.toString() %>">
 							<portlet:param name="mvcPath" value='<%= templatePath + "select_parent.jsp" %>' />
 							<portlet:param name="resourceClassNameId" value="<%= String.valueOf(resourceClassNameId) %>" />
 							<portlet:param name="resourcePrimKey" value="<%= String.valueOf(resourcePrimKey) %>" />
 							<portlet:param name="parentResourceClassNameId" value="<%= String.valueOf(kbArticle.getClassNameId()) %>" />
 							<portlet:param name="parentResourcePrimKey" value="<%= String.valueOf(kbArticle.getResourcePrimKey()) %>" />
 							<portlet:param name="originalParentResourcePrimKey" value="<%= String.valueOf(originalParentResourcePrimKey) %>" />
-							<portlet:param name="selectableClassNameIds" value="<%= StringUtil.merge(selectableClassNameIds) %>" />
 							<portlet:param name="status" value="<%= String.valueOf(status) %>" />
 							<portlet:param name="targetStatus" value="<%= String.valueOf(targetStatus) %>" />
 							<portlet:param name="eventName" value="<%= eventName %>" />
 						</liferay-portlet:renderURL>
 
 						<%
+						rowURL.setParameter("selectableClassNameIds", ArrayUtil.toStringArray(selectableClassNameIds));
+
 						int kbArticlesCount = KBArticleServiceUtil.getKBArticlesCount(scopeGroupId, kbArticle.getResourcePrimKey(), targetStatus);
 
 						if ((kbArticle.getResourcePrimKey() == resourcePrimKey) || (kbArticlesCount == 0)) {
@@ -217,8 +231,8 @@ else {
 
 						<liferay-ui:search-container-column-text>
 							<c:choose>
-								<c:when test="<%= Validator.isNotNull(rowURL) %>">
-									<aui:a href="<%= rowURL %>">
+								<c:when test="<%= rowURL != null %>">
+									<aui:a href="<%= rowURL.toString() %>">
 										<%= HtmlUtil.escape(kbArticle.getTitle()) %>
 									</aui:a>
 								</c:when>
@@ -229,46 +243,54 @@ else {
 						</liferay-ui:search-container-column-text>
 
 						<liferay-ui:search-container-column-text
-							href="<%= rowURL %>"
-							name="num-of-kb-folders"
+							align="right"
+							href="<%= (rowURL == null) ? StringPool.BLANK : rowURL.toString() %>"
+							name="folders"
 							value="-"
 						/>
 
 						<liferay-ui:search-container-column-text
-							href="<%= rowURL %>"
-							name="num-of-kb-articles"
+							align="right"
+							href="<%= (rowURL == null) ? StringPool.BLANK : rowURL.toString() %>"
+							name="articles"
 							value="<%= String.valueOf(kbArticlesCount) %>"
 						/>
 
 						<liferay-ui:search-container-column-text
 							align="right"
 						>
-
-							<%
-							Map<String, Object> data = new HashMap<String, Object>();
-
-							data.put("priority", kbArticle.getPriority());
-							data.put("resourceClassNameId", kbArticle.getClassNameId());
-							data.put("resourcePrimKey", kbArticle.getResourcePrimKey());
-							data.put("title", kbArticle.getTitle());
-							%>
-
 							<aui:button
 								cssClass="selector-button"
-								data="<%= data %>"
+								data='<%=
+									HashMapBuilder.<String, Object>put(
+										"priority", kbArticle.getPriority()
+									).put(
+										"resourceClassNameId", kbArticle.getClassNameId()
+									).put(
+										"resourcePrimKey", kbArticle.getResourcePrimKey()
+									).put(
+										"title", kbArticle.getTitle()
+									).build()
+								%>'
 								disabled="<%= (kbArticle.getResourcePrimKey() == resourcePrimKey) || (kbArticle.getResourcePrimKey() == originalParentResourcePrimKey) || !ArrayUtil.contains(selectableClassNameIds, kbArticleClassNameId) %>"
-								value="choose"
+								value="select"
 							/>
 						</liferay-ui:search-container-column-text>
 					</c:otherwise>
 				</c:choose>
 			</liferay-ui:search-container-row>
 
-			<liferay-ui:search-iterator markupView="lexicon" resultRowSplitter="<%= kbFolderView ? null : new KBResultRowSplitter() %>" />
+			<liferay-ui:search-iterator
+				markupView="lexicon"
+				resultRowSplitter="<%= kbFolderView ? null : new KBResultRowSplitter() %>"
+			/>
 		</liferay-ui:search-container>
 	</aui:form>
-</div>
+</clay:container-fluid>
 
-<aui:script use="aui-base">
-	Liferay.Util.selectEntityHandler('#<portlet:namespace />fm', '<%= HtmlUtil.escape(eventName) %>');
-</aui:script>
+<script>
+	Liferay.Util.selectEntityHandler(
+		'#<portlet:namespace />fm',
+		'<%= HtmlUtil.escape(eventName) %>'
+	);
+</script>

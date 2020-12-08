@@ -14,9 +14,9 @@
 
 package com.liferay.portal.kernel.servlet;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.util.StringPool;
 
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -31,7 +31,7 @@ import org.junit.Test;
 import org.springframework.mock.web.MockServletContext;
 
 /**
- * @author Laszlo Csontos
+ * @author László Csontos
  */
 public class ServletContextUtilTest {
 
@@ -97,8 +97,8 @@ public class ServletContextUtilTest {
 		try {
 			return new URI("file", path, null);
 		}
-		catch (Exception e) {
-			_log.error(e, e);
+		catch (Exception exception) {
+			_log.error(exception, exception);
 		}
 
 		return null;
@@ -117,9 +117,7 @@ public class ServletContextUtilTest {
 	protected void testGetRootURI(String path, URI uri) throws Exception {
 		ServletContext servletContext = getServletContext(path);
 
-		URI rootURI = ServletContextUtil.getRootURI(servletContext);
-
-		Assert.assertEquals(uri, rootURI);
+		Assert.assertEquals(uri, ServletContextUtil.getRootURI(servletContext));
 
 		Assert.assertEquals(
 			uri, servletContext.getAttribute(ServletContextUtil.URI_ATTRIBUTE));

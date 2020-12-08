@@ -14,9 +14,9 @@
 
 package com.liferay.portal.kernel.resiliency.spi;
 
-import com.liferay.portal.kernel.util.CharPool;
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.xml.Document;
 import com.liferay.portal.kernel.xml.DocumentException;
@@ -29,8 +29,10 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * @author Shuyang Zhou
+ * @author     Shuyang Zhou
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  */
+@Deprecated
 public class SPIConfiguration implements Serializable {
 
 	public static final String JAVA_EXECUTABLE_DEFAULT = "java";

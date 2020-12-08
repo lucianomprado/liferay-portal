@@ -15,6 +15,8 @@
 package com.liferay.screens.service.impl;
 
 import com.liferay.asset.kernel.model.AssetEntry;
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.aop.AopService;
 import com.liferay.portal.kernel.comment.Comment;
 import com.liferay.portal.kernel.comment.CommentManager;
 import com.liferay.portal.kernel.comment.Discussion;
@@ -26,17 +28,28 @@ import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.service.ServiceContext;
-import com.liferay.portal.kernel.util.Function;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
-import com.liferay.portal.spring.extender.service.ServiceReference;
 import com.liferay.screens.service.base.ScreensCommentServiceBaseImpl;
 
+import java.util.Date;
+import java.util.function.Function;
+
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
+
 /**
- * @author Alejandro Hernández Malillos
+ * @author Alejandro Hernández
  */
+@Component(
+	property = {
+		"json.web.service.context.name=screens",
+		"json.web.service.context.path=ScreensComment"
+	},
+	service = AopService.class
+)
 public class ScreensCommentServiceImpl extends ScreensCommentServiceBaseImpl {
 
 	@Override
@@ -183,13 +196,13 @@ public class ScreensCommentServiceImpl extends ScreensCommentServiceBaseImpl {
 	}
 
 	protected Function<String, ServiceContext> createServiceContextFunction() {
-		return (className) -> new ServiceContext();
+		return className -> new ServiceContext();
 	}
 
 	protected Function<String, ServiceContext> createServiceContextFunction(
 		int workflowAction) {
 
-		return (className) -> {
+		return className -> {
 			ServiceContext serviceContext = new ServiceContext();
 
 			serviceContext.setWorkflowAction(workflowAction);
@@ -202,27 +215,38 @@ public class ScreensCommentServiceImpl extends ScreensCommentServiceBaseImpl {
 			Comment comment, DiscussionPermission discussionPermission)
 		throws PortalException {
 
-		JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
+		JSONObject jsonObject = JSONUtil.put(
+			"body", comment.getBody()
+		).put(
+			"commentId", Long.valueOf(comment.getCommentId())
+		);
 
-		jsonObject.put("body", comment.getBody());
-		jsonObject.put("commentId", Long.valueOf(comment.getCommentId()));
+		Date createDate = comment.getCreateDate();
+
 		jsonObject.put(
-			"createDate", Long.valueOf(comment.getCreateDate().getTime()));
-		jsonObject.put(
+			"createDate", Long.valueOf(createDate.getTime())
+		).put(
 			"deletePermission",
-			discussionPermission.hasDeletePermission(comment.getCommentId()));
+			discussionPermission.hasDeletePermission(comment.getCommentId())
+		);
+
+		Date modifiedDate = comment.getModifiedDate();
+
 		jsonObject.put(
-			"modifiedDate", Long.valueOf(comment.getModifiedDate().getTime()));
-		jsonObject.put(
+			"modifiedDate", Long.valueOf(modifiedDate.getTime())
+		).put(
 			"updatePermission",
-			discussionPermission.hasUpdatePermission(comment.getCommentId()));
-		jsonObject.put("userId", Long.valueOf(comment.getUserId()));
-		jsonObject.put("userName", comment.getUserName());
+			discussionPermission.hasUpdatePermission(comment.getCommentId())
+		).put(
+			"userId", Long.valueOf(comment.getUserId())
+		).put(
+			"userName", comment.getUserName()
+		);
 
 		return jsonObject;
 	}
 
-	@ServiceReference(type = CommentManager.class)
+	@Reference
 	protected CommentManager commentManager;
 
 }

@@ -14,8 +14,6 @@
 
 package com.liferay.exportimport.kernel.lar;
 
-import aQute.bnd.annotation.ProviderType;
-
 import java.io.Serializable;
 
 import java.util.HashMap;
@@ -24,7 +22,6 @@ import java.util.Map;
 /**
  * @author Julio Camarero
  */
-@ProviderType
 public class MissingReferences implements Serializable {
 
 	public void add(MissingReference missingReference) {

@@ -26,6 +26,8 @@ import com.liferay.portal.kernel.service.BaseServiceImpl;
 import com.liferay.portal.kernel.service.RegionService;
 import com.liferay.portal.kernel.service.persistence.CountryPersistence;
 import com.liferay.portal.kernel.service.persistence.RegionPersistence;
+import com.liferay.portal.kernel.service.persistence.UserFinder;
+import com.liferay.portal.kernel.service.persistence.UserPersistence;
 import com.liferay.portal.kernel.util.PortalUtil;
 
 import javax.sql.DataSource;
@@ -39,16 +41,39 @@ import javax.sql.DataSource;
  *
  * @author Brian Wing Shun Chan
  * @see com.liferay.portal.service.impl.RegionServiceImpl
- * @see com.liferay.portal.kernel.service.RegionServiceUtil
  * @generated
  */
-public abstract class RegionServiceBaseImpl extends BaseServiceImpl
-	implements RegionService, IdentifiableOSGiService {
+public abstract class RegionServiceBaseImpl
+	extends BaseServiceImpl implements IdentifiableOSGiService, RegionService {
+
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. Always use {@link com.liferay.portal.kernel.service.RegionServiceUtil} to access the region remote service.
+	 * Never modify or reference this class directly. Use <code>RegionService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>com.liferay.portal.kernel.service.RegionServiceUtil</code>.
 	 */
+
+	/**
+	 * Returns the region local service.
+	 *
+	 * @return the region local service
+	 */
+	public com.liferay.portal.kernel.service.RegionLocalService
+		getRegionLocalService() {
+
+		return regionLocalService;
+	}
+
+	/**
+	 * Sets the region local service.
+	 *
+	 * @param regionLocalService the region local service
+	 */
+	public void setRegionLocalService(
+		com.liferay.portal.kernel.service.RegionLocalService
+			regionLocalService) {
+
+		this.regionLocalService = regionLocalService;
+	}
 
 	/**
 	 * Returns the region remote service.
@@ -91,7 +116,9 @@ public abstract class RegionServiceBaseImpl extends BaseServiceImpl
 	 *
 	 * @return the counter local service
 	 */
-	public com.liferay.counter.kernel.service.CounterLocalService getCounterLocalService() {
+	public com.liferay.counter.kernel.service.CounterLocalService
+		getCounterLocalService() {
+
 		return counterLocalService;
 	}
 
@@ -101,8 +128,33 @@ public abstract class RegionServiceBaseImpl extends BaseServiceImpl
 	 * @param counterLocalService the counter local service
 	 */
 	public void setCounterLocalService(
-		com.liferay.counter.kernel.service.CounterLocalService counterLocalService) {
+		com.liferay.counter.kernel.service.CounterLocalService
+			counterLocalService) {
+
 		this.counterLocalService = counterLocalService;
+	}
+
+	/**
+	 * Returns the country local service.
+	 *
+	 * @return the country local service
+	 */
+	public com.liferay.portal.kernel.service.CountryLocalService
+		getCountryLocalService() {
+
+		return countryLocalService;
+	}
+
+	/**
+	 * Sets the country local service.
+	 *
+	 * @param countryLocalService the country local service
+	 */
+	public void setCountryLocalService(
+		com.liferay.portal.kernel.service.CountryLocalService
+			countryLocalService) {
+
+		this.countryLocalService = countryLocalService;
 	}
 
 	/**
@@ -110,7 +162,9 @@ public abstract class RegionServiceBaseImpl extends BaseServiceImpl
 	 *
 	 * @return the country remote service
 	 */
-	public com.liferay.portal.kernel.service.CountryService getCountryService() {
+	public com.liferay.portal.kernel.service.CountryService
+		getCountryService() {
+
 		return countryService;
 	}
 
@@ -121,6 +175,7 @@ public abstract class RegionServiceBaseImpl extends BaseServiceImpl
 	 */
 	public void setCountryService(
 		com.liferay.portal.kernel.service.CountryService countryService) {
+
 		this.countryService = countryService;
 	}
 
@@ -140,6 +195,84 @@ public abstract class RegionServiceBaseImpl extends BaseServiceImpl
 	 */
 	public void setCountryPersistence(CountryPersistence countryPersistence) {
 		this.countryPersistence = countryPersistence;
+	}
+
+	/**
+	 * Returns the user local service.
+	 *
+	 * @return the user local service
+	 */
+	public com.liferay.portal.kernel.service.UserLocalService
+		getUserLocalService() {
+
+		return userLocalService;
+	}
+
+	/**
+	 * Sets the user local service.
+	 *
+	 * @param userLocalService the user local service
+	 */
+	public void setUserLocalService(
+		com.liferay.portal.kernel.service.UserLocalService userLocalService) {
+
+		this.userLocalService = userLocalService;
+	}
+
+	/**
+	 * Returns the user remote service.
+	 *
+	 * @return the user remote service
+	 */
+	public com.liferay.portal.kernel.service.UserService getUserService() {
+		return userService;
+	}
+
+	/**
+	 * Sets the user remote service.
+	 *
+	 * @param userService the user remote service
+	 */
+	public void setUserService(
+		com.liferay.portal.kernel.service.UserService userService) {
+
+		this.userService = userService;
+	}
+
+	/**
+	 * Returns the user persistence.
+	 *
+	 * @return the user persistence
+	 */
+	public UserPersistence getUserPersistence() {
+		return userPersistence;
+	}
+
+	/**
+	 * Sets the user persistence.
+	 *
+	 * @param userPersistence the user persistence
+	 */
+	public void setUserPersistence(UserPersistence userPersistence) {
+		this.userPersistence = userPersistence;
+	}
+
+	/**
+	 * Returns the user finder.
+	 *
+	 * @return the user finder
+	 */
+	public UserFinder getUserFinder() {
+		return userFinder;
+	}
+
+	/**
+	 * Sets the user finder.
+	 *
+	 * @param userFinder the user finder
+	 */
+	public void setUserFinder(UserFinder userFinder) {
+		this.userFinder = userFinder;
 	}
 
 	public void afterPropertiesSet() {
@@ -180,24 +313,61 @@ public abstract class RegionServiceBaseImpl extends BaseServiceImpl
 			sql = db.buildSQL(sql);
 			sql = PortalUtil.transformSQL(sql);
 
-			SqlUpdate sqlUpdate = SqlUpdateFactoryUtil.getSqlUpdate(dataSource,
-					sql);
+			SqlUpdate sqlUpdate = SqlUpdateFactoryUtil.getSqlUpdate(
+				dataSource, sql);
 
 			sqlUpdate.update();
 		}
-		catch (Exception e) {
-			throw new SystemException(e);
+		catch (Exception exception) {
+			throw new SystemException(exception);
 		}
 	}
 
+	@BeanReference(
+		type = com.liferay.portal.kernel.service.RegionLocalService.class
+	)
+	protected com.liferay.portal.kernel.service.RegionLocalService
+		regionLocalService;
+
 	@BeanReference(type = RegionService.class)
 	protected RegionService regionService;
+
 	@BeanReference(type = RegionPersistence.class)
 	protected RegionPersistence regionPersistence;
-	@BeanReference(type = com.liferay.counter.kernel.service.CounterLocalService.class)
-	protected com.liferay.counter.kernel.service.CounterLocalService counterLocalService;
-	@BeanReference(type = com.liferay.portal.kernel.service.CountryService.class)
+
+	@BeanReference(
+		type = com.liferay.counter.kernel.service.CounterLocalService.class
+	)
+	protected com.liferay.counter.kernel.service.CounterLocalService
+		counterLocalService;
+
+	@BeanReference(
+		type = com.liferay.portal.kernel.service.CountryLocalService.class
+	)
+	protected com.liferay.portal.kernel.service.CountryLocalService
+		countryLocalService;
+
+	@BeanReference(
+		type = com.liferay.portal.kernel.service.CountryService.class
+	)
 	protected com.liferay.portal.kernel.service.CountryService countryService;
+
 	@BeanReference(type = CountryPersistence.class)
 	protected CountryPersistence countryPersistence;
+
+	@BeanReference(
+		type = com.liferay.portal.kernel.service.UserLocalService.class
+	)
+	protected com.liferay.portal.kernel.service.UserLocalService
+		userLocalService;
+
+	@BeanReference(type = com.liferay.portal.kernel.service.UserService.class)
+	protected com.liferay.portal.kernel.service.UserService userService;
+
+	@BeanReference(type = UserPersistence.class)
+	protected UserPersistence userPersistence;
+
+	@BeanReference(type = UserFinder.class)
+	protected UserFinder userFinder;
+
 }

@@ -14,6 +14,7 @@
 
 package com.liferay.portal.service.impl;
 
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -64,24 +65,33 @@ public class PortalPreferencesLocalServiceImpl
 		portalPreferences.setPreferences(defaultPreferences);
 
 		try {
-			portalPreferencesPersistence.update(portalPreferences);
+			portalPreferences = portalPreferencesPersistence.update(
+				portalPreferences);
 		}
-		catch (SystemException se) {
+		catch (SystemException systemException) {
 			if (_log.isWarnEnabled()) {
 				_log.warn(
-					"Add failed, fetch {ownerId=" + ownerId + ", ownerType=" +
-						ownerType + "}");
+					StringBundler.concat(
+						"Add failed, fetch {ownerId=", ownerId, ", ownerType=",
+						ownerType, "}"));
 			}
 
 			portalPreferences = portalPreferencesPersistence.fetchByO_O(
 				ownerId, ownerType, false);
 
 			if (portalPreferences == null) {
-				throw se;
+				throw systemException;
 			}
 		}
 
 		return portalPreferences;
+	}
+
+	@Override
+	public PortalPreferences fetchPortalPreferences(
+		long ownerId, int ownerType) {
+
+		return portalPreferencesPersistence.fetchByO_O(ownerId, ownerType);
 	}
 
 	@Override

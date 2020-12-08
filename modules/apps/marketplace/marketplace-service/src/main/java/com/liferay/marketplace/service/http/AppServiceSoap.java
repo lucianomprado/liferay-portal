@@ -14,10 +14,7 @@
 
 package com.liferay.marketplace.service.http;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.marketplace.service.AppServiceUtil;
-
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 
@@ -25,19 +22,20 @@ import java.rmi.RemoteException;
 
 /**
  * Provides the SOAP utility for the
- * {@link AppServiceUtil} service utility. The
- * static methods of this class calls the same methods of the service utility.
- * However, the signatures are different because it is difficult for SOAP to
- * support certain types.
+ * <code>AppServiceUtil</code> service
+ * utility. The static methods of this class call the same methods of the
+ * service utility. However, the signatures are different because it is
+ * difficult for SOAP to support certain types.
  *
  * <p>
  * ServiceBuilder follows certain rules in translating the methods. For example,
- * if the method in the service utility returns a {@link java.util.List}, that
- * is translated to an array of {@link com.liferay.marketplace.model.AppSoap}.
- * If the method in the service utility returns a
- * {@link com.liferay.marketplace.model.App}, that is translated to a
- * {@link com.liferay.marketplace.model.AppSoap}. Methods that SOAP cannot
- * safely wire are skipped.
+ * if the method in the service utility returns a <code>java.util.List</code>,
+ * that is translated to an array of
+ * <code>com.liferay.marketplace.model.AppSoap</code>. If the method in the
+ * service utility returns a
+ * <code>com.liferay.marketplace.model.App</code>, that is translated to a
+ * <code>com.liferay.marketplace.model.AppSoap</code>. Methods that SOAP
+ * cannot safely wire are skipped.
  * </p>
  *
  * <p>
@@ -59,23 +57,26 @@ import java.rmi.RemoteException;
  *
  * @author Ryan Park
  * @see AppServiceHttp
- * @see com.liferay.marketplace.model.AppSoap
- * @see AppServiceUtil
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
-@ProviderType
+@Deprecated
 public class AppServiceSoap {
+
 	public static com.liferay.marketplace.model.AppSoap deleteApp(long appId)
 		throws RemoteException {
+
 		try {
-			com.liferay.marketplace.model.App returnValue = AppServiceUtil.deleteApp(appId);
+			com.liferay.marketplace.model.App returnValue =
+				AppServiceUtil.deleteApp(appId);
 
-			return com.liferay.marketplace.model.AppSoap.toSoapModel(returnValue);
+			return com.liferay.marketplace.model.AppSoap.toSoapModel(
+				returnValue);
 		}
-		catch (Exception e) {
-			_log.error(e, e);
+		catch (Exception exception) {
+			_log.error(exception, exception);
 
-			throw new RemoteException(e.getMessage());
+			throw new RemoteException(exception.getMessage());
 		}
 	}
 
@@ -83,10 +84,10 @@ public class AppServiceSoap {
 		try {
 			AppServiceUtil.installApp(remoteAppId);
 		}
-		catch (Exception e) {
-			_log.error(e, e);
+		catch (Exception exception) {
+			_log.error(exception, exception);
 
-			throw new RemoteException(e.getMessage());
+			throw new RemoteException(exception.getMessage());
 		}
 	}
 
@@ -94,12 +95,13 @@ public class AppServiceSoap {
 		try {
 			AppServiceUtil.uninstallApp(remoteAppId);
 		}
-		catch (Exception e) {
-			_log.error(e, e);
+		catch (Exception exception) {
+			_log.error(exception, exception);
 
-			throw new RemoteException(e.getMessage());
+			throw new RemoteException(exception.getMessage());
 		}
 	}
 
 	private static Log _log = LogFactoryUtil.getLog(AppServiceSoap.class);
+
 }

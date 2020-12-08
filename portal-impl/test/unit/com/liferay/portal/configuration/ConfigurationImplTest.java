@@ -14,13 +14,12 @@
 
 package com.liferay.portal.configuration;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.configuration.Filter;
 import com.liferay.portal.kernel.io.unsync.UnsyncByteArrayInputStream;
 import com.liferay.portal.kernel.model.CompanyConstants;
 import com.liferay.portal.kernel.test.rule.NewEnv;
-import com.liferay.portal.kernel.test.rule.NewEnv.Environment;
 import com.liferay.portal.kernel.test.rule.NewEnvTestRule;
-import com.liferay.portal.kernel.util.StringPool;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -50,7 +49,8 @@ public class ConfigurationImplTest {
 		Class.forName(Initializer.class.getName());
 	}
 
-	@Environment(
+	@NewEnv(type = NewEnv.Type.JVM)
+	@NewEnv.Environment(
 		variables = {
 			"LIFERAY_LIFERAY_PERIOD_HOME=/liferay",
 			"LIFERAY_SETUP_PERIOD_WIZARD_PERIOD_ENABLED=false",
@@ -59,14 +59,13 @@ public class ConfigurationImplTest {
 				"_UPPERCASEN_AME_OPENBRACKET_DB2_CLOSEBRACKET_=" +
 					"com.ibm.db2.jcc.DB2Driver",
 			"LIFERAY_SETUP_PERIOD_DATABASE_PERIOD_JAR_PERIOD_NAME" +
-				"_OPENBRACKET_COM_PERIOD_MYSQL_PERIOD_JDBC_PERIOD_" +
+				"_OPENBRACKET_COM_PERIOD_MYSQL_PERIOD_CJ_PERIOD_JDBC_PERIOD_" +
 					"_UPPERCASED_RIVER_CLOSEBRACKET_=mysql.jar",
 			"LIFERAY_LAYOUT_PERIOD_STATIC_PERIOD_PORTLETS_PERIOD_START" +
 				"_PERIOD_COLUMN_DASH_1_OPENBRACKET_USER_CLOSEBRACKET_" +
 					"_OPENBRACKET__SLASH_HOME_CLOSEBRACKET_=6"
 		}
 	)
-	@NewEnv(type = NewEnv.Type.JVM)
 	@Test
 	public void testEnvironmentVariableOverrideMisc() throws IOException {
 
@@ -92,7 +91,7 @@ public class ConfigurationImplTest {
 			"mysql.jar",
 			configurationImpl.get(
 				"setup.database.jar.name",
-				new Filter("com.mysql.jdbc.Driver")));
+				new Filter("com.mysql.cj.jdbc.Driver")));
 		Assert.assertEquals(
 			"6",
 			configurationImpl.get(
@@ -100,8 +99,8 @@ public class ConfigurationImplTest {
 				new Filter("user", "/home")));
 	}
 
-	@Environment(variables = {"LIFERAY_NAMESPACE_PERIOD_KEY2=valuex"})
 	@NewEnv(type = NewEnv.Type.JVM)
+	@NewEnv.Environment(variables = "LIFERAY_NAMESPACE_PERIOD_KEY2=valuex")
 	@Test
 	public void testEnvironmentVariableOverrideProperties() throws IOException {
 		TestResourceClassLoader testResourceClassLoader =
@@ -447,9 +446,7 @@ public class ConfigurationImplTest {
 		public void addPropertiesResource(String name, String content)
 			throws IOException {
 
-			UUID uuid = UUID.randomUUID();
-
-			URL url = new URL("test://" + uuid.toString());
+			URL url = new URL("test://" + String.valueOf(UUID.randomUUID()));
 
 			_testURLResources.put(url, content.getBytes(StringPool.UTF8));
 

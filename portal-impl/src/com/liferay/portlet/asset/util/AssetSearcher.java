@@ -17,21 +17,24 @@ package com.liferay.portlet.asset.util;
 import com.liferay.asset.kernel.model.AssetCategory;
 import com.liferay.asset.kernel.service.AssetCategoryLocalServiceUtil;
 import com.liferay.asset.kernel.service.persistence.AssetEntryQuery;
+import com.liferay.petra.string.CharPool;
 import com.liferay.portal.kernel.search.BaseSearcher;
 import com.liferay.portal.kernel.search.BooleanClauseOccur;
 import com.liferay.portal.kernel.search.BooleanQuery;
-import com.liferay.portal.kernel.search.DocumentImpl;
 import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.search.Indexer;
 import com.liferay.portal.kernel.search.Query;
 import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.kernel.search.filter.BooleanFilter;
+import com.liferay.portal.kernel.search.filter.QueryFilter;
 import com.liferay.portal.kernel.search.filter.TermsFilter;
-import com.liferay.portal.kernel.security.permission.PermissionChecker;
+import com.liferay.portal.kernel.search.generic.BooleanQueryImpl;
+import com.liferay.portal.kernel.search.generic.StringQuery;
 import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.util.PropsValues;
 
@@ -85,9 +88,6 @@ public class AssetSearcher extends BaseSearcher {
 	protected void addSearchAllCategories(BooleanFilter queryBooleanFilter)
 		throws Exception {
 
-		PermissionChecker permissionChecker =
-			PermissionThreadLocal.getPermissionChecker();
-
 		long[] allCategoryIds = _assetEntryQuery.getAllCategoryIds();
 
 		if (allCategoryIds.length == 0) {
@@ -95,7 +95,7 @@ public class AssetSearcher extends BaseSearcher {
 		}
 
 		long[] filteredAllCategoryIds = AssetUtil.filterCategoryIds(
-			permissionChecker, allCategoryIds);
+			PermissionThreadLocal.getPermissionChecker(), allCategoryIds);
 
 		if (allCategoryIds.length != filteredAllCategoryIds.length) {
 			addImpossibleTerm(queryBooleanFilter, Field.ASSET_CATEGORY_IDS);
@@ -129,8 +129,7 @@ public class AssetSearcher extends BaseSearcher {
 				Field.ASSET_CATEGORY_IDS);
 
 			categoryIdTermsFilter.addValues(
-				ArrayUtil.toStringArray(
-					categoryIds.toArray(new Long[categoryIds.size()])));
+				ArrayUtil.toStringArray(categoryIds.toArray(new Long[0])));
 
 			categoryIdsBooleanFilter.add(
 				categoryIdTermsFilter, BooleanClauseOccur.MUST);
@@ -138,6 +137,31 @@ public class AssetSearcher extends BaseSearcher {
 
 		queryBooleanFilter.add(
 			categoryIdsBooleanFilter, BooleanClauseOccur.MUST);
+	}
+
+	protected void addSearchAllKeywords(BooleanFilter queryBooleanFilter)
+		throws Exception {
+
+		String[] allKeywords = _assetEntryQuery.getAllKeywords();
+
+		if (allKeywords.length == 0) {
+			return;
+		}
+
+		BooleanQuery keywordsQuery = new BooleanQueryImpl();
+
+		for (String keyword : allKeywords) {
+			if (keyword.contains(" ")) {
+				keyword = StringUtil.quote(keyword, CharPool.QUOTE);
+			}
+
+			StringQuery stringQuery = new StringQuery(keyword);
+
+			keywordsQuery.add(stringQuery, BooleanClauseOccur.MUST);
+		}
+
+		queryBooleanFilter.add(
+			new QueryFilter(keywordsQuery), BooleanClauseOccur.MUST);
 	}
 
 	protected void addSearchAllTags(BooleanFilter queryBooleanFilter)
@@ -172,9 +196,6 @@ public class AssetSearcher extends BaseSearcher {
 	protected void addSearchAnyCategories(BooleanFilter queryBooleanFilter)
 		throws Exception {
 
-		PermissionChecker permissionChecker =
-			PermissionThreadLocal.getPermissionChecker();
-
 		long[] anyCategoryIds = _assetEntryQuery.getAnyCategoryIds();
 
 		if (anyCategoryIds.length == 0) {
@@ -182,7 +203,7 @@ public class AssetSearcher extends BaseSearcher {
 		}
 
 		long[] filteredAnyCategoryIds = AssetUtil.filterCategoryIds(
-			permissionChecker, anyCategoryIds);
+			PermissionThreadLocal.getPermissionChecker(), anyCategoryIds);
 
 		if (filteredAnyCategoryIds.length == 0) {
 			addImpossibleTerm(queryBooleanFilter, Field.ASSET_CATEGORY_IDS);
@@ -214,11 +235,35 @@ public class AssetSearcher extends BaseSearcher {
 			}
 
 			categoryIdsTermsFilter.addValues(
-				ArrayUtil.toStringArray(
-					categoryIds.toArray(new Long[categoryIds.size()])));
+				ArrayUtil.toStringArray(categoryIds.toArray(new Long[0])));
 		}
 
 		queryBooleanFilter.add(categoryIdsTermsFilter, BooleanClauseOccur.MUST);
+	}
+
+	protected void addSearchAnyKeywords(BooleanFilter queryBooleanFilter)
+		throws Exception {
+
+		String[] anyKeywords = _assetEntryQuery.getAnyKeywords();
+
+		if (anyKeywords.length == 0) {
+			return;
+		}
+
+		BooleanQuery keywordsQuery = new BooleanQueryImpl();
+
+		for (String keyword : anyKeywords) {
+			if (keyword.contains(" ")) {
+				keyword = StringUtil.quote(keyword, CharPool.QUOTE);
+			}
+
+			StringQuery stringQuery = new StringQuery(keyword);
+
+			keywordsQuery.add(stringQuery, BooleanClauseOccur.SHOULD);
+		}
+
+		queryBooleanFilter.add(
+			new QueryFilter(keywordsQuery), BooleanClauseOccur.MUST);
 	}
 
 	protected void addSearchAnyTags(BooleanFilter queryBooleanFilter)
@@ -273,7 +318,7 @@ public class AssetSearcher extends BaseSearcher {
 		Map<String, Query> queries = super.addSearchKeywords(
 			searchQuery, searchContext);
 
-		String field = DocumentImpl.getLocalizedName(
+		String field = Field.getLocalizedName(
 			searchContext.getLocale(), "localized_title");
 
 		Query query = searchQuery.addTerm(field, keywords, true);
@@ -332,8 +377,7 @@ public class AssetSearcher extends BaseSearcher {
 				Field.ASSET_CATEGORY_IDS);
 
 			categoryIdTermsFilter.addValues(
-				ArrayUtil.toStringArray(
-					categoryIds.toArray(new Long[categoryIds.size()])));
+				ArrayUtil.toStringArray(categoryIds.toArray(new Long[0])));
 
 			categoryIdsBooleanFilter.add(
 				categoryIdTermsFilter, BooleanClauseOccur.MUST);
@@ -341,6 +385,31 @@ public class AssetSearcher extends BaseSearcher {
 
 		queryBooleanFilter.add(
 			categoryIdsBooleanFilter, BooleanClauseOccur.MUST_NOT);
+	}
+
+	protected void addSearchNotAllKeywords(BooleanFilter queryBooleanFilter)
+		throws Exception {
+
+		String[] notAllKeywords = _assetEntryQuery.getNotAllKeywords();
+
+		if (notAllKeywords.length == 0) {
+			return;
+		}
+
+		BooleanQuery keywordsQuery = new BooleanQueryImpl();
+
+		for (String keyword : notAllKeywords) {
+			if (keyword.contains(" ")) {
+				keyword = StringUtil.quote(keyword, CharPool.QUOTE);
+			}
+
+			StringQuery stringQuery = new StringQuery(keyword);
+
+			keywordsQuery.add(stringQuery, BooleanClauseOccur.MUST);
+		}
+
+		queryBooleanFilter.add(
+			new QueryFilter(keywordsQuery), BooleanClauseOccur.MUST_NOT);
 	}
 
 	protected void addSearchNotAllTags(BooleanFilter queryBooleanFilter)
@@ -406,12 +475,36 @@ public class AssetSearcher extends BaseSearcher {
 			}
 
 			categoryIdsTermsFilter.addValues(
-				ArrayUtil.toStringArray(
-					categoryIds.toArray(new Long[categoryIds.size()])));
+				ArrayUtil.toStringArray(categoryIds.toArray(new Long[0])));
 		}
 
 		queryBooleanFilter.add(
 			categoryIdsTermsFilter, BooleanClauseOccur.MUST_NOT);
+	}
+
+	protected void addSearchNotAnyKeywords(BooleanFilter queryBooleanFilter)
+		throws Exception {
+
+		String[] notAnyKeywords = _assetEntryQuery.getNotAnyKeywords();
+
+		if (notAnyKeywords.length == 0) {
+			return;
+		}
+
+		BooleanQuery keywordsQuery = new BooleanQueryImpl();
+
+		for (String keyword : notAnyKeywords) {
+			if (keyword.contains(" ")) {
+				keyword = StringUtil.quote(keyword, CharPool.QUOTE);
+			}
+
+			StringQuery stringQuery = new StringQuery(keyword);
+
+			keywordsQuery.add(stringQuery, BooleanClauseOccur.SHOULD);
+		}
+
+		queryBooleanFilter.add(
+			new QueryFilter(keywordsQuery), BooleanClauseOccur.MUST_NOT);
 	}
 
 	protected void addSearchNotAnyTags(BooleanFilter queryBooleanFilter)
@@ -428,6 +521,19 @@ public class AssetSearcher extends BaseSearcher {
 		tagIgsTermsFilter.addValues(ArrayUtil.toStringArray(notAnyTagIds));
 
 		queryBooleanFilter.add(tagIgsTermsFilter, BooleanClauseOccur.MUST_NOT);
+	}
+
+	@Override
+	protected BooleanQuery createFullQuery(
+			BooleanFilter fullQueryBooleanFilter, SearchContext searchContext)
+		throws Exception {
+
+		addSearchAllKeywords(fullQueryBooleanFilter);
+		addSearchAnyKeywords(fullQueryBooleanFilter);
+		addSearchNotAnyKeywords(fullQueryBooleanFilter);
+		addSearchNotAllKeywords(fullQueryBooleanFilter);
+
+		return super.createFullQuery(fullQueryBooleanFilter, searchContext);
 	}
 
 	@Override

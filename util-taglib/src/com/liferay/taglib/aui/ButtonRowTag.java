@@ -14,8 +14,8 @@
 
 package com.liferay.taglib.aui;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.taglib.aui.base.BaseButtonRowTag;
 import com.liferay.taglib.util.InlineUtil;
@@ -75,9 +75,10 @@ public class ButtonRowTag extends BaseButtonRowTag {
 	}
 
 	@Override
-	protected void setAttributes(HttpServletRequest request) {
-		ThemeDisplay themeDisplay = (ThemeDisplay)request.getAttribute(
-			WebKeys.THEME_DISPLAY);
+	protected void setAttributes(HttpServletRequest httpServletRequest) {
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)httpServletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
 
 		if (themeDisplay.isStatePopUp()) {
 			String cssClass = "dialog-footer";
@@ -89,7 +90,7 @@ public class ButtonRowTag extends BaseButtonRowTag {
 			setCssClass(cssClass);
 		}
 
-		super.setAttributes(request);
+		super.setAttributes(httpServletRequest);
 	}
 
 	private static final boolean _CLEAN_UP_SET_ATTRIBUTES = true;

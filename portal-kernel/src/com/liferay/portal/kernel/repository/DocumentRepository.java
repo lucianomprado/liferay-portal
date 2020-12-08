@@ -14,6 +14,7 @@
 
 package com.liferay.portal.kernel.repository;
 
+import com.liferay.document.library.kernel.model.DLVersionNumberIncrease;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.repository.capabilities.CapabilityProvider;
 import com.liferay.portal.kernel.repository.model.FileEntry;
@@ -42,8 +43,8 @@ public interface DocumentRepository extends CapabilityProvider {
 
 	public FileEntry addFileEntry(
 			long userId, long folderId, String sourceFileName, String mimeType,
-			String title, String description, String changeLog, InputStream is,
-			long size, ServiceContext serviceContext)
+			String title, String description, String changeLog,
+			InputStream inputStream, long size, ServiceContext serviceContext)
 		throws PortalException;
 
 	public FileShortcut addFileShortcut(
@@ -57,8 +58,9 @@ public interface DocumentRepository extends CapabilityProvider {
 		throws PortalException;
 
 	public void checkInFileEntry(
-			long userId, long fileEntryId, boolean majorVersion,
-			String changeLog, ServiceContext serviceContext)
+			long userId, long fileEntryId,
+			DLVersionNumberIncrease dlVersionNumberIncrease, String changeLog,
+			ServiceContext serviceContext)
 		throws PortalException;
 
 	public void checkInFileEntry(
@@ -79,23 +81,26 @@ public interface DocumentRepository extends CapabilityProvider {
 
 	public void deleteFileShortcuts(long toFileEntryId) throws PortalException;
 
+	public void deleteFileVersion(long fileVersionId) throws PortalException;
+
 	public void deleteFolder(long folderId) throws PortalException;
 
 	public List<FileEntry> getFileEntries(
 			long folderId, int status, int start, int end,
-			OrderByComparator<FileEntry> obc)
+			OrderByComparator<FileEntry> orderByComparator)
 		throws PortalException;
 
 	public List<FileEntry> getFileEntries(
-			long folderId, int start, int end, OrderByComparator<FileEntry> obc)
+			long folderId, int start, int end,
+			OrderByComparator<FileEntry> orderByComparator)
 		throws PortalException;
 
 	public default List<FileEntry> getFileEntries(
 			long folderId, String[] mimeTypes, int status, int start, int end,
-			OrderByComparator<FileEntry> obc)
+			OrderByComparator<FileEntry> orderByComparator)
 		throws PortalException {
 
-		return getFileEntries(folderId, status, start, end, obc);
+		return getFileEntries(folderId, status, start, end, orderByComparator);
 	}
 
 	public List<RepositoryEntry> getFileEntriesAndFileShortcuts(
@@ -122,6 +127,13 @@ public interface DocumentRepository extends CapabilityProvider {
 	public FileEntry getFileEntry(long folderId, String title)
 		throws PortalException;
 
+	public default FileEntry getFileEntryByFileName(
+			long folderId, String fileName)
+		throws PortalException {
+
+		return getFileEntry(folderId, fileName);
+	}
+
 	public FileEntry getFileEntryByUuid(String uuid) throws PortalException;
 
 	public FileShortcut getFileShortcut(long fileShortcutId)
@@ -137,17 +149,17 @@ public interface DocumentRepository extends CapabilityProvider {
 
 	public List<Folder> getFolders(
 			long parentFolderId, boolean includeMountFolders, int start,
-			int end, OrderByComparator<Folder> obc)
+			int end, OrderByComparator<Folder> orderByComparator)
 		throws PortalException;
 
 	public List<Folder> getFolders(
 			long parentFolderId, int status, boolean includeMountFolders,
-			int start, int end, OrderByComparator<Folder> obc)
+			int start, int end, OrderByComparator<Folder> orderByComparator)
 		throws PortalException;
 
 	public List<RepositoryEntry> getFoldersAndFileEntriesAndFileShortcuts(
 			long folderId, int status, boolean includeMountFolders, int start,
-			int end, OrderByComparator<?> obc)
+			int end, OrderByComparator<?> orderByComparator)
 		throws PortalException;
 
 	public int getFoldersAndFileEntriesAndFileShortcutsCount(
@@ -163,7 +175,7 @@ public interface DocumentRepository extends CapabilityProvider {
 
 	public List<FileEntry> getRepositoryFileEntries(
 			long userId, long rootFolderId, int start, int end,
-			OrderByComparator<FileEntry> obc)
+			OrderByComparator<FileEntry> orderByComparator)
 		throws PortalException;
 
 	public long getRepositoryId();
@@ -186,14 +198,15 @@ public interface DocumentRepository extends CapabilityProvider {
 	public FileEntry updateFileEntry(
 			long userId, long fileEntryId, String sourceFileName,
 			String mimeType, String title, String description, String changeLog,
-			boolean majorVersion, File file, ServiceContext serviceContext)
+			DLVersionNumberIncrease dlVersionNumberIncrease, File file,
+			ServiceContext serviceContext)
 		throws PortalException;
 
 	public FileEntry updateFileEntry(
 			long userId, long fileEntryId, String sourceFileName,
 			String mimeType, String title, String description, String changeLog,
-			boolean majorVersion, InputStream is, long size,
-			ServiceContext serviceContext)
+			DLVersionNumberIncrease dlVersionNumberIncrease,
+			InputStream inputStream, long size, ServiceContext serviceContext)
 		throws PortalException;
 
 	public FileShortcut updateFileShortcut(

@@ -14,23 +14,25 @@
 
 package com.liferay.portal.osgi.web.wab.extender.internal;
 
-import com.liferay.osgi.felix.util.AbstractExtender;
 import com.liferay.portal.configuration.metatype.bnd.util.ConfigurableUtil;
+import com.liferay.portal.kernel.dependency.manager.DependencyManagerSyncUtil;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.module.framework.ModuleServiceLifecycle;
+import com.liferay.portal.osgi.web.servlet.JSPServletFactory;
+import com.liferay.portal.osgi.web.servlet.JSPTaglibHelper;
 import com.liferay.portal.osgi.web.servlet.context.helper.ServletContextHelperFactory;
 import com.liferay.portal.osgi.web.wab.extender.internal.configuration.WabExtenderConfiguration;
-import com.liferay.portal.osgi.web.wab.extender.internal.event.EventUtil;
 import com.liferay.portal.profile.PortalProfile;
 
 import java.util.Dictionary;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
-
-import org.apache.felix.utils.extender.Extension;
-import org.apache.felix.utils.log.Logger;
 
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.BundleEvent;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.component.ComponentContext;
 import org.osgi.service.component.annotations.Activate;
@@ -38,6 +40,8 @@ import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
 import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
+import org.osgi.util.tracker.BundleTracker;
+import org.osgi.util.tracker.BundleTrackerCustomizer;
 
 /**
  * @author Miguel Pastor
@@ -45,104 +49,58 @@ import org.osgi.service.component.annotations.Reference;
  */
 @Component(
 	configurationPid = "com.liferay.portal.osgi.web.wab.extender.internal.configuration.WabExtenderConfiguration",
-	configurationPolicy = ConfigurationPolicy.OPTIONAL, immediate = true
+	configurationPolicy = ConfigurationPolicy.OPTIONAL, immediate = true,
+	service = {}
 )
-public class WabFactory extends AbstractExtender {
+public class WabFactory
+	implements BundleTrackerCustomizer<WabFactory.WABExtension> {
 
-	@Activate
-	public void activate(ComponentContext componentContext) {
-		BundleContext bundleContext = componentContext.getBundleContext();
+	@Override
+	public WABExtension addingBundle(Bundle bundle, BundleEvent bundleEvent) {
+		String contextPath = WabUtil.getWebContextPath(bundle);
 
-		_eventUtil = new EventUtil(bundleContext);
-		_logger = new Logger(bundleContext);
-
-		Dictionary<String, Object> properties =
-			componentContext.getProperties();
-
-		_wabExtenderConfiguration = ConfigurableUtil.createConfigurable(
-			WabExtenderConfiguration.class, properties);
-
-		try {
-			_webBundleDeployer = new WebBundleDeployer(
-				bundleContext, properties, _eventUtil, _logger);
-
-			start(bundleContext);
+		if (contextPath == null) {
+			return null;
 		}
-		catch (Exception e) {
-			_logger.log(Logger.LOG_ERROR, e.getMessage(), e);
-		}
-	}
 
-	@Deactivate
-	public void deactivate(BundleContext bundleContext) throws Exception {
-		stop(bundleContext);
+		WABExtension wabExtension = new WABExtension(bundle);
 
-		_eventUtil.close();
+		wabExtension.start();
 
-		_eventUtil = null;
-
-		_logger = null;
-
-		_webBundleDeployer.close();
-
-		_webBundleDeployer = null;
+		return wabExtension;
 	}
 
 	@Override
-	protected void debug(Bundle bundle, String message) {
-		_logger.log(Logger.LOG_DEBUG, "[" + bundle + "] " + message);
+	public void modifiedBundle(
+		Bundle bundle, BundleEvent bundleEvent, WABExtension wabExtension) {
 	}
 
 	@Override
-	protected Extension doCreateExtension(Bundle bundle) throws Exception {
-		return new WABExtension(bundle);
+	public void removedBundle(
+		Bundle bundle, BundleEvent bundleEvent, WABExtension wabExtension) {
+
+		wabExtension.destroy();
 	}
 
-	@Override
-	protected void error(String message, Throwable t) {
-		_logger.log(Logger.LOG_ERROR, message, t);
-	}
-
-	@Reference(target = ModuleServiceLifecycle.PORTAL_INITIALIZED, unbind = "-")
-	protected void setModuleServiceLifecycle(
-		ModuleServiceLifecycle moduleServiceLifecycle) {
-	}
-
-	@Override
-	protected void warn(Bundle bundle, String message, Throwable t) {
-		_logger.log(Logger.LOG_WARNING, "[" + bundle + "] " + message, t);
-	}
-
-	private EventUtil _eventUtil;
-	private Logger _logger;
-
-	@Reference
-	private ServletContextHelperFactory _servletContextHelperFactory;
-
-	private WabExtenderConfiguration _wabExtenderConfiguration;
-	private WebBundleDeployer _webBundleDeployer;
-
-	private class WABExtension implements Extension {
+	public class WABExtension {
 
 		public WABExtension(Bundle bundle) {
 			_bundle = bundle;
 		}
 
-		@Override
-		public void destroy() throws Exception {
+		public void destroy() {
 			try {
 				_started.await(
 					_wabExtenderConfiguration.stopTimeout(),
 					TimeUnit.MILLISECONDS);
 			}
-			catch (InterruptedException ie) {
-				_logger.log(
-					Logger.LOG_ERROR,
+			catch (InterruptedException interruptedException) {
+				_log.error(
 					String.format(
 						"The wait for bundle {0}/{1} to start before " +
 							"destroying was interrupted",
 						_bundle.getSymbolicName(), _bundle.getBundleId()),
-					ie);
+					interruptedException);
 			}
 
 			if (_serviceRegistration != null) {
@@ -152,8 +110,7 @@ public class WabFactory extends AbstractExtender {
 			_webBundleDeployer.doStop(_bundle);
 		}
 
-		@Override
-		public void start() throws Exception {
+		public void start() {
 			try {
 				_serviceRegistration = _webBundleDeployer.doStart(_bundle);
 			}
@@ -167,5 +124,66 @@ public class WabFactory extends AbstractExtender {
 		private final CountDownLatch _started = new CountDownLatch(1);
 
 	}
+
+	@Activate
+	protected void activate(ComponentContext componentContext) {
+		BundleContext bundleContext = componentContext.getBundleContext();
+
+		Dictionary<String, Object> properties =
+			componentContext.getProperties();
+
+		_wabExtenderConfiguration = ConfigurableUtil.createConfigurable(
+			WabExtenderConfiguration.class, properties);
+
+		_webBundleDeployer = new WebBundleDeployer(
+			bundleContext, _jspServletFactory, _jspTaglibHelper, properties);
+
+		_bundleTracker = new BundleTracker<>(
+			bundleContext, Bundle.ACTIVE | Bundle.STARTING, this);
+
+		FutureTask<Void> futureTask = new FutureTask<>(
+			() -> {
+				_bundleTracker.open();
+
+				return null;
+			});
+
+		Thread bundleTrackerOpenerThread = new Thread(
+			futureTask, WabFactory.class.getName() + "-BundleTrackerOpener");
+
+		bundleTrackerOpenerThread.setDaemon(true);
+
+		bundleTrackerOpenerThread.start();
+
+		DependencyManagerSyncUtil.registerSyncFuture(futureTask);
+	}
+
+	@Deactivate
+	protected void deactivate() {
+		_bundleTracker.close();
+
+		_webBundleDeployer.close();
+
+		_webBundleDeployer = null;
+	}
+
+	private static final Log _log = LogFactoryUtil.getLog(WabFactory.class);
+
+	private BundleTracker<?> _bundleTracker;
+
+	@Reference
+	private JSPServletFactory _jspServletFactory;
+
+	@Reference
+	private JSPTaglibHelper _jspTaglibHelper;
+
+	@Reference(target = ModuleServiceLifecycle.PORTAL_INITIALIZED)
+	private ModuleServiceLifecycle _moduleServiceLifecycle;
+
+	@Reference
+	private ServletContextHelperFactory _servletContextHelperFactory;
+
+	private WabExtenderConfiguration _wabExtenderConfiguration;
+	private WebBundleDeployer _webBundleDeployer;
 
 }

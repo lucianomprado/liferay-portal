@@ -14,7 +14,7 @@
 
 package com.liferay.source.formatter.checks;
 
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 
@@ -78,7 +78,7 @@ public class JavaSystemExceptionCheck extends BaseFileCheck {
 			StringUtil.replaceFirst(content, match, replacement));
 	}
 
-	private final Pattern _throwsSystemExceptionPattern = Pattern.compile(
-		"(\n\t+.*)throws(.*) SystemException(.*)( \\{|;\n)");
+	private static final Pattern _throwsSystemExceptionPattern =
+		Pattern.compile("(\n\t+.*)throws(.*) SystemException(.*)( \\{|;\n)");
 
 }

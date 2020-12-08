@@ -30,7 +30,7 @@ KBArticle kbArticle = (KBArticle)request.getAttribute(KBWebKeys.KNOWLEDGE_BASE_K
 	<c:if test="<%= assetTagIds.length > 0 %>">
 
 		<%
-		long[] classNameIds = new long[] {ClassNameLocalServiceUtil.getClassNameId(BlogsEntry.class), ClassNameLocalServiceUtil.getClassNameId(JournalArticle.class), ClassNameLocalServiceUtil.getClassNameId(KBArticle.class), ClassNameLocalServiceUtil.getClassNameId(MBMessage.class), ClassNameLocalServiceUtil.getClassNameId(WikiPage.class)};
+		long[] classNameIds = {ClassNameLocalServiceUtil.getClassNameId(BlogsEntry.class), ClassNameLocalServiceUtil.getClassNameId(JournalArticle.class), ClassNameLocalServiceUtil.getClassNameId(KBArticle.class), ClassNameLocalServiceUtil.getClassNameId(MBMessage.class), ClassNameLocalServiceUtil.getClassNameId(WikiPage.class)};
 
 		List<AssetEntry> mostPopularAssetEntries = KBArticleAssetEntriesUtil.getAssetEntries(groupIds, classNameIds, assetTagIds, kbArticle.getResourcePrimKey(), 0, 10, "viewCount");
 		List<AssetEntry> mostRecentAssetEntries = KBArticleAssetEntriesUtil.getAssetEntries(groupIds, classNameIds, assetTagIds, kbArticle.getResourcePrimKey(), 0, 10, "modifiedDate");
@@ -51,15 +51,16 @@ KBArticle kbArticle = (KBArticle)request.getAttribute(KBWebKeys.KNOWLEDGE_BASE_K
 
 							<%
 							for (AssetEntry assetEntry : mostRecentAssetEntries) {
-								AssetRendererFactory assetRendererFactory = AssetRendererFactoryRegistryUtil.getAssetRendererFactoryByClassName(assetEntry.getClassName());
+								AssetRendererFactory<?> assetRendererFactory = AssetRendererFactoryRegistryUtil.getAssetRendererFactoryByClassName(assetEntry.getClassName());
 
-								AssetRenderer assetRenderer = assetRendererFactory.getAssetRenderer(assetEntry.getClassPK());
+								AssetRenderer<?> assetRenderer = assetRendererFactory.getAssetRenderer(assetEntry.getClassPK());
 							%>
 
 								<div class="kb-title">
 									<liferay-ui:icon
-										iconCssClass="<%= assetRenderer.getIconCssClass() %>"
+										icon="<%= assetRenderer.getIconCssClass() %>"
 										label="<%= true %>"
+										markupView="lexicon"
 										message="<%= HtmlUtil.escape(assetRenderer.getTitle(locale)) %>"
 										url="<%= KBArticleAssetEntriesUtil.getURL(request, themeDisplay, assetRendererFactory, assetRenderer) %>"
 									/>
@@ -83,15 +84,16 @@ KBArticle kbArticle = (KBArticle)request.getAttribute(KBWebKeys.KNOWLEDGE_BASE_K
 
 							<%
 							for (AssetEntry assetEntry : mostPopularAssetEntries) {
-								AssetRendererFactory assetRendererFactory = AssetRendererFactoryRegistryUtil.getAssetRendererFactoryByClassName(assetEntry.getClassName());
+								AssetRendererFactory<?> assetRendererFactory = AssetRendererFactoryRegistryUtil.getAssetRendererFactoryByClassName(assetEntry.getClassName());
 
-								AssetRenderer assetRenderer = assetRendererFactory.getAssetRenderer(assetEntry.getClassPK());
+								AssetRenderer<?> assetRenderer = assetRendererFactory.getAssetRenderer(assetEntry.getClassPK());
 							%>
 
 								<div class="kb-title">
 									<liferay-ui:icon
-										iconCssClass="<%= assetRenderer.getIconCssClass() %>"
+										icon="<%= assetRenderer.getIconCssClass() %>"
 										label="<%= true %>"
+										markupView="lexicon"
 										message="<%= HtmlUtil.escape(assetRenderer.getTitle(locale)) %>"
 										url="<%= KBArticleAssetEntriesUtil.getURL(request, themeDisplay, assetRendererFactory, assetRenderer) %>"
 									/>

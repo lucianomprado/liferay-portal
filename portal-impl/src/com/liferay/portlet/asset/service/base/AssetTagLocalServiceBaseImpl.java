@@ -14,22 +14,19 @@
 
 package com.liferay.portlet.asset.service.base;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.asset.kernel.model.AssetTag;
 import com.liferay.asset.kernel.service.AssetTagLocalService;
 import com.liferay.asset.kernel.service.persistence.AssetEntryFinder;
 import com.liferay.asset.kernel.service.persistence.AssetEntryPersistence;
 import com.liferay.asset.kernel.service.persistence.AssetTagFinder;
 import com.liferay.asset.kernel.service.persistence.AssetTagPersistence;
-import com.liferay.asset.kernel.service.persistence.AssetTagStatsPersistence;
-
 import com.liferay.exportimport.kernel.lar.ExportImportHelperUtil;
 import com.liferay.exportimport.kernel.lar.ManifestSummary;
 import com.liferay.exportimport.kernel.lar.PortletDataContext;
 import com.liferay.exportimport.kernel.lar.StagedModelDataHandlerUtil;
 import com.liferay.exportimport.kernel.lar.StagedModelType;
-
+import com.liferay.petra.function.UnsafeFunction;
+import com.liferay.petra.sql.dsl.query.DSLQuery;
 import com.liferay.portal.kernel.bean.BeanReference;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
@@ -50,11 +47,14 @@ import com.liferay.portal.kernel.search.Indexable;
 import com.liferay.portal.kernel.search.IndexableType;
 import com.liferay.portal.kernel.service.BaseLocalServiceImpl;
 import com.liferay.portal.kernel.service.PersistedModelLocalServiceRegistry;
+import com.liferay.portal.kernel.service.persistence.BasePersistence;
 import com.liferay.portal.kernel.service.persistence.ClassNamePersistence;
 import com.liferay.portal.kernel.service.persistence.GroupFinder;
 import com.liferay.portal.kernel.service.persistence.GroupPersistence;
 import com.liferay.portal.kernel.service.persistence.UserFinder;
 import com.liferay.portal.kernel.service.persistence.UserPersistence;
+import com.liferay.portal.kernel.service.persistence.change.tracking.CTPersistence;
+import com.liferay.portal.kernel.transaction.Transactional;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.PortalUtil;
 
@@ -73,20 +73,24 @@ import javax.sql.DataSource;
  *
  * @author Brian Wing Shun Chan
  * @see com.liferay.portlet.asset.service.impl.AssetTagLocalServiceImpl
- * @see com.liferay.asset.kernel.service.AssetTagLocalServiceUtil
  * @generated
  */
-@ProviderType
-public abstract class AssetTagLocalServiceBaseImpl extends BaseLocalServiceImpl
+public abstract class AssetTagLocalServiceBaseImpl
+	extends BaseLocalServiceImpl
 	implements AssetTagLocalService, IdentifiableOSGiService {
+
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. Always use {@link com.liferay.asset.kernel.service.AssetTagLocalServiceUtil} to access the asset tag local service.
+	 * Never modify or reference this class directly. Use <code>AssetTagLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>com.liferay.asset.kernel.service.AssetTagLocalServiceUtil</code>.
 	 */
 
 	/**
 	 * Adds the asset tag to the database. Also notifies the appropriate model listeners.
+	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect AssetTagLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
 	 *
 	 * @param assetTag the asset tag
 	 * @return the asset tag that was added
@@ -106,12 +110,17 @@ public abstract class AssetTagLocalServiceBaseImpl extends BaseLocalServiceImpl
 	 * @return the new asset tag
 	 */
 	@Override
+	@Transactional(enabled = false)
 	public AssetTag createAssetTag(long tagId) {
 		return assetTagPersistence.create(tagId);
 	}
 
 	/**
 	 * Deletes the asset tag with the primary key from the database. Also notifies the appropriate model listeners.
+	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect AssetTagLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
 	 *
 	 * @param tagId the primary key of the asset tag
 	 * @return the asset tag that was removed
@@ -126,6 +135,10 @@ public abstract class AssetTagLocalServiceBaseImpl extends BaseLocalServiceImpl
 	/**
 	 * Deletes the asset tag from the database. Also notifies the appropriate model listeners.
 	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect AssetTagLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
+	 *
 	 * @param assetTag the asset tag
 	 * @return the asset tag that was removed
 	 */
@@ -136,11 +149,16 @@ public abstract class AssetTagLocalServiceBaseImpl extends BaseLocalServiceImpl
 	}
 
 	@Override
+	public <T> T dslQuery(DSLQuery dslQuery) {
+		return assetTagPersistence.dslQuery(dslQuery);
+	}
+
+	@Override
 	public DynamicQuery dynamicQuery() {
 		Class<?> clazz = getClass();
 
-		return DynamicQueryFactoryUtil.forClass(AssetTag.class,
-			clazz.getClassLoader());
+		return DynamicQueryFactoryUtil.forClass(
+			AssetTag.class, clazz.getClassLoader());
 	}
 
 	/**
@@ -158,7 +176,7 @@ public abstract class AssetTagLocalServiceBaseImpl extends BaseLocalServiceImpl
 	 * Performs a dynamic query on the database and returns a range of the matching rows.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.asset.model.impl.AssetTagModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>com.liferay.portlet.asset.model.impl.AssetTagModelImpl</code>.
 	 * </p>
 	 *
 	 * @param dynamicQuery the dynamic query
@@ -167,16 +185,18 @@ public abstract class AssetTagLocalServiceBaseImpl extends BaseLocalServiceImpl
 	 * @return the range of matching rows
 	 */
 	@Override
-	public <T> List<T> dynamicQuery(DynamicQuery dynamicQuery, int start,
-		int end) {
-		return assetTagPersistence.findWithDynamicQuery(dynamicQuery, start, end);
+	public <T> List<T> dynamicQuery(
+		DynamicQuery dynamicQuery, int start, int end) {
+
+		return assetTagPersistence.findWithDynamicQuery(
+			dynamicQuery, start, end);
 	}
 
 	/**
 	 * Performs a dynamic query on the database and returns an ordered range of the matching rows.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.asset.model.impl.AssetTagModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>com.liferay.portlet.asset.model.impl.AssetTagModelImpl</code>.
 	 * </p>
 	 *
 	 * @param dynamicQuery the dynamic query
@@ -186,10 +206,12 @@ public abstract class AssetTagLocalServiceBaseImpl extends BaseLocalServiceImpl
 	 * @return the ordered range of matching rows
 	 */
 	@Override
-	public <T> List<T> dynamicQuery(DynamicQuery dynamicQuery, int start,
-		int end, OrderByComparator<T> orderByComparator) {
-		return assetTagPersistence.findWithDynamicQuery(dynamicQuery, start,
-			end, orderByComparator);
+	public <T> List<T> dynamicQuery(
+		DynamicQuery dynamicQuery, int start, int end,
+		OrderByComparator<T> orderByComparator) {
+
+		return assetTagPersistence.findWithDynamicQuery(
+			dynamicQuery, start, end, orderByComparator);
 	}
 
 	/**
@@ -211,10 +233,11 @@ public abstract class AssetTagLocalServiceBaseImpl extends BaseLocalServiceImpl
 	 * @return the number of rows matching the dynamic query
 	 */
 	@Override
-	public long dynamicQueryCount(DynamicQuery dynamicQuery,
-		Projection projection) {
-		return assetTagPersistence.countWithDynamicQuery(dynamicQuery,
-			projection);
+	public long dynamicQueryCount(
+		DynamicQuery dynamicQuery, Projection projection) {
+
+		return assetTagPersistence.countWithDynamicQuery(
+			dynamicQuery, projection);
 	}
 
 	@Override
@@ -248,7 +271,8 @@ public abstract class AssetTagLocalServiceBaseImpl extends BaseLocalServiceImpl
 
 	@Override
 	public ActionableDynamicQuery getActionableDynamicQuery() {
-		ActionableDynamicQuery actionableDynamicQuery = new DefaultActionableDynamicQuery();
+		ActionableDynamicQuery actionableDynamicQuery =
+			new DefaultActionableDynamicQuery();
 
 		actionableDynamicQuery.setBaseLocalService(assetTagLocalService);
 		actionableDynamicQuery.setClassLoader(getClassLoader());
@@ -260,10 +284,14 @@ public abstract class AssetTagLocalServiceBaseImpl extends BaseLocalServiceImpl
 	}
 
 	@Override
-	public IndexableActionableDynamicQuery getIndexableActionableDynamicQuery() {
-		IndexableActionableDynamicQuery indexableActionableDynamicQuery = new IndexableActionableDynamicQuery();
+	public IndexableActionableDynamicQuery
+		getIndexableActionableDynamicQuery() {
 
-		indexableActionableDynamicQuery.setBaseLocalService(assetTagLocalService);
+		IndexableActionableDynamicQuery indexableActionableDynamicQuery =
+			new IndexableActionableDynamicQuery();
+
+		indexableActionableDynamicQuery.setBaseLocalService(
+			assetTagLocalService);
 		indexableActionableDynamicQuery.setClassLoader(getClassLoader());
 		indexableActionableDynamicQuery.setModelClass(AssetTag.class);
 
@@ -274,6 +302,7 @@ public abstract class AssetTagLocalServiceBaseImpl extends BaseLocalServiceImpl
 
 	protected void initActionableDynamicQuery(
 		ActionableDynamicQuery actionableDynamicQuery) {
+
 		actionableDynamicQuery.setBaseLocalService(assetTagLocalService);
 		actionableDynamicQuery.setClassLoader(getClassLoader());
 		actionableDynamicQuery.setModelClass(AssetTag.class);
@@ -284,51 +313,67 @@ public abstract class AssetTagLocalServiceBaseImpl extends BaseLocalServiceImpl
 	@Override
 	public ExportActionableDynamicQuery getExportActionableDynamicQuery(
 		final PortletDataContext portletDataContext) {
-		final ExportActionableDynamicQuery exportActionableDynamicQuery = new ExportActionableDynamicQuery() {
+
+		final ExportActionableDynamicQuery exportActionableDynamicQuery =
+			new ExportActionableDynamicQuery() {
+
 				@Override
 				public long performCount() throws PortalException {
-					ManifestSummary manifestSummary = portletDataContext.getManifestSummary();
+					ManifestSummary manifestSummary =
+						portletDataContext.getManifestSummary();
 
 					StagedModelType stagedModelType = getStagedModelType();
 
 					long modelAdditionCount = super.performCount();
 
-					manifestSummary.addModelAdditionCount(stagedModelType,
-						modelAdditionCount);
+					manifestSummary.addModelAdditionCount(
+						stagedModelType, modelAdditionCount);
 
-					long modelDeletionCount = ExportImportHelperUtil.getModelDeletionCount(portletDataContext,
-							stagedModelType);
+					long modelDeletionCount =
+						ExportImportHelperUtil.getModelDeletionCount(
+							portletDataContext, stagedModelType);
 
-					manifestSummary.addModelDeletionCount(stagedModelType,
-						modelDeletionCount);
+					manifestSummary.addModelDeletionCount(
+						stagedModelType, modelDeletionCount);
 
 					return modelAdditionCount;
 				}
+
 			};
 
 		initActionableDynamicQuery(exportActionableDynamicQuery);
 
-		exportActionableDynamicQuery.setAddCriteriaMethod(new ActionableDynamicQuery.AddCriteriaMethod() {
+		exportActionableDynamicQuery.setAddCriteriaMethod(
+			new ActionableDynamicQuery.AddCriteriaMethod() {
+
 				@Override
 				public void addCriteria(DynamicQuery dynamicQuery) {
-					portletDataContext.addDateRangeCriteria(dynamicQuery,
-						"modifiedDate");
+					portletDataContext.addDateRangeCriteria(
+						dynamicQuery, "modifiedDate");
 				}
+
 			});
 
-		exportActionableDynamicQuery.setCompanyId(portletDataContext.getCompanyId());
+		exportActionableDynamicQuery.setCompanyId(
+			portletDataContext.getCompanyId());
 
-		exportActionableDynamicQuery.setGroupId(portletDataContext.getScopeGroupId());
+		exportActionableDynamicQuery.setGroupId(
+			portletDataContext.getScopeGroupId());
 
-		exportActionableDynamicQuery.setPerformActionMethod(new ActionableDynamicQuery.PerformActionMethod<AssetTag>() {
+		exportActionableDynamicQuery.setPerformActionMethod(
+			new ActionableDynamicQuery.PerformActionMethod<AssetTag>() {
+
 				@Override
 				public void performAction(AssetTag assetTag)
 					throws PortalException {
-					StagedModelDataHandlerUtil.exportStagedModel(portletDataContext,
-						assetTag);
+
+					StagedModelDataHandlerUtil.exportStagedModel(
+						portletDataContext, assetTag);
 				}
+
 			});
-		exportActionableDynamicQuery.setStagedModelType(new StagedModelType(
+		exportActionableDynamicQuery.setStagedModelType(
+			new StagedModelType(
 				PortalUtil.getClassNameId(AssetTag.class.getName())));
 
 		return exportActionableDynamicQuery;
@@ -338,14 +383,34 @@ public abstract class AssetTagLocalServiceBaseImpl extends BaseLocalServiceImpl
 	 * @throws PortalException
 	 */
 	@Override
+	public PersistedModel createPersistedModel(Serializable primaryKeyObj)
+		throws PortalException {
+
+		return assetTagPersistence.create(((Long)primaryKeyObj).longValue());
+	}
+
+	/**
+	 * @throws PortalException
+	 */
+	@Override
 	public PersistedModel deletePersistedModel(PersistedModel persistedModel)
 		throws PortalException {
+
 		return assetTagLocalService.deleteAssetTag((AssetTag)persistedModel);
 	}
 
 	@Override
+	public BasePersistence<AssetTag> getBasePersistence() {
+		return assetTagPersistence;
+	}
+
+	/**
+	 * @throws PortalException
+	 */
+	@Override
 	public PersistedModel getPersistedModel(Serializable primaryKeyObj)
 		throws PortalException {
+
 		return assetTagPersistence.findByPrimaryKey(primaryKeyObj);
 	}
 
@@ -357,8 +422,9 @@ public abstract class AssetTagLocalServiceBaseImpl extends BaseLocalServiceImpl
 	 * @return the matching asset tags, or an empty list if no matches were found
 	 */
 	@Override
-	public List<AssetTag> getAssetTagsByUuidAndCompanyId(String uuid,
-		long companyId) {
+	public List<AssetTag> getAssetTagsByUuidAndCompanyId(
+		String uuid, long companyId) {
+
 		return assetTagPersistence.findByUuid_C(uuid, companyId);
 	}
 
@@ -373,11 +439,12 @@ public abstract class AssetTagLocalServiceBaseImpl extends BaseLocalServiceImpl
 	 * @return the range of matching asset tags, or an empty list if no matches were found
 	 */
 	@Override
-	public List<AssetTag> getAssetTagsByUuidAndCompanyId(String uuid,
-		long companyId, int start, int end,
+	public List<AssetTag> getAssetTagsByUuidAndCompanyId(
+		String uuid, long companyId, int start, int end,
 		OrderByComparator<AssetTag> orderByComparator) {
-		return assetTagPersistence.findByUuid_C(uuid, companyId, start, end,
-			orderByComparator);
+
+		return assetTagPersistence.findByUuid_C(
+			uuid, companyId, start, end, orderByComparator);
 	}
 
 	/**
@@ -391,6 +458,7 @@ public abstract class AssetTagLocalServiceBaseImpl extends BaseLocalServiceImpl
 	@Override
 	public AssetTag getAssetTagByUuidAndGroupId(String uuid, long groupId)
 		throws PortalException {
+
 		return assetTagPersistence.findByUUID_G(uuid, groupId);
 	}
 
@@ -398,7 +466,7 @@ public abstract class AssetTagLocalServiceBaseImpl extends BaseLocalServiceImpl
 	 * Returns a range of all the asset tags.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.asset.model.impl.AssetTagModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>com.liferay.portlet.asset.model.impl.AssetTagModelImpl</code>.
 	 * </p>
 	 *
 	 * @param start the lower bound of the range of asset tags
@@ -422,6 +490,10 @@ public abstract class AssetTagLocalServiceBaseImpl extends BaseLocalServiceImpl
 
 	/**
 	 * Updates the asset tag in the database or adds it if it does not yet exist. Also notifies the appropriate model listeners.
+	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect AssetTagLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
 	 *
 	 * @param assetTag the asset tag
 	 * @return the asset tag that was updated
@@ -491,7 +563,9 @@ public abstract class AssetTagLocalServiceBaseImpl extends BaseLocalServiceImpl
 	/**
 	 */
 	@Override
-	public void deleteAssetEntryAssetTags(long entryId, List<AssetTag> assetTags) {
+	public void deleteAssetEntryAssetTags(
+		long entryId, List<AssetTag> assetTags) {
+
 		assetEntryPersistence.removeAssetTags(entryId, assetTags);
 	}
 
@@ -516,18 +590,21 @@ public abstract class AssetTagLocalServiceBaseImpl extends BaseLocalServiceImpl
 	/**
 	 */
 	@Override
-	public List<AssetTag> getAssetEntryAssetTags(long entryId, int start,
-		int end) {
+	public List<AssetTag> getAssetEntryAssetTags(
+		long entryId, int start, int end) {
+
 		return assetEntryPersistence.getAssetTags(entryId, start, end);
 	}
 
 	/**
 	 */
 	@Override
-	public List<AssetTag> getAssetEntryAssetTags(long entryId, int start,
-		int end, OrderByComparator<AssetTag> orderByComparator) {
-		return assetEntryPersistence.getAssetTags(entryId, start, end,
-			orderByComparator);
+	public List<AssetTag> getAssetEntryAssetTags(
+		long entryId, int start, int end,
+		OrderByComparator<AssetTag> orderByComparator) {
+
+		return assetEntryPersistence.getAssetTags(
+			entryId, start, end, orderByComparator);
 	}
 
 	/**
@@ -574,6 +651,7 @@ public abstract class AssetTagLocalServiceBaseImpl extends BaseLocalServiceImpl
 	 */
 	public void setAssetTagLocalService(
 		AssetTagLocalService assetTagLocalService) {
+
 		this.assetTagLocalService = assetTagLocalService;
 	}
 
@@ -591,7 +669,9 @@ public abstract class AssetTagLocalServiceBaseImpl extends BaseLocalServiceImpl
 	 *
 	 * @param assetTagPersistence the asset tag persistence
 	 */
-	public void setAssetTagPersistence(AssetTagPersistence assetTagPersistence) {
+	public void setAssetTagPersistence(
+		AssetTagPersistence assetTagPersistence) {
+
 		this.assetTagPersistence = assetTagPersistence;
 	}
 
@@ -618,7 +698,9 @@ public abstract class AssetTagLocalServiceBaseImpl extends BaseLocalServiceImpl
 	 *
 	 * @return the counter local service
 	 */
-	public com.liferay.counter.kernel.service.CounterLocalService getCounterLocalService() {
+	public com.liferay.counter.kernel.service.CounterLocalService
+		getCounterLocalService() {
+
 		return counterLocalService;
 	}
 
@@ -628,7 +710,9 @@ public abstract class AssetTagLocalServiceBaseImpl extends BaseLocalServiceImpl
 	 * @param counterLocalService the counter local service
 	 */
 	public void setCounterLocalService(
-		com.liferay.counter.kernel.service.CounterLocalService counterLocalService) {
+		com.liferay.counter.kernel.service.CounterLocalService
+			counterLocalService) {
+
 		this.counterLocalService = counterLocalService;
 	}
 
@@ -637,7 +721,9 @@ public abstract class AssetTagLocalServiceBaseImpl extends BaseLocalServiceImpl
 	 *
 	 * @return the class name local service
 	 */
-	public com.liferay.portal.kernel.service.ClassNameLocalService getClassNameLocalService() {
+	public com.liferay.portal.kernel.service.ClassNameLocalService
+		getClassNameLocalService() {
+
 		return classNameLocalService;
 	}
 
@@ -647,7 +733,9 @@ public abstract class AssetTagLocalServiceBaseImpl extends BaseLocalServiceImpl
 	 * @param classNameLocalService the class name local service
 	 */
 	public void setClassNameLocalService(
-		com.liferay.portal.kernel.service.ClassNameLocalService classNameLocalService) {
+		com.liferay.portal.kernel.service.ClassNameLocalService
+			classNameLocalService) {
+
 		this.classNameLocalService = classNameLocalService;
 	}
 
@@ -667,6 +755,7 @@ public abstract class AssetTagLocalServiceBaseImpl extends BaseLocalServiceImpl
 	 */
 	public void setClassNamePersistence(
 		ClassNamePersistence classNamePersistence) {
+
 		this.classNamePersistence = classNamePersistence;
 	}
 
@@ -675,7 +764,9 @@ public abstract class AssetTagLocalServiceBaseImpl extends BaseLocalServiceImpl
 	 *
 	 * @return the group local service
 	 */
-	public com.liferay.portal.kernel.service.GroupLocalService getGroupLocalService() {
+	public com.liferay.portal.kernel.service.GroupLocalService
+		getGroupLocalService() {
+
 		return groupLocalService;
 	}
 
@@ -686,6 +777,7 @@ public abstract class AssetTagLocalServiceBaseImpl extends BaseLocalServiceImpl
 	 */
 	public void setGroupLocalService(
 		com.liferay.portal.kernel.service.GroupLocalService groupLocalService) {
+
 		this.groupLocalService = groupLocalService;
 	}
 
@@ -726,30 +818,13 @@ public abstract class AssetTagLocalServiceBaseImpl extends BaseLocalServiceImpl
 	}
 
 	/**
-	 * Returns the resource local service.
-	 *
-	 * @return the resource local service
-	 */
-	public com.liferay.portal.kernel.service.ResourceLocalService getResourceLocalService() {
-		return resourceLocalService;
-	}
-
-	/**
-	 * Sets the resource local service.
-	 *
-	 * @param resourceLocalService the resource local service
-	 */
-	public void setResourceLocalService(
-		com.liferay.portal.kernel.service.ResourceLocalService resourceLocalService) {
-		this.resourceLocalService = resourceLocalService;
-	}
-
-	/**
 	 * Returns the user local service.
 	 *
 	 * @return the user local service
 	 */
-	public com.liferay.portal.kernel.service.UserLocalService getUserLocalService() {
+	public com.liferay.portal.kernel.service.UserLocalService
+		getUserLocalService() {
+
 		return userLocalService;
 	}
 
@@ -760,6 +835,7 @@ public abstract class AssetTagLocalServiceBaseImpl extends BaseLocalServiceImpl
 	 */
 	public void setUserLocalService(
 		com.liferay.portal.kernel.service.UserLocalService userLocalService) {
+
 		this.userLocalService = userLocalService;
 	}
 
@@ -804,7 +880,9 @@ public abstract class AssetTagLocalServiceBaseImpl extends BaseLocalServiceImpl
 	 *
 	 * @return the asset entry local service
 	 */
-	public com.liferay.asset.kernel.service.AssetEntryLocalService getAssetEntryLocalService() {
+	public com.liferay.asset.kernel.service.AssetEntryLocalService
+		getAssetEntryLocalService() {
+
 		return assetEntryLocalService;
 	}
 
@@ -814,7 +892,9 @@ public abstract class AssetTagLocalServiceBaseImpl extends BaseLocalServiceImpl
 	 * @param assetEntryLocalService the asset entry local service
 	 */
 	public void setAssetEntryLocalService(
-		com.liferay.asset.kernel.service.AssetEntryLocalService assetEntryLocalService) {
+		com.liferay.asset.kernel.service.AssetEntryLocalService
+			assetEntryLocalService) {
+
 		this.assetEntryLocalService = assetEntryLocalService;
 	}
 
@@ -834,6 +914,7 @@ public abstract class AssetTagLocalServiceBaseImpl extends BaseLocalServiceImpl
 	 */
 	public void setAssetEntryPersistence(
 		AssetEntryPersistence assetEntryPersistence) {
+
 		this.assetEntryPersistence = assetEntryPersistence;
 	}
 
@@ -855,47 +936,9 @@ public abstract class AssetTagLocalServiceBaseImpl extends BaseLocalServiceImpl
 		this.assetEntryFinder = assetEntryFinder;
 	}
 
-	/**
-	 * Returns the asset tag stats local service.
-	 *
-	 * @return the asset tag stats local service
-	 */
-	public com.liferay.asset.kernel.service.AssetTagStatsLocalService getAssetTagStatsLocalService() {
-		return assetTagStatsLocalService;
-	}
-
-	/**
-	 * Sets the asset tag stats local service.
-	 *
-	 * @param assetTagStatsLocalService the asset tag stats local service
-	 */
-	public void setAssetTagStatsLocalService(
-		com.liferay.asset.kernel.service.AssetTagStatsLocalService assetTagStatsLocalService) {
-		this.assetTagStatsLocalService = assetTagStatsLocalService;
-	}
-
-	/**
-	 * Returns the asset tag stats persistence.
-	 *
-	 * @return the asset tag stats persistence
-	 */
-	public AssetTagStatsPersistence getAssetTagStatsPersistence() {
-		return assetTagStatsPersistence;
-	}
-
-	/**
-	 * Sets the asset tag stats persistence.
-	 *
-	 * @param assetTagStatsPersistence the asset tag stats persistence
-	 */
-	public void setAssetTagStatsPersistence(
-		AssetTagStatsPersistence assetTagStatsPersistence) {
-		this.assetTagStatsPersistence = assetTagStatsPersistence;
-	}
-
 	public void afterPropertiesSet() {
-		persistedModelLocalServiceRegistry.register("com.liferay.asset.kernel.model.AssetTag",
-			assetTagLocalService);
+		persistedModelLocalServiceRegistry.register(
+			"com.liferay.asset.kernel.model.AssetTag", assetTagLocalService);
 	}
 
 	public void destroy() {
@@ -913,8 +956,22 @@ public abstract class AssetTagLocalServiceBaseImpl extends BaseLocalServiceImpl
 		return AssetTagLocalService.class.getName();
 	}
 
-	protected Class<?> getModelClass() {
+	@Override
+	public CTPersistence<AssetTag> getCTPersistence() {
+		return assetTagPersistence;
+	}
+
+	@Override
+	public Class<AssetTag> getModelClass() {
 		return AssetTag.class;
+	}
+
+	@Override
+	public <R, E extends Throwable> R updateWithUnsafeFunction(
+			UnsafeFunction<CTPersistence<AssetTag>, R, E> updateUnsafeFunction)
+		throws E {
+
+		return updateUnsafeFunction.apply(assetTagPersistence);
 	}
 
 	protected String getModelClassName() {
@@ -935,52 +992,78 @@ public abstract class AssetTagLocalServiceBaseImpl extends BaseLocalServiceImpl
 			sql = db.buildSQL(sql);
 			sql = PortalUtil.transformSQL(sql);
 
-			SqlUpdate sqlUpdate = SqlUpdateFactoryUtil.getSqlUpdate(dataSource,
-					sql);
+			SqlUpdate sqlUpdate = SqlUpdateFactoryUtil.getSqlUpdate(
+				dataSource, sql);
 
 			sqlUpdate.update();
 		}
-		catch (Exception e) {
-			throw new SystemException(e);
+		catch (Exception exception) {
+			throw new SystemException(exception);
 		}
 	}
 
 	@BeanReference(type = AssetTagLocalService.class)
 	protected AssetTagLocalService assetTagLocalService;
+
 	@BeanReference(type = AssetTagPersistence.class)
 	protected AssetTagPersistence assetTagPersistence;
+
 	@BeanReference(type = AssetTagFinder.class)
 	protected AssetTagFinder assetTagFinder;
-	@BeanReference(type = com.liferay.counter.kernel.service.CounterLocalService.class)
-	protected com.liferay.counter.kernel.service.CounterLocalService counterLocalService;
-	@BeanReference(type = com.liferay.portal.kernel.service.ClassNameLocalService.class)
-	protected com.liferay.portal.kernel.service.ClassNameLocalService classNameLocalService;
+
+	@BeanReference(
+		type = com.liferay.counter.kernel.service.CounterLocalService.class
+	)
+	protected com.liferay.counter.kernel.service.CounterLocalService
+		counterLocalService;
+
+	@BeanReference(
+		type = com.liferay.portal.kernel.service.ClassNameLocalService.class
+	)
+	protected com.liferay.portal.kernel.service.ClassNameLocalService
+		classNameLocalService;
+
 	@BeanReference(type = ClassNamePersistence.class)
 	protected ClassNamePersistence classNamePersistence;
-	@BeanReference(type = com.liferay.portal.kernel.service.GroupLocalService.class)
-	protected com.liferay.portal.kernel.service.GroupLocalService groupLocalService;
+
+	@BeanReference(
+		type = com.liferay.portal.kernel.service.GroupLocalService.class
+	)
+	protected com.liferay.portal.kernel.service.GroupLocalService
+		groupLocalService;
+
 	@BeanReference(type = GroupPersistence.class)
 	protected GroupPersistence groupPersistence;
+
 	@BeanReference(type = GroupFinder.class)
 	protected GroupFinder groupFinder;
-	@BeanReference(type = com.liferay.portal.kernel.service.ResourceLocalService.class)
-	protected com.liferay.portal.kernel.service.ResourceLocalService resourceLocalService;
-	@BeanReference(type = com.liferay.portal.kernel.service.UserLocalService.class)
-	protected com.liferay.portal.kernel.service.UserLocalService userLocalService;
+
+	@BeanReference(
+		type = com.liferay.portal.kernel.service.UserLocalService.class
+	)
+	protected com.liferay.portal.kernel.service.UserLocalService
+		userLocalService;
+
 	@BeanReference(type = UserPersistence.class)
 	protected UserPersistence userPersistence;
+
 	@BeanReference(type = UserFinder.class)
 	protected UserFinder userFinder;
-	@BeanReference(type = com.liferay.asset.kernel.service.AssetEntryLocalService.class)
-	protected com.liferay.asset.kernel.service.AssetEntryLocalService assetEntryLocalService;
+
+	@BeanReference(
+		type = com.liferay.asset.kernel.service.AssetEntryLocalService.class
+	)
+	protected com.liferay.asset.kernel.service.AssetEntryLocalService
+		assetEntryLocalService;
+
 	@BeanReference(type = AssetEntryPersistence.class)
 	protected AssetEntryPersistence assetEntryPersistence;
+
 	@BeanReference(type = AssetEntryFinder.class)
 	protected AssetEntryFinder assetEntryFinder;
-	@BeanReference(type = com.liferay.asset.kernel.service.AssetTagStatsLocalService.class)
-	protected com.liferay.asset.kernel.service.AssetTagStatsLocalService assetTagStatsLocalService;
-	@BeanReference(type = AssetTagStatsPersistence.class)
-	protected AssetTagStatsPersistence assetTagStatsPersistence;
+
 	@BeanReference(type = PersistedModelLocalServiceRegistry.class)
-	protected PersistedModelLocalServiceRegistry persistedModelLocalServiceRegistry;
+	protected PersistedModelLocalServiceRegistry
+		persistedModelLocalServiceRegistry;
+
 }

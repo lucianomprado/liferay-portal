@@ -1,36 +1,37 @@
-<definition component-name="portal-test-plugins">
-	<property name="portal.release" value="true" />
-	<property name="portal.upstream" value="true" />
-	<property name="testray.main.component.name" value="Security" />
-	<property name="portlet.plugins.includes" value="test-runtime-action-portlet,test-runtime-parent-portlet" />
+@component-name = "portal-test-plugins"
+definition {
 
-	<set-up>
-		<execute macro="User#firstLoginPG" />
+	property portal.release = "true";
+	property portal.upstream = "true";
+	property portlet.plugins.includes = "test-runtime-action-portlet,test-runtime-parent-portlet";
+	property testray.main.component.name = "Test Plugins";
 
-		<execute macro="Page#add">
-			<var name="pageName" value="Test Runtime Page" />
-		</execute>
-	</set-up>
+	setUp {
+		User.firstLoginPG();
 
-	<tear-down>
-		<execute macro="Page#tearDownPG" />
-	</tear-down>
+		ProductMenu.gotoPortlet(
+			category = "Site Builder",
+			portlet = "Pages");
 
-	<command name="Smoke" priority="5">
-		<description message="This is a test case for LPS-56769." />
+		SitePages.addPublicPage(pageName = "Test Runtime Page");
+	}
 
-		<property name="portal.acceptance" value="true" />
+	tearDown {
+		Page.tearDownCP();
+	}
 
-		<execute macro="Navigator#gotoPage">
-			<var name="pageName" value="Test Runtime Page" />
-		</execute>
+	@description = "This is a test case for LPS-56769."
+	@priority = "5"
+	test Smoke {
+		property portal.acceptance = "true";
 
-		<execute macro="Portlet#addPG">
-			<var name="portletName" value="Test Runtime Parent" />
-		</execute>
+		Navigator.gotoPage(pageName = "Test Runtime Page");
 
-		<execute function="Click" locator1="Button#EXECUTE" />
+		Portlet.addPG(portletName = "Test Runtime Parent");
 
-		<execute macro="Alert#viewSuccessMessage" />
-	</command>
-</definition>
+		Click(locator1 = "Button#EXECUTE");
+
+		Alert.viewSuccessMessage();
+	}
+
+}

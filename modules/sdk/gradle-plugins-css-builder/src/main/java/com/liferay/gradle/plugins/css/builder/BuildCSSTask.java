@@ -16,6 +16,7 @@ package com.liferay.gradle.plugins.css.builder;
 
 import com.liferay.css.builder.CSSBuilderArgs;
 import com.liferay.gradle.util.FileUtil;
+import com.liferay.gradle.util.GUtil;
 import com.liferay.gradle.util.GradleUtil;
 import com.liferay.gradle.util.Validator;
 
@@ -35,8 +36,6 @@ import java.util.Set;
 import org.gradle.api.Project;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.tasks.Input;
-import org.gradle.api.tasks.InputDirectory;
-import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.JavaExec;
 import org.gradle.api.tasks.Optional;
@@ -44,10 +43,10 @@ import org.gradle.api.tasks.OutputDirectories;
 import org.gradle.api.tasks.OutputFiles;
 import org.gradle.api.tasks.SkipWhenEmpty;
 import org.gradle.util.CollectionUtils;
-import org.gradle.util.GUtil;
 
 /**
  * @author Andrea Di Giorgi
+ * @author David Truong
  */
 public class BuildCSSTask extends JavaExec {
 
@@ -55,6 +54,7 @@ public class BuildCSSTask extends JavaExec {
 		setDefaultCharacterEncoding(StandardCharsets.UTF_8.toString());
 		setDirNames("/");
 		setMain("com.liferay.css.builder.CSSBuilder");
+		systemProperty("sass.compiler.jni.clean.temp.dir", true);
 	}
 
 	public BuildCSSTask dirNames(Iterable<Object> dirNames) {
@@ -67,11 +67,25 @@ public class BuildCSSTask extends JavaExec {
 		return dirNames(Arrays.asList(dirNames));
 	}
 
+	public BuildCSSTask excludes(Iterable<Object> excludes) {
+		GUtil.addToCollection(_excludes, excludes);
+
+		return this;
+	}
+
+	public BuildCSSTask excludes(Object... excludes) {
+		return excludes(Arrays.asList(excludes));
+	}
+
 	@Override
 	public void exec() {
 		setArgs(_getCompleteArgs());
 
 		super.exec();
+	}
+
+	public File getBaseDir() {
+		return GradleUtil.toFile(getProject(), _baseDir);
 	}
 
 	@InputFiles
@@ -80,7 +94,7 @@ public class BuildCSSTask extends JavaExec {
 		Project project = getProject();
 
 		List<String> dirNames = getDirNames();
-		File docrootDir = getDocrootDir();
+		File docrootDir = getBaseDir();
 
 		if (dirNames.isEmpty() || (docrootDir == null)) {
 			return project.files();
@@ -119,8 +133,17 @@ public class BuildCSSTask extends JavaExec {
 		return GradleUtil.toStringList(_dirNames);
 	}
 
-	public File getDocrootDir() {
-		return GradleUtil.toFile(getProject(), _docrootDir);
+	@Input
+	public List<String> getExcludes() {
+		return GradleUtil.toStringList(_excludes);
+	}
+
+	@InputFiles
+	@Optional
+	public FileCollection getImports() {
+		Project project = getProject();
+
+		return project.files(_imports);
 	}
 
 	@Input
@@ -145,29 +168,6 @@ public class BuildCSSTask extends JavaExec {
 		}
 
 		return project.files(outputDirs);
-	}
-
-	@InputDirectory
-	@Optional
-	public File getPortalCommonDir() {
-		return GradleUtil.toFile(getProject(), _portalCommonDir);
-	}
-
-	@InputFile
-	@Optional
-	public File getPortalCommonFile() {
-		return GradleUtil.toFile(getProject(), _portalCommonFile);
-	}
-
-	@Input
-	public File getPortalCommonPath() {
-		File portalCommonPath = getPortalCommonDir();
-
-		if (portalCommonPath == null) {
-			portalCommonPath = getPortalCommonFile();
-		}
-
-		return portalCommonPath;
 	}
 
 	@Input
@@ -205,6 +205,21 @@ public class BuildCSSTask extends JavaExec {
 		return project.files(sourceMapFiles);
 	}
 
+	public BuildCSSTask imports(Iterable<Object> imports) {
+		GUtil.addToCollection(_imports, imports);
+
+		return this;
+	}
+
+	public BuildCSSTask imports(Object... imports) {
+		return imports(Arrays.asList(imports));
+	}
+
+	@Input
+	public boolean isAppendCssImportTimestamps() {
+		return _appendCssImportTimestamps;
+	}
+
 	@Input
 	public boolean isGenerateSourceMap() {
 		return _generateSourceMap;
@@ -224,6 +239,16 @@ public class BuildCSSTask extends JavaExec {
 		return rtlExcludedPathRegexps(Arrays.asList(rtlExcludedPathRegexps));
 	}
 
+	public void setAppendCssImportTimestamps(
+		boolean appendCssImportTimestamps) {
+
+		_appendCssImportTimestamps = appendCssImportTimestamps;
+	}
+
+	public void setBaseDir(Object baseDir) {
+		_baseDir = baseDir;
+	}
+
 	public void setDirNames(Iterable<Object> dirNames) {
 		_dirNames.clear();
 
@@ -234,24 +259,32 @@ public class BuildCSSTask extends JavaExec {
 		setDirNames(Arrays.asList(dirNames));
 	}
 
-	public void setDocrootDir(Object docrootDir) {
-		_docrootDir = docrootDir;
+	public void setExcludes(Iterable<Object> excludes) {
+		_excludes.clear();
+
+		excludes(excludes);
+	}
+
+	public void setExcludes(Object... excludes) {
+		setExcludes(Arrays.asList(excludes));
 	}
 
 	public void setGenerateSourceMap(boolean generateSourceMap) {
 		_generateSourceMap = generateSourceMap;
 	}
 
+	public void setImports(Iterable<Object> imports) {
+		_imports.clear();
+
+		imports(imports);
+	}
+
+	public void setImports(Object... imports) {
+		setImports(Arrays.asList(imports));
+	}
+
 	public void setOutputDirName(Object outputDirName) {
 		_outputDirName = outputDirName;
-	}
-
-	public void setPortalCommonDir(Object portalCommonDir) {
-		_portalCommonDir = portalCommonDir;
-	}
-
-	public void setPortalCommonFile(Object portalCommonFile) {
-		_portalCommonFile = portalCommonFile;
 	}
 
 	public void setPrecision(Object precision) {
@@ -291,46 +324,60 @@ public class BuildCSSTask extends JavaExec {
 	private List<String> _getCompleteArgs() {
 		List<String> args = new ArrayList<>(getArgs());
 
-		List<String> dirNames = getDirNames();
+		args.add(
+			"--append-css-import-timestamps=" + isAppendCssImportTimestamps());
 
-		if (dirNames.size() == 1) {
-			args.add("sass.dir=/" + _removeLeadingSlash(dirNames.get(0)));
-		}
-		else {
-			for (int i = 0; i < dirNames.size(); i++) {
-				String dirName = dirNames.get(i);
+		String baseDir = FileUtil.getAbsolutePath(getBaseDir());
 
-				args.add("sass.dir." + i + "=/" + _removeLeadingSlash(dirName));
-			}
-		}
-
-		String docrootDirName = FileUtil.getAbsolutePath(getDocrootDir());
-
-		args.add("sass.docroot.dir=" + _removeTrailingSlash(docrootDirName));
-
-		args.add("sass.generate.source.map=" + isGenerateSourceMap());
-
-		args.add("sass.output.dir=" + _addTrailingSlash(getOutputDirName()));
-
-		String portalCommonPath = FileUtil.getAbsolutePath(
-			getPortalCommonPath());
-
-		args.add("sass.portal.common.path=" + portalCommonPath);
-
-		args.add("sass.precision=" + getPrecision());
-
-		String rtlExcludedPathRegexps = CollectionUtils.join(
-			",", getRtlExcludedPathRegexps());
-
-		args.add("sass.rtl.excluded.path.regexps=" + rtlExcludedPathRegexps);
+		args.add("--base-dir=" + _removeTrailingSlash(baseDir));
 
 		String sassCompilerClassName = getSassCompilerClassName();
 
 		if (Validator.isNotNull(sassCompilerClassName)) {
-			args.add("sass.compiler.class.name=" + sassCompilerClassName);
+			args.add("--compiler=" + sassCompilerClassName);
 		}
 
+		args.add("--dir-names=" + _getDirNamesArg());
+
+		String excludes = CollectionUtils.join(",", getExcludes());
+
+		args.add("--excludes=" + excludes);
+
+		args.add("--generate-source-map=" + isGenerateSourceMap());
+
+		FileCollection imports = getImports();
+
+		args.add("--import-paths=" + imports.getAsPath());
+
+		args.add("--output-dir=" + _addTrailingSlash(getOutputDirName()));
+
+		args.add("--precision=" + getPrecision());
+
+		String rtlExcludedPathRegexps = CollectionUtils.join(
+			",", getRtlExcludedPathRegexps());
+
+		args.add("--rtl-excluded-path-regexps=" + rtlExcludedPathRegexps);
+
 		return args;
+	}
+
+	private String _getDirNamesArg() {
+		StringBuilder sb = new StringBuilder();
+
+		boolean first = true;
+
+		for (String dirName : getDirNames()) {
+			if (!first) {
+				sb.append(',');
+			}
+
+			first = false;
+
+			sb.append('/');
+			sb.append(_removeLeadingSlash(dirName));
+		}
+
+		return sb.toString();
 	}
 
 	private String _removeLeadingSlash(String path) {
@@ -361,12 +408,15 @@ public class BuildCSSTask extends JavaExec {
 		return path;
 	}
 
+	private boolean _appendCssImportTimestamps =
+		CSSBuilderArgs.APPEND_CSS_IMPORT_TIMESTAMPS;
+	private Object _baseDir;
 	private final Set<Object> _dirNames = new LinkedHashSet<>();
-	private Object _docrootDir;
+	private final Set<Object> _excludes = new LinkedHashSet<>(
+		Arrays.asList(CSSBuilderArgs.EXCLUDES));
 	private boolean _generateSourceMap;
+	private final List<Object> _imports = new ArrayList<>();
 	private Object _outputDirName = CSSBuilderArgs.OUTPUT_DIR_NAME;
-	private Object _portalCommonDir;
-	private Object _portalCommonFile;
 	private Object _precision = CSSBuilderArgs.PRECISION;
 	private final Set<Object> _rtlExcludedPathRegexps = new LinkedHashSet<>();
 	private Object _sassCompilerClassName;

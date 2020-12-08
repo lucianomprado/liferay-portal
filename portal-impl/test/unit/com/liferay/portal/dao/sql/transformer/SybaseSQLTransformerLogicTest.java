@@ -14,7 +14,7 @@
 
 package com.liferay.portal.dao.sql.transformer;
 
-import com.liferay.portal.dao.db.TestDB;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.dao.db.DBType;
 
 import org.junit.Assert;
@@ -28,6 +28,19 @@ public class SybaseSQLTransformerLogicTest
 
 	public SybaseSQLTransformerLogicTest() {
 		super(new TestSybaseDB(1, 0));
+	}
+
+	@Override
+	public String getDropTableIfExistsTextTransformedSQL() {
+		StringBundler sb = new StringBundler(5);
+
+		sb.append("IF EXISTS(select 1 from sysobjects where name = 'Foo' and ");
+		sb.append("type = 'U')\n");
+		sb.append("BEGIN\n");
+		sb.append("DROP TABLE Foo\n");
+		sb.append("END");
+
+		return sb.toString();
 	}
 
 	@Test

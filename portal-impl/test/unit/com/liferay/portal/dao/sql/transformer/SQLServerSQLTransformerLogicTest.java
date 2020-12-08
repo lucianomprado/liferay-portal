@@ -14,7 +14,6 @@
 
 package com.liferay.portal.dao.sql.transformer;
 
-import com.liferay.portal.dao.db.TestDB;
 import com.liferay.portal.kernel.dao.db.DBType;
 
 import org.junit.Assert;
@@ -28,6 +27,11 @@ public class SQLServerSQLTransformerLogicTest
 
 	public SQLServerSQLTransformerLogicTest() {
 		super(new TestSQLServerDB(1, 0));
+	}
+
+	@Override
+	public String getDropTableIfExistsTextTransformedSQL() {
+		return "IF OBJECT_ID('Foo', 'U') IS NOT NULL DROP TABLE Foo";
 	}
 
 	@Test

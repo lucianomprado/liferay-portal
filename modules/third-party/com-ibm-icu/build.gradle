@@ -1,3 +1,5 @@
+apply plugin: "nebula.optional-base"
+
 configurations {
 	jarjar
 }
@@ -9,7 +11,7 @@ dependencies {
 }
 
 jar {
-	deleteAllActions()
+	setActions([])
 
 	doLast {
 		Set<File> jarFiles = configurations.compile.files {

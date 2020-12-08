@@ -45,10 +45,18 @@
 			_entry=ddlRecordModel
 		/>
 
-		${dataFactory.getCSVWriter("dynamicDataList").write(ddlRecordModel.groupId + "," + layoutName + "," + portletId + "," + ddlRecordSetModel.recordSetId + "," + ddlRecordModel.recordId + "\n")}
+		${csvFileWriter.write("dynamicDataList", ddlRecordModel.groupId + "," + layoutName + "," + portletId + "," + ddlRecordSetModel.recordSetId + "," + ddlRecordModel.recordId + "\n")}
 	</#list>
 
-	${dataFactory.toInsertSQL(dataFactory.newPortletPreferencesModel(layoutModel.plid, portletId, ddlRecordSetModel))}
+	<#assign ddlPortletPreferencesModel = dataFactory.newPortletPreferencesModel(layoutModel.plid, portletId) />
+
+	${dataFactory.toInsertSQL(ddlPortletPreferencesModel)}
+
+	<#assign ddlPortletPreferenceValueModels = dataFactory.newDDLPortletPreferenceValueModels(ddlPortletPreferencesModel, ddlRecordSetModel) />
+
+	<#list ddlPortletPreferenceValueModels as ddlPortletPreferenceValueModel>
+		${dataFactory.toInsertSQL(ddlPortletPreferenceValueModel)}
+	</#list>
 
 	<#assign portletPreferencesModels = dataFactory.newDDLPortletPreferencesModels(layoutModel.plid) />
 

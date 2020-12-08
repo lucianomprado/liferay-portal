@@ -17,6 +17,7 @@ package com.liferay.portal.kernel.workflow;
 import com.liferay.portal.kernel.messaging.proxy.MessagingProxy;
 import com.liferay.portal.kernel.messaging.proxy.ProxyMode;
 import com.liferay.portal.kernel.util.OrderByComparator;
+import com.liferay.portal.kernel.workflow.search.WorkflowModelSearchResult;
 
 import java.io.Serializable;
 
@@ -42,6 +43,13 @@ public interface WorkflowInstanceManager {
 	public WorkflowInstance getWorkflowInstance(
 			long companyId, long workflowInstanceId)
 		throws WorkflowException;
+
+	public default WorkflowInstance getWorkflowInstance(
+			long companyId, long userId, long workflowInstanceId)
+		throws WorkflowException {
+
+		throw new UnsupportedOperationException();
+	}
 
 	public int getWorkflowInstanceCount(
 			long companyId, Long userId, String assetClassName,
@@ -76,16 +84,57 @@ public interface WorkflowInstanceManager {
 			int end, OrderByComparator<WorkflowInstance> orderByComparator)
 		throws WorkflowException;
 
+	/**
+	 * @deprecated As of Mueller (7.2.x), replaced by {@link #search(long, Long,
+	 *             String, String, String, String, String, Boolean, int, int,
+	 *             OrderByComparator)}
+	 */
+	@Deprecated
 	public List<WorkflowInstance> search(
 			long companyId, Long userId, String assetType, String nodeName,
 			String kaleoDefinitionName, Boolean completed, int start, int end,
 			OrderByComparator<WorkflowInstance> orderByComparator)
 		throws WorkflowException;
 
+	public default List<WorkflowInstance> search(
+			long companyId, Long userId, String assetClassName,
+			String assetTitle, String assetDescription, String nodeName,
+			String kaleoDefinitionName, Boolean completed, int start, int end,
+			OrderByComparator<WorkflowInstance> orderByComparator)
+		throws WorkflowException {
+
+		throw new UnsupportedOperationException();
+	}
+
+	/**
+	 * @deprecated As of Mueller (7.2.x), replaced by {@link #searchCount(long,
+	 *             Long, String, String, String, String, String, Boolean)}
+	 */
+	@Deprecated
 	public int searchCount(
 			long companyId, Long userId, String assetType, String nodeName,
 			String kaleoDefinitionName, Boolean completed)
 		throws WorkflowException;
+
+	public default int searchCount(
+			long companyId, Long userId, String assetClassName,
+			String assetTitle, String assetDescription, String nodeName,
+			String kaleoDefinitionName, Boolean completed)
+		throws WorkflowException {
+
+		throw new UnsupportedOperationException();
+	}
+
+	public default WorkflowModelSearchResult<WorkflowInstance>
+			searchWorkflowInstances(
+				long companyId, Long userId, String assetClassName,
+				String assetTitle, String assetDescription, String nodeName,
+				String kaleoDefinitionName, Boolean completed, int start,
+				int end, OrderByComparator<WorkflowInstance> orderByComparator)
+		throws WorkflowException {
+
+		throw new UnsupportedOperationException();
+	}
 
 	public WorkflowInstance signalWorkflowInstance(
 			long companyId, long userId, long workflowInstanceId,

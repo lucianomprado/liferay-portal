@@ -14,6 +14,7 @@
 
 package com.liferay.portal.service.impl;
 
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -59,6 +60,18 @@ public class LayoutSetBranchServiceImpl extends LayoutSetBranchServiceBaseImpl {
 	}
 
 	@Override
+	public void deleteLayoutSetBranch(
+			long currentLayoutPlid, long layoutSetBranchId)
+		throws PortalException {
+
+		LayoutSetBranchPermissionUtil.check(
+			getPermissionChecker(), layoutSetBranchId, ActionKeys.DELETE);
+
+		layoutSetBranchLocalService.deleteLayoutSetBranch(
+			currentLayoutPlid, layoutSetBranchId);
+	}
+
+	@Override
 	public List<LayoutSetBranch> getLayoutSetBranches(
 		long groupId, boolean privateLayout) {
 
@@ -70,13 +83,14 @@ public class LayoutSetBranchServiceImpl extends LayoutSetBranchServiceBaseImpl {
 					groupId, privateLayout);
 			}
 		}
-		catch (PortalException pe) {
+		catch (PortalException portalException) {
 			if (_log.isDebugEnabled()) {
 				_log.debug(
-					"Unable to get layout set branches for group " + groupId +
-						" with " + (privateLayout ? "private" : "public") +
-							" layouts",
-					pe);
+					StringBundler.concat(
+						"Unable to get layout set branches for group ", groupId,
+						" with ", privateLayout ? "private" : "public",
+						" layouts"),
+					portalException);
 			}
 		}
 

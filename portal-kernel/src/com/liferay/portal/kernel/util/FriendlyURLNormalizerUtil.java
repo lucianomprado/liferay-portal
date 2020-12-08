@@ -14,39 +14,22 @@
 
 package com.liferay.portal.kernel.util;
 
-import java.util.regex.Pattern;
-
 /**
  * @author Julio Camarero
  * @author Samuel Kong
  */
 public class FriendlyURLNormalizerUtil {
 
-	public static FriendlyURLNormalizer getFriendlyURLNormalizer() {
-		return _friendlyURLNormalizer;
-	}
-
 	public static String normalize(String friendlyURL) {
-		return getFriendlyURLNormalizer().normalize(friendlyURL);
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	public static String normalize(
-		String friendlyURL, Pattern friendlyURLPattern) {
-
-		return getFriendlyURLNormalizer().normalize(
-			friendlyURL, friendlyURLPattern);
+		return _friendlyURLNormalizer.normalize(friendlyURL);
 	}
 
 	public static String normalizeWithEncoding(String friendlyURL) {
-		return getFriendlyURLNormalizer().normalizeWithEncoding(friendlyURL);
+		return _friendlyURLNormalizer.normalizeWithEncoding(friendlyURL);
 	}
 
 	public static String normalizeWithPeriodsAndSlashes(String friendlyURL) {
-		return getFriendlyURLNormalizer().normalizeWithPeriodsAndSlashes(
+		return _friendlyURLNormalizer.normalizeWithPeriodsAndSlashes(
 			friendlyURL);
 	}
 

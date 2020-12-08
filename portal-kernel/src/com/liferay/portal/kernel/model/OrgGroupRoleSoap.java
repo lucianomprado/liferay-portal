@@ -14,8 +14,6 @@
 
 package com.liferay.portal.kernel.model;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.portal.kernel.service.persistence.OrgGroupRolePK;
 
 import java.io.Serializable;
@@ -27,10 +25,12 @@ import java.util.List;
  * This class is used by SOAP remote services.
  *
  * @author Brian Wing Shun Chan
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
-@ProviderType
+@Deprecated
 public class OrgGroupRoleSoap implements Serializable {
+
 	public static OrgGroupRoleSoap toSoapModel(OrgGroupRole model) {
 		OrgGroupRoleSoap soapModel = new OrgGroupRoleSoap();
 
@@ -71,7 +71,8 @@ public class OrgGroupRoleSoap implements Serializable {
 	}
 
 	public static OrgGroupRoleSoap[] toSoapModels(List<OrgGroupRole> models) {
-		List<OrgGroupRoleSoap> soapModels = new ArrayList<OrgGroupRoleSoap>(models.size());
+		List<OrgGroupRoleSoap> soapModels = new ArrayList<OrgGroupRoleSoap>(
+			models.size());
 
 		for (OrgGroupRole model : models) {
 			soapModels.add(toSoapModel(model));
@@ -138,4 +139,5 @@ public class OrgGroupRoleSoap implements Serializable {
 	private long _groupId;
 	private long _roleId;
 	private long _companyId;
+
 }

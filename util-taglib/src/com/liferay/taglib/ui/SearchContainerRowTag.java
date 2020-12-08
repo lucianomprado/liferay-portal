@@ -14,6 +14,7 @@
 
 package com.liferay.taglib.ui;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.bean.BeanPropertiesUtil;
 import com.liferay.portal.kernel.dao.search.ResultRow;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
@@ -21,8 +22,6 @@ import com.liferay.portal.kernel.model.BaseModel;
 import com.liferay.portal.kernel.repository.model.RepositoryModel;
 import com.liferay.portal.kernel.util.FriendlyURLNormalizerUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.ServerDetector;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.taglib.util.ParamAndPropertyAncestorTagImpl;
 
@@ -58,13 +57,13 @@ public class SearchContainerRowTag<R>
 			_resultRow.setRestricted(GetterUtil.getBoolean(value));
 		}
 		else {
-			Object obj = pageContext.getAttribute(value);
+			Object object = pageContext.getAttribute(value);
 
-			if (obj == null) {
-				obj = value;
+			if (object == null) {
+				object = value;
 			}
 
-			_resultRow.setParameter(name, obj);
+			_resultRow.setParameter(name, object);
 		}
 	}
 
@@ -74,6 +73,7 @@ public class SearchContainerRowTag<R>
 			!_headerNames.isEmpty()) {
 
 			_searchContainer.setHeaderNames(_headerNames);
+			_searchContainer.setHelpMessages(_helpMessages);
 			_searchContainer.setOrderableHeaders(_orderableHeaders);
 
 			_headerNamesAssigned = true;
@@ -90,9 +90,8 @@ public class SearchContainerRowTag<R>
 
 			return EVAL_BODY_AGAIN;
 		}
-		else {
-			return SKIP_BODY;
-		}
+
+		return SKIP_BODY;
 	}
 
 	@Override
@@ -103,20 +102,19 @@ public class SearchContainerRowTag<R>
 		_rowIndex = 0;
 		_resultRow = null;
 
-		if (!ServerDetector.isResin()) {
-			_bold = false;
-			_className = null;
-			_cssClass = StringPool.BLANK;
-			_escapedModel = false;
-			_indexVar = DEFAULT_INDEX_VAR;
-			_keyProperty = null;
-			_modelVar = DEFAULT_MODEL_VAR;
-			_orderableHeaders = null;
-			_rowIdProperty = null;
-			_rowVar = DEFAULT_ROW_VAR;
-			_stringKey = false;
-			_state = StringPool.BLANK;
-		}
+		_bold = false;
+		_className = null;
+		_cssClass = StringPool.BLANK;
+		_escapedModel = false;
+		_helpMessages = null;
+		_indexVar = DEFAULT_INDEX_VAR;
+		_keyProperty = null;
+		_modelVar = DEFAULT_MODEL_VAR;
+		_orderableHeaders = null;
+		_rowIdProperty = null;
+		_rowVar = DEFAULT_ROW_VAR;
+		_stringKey = false;
+		_state = StringPool.BLANK;
 
 		return EVAL_PAGE;
 	}
@@ -136,6 +134,7 @@ public class SearchContainerRowTag<R>
 		_searchContainer.setClassName(_className);
 
 		_resultRows = _searchContainer.getResultRows();
+
 		_results = _searchContainer.getResults();
 
 		if ((_results != null) && !_results.isEmpty()) {
@@ -143,9 +142,8 @@ public class SearchContainerRowTag<R>
 
 			return EVAL_BODY_INCLUDE;
 		}
-		else {
-			return SKIP_BODY;
-		}
+
+		return SKIP_BODY;
 	}
 
 	public String getClassName() {
@@ -162,6 +160,14 @@ public class SearchContainerRowTag<R>
 		}
 
 		return _headerNames;
+	}
+
+	public Map<String, String> getHelpMessages() {
+		if (_helpMessages == null) {
+			_helpMessages = new LinkedHashMap<>();
+		}
+
+		return _helpMessages;
 	}
 
 	public String getIndexVar() {
@@ -236,6 +242,10 @@ public class SearchContainerRowTag<R>
 		_headerNamesAssigned = headerNamesAssigned;
 	}
 
+	public void setHelpMessages(Map<String, String> helpMessages) {
+		_helpMessages = helpMessages;
+	}
+
 	public void setIndexVar(String indexVar) {
 		_indexVar = indexVar;
 	}
@@ -298,10 +308,10 @@ public class SearchContainerRowTag<R>
 				model, _keyProperty);
 		}
 		else {
-			Object primaryKeyObj = BeanPropertiesUtil.getObjectSilent(
+			Object primaryKeyObject = BeanPropertiesUtil.getObjectSilent(
 				model, _keyProperty);
 
-			primaryKey = String.valueOf(primaryKeyObj);
+			primaryKey = String.valueOf(primaryKeyObject);
 		}
 
 		String rowId = null;
@@ -310,16 +320,16 @@ public class SearchContainerRowTag<R>
 			rowId = String.valueOf(_rowIndex + 1);
 		}
 		else {
-			Object rowIdObj = BeanPropertiesUtil.getObjectSilent(
+			Object rowIdObject = BeanPropertiesUtil.getObjectSilent(
 				model, _rowIdProperty);
 
-			if (Validator.isNull(rowIdObj)) {
+			if (Validator.isNull(rowIdObject)) {
 				rowId = String.valueOf(_rowIndex + 1);
 			}
 			else {
 				rowId =
 					FriendlyURLNormalizerUtil.normalizeWithPeriodsAndSlashes(
-						String.valueOf(rowIdObj));
+						String.valueOf(rowIdObject));
 			}
 		}
 
@@ -337,6 +347,7 @@ public class SearchContainerRowTag<R>
 	private boolean _escapedModel;
 	private List<String> _headerNames;
 	private boolean _headerNamesAssigned;
+	private Map<String, String> _helpMessages;
 	private String _indexVar = DEFAULT_INDEX_VAR;
 	private String _keyProperty;
 	private String _modelVar = DEFAULT_MODEL_VAR;

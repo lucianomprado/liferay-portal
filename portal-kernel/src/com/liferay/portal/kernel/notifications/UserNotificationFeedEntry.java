@@ -14,8 +14,8 @@
 
 package com.liferay.portal.kernel.notifications;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.StringPool;
 
 /**
  * @author Jonathan Lee
@@ -23,9 +23,10 @@ import com.liferay.portal.kernel.util.StringPool;
 public class UserNotificationFeedEntry {
 
 	public UserNotificationFeedEntry(
-		boolean actionable, String body, String link) {
+		boolean actionable, String body, String link, boolean applicable) {
 
 		setActionable(actionable);
+		setApplicable(applicable);
 		setBody(body);
 		setLink(link);
 	}
@@ -46,12 +47,20 @@ public class UserNotificationFeedEntry {
 		return _actionable;
 	}
 
+	public boolean isApplicable() {
+		return _applicable;
+	}
+
 	public boolean isOpenDialog() {
 		return _openDialog;
 	}
 
 	public void setActionable(boolean actionable) {
 		_actionable = actionable;
+	}
+
+	public void setApplicable(boolean applicable) {
+		_applicable = applicable;
 	}
 
 	public void setBody(String body) {
@@ -71,6 +80,7 @@ public class UserNotificationFeedEntry {
 	}
 
 	private boolean _actionable;
+	private boolean _applicable = true;
 	private String _body;
 	private String _link;
 	private boolean _openDialog;

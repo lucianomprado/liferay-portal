@@ -55,7 +55,7 @@ public class NoticeableFutureConverterTest {
 
 			Assert.fail();
 		}
-		catch (CancellationException ce) {
+		catch (CancellationException cancellationException) {
 		}
 
 		try {
@@ -63,7 +63,7 @@ public class NoticeableFutureConverterTest {
 
 			Assert.fail();
 		}
-		catch (CancellationException ce) {
+		catch (CancellationException cancellationException) {
 		}
 	}
 
@@ -87,7 +87,7 @@ public class NoticeableFutureConverterTest {
 
 			Assert.fail();
 		}
-		catch (CancellationException ce) {
+		catch (CancellationException cancellationException) {
 		}
 
 		try {
@@ -95,7 +95,7 @@ public class NoticeableFutureConverterTest {
 
 			Assert.fail();
 		}
-		catch (CancellationException ce) {
+		catch (CancellationException cancellationException) {
 		}
 	}
 
@@ -114,28 +114,27 @@ public class NoticeableFutureConverterTest {
 
 			};
 
-		RecordedFutureListener<Object> recordedFutureListener =
-			new RecordedFutureListener<>();
+		TestFutureListener<Object> testFutureListener =
+			new TestFutureListener<>();
 
 		Assert.assertTrue(
-			noticeableFutureConverter.addFutureListener(
-				recordedFutureListener));
+			noticeableFutureConverter.addFutureListener(testFutureListener));
 
 		_defaultNoticeableFuture.set(new Object());
 
-		Assert.assertEquals(1, recordedFutureListener.getCount());
+		Assert.assertEquals(1, testFutureListener.getCount());
 		Assert.assertSame(
 			ReflectionTestUtil.getFieldValue(
 				noticeableFutureConverter, "_defaultNoticeableFuture"),
-			recordedFutureListener.getFuture());
+			testFutureListener.getFuture());
 
 		try {
 			noticeableFutureConverter.get();
 
 			Assert.fail();
 		}
-		catch (ExecutionException ee) {
-			Assert.assertSame(exception, ee.getCause());
+		catch (ExecutionException executionException) {
+			Assert.assertSame(exception, executionException.getCause());
 		}
 
 		try {
@@ -143,8 +142,8 @@ public class NoticeableFutureConverterTest {
 
 			Assert.fail();
 		}
-		catch (ExecutionException ee) {
-			Assert.assertSame(exception, ee.getCause());
+		catch (ExecutionException executionException) {
+			Assert.assertSame(exception, executionException.getCause());
 		}
 	}
 
@@ -167,30 +166,29 @@ public class NoticeableFutureConverterTest {
 		NoticeableFuture<Object> noticeableFutureConverter =
 			new NopNoticeableFutureConverter(_defaultNoticeableFuture);
 
-		RecordedFutureListener<Object> recordedFutureListener =
-			new RecordedFutureListener<>();
+		TestFutureListener<Object> testFutureListener =
+			new TestFutureListener<>();
 
 		Assert.assertTrue(
-			noticeableFutureConverter.addFutureListener(
-				recordedFutureListener));
+			noticeableFutureConverter.addFutureListener(testFutureListener));
 
 		Exception exception = new Exception();
 
 		_defaultNoticeableFuture.setException(exception);
 
-		Assert.assertEquals(1, recordedFutureListener.getCount());
+		Assert.assertEquals(1, testFutureListener.getCount());
 		Assert.assertSame(
 			ReflectionTestUtil.getFieldValue(
 				noticeableFutureConverter, "_defaultNoticeableFuture"),
-			recordedFutureListener.getFuture());
+			testFutureListener.getFuture());
 
 		try {
 			noticeableFutureConverter.get();
 
 			Assert.fail();
 		}
-		catch (ExecutionException ee) {
-			Assert.assertSame(exception, ee.getCause());
+		catch (ExecutionException executionException) {
+			Assert.assertSame(exception, executionException.getCause());
 		}
 
 		try {
@@ -198,8 +196,8 @@ public class NoticeableFutureConverterTest {
 
 			Assert.fail();
 		}
-		catch (ExecutionException ee) {
-			Assert.assertSame(exception, ee.getCause());
+		catch (ExecutionException executionException) {
+			Assert.assertSame(exception, executionException.getCause());
 		}
 	}
 
@@ -208,21 +206,17 @@ public class NoticeableFutureConverterTest {
 		NoticeableFuture<Object> noticeableFutureConverter =
 			new NopNoticeableFutureConverter(_defaultNoticeableFuture);
 
-		RecordedFutureListener<Object> recordedFutureListener =
-			new RecordedFutureListener<>();
+		TestFutureListener<Object> testFutureListener =
+			new TestFutureListener<>();
 
 		Assert.assertTrue(
-			noticeableFutureConverter.addFutureListener(
-				recordedFutureListener));
+			noticeableFutureConverter.addFutureListener(testFutureListener));
 		Assert.assertFalse(
-			noticeableFutureConverter.addFutureListener(
-				recordedFutureListener));
+			noticeableFutureConverter.addFutureListener(testFutureListener));
 		Assert.assertTrue(
-			noticeableFutureConverter.removeFutureListener(
-				recordedFutureListener));
+			noticeableFutureConverter.removeFutureListener(testFutureListener));
 		Assert.assertFalse(
-			noticeableFutureConverter.removeFutureListener(
-				recordedFutureListener));
+			noticeableFutureConverter.removeFutureListener(testFutureListener));
 	}
 
 	@Test(timeout = 10000)
@@ -239,7 +233,7 @@ public class NoticeableFutureConverterTest {
 
 			Assert.fail();
 		}
-		catch (InterruptedException ie) {
+		catch (InterruptedException interruptedException) {
 		}
 
 		Assert.assertFalse(currentThread.isInterrupted());
@@ -251,7 +245,7 @@ public class NoticeableFutureConverterTest {
 
 			Assert.fail();
 		}
-		catch (InterruptedException ie) {
+		catch (InterruptedException interruptedException) {
 		}
 
 		Assert.assertFalse(currentThread.isInterrupted());
@@ -267,7 +261,7 @@ public class NoticeableFutureConverterTest {
 
 			Assert.fail();
 		}
-		catch (TimeoutException te) {
+		catch (TimeoutException timeoutException) {
 		}
 	}
 

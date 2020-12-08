@@ -14,7 +14,8 @@
 
 package com.liferay.portal.asm;
 
-import com.liferay.portal.kernel.util.CharPool;
+import com.liferay.petra.string.CharPool;
+import com.liferay.portal.kernel.util.StringUtil;
 
 import java.io.IOException;
 
@@ -127,7 +128,7 @@ public class ASMUtil {
 
 		String name = clazz.getName();
 
-		name = name.replace(CharPool.PERIOD, CharPool.SLASH);
+		name = StringUtil.replace(name, CharPool.PERIOD, CharPool.SLASH);
 
 		ClassReader classReader = null;
 
@@ -135,8 +136,8 @@ public class ASMUtil {
 			classReader = new ClassReader(
 				classLoader.getResourceAsStream(name.concat(".class")));
 		}
-		catch (IOException ioe) {
-			throw new RuntimeException(ioe);
+		catch (IOException ioException) {
+			throw new RuntimeException(ioException);
 		}
 
 		ClassNode classNode = new ClassNode();
@@ -264,9 +265,9 @@ public class ASMUtil {
 		return removedMethodNodes;
 	}
 
-	private static final MethodVisitor _emptyMethodVisitor =
-		new MethodVisitor(Opcodes.ASM5) {
-		};
+	private static final MethodVisitor _emptyMethodVisitor = new MethodVisitor(
+		Opcodes.ASM5) {
+	};
 
 	private static class RenameClassRemapper extends Remapper {
 

@@ -14,8 +14,6 @@
 
 package com.liferay.marketplace.model.impl;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.marketplace.model.Module;
 import com.liferay.marketplace.service.ModuleLocalServiceUtil;
 
@@ -31,12 +29,12 @@ import com.liferay.marketplace.service.ModuleLocalServiceUtil;
  * @see Module
  * @generated
  */
-@ProviderType
 public abstract class ModuleBaseImpl extends ModuleModelImpl implements Module {
+
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. All methods that expect a module model instance should use the {@link Module} interface instead.
+	 * Never modify or reference this class directly. All methods that expect a module model instance should use the <code>Module</code> interface instead.
 	 */
 	@Override
 	public void persist() {
@@ -47,4 +45,5 @@ public abstract class ModuleBaseImpl extends ModuleModelImpl implements Module {
 			ModuleLocalServiceUtil.updateModule(this);
 		}
 	}
+
 }

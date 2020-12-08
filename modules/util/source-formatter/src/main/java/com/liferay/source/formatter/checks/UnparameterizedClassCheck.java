@@ -28,9 +28,7 @@ public class UnparameterizedClassCheck extends BaseFileCheck {
 	protected String doProcess(
 		String fileName, String absolutePath, String content) {
 
-		content = _fixUnparameterizedClassType(content);
-
-		return content;
+		return _fixUnparameterizedClassType(content);
 	}
 
 	private String _fixUnparameterizedClassType(String content) {
@@ -51,9 +49,9 @@ public class UnparameterizedClassCheck extends BaseFileCheck {
 		return content;
 	}
 
-	private final Pattern _unparameterizedClassTypePattern1 = Pattern.compile(
-		"\\Wnew Class[^<\\w]");
-	private final Pattern _unparameterizedClassTypePattern2 = Pattern.compile(
-		"\\WClass[\\[\\]]* \\w+ =");
+	private static final Pattern _unparameterizedClassTypePattern1 =
+		Pattern.compile("\\Wnew Class[^<\\w]");
+	private static final Pattern _unparameterizedClassTypePattern2 =
+		Pattern.compile("\\WClass[\\[\\]]* \\w+ =");
 
 }

@@ -14,6 +14,7 @@
 
 package com.liferay.portal.kernel.portlet;
 
+import com.liferay.petra.string.CharPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.LayoutFriendlyURLComposite;
@@ -21,7 +22,6 @@ import com.liferay.portal.kernel.model.LayoutQueryStringComposite;
 import com.liferay.portal.kernel.model.VirtualLayoutConstants;
 import com.liferay.portal.kernel.service.GroupLocalServiceUtil;
 import com.liferay.portal.kernel.spring.osgi.OSGiBeanProperties;
-import com.liferay.portal.kernel.util.CharPool;
 import com.liferay.portal.kernel.util.HttpUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.PortalUtil;
@@ -30,7 +30,7 @@ import com.liferay.portal.kernel.util.Validator;
 import java.util.Map;
 
 /**
- * @author Eduardo Garcia
+ * @author Eduardo García
  * @author Marco Leo
  */
 @OSGiBeanProperties(service = FriendlyURLResolver.class)
@@ -135,11 +135,8 @@ public class VirtualLayoutFriendlyURLResolver implements FriendlyURLResolver {
 				companyId, groupId, privateLayout, friendlyURL, params,
 				requestContext);
 
-		LayoutFriendlyURLSeparatorComposite newLayoutFriendlyURLComposite =
-			new LayoutFriendlyURLSeparatorComposite(
-				layoutFriendlyURLComposite, Portal.FRIENDLY_URL_SEPARATOR);
-
-		return newLayoutFriendlyURLComposite;
+		return new LayoutFriendlyURLSeparatorComposite(
+			layoutFriendlyURLComposite, Portal.FRIENDLY_URL_SEPARATOR);
 	}
 
 	@Override

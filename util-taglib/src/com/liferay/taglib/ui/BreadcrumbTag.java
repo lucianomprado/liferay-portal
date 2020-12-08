@@ -16,6 +16,7 @@ package com.liferay.taglib.ui;
 
 import com.liferay.portal.kernel.portletdisplaytemplate.PortletDisplayTemplateManagerUtil;
 import com.liferay.portal.kernel.servlet.taglib.ui.BreadcrumbEntry;
+import com.liferay.portal.kernel.servlet.taglib.ui.BreadcrumbEntryContributorUtil;
 import com.liferay.portal.kernel.servlet.taglib.ui.BreadcrumbUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ArrayUtil;
@@ -31,8 +32,39 @@ import javax.servlet.http.HttpServletRequest;
 
 /**
  * @author Brian Wing Shun Chan
+ * @deprecated As of Athanasius (7.3.x), replaced by {@link
+ *             com.liferay.site.navigation.taglib.servlet.taglib.BreadcrumbTag}
  */
+@Deprecated
 public class BreadcrumbTag extends IncludeTag {
+
+	public long getDdmTemplateGroupId() {
+		return _ddmTemplateGroupId;
+	}
+
+	public String getDdmTemplateKey() {
+		return _ddmTemplateKey;
+	}
+
+	public boolean isShowCurrentGroup() {
+		return _showCurrentGroup;
+	}
+
+	public boolean isShowGuestGroup() {
+		return _showGuestGroup;
+	}
+
+	public boolean isShowLayout() {
+		return _showLayout;
+	}
+
+	public boolean isShowParentGroups() {
+		return _showParentGroups;
+	}
+
+	public boolean isShowPortletBreadcrumb() {
+		return _showPortletBreadcrumb;
+	}
 
 	public void setDdmTemplateGroupId(long ddmTemplateGroupId) {
 		_ddmTemplateGroupId = ddmTemplateGroupId;
@@ -64,6 +96,8 @@ public class BreadcrumbTag extends IncludeTag {
 
 	@Override
 	protected void cleanUp() {
+		super.cleanUp();
+
 		_ddmTemplateGroupId = 0;
 		_ddmTemplateKey = null;
 		_showCurrentGroup = true;
@@ -74,7 +108,7 @@ public class BreadcrumbTag extends IncludeTag {
 	}
 
 	protected List<BreadcrumbEntry> getBreadcrumbEntries(
-		HttpServletRequest request) {
+		HttpServletRequest httpServletRequest) {
 
 		List<BreadcrumbEntry> breadcrumbEntries = Collections.emptyList();
 
@@ -102,9 +136,9 @@ public class BreadcrumbTag extends IncludeTag {
 
 		try {
 			breadcrumbEntries = BreadcrumbUtil.getBreadcrumbEntries(
-				request, ArrayUtil.toIntArray(breadcrumbEntryTypes));
+				httpServletRequest, ArrayUtil.toIntArray(breadcrumbEntryTypes));
 		}
-		catch (Exception e) {
+		catch (Exception exception) {
 		}
 
 		return breadcrumbEntries;
@@ -124,8 +158,11 @@ public class BreadcrumbTag extends IncludeTag {
 			return _ddmTemplateGroupId;
 		}
 
-		ThemeDisplay themeDisplay = (ThemeDisplay)request.getAttribute(
-			WebKeys.THEME_DISPLAY);
+		HttpServletRequest httpServletRequest = getRequest();
+
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)httpServletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
 
 		return themeDisplay.getScopeGroupId();
 	}
@@ -136,13 +173,14 @@ public class BreadcrumbTag extends IncludeTag {
 	}
 
 	@Override
-	protected void setAttributes(HttpServletRequest request) {
-		request.setAttribute(
+	protected void setAttributes(HttpServletRequest httpServletRequest) {
+		httpServletRequest.setAttribute(
 			"liferay-ui:breadcrumb:breadcrumbEntries",
-			getBreadcrumbEntries(request));
-		request.setAttribute(
+			BreadcrumbEntryContributorUtil.contribute(
+				getBreadcrumbEntries(httpServletRequest), httpServletRequest));
+		httpServletRequest.setAttribute(
 			"liferay-ui:breadcrumb:displayStyle", getDisplayStyle());
-		request.setAttribute(
+		httpServletRequest.setAttribute(
 			"liferay-ui:breadcrumb:displayStyleGroupId",
 			getDisplayStyleGroupId());
 	}

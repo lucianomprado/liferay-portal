@@ -1,5 +1,4 @@
 <?xml version="1.0"?>
-<!DOCTYPE struts-config PUBLIC "-//Apache Software Foundation//DTD Struts Configuration 1.2//EN" "http://jakarta.apache.org/struts/dtds/struts-config_1_2.dtd">
 
 <struts-config>
 
@@ -37,8 +36,6 @@
 
 		<action forward="/portal/extend_session.jsp" path="/portal/extend_session" />
 
-		<action forward="/portal/flash.jsp" path="/portal/flash" />
-
 		<action path="/portal/get_layouts" type="com.liferay.portal.action.GetLayoutsAction" />
 
 		<action forward="/portal/j_login.jsp" path="/portal/j_login" />
@@ -70,8 +67,6 @@
 		<action path="/portal/render_portlet" type="com.liferay.portal.action.RenderPortletAction">
 			<forward name="/portal/render_portlet" path="/portal/render_portlet.jsp" />
 		</action>
-
-		<action path="/portal/resiliency" type="com.liferay.portal.resiliency.spi.action.PortalResiliencyAction" />
 
 		<action path="/portal/rest_proxy" type="com.liferay.portal.action.RESTProxyAction" />
 
@@ -129,16 +124,4 @@
 
 		<action path="/asset/get_categories" type="com.liferay.portlet.asset.action.GetCategoriesAction" />
 	</action-mappings>
-
-	<!-- Custom Request Processor -->
-
-	<controller contentType="text/html; charset=UTF-8" processorClass="com.liferay.portal.struts.PortalRequestProcessor" />
-
-	<!-- Tiles Plugin -->
-
-	<plug-in className="com.liferay.portal.struts.PortalTilesPlugin">
-		<set-property property="definitions-config" value="/WEB-INF/tiles-defs.xml,/WEB-INF/tiles-defs-ext.xml" />
-		<set-property property="definitions-factory-class" value="com.liferay.portal.struts.PortalI18nFactorySet" />
-		<set-property property="moduleAware" value="true" />
-	</plug-in>
 </struts-config>

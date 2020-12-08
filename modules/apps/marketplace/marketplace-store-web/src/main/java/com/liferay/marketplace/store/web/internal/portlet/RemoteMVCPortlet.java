@@ -15,11 +15,15 @@
 package com.liferay.marketplace.store.web.internal.portlet;
 
 import com.liferay.marketplace.store.web.internal.oauth.util.OAuthManager;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
 import com.liferay.portal.kernel.portlet.PortletResponseUtil;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCPortlet;
 import com.liferay.portal.kernel.security.auth.AuthTokenUtil;
+import com.liferay.portal.kernel.security.auth.PrincipalException;
+import com.liferay.portal.kernel.security.permission.PermissionChecker;
+import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
 import com.liferay.portal.kernel.servlet.HttpHeaders;
 import com.liferay.portal.kernel.servlet.ServletResponseUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
@@ -30,7 +34,6 @@ import com.liferay.portal.kernel.util.HttpUtil;
 import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 
@@ -118,6 +121,8 @@ public class RemoteMVCPortlet extends MVCPortlet {
 			ActionRequest actionRequest, ActionResponse actionResponse)
 		throws IOException, PortletException {
 
+		checkOmniAdmin();
+
 		try {
 			String actionName = ParamUtil.getString(
 				actionRequest, ActionRequest.ACTION_NAME);
@@ -128,17 +133,17 @@ public class RemoteMVCPortlet extends MVCPortlet {
 
 			return;
 		}
-		catch (NoSuchMethodException nsme) {
+		catch (NoSuchMethodException noSuchMethodException) {
 		}
 
 		try {
 			remoteProcessAction(actionRequest, actionResponse);
 		}
-		catch (IOException ioe) {
-			throw ioe;
+		catch (IOException ioException) {
+			throw ioException;
 		}
-		catch (Exception e) {
-			throw new PortletException(e);
+		catch (Exception exception) {
+			throw new PortletException(exception);
 		}
 	}
 
@@ -146,6 +151,8 @@ public class RemoteMVCPortlet extends MVCPortlet {
 	public void render(
 			RenderRequest renderRequest, RenderResponse renderResponse)
 		throws IOException, PortletException {
+
+		checkOmniAdmin();
 
 		try {
 			HttpServletRequest httpServletRequest =
@@ -169,11 +176,11 @@ public class RemoteMVCPortlet extends MVCPortlet {
 				return;
 			}
 		}
-		catch (IOException ioe) {
-			throw ioe;
+		catch (IOException ioException) {
+			throw ioException;
 		}
-		catch (Exception e) {
-			throw new PortletException(e);
+		catch (Exception exception) {
+			throw new PortletException(exception);
 		}
 
 		super.render(renderRequest, renderResponse);
@@ -184,14 +191,16 @@ public class RemoteMVCPortlet extends MVCPortlet {
 			ResourceRequest resourceRequest, ResourceResponse resourceResponse)
 		throws IOException, PortletException {
 
+		checkOmniAdmin();
+
 		try {
 			remoteServeResource(resourceRequest, resourceResponse);
 		}
-		catch (IOException ioe) {
-			throw ioe;
+		catch (IOException ioException) {
+			throw ioException;
 		}
-		catch (Exception e) {
-			throw new PortletException(e);
+		catch (Exception exception) {
+			throw new PortletException(exception);
 		}
 	}
 
@@ -203,6 +212,19 @@ public class RemoteMVCPortlet extends MVCPortlet {
 		}
 		else if (oAuthRequest.getVerb() == Verb.POST) {
 			oAuthRequest.addBodyParameter(key, value);
+		}
+	}
+
+	protected void checkOmniAdmin() throws PortletException {
+		PermissionChecker permissionChecker =
+			PermissionThreadLocal.getPermissionChecker();
+
+		if (!permissionChecker.isOmniadmin()) {
+			PrincipalException principalException =
+				new PrincipalException.MustBeCompanyAdmin(
+					permissionChecker.getUserId());
+
+			throw new PortletException(principalException);
 		}
 	}
 

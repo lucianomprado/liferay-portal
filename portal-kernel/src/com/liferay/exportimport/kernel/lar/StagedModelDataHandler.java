@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @author Mate Thurzo
+ * @author Máté Thurzó
  * @author Daniel Kocsis
  * @author Zsolt Berentey
  */
@@ -141,25 +141,6 @@ public interface StagedModelDataHandler<T extends StagedModel> {
 	 */
 	public Map<String, String> getReferenceAttributes(
 		PortletDataContext portletDataContext, T stagedModel);
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link
-	 *             #importMissingReference(PortletDataContext, Element)}
-	 */
-	@Deprecated
-	public void importCompanyStagedModel(
-			PortletDataContext portletDataContext, Element element)
-		throws PortletDataException;
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link
-	 *             #importMissingReference(PortletDataContext, String, long,
-	 *             long)}
-	 */
-	@Deprecated
-	public void importCompanyStagedModel(
-			PortletDataContext portletDataContext, String uuid, long classPK)
-		throws PortletDataException;
 
 	/**
 	 * Maps the ID of the existing staged model to the old ID in the reference

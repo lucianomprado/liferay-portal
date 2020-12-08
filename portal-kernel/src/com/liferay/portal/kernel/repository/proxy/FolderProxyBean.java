@@ -17,6 +17,7 @@ package com.liferay.portal.kernel.repository.proxy;
 import com.liferay.expando.kernel.model.ExpandoBridge;
 import com.liferay.exportimport.kernel.lar.StagedModelType;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.repository.capabilities.Capability;
 import com.liferay.portal.kernel.repository.model.Folder;
 import com.liferay.portal.kernel.repository.model.RepositoryModelOperation;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
@@ -93,10 +94,8 @@ public class FolderProxyBean
 
 	@Override
 	public ExpandoBridge getExpandoBridge() {
-		ExpandoBridge expandoBridge = _folder.getExpandoBridge();
-
 		return (ExpandoBridge)newProxyInstance(
-			expandoBridge, ExpandoBridge.class);
+			_folder.getExpandoBridge(), ExpandoBridge.class);
 	}
 
 	@Override
@@ -167,6 +166,13 @@ public class FolderProxyBean
 	}
 
 	@Override
+	public <T extends Capability> T getRepositoryCapability(
+		Class<T> capabilityClass) {
+
+		return _folder.getRepositoryCapability(capabilityClass);
+	}
+
+	@Override
 	public long getRepositoryId() {
 		return _folder.getRepositoryId();
 	}
@@ -224,6 +230,13 @@ public class FolderProxyBean
 	@Override
 	public boolean isMountPoint() {
 		return _folder.isMountPoint();
+	}
+
+	@Override
+	public <T extends Capability> boolean isRepositoryCapabilityProvided(
+		Class<T> capabilityClass) {
+
+		return _folder.isRepositoryCapabilityProvided(capabilityClass);
 	}
 
 	@Override

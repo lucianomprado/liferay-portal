@@ -14,6 +14,8 @@
 
 package com.liferay.portal.tools.service.builder;
 
+import com.liferay.petra.string.StringPool;
+
 /**
  * @author Raymond Augé
  * @author Andrea Di Giorgi
@@ -30,8 +32,10 @@ public class ServiceBuilderArgs {
 	public static final String OUTPUT_KEY_MODIFIED_FILES =
 		"service.builder.modified.files";
 
-	public static final String[] READ_ONLY_PREFIXES =
-		{"fetch", "get", "has", "is", "load", "reindex", "search"};
+	public static final String[] READ_ONLY_PREFIXES = {
+		"dslQuery", "dynamicQuery", "fetch", "get", "has", "is", "load",
+		"reindex", "search"
+	};
 
 	public static final String[] RESOURCE_ACTION_CONFIGS = {
 		"META-INF/resource-actions/default.xml", "resource-actions/default.xml"
@@ -49,12 +53,20 @@ public class ServiceBuilderArgs {
 		return _buildNumber;
 	}
 
+	public int getDatabaseNameMaxLength() {
+		return _databaseNameMaxLength;
+	}
+
 	public String getHbmFileName() {
 		return _hbmFileName;
 	}
 
 	public String getImplDirName() {
 		return _implDirName;
+	}
+
+	public String[] getIncubationFeatures() {
+		return _incubationFeatures;
 	}
 
 	public String getInputFileName() {
@@ -121,6 +133,14 @@ public class ServiceBuilderArgs {
 		return _testDirName;
 	}
 
+	public String getUADDirName() {
+		return _uadDirName;
+	}
+
+	public String getUADTestIntegrationDirName() {
+		return _uadTestIntegrationDirName;
+	}
+
 	public boolean isAutoImportDefaultReferences() {
 		return _autoImportDefaultReferences;
 	}
@@ -163,12 +183,24 @@ public class ServiceBuilderArgs {
 		_buildNumberIncrement = buildNumberIncrement;
 	}
 
+	public void setDatabaseNameMaxLength(int databaseNameMaxLength) {
+		_databaseNameMaxLength = databaseNameMaxLength;
+	}
+
 	public void setHbmFileName(String hbmFileName) {
 		_hbmFileName = hbmFileName;
 	}
 
 	public void setImplDirName(String implDirName) {
 		_implDirName = implDirName;
+	}
+
+	public void setIncubationFeatures(String incubationFeatures) {
+		setIncubationFeatures(_split(incubationFeatures));
+	}
+
+	public void setIncubationFeatures(String[] incubationFeatures) {
+		_incubationFeatures = incubationFeatures;
 	}
 
 	public void setInputFileName(String inputFileName) {
@@ -285,6 +317,14 @@ public class ServiceBuilderArgs {
 		_testDirName = testDirName;
 	}
 
+	public void setUADDirName(String uadDirName) {
+		_uadDirName = uadDirName;
+	}
+
+	public void setUADTestIntegrationDirName(String uadTestIntegrationDirName) {
+		_uadTestIntegrationDirName = uadTestIntegrationDirName;
+	}
+
 	private String[] _append(String[] array1, String[] array2) {
 		String[] newArray = new String[array1.length + array2.length];
 
@@ -342,8 +382,10 @@ public class ServiceBuilderArgs {
 		"com.liferay.portal.kernel.bean.PortalBeanLocatorUtil";
 	private long _buildNumber = 1;
 	private boolean _buildNumberIncrement = true;
+	private int _databaseNameMaxLength = 30;
 	private String _hbmFileName = "src/META-INF/portal-hbm.xml";
 	private String _implDirName = "src";
+	private String[] _incubationFeatures = {};
 	private String _inputFileName = "service.xml";
 	private String[] _modelHintsConfigs = MODEL_HINTS_CONFIGS;
 	private boolean _modelHintsConfigsSet;
@@ -357,12 +399,14 @@ public class ServiceBuilderArgs {
 	private boolean _resourceActionsConfigsSet;
 	private String _resourcesDirName = "src";
 	private String _springFileName = "src/META-INF/portal-spring.xml";
-	private String[] _springNamespaces = new String[] {"beans"};
+	private String[] _springNamespaces = {"beans"};
 	private String _sqlDirName = "../sql";
 	private String _sqlFileName = "portal-tables.sql";
 	private String _sqlIndexesFileName = "indexes.sql";
 	private String _sqlSequencesFileName = "sequences.sql";
 	private String _targetEntityName;
 	private String _testDirName = "test/integration";
+	private String _uadDirName = StringPool.BLANK;
+	private String _uadTestIntegrationDirName = StringPool.BLANK;
 
 }

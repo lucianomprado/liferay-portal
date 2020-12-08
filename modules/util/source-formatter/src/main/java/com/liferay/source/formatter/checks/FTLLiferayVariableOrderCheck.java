@@ -33,10 +33,10 @@ public class FTLLiferayVariableOrderCheck extends BaseFileCheck {
 	}
 
 	private String _sortLiferayVariables(String content) {
-		Matcher matcher = _liferayVariablesPattern.matcher(content);
+		Matcher matcher1 = _liferayVariablesPattern.matcher(content);
 
-		while (matcher.find()) {
-			String match = matcher.group();
+		while (matcher1.find()) {
+			String match = matcher1.group();
 
 			Matcher matcher2 = _liferayVariablePattern.matcher(match);
 
@@ -50,6 +50,7 @@ public class FTLLiferayVariableOrderCheck extends BaseFileCheck {
 
 					String replacement = StringUtil.replaceFirst(
 						match, previousVariable, variable);
+
 					replacement = StringUtil.replaceLast(
 						replacement, variable, previousVariable);
 
@@ -63,9 +64,9 @@ public class FTLLiferayVariableOrderCheck extends BaseFileCheck {
 		return content;
 	}
 
-	private final Pattern _liferayVariablePattern = Pattern.compile(
+	private static final Pattern _liferayVariablePattern = Pattern.compile(
 		"^\t*<#assign liferay_.*>\n", Pattern.MULTILINE);
-	private final Pattern _liferayVariablesPattern = Pattern.compile(
+	private static final Pattern _liferayVariablesPattern = Pattern.compile(
 		"(^\t*<#assign liferay_.*>\n)+", Pattern.MULTILINE);
 
 }

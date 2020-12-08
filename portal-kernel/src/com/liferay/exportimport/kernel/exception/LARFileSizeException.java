@@ -14,14 +14,11 @@
 
 package com.liferay.exportimport.kernel.exception;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.portal.kernel.exception.PortalException;
 
 /**
  * @author Brian Wing Shun Chan
  */
-@ProviderType
 public class LARFileSizeException extends PortalException {
 
 	public LARFileSizeException() {
@@ -31,12 +28,12 @@ public class LARFileSizeException extends PortalException {
 		super(msg);
 	}
 
-	public LARFileSizeException(String msg, Throwable cause) {
-		super(msg, cause);
+	public LARFileSizeException(String msg, Throwable throwable) {
+		super(msg, throwable);
 	}
 
-	public LARFileSizeException(Throwable cause) {
-		super(cause);
+	public LARFileSizeException(Throwable throwable) {
+		super(throwable);
 	}
 
 }

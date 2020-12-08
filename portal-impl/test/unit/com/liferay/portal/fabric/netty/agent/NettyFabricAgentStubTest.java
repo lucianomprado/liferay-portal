@@ -14,7 +14,11 @@
 
 package com.liferay.portal.fabric.netty.agent;
 
+import com.liferay.petra.concurrent.NoticeableFuture;
+import com.liferay.petra.process.ProcessCallable;
+import com.liferay.petra.process.ProcessConfig;
 import com.liferay.portal.fabric.OutputResource;
+import com.liferay.portal.fabric.ReturnProcessCallable;
 import com.liferay.portal.fabric.netty.NettyTestUtil;
 import com.liferay.portal.fabric.netty.worker.NettyFabricWorkerConfig;
 import com.liferay.portal.fabric.netty.worker.NettyFabricWorkerStub;
@@ -22,11 +26,6 @@ import com.liferay.portal.fabric.repository.MockRepository;
 import com.liferay.portal.fabric.status.FabricStatus;
 import com.liferay.portal.fabric.status.RemoteFabricStatus;
 import com.liferay.portal.fabric.worker.FabricWorker;
-import com.liferay.portal.kernel.concurrent.NoticeableFuture;
-import com.liferay.portal.kernel.process.ProcessCallable;
-import com.liferay.portal.kernel.process.ProcessConfig;
-import com.liferay.portal.kernel.process.ProcessConfig.Builder;
-import com.liferay.portal.kernel.process.local.ReturnProcessCallable;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.rule.CodeCoverageAssertor;
 
@@ -69,8 +68,9 @@ public class NettyFabricAgentStubTest {
 
 			Assert.fail();
 		}
-		catch (NullPointerException npe) {
-			Assert.assertEquals("Channel is null", npe.getMessage());
+		catch (NullPointerException nullPointerException) {
+			Assert.assertEquals(
+				"Channel is null", nullPointerException.getMessage());
 		}
 
 		try {
@@ -78,8 +78,9 @@ public class NettyFabricAgentStubTest {
 
 			Assert.fail();
 		}
-		catch (NullPointerException npe) {
-			Assert.assertEquals("Repository is null", npe.getMessage());
+		catch (NullPointerException nullPointerException) {
+			Assert.assertEquals(
+				"Repository is null", nullPointerException.getMessage());
 		}
 
 		try {
@@ -88,9 +89,10 @@ public class NettyFabricAgentStubTest {
 
 			Assert.fail();
 		}
-		catch (NullPointerException npe) {
+		catch (NullPointerException nullPointerException) {
 			Assert.assertEquals(
-				"Remote repository path is null", npe.getMessage());
+				"Remote repository path is null",
+				nullPointerException.getMessage());
 		}
 
 		new NettyFabricAgentStub(
@@ -136,7 +138,7 @@ public class NettyFabricAgentStubTest {
 
 		long id = idGenerator.get();
 
-		Builder builder = new Builder();
+		ProcessConfig.Builder builder = new ProcessConfig.Builder();
 
 		ProcessConfig processConfig = builder.build();
 
@@ -154,18 +156,18 @@ public class NettyFabricAgentStubTest {
 
 				@Override
 				public void write(
-						ChannelHandlerContext channelHandlerContext, Object obj,
-						ChannelPromise channelPromise)
+						ChannelHandlerContext channelHandlerContext,
+						Object object, ChannelPromise channelPromise)
 					throws Exception {
 
-					super.write(channelHandlerContext, obj, channelPromise);
+					super.write(channelHandlerContext, object, channelPromise);
 
-					if (!(obj instanceof NettyFabricWorkerConfig)) {
+					if (!(object instanceof NettyFabricWorkerConfig)) {
 						return;
 					}
 
 					NettyFabricWorkerConfig<?> nettyFabricWorkerConfig =
-						(NettyFabricWorkerConfig<?>)obj;
+						(NettyFabricWorkerConfig<?>)object;
 
 					nettyFabricAgentStub.finishStartup(
 						nettyFabricWorkerConfig.getId());
@@ -201,7 +203,8 @@ public class NettyFabricAgentStubTest {
 			nettyFabricAgentStub.getFabricWorkers();
 
 		Assert.assertEquals(fabricWorkers.toString(), 1, fabricWorkers.size());
-		Assert.assertTrue(fabricWorkers.contains(fabricWorker));
+		Assert.assertTrue(
+			fabricWorkers.toString(), fabricWorkers.contains(fabricWorker));
 
 		NoticeableFuture<String> noticeableFuture =
 			fabricWorker.getProcessNoticeableFuture();
@@ -212,7 +215,7 @@ public class NettyFabricAgentStubTest {
 			(NettyFabricWorkerStub<String>)
 				nettyFabricAgentStub.takeNettyStubFabricWorker(id);
 
-		Assert.assertTrue(fabricWorkers.isEmpty());
+		Assert.assertTrue(fabricWorkers.toString(), fabricWorkers.isEmpty());
 
 		Map<Path, Path> outputPathMap = ReflectionTestUtil.getFieldValue(
 			nettyFabricWorkerStub, "_outputPathMap");
@@ -265,7 +268,7 @@ public class NettyFabricAgentStubTest {
 					_embeddedChannel, new MockRepository<Channel>(),
 					Paths.get("RepositoryPath"), 0, Long.MAX_VALUE);
 
-			Builder builder = new Builder();
+			ProcessConfig.Builder builder = new ProcessConfig.Builder();
 
 			FabricWorker<String> fabricWorker = nettyFabricAgentStub.execute(
 				builder.build(),
@@ -279,7 +282,8 @@ public class NettyFabricAgentStubTest {
 			Collection<? extends FabricWorker<?>> fabricWorkers =
 				nettyFabricAgentStub.getFabricWorkers();
 
-			Assert.assertTrue(fabricWorkers.isEmpty());
+			Assert.assertTrue(
+				fabricWorkers.toString(), fabricWorkers.isEmpty());
 		}
 		finally {
 			channelPipeline.removeFirst();
@@ -303,31 +307,24 @@ public class NettyFabricAgentStubTest {
 
 			});
 
-		try {
-			NettyFabricAgentStub nettyFabricAgentStub =
-				new NettyFabricAgentStub(
-					_embeddedChannel, new MockRepository<Channel>(),
-					Paths.get("RepositoryPath"), 0, Long.MAX_VALUE);
+		NettyFabricAgentStub nettyFabricAgentStub = new NettyFabricAgentStub(
+			_embeddedChannel, new MockRepository<Channel>(),
+			Paths.get("RepositoryPath"), 0, Long.MAX_VALUE);
 
-			Builder builder = new Builder();
+		ProcessConfig.Builder builder = new ProcessConfig.Builder();
 
-			FabricWorker<String> fabricWorker = nettyFabricAgentStub.execute(
-				builder.build(),
-				new ReturnProcessCallable<String>("Test result"));
+		FabricWorker<String> fabricWorker = nettyFabricAgentStub.execute(
+			builder.build(), new ReturnProcessCallable<String>("Test result"));
 
-			NoticeableFuture<String> noticeableFuture =
-				fabricWorker.getProcessNoticeableFuture();
+		NoticeableFuture<String> noticeableFuture =
+			fabricWorker.getProcessNoticeableFuture();
 
-			Assert.assertTrue(noticeableFuture.isCancelled());
+		Assert.assertTrue(noticeableFuture.isCancelled());
 
-			Collection<? extends FabricWorker<?>> fabricWorkers =
-				nettyFabricAgentStub.getFabricWorkers();
+		Collection<? extends FabricWorker<?>> fabricWorkers =
+			nettyFabricAgentStub.getFabricWorkers();
 
-			Assert.assertTrue(fabricWorkers.isEmpty());
-		}
-		finally {
-			channelPipeline.removeFirst();
-		}
+		Assert.assertTrue(fabricWorkers.toString(), fabricWorkers.isEmpty());
 	}
 
 	@Test
@@ -355,7 +352,7 @@ public class NettyFabricAgentStubTest {
 					_embeddedChannel, new MockRepository<Channel>(),
 					Paths.get("RepositoryPath"), 0, Long.MAX_VALUE);
 
-			Builder builder = new Builder();
+			ProcessConfig.Builder builder = new ProcessConfig.Builder();
 
 			FabricWorker<String> fabricWorker = nettyFabricAgentStub.execute(
 				builder.build(),
@@ -369,14 +366,15 @@ public class NettyFabricAgentStubTest {
 
 				Assert.fail();
 			}
-			catch (ExecutionException ee) {
-				Assert.assertSame(throwable, ee.getCause());
+			catch (ExecutionException executionException) {
+				Assert.assertSame(throwable, executionException.getCause());
 			}
 
 			Collection<? extends FabricWorker<?>> fabricWorkers =
 				nettyFabricAgentStub.getFabricWorkers();
 
-			Assert.assertTrue(fabricWorkers.isEmpty());
+			Assert.assertTrue(
+				fabricWorkers.toString(), fabricWorkers.isEmpty());
 		}
 		finally {
 			channelPipeline.removeFirst();
@@ -393,7 +391,7 @@ public class NettyFabricAgentStubTest {
 
 		currentThread.interrupt();
 
-		Builder builder = new Builder();
+		ProcessConfig.Builder builder = new ProcessConfig.Builder();
 
 		FabricWorker<String> fabricWorker = nettyFabricAgentStub.execute(
 			builder.build(), new ReturnProcessCallable<String>("Test result"));
@@ -406,8 +404,8 @@ public class NettyFabricAgentStubTest {
 
 			Assert.fail();
 		}
-		catch (ExecutionException ee) {
-			Throwable throwable = ee.getCause();
+		catch (ExecutionException executionException) {
+			Throwable throwable = executionException.getCause();
 
 			Assert.assertSame(InterruptedException.class, throwable.getClass());
 		}
@@ -415,7 +413,7 @@ public class NettyFabricAgentStubTest {
 		Collection<? extends FabricWorker<?>> fabricWorkers =
 			nettyFabricAgentStub.getFabricWorkers();
 
-		Assert.assertTrue(fabricWorkers.isEmpty());
+		Assert.assertTrue(fabricWorkers.toString(), fabricWorkers.isEmpty());
 	}
 
 	@Test
@@ -424,7 +422,7 @@ public class NettyFabricAgentStubTest {
 			_embeddedChannel, new MockRepository<Channel>(),
 			Paths.get("RepositoryPath"), 0, 0);
 
-		Builder builder = new Builder();
+		ProcessConfig.Builder builder = new ProcessConfig.Builder();
 
 		FabricWorker<String> fabricWorker = nettyFabricAgentStub.execute(
 			builder.build(), new ReturnProcessCallable<String>("Test result"));
@@ -437,8 +435,8 @@ public class NettyFabricAgentStubTest {
 
 			Assert.fail();
 		}
-		catch (ExecutionException ee) {
-			Throwable throwable = ee.getCause();
+		catch (ExecutionException executionException) {
+			Throwable throwable = executionException.getCause();
 
 			Assert.assertSame(TimeoutException.class, throwable.getClass());
 		}
@@ -446,7 +444,7 @@ public class NettyFabricAgentStubTest {
 		Collection<? extends FabricWorker<?>> fabricWorkers =
 			nettyFabricAgentStub.getFabricWorkers();
 
-		Assert.assertTrue(fabricWorkers.isEmpty());
+		Assert.assertTrue(fabricWorkers.toString(), fabricWorkers.isEmpty());
 	}
 
 	@Test

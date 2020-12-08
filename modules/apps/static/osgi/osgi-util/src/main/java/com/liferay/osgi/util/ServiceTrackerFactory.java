@@ -14,10 +14,17 @@
 
 package com.liferay.osgi.util;
 
+import com.liferay.portal.kernel.util.HashMapDictionary;
+
+import java.util.Dictionary;
+import java.util.function.Function;
+
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.FrameworkUtil;
 import org.osgi.framework.InvalidSyntaxException;
+import org.osgi.framework.ServiceReference;
+import org.osgi.framework.ServiceRegistration;
 import org.osgi.util.tracker.ServiceTracker;
 import org.osgi.util.tracker.ServiceTrackerCustomizer;
 
@@ -47,8 +54,8 @@ public class ServiceTrackerFactory {
 			return new ServiceTracker<>(
 				bundleContext, bundleContext.createFilter(filterString), null);
 		}
-		catch (InvalidSyntaxException ise) {
-			throwException(ise);
+		catch (InvalidSyntaxException invalidSyntaxException) {
+			throwException(invalidSyntaxException);
 
 			return null;
 		}
@@ -63,13 +70,17 @@ public class ServiceTrackerFactory {
 				bundleContext, bundleContext.createFilter(filterString),
 				serviceTrackerCustomizer);
 		}
-		catch (InvalidSyntaxException ise) {
-			throwException(ise);
+		catch (InvalidSyntaxException invalidSyntaxException) {
+			throwException(invalidSyntaxException);
 
 			return null;
 		}
 	}
 
+	/**
+	 * @deprecated As of Mueller (7.2.x), with no replacement
+	 */
+	@Deprecated
 	public static <T> ServiceTracker<T, T> create(Class<T> clazz) {
 		return create(
 			FrameworkUtil.getBundle(ServiceTrackerFactory.class), clazz);
@@ -118,12 +129,78 @@ public class ServiceTrackerFactory {
 		return serviceTracker;
 	}
 
+	/**
+	 * @deprecated As of Mueller (7.2.x), with no replacement
+	 */
+	@Deprecated
 	public static <T> ServiceTracker<T, T> open(Class<T> clazz) {
 		ServiceTracker<T, T> serviceTracker = create(clazz);
 
 		serviceTracker.open();
 
 		return serviceTracker;
+	}
+
+	public static <T, W> ServiceTracker<T, ServiceRegistration<W>>
+		openWrapperServiceRegistrator(
+			BundleContext bundleContext, Class<T> trackedClass,
+			Class<W> registeredClass, Function<T, W> wrapperFunction,
+			String... propertyNames) {
+
+		return open(
+			bundleContext, trackedClass,
+			new ServiceTrackerCustomizer<T, ServiceRegistration<W>>() {
+
+				@Override
+				public ServiceRegistration<W> addingService(
+					ServiceReference<T> serviceReference) {
+
+					return bundleContext.registerService(
+						registeredClass,
+						wrapperFunction.apply(
+							bundleContext.getService(serviceReference)),
+						_buildProperties(serviceReference));
+				}
+
+				@Override
+				public void modifiedService(
+					ServiceReference<T> serviceReference,
+					ServiceRegistration<W> serviceRegistration) {
+
+					serviceRegistration.setProperties(
+						_buildProperties(serviceReference));
+				}
+
+				@Override
+				public void removedService(
+					ServiceReference<T> serviceReference,
+					ServiceRegistration<W> serviceRegistration) {
+
+					serviceRegistration.unregister();
+
+					bundleContext.ungetService(serviceReference);
+				}
+
+				private Dictionary<String, Object> _buildProperties(
+					ServiceReference<?> serviceReference) {
+
+					Dictionary<String, Object> properties =
+						new HashMapDictionary<>();
+
+					for (String propertyName : propertyNames) {
+						properties.put(
+							propertyName,
+							serviceReference.getProperty(propertyName));
+					}
+
+					properties.put(
+						"original.service.id",
+						serviceReference.getProperty("service.id"));
+
+					return properties;
+				}
+
+			});
 	}
 
 	public static <T> T throwException(Throwable throwable) {

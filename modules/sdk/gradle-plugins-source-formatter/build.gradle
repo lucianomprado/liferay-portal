@@ -1,13 +1,38 @@
 import com.liferay.gradle.plugins.defaults.tasks.ReplaceRegexTask
 
+apply plugin: "com.gradle.plugin-publish"
+apply plugin: "org.ysb33r.gradletest"
+
+task copyGradleTestDependencies(type: Copy)
 task updateReadme(type: ReplaceRegexTask)
 
+String gradleVersion = "6.6.1"
+
+tasks.eclipse {
+	ext.gradleVersion = gradleVersion
+}
+
+copyGradleTestDependencies {
+	from configurations.compile
+	into jar.destinationDir
+}
+
 dependencies {
-	compile group: "com.liferay", name: "com.liferay.gradle.util", version: "1.0.29"
+	compile group: "com.liferay", name: "com.liferay.gradle.util", version: "1.0.44"
 
-	compileOnly fileTree(builtBy: [rootProject.tasks.extractGradleApi25], dir: new File(rootProject.buildDir, "gradle-2.5"))
+	compileOnly fileTree(builtBy: [rootProject.tasks.getByName("extractGradleApi" + gradleVersion.replace(".", ""))], dir: new File(rootProject.buildDir, "gradle-${gradleVersion}"))
+	compileOnly group: "com.liferay", name: "com.liferay.source.formatter", version: "1.0.1071"
+}
 
-	provided group: "com.liferay", name: "com.liferay.source.formatter", version: "1.0.432"
+gradleTest {
+	dependsOn copyGradleTestDependencies
+	dependsOn jar
+
+	versions "5.6.4", gradleVersion
+}
+
+pluginBundle {
+	tags = ["java", "style"]
 }
 
 updateReadme {

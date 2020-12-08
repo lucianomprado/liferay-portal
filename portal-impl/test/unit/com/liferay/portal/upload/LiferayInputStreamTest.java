@@ -14,11 +14,10 @@
 
 package com.liferay.portal.upload;
 
+import com.liferay.petra.reflect.ReflectionUtil;
 import com.liferay.portal.kernel.util.File;
 import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
-import com.liferay.portal.kernel.util.ReflectionUtil;
-import com.liferay.portal.servlet.filters.uploadservletrequest.UploadServletRequestFilter;
 
 import java.io.InputStream;
 
@@ -57,7 +56,7 @@ public class LiferayInputStreamTest {
 								File.class.getMethod("createTempFile"))) {
 
 							_file = java.io.File.createTempFile(
-								"temp", Long.toString(System.nanoTime()));
+								"temp", String.valueOf(System.nanoTime()));
 
 							return _file;
 						}
@@ -103,8 +102,7 @@ public class LiferayInputStreamTest {
 		throws Exception {
 
 		_mockHttpServletRequest.setAttribute(
-			UploadServletRequestFilter.COPY_MULTIPART_STREAM_TO_FILE,
-			Boolean.FALSE);
+			LiferayInputStream.COPY_MULTIPART_STREAM_TO_FILE, Boolean.FALSE);
 
 		testInitialRead(_UNCACHEABLE_BYTES);
 	}
@@ -157,7 +155,7 @@ public class LiferayInputStreamTest {
 		_mockHttpServletRequest.setContent(content);
 
 		_mockHttpServletRequest.setAttribute(
-			UploadServletRequestFilter.COPY_MULTIPART_STREAM_TO_FILE, readable);
+			LiferayInputStream.COPY_MULTIPART_STREAM_TO_FILE, readable);
 
 		_liferayInputStream = new LiferayInputStream(_mockHttpServletRequest);
 
@@ -190,8 +188,8 @@ public class LiferayInputStreamTest {
 	private static final byte[] _CACHEABLE_BYTES =
 		new byte[(int)LiferayInputStream.THRESHOLD_SIZE - 1];
 
-	private static final byte[] _UNCACHEABLE_BYTES = new byte[(
-		int)LiferayInputStream.THRESHOLD_SIZE];
+	private static final byte[] _UNCACHEABLE_BYTES =
+		new byte[(int)LiferayInputStream.THRESHOLD_SIZE];
 
 	static {
 		for (int i = 0; i < _CACHEABLE_BYTES.length; i++) {

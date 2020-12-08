@@ -52,9 +52,8 @@ public class ByteArrayFileInputStream extends InputStream {
 		else if (fileInputStream != null) {
 			return fileInputStream.available();
 		}
-		else {
-			return 0;
-		}
+
+		return 0;
 	}
 
 	@Override
@@ -102,15 +101,13 @@ public class ByteArrayFileInputStream extends InputStream {
 			if (index < data.length) {
 				return data[index++] & 0xff;
 			}
-			else {
-				return -1;
-			}
-		}
-		else {
-			initFileInputStream();
 
-			return fileInputStream.read();
+			return -1;
 		}
+
+		initFileInputStream();
+
+		return fileInputStream.read();
 	}
 
 	@Override
@@ -193,20 +190,15 @@ public class ByteArrayFileInputStream extends InputStream {
 
 		data = new byte[arraySize];
 
-		FileInputStream fileInputStream = new FileInputStream(file);
+		try (FileInputStream fileInputStream = new FileInputStream(file)) {
+			int offset = 0;
+			int length = 0;
 
-		int offset = 0;
-		int length = 0;
-
-		try {
 			while (offset < arraySize) {
 				length = fileInputStream.read(data, offset, arraySize - offset);
 
 				offset += length;
 			}
-		}
-		finally {
-			fileInputStream.close();
 		}
 	}
 

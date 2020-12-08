@@ -17,9 +17,7 @@ package com.liferay.push.notifications.web.internal.application.list;
 import com.liferay.application.list.BasePanelApp;
 import com.liferay.application.list.PanelApp;
 import com.liferay.application.list.constants.PanelCategoryKeys;
-import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Portlet;
-import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.push.notifications.constants.PushNotificationsPortletKeys;
 
 import org.osgi.service.component.annotations.Component;
@@ -31,6 +29,7 @@ import org.osgi.service.component.annotations.Reference;
 @Component(
 	immediate = true,
 	property = {
+		"panel.app.order:Integer=300",
 		"panel.category.key=" + PanelCategoryKeys.CONTROL_PANEL_CONFIGURATION
 	},
 	service = PanelApp.class
@@ -40,11 +39,6 @@ public class PushNotificationsPanelApp extends BasePanelApp {
 	@Override
 	public String getPortletId() {
 		return PushNotificationsPortletKeys.PUSH_NOTIFICATIONS;
-	}
-
-	@Override
-	public boolean isShow(PermissionChecker permissionChecker, Group group) {
-		return permissionChecker.isOmniadmin();
 	}
 
 	@Override

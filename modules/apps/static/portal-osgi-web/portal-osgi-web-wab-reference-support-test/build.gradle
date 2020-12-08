@@ -1,9 +1,26 @@
-sourceCompatibility = "1.8"
-targetCompatibility = "1.8"
+task zipPortlet(type: Zip)
+task zipTheme(type: Zip)
 
 dependencies {
-	provided group: "org.osgi", name: "org.osgi.core", version: "6.0.0"
+	testIntegrationCompile group: "com.liferay.portal", name: "com.liferay.portal.kernel", version: "default"
+	testIntegrationCompile group: "org.osgi", name: "osgi.core", version: "6.0.0"
+	testIntegrationCompile project(":test:arquillian-extension-junit-bridge")
+}
 
-	testIntegrationCompile group: "com.liferay", name: "com.liferay.arquillian.extension.junit.bridge", version: "1.0.7"
-	testIntegrationCompile group: "com.liferay.portal", name: "com.liferay.portal.kernel", version: "2.23.0"
+testIntegrationClasses {
+	dependsOn zipPortlet, zipTheme
+}
+
+zipPortlet {
+	archiveName "exploded-test-portlet.zip"
+	destinationDir = project.file("test-classes/integration")
+	from "test-classes/integration/exploded-test-portlet"
+	include '**/*'
+}
+
+zipTheme {
+	archiveName "exploded-test-theme.zip"
+	destinationDir = project.file("test-classes/integration")
+	from "test-classes/integration/exploded-test-theme"
+	include '**/*'
 }

@@ -14,8 +14,6 @@
 
 package com.liferay.portal.kernel.service;
 
-import com.liferay.portal.kernel.security.pacl.permission.PortalRuntimePermission;
-
 import java.util.List;
 
 /**
@@ -44,11 +42,6 @@ public class PersistedModelLocalServiceRegistryUtil {
 			getPersistedModelLocalServices();
 	}
 
-	public static boolean isPermissionedModelLocalService(String className) {
-		return getPersistedModelLocalServiceRegistry().
-			isPermissionedModelLocalService(className);
-	}
-
 	public static void register(
 		String className,
 		PersistedModelLocalService persistedModelLocalService) {
@@ -63,8 +56,6 @@ public class PersistedModelLocalServiceRegistryUtil {
 
 	public void setPersistedModelLocalServiceRegistry(
 		PersistedModelLocalServiceRegistry persistedModelLocalServiceRegistry) {
-
-		PortalRuntimePermission.checkSetBeanProperty(getClass());
 
 		_persistedModelLocalServiceRegistry =
 			persistedModelLocalServiceRegistry;

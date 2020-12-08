@@ -15,6 +15,7 @@
 package com.liferay.gradle.plugins.workspace.configurators;
 
 import com.liferay.gradle.plugins.LiferayBasePlugin;
+import com.liferay.gradle.plugins.css.builder.CSSBuilderPlugin;
 import com.liferay.gradle.plugins.workspace.WorkspaceExtension;
 import com.liferay.gradle.plugins.workspace.WorkspacePlugin;
 import com.liferay.gradle.plugins.workspace.internal.util.GradleUtil;
@@ -39,6 +40,7 @@ import org.gradle.api.file.CopySpec;
 import org.gradle.api.initialization.Settings;
 import org.gradle.api.plugins.BasePlugin;
 import org.gradle.api.plugins.ExtensionAware;
+import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.plugins.WarPlugin;
 import org.gradle.api.tasks.Copy;
 import org.gradle.api.tasks.bundling.War;
@@ -53,7 +55,7 @@ public class WarsProjectConfigurator extends BaseProjectConfigurator {
 
 		_defaultRepositoryEnabled = GradleUtil.getProperty(
 			settings,
-			WorkspacePlugin.PROPERTY_PREFIX + _NAME +
+			WorkspacePlugin.PROPERTY_PREFIX + NAME +
 				".default.repository.enabled",
 			_DEFAULT_REPOSITORY_ENABLED);
 	}
@@ -65,6 +67,8 @@ public class WarsProjectConfigurator extends BaseProjectConfigurator {
 
 		GradleUtil.applyPlugin(project, WarPlugin.class);
 
+		_configureTaskProcessResources(project);
+
 		War war = (War)GradleUtil.getTask(project, WarPlugin.WAR_TASK_NAME);
 
 		if (isDefaultRepositoryEnabled()) {
@@ -73,12 +77,14 @@ public class WarsProjectConfigurator extends BaseProjectConfigurator {
 
 		_addTaskDeploy(war, workspaceExtension);
 
+		addTaskDockerDeploy(project, war, workspaceExtension);
+
 		_configureRootTaskDistBundle(war);
 	}
 
 	@Override
 	public String getName() {
-		return _NAME;
+		return NAME;
 	}
 
 	public boolean isDefaultRepositoryEnabled() {
@@ -102,9 +108,15 @@ public class WarsProjectConfigurator extends BaseProjectConfigurator {
 						Path dirPath, BasicFileAttributes basicFileAttributes)
 					throws IOException {
 
-					if (Files.isDirectory(dirPath.resolve("src"))) {
+					if (Files.isDirectory(dirPath.resolve("src/main/webapp"))) {
 						projectDirs.add(dirPath.toFile());
 
+						return FileVisitResult.SKIP_SUBTREE;
+					}
+
+					Path dirNamePath = dirPath.getFileName();
+
+					if (isExcludedDirName(dirNamePath.toString())) {
 						return FileVisitResult.SKIP_SUBTREE;
 					}
 
@@ -115,6 +127,8 @@ public class WarsProjectConfigurator extends BaseProjectConfigurator {
 
 		return projectDirs;
 	}
+
+	protected static final String NAME = "wars";
 
 	private Copy _addTaskDeploy(
 		War war, final WorkspaceExtension workspaceExtension) {
@@ -140,6 +154,7 @@ public class WarsProjectConfigurator extends BaseProjectConfigurator {
 		return copy;
 	}
 
+	@SuppressWarnings("serial")
 	private void _configureRootTaskDistBundle(final War war) {
 		Project project = war.getProject();
 
@@ -159,9 +174,37 @@ public class WarsProjectConfigurator extends BaseProjectConfigurator {
 			});
 	}
 
-	private static final boolean _DEFAULT_REPOSITORY_ENABLED = true;
+	private void _configureTaskProcessResources(Project project) {
+		project.afterEvaluate(
+			curProject -> {
+				if (GradleUtil.hasTask(
+						curProject, CSSBuilderPlugin.BUILD_CSS_TASK_NAME)) {
 
-	private static final String _NAME = "wars";
+					Copy copy = (Copy)GradleUtil.getTask(
+						project, JavaPlugin.PROCESS_RESOURCES_TASK_NAME);
+
+					if (copy != null) {
+						copy.dependsOn(CSSBuilderPlugin.BUILD_CSS_TASK_NAME);
+
+						copy.exclude("**/*.css");
+						copy.exclude("**/*.scss");
+
+						copy.filesMatching(
+							"**/.sass-cache/",
+							fileCopyDetails -> {
+								String path = fileCopyDetails.getPath();
+
+								fileCopyDetails.setPath(
+									path.replace(".sass-cache/", ""));
+							});
+
+						copy.setIncludeEmptyDirs(false);
+					}
+				}
+			});
+	}
+
+	private static final boolean _DEFAULT_REPOSITORY_ENABLED = true;
 
 	private boolean _defaultRepositoryEnabled;
 

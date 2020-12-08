@@ -14,6 +14,7 @@
 
 package com.liferay.portal.upload;
 
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.io.ByteArrayFileInputStream;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -24,7 +25,6 @@ import com.liferay.portal.kernel.upload.UploadServletRequestConfigurationHelperU
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.ProgressTracker;
-import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 
@@ -61,20 +61,22 @@ public class UploadServletRequestImpl
 	extends HttpServletRequestWrapper implements UploadServletRequest {
 
 	public static File getTempDir() {
-		if (_tempDir == null) {
-			_tempDir = new File(
-				UploadServletRequestConfigurationHelperUtil.getTempDir());
-		}
-
-		return _tempDir;
+		return _getTempDir(null);
 	}
 
 	public static void setTempDir(File tempDir) {
 		_tempDir = tempDir;
 	}
 
-	public UploadServletRequestImpl(HttpServletRequest request) {
-		super(request);
+	public UploadServletRequestImpl(HttpServletRequest httpServletRequest) {
+		this(httpServletRequest, 0, null, 0, 0);
+	}
+
+	public UploadServletRequestImpl(
+		HttpServletRequest httpServletRequest, int fileSizeThreshold,
+		String location, long maxRequestSize, long maxFileSize) {
+
+		super(httpServletRequest);
 
 		_fileParameters = new LinkedHashMap<>();
 		_regularParameters = new LinkedHashMap<>();
@@ -82,25 +84,51 @@ public class UploadServletRequestImpl
 		LiferayServletRequest liferayServletRequest = null;
 
 		try {
-			HttpSession session = request.getSession();
+			HttpSession session = httpServletRequest.getSession();
 
 			session.removeAttribute(ProgressTracker.PERCENT);
 
-			ServletFileUpload servletFileUpload = new ServletFileUpload(
-				new LiferayFileItemFactory(getTempDir()));
+			ServletFileUpload servletFileUpload;
 
-			liferayServletRequest = new LiferayServletRequest(request);
+			if (fileSizeThreshold > 0) {
+				servletFileUpload = new ServletFileUpload(
+					new LiferayFileItemFactory(
+						_getTempDir(location), fileSizeThreshold));
+			}
+			else {
+				servletFileUpload = new ServletFileUpload(
+					new LiferayFileItemFactory(getTempDir()));
+			}
+
+			long uploadServletRequestImplMaxSize =
+				UploadServletRequestConfigurationHelperUtil.getMaxSize();
+
+			if (maxRequestSize > 0) {
+				servletFileUpload.setSizeMax(maxRequestSize);
+			}
+			else {
+				servletFileUpload.setSizeMax(uploadServletRequestImplMaxSize);
+			}
+
+			if (maxFileSize > 0) {
+				servletFileUpload.setFileSizeMax(maxFileSize);
+			}
+			else {
+				servletFileUpload.setFileSizeMax(
+					uploadServletRequestImplMaxSize);
+			}
+
+			liferayServletRequest = new LiferayServletRequest(
+				httpServletRequest);
 
 			List<org.apache.commons.fileupload.FileItem> fileItems =
 				servletFileUpload.parseRequest(liferayServletRequest);
 
 			liferayServletRequest.setFinishedReadingOriginalStream(true);
 
-			long uploadServletRequestImplMaxSize =
-				UploadServletRequestConfigurationHelperUtil.getMaxSize();
 			long uploadServletRequestImplSize = 0;
 
-			int contentLength = request.getContentLength();
+			int contentLength = httpServletRequest.getContentLength();
 
 			if ((uploadServletRequestImplMaxSize > 0) &&
 				((contentLength == -1) ||
@@ -113,7 +141,7 @@ public class UploadServletRequestImpl
 				LiferayFileItem liferayFileItem = (LiferayFileItem)fileItem;
 
 				if (uploadServletRequestImplMaxSize > 0) {
-					long itemSize = liferayFileItem.getItemSize();
+					long itemSize = liferayFileItem.getSize();
 
 					if ((uploadServletRequestImplSize + itemSize) >
 							uploadServletRequestImplMaxSize) {
@@ -130,7 +158,7 @@ public class UploadServletRequestImpl
 
 						uploadException.setExceededUploadRequestSizeLimit(true);
 
-						request.setAttribute(
+						httpServletRequest.setAttribute(
 							WebKeys.UPLOAD_EXCEPTION, uploadException);
 
 						continue;
@@ -140,7 +168,8 @@ public class UploadServletRequestImpl
 				}
 
 				if (liferayFileItem.isFormField()) {
-					liferayFileItem.setString(request.getCharacterEncoding());
+					liferayFileItem.setString(
+						httpServletRequest.getCharacterEncoding());
 
 					String fieldName = liferayFileItem.getFieldName();
 
@@ -168,7 +197,7 @@ public class UploadServletRequestImpl
 						uploadException.setExceededLiferayFileItemSizeLimit(
 							true);
 
-						request.setAttribute(
+						httpServletRequest.setAttribute(
 							WebKeys.UPLOAD_EXCEPTION, uploadException);
 					}
 
@@ -201,20 +230,30 @@ public class UploadServletRequestImpl
 					liferayFileItem.getFieldName(), liferayFileItems);
 			}
 		}
-		catch (Exception e) {
-			UploadException uploadException = new UploadException(e);
+		catch (Exception exception) {
+			UploadException uploadException = new UploadException(exception);
 
-			if (e instanceof FileUploadBase.FileSizeLimitExceededException) {
+			if (exception instanceof
+					FileUploadBase.FileSizeLimitExceededException) {
+
 				uploadException.setExceededFileSizeLimit(true);
 			}
-			else if (e instanceof FileUploadBase.SizeLimitExceededException) {
+			else if (exception instanceof
+						FileUploadBase.SizeLimitExceededException) {
+
 				uploadException.setExceededUploadRequestSizeLimit(true);
 			}
 
-			request.setAttribute(WebKeys.UPLOAD_EXCEPTION, uploadException);
+			httpServletRequest.setAttribute(
+				WebKeys.UPLOAD_EXCEPTION, uploadException);
 
 			if (_log.isDebugEnabled()) {
-				_log.debug(e, e);
+				_log.debug(exception, exception);
+			}
+			else if (_log.isWarnEnabled()) {
+				_log.warn(
+					"Unable to parse upload request: " +
+						exception.getMessage());
 			}
 		}
 
@@ -222,10 +261,11 @@ public class UploadServletRequestImpl
 	}
 
 	public UploadServletRequestImpl(
-		HttpServletRequest request, Map<String, FileItem[]> fileParameters,
+		HttpServletRequest httpServletRequest,
+		Map<String, FileItem[]> fileParameters,
 		Map<String, List<String>> regularParameters) {
 
-		super(request);
+		super(httpServletRequest);
 
 		_fileParameters = new LinkedHashMap<>();
 		_regularParameters = new LinkedHashMap<>();
@@ -300,12 +340,12 @@ public class UploadServletRequestImpl
 			try {
 				FileUtil.write(file, liferayFileItem.getInputStream());
 			}
-			catch (IOException ioe) {
+			catch (IOException ioException) {
 				if (_log.isWarnEnabled()) {
 					_log.warn(
 						"Unable to write temporary file " +
 							file.getAbsolutePath(),
-						ioe);
+						ioException);
 				}
 			}
 		}
@@ -475,10 +515,10 @@ public class UploadServletRequestImpl
 	public Map<String, String[]> getParameterMap() {
 		Map<String, String[]> map = new HashMap<>();
 
-		Enumeration<String> enu = getParameterNames();
+		Enumeration<String> enumeration = getParameterNames();
 
-		while (enu.hasMoreElements()) {
-			String name = enu.nextElement();
+		while (enumeration.hasMoreElements()) {
+			String name = enumeration.nextElement();
 
 			String[] values = getParameterValues(name);
 
@@ -494,10 +534,10 @@ public class UploadServletRequestImpl
 	public Enumeration<String> getParameterNames() {
 		Set<String> parameterNames = new LinkedHashSet<>();
 
-		Enumeration<String> enu = super.getParameterNames();
+		Enumeration<String> enumeration = super.getParameterNames();
 
-		while (enu.hasMoreElements()) {
-			parameterNames.add(enu.nextElement());
+		while (enumeration.hasMoreElements()) {
+			parameterNames.add(enumeration.nextElement());
 		}
 
 		parameterNames.addAll(_regularParameters.keySet());
@@ -513,7 +553,7 @@ public class UploadServletRequestImpl
 		List<String> values = _regularParameters.get(name);
 
 		if (values != null) {
-			parameterValues = values.toArray(new String[values.size()]);
+			parameterValues = values.toArray(new String[0]);
 		}
 
 		String[] parentParameterValues = super.getParameterValues(name);
@@ -608,6 +648,19 @@ public class UploadServletRequestImpl
 		}
 
 		return sortedFileItems;
+	}
+
+	private static File _getTempDir(String configuredTempDir) {
+		if (Validator.isNotNull(configuredTempDir)) {
+			return new File(configuredTempDir);
+		}
+
+		if (_tempDir == null) {
+			_tempDir = new File(
+				UploadServletRequestConfigurationHelperUtil.getTempDir());
+		}
+
+		return _tempDir;
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(

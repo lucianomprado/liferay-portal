@@ -14,7 +14,7 @@
 
 package com.liferay.portal.dao.orm.hibernate;
 
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.petra.string.StringPool;
 
 import java.io.Serializable;
 
@@ -42,8 +42,8 @@ public class StringType implements CompositeUserType, Serializable {
 	}
 
 	@Override
-	public Object deepCopy(Object obj) {
-		return obj;
+	public Object deepCopy(Object object) {
+		return object;
 	}
 
 	@Override
@@ -61,9 +61,8 @@ public class StringType implements CompositeUserType, Serializable {
 
 			return true;
 		}
-		else {
-			return false;
-		}
+
+		return false;
 	}
 
 	@Override

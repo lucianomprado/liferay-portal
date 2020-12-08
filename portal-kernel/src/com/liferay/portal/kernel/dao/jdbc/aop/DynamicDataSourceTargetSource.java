@@ -14,16 +14,15 @@
 
 package com.liferay.portal.kernel.dao.jdbc.aop;
 
-import java.util.Stack;
-
 import javax.sql.DataSource;
+
+import org.osgi.annotation.versioning.ProviderType;
 
 /**
  * @author Brian Wing Shun Chan
  */
+@ProviderType
 public interface DynamicDataSourceTargetSource {
-
-	public Stack<String> getMethodStack();
 
 	public Operation getOperation();
 
@@ -33,11 +32,9 @@ public interface DynamicDataSourceTargetSource {
 
 	public DataSource getWriteDataSource();
 
-	public String popMethod();
+	public Operation popOperation();
 
-	public void pushMethod(String method);
-
-	public void setOperation(Operation operation);
+	public void pushOperation(Operation operation);
 
 	public void setReadDataSource(DataSource readDataSource);
 

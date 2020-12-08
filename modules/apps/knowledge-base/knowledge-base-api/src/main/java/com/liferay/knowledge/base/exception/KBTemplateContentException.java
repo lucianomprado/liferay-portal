@@ -14,14 +14,11 @@
 
 package com.liferay.knowledge.base.exception;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.portal.kernel.exception.PortalException;
 
 /**
  * @author Brian Wing Shun Chan
  */
-@ProviderType
 public class KBTemplateContentException extends PortalException {
 
 	public KBTemplateContentException() {
@@ -31,12 +28,12 @@ public class KBTemplateContentException extends PortalException {
 		super(msg);
 	}
 
-	public KBTemplateContentException(String msg, Throwable cause) {
-		super(msg, cause);
+	public KBTemplateContentException(String msg, Throwable throwable) {
+		super(msg, throwable);
 	}
 
-	public KBTemplateContentException(Throwable cause) {
-		super(cause);
+	public KBTemplateContentException(Throwable throwable) {
+		super(throwable);
 	}
 
 }

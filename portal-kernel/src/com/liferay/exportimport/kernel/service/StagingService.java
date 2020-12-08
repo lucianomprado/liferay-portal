@@ -14,11 +14,8 @@
 
 package com.liferay.exportimport.kernel.service;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.exportimport.kernel.lar.MissingReferences;
 import com.liferay.exportimport.kernel.model.ExportImportConfiguration;
-
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.jsonwebservice.JSONWebService;
@@ -31,7 +28,8 @@ import com.liferay.portal.kernel.transaction.Transactional;
 import java.io.Serializable;
 
 import java.util.List;
-import java.util.Map;
+
+import org.osgi.annotation.versioning.ProviderType;
 
 /**
  * Provides the remote service interface for Staging. Methods of this
@@ -40,65 +38,52 @@ import java.util.Map;
  *
  * @author Brian Wing Shun Chan
  * @see StagingServiceUtil
- * @see com.liferay.portlet.exportimport.service.base.StagingServiceBaseImpl
- * @see com.liferay.portlet.exportimport.service.impl.StagingServiceImpl
  * @generated
  */
 @AccessControlled
 @JSONWebService
 @ProviderType
-@Transactional(isolation = Isolation.PORTAL, rollbackFor =  {
-	PortalException.class, SystemException.class})
+@Transactional(
+	isolation = Isolation.PORTAL,
+	rollbackFor = {PortalException.class, SystemException.class}
+)
 public interface StagingService extends BaseService {
+
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this interface directly. Always use {@link StagingServiceUtil} to access the staging remote service. Add custom service methods to {@link com.liferay.portlet.exportimport.service.impl.StagingServiceImpl} and rerun ServiceBuilder to automatically copy the method declarations to this interface.
+	 * Never modify this interface directly. Add custom service methods to <code>com.liferay.portlet.exportimport.service.impl.StagingServiceImpl</code> and rerun ServiceBuilder to automatically copy the method declarations to this interface. Consume the staging remote service via injection or a <code>org.osgi.util.tracker.ServiceTracker</code>. Use {@link StagingServiceUtil} if injection and service tracking are not available.
 	 */
-	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
-	public boolean hasRemoteLayout(java.lang.String uuid, long groupId,
-		boolean privateLayout) throws PortalException;
-
-	/**
-	* @deprecated As of 7.0.0, with no direct replacement
-	*/
-	@java.lang.Deprecated
-	public MissingReferences publishStagingRequest(long stagingRequestId,
-		boolean privateLayout,
-		Map<java.lang.String, java.lang.String[]> parameterMap)
-		throws PortalException;
-
-	public MissingReferences publishStagingRequest(long stagingRequestId,
-		ExportImportConfiguration exportImportConfiguration)
-		throws PortalException;
-
-	/**
-	* @deprecated As of 7.0.0, replaced by {@link #publishStagingRequest(long,
-	boolean, Map)}
-	*/
-	@java.lang.Deprecated
-	public MissingReferences validateStagingRequest(long stagingRequestId,
-		boolean privateLayout,
-		Map<java.lang.String, java.lang.String[]> parameterMap)
-		throws PortalException;
-
-	/**
-	* Returns the OSGi service identifier.
-	*
-	* @return the OSGi service identifier
-	*/
-	public java.lang.String getOSGiServiceIdentifier();
-
-	public long createStagingRequest(long groupId, java.lang.String checksum)
-		throws PortalException;
-
 	public void cleanUpStagingRequest(long stagingRequestId)
 		throws PortalException;
 
-	public void propagateExportImportLifecycleEvent(int code, int processFlag,
-		java.lang.String processId, List<Serializable> arguments)
+	public long createStagingRequest(long groupId, String checksum)
 		throws PortalException;
 
-	public void updateStagingRequest(long stagingRequestId,
-		java.lang.String fileName, byte[] bytes) throws PortalException;
+	/**
+	 * Returns the OSGi service identifier.
+	 *
+	 * @return the OSGi service identifier
+	 */
+	public String getOSGiServiceIdentifier();
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public boolean hasRemoteLayout(
+			String uuid, long groupId, boolean privateLayout)
+		throws PortalException;
+
+	public void propagateExportImportLifecycleEvent(
+			int code, int processFlag, String processId,
+			List<Serializable> arguments)
+		throws PortalException;
+
+	public MissingReferences publishStagingRequest(
+			long stagingRequestId,
+			ExportImportConfiguration exportImportConfiguration)
+		throws PortalException;
+
+	public void updateStagingRequest(
+			long stagingRequestId, String fileName, byte[] bytes)
+		throws PortalException;
+
 }

@@ -33,34 +33,35 @@ import javax.servlet.http.HttpServletResponse;
 public abstract class BaseJSPTrashRenderer extends BaseTrashRenderer {
 
 	public abstract String getJspPath(
-		HttpServletRequest request, String template);
+		HttpServletRequest httpServletRequest, String template);
 
 	@Override
 	public boolean include(
-			HttpServletRequest request, HttpServletResponse response,
-			String template)
+			HttpServletRequest httpServletRequest,
+			HttpServletResponse httpServletResponse, String template)
 		throws Exception {
 
-		ServletContext servletContext = getServletContext(request);
-
-		String jspPath = getJspPath(request, template);
+		String jspPath = getJspPath(httpServletRequest, template);
 
 		if (Validator.isNull(jspPath)) {
 			return false;
 		}
 
+		ServletContext servletContext = getServletContext(httpServletRequest);
+
 		RequestDispatcher requestDispatcher =
 			servletContext.getRequestDispatcher(jspPath);
 
 		try {
-			requestDispatcher.include(request, response);
+			requestDispatcher.include(httpServletRequest, httpServletResponse);
 
 			return true;
 		}
-		catch (ServletException se) {
-			_log.error("Unable to include JSP " + jspPath, se);
+		catch (ServletException servletException) {
+			_log.error("Unable to include JSP " + jspPath, servletException);
 
-			throw new IOException("Unable to include " + jspPath, se);
+			throw new IOException(
+				"Unable to include " + jspPath, servletException);
 		}
 	}
 
@@ -68,12 +69,14 @@ public abstract class BaseJSPTrashRenderer extends BaseTrashRenderer {
 		_servletContext = servletContext;
 	}
 
-	protected ServletContext getServletContext(HttpServletRequest request) {
+	protected ServletContext getServletContext(
+		HttpServletRequest httpServletRequest) {
+
 		if (_servletContext != null) {
 			return _servletContext;
 		}
 
-		return (ServletContext)request.getAttribute(WebKeys.CTX);
+		return (ServletContext)httpServletRequest.getAttribute(WebKeys.CTX);
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(

@@ -14,6 +14,7 @@
 
 package com.liferay.portal.jsonwebservice;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.json.JSONFactoryImpl;
 import com.liferay.portal.json.transformer.SortedHashMapJSONTransformer;
 import com.liferay.portal.jsonwebservice.action.JSONWebServiceInvokerAction;
@@ -29,9 +30,10 @@ import com.liferay.portal.kernel.jsonwebservice.NoSuchJSONWebServiceException;
 import com.liferay.portal.kernel.servlet.HttpMethods;
 import com.liferay.portal.kernel.util.MethodParametersResolverUtil;
 import com.liferay.portal.kernel.util.PropsUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.util.MethodParametersResolverImpl;
 import com.liferay.portal.util.PropsImpl;
+import com.liferay.registry.BasicRegistryImpl;
+import com.liferay.registry.RegistryUtil;
 
 import java.lang.reflect.Method;
 
@@ -71,6 +73,8 @@ public abstract class BaseJSONWebServiceTestCase extends PowerMockito {
 
 		methodParametersResolverUtil.setMethodParametersResolver(
 			new MethodParametersResolverImpl());
+
+		RegistryUtil.setRegistry(new BasicRegistryImpl());
 	}
 
 	protected static void registerAction(Object action) {
@@ -197,7 +201,9 @@ public abstract class BaseJSONWebServiceTestCase extends PowerMockito {
 		}
 
 		if (object instanceof JSONSerializable) {
-			return ((JSONSerializable)object).toJSONString();
+			JSONSerializable jsonSerializable = (JSONSerializable)object;
+
+			return jsonSerializable.toJSONString();
 		}
 
 		JSONSerializer jsonSerializer = JSONFactoryUtil.createJSONSerializer();
@@ -207,7 +213,9 @@ public abstract class BaseJSONWebServiceTestCase extends PowerMockito {
 
 	protected String toJSON(Object object, String... includes) {
 		if (object instanceof JSONSerializable) {
-			return ((JSONSerializable)object).toJSONString();
+			JSONSerializable jsonSerializable = (JSONSerializable)object;
+
+			return jsonSerializable.toJSONString();
 		}
 
 		JSONSerializer jsonSerializer = JSONFactoryUtil.createJSONSerializer();
@@ -234,7 +242,8 @@ public abstract class BaseJSONWebServiceTestCase extends PowerMockito {
 	private class MockHttpServletRequest30 extends MockHttpServletRequest {
 
 		public MockHttpServletRequest30() {
-			_mockServletContext = new MockServletContext() {};
+			_mockServletContext = new MockServletContext() {
+			};
 
 			_mockServletContext.setContextPath(StringPool.BLANK);
 			_mockServletContext.setServletContextName(StringPool.BLANK);

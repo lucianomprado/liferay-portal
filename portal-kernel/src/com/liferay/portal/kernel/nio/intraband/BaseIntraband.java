@@ -16,7 +16,6 @@ package com.liferay.portal.kernel.nio.intraband;
 
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.nio.intraband.CompletionHandler.CompletionType;
 
 import java.io.IOException;
 
@@ -46,7 +45,6 @@ public abstract class BaseIntraband implements Intraband {
 	}
 
 	@Override
-	@SuppressWarnings("unused")
 	public void close() throws InterruptedException, IOException {
 		datagramReceiveHandlersReference.set(null);
 
@@ -131,7 +129,7 @@ public abstract class BaseIntraband implements Intraband {
 	@Override
 	public <A> void sendDatagram(
 		RegistrationReference registrationReference, Datagram datagram,
-		A attachment, EnumSet<CompletionType> completionTypes,
+		A attachment, EnumSet<CompletionHandler.CompletionType> completionTypes,
 		CompletionHandler<A> completionHandler, long timeout,
 		TimeUnit timeUnit) {
 
@@ -180,14 +178,17 @@ public abstract class BaseIntraband implements Intraband {
 		datagram.timeout = timeout;
 
 		datagram.setAckRequest(
-			completionTypes.contains(CompletionType.DELIVERED));
+			completionTypes.contains(
+				CompletionHandler.CompletionType.DELIVERED));
 
 		if (datagram.getSequenceId() == 0) {
 			datagram.setSequenceId(generateSequenceId());
 		}
 
-		if (completionTypes.contains(CompletionType.DELIVERED) ||
-			completionTypes.contains(CompletionType.REPLIED)) {
+		if (completionTypes.contains(
+				CompletionHandler.CompletionType.DELIVERED) ||
+			completionTypes.contains(
+				CompletionHandler.CompletionType.REPLIED)) {
 
 			addResponseWaitingDatagram(datagram);
 		}
@@ -387,10 +388,12 @@ public abstract class BaseIntraband implements Intraband {
 						}
 					}
 					else {
-						EnumSet<CompletionType> completionTypes =
-							requestDatagram.completionTypes;
+						EnumSet<CompletionHandler.CompletionType>
+							completionTypes = requestDatagram.completionTypes;
 
-						if (completionTypes.contains(CompletionType.REPLIED)) {
+						if (completionTypes.contains(
+								CompletionHandler.CompletionType.REPLIED)) {
+
 							CompletionHandler<Object> completionHandler =
 								requestDatagram.completionHandler;
 
@@ -430,14 +433,14 @@ public abstract class BaseIntraband implements Intraband {
 								channelContext.getRegistrationReference(),
 								datagram);
 						}
-						catch (Throwable t) {
-							_log.error("Unable to dispatch", t);
+						catch (Throwable throwable) {
+							_log.error("Unable to dispatch", throwable);
 						}
 					}
 				}
 			}
 		}
-		catch (IOException ioe) {
+		catch (IOException ioException) {
 			RegistrationReference registrationReference =
 				channelContext.getRegistrationReference();
 
@@ -446,7 +449,7 @@ public abstract class BaseIntraband implements Intraband {
 			if (_log.isDebugEnabled()) {
 				_log.debug(
 					"Broken read channel, unregister " + registrationReference,
-					ioe);
+					ioException);
 			}
 			else if (_log.isInfoEnabled()) {
 				_log.info(
@@ -465,25 +468,25 @@ public abstract class BaseIntraband implements Intraband {
 			if (datagram.writeTo(gatheringByteChannel)) {
 				channelContext.setWritingDatagram(null);
 
-				EnumSet<CompletionType> completionTypes =
+				EnumSet<CompletionHandler.CompletionType> completionTypes =
 					datagram.completionTypes;
 
-				if (completionTypes != null) {
-					if (completionTypes.contains(CompletionType.SUBMITTED)) {
-						CompletionHandler<Object> completeHandler =
-							datagram.completionHandler;
+				if ((completionTypes != null) &&
+					completionTypes.contains(
+						CompletionHandler.CompletionType.SUBMITTED)) {
 
-						completeHandler.submitted(datagram.attachment);
-					}
+					CompletionHandler<Object> completeHandler =
+						datagram.completionHandler;
+
+					completeHandler.submitted(datagram.attachment);
 				}
 
 				return true;
 			}
-			else {
-				return false;
-			}
+
+			return false;
 		}
-		catch (IOException ioe) {
+		catch (IOException ioException) {
 			RegistrationReference registrationReference =
 				channelContext.getRegistrationReference();
 
@@ -493,13 +496,13 @@ public abstract class BaseIntraband implements Intraband {
 				datagram.completionHandler;
 
 			if (completionHandler != null) {
-				completionHandler.failed(datagram.attachment, ioe);
+				completionHandler.failed(datagram.attachment, ioException);
 			}
 
 			if (_log.isDebugEnabled()) {
 				_log.debug(
 					"Broken write channel, unregister " + registrationReference,
-					ioe);
+					ioException);
 			}
 			else if (_log.isInfoEnabled()) {
 				_log.info(
@@ -514,9 +517,8 @@ public abstract class BaseIntraband implements Intraband {
 	protected Datagram removeResponseWaitingDatagram(
 		Datagram responseDatagram) {
 
-		long sequenceId = responseDatagram.getSequenceId();
-
-		Datagram requestDatagram = responseWaitingMap.remove(sequenceId);
+		Datagram requestDatagram = responseWaitingMap.remove(
+			responseDatagram.getSequenceId());
 
 		if (requestDatagram != null) {
 			timeoutMap.remove(requestDatagram.expireTime);
@@ -525,8 +527,8 @@ public abstract class BaseIntraband implements Intraband {
 		return requestDatagram;
 	}
 
-	protected static final EnumSet<CompletionType> REPLIED_ENUM_SET =
-		EnumSet.of(CompletionType.REPLIED);
+	protected static final EnumSet<CompletionHandler.CompletionType>
+		REPLIED_ENUM_SET = EnumSet.of(CompletionHandler.CompletionType.REPLIED);
 
 	protected final AtomicReference<DatagramReceiveHandler[]>
 		datagramReceiveHandlersReference = new AtomicReference<>(
@@ -547,11 +549,11 @@ public abstract class BaseIntraband implements Intraband {
 		}
 
 		@Override
-		public void failed(Object attachment, IOException ioe) {
+		public void failed(Object attachment, IOException ioException) {
 
 			// Must set before count down to ensure memory visibility
 
-			_ioe = ioe;
+			_ioe = ioException;
 
 			_countDownLatch.countDown();
 		}

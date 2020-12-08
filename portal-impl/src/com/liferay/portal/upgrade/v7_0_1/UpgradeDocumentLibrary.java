@@ -16,11 +16,11 @@ package com.liferay.portal.upgrade.v7_0_1;
 
 import com.liferay.document.library.kernel.model.DLFileEntry;
 import com.liferay.document.library.kernel.util.RawMetadataProcessor;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.dao.jdbc.AutoBatchPreparedStatementUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.PortalUtil;
-import com.liferay.portal.kernel.util.StringBundler;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -122,11 +122,11 @@ public class UpgradeDocumentLibrary extends UpgradeProcess {
 
 			StringBundler sb = new StringBundler(5);
 
-			sb.append("select fileVersionId, ddmStructureId from ");
-			sb.append("DLFileEntryMetadata where fileVersionId in ");
-			sb.append("(select fileVersionId from DLFileEntryMetadata ");
-			sb.append("group by fileVersionId having count(*) = 2) and ");
-			sb.append("ddmStructureId = ?");
+			sb.append("select fileVersionId, DDMStructureId from ");
+			sb.append("DLFileEntryMetadata where fileVersionId in (select ");
+			sb.append("fileVersionId from DLFileEntryMetadata group by ");
+			sb.append("fileVersionId having count(*) >= 2) and ");
+			sb.append("DDMStructureId = ?");
 
 			try (PreparedStatement ps1 = connection.prepareStatement(
 					sb.toString());
@@ -134,7 +134,7 @@ public class UpgradeDocumentLibrary extends UpgradeProcess {
 					AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 						connection,
 						"delete from DLFileEntryMetadata where fileVersionId " +
-							"= ? and ddmStructureId = ?")) {
+							"= ? and DDMStructureId = ?")) {
 
 				ps1.setLong(1, oldDDMStructureId);
 
@@ -142,7 +142,7 @@ public class UpgradeDocumentLibrary extends UpgradeProcess {
 
 				while (resultSet.next()) {
 					long fileVersionId = resultSet.getLong("fileVersionId");
-					long ddmStructureId = resultSet.getLong("ddmStructureId");
+					long ddmStructureId = resultSet.getLong("DDMStructureId");
 
 					ps2.setLong(1, fileVersionId);
 					ps2.setLong(2, ddmStructureId);

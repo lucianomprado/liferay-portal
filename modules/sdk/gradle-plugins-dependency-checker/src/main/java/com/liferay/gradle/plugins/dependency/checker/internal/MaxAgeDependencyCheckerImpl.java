@@ -21,7 +21,6 @@ import groovy.json.JsonSlurper;
 
 import groovy.time.Duration;
 
-import java.net.MalformedURLException;
 import java.net.URL;
 
 import java.util.Date;
@@ -86,8 +85,7 @@ public class MaxAgeDependencyCheckerImpl extends BaseDependencyCheckerImpl {
 		Date currentDate = new Date(currentVersionInfo.timestamp);
 
 		if (latestVersionInfo.timestamp <=
-				(currentVersionInfo.timestamp +
-					_maxAge.toMilliseconds())) {
+				(currentVersionInfo.timestamp + _maxAge.toMilliseconds())) {
 
 			if (_logger.isWarnEnabled()) {
 				_logger.warn(
@@ -142,7 +140,7 @@ public class MaxAgeDependencyCheckerImpl extends BaseDependencyCheckerImpl {
 
 	private VersionInfo _getVersionInfo(
 			String group, String name, String version)
-		throws MalformedURLException {
+		throws Exception {
 
 		URL url = _getVersionInfoURL(group, name, version);
 
@@ -191,24 +189,32 @@ public class MaxAgeDependencyCheckerImpl extends BaseDependencyCheckerImpl {
 	}
 
 	private URL _getVersionInfoURL(String group, String name, String version)
-		throws MalformedURLException {
+		throws Exception {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append("https://search.maven.org/solrsearch/select?q=g:\"");
+		sb.append("https://search.maven.org/solrsearch/select?q=g:");
+		sb.append(_ENCODED_DOUBLE_QUOTE);
 		sb.append(group);
-		sb.append("\"+AND+a:\"");
+		sb.append(_ENCODED_DOUBLE_QUOTE);
+		sb.append("+AND+a:");
+		sb.append(_ENCODED_DOUBLE_QUOTE);
 		sb.append(name);
+		sb.append(_ENCODED_DOUBLE_QUOTE);
 
 		if (Validator.isNotNull(version)) {
-			sb.append("\"+AND+v:\"");
+			sb.append("+AND+v:");
+			sb.append(_ENCODED_DOUBLE_QUOTE);
 			sb.append(version);
+			sb.append(_ENCODED_DOUBLE_QUOTE);
 		}
 
-		sb.append("\"&wt=json");
+		sb.append("&wt=json");
 
 		return new URL(sb.toString());
 	}
+
+	private static final String _ENCODED_DOUBLE_QUOTE = "%22";
 
 	private static final ExpiringMap<URL, VersionInfo> _versionInfos =
 		ExpiringMap.create();
@@ -226,16 +232,16 @@ public class MaxAgeDependencyCheckerImpl extends BaseDependencyCheckerImpl {
 		}
 
 		@Override
-		public boolean equals(Object obj) {
-			if (this == obj) {
+		public boolean equals(Object object) {
+			if (this == object) {
 				return true;
 			}
 
-			if (!(obj instanceof VersionInfo)) {
+			if (!(object instanceof VersionInfo)) {
 				return false;
 			}
 
-			VersionInfo versionInfo = (VersionInfo)obj;
+			VersionInfo versionInfo = (VersionInfo)object;
 
 			if ((timestamp == versionInfo.timestamp) &&
 				version.equals(versionInfo.version)) {

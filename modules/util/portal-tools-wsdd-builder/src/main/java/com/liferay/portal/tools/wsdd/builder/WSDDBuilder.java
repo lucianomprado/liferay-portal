@@ -14,8 +14,9 @@
 
 package com.liferay.portal.tools.wsdd.builder;
 
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.tools.ArgumentsUtil;
 import com.liferay.portal.tools.ToolsUtil;
@@ -60,8 +61,8 @@ public class WSDDBuilder {
 
 			wsddBuilder.build();
 		}
-		catch (Exception e) {
-			ArgumentsUtil.processMainException(arguments, e);
+		catch (Exception exception) {
+			ArgumentsUtil.processMainException(arguments, exception);
 		}
 	}
 
@@ -71,10 +72,8 @@ public class WSDDBuilder {
 		if (!serverConfigFile.exists()) {
 			Class<?> clazz = getClass();
 
-			ClassLoader classLoader = clazz.getClassLoader();
-
 			String serverConfigContent = StringUtil.read(
-				classLoader,
+				clazz.getClassLoader(),
 				"com/liferay/portal/tools/wsdd/builder/dependencies" +
 					"/server-config.wsdd");
 
@@ -83,21 +82,21 @@ public class WSDDBuilder {
 
 		SAXReader saxReader = _getSAXReader();
 
-		String content = ToolsUtil.getContent(_fileName);
-
-		Document document = saxReader.read(new XMLSafeReader(content));
+		Document document = saxReader.read(
+			new XMLSafeReader(ToolsUtil.getContent(_fileName)));
 
 		Element rootElement = document.getRootElement();
 
 		String packagePath = rootElement.attributeValue("package-path");
 
 		Element portletElement = rootElement.element("portlet");
-		Element namespaceElement = rootElement.element("namespace");
 
 		if (portletElement != null) {
 			_portletShortName = portletElement.attributeValue("short-name");
 		}
 		else {
+			Element namespaceElement = rootElement.element("namespace");
+
 			_portletShortName = namespaceElement.getText();
 		}
 
@@ -118,7 +117,8 @@ public class WSDDBuilder {
 				_createServiceWSDD(entityName);
 
 				WSDDMerger.merge(
-					_outputPath + "/" + entityName + "Service_deploy.wsdd",
+					StringBundler.concat(
+						_outputPath, "/", entityName, "Service_deploy.wsdd"),
 					_serverConfigFileName);
 			}
 		}
@@ -145,8 +145,8 @@ public class WSDDBuilder {
 	}
 
 	private void _createServiceWSDD(String entityName) throws Exception {
-		String className =
-			_packagePath + ".service.http." + entityName + "ServiceSoap";
+		String className = StringBundler.concat(
+			_packagePath, ".service.http.", entityName, "ServiceSoap");
 
 		String serviceName = StringUtil.replace(_portletShortName, ' ', '_');
 
@@ -160,11 +160,15 @@ public class WSDDBuilder {
 			className, _classPath, serviceName);
 
 		_writeFile(
-			new File(_outputPath + "/" + entityName + "Service_deploy.wsdd"),
+			new File(
+				StringBundler.concat(
+					_outputPath, "/", entityName, "Service_deploy.wsdd")),
 			wsdds[0]);
 
 		_writeFile(
-			new File(_outputPath + "/" + entityName + "Service_undeploy.wsdd"),
+			new File(
+				StringBundler.concat(
+					_outputPath, "/", entityName, "Service_undeploy.wsdd")),
 			wsdds[1]);
 	}
 

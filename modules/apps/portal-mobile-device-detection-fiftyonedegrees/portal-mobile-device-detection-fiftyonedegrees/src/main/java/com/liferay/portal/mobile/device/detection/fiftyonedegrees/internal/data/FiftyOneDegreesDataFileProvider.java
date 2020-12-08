@@ -39,7 +39,7 @@ import org.osgi.service.component.annotations.Modified;
  */
 @Component(
 	configurationPid = "com.liferay.portal.mobile.device.detection.fiftyonedegrees.configuration.FiftyOneDegreesConfiguration",
-	immediate = true, property = {"service.ranking:Integer=1"},
+	immediate = true, property = "service.ranking:Integer=1",
 	service = DataFileProvider.class
 )
 public class FiftyOneDegreesDataFileProvider implements DataFileProvider {
@@ -63,9 +63,8 @@ public class FiftyOneDegreesDataFileProvider implements DataFileProvider {
 
 			return new ZipInputStream(inputStream);
 		}
-		else {
-			return inputStream;
-		}
+
+		return inputStream;
 	}
 
 	@Activate

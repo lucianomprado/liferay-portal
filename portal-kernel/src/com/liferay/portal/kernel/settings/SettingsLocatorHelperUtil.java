@@ -22,11 +22,33 @@ import com.liferay.registry.collections.ServiceTrackerList;
  */
 public class SettingsLocatorHelperUtil {
 
+	public static Settings getCompanyConfigurationBeanSettings(
+		long companyId, String configurationPid, Settings parentSettings) {
+
+		return getSettingsLocatorHelper().getCompanyConfigurationBeanSettings(
+			companyId, configurationPid, parentSettings);
+	}
+
 	public static Settings getCompanyPortletPreferencesSettings(
 		long companyId, String settingsId, Settings parentSettings) {
 
 		return getSettingsLocatorHelper().getCompanyPortletPreferencesSettings(
 			companyId, settingsId, parentSettings);
+	}
+
+	public static Settings getGroupConfigurationBeanSettings(
+		long groupId, String configurationPid, Settings parentSettings) {
+
+		return getSettingsLocatorHelper().getGroupConfigurationBeanSettings(
+			groupId, configurationPid, parentSettings);
+	}
+
+	public static Settings getPortletInstanceConfigurationBeanSettings(
+		String portletId, String configurationPid, Settings parentSettings) {
+
+		return getSettingsLocatorHelper().
+			getPortletInstanceConfigurationBeanSettings(
+				portletId, configurationPid, parentSettings);
 	}
 
 	public static SettingsLocatorHelper getSettingsLocatorHelper() {
@@ -36,18 +58,6 @@ public class SettingsLocatorHelperUtil {
 	public Settings getConfigurationBeanSettings(String settingsId) {
 		return getSettingsLocatorHelper().getConfigurationBeanSettings(
 			settingsId);
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, replaced by {@link
-	 *             #getConfigurationBeanSettings(String)}
-	 */
-	@Deprecated
-	public Settings getConfigurationBeanSettings(
-		String settingsId, Settings parentSettings) {
-
-		return getSettingsLocatorHelper().getConfigurationBeanSettings(
-			settingsId, parentSettings);
 	}
 
 	public Settings getGroupPortletPreferencesSettings(
@@ -62,14 +72,6 @@ public class SettingsLocatorHelperUtil {
 
 		return getSettingsLocatorHelper().getPortalPreferencesSettings(
 			companyId, parentSettings);
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	public Settings getPortalPropertiesSettings() {
-		return getSettingsLocatorHelper().getPortalPropertiesSettings();
 	}
 
 	public Settings getPortletInstancePortletPreferencesSettings(

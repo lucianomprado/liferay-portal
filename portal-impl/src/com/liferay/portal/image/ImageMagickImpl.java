@@ -14,16 +14,15 @@
 
 package com.liferay.portal.image;
 
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.configuration.Filter;
 import com.liferay.portal.kernel.image.ImageMagick;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.security.pacl.DoPrivileged;
-import com.liferay.portal.kernel.util.ClassLoaderUtil;
 import com.liferay.portal.kernel.util.NamedThreadFactory;
 import com.liferay.portal.kernel.util.OSDetector;
+import com.liferay.portal.kernel.util.PortalClassLoaderUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
-import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.util.PrefsPropsUtil;
 import com.liferay.portal.util.PropsUtil;
@@ -44,11 +43,10 @@ import org.im4java.process.ProcessTask;
  * @author Alexander Chow
  * @author Ivica Cardic
  */
-@DoPrivileged
 public class ImageMagickImpl implements ImageMagick {
 
 	public static ImageMagickImpl getInstance() {
-		return _instance;
+		return _imageMagickImpl;
 	}
 
 	@Override
@@ -149,7 +147,7 @@ public class ImageMagickImpl implements ImageMagick {
 		List<String> output = arrayListOutputConsumer.getOutput();
 
 		if (output != null) {
-			return output.toArray(new String[output.size()]);
+			return output.toArray(new String[0]);
 		}
 
 		return new String[0];
@@ -162,9 +160,9 @@ public class ImageMagickImpl implements ImageMagick {
 		try {
 			enabled = PrefsPropsUtil.getBoolean(PropsKeys.IMAGEMAGICK_ENABLED);
 		}
-		catch (Exception e) {
+		catch (Exception exception) {
 			if (_log.isWarnEnabled()) {
-				_log.warn(e, e);
+				_log.warn(exception, exception);
 			}
 		}
 
@@ -176,8 +174,8 @@ public class ImageMagickImpl implements ImageMagick {
 			sb.append("previews, install ImageMagick and Ghostscript. Enable ");
 			sb.append("ImageMagick in portal-ext.properties or in the Server ");
 			sb.append("Administration section of the Control Panel at: ");
-			sb.append("http://<server>/group/control_panel/manage/-/server/");
-			sb.append("external-services");
+			sb.append("http://<server>/group/control_panel/manage/-/server");
+			sb.append("/external-services");
 
 			_log.warn(sb.toString());
 
@@ -195,8 +193,8 @@ public class ImageMagickImpl implements ImageMagick {
 
 				_resourceLimitsProperties = getResourceLimitsProperties();
 			}
-			catch (Exception e) {
-				_log.error(e, e);
+			catch (Exception exception) {
+				_log.error(exception, exception);
 			}
 		}
 	}
@@ -237,7 +235,7 @@ public class ImageMagickImpl implements ImageMagick {
 				_processExecutor.setThreadFactory(
 					new NamedThreadFactory(
 						ImageMagickImpl.class.getName(), Thread.MIN_PRIORITY,
-						ClassLoaderUtil.getPortalClassLoader()));
+						PortalClassLoaderUtil.getClassLoader()));
 			}
 		}
 
@@ -247,7 +245,8 @@ public class ImageMagickImpl implements ImageMagick {
 	private static final Log _log = LogFactoryUtil.getLog(
 		ImageMagickImpl.class);
 
-	private static final ImageMagickImpl _instance = new ImageMagickImpl();
+	private static final ImageMagickImpl _imageMagickImpl =
+		new ImageMagickImpl();
 
 	private String _globalSearchPath;
 	private volatile ProcessExecutor _processExecutor;

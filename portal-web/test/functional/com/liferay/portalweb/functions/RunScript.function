@@ -1,11 +1,14 @@
-<definition default="runScript">
-	<command name="runScript">
-		<execute function="WaitForSPARefresh" />
+@default = "runScript"
+definition {
 
-		<execute selenium="runScript" />
+	function runScript {
+		WaitForSPARefresh();
 
-		<execute selenium="assertJavaScriptErrors" />
+		selenium.runScript();
 
-		<execute selenium="assertLiferayErrors" />
-	</command>
-</definition>
+		selenium.assertJavaScriptErrors();
+
+		selenium.assertLiferayErrors();
+	}
+
+}

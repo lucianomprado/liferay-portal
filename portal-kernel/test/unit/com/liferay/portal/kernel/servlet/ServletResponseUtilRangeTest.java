@@ -14,12 +14,12 @@
 
 package com.liferay.portal.kernel.servlet;
 
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.test.ReflectionTestUtil;
+import com.liferay.portal.kernel.test.util.PropsTestUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.FileUtil;
-import com.liferay.portal.kernel.util.Props;
 import com.liferay.portal.kernel.util.PropsKeys;
-import com.liferay.portal.kernel.util.PropsUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 
@@ -35,7 +35,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -63,17 +62,18 @@ public class ServletResponseUtilRangeTest extends PowerMockito {
 	public void setUp() {
 		MockitoAnnotations.initMocks(this);
 
-		setUpBrowserSniffer();
 		setUpFileUtil();
 		setUpPropsUtil();
 	}
 
 	@Test
 	public void testGetMultipleRanges() throws IOException {
-		setUpRange(_request, "bytes=1-3,3-8,9-11,12-12,30-");
+		setUpRange(_httpServletRequest, "bytes=1-3,3-8,9-11,12-12,30-");
 
-		List<Range> ranges = ServletResponseUtil.getRanges(
-			_request, _response, 1000);
+		List<Range> ranges = ReflectionTestUtil.invoke(
+			ServletResponseUtil.class, "_getRanges",
+			new Class<?>[] {HttpServletRequest.class, long.class},
+			_httpServletRequest, 1000);
 
 		Assert.assertEquals(ranges.toString(), 5, ranges.size());
 		assertRange(ranges.get(0), 1, 3, 3);
@@ -93,26 +93,34 @@ public class ServletResponseUtilRangeTest extends PowerMockito {
 		// The final 500 bytes (byte offsets 9500-9999, inclusive): bytes=-500
 		// or bytes=9500-
 
-		setUpRange(_request, "bytes=-500");
+		setUpRange(_httpServletRequest, "bytes=-500");
 
-		List<Range> ranges = ServletResponseUtil.getRanges(
-			_request, _response, length);
+		List<Range> ranges = ReflectionTestUtil.invoke(
+			ServletResponseUtil.class, "_getRanges",
+			new Class<?>[] {HttpServletRequest.class, long.class},
+			_httpServletRequest, length);
 
 		Assert.assertEquals(ranges.toString(), 1, ranges.size());
 		assertRange(ranges.get(0), 9500, 9999, 500);
 
-		setUpRange(_request, "bytes=9500-");
+		setUpRange(_httpServletRequest, "bytes=9500-");
 
-		ranges = ServletResponseUtil.getRanges(_request, _response, length);
+		ranges = ReflectionTestUtil.invoke(
+			ServletResponseUtil.class, "_getRanges",
+			new Class<?>[] {HttpServletRequest.class, long.class},
+			_httpServletRequest, length);
 
 		Assert.assertEquals(ranges.toString(), 1, ranges.size());
 		assertRange(ranges.get(0), 9500, 9999, 500);
 
 		// The first and last bytes only (bytes 0 and 9999): bytes=0-0,-1
 
-		setUpRange(_request, "bytes=0-0,-1");
+		setUpRange(_httpServletRequest, "bytes=0-0,-1");
 
-		ranges = ServletResponseUtil.getRanges(_request, _response, length);
+		ranges = ReflectionTestUtil.invoke(
+			ServletResponseUtil.class, "_getRanges",
+			new Class<?>[] {HttpServletRequest.class, long.class},
+			_httpServletRequest, length);
 
 		Assert.assertEquals(ranges.toString(), 2, ranges.size());
 		assertRange(ranges.get(0), 0, 0, 1);
@@ -122,17 +130,23 @@ public class ServletResponseUtilRangeTest extends PowerMockito {
 		// bytes (byte offsets 500-999, inclusive): bytes=500-600,601-999 or
 		// bytes=500-700,601-999
 
-		setUpRange(_request, "bytes=500-600,601-999");
+		setUpRange(_httpServletRequest, "bytes=500-600,601-999");
 
-		ranges = ServletResponseUtil.getRanges(_request, _response, length);
+		ranges = ReflectionTestUtil.invoke(
+			ServletResponseUtil.class, "_getRanges",
+			new Class<?>[] {HttpServletRequest.class, long.class},
+			_httpServletRequest, length);
 
 		Assert.assertEquals(ranges.toString(), 2, ranges.size());
 		assertRange(ranges.get(0), 500, 600, 101);
 		assertRange(ranges.get(1), 601, 999, 399);
 
-		setUpRange(_request, "bytes=500-700,601-999");
+		setUpRange(_httpServletRequest, "bytes=500-700,601-999");
 
-		ranges = ServletResponseUtil.getRanges(_request, _response, length);
+		ranges = ReflectionTestUtil.invoke(
+			ServletResponseUtil.class, "_getRanges",
+			new Class<?>[] {HttpServletRequest.class, long.class},
+			_httpServletRequest, length);
 
 		Assert.assertEquals(ranges.toString(), 2, ranges.size());
 		assertRange(ranges.get(0), 500, 700, 201);
@@ -141,10 +155,12 @@ public class ServletResponseUtilRangeTest extends PowerMockito {
 
 	@Test
 	public void testGetRangesSimple() throws IOException {
-		setUpRange(_request, "bytes=0-999");
+		setUpRange(_httpServletRequest, "bytes=0-999");
 
-		List<Range> ranges = ServletResponseUtil.getRanges(
-			_request, _response, 1000);
+		List<Range> ranges = ReflectionTestUtil.invoke(
+			ServletResponseUtil.class, "_getRanges",
+			new Class<?>[] {HttpServletRequest.class, long.class},
+			_httpServletRequest, 1000);
 
 		Assert.assertEquals(ranges.toString(), 1, ranges.size());
 		assertRange(ranges.get(0), 0, 999, 1000);
@@ -180,18 +196,6 @@ public class ServletResponseUtilRangeTest extends PowerMockito {
 		Assert.assertEquals(range.getStart(), start);
 		Assert.assertEquals(range.getEnd(), end);
 		Assert.assertEquals(range.getLength(), length);
-	}
-
-	protected void setUpBrowserSniffer() {
-		BrowserSnifferUtil browserSnifferUtil = new BrowserSnifferUtil();
-
-		browserSnifferUtil.setBrowserSniffer(_browserSniffer);
-
-		when(
-			_browserSniffer.isIe(Matchers.any(HttpServletRequest.class))
-		).thenReturn(
-			false
-		);
 	}
 
 	protected void setUpFileUtil() {
@@ -237,18 +241,15 @@ public class ServletResponseUtilRangeTest extends PowerMockito {
 	}
 
 	protected void setUpPropsUtil() {
-		PropsUtil.setProps(_props);
-
-		when(
-			_props.get(PropsKeys.WEB_SERVER_SERVLET_MAX_RANGE_FIELDS)
-		).thenReturn(
-			"10"
-		);
+		PropsTestUtil.setProps(
+			PropsKeys.WEB_SERVER_SERVLET_MAX_RANGE_FIELDS, "10");
 	}
 
-	protected void setUpRange(HttpServletRequest request, String rangeHeader) {
+	protected void setUpRange(
+		HttpServletRequest httpServletRequest, String rangeHeader) {
+
 		when(
-			request.getHeader(HttpHeaders.RANGE)
+			httpServletRequest.getHeader(HttpHeaders.RANGE)
 		).thenReturn(
 			rangeHeader
 		);
@@ -257,18 +258,20 @@ public class ServletResponseUtilRangeTest extends PowerMockito {
 	protected void testWriteWith(InputStream inputStream, byte[] content)
 		throws IOException {
 
-		setUpRange(_request, "bytes=0-9,980-989,980-999,990-999");
+		setUpRange(_httpServletRequest, "bytes=0-9,980-989,980-999,990-999");
 
-		List<Range> ranges = ServletResponseUtil.getRanges(
-			_request, _response, content.length);
+		List<Range> ranges = ReflectionTestUtil.invoke(
+			ServletResponseUtil.class, "_getRanges",
+			new Class<?>[] {HttpServletRequest.class, long.class},
+			_httpServletRequest, content.length);
 
 		MockHttpServletResponse mockHttpServletResponse =
 			new MockHttpServletResponse();
 
 		mockHttpServletResponse.setCharacterEncoding(StringPool.UTF8);
 
-		ServletResponseUtil.write(
-			_request, mockHttpServletResponse, "filename.txt", ranges,
+		ServletResponseUtil.sendFileWithRangeHeader(
+			_httpServletRequest, mockHttpServletResponse, "filename.txt",
 			inputStream, content.length, "text/plain");
 
 		String contentType = mockHttpServletResponse.getContentType();
@@ -326,12 +329,6 @@ public class ServletResponseUtilRangeTest extends PowerMockito {
 	private com.liferay.portal.kernel.util.File _file;
 
 	@Mock
-	private Props _props;
-
-	@Mock
-	private HttpServletRequest _request;
-
-	@Mock
-	private HttpServletResponse _response;
+	private HttpServletRequest _httpServletRequest;
 
 }

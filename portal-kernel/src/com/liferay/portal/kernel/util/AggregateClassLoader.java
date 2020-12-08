@@ -14,8 +14,10 @@
 
 package com.liferay.portal.kernel.util;
 
+import com.liferay.petra.lang.HashUtil;
+import com.liferay.petra.memory.EqualityWeakReference;
+import com.liferay.petra.reflect.ReflectionUtil;
 import com.liferay.portal.kernel.exception.LoggedExceptionInInitializerError;
-import com.liferay.portal.kernel.memory.EqualityWeakReference;
 
 import java.io.IOException;
 
@@ -31,6 +33,7 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author Brian Wing Shun Chan
@@ -50,6 +53,30 @@ public class AggregateClassLoader extends ClassLoader {
 
 		if (parentClassLoader instanceof AggregateClassLoader) {
 			aggregateClassLoader = (AggregateClassLoader)parentClassLoader;
+
+			List<ClassLoader> existingClassLoaders =
+				aggregateClassLoader.getClassLoaders();
+
+			boolean requiresNew = false;
+
+			for (ClassLoader classLoader : classLoaders) {
+				if (!classLoader.equals(parentClassLoader) &&
+					!existingClassLoaders.contains(classLoader)) {
+
+					requiresNew = true;
+
+					break;
+				}
+			}
+
+			if (!requiresNew) {
+				return aggregateClassLoader;
+			}
+
+			aggregateClassLoader = new AggregateClassLoader(
+				parentClassLoader.getParent());
+
+			aggregateClassLoader.addClassLoader(parentClassLoader);
 		}
 		else {
 			aggregateClassLoader = new AggregateClassLoader(parentClassLoader);
@@ -77,28 +104,32 @@ public class AggregateClassLoader extends ClassLoader {
 	}
 
 	public void addClassLoader(ClassLoader classLoader) {
+		if (classLoader.equals(getParent())) {
+			return;
+		}
+
 		List<ClassLoader> classLoaders = getClassLoaders();
 
 		if (classLoaders.contains(classLoader)) {
 			return;
 		}
 
-		if ((classLoader instanceof AggregateClassLoader) &&
-			classLoader.getParent().equals(getParent())) {
-
+		if (classLoader instanceof AggregateClassLoader) {
 			AggregateClassLoader aggregateClassLoader =
 				(AggregateClassLoader)classLoader;
+
+			addClassLoader(aggregateClassLoader.getParent());
 
 			for (ClassLoader curClassLoader :
 					aggregateClassLoader.getClassLoaders()) {
 
 				addClassLoader(curClassLoader);
 			}
+
+			return;
 		}
-		else {
-			_classLoaderReferences.add(
-				new EqualityWeakReference<>(classLoader));
-		}
+
+		_classLoaderReferences.add(new EqualityWeakReference<>(classLoader));
 	}
 
 	public void addClassLoader(ClassLoader... classLoaders) {
@@ -114,23 +145,21 @@ public class AggregateClassLoader extends ClassLoader {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
+	public boolean equals(Object object) {
+		if (this == object) {
 			return true;
 		}
 
-		if (!(obj instanceof AggregateClassLoader)) {
+		if (!(object instanceof AggregateClassLoader)) {
 			return false;
 		}
 
-		AggregateClassLoader aggregateClassLoader = (AggregateClassLoader)obj;
+		AggregateClassLoader aggregateClassLoader =
+			(AggregateClassLoader)object;
 
 		if (_classLoaderReferences.equals(
 				aggregateClassLoader._classLoaderReferences) &&
-			(((getParent() == null) &&
-			  (aggregateClassLoader.getParent() == null)) ||
-			 ((getParent() != null) &&
-			  getParent().equals(aggregateClassLoader.getParent())))) {
+			Objects.equals(getParent(), aggregateClassLoader.getParent())) {
 
 			return true;
 		}
@@ -142,16 +171,16 @@ public class AggregateClassLoader extends ClassLoader {
 		List<ClassLoader> classLoaders = new ArrayList<>(
 			_classLoaderReferences.size());
 
-		Iterator<EqualityWeakReference<ClassLoader>> itr =
+		Iterator<EqualityWeakReference<ClassLoader>> iterator =
 			_classLoaderReferences.iterator();
 
-		while (itr.hasNext()) {
-			WeakReference<ClassLoader> weakReference = itr.next();
+		while (iterator.hasNext()) {
+			WeakReference<ClassLoader> weakReference = iterator.next();
 
 			ClassLoader classLoader = weakReference.get();
 
 			if (classLoader == null) {
-				itr.remove();
+				iterator.remove();
 			}
 			else {
 				classLoaders.add(classLoader);
@@ -164,7 +193,7 @@ public class AggregateClassLoader extends ClassLoader {
 	@Override
 	public URL getResource(String name) {
 		for (ClassLoader classLoader : getClassLoaders()) {
-			URL url = _getResource(classLoader, name);
+			URL url = classLoader.getResource(name);
 
 			if (url != null) {
 				return url;
@@ -179,22 +208,21 @@ public class AggregateClassLoader extends ClassLoader {
 		List<URL> urls = new ArrayList<>();
 
 		for (ClassLoader classLoader : getClassLoaders()) {
-			urls.addAll(Collections.list(_getResources(classLoader, name)));
+			urls.addAll(Collections.list(classLoader.getResources(name)));
 		}
 
-		urls.addAll(Collections.list(_getResources(getParent(), name)));
+		ClassLoader parentClassLoader = getParent();
+
+		urls.addAll(Collections.list(parentClassLoader.getResources(name)));
 
 		return Collections.enumeration(urls);
 	}
 
 	@Override
 	public int hashCode() {
-		if (_classLoaderReferences != null) {
-			return _classLoaderReferences.hashCode();
-		}
-		else {
-			return 0;
-		}
+		int hash = HashUtil.hash(0, _classLoaderReferences);
+
+		return HashUtil.hash(hash, getParent());
 	}
 
 	@Override
@@ -203,7 +231,7 @@ public class AggregateClassLoader extends ClassLoader {
 			try {
 				return _findClass(classLoader, name);
 			}
-			catch (ClassNotFoundException cnfe) {
+			catch (ClassNotFoundException classNotFoundException) {
 			}
 		}
 
@@ -222,7 +250,7 @@ public class AggregateClassLoader extends ClassLoader {
 
 				break;
 			}
-			catch (ClassNotFoundException cnfe) {
+			catch (ClassNotFoundException classNotFoundException) {
 			}
 		}
 
@@ -236,73 +264,47 @@ public class AggregateClassLoader extends ClassLoader {
 		return loadedClass;
 	}
 
-	private static Class<?> _findClass(ClassLoader classLoader, String name)
+	private Class<?> _findClass(ClassLoader classLoader, String name)
 		throws ClassNotFoundException {
 
 		try {
 			return (Class<?>)_FIND_CLASS_METHOD.invoke(classLoader, name);
 		}
-		catch (InvocationTargetException ite) {
+		catch (InvocationTargetException invocationTargetException) {
 			throw new ClassNotFoundException(
-				"Unable to find class " + name, ite.getTargetException());
+				"Unable to find class " + name,
+				invocationTargetException.getTargetException());
 		}
-		catch (Exception e) {
-			throw new ClassNotFoundException("Unable to find class " + name, e);
-		}
-	}
-
-	private static URL _getResource(ClassLoader classLoader, String name) {
-		try {
-			return (URL)_GET_RESOURCE_METHOD.invoke(classLoader, name);
-		}
-		catch (InvocationTargetException ite) {
-			return null;
-		}
-		catch (Exception e) {
-			return null;
+		catch (Exception exception) {
+			throw new ClassNotFoundException(
+				"Unable to find class " + name, exception);
 		}
 	}
 
-	private static Enumeration<URL> _getResources(
-			ClassLoader classLoader, String name)
-		throws IOException {
-
-		try {
-			return (Enumeration<URL>)_GET_RESOURCES_METHOD.invoke(
-				classLoader, name);
-		}
-		catch (InvocationTargetException ite) {
-			Throwable t = ite.getTargetException();
-
-			throw new IOException(t);
-		}
-		catch (Exception e) {
-			throw new IOException(e);
-		}
-	}
-
-	private static Class<?> _loadClass(
+	private Class<?> _loadClass(
 			ClassLoader classLoader, String name, boolean resolve)
 		throws ClassNotFoundException {
 
-		try {
-			return (Class<?>)_LOAD_CLASS_METHOD.invoke(
-				classLoader, name, resolve);
+		if (resolve) {
+			try {
+				return (Class<?>)_LOAD_CLASS_METHOD.invoke(
+					classLoader, name, true);
+			}
+			catch (InvocationTargetException invocationTargetException) {
+				throw new ClassNotFoundException(
+					"Unable to load class " + name,
+					invocationTargetException.getTargetException());
+			}
+			catch (Exception exception) {
+				throw new ClassNotFoundException(
+					"Unable to load class " + name, exception);
+			}
 		}
-		catch (InvocationTargetException ite) {
-			throw new ClassNotFoundException(
-				"Unable to load class " + name, ite.getTargetException());
-		}
-		catch (Exception e) {
-			throw new ClassNotFoundException("Unable to load class " + name, e);
-		}
+
+		return classLoader.loadClass(name);
 	}
 
 	private static final Method _FIND_CLASS_METHOD;
-
-	private static final Method _GET_RESOURCE_METHOD;
-
-	private static final Method _GET_RESOURCES_METHOD;
 
 	private static final Method _LOAD_CLASS_METHOD;
 
@@ -311,17 +313,11 @@ public class AggregateClassLoader extends ClassLoader {
 			_FIND_CLASS_METHOD = ReflectionUtil.getDeclaredMethod(
 				ClassLoader.class, "findClass", String.class);
 
-			_GET_RESOURCE_METHOD = ReflectionUtil.getDeclaredMethod(
-				ClassLoader.class, "getResource", String.class);
-
-			_GET_RESOURCES_METHOD = ReflectionUtil.getDeclaredMethod(
-				ClassLoader.class, "getResources", String.class);
-
 			_LOAD_CLASS_METHOD = ReflectionUtil.getDeclaredMethod(
 				ClassLoader.class, "loadClass", String.class, boolean.class);
 		}
-		catch (Exception e) {
-			throw new LoggedExceptionInInitializerError(e);
+		catch (Exception exception) {
+			throw new LoggedExceptionInInitializerError(exception);
 		}
 	}
 

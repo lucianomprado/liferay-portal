@@ -1,5 +1,10 @@
 function GoogleFilePicker(callback) {
-	Liferay.once('googleAPILoaded', callback);
+	if (window.gapi) {
+		callback();
+	}
+	else {
+		Liferay.once('googleAPILoaded', callback);
+	}
 }
 
 GoogleFilePicker.prototype = {
@@ -103,15 +108,16 @@ GoogleFilePicker.prototype = {
 					"ICON_URL": doc[googlePickerDoc.ICON_URL] || '',
 					"ID": doc[googlePickerDoc.ID],
 					"NAME": doc[googlePickerDoc.NAME],
+					"TITLE": doc[googlePickerDoc.NAME].replace(/\.[^.]*$/, ''),
 					"URL": doc[googlePickerDoc.URL] || ''
 				});
 		}
 	}
 };
 
-GoogleFilePicker.API_KEY = '${googleAppsAPIKey}';
+GoogleFilePicker.API_KEY = '${htmlUtil.escapeJS(googleAppsAPIKey)}';
 
-GoogleFilePicker.CLIENT_ID = '${googleClientId}';
+GoogleFilePicker.CLIENT_ID = '${htmlUtil.escapeJS(googleClientId)}';
 
 GoogleFilePicker.SCOPE = [
 	'https://www.googleapis.com/auth/drive.readonly',

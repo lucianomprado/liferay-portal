@@ -17,22 +17,25 @@ package com.liferay.knowledge.base.service.persistence.impl;
 import com.liferay.knowledge.base.model.KBArticle;
 import com.liferay.knowledge.base.model.impl.KBArticleImpl;
 import com.liferay.knowledge.base.service.persistence.KBArticleFinder;
-import com.liferay.portal.dao.orm.custom.sql.CustomSQLUtil;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.portal.dao.orm.custom.sql.CustomSQL;
 import com.liferay.portal.kernel.dao.orm.QueryPos;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.dao.orm.SQLQuery;
 import com.liferay.portal.kernel.dao.orm.Session;
-import com.liferay.portal.kernel.util.StringBundler;
+import com.liferay.portal.kernel.dao.orm.Type;
 import com.liferay.portal.kernel.util.StringUtil;
-
-import java.math.BigInteger;
 
 import java.util.Iterator;
 import java.util.List;
 
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
+
 /**
  * @author Adolfo Pérez
  */
+@Component(service = KBArticleFinder.class)
 public class KBArticleFinderImpl
 	extends KBArticleFinderBaseImpl implements KBArticleFinder {
 
@@ -46,23 +49,25 @@ public class KBArticleFinderImpl
 		try {
 			session = openSession();
 
-			String sql = CustomSQLUtil.get(
+			String sql = _customSQL.get(
 				KBArticleFinderImpl.class, _COUNT_BY_URL_TITLE);
 
 			sql = replaceWorkflowStatus(sql, status);
 
-			SQLQuery query = session.createSynchronizedSQLQuery(sql);
+			SQLQuery sqlQuery = session.createSynchronizedSQLQuery(sql);
 
-			QueryPos qPos = QueryPos.getInstance(query);
+			sqlQuery.addScalar(COUNT_COLUMN_NAME, Type.LONG);
 
-			qPos.add(groupId);
-			qPos.add(kbArticleUrlTitle);
-			qPos.add(kbFolderUrlTitle);
+			QueryPos queryPos = QueryPos.getInstance(sqlQuery);
 
-			Iterator<BigInteger> itr = query.iterate();
+			queryPos.add(groupId);
+			queryPos.add(kbArticleUrlTitle);
+			queryPos.add(kbFolderUrlTitle);
 
-			if (itr.hasNext()) {
-				BigInteger count = itr.next();
+			Iterator<Long> iterator = sqlQuery.iterate();
+
+			if (iterator.hasNext()) {
+				Long count = iterator.next();
 
 				if (count != null) {
 					return count.intValue();
@@ -86,22 +91,22 @@ public class KBArticleFinderImpl
 		try {
 			session = openSession();
 
-			String sql = CustomSQLUtil.get(
+			String sql = _customSQL.get(
 				KBArticleFinderImpl.class, _FIND_BY_URL_TITLE);
 
 			sql = replaceWorkflowStatus(sql, status);
 
-			SQLQuery query = session.createSynchronizedSQLQuery(sql);
+			SQLQuery sqlQuery = session.createSynchronizedSQLQuery(sql);
 
-			query.addEntity(KBArticleImpl.TABLE_NAME, KBArticleImpl.class);
+			sqlQuery.addEntity(KBArticleImpl.TABLE_NAME, KBArticleImpl.class);
 
-			QueryPos qPos = QueryPos.getInstance(query);
+			QueryPos queryPos = QueryPos.getInstance(sqlQuery);
 
-			qPos.add(groupId);
-			qPos.add(kbArticleUrlTitle);
-			qPos.add(kbFolderUrlTitle);
+			queryPos.add(groupId);
+			queryPos.add(kbArticleUrlTitle);
+			queryPos.add(kbFolderUrlTitle);
 
-			return (List)QueryUtil.list(query, getDialect(), start, end);
+			return (List)QueryUtil.list(sqlQuery, getDialect(), start, end);
 		}
 		finally {
 			closeSession(session);
@@ -127,5 +132,8 @@ public class KBArticleFinderImpl
 
 	private static final String _FIND_BY_URL_TITLE =
 		KBArticleFinder.class.getName() + ".findByUrlTitle";
+
+	@Reference
+	private CustomSQL _customSQL;
 
 }

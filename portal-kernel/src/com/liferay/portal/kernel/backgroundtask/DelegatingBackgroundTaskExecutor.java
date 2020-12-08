@@ -30,10 +30,8 @@ public class DelegatingBackgroundTaskExecutor
 
 	@Override
 	public BackgroundTaskExecutor clone() {
-		BackgroundTaskExecutor backgroundTaskExecutor =
-			new DelegatingBackgroundTaskExecutor(getBackgroundTaskExecutor());
-
-		return backgroundTaskExecutor;
+		return new DelegatingBackgroundTaskExecutor(
+			getBackgroundTaskExecutor());
 	}
 
 	@Override
@@ -69,8 +67,11 @@ public class DelegatingBackgroundTaskExecutor
 	}
 
 	@Override
-	public String handleException(BackgroundTask backgroundTask, Exception e) {
-		return _backgroundTaskExecutor.handleException(backgroundTask, e);
+	public String handleException(
+		BackgroundTask backgroundTask, Exception exception) {
+
+		return _backgroundTaskExecutor.handleException(
+			backgroundTask, exception);
 	}
 
 	@Override

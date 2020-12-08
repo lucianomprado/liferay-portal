@@ -14,7 +14,7 @@
 
 package com.liferay.portal.util;
 
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.petra.string.StringPool;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -195,6 +195,12 @@ public class FileImplTest {
 	public void testStripSuffixWhenFileNameHasNoCloseParenthesis() {
 		Assert.assertEquals(
 			"test(1.jsp", _fileImpl.stripParentheticalSuffix("test(1.jsp"));
+	}
+
+	@Test
+	public void testStripSuffixWhenFileNameHasNoExtension() {
+		Assert.assertEquals(
+			"test", _fileImpl.stripParentheticalSuffix("test (1)"));
 	}
 
 	@Test

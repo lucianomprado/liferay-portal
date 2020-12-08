@@ -14,14 +14,13 @@
 
 package com.liferay.knowledge.base.web.internal.constants;
 
+import com.liferay.portal.kernel.util.WebKeys;
+
 /**
  * @author Brian Wing Shun Chan
  * @author Peter Shin
  */
-public class KBWebKeys implements com.liferay.portal.kernel.util.WebKeys {
-
-	public static final String DL_MIME_TYPE_DISPLAY_CONTEXT =
-		"DL_MIME_TYPE_DISPLAY_CONTEXT";
+public class KBWebKeys implements WebKeys {
 
 	public static final String KNOWLEDGE_BASE_EXACT_MATCH =
 		"KNOWLEDGE_BASE_EXACT_MATCH";
@@ -57,5 +56,8 @@ public class KBWebKeys implements com.liferay.portal.kernel.util.WebKeys {
 	public static final String KNOWLEDGE_BASE_STATUS = "KNOWLEDGE_BASE_STATUS";
 
 	public static final String SHOW_SIDEBAR_HEADER = "SHOW_SIDEBAR_HEADER";
+
+	public static final String TEMP_FOLDER_NAME =
+		"com.liferay.knowledge.base.admin";
 
 }

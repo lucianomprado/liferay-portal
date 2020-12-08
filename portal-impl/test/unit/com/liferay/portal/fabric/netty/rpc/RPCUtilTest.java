@@ -14,17 +14,17 @@
 
 package com.liferay.portal.fabric.netty.rpc;
 
+import com.liferay.petra.concurrent.AsyncBroker;
+import com.liferay.petra.concurrent.DefaultNoticeableFuture;
+import com.liferay.petra.concurrent.NoticeableFuture;
+import com.liferay.petra.process.ProcessException;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.fabric.netty.handlers.NettyChannelAttributes;
 import com.liferay.portal.fabric.netty.rpc.handlers.NettyRPCChannelHandler;
-import com.liferay.portal.kernel.concurrent.AsyncBroker;
-import com.liferay.portal.kernel.concurrent.DefaultNoticeableFuture;
-import com.liferay.portal.kernel.concurrent.NoticeableFuture;
-import com.liferay.portal.kernel.process.ProcessException;
 import com.liferay.portal.kernel.test.CaptureHandler;
 import com.liferay.portal.kernel.test.JDKLoggerTestUtil;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.rule.CodeCoverageAssertor;
-import com.liferay.portal.kernel.util.StringPool;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
@@ -99,23 +99,23 @@ public class RPCUtilTest {
 
 		// RPCResponse with exception
 
-		ProcessException testException = new ProcessException("message");
+		ProcessException processException = new ProcessException("message");
 
 		Future<Serializable> future = RPCUtil.execute(
-			_embeddedChannel, new ExceptionRPCCallable(testException));
+			_embeddedChannel, new ExceptionRPCCallable(processException));
 
-		_embeddedChannel.writeInbound(_embeddedChannel.readOutbound());
-		_embeddedChannel.writeInbound(_embeddedChannel.readOutbound());
+		_embeddedChannel.writeOneInbound(_embeddedChannel.readOutbound());
+		_embeddedChannel.writeOneInbound(_embeddedChannel.readOutbound());
 
 		try {
 			future.get();
 
 			Assert.fail();
 		}
-		catch (ExecutionException ee) {
-			Throwable throwable = ee.getCause();
+		catch (ExecutionException executionException) {
+			Throwable throwable = executionException.getCause();
 
-			Assert.assertSame(testException, throwable);
+			Assert.assertSame(processException, throwable);
 		}
 
 		// Channel closed failure, set back exception
@@ -130,8 +130,8 @@ public class RPCUtilTest {
 
 			Assert.fail();
 		}
-		catch (ExecutionException ee) {
-			Throwable throwable = ee.getCause();
+		catch (ExecutionException executionException) {
+			Throwable throwable = executionException.getCause();
 
 			Assert.assertSame(
 				ClosedChannelException.class, throwable.getClass());
@@ -190,8 +190,8 @@ public class RPCUtilTest {
 		Future<String> future = RPCUtil.execute(
 			_embeddedChannel, new ResultRPCCallable(result));
 
-		_embeddedChannel.writeInbound(_embeddedChannel.readOutbound());
-		_embeddedChannel.writeInbound(_embeddedChannel.readOutbound());
+		_embeddedChannel.writeOneInbound(_embeddedChannel.readOutbound());
+		_embeddedChannel.writeOneInbound(_embeddedChannel.readOutbound());
 
 		Assert.assertEquals(result, future.get());
 	}

@@ -14,8 +14,6 @@
 
 package com.liferay.knowledge.base.model;
 
-import aQute.bnd.annotation.ProviderType;
-
 import java.io.Serializable;
 
 import java.util.ArrayList;
@@ -26,14 +24,16 @@ import java.util.List;
  * This class is used by SOAP remote services, specifically {@link com.liferay.knowledge.base.service.http.KBFolderServiceSoap}.
  *
  * @author Brian Wing Shun Chan
- * @see com.liferay.knowledge.base.service.http.KBFolderServiceSoap
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
-@ProviderType
+@Deprecated
 public class KBFolderSoap implements Serializable {
+
 	public static KBFolderSoap toSoapModel(KBFolder model) {
 		KBFolderSoap soapModel = new KBFolderSoap();
 
+		soapModel.setMvccVersion(model.getMvccVersion());
 		soapModel.setUuid(model.getUuid());
 		soapModel.setKbFolderId(model.getKbFolderId());
 		soapModel.setGroupId(model.getGroupId());
@@ -79,7 +79,8 @@ public class KBFolderSoap implements Serializable {
 	}
 
 	public static KBFolderSoap[] toSoapModels(List<KBFolder> models) {
-		List<KBFolderSoap> soapModels = new ArrayList<KBFolderSoap>(models.size());
+		List<KBFolderSoap> soapModels = new ArrayList<KBFolderSoap>(
+			models.size());
 
 		for (KBFolder model : models) {
 			soapModels.add(toSoapModel(model));
@@ -97,6 +98,14 @@ public class KBFolderSoap implements Serializable {
 
 	public void setPrimaryKey(long pk) {
 		setKbFolderId(pk);
+	}
+
+	public long getMvccVersion() {
+		return _mvccVersion;
+	}
+
+	public void setMvccVersion(long mvccVersion) {
+		_mvccVersion = mvccVersion;
 	}
 
 	public String getUuid() {
@@ -203,6 +212,7 @@ public class KBFolderSoap implements Serializable {
 		_lastPublishDate = lastPublishDate;
 	}
 
+	private long _mvccVersion;
 	private String _uuid;
 	private long _kbFolderId;
 	private long _groupId;
@@ -216,4 +226,5 @@ public class KBFolderSoap implements Serializable {
 	private String _urlTitle;
 	private String _description;
 	private Date _lastPublishDate;
+
 }

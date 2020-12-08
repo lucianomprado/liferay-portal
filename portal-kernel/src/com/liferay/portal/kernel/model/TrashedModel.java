@@ -14,8 +14,6 @@
 
 package com.liferay.portal.kernel.model;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.trash.TrashHandler;
 import com.liferay.trash.kernel.model.TrashEntry;
@@ -23,7 +21,6 @@ import com.liferay.trash.kernel.model.TrashEntry;
 /**
  * @author Zsolt Berentey
  */
-@ProviderType
 public interface TrashedModel {
 
 	public int getStatus();

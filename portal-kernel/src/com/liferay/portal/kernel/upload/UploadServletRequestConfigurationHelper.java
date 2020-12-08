@@ -14,7 +14,7 @@
 
 package com.liferay.portal.kernel.upload;
 
-import aQute.bnd.annotation.ProviderType;
+import org.osgi.annotation.versioning.ProviderType;
 
 /**
  * @author Pei-Jung Lan
@@ -23,6 +23,8 @@ import aQute.bnd.annotation.ProviderType;
 public interface UploadServletRequestConfigurationHelper {
 
 	public long getMaxSize();
+
+	public long getMaxTries();
 
 	public String getTempDir();
 

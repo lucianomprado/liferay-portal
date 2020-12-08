@@ -7,7 +7,7 @@
 		layoutModel = dataFactory.newLayoutModel(groupId, groupId + "_asset_publisher_" + pageCount, "", portletId)
 	/>
 
-	${dataFactory.getCSVWriter("assetPublisher").write(layoutModel.friendlyURL + "\n")}
+	${csvFileWriter.write("assetPublisher", layoutModel.friendlyURL + "\n")}
 
 	<@insertLayout _layoutModel=layoutModel />
 
@@ -17,5 +17,13 @@
 		${dataFactory.toInsertSQL(portletPreferencesModel)}
 	</#list>
 
-	${dataFactory.toInsertSQL(dataFactory.newPortletPreferencesModel(layoutModel.plid, groupId, portletId, pageCount))}
+	<#assign assetPublisherPortletPreferencesModel = dataFactory.newPortletPreferencesModel(layoutModel.plid, groupId, portletId, pageCount) />
+
+	${dataFactory.toInsertSQL(assetPublisherPortletPreferencesModel)}
+
+	<#assign assetPublisherPortletPreferencesModels = dataFactory.newAssetPublisherPortletPreferenceValueModels(assetPublisherPortletPreferencesModel, groupId, pageCount) />
+
+	<#list assetPublisherPortletPreferencesModels as assetPublisherPortletPreferencesModel>
+		${dataFactory.toInsertSQL(assetPublisherPortletPreferencesModel)}
+	</#list>
 </#list>

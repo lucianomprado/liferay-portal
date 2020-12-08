@@ -14,6 +14,7 @@
 
 package com.liferay.taglib.ui;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.service.PortletLocalServiceUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
@@ -21,7 +22,6 @@ import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.PropsUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.taglib.portletext.RuntimeTag;
@@ -38,6 +38,8 @@ public class LayoutCommonTag extends IncludeTag {
 
 	@Override
 	protected void cleanUp() {
+		super.cleanUp();
+
 		_includeStaticPortlets = false;
 		_includeWebServerDisplayNode = false;
 	}
@@ -49,13 +51,16 @@ public class LayoutCommonTag extends IncludeTag {
 
 	@Override
 	protected boolean isCleanUpSetAttributes() {
-		return _CLEAN_UP_SET_ATTRIBUTES;
+		return super.isCleanUpSetAttributes();
 	}
 
 	@Override
 	protected int processEndTag() throws Exception {
-		ThemeDisplay themeDisplay = (ThemeDisplay)request.getAttribute(
-			WebKeys.THEME_DISPLAY);
+		HttpServletRequest httpServletRequest = getRequest();
+
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)httpServletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
 
 		if (!themeDisplay.isStatePopUp()) {
 			if (!themeDisplay.isStateExclusive() && !themeDisplay.isWidget()) {
@@ -69,14 +74,16 @@ public class LayoutCommonTag extends IncludeTag {
 
 		if (_includeStaticPortlets) {
 			Company company = themeDisplay.getCompany();
-			HttpServletResponse response =
+			HttpServletResponse httpServletResponse =
 				(HttpServletResponse)pageContext.getResponse();
 
 			for (String portletId : _LAYOUT_STATIC_PORTLETS_ALL) {
 				if (PortletLocalServiceUtil.hasPortlet(
 						company.getCompanyId(), portletId)) {
 
-					RuntimeTag.doTag(portletId, pageContext, request, response);
+					RuntimeTag.doTag(
+						portletId, pageContext, httpServletRequest,
+						httpServletResponse);
 				}
 			}
 		}
@@ -98,17 +105,16 @@ public class LayoutCommonTag extends IncludeTag {
 		}
 
 		jspWriter.write(
-			"<form action=\"#\" id=\"hrefFm\" method=\"post\" name=\"hrefFm\"" +
-				"><span></span></form>");
+			"<form action=\"#\" aria-hidden=\"true\" class=\"hide\" " +
+				"id=\"hrefFm\" method=\"post\" name=\"hrefFm\"><span>" +
+					"</span><input hidden type=\"submit\"/></form>");
 
 		return EVAL_PAGE;
 	}
 
 	@Override
-	protected void setAttributes(HttpServletRequest request) {
+	protected void setAttributes(HttpServletRequest httpServletRequest) {
 	}
-
-	private static final boolean _CLEAN_UP_SET_ATTRIBUTES = true;
 
 	private static final String[] _LAYOUT_STATIC_PORTLETS_ALL =
 		PropsUtil.getArray(PropsKeys.LAYOUT_STATIC_PORTLETS_ALL);

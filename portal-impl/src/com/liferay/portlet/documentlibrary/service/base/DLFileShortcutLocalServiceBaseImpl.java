@@ -14,19 +14,15 @@
 
 package com.liferay.portlet.documentlibrary.service.base;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.asset.kernel.service.persistence.AssetEntryFinder;
 import com.liferay.asset.kernel.service.persistence.AssetEntryPersistence;
 import com.liferay.asset.kernel.service.persistence.AssetTagFinder;
 import com.liferay.asset.kernel.service.persistence.AssetTagPersistence;
-
 import com.liferay.document.library.kernel.model.DLFileShortcut;
 import com.liferay.document.library.kernel.service.DLFileShortcutLocalService;
 import com.liferay.document.library.kernel.service.persistence.DLFileShortcutPersistence;
 import com.liferay.document.library.kernel.service.persistence.DLFolderFinder;
 import com.liferay.document.library.kernel.service.persistence.DLFolderPersistence;
-
 import com.liferay.exportimport.kernel.lar.ExportImportHelperUtil;
 import com.liferay.exportimport.kernel.lar.ManifestSummary;
 import com.liferay.exportimport.kernel.lar.PortletDataContext;
@@ -34,7 +30,8 @@ import com.liferay.exportimport.kernel.lar.StagedModelDataHandler;
 import com.liferay.exportimport.kernel.lar.StagedModelDataHandlerRegistryUtil;
 import com.liferay.exportimport.kernel.lar.StagedModelDataHandlerUtil;
 import com.liferay.exportimport.kernel.lar.StagedModelType;
-
+import com.liferay.petra.function.UnsafeFunction;
+import com.liferay.petra.sql.dsl.query.DSLQuery;
 import com.liferay.portal.kernel.bean.BeanReference;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
@@ -61,12 +58,14 @@ import com.liferay.portal.kernel.search.Indexable;
 import com.liferay.portal.kernel.search.IndexableType;
 import com.liferay.portal.kernel.service.BaseLocalServiceImpl;
 import com.liferay.portal.kernel.service.PersistedModelLocalServiceRegistry;
+import com.liferay.portal.kernel.service.persistence.BasePersistence;
 import com.liferay.portal.kernel.service.persistence.UserFinder;
 import com.liferay.portal.kernel.service.persistence.UserPersistence;
+import com.liferay.portal.kernel.service.persistence.change.tracking.CTPersistence;
+import com.liferay.portal.kernel.transaction.Transactional;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
-
 import com.liferay.trash.kernel.service.persistence.TrashEntryPersistence;
 import com.liferay.trash.kernel.service.persistence.TrashVersionPersistence;
 
@@ -85,21 +84,24 @@ import javax.sql.DataSource;
  *
  * @author Brian Wing Shun Chan
  * @see com.liferay.portlet.documentlibrary.service.impl.DLFileShortcutLocalServiceImpl
- * @see com.liferay.document.library.kernel.service.DLFileShortcutLocalServiceUtil
  * @generated
  */
-@ProviderType
 public abstract class DLFileShortcutLocalServiceBaseImpl
-	extends BaseLocalServiceImpl implements DLFileShortcutLocalService,
-		IdentifiableOSGiService {
+	extends BaseLocalServiceImpl
+	implements DLFileShortcutLocalService, IdentifiableOSGiService {
+
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. Always use {@link com.liferay.document.library.kernel.service.DLFileShortcutLocalServiceUtil} to access the document library file shortcut local service.
+	 * Never modify or reference this class directly. Use <code>DLFileShortcutLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>com.liferay.document.library.kernel.service.DLFileShortcutLocalServiceUtil</code>.
 	 */
 
 	/**
 	 * Adds the document library file shortcut to the database. Also notifies the appropriate model listeners.
+	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect DLFileShortcutLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
 	 *
 	 * @param dlFileShortcut the document library file shortcut
 	 * @return the document library file shortcut that was added
@@ -119,12 +121,17 @@ public abstract class DLFileShortcutLocalServiceBaseImpl
 	 * @return the new document library file shortcut
 	 */
 	@Override
+	@Transactional(enabled = false)
 	public DLFileShortcut createDLFileShortcut(long fileShortcutId) {
 		return dlFileShortcutPersistence.create(fileShortcutId);
 	}
 
 	/**
 	 * Deletes the document library file shortcut with the primary key from the database. Also notifies the appropriate model listeners.
+	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect DLFileShortcutLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
 	 *
 	 * @param fileShortcutId the primary key of the document library file shortcut
 	 * @return the document library file shortcut that was removed
@@ -134,11 +141,16 @@ public abstract class DLFileShortcutLocalServiceBaseImpl
 	@Override
 	public DLFileShortcut deleteDLFileShortcut(long fileShortcutId)
 		throws PortalException {
+
 		return dlFileShortcutPersistence.remove(fileShortcutId);
 	}
 
 	/**
 	 * Deletes the document library file shortcut from the database. Also notifies the appropriate model listeners.
+	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect DLFileShortcutLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
 	 *
 	 * @param dlFileShortcut the document library file shortcut
 	 * @return the document library file shortcut that was removed
@@ -150,11 +162,16 @@ public abstract class DLFileShortcutLocalServiceBaseImpl
 	}
 
 	@Override
+	public <T> T dslQuery(DSLQuery dslQuery) {
+		return dlFileShortcutPersistence.dslQuery(dslQuery);
+	}
+
+	@Override
 	public DynamicQuery dynamicQuery() {
 		Class<?> clazz = getClass();
 
-		return DynamicQueryFactoryUtil.forClass(DLFileShortcut.class,
-			clazz.getClassLoader());
+		return DynamicQueryFactoryUtil.forClass(
+			DLFileShortcut.class, clazz.getClassLoader());
 	}
 
 	/**
@@ -172,7 +189,7 @@ public abstract class DLFileShortcutLocalServiceBaseImpl
 	 * Performs a dynamic query on the database and returns a range of the matching rows.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.documentlibrary.model.impl.DLFileShortcutModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>com.liferay.portlet.documentlibrary.model.impl.DLFileShortcutModelImpl</code>.
 	 * </p>
 	 *
 	 * @param dynamicQuery the dynamic query
@@ -181,17 +198,18 @@ public abstract class DLFileShortcutLocalServiceBaseImpl
 	 * @return the range of matching rows
 	 */
 	@Override
-	public <T> List<T> dynamicQuery(DynamicQuery dynamicQuery, int start,
-		int end) {
-		return dlFileShortcutPersistence.findWithDynamicQuery(dynamicQuery,
-			start, end);
+	public <T> List<T> dynamicQuery(
+		DynamicQuery dynamicQuery, int start, int end) {
+
+		return dlFileShortcutPersistence.findWithDynamicQuery(
+			dynamicQuery, start, end);
 	}
 
 	/**
 	 * Performs a dynamic query on the database and returns an ordered range of the matching rows.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.documentlibrary.model.impl.DLFileShortcutModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>com.liferay.portlet.documentlibrary.model.impl.DLFileShortcutModelImpl</code>.
 	 * </p>
 	 *
 	 * @param dynamicQuery the dynamic query
@@ -201,10 +219,12 @@ public abstract class DLFileShortcutLocalServiceBaseImpl
 	 * @return the ordered range of matching rows
 	 */
 	@Override
-	public <T> List<T> dynamicQuery(DynamicQuery dynamicQuery, int start,
-		int end, OrderByComparator<T> orderByComparator) {
-		return dlFileShortcutPersistence.findWithDynamicQuery(dynamicQuery,
-			start, end, orderByComparator);
+	public <T> List<T> dynamicQuery(
+		DynamicQuery dynamicQuery, int start, int end,
+		OrderByComparator<T> orderByComparator) {
+
+		return dlFileShortcutPersistence.findWithDynamicQuery(
+			dynamicQuery, start, end, orderByComparator);
 	}
 
 	/**
@@ -226,10 +246,11 @@ public abstract class DLFileShortcutLocalServiceBaseImpl
 	 * @return the number of rows matching the dynamic query
 	 */
 	@Override
-	public long dynamicQueryCount(DynamicQuery dynamicQuery,
-		Projection projection) {
-		return dlFileShortcutPersistence.countWithDynamicQuery(dynamicQuery,
-			projection);
+	public long dynamicQueryCount(
+		DynamicQuery dynamicQuery, Projection projection) {
+
+		return dlFileShortcutPersistence.countWithDynamicQuery(
+			dynamicQuery, projection);
 	}
 
 	@Override
@@ -245,8 +266,9 @@ public abstract class DLFileShortcutLocalServiceBaseImpl
 	 * @return the matching document library file shortcut, or <code>null</code> if a matching document library file shortcut could not be found
 	 */
 	@Override
-	public DLFileShortcut fetchDLFileShortcutByUuidAndGroupId(String uuid,
-		long groupId) {
+	public DLFileShortcut fetchDLFileShortcutByUuidAndGroupId(
+		String uuid, long groupId) {
+
 		return dlFileShortcutPersistence.fetchByUUID_G(uuid, groupId);
 	}
 
@@ -260,12 +282,14 @@ public abstract class DLFileShortcutLocalServiceBaseImpl
 	@Override
 	public DLFileShortcut getDLFileShortcut(long fileShortcutId)
 		throws PortalException {
+
 		return dlFileShortcutPersistence.findByPrimaryKey(fileShortcutId);
 	}
 
 	@Override
 	public ActionableDynamicQuery getActionableDynamicQuery() {
-		ActionableDynamicQuery actionableDynamicQuery = new DefaultActionableDynamicQuery();
+		ActionableDynamicQuery actionableDynamicQuery =
+			new DefaultActionableDynamicQuery();
 
 		actionableDynamicQuery.setBaseLocalService(dlFileShortcutLocalService);
 		actionableDynamicQuery.setClassLoader(getClassLoader());
@@ -277,10 +301,14 @@ public abstract class DLFileShortcutLocalServiceBaseImpl
 	}
 
 	@Override
-	public IndexableActionableDynamicQuery getIndexableActionableDynamicQuery() {
-		IndexableActionableDynamicQuery indexableActionableDynamicQuery = new IndexableActionableDynamicQuery();
+	public IndexableActionableDynamicQuery
+		getIndexableActionableDynamicQuery() {
 
-		indexableActionableDynamicQuery.setBaseLocalService(dlFileShortcutLocalService);
+		IndexableActionableDynamicQuery indexableActionableDynamicQuery =
+			new IndexableActionableDynamicQuery();
+
+		indexableActionableDynamicQuery.setBaseLocalService(
+			dlFileShortcutLocalService);
 		indexableActionableDynamicQuery.setClassLoader(getClassLoader());
 		indexableActionableDynamicQuery.setModelClass(DLFileShortcut.class);
 
@@ -292,6 +320,7 @@ public abstract class DLFileShortcutLocalServiceBaseImpl
 
 	protected void initActionableDynamicQuery(
 		ActionableDynamicQuery actionableDynamicQuery) {
+
 		actionableDynamicQuery.setBaseLocalService(dlFileShortcutLocalService);
 		actionableDynamicQuery.setClassLoader(getClassLoader());
 		actionableDynamicQuery.setModelClass(DLFileShortcut.class);
@@ -302,48 +331,59 @@ public abstract class DLFileShortcutLocalServiceBaseImpl
 	@Override
 	public ExportActionableDynamicQuery getExportActionableDynamicQuery(
 		final PortletDataContext portletDataContext) {
-		final ExportActionableDynamicQuery exportActionableDynamicQuery = new ExportActionableDynamicQuery() {
+
+		final ExportActionableDynamicQuery exportActionableDynamicQuery =
+			new ExportActionableDynamicQuery() {
+
 				@Override
 				public long performCount() throws PortalException {
-					ManifestSummary manifestSummary = portletDataContext.getManifestSummary();
+					ManifestSummary manifestSummary =
+						portletDataContext.getManifestSummary();
 
 					StagedModelType stagedModelType = getStagedModelType();
 
 					long modelAdditionCount = super.performCount();
 
-					manifestSummary.addModelAdditionCount(stagedModelType,
-						modelAdditionCount);
+					manifestSummary.addModelAdditionCount(
+						stagedModelType, modelAdditionCount);
 
-					long modelDeletionCount = ExportImportHelperUtil.getModelDeletionCount(portletDataContext,
-							stagedModelType);
+					long modelDeletionCount =
+						ExportImportHelperUtil.getModelDeletionCount(
+							portletDataContext, stagedModelType);
 
-					manifestSummary.addModelDeletionCount(stagedModelType,
-						modelDeletionCount);
+					manifestSummary.addModelDeletionCount(
+						stagedModelType, modelDeletionCount);
 
 					return modelAdditionCount;
 				}
+
 			};
 
 		initActionableDynamicQuery(exportActionableDynamicQuery);
 
-		exportActionableDynamicQuery.setAddCriteriaMethod(new ActionableDynamicQuery.AddCriteriaMethod() {
+		exportActionableDynamicQuery.setAddCriteriaMethod(
+			new ActionableDynamicQuery.AddCriteriaMethod() {
+
 				@Override
 				public void addCriteria(DynamicQuery dynamicQuery) {
-					Criterion modifiedDateCriterion = portletDataContext.getDateRangeCriteria(
-							"modifiedDate");
+					Criterion modifiedDateCriterion =
+						portletDataContext.getDateRangeCriteria("modifiedDate");
 
 					if (modifiedDateCriterion != null) {
-						Conjunction conjunction = RestrictionsFactoryUtil.conjunction();
+						Conjunction conjunction =
+							RestrictionsFactoryUtil.conjunction();
 
 						conjunction.add(modifiedDateCriterion);
 
-						Disjunction disjunction = RestrictionsFactoryUtil.disjunction();
+						Disjunction disjunction =
+							RestrictionsFactoryUtil.disjunction();
 
-						disjunction.add(RestrictionsFactoryUtil.gtProperty(
+						disjunction.add(
+							RestrictionsFactoryUtil.gtProperty(
 								"modifiedDate", "lastPublishDate"));
 
-						Property lastPublishDateProperty = PropertyFactoryUtil.forName(
-								"lastPublishDate");
+						Property lastPublishDateProperty =
+							PropertyFactoryUtil.forName("lastPublishDate");
 
 						disjunction.add(lastPublishDateProperty.isNull());
 
@@ -352,12 +392,14 @@ public abstract class DLFileShortcutLocalServiceBaseImpl
 						modifiedDateCriterion = conjunction;
 					}
 
-					Criterion statusDateCriterion = portletDataContext.getDateRangeCriteria(
-							"statusDate");
+					Criterion statusDateCriterion =
+						portletDataContext.getDateRangeCriteria("statusDate");
 
 					if ((modifiedDateCriterion != null) &&
-							(statusDateCriterion != null)) {
-						Disjunction disjunction = RestrictionsFactoryUtil.disjunction();
+						(statusDateCriterion != null)) {
+
+						Disjunction disjunction =
+							RestrictionsFactoryUtil.disjunction();
 
 						disjunction.add(modifiedDateCriterion);
 						disjunction.add(statusDateCriterion);
@@ -365,35 +407,49 @@ public abstract class DLFileShortcutLocalServiceBaseImpl
 						dynamicQuery.add(disjunction);
 					}
 
-					Property workflowStatusProperty = PropertyFactoryUtil.forName(
-							"status");
+					Property workflowStatusProperty =
+						PropertyFactoryUtil.forName("status");
 
 					if (portletDataContext.isInitialPublication()) {
-						dynamicQuery.add(workflowStatusProperty.ne(
+						dynamicQuery.add(
+							workflowStatusProperty.ne(
 								WorkflowConstants.STATUS_IN_TRASH));
 					}
 					else {
-						StagedModelDataHandler<?> stagedModelDataHandler = StagedModelDataHandlerRegistryUtil.getStagedModelDataHandler(DLFileShortcut.class.getName());
+						StagedModelDataHandler<?> stagedModelDataHandler =
+							StagedModelDataHandlerRegistryUtil.
+								getStagedModelDataHandler(
+									DLFileShortcut.class.getName());
 
-						dynamicQuery.add(workflowStatusProperty.in(
-								stagedModelDataHandler.getExportableStatuses()));
+						dynamicQuery.add(
+							workflowStatusProperty.in(
+								stagedModelDataHandler.
+									getExportableStatuses()));
 					}
 				}
+
 			});
 
-		exportActionableDynamicQuery.setCompanyId(portletDataContext.getCompanyId());
+		exportActionableDynamicQuery.setCompanyId(
+			portletDataContext.getCompanyId());
 
-		exportActionableDynamicQuery.setGroupId(portletDataContext.getScopeGroupId());
+		exportActionableDynamicQuery.setGroupId(
+			portletDataContext.getScopeGroupId());
 
-		exportActionableDynamicQuery.setPerformActionMethod(new ActionableDynamicQuery.PerformActionMethod<DLFileShortcut>() {
+		exportActionableDynamicQuery.setPerformActionMethod(
+			new ActionableDynamicQuery.PerformActionMethod<DLFileShortcut>() {
+
 				@Override
 				public void performAction(DLFileShortcut dlFileShortcut)
 					throws PortalException {
-					StagedModelDataHandlerUtil.exportStagedModel(portletDataContext,
-						dlFileShortcut);
+
+					StagedModelDataHandlerUtil.exportStagedModel(
+						portletDataContext, dlFileShortcut);
 				}
+
 			});
-		exportActionableDynamicQuery.setStagedModelType(new StagedModelType(
+		exportActionableDynamicQuery.setStagedModelType(
+			new StagedModelType(
 				PortalUtil.getClassNameId(DLFileShortcut.class.getName())));
 
 		return exportActionableDynamicQuery;
@@ -403,14 +459,36 @@ public abstract class DLFileShortcutLocalServiceBaseImpl
 	 * @throws PortalException
 	 */
 	@Override
+	public PersistedModel createPersistedModel(Serializable primaryKeyObj)
+		throws PortalException {
+
+		return dlFileShortcutPersistence.create(
+			((Long)primaryKeyObj).longValue());
+	}
+
+	/**
+	 * @throws PortalException
+	 */
+	@Override
 	public PersistedModel deletePersistedModel(PersistedModel persistedModel)
 		throws PortalException {
-		return dlFileShortcutLocalService.deleteDLFileShortcut((DLFileShortcut)persistedModel);
+
+		return dlFileShortcutLocalService.deleteDLFileShortcut(
+			(DLFileShortcut)persistedModel);
 	}
 
 	@Override
+	public BasePersistence<DLFileShortcut> getBasePersistence() {
+		return dlFileShortcutPersistence;
+	}
+
+	/**
+	 * @throws PortalException
+	 */
+	@Override
 	public PersistedModel getPersistedModel(Serializable primaryKeyObj)
 		throws PortalException {
+
 		return dlFileShortcutPersistence.findByPrimaryKey(primaryKeyObj);
 	}
 
@@ -424,6 +502,7 @@ public abstract class DLFileShortcutLocalServiceBaseImpl
 	@Override
 	public List<DLFileShortcut> getDLFileShortcutsByUuidAndCompanyId(
 		String uuid, long companyId) {
+
 		return dlFileShortcutPersistence.findByUuid_C(uuid, companyId);
 	}
 
@@ -441,8 +520,9 @@ public abstract class DLFileShortcutLocalServiceBaseImpl
 	public List<DLFileShortcut> getDLFileShortcutsByUuidAndCompanyId(
 		String uuid, long companyId, int start, int end,
 		OrderByComparator<DLFileShortcut> orderByComparator) {
-		return dlFileShortcutPersistence.findByUuid_C(uuid, companyId, start,
-			end, orderByComparator);
+
+		return dlFileShortcutPersistence.findByUuid_C(
+			uuid, companyId, start, end, orderByComparator);
 	}
 
 	/**
@@ -454,8 +534,10 @@ public abstract class DLFileShortcutLocalServiceBaseImpl
 	 * @throws PortalException if a matching document library file shortcut could not be found
 	 */
 	@Override
-	public DLFileShortcut getDLFileShortcutByUuidAndGroupId(String uuid,
-		long groupId) throws PortalException {
+	public DLFileShortcut getDLFileShortcutByUuidAndGroupId(
+			String uuid, long groupId)
+		throws PortalException {
+
 		return dlFileShortcutPersistence.findByUUID_G(uuid, groupId);
 	}
 
@@ -463,7 +545,7 @@ public abstract class DLFileShortcutLocalServiceBaseImpl
 	 * Returns a range of all the document library file shortcuts.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.documentlibrary.model.impl.DLFileShortcutModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>com.liferay.portlet.documentlibrary.model.impl.DLFileShortcutModelImpl</code>.
 	 * </p>
 	 *
 	 * @param start the lower bound of the range of document library file shortcuts
@@ -487,6 +569,10 @@ public abstract class DLFileShortcutLocalServiceBaseImpl
 
 	/**
 	 * Updates the document library file shortcut in the database or adds it if it does not yet exist. Also notifies the appropriate model listeners.
+	 *
+	 * <p>
+	 * <strong>Important:</strong> Inspect DLFileShortcutLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
+	 * </p>
 	 *
 	 * @param dlFileShortcut the document library file shortcut
 	 * @return the document library file shortcut that was updated
@@ -513,6 +599,7 @@ public abstract class DLFileShortcutLocalServiceBaseImpl
 	 */
 	public void setDLFileShortcutLocalService(
 		DLFileShortcutLocalService dlFileShortcutLocalService) {
+
 		this.dlFileShortcutLocalService = dlFileShortcutLocalService;
 	}
 
@@ -532,6 +619,7 @@ public abstract class DLFileShortcutLocalServiceBaseImpl
 	 */
 	public void setDLFileShortcutPersistence(
 		DLFileShortcutPersistence dlFileShortcutPersistence) {
+
 		this.dlFileShortcutPersistence = dlFileShortcutPersistence;
 	}
 
@@ -540,7 +628,9 @@ public abstract class DLFileShortcutLocalServiceBaseImpl
 	 *
 	 * @return the counter local service
 	 */
-	public com.liferay.counter.kernel.service.CounterLocalService getCounterLocalService() {
+	public com.liferay.counter.kernel.service.CounterLocalService
+		getCounterLocalService() {
+
 		return counterLocalService;
 	}
 
@@ -550,7 +640,9 @@ public abstract class DLFileShortcutLocalServiceBaseImpl
 	 * @param counterLocalService the counter local service
 	 */
 	public void setCounterLocalService(
-		com.liferay.counter.kernel.service.CounterLocalService counterLocalService) {
+		com.liferay.counter.kernel.service.CounterLocalService
+			counterLocalService) {
+
 		this.counterLocalService = counterLocalService;
 	}
 
@@ -559,7 +651,9 @@ public abstract class DLFileShortcutLocalServiceBaseImpl
 	 *
 	 * @return the resource local service
 	 */
-	public com.liferay.portal.kernel.service.ResourceLocalService getResourceLocalService() {
+	public com.liferay.portal.kernel.service.ResourceLocalService
+		getResourceLocalService() {
+
 		return resourceLocalService;
 	}
 
@@ -569,7 +663,9 @@ public abstract class DLFileShortcutLocalServiceBaseImpl
 	 * @param resourceLocalService the resource local service
 	 */
 	public void setResourceLocalService(
-		com.liferay.portal.kernel.service.ResourceLocalService resourceLocalService) {
+		com.liferay.portal.kernel.service.ResourceLocalService
+			resourceLocalService) {
+
 		this.resourceLocalService = resourceLocalService;
 	}
 
@@ -578,7 +674,9 @@ public abstract class DLFileShortcutLocalServiceBaseImpl
 	 *
 	 * @return the user local service
 	 */
-	public com.liferay.portal.kernel.service.UserLocalService getUserLocalService() {
+	public com.liferay.portal.kernel.service.UserLocalService
+		getUserLocalService() {
+
 		return userLocalService;
 	}
 
@@ -589,6 +687,7 @@ public abstract class DLFileShortcutLocalServiceBaseImpl
 	 */
 	public void setUserLocalService(
 		com.liferay.portal.kernel.service.UserLocalService userLocalService) {
+
 		this.userLocalService = userLocalService;
 	}
 
@@ -633,7 +732,9 @@ public abstract class DLFileShortcutLocalServiceBaseImpl
 	 *
 	 * @return the asset entry local service
 	 */
-	public com.liferay.asset.kernel.service.AssetEntryLocalService getAssetEntryLocalService() {
+	public com.liferay.asset.kernel.service.AssetEntryLocalService
+		getAssetEntryLocalService() {
+
 		return assetEntryLocalService;
 	}
 
@@ -643,7 +744,9 @@ public abstract class DLFileShortcutLocalServiceBaseImpl
 	 * @param assetEntryLocalService the asset entry local service
 	 */
 	public void setAssetEntryLocalService(
-		com.liferay.asset.kernel.service.AssetEntryLocalService assetEntryLocalService) {
+		com.liferay.asset.kernel.service.AssetEntryLocalService
+			assetEntryLocalService) {
+
 		this.assetEntryLocalService = assetEntryLocalService;
 	}
 
@@ -663,6 +766,7 @@ public abstract class DLFileShortcutLocalServiceBaseImpl
 	 */
 	public void setAssetEntryPersistence(
 		AssetEntryPersistence assetEntryPersistence) {
+
 		this.assetEntryPersistence = assetEntryPersistence;
 	}
 
@@ -689,7 +793,9 @@ public abstract class DLFileShortcutLocalServiceBaseImpl
 	 *
 	 * @return the asset tag local service
 	 */
-	public com.liferay.asset.kernel.service.AssetTagLocalService getAssetTagLocalService() {
+	public com.liferay.asset.kernel.service.AssetTagLocalService
+		getAssetTagLocalService() {
+
 		return assetTagLocalService;
 	}
 
@@ -699,7 +805,9 @@ public abstract class DLFileShortcutLocalServiceBaseImpl
 	 * @param assetTagLocalService the asset tag local service
 	 */
 	public void setAssetTagLocalService(
-		com.liferay.asset.kernel.service.AssetTagLocalService assetTagLocalService) {
+		com.liferay.asset.kernel.service.AssetTagLocalService
+			assetTagLocalService) {
+
 		this.assetTagLocalService = assetTagLocalService;
 	}
 
@@ -717,7 +825,9 @@ public abstract class DLFileShortcutLocalServiceBaseImpl
 	 *
 	 * @param assetTagPersistence the asset tag persistence
 	 */
-	public void setAssetTagPersistence(AssetTagPersistence assetTagPersistence) {
+	public void setAssetTagPersistence(
+		AssetTagPersistence assetTagPersistence) {
+
 		this.assetTagPersistence = assetTagPersistence;
 	}
 
@@ -744,7 +854,9 @@ public abstract class DLFileShortcutLocalServiceBaseImpl
 	 *
 	 * @return the dl app local service
 	 */
-	public com.liferay.document.library.kernel.service.DLAppLocalService getDLAppLocalService() {
+	public com.liferay.document.library.kernel.service.DLAppLocalService
+		getDLAppLocalService() {
+
 		return dlAppLocalService;
 	}
 
@@ -754,7 +866,9 @@ public abstract class DLFileShortcutLocalServiceBaseImpl
 	 * @param dlAppLocalService the dl app local service
 	 */
 	public void setDLAppLocalService(
-		com.liferay.document.library.kernel.service.DLAppLocalService dlAppLocalService) {
+		com.liferay.document.library.kernel.service.DLAppLocalService
+			dlAppLocalService) {
+
 		this.dlAppLocalService = dlAppLocalService;
 	}
 
@@ -763,7 +877,10 @@ public abstract class DLFileShortcutLocalServiceBaseImpl
 	 *
 	 * @return the trash entry local service
 	 */
-	public com.liferay.trash.kernel.service.TrashEntryLocalService getTrashEntryLocalService() {
+	@SuppressWarnings("deprecation")
+	public com.liferay.trash.kernel.service.TrashEntryLocalService
+		getTrashEntryLocalService() {
+
 		return trashEntryLocalService;
 	}
 
@@ -772,8 +889,11 @@ public abstract class DLFileShortcutLocalServiceBaseImpl
 	 *
 	 * @param trashEntryLocalService the trash entry local service
 	 */
+	@SuppressWarnings("deprecation")
 	public void setTrashEntryLocalService(
-		com.liferay.trash.kernel.service.TrashEntryLocalService trashEntryLocalService) {
+		com.liferay.trash.kernel.service.TrashEntryLocalService
+			trashEntryLocalService) {
+
 		this.trashEntryLocalService = trashEntryLocalService;
 	}
 
@@ -793,6 +913,7 @@ public abstract class DLFileShortcutLocalServiceBaseImpl
 	 */
 	public void setTrashEntryPersistence(
 		TrashEntryPersistence trashEntryPersistence) {
+
 		this.trashEntryPersistence = trashEntryPersistence;
 	}
 
@@ -801,7 +922,10 @@ public abstract class DLFileShortcutLocalServiceBaseImpl
 	 *
 	 * @return the trash version local service
 	 */
-	public com.liferay.trash.kernel.service.TrashVersionLocalService getTrashVersionLocalService() {
+	@SuppressWarnings("deprecation")
+	public com.liferay.trash.kernel.service.TrashVersionLocalService
+		getTrashVersionLocalService() {
+
 		return trashVersionLocalService;
 	}
 
@@ -810,8 +934,11 @@ public abstract class DLFileShortcutLocalServiceBaseImpl
 	 *
 	 * @param trashVersionLocalService the trash version local service
 	 */
+	@SuppressWarnings("deprecation")
 	public void setTrashVersionLocalService(
-		com.liferay.trash.kernel.service.TrashVersionLocalService trashVersionLocalService) {
+		com.liferay.trash.kernel.service.TrashVersionLocalService
+			trashVersionLocalService) {
+
 		this.trashVersionLocalService = trashVersionLocalService;
 	}
 
@@ -831,6 +958,7 @@ public abstract class DLFileShortcutLocalServiceBaseImpl
 	 */
 	public void setTrashVersionPersistence(
 		TrashVersionPersistence trashVersionPersistence) {
+
 		this.trashVersionPersistence = trashVersionPersistence;
 	}
 
@@ -839,7 +967,9 @@ public abstract class DLFileShortcutLocalServiceBaseImpl
 	 *
 	 * @return the document library folder local service
 	 */
-	public com.liferay.document.library.kernel.service.DLFolderLocalService getDLFolderLocalService() {
+	public com.liferay.document.library.kernel.service.DLFolderLocalService
+		getDLFolderLocalService() {
+
 		return dlFolderLocalService;
 	}
 
@@ -849,7 +979,9 @@ public abstract class DLFileShortcutLocalServiceBaseImpl
 	 * @param dlFolderLocalService the document library folder local service
 	 */
 	public void setDLFolderLocalService(
-		com.liferay.document.library.kernel.service.DLFolderLocalService dlFolderLocalService) {
+		com.liferay.document.library.kernel.service.DLFolderLocalService
+			dlFolderLocalService) {
+
 		this.dlFolderLocalService = dlFolderLocalService;
 	}
 
@@ -867,7 +999,9 @@ public abstract class DLFileShortcutLocalServiceBaseImpl
 	 *
 	 * @param dlFolderPersistence the document library folder persistence
 	 */
-	public void setDLFolderPersistence(DLFolderPersistence dlFolderPersistence) {
+	public void setDLFolderPersistence(
+		DLFolderPersistence dlFolderPersistence) {
+
 		this.dlFolderPersistence = dlFolderPersistence;
 	}
 
@@ -890,7 +1024,8 @@ public abstract class DLFileShortcutLocalServiceBaseImpl
 	}
 
 	public void afterPropertiesSet() {
-		persistedModelLocalServiceRegistry.register("com.liferay.document.library.kernel.model.DLFileShortcut",
+		persistedModelLocalServiceRegistry.register(
+			"com.liferay.document.library.kernel.model.DLFileShortcut",
 			dlFileShortcutLocalService);
 	}
 
@@ -909,8 +1044,23 @@ public abstract class DLFileShortcutLocalServiceBaseImpl
 		return DLFileShortcutLocalService.class.getName();
 	}
 
-	protected Class<?> getModelClass() {
+	@Override
+	public CTPersistence<DLFileShortcut> getCTPersistence() {
+		return dlFileShortcutPersistence;
+	}
+
+	@Override
+	public Class<DLFileShortcut> getModelClass() {
 		return DLFileShortcut.class;
+	}
+
+	@Override
+	public <R, E extends Throwable> R updateWithUnsafeFunction(
+			UnsafeFunction<CTPersistence<DLFileShortcut>, R, E>
+				updateUnsafeFunction)
+		throws E {
+
+		return updateUnsafeFunction.apply(dlFileShortcutPersistence);
 	}
 
 	protected String getModelClassName() {
@@ -931,58 +1081,110 @@ public abstract class DLFileShortcutLocalServiceBaseImpl
 			sql = db.buildSQL(sql);
 			sql = PortalUtil.transformSQL(sql);
 
-			SqlUpdate sqlUpdate = SqlUpdateFactoryUtil.getSqlUpdate(dataSource,
-					sql);
+			SqlUpdate sqlUpdate = SqlUpdateFactoryUtil.getSqlUpdate(
+				dataSource, sql);
 
 			sqlUpdate.update();
 		}
-		catch (Exception e) {
-			throw new SystemException(e);
+		catch (Exception exception) {
+			throw new SystemException(exception);
 		}
 	}
 
 	@BeanReference(type = DLFileShortcutLocalService.class)
 	protected DLFileShortcutLocalService dlFileShortcutLocalService;
+
 	@BeanReference(type = DLFileShortcutPersistence.class)
 	protected DLFileShortcutPersistence dlFileShortcutPersistence;
-	@BeanReference(type = com.liferay.counter.kernel.service.CounterLocalService.class)
-	protected com.liferay.counter.kernel.service.CounterLocalService counterLocalService;
-	@BeanReference(type = com.liferay.portal.kernel.service.ResourceLocalService.class)
-	protected com.liferay.portal.kernel.service.ResourceLocalService resourceLocalService;
-	@BeanReference(type = com.liferay.portal.kernel.service.UserLocalService.class)
-	protected com.liferay.portal.kernel.service.UserLocalService userLocalService;
+
+	@BeanReference(
+		type = com.liferay.counter.kernel.service.CounterLocalService.class
+	)
+	protected com.liferay.counter.kernel.service.CounterLocalService
+		counterLocalService;
+
+	@BeanReference(
+		type = com.liferay.portal.kernel.service.ResourceLocalService.class
+	)
+	protected com.liferay.portal.kernel.service.ResourceLocalService
+		resourceLocalService;
+
+	@BeanReference(
+		type = com.liferay.portal.kernel.service.UserLocalService.class
+	)
+	protected com.liferay.portal.kernel.service.UserLocalService
+		userLocalService;
+
 	@BeanReference(type = UserPersistence.class)
 	protected UserPersistence userPersistence;
+
 	@BeanReference(type = UserFinder.class)
 	protected UserFinder userFinder;
-	@BeanReference(type = com.liferay.asset.kernel.service.AssetEntryLocalService.class)
-	protected com.liferay.asset.kernel.service.AssetEntryLocalService assetEntryLocalService;
+
+	@BeanReference(
+		type = com.liferay.asset.kernel.service.AssetEntryLocalService.class
+	)
+	protected com.liferay.asset.kernel.service.AssetEntryLocalService
+		assetEntryLocalService;
+
 	@BeanReference(type = AssetEntryPersistence.class)
 	protected AssetEntryPersistence assetEntryPersistence;
+
 	@BeanReference(type = AssetEntryFinder.class)
 	protected AssetEntryFinder assetEntryFinder;
-	@BeanReference(type = com.liferay.asset.kernel.service.AssetTagLocalService.class)
-	protected com.liferay.asset.kernel.service.AssetTagLocalService assetTagLocalService;
+
+	@BeanReference(
+		type = com.liferay.asset.kernel.service.AssetTagLocalService.class
+	)
+	protected com.liferay.asset.kernel.service.AssetTagLocalService
+		assetTagLocalService;
+
 	@BeanReference(type = AssetTagPersistence.class)
 	protected AssetTagPersistence assetTagPersistence;
+
 	@BeanReference(type = AssetTagFinder.class)
 	protected AssetTagFinder assetTagFinder;
-	@BeanReference(type = com.liferay.document.library.kernel.service.DLAppLocalService.class)
-	protected com.liferay.document.library.kernel.service.DLAppLocalService dlAppLocalService;
-	@BeanReference(type = com.liferay.trash.kernel.service.TrashEntryLocalService.class)
-	protected com.liferay.trash.kernel.service.TrashEntryLocalService trashEntryLocalService;
+
+	@BeanReference(
+		type = com.liferay.document.library.kernel.service.DLAppLocalService.class
+	)
+	protected com.liferay.document.library.kernel.service.DLAppLocalService
+		dlAppLocalService;
+
+	@BeanReference(
+		type = com.liferay.trash.kernel.service.TrashEntryLocalService.class
+	)
+	@SuppressWarnings("deprecation")
+	protected com.liferay.trash.kernel.service.TrashEntryLocalService
+		trashEntryLocalService;
+
 	@BeanReference(type = TrashEntryPersistence.class)
 	protected TrashEntryPersistence trashEntryPersistence;
-	@BeanReference(type = com.liferay.trash.kernel.service.TrashVersionLocalService.class)
-	protected com.liferay.trash.kernel.service.TrashVersionLocalService trashVersionLocalService;
+
+	@BeanReference(
+		type = com.liferay.trash.kernel.service.TrashVersionLocalService.class
+	)
+	@SuppressWarnings("deprecation")
+	protected com.liferay.trash.kernel.service.TrashVersionLocalService
+		trashVersionLocalService;
+
 	@BeanReference(type = TrashVersionPersistence.class)
 	protected TrashVersionPersistence trashVersionPersistence;
-	@BeanReference(type = com.liferay.document.library.kernel.service.DLFolderLocalService.class)
-	protected com.liferay.document.library.kernel.service.DLFolderLocalService dlFolderLocalService;
+
+	@BeanReference(
+		type = com.liferay.document.library.kernel.service.DLFolderLocalService.class
+	)
+	protected com.liferay.document.library.kernel.service.DLFolderLocalService
+		dlFolderLocalService;
+
 	@BeanReference(type = DLFolderPersistence.class)
 	protected DLFolderPersistence dlFolderPersistence;
+
 	@BeanReference(type = DLFolderFinder.class)
 	protected DLFolderFinder dlFolderFinder;
+
 	@BeanReference(type = PersistedModelLocalServiceRegistry.class)
-	protected PersistedModelLocalServiceRegistry persistedModelLocalServiceRegistry;
+	protected PersistedModelLocalServiceRegistry
+		persistedModelLocalServiceRegistry;
+
 }

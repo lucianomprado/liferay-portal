@@ -14,8 +14,6 @@
 
 package com.liferay.expando.kernel.model;
 
-import aQute.bnd.annotation.ProviderType;
-
 import java.io.Serializable;
 
 import java.util.ArrayList;
@@ -26,13 +24,17 @@ import java.util.List;
  * This class is used by SOAP remote services.
  *
  * @author Brian Wing Shun Chan
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
-@ProviderType
+@Deprecated
 public class ExpandoRowSoap implements Serializable {
+
 	public static ExpandoRowSoap toSoapModel(ExpandoRow model) {
 		ExpandoRowSoap soapModel = new ExpandoRowSoap();
 
+		soapModel.setMvccVersion(model.getMvccVersion());
+		soapModel.setCtCollectionId(model.getCtCollectionId());
 		soapModel.setRowId(model.getRowId());
 		soapModel.setCompanyId(model.getCompanyId());
 		soapModel.setModifiedDate(model.getModifiedDate());
@@ -70,7 +72,8 @@ public class ExpandoRowSoap implements Serializable {
 	}
 
 	public static ExpandoRowSoap[] toSoapModels(List<ExpandoRow> models) {
-		List<ExpandoRowSoap> soapModels = new ArrayList<ExpandoRowSoap>(models.size());
+		List<ExpandoRowSoap> soapModels = new ArrayList<ExpandoRowSoap>(
+			models.size());
 
 		for (ExpandoRow model : models) {
 			soapModels.add(toSoapModel(model));
@@ -88,6 +91,22 @@ public class ExpandoRowSoap implements Serializable {
 
 	public void setPrimaryKey(long pk) {
 		setRowId(pk);
+	}
+
+	public long getMvccVersion() {
+		return _mvccVersion;
+	}
+
+	public void setMvccVersion(long mvccVersion) {
+		_mvccVersion = mvccVersion;
+	}
+
+	public long getCtCollectionId() {
+		return _ctCollectionId;
+	}
+
+	public void setCtCollectionId(long ctCollectionId) {
+		_ctCollectionId = ctCollectionId;
 	}
 
 	public long getRowId() {
@@ -130,9 +149,12 @@ public class ExpandoRowSoap implements Serializable {
 		_classPK = classPK;
 	}
 
+	private long _mvccVersion;
+	private long _ctCollectionId;
 	private long _rowId;
 	private long _companyId;
 	private Date _modifiedDate;
 	private long _tableId;
 	private long _classPK;
+
 }

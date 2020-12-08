@@ -14,6 +14,7 @@
 
 package com.liferay.portal.kernel.util;
 
+import com.liferay.petra.reflect.ReflectionUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 
@@ -90,7 +91,7 @@ public class ClearTimerThreadUtil {
 
 			initialized = true;
 		}
-		catch (Throwable t) {
+		catch (Throwable throwable) {
 			if (_log.isWarnEnabled()) {
 				_log.warn("Failed to initialize ClearTimerThreadUtil");
 			}

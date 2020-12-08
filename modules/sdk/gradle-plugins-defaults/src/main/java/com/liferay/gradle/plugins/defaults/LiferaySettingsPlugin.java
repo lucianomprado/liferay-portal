@@ -14,12 +14,14 @@
 
 package com.liferay.gradle.plugins.defaults;
 
+import com.liferay.gradle.plugins.defaults.internal.util.GradlePluginsDefaultsUtil;
 import com.liferay.gradle.plugins.defaults.internal.util.GradleUtil;
 import com.liferay.gradle.util.Validator;
 
 import java.io.File;
 import java.io.IOException;
 
+import java.nio.file.FileVisitOption;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -30,6 +32,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.Set;
 
 import org.gradle.api.Plugin;
@@ -68,11 +71,17 @@ public class LiferaySettingsPlugin implements Plugin<Settings> {
 		}
 
 		try {
+			Path projectPathRootDirPath = rootDirPath;
+
+			if (_isPortalRootDirPath(rootDirPath)) {
+				projectPathRootDirPath = rootDirPath.resolve("modules");
+			}
+
 			_includeProjects(
-				settings, rootDirPath, rootDirPath, projectPathPrefix);
+				settings, projectPathRootDirPath, projectPathPrefix);
 		}
-		catch (IOException ioe) {
-			throw new UncheckedIOException(ioe);
+		catch (IOException ioException) {
+			throw new UncheckedIOException(ioException);
 		}
 	}
 
@@ -100,9 +109,7 @@ public class LiferaySettingsPlugin implements Plugin<Settings> {
 		Iterator<T> iterator = flags.iterator();
 
 		while (iterator.hasNext()) {
-			T flag = iterator.next();
-
-			String flagName = flag.toString();
+			String flagName = String.valueOf(iterator.next());
 
 			flagName = flagName.replace('_', '.');
 			flagName = flagName.toLowerCase();
@@ -124,6 +131,13 @@ public class LiferaySettingsPlugin implements Plugin<Settings> {
 			return ProjectDirType.MODULE;
 		}
 
+		Path applicationPropertiesPath = dirPath.resolve(
+			"src/main/resources/application.properties");
+
+		if (Files.exists(applicationPropertiesPath)) {
+			return ProjectDirType.SPRING_BOOT;
+		}
+
 		if (Files.exists(dirPath.resolve("gulpfile.js"))) {
 			return ProjectDirType.THEME;
 		}
@@ -131,13 +145,37 @@ public class LiferaySettingsPlugin implements Plugin<Settings> {
 		return ProjectDirType.UNKNOWN;
 	}
 
+	private boolean _includeDXPProjects(
+		String buildProfile, Set<String> buildProfileFileNames,
+		Path projectPathRootDirPath) {
+
+		if ((buildProfile == null) && (buildProfileFileNames == null)) {
+			File portalRootDir = GradleUtil.getRootDir(
+				projectPathRootDirPath.toFile(), "portal-impl");
+
+			if (portalRootDir == null) {
+				return false;
+			}
+
+			File buildProfileDXPPropertiesFile = new File(
+				portalRootDir, "build.profile-dxp.properties");
+
+			if (!buildProfileDXPPropertiesFile.exists()) {
+				return false;
+			}
+
+			return true;
+		}
+
+		return Objects.equals(buildProfile, "dxp");
+	}
+
 	private void _includeProject(
 		Settings settings, Path projectDirPath, Path projectPathRootDirPath,
 		String projectPathPrefix) {
 
-		Path relativePath = projectPathRootDirPath.relativize(projectDirPath);
-
-		String projectPath = relativePath.toString();
+		String projectPath = String.valueOf(
+			projectPathRootDirPath.relativize(projectDirPath));
 
 		projectPath =
 			projectPathPrefix + ":" +
@@ -151,31 +189,59 @@ public class LiferaySettingsPlugin implements Plugin<Settings> {
 	}
 
 	private void _includeProjects(
-			final Settings settings, final Path rootDirPath,
-			final Path projectPathRootDirPath, final String projectPathPrefix)
+			final Settings settings, final Path projectPathRootDirPath,
+			final String projectPathPrefix)
 		throws IOException {
 
 		final String buildProfile = System.getProperty("build.profile");
+
+		final Set<String> buildProfileFileNames =
+			GradlePluginsDefaultsUtil.getBuildProfileFileNames(
+				buildProfile,
+				GradleUtil.getProperty(
+					settings, "liferay.releng.public", true));
+
 		final Set<Path> excludedDirPaths = _getDirPaths(
-			"build.exclude.dirs", rootDirPath);
+			"build.exclude.dirs", projectPathRootDirPath);
 		final Set<Path> includedDirPaths = _getDirPaths(
-			"build.include.dirs", rootDirPath);
+			"build.include.dirs", projectPathRootDirPath);
 		final Set<ProjectDirType> excludedProjectDirTypes = _getFlags(
 			"build.exclude.", ProjectDirType.class);
 
+		final boolean includeDXPProjects = _includeDXPProjects(
+			buildProfile, buildProfileFileNames, projectPathRootDirPath);
+
 		Files.walkFileTree(
-			rootDirPath,
+			projectPathRootDirPath, EnumSet.of(FileVisitOption.FOLLOW_LINKS),
+			10,
 			new SimpleFileVisitor<Path>() {
 
 				@Override
 				public FileVisitResult preVisitDirectory(
 					Path dirPath, BasicFileAttributes basicFileAttributes) {
 
-					if (dirPath.equals(rootDirPath)) {
+					if (dirPath.equals(projectPathRootDirPath)) {
 						return FileVisitResult.CONTINUE;
 					}
 
 					if (excludedDirPaths.contains(dirPath)) {
+						return FileVisitResult.SKIP_SUBTREE;
+					}
+
+					if (!includeDXPProjects) {
+						Path dxpPath = projectPathRootDirPath.resolve("dxp");
+
+						if (dirPath.equals(dxpPath)) {
+							return FileVisitResult.SKIP_SUBTREE;
+						}
+					}
+
+					String dirName = String.valueOf(dirPath.getFileName());
+
+					if (dirName.equals("build") ||
+						dirName.equals("node_modules") ||
+						dirName.equals("node_modules_cache")) {
+
 						return FileVisitResult.SKIP_SUBTREE;
 					}
 
@@ -195,11 +261,20 @@ public class LiferaySettingsPlugin implements Plugin<Settings> {
 						return FileVisitResult.SKIP_SUBTREE;
 					}
 
-					if (Validator.isNotNull(buildProfile) &&
-						Files.notExists(
-							dirPath.resolve(".lfrbuild-" + buildProfile))) {
+					if (buildProfileFileNames != null) {
+						boolean found = false;
 
-						return FileVisitResult.SKIP_SUBTREE;
+						for (String fileName : buildProfileFileNames) {
+							if (Files.exists(dirPath.resolve(fileName))) {
+								found = true;
+
+								break;
+							}
+						}
+
+						if (!found) {
+							return FileVisitResult.SKIP_SUBTREE;
+						}
 					}
 
 					_includeProject(
@@ -210,6 +285,18 @@ public class LiferaySettingsPlugin implements Plugin<Settings> {
 				}
 
 			});
+	}
+
+	private boolean _isPortalRootDirPath(Path dirPath) {
+		if (!Files.exists(dirPath.resolve("modules"))) {
+			return false;
+		}
+
+		if (!Files.exists(dirPath.resolve("portal-impl"))) {
+			return false;
+		}
+
+		return true;
 	}
 
 	private boolean _startsWith(Path path, Iterable<Path> parentPaths) {
@@ -224,7 +311,7 @@ public class LiferaySettingsPlugin implements Plugin<Settings> {
 
 	private static enum ProjectDirType {
 
-		ANT_PLUGIN, MODULE, THEME, UNKNOWN
+		ANT_PLUGIN, MODULE, SPRING_BOOT, THEME, UNKNOWN
 
 	}
 

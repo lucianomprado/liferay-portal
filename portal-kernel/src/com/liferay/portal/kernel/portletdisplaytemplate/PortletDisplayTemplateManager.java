@@ -14,8 +14,6 @@
 
 package com.liferay.portal.kernel.portletdisplaytemplate;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.dynamic.data.mapping.kernel.DDMTemplate;
 import com.liferay.portal.kernel.template.TemplateVariableGroup;
 
@@ -24,6 +22,8 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import org.osgi.annotation.versioning.ProviderType;
 
 /**
  * @author Leonardo Barros
@@ -45,15 +45,15 @@ public interface PortletDisplayTemplateManager {
 		String language);
 
 	public String renderDDMTemplate(
-			HttpServletRequest request, HttpServletResponse response,
-			DDMTemplate ddmTemplate, List<?> entries,
-			Map<String, Object> contextObjects)
+			HttpServletRequest httpServletRequest,
+			HttpServletResponse httpServletResponse, DDMTemplate ddmTemplate,
+			List<?> entries, Map<String, Object> contextObjects)
 		throws Exception;
 
 	public String renderDDMTemplate(
-			HttpServletRequest request, HttpServletResponse response,
-			long templateId, List<?> entries,
-			Map<String, Object> contextObjects)
+			HttpServletRequest httpServletRequest,
+			HttpServletResponse httpServletResponse, long templateId,
+			List<?> entries, Map<String, Object> contextObjects)
 		throws Exception;
 
 }

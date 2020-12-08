@@ -14,9 +14,8 @@
 
 package com.liferay.portal.service.persistence.impl;
 
-import aQute.bnd.annotation.ProviderType;
-
-import com.liferay.portal.kernel.bean.BeanReference;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.portal.kernel.dao.orm.ArgumentsResolver;
 import com.liferay.portal.kernel.dao.orm.EntityCache;
 import com.liferay.portal.kernel.dao.orm.EntityCacheUtil;
 import com.liferay.portal.kernel.dao.orm.FinderCache;
@@ -29,26 +28,28 @@ import com.liferay.portal.kernel.dao.orm.Session;
 import com.liferay.portal.kernel.exception.NoSuchRecentLayoutBranchException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.BaseModel;
 import com.liferay.portal.kernel.model.RecentLayoutBranch;
-import com.liferay.portal.kernel.service.persistence.CompanyProvider;
-import com.liferay.portal.kernel.service.persistence.CompanyProviderWrapper;
+import com.liferay.portal.kernel.model.RecentLayoutBranchTable;
+import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.service.persistence.RecentLayoutBranchPersistence;
 import com.liferay.portal.kernel.service.persistence.impl.BasePersistenceImpl;
 import com.liferay.portal.kernel.util.OrderByComparator;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.portal.kernel.util.ProxyUtil;
 import com.liferay.portal.model.impl.RecentLayoutBranchImpl;
 import com.liferay.portal.model.impl.RecentLayoutBranchModelImpl;
+import com.liferay.registry.Registry;
+import com.liferay.registry.RegistryUtil;
+import com.liferay.registry.ServiceRegistration;
 
 import java.io.Serializable;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
+import java.lang.reflect.InvocationHandler;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * The persistence implementation for the recent layout branch service.
@@ -58,146 +59,130 @@ import java.util.Set;
  * </p>
  *
  * @author Brian Wing Shun Chan
- * @see RecentLayoutBranchPersistence
- * @see com.liferay.portal.kernel.service.persistence.RecentLayoutBranchUtil
  * @generated
  */
-@ProviderType
-public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<RecentLayoutBranch>
+public class RecentLayoutBranchPersistenceImpl
+	extends BasePersistenceImpl<RecentLayoutBranch>
 	implements RecentLayoutBranchPersistence {
+
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. Always use {@link RecentLayoutBranchUtil} to access the recent layout branch persistence. Modify <code>service.xml</code> and rerun ServiceBuilder to regenerate this class.
+	 * Never modify or reference this class directly. Always use <code>RecentLayoutBranchUtil</code> to access the recent layout branch persistence. Modify <code>service.xml</code> and rerun ServiceBuilder to regenerate this class.
 	 */
-	public static final String FINDER_CLASS_NAME_ENTITY = RecentLayoutBranchImpl.class.getName();
-	public static final String FINDER_CLASS_NAME_LIST_WITH_PAGINATION = FINDER_CLASS_NAME_ENTITY +
-		".List1";
-	public static final String FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION = FINDER_CLASS_NAME_ENTITY +
-		".List2";
-	public static final FinderPath FINDER_PATH_WITH_PAGINATION_FIND_ALL = new FinderPath(RecentLayoutBranchModelImpl.ENTITY_CACHE_ENABLED,
-			RecentLayoutBranchModelImpl.FINDER_CACHE_ENABLED,
-			RecentLayoutBranchImpl.class,
-			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findAll", new String[0]);
-	public static final FinderPath FINDER_PATH_WITHOUT_PAGINATION_FIND_ALL = new FinderPath(RecentLayoutBranchModelImpl.ENTITY_CACHE_ENABLED,
-			RecentLayoutBranchModelImpl.FINDER_CACHE_ENABLED,
-			RecentLayoutBranchImpl.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findAll", new String[0]);
-	public static final FinderPath FINDER_PATH_COUNT_ALL = new FinderPath(RecentLayoutBranchModelImpl.ENTITY_CACHE_ENABLED,
-			RecentLayoutBranchModelImpl.FINDER_CACHE_ENABLED, Long.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countAll", new String[0]);
-	public static final FinderPath FINDER_PATH_WITH_PAGINATION_FIND_BY_GROUPID = new FinderPath(RecentLayoutBranchModelImpl.ENTITY_CACHE_ENABLED,
-			RecentLayoutBranchModelImpl.FINDER_CACHE_ENABLED,
-			RecentLayoutBranchImpl.class,
-			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByGroupId",
-			new String[] {
-				Long.class.getName(),
-				
-			Integer.class.getName(), Integer.class.getName(),
-				OrderByComparator.class.getName()
-			});
-	public static final FinderPath FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_GROUPID =
-		new FinderPath(RecentLayoutBranchModelImpl.ENTITY_CACHE_ENABLED,
-			RecentLayoutBranchModelImpl.FINDER_CACHE_ENABLED,
-			RecentLayoutBranchImpl.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByGroupId",
-			new String[] { Long.class.getName() },
-			RecentLayoutBranchModelImpl.GROUPID_COLUMN_BITMASK);
-	public static final FinderPath FINDER_PATH_COUNT_BY_GROUPID = new FinderPath(RecentLayoutBranchModelImpl.ENTITY_CACHE_ENABLED,
-			RecentLayoutBranchModelImpl.FINDER_CACHE_ENABLED, Long.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByGroupId",
-			new String[] { Long.class.getName() });
+	public static final String FINDER_CLASS_NAME_ENTITY =
+		RecentLayoutBranchImpl.class.getName();
+
+	public static final String FINDER_CLASS_NAME_LIST_WITH_PAGINATION =
+		FINDER_CLASS_NAME_ENTITY + ".List1";
+
+	public static final String FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION =
+		FINDER_CLASS_NAME_ENTITY + ".List2";
+
+	private FinderPath _finderPathWithPaginationFindAll;
+	private FinderPath _finderPathWithoutPaginationFindAll;
+	private FinderPath _finderPathCountAll;
+	private FinderPath _finderPathWithPaginationFindByGroupId;
+	private FinderPath _finderPathWithoutPaginationFindByGroupId;
+	private FinderPath _finderPathCountByGroupId;
 
 	/**
-	 * Returns all the recent layout branchs where groupId = &#63;.
+	 * Returns all the recent layout branches where groupId = &#63;.
 	 *
 	 * @param groupId the group ID
-	 * @return the matching recent layout branchs
+	 * @return the matching recent layout branches
 	 */
 	@Override
 	public List<RecentLayoutBranch> findByGroupId(long groupId) {
-		return findByGroupId(groupId, QueryUtil.ALL_POS, QueryUtil.ALL_POS, null);
+		return findByGroupId(
+			groupId, QueryUtil.ALL_POS, QueryUtil.ALL_POS, null);
 	}
 
 	/**
-	 * Returns a range of all the recent layout branchs where groupId = &#63;.
+	 * Returns a range of all the recent layout branches where groupId = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link RecentLayoutBranchModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>RecentLayoutBranchModelImpl</code>.
 	 * </p>
 	 *
 	 * @param groupId the group ID
-	 * @param start the lower bound of the range of recent layout branchs
-	 * @param end the upper bound of the range of recent layout branchs (not inclusive)
-	 * @return the range of matching recent layout branchs
+	 * @param start the lower bound of the range of recent layout branches
+	 * @param end the upper bound of the range of recent layout branches (not inclusive)
+	 * @return the range of matching recent layout branches
 	 */
 	@Override
-	public List<RecentLayoutBranch> findByGroupId(long groupId, int start,
-		int end) {
+	public List<RecentLayoutBranch> findByGroupId(
+		long groupId, int start, int end) {
+
 		return findByGroupId(groupId, start, end, null);
 	}
 
 	/**
-	 * Returns an ordered range of all the recent layout branchs where groupId = &#63;.
+	 * Returns an ordered range of all the recent layout branches where groupId = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link RecentLayoutBranchModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>RecentLayoutBranchModelImpl</code>.
 	 * </p>
 	 *
 	 * @param groupId the group ID
-	 * @param start the lower bound of the range of recent layout branchs
-	 * @param end the upper bound of the range of recent layout branchs (not inclusive)
+	 * @param start the lower bound of the range of recent layout branches
+	 * @param end the upper bound of the range of recent layout branches (not inclusive)
 	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
-	 * @return the ordered range of matching recent layout branchs
+	 * @return the ordered range of matching recent layout branches
 	 */
 	@Override
-	public List<RecentLayoutBranch> findByGroupId(long groupId, int start,
-		int end, OrderByComparator<RecentLayoutBranch> orderByComparator) {
+	public List<RecentLayoutBranch> findByGroupId(
+		long groupId, int start, int end,
+		OrderByComparator<RecentLayoutBranch> orderByComparator) {
+
 		return findByGroupId(groupId, start, end, orderByComparator, true);
 	}
 
 	/**
-	 * Returns an ordered range of all the recent layout branchs where groupId = &#63;.
+	 * Returns an ordered range of all the recent layout branches where groupId = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link RecentLayoutBranchModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>RecentLayoutBranchModelImpl</code>.
 	 * </p>
 	 *
 	 * @param groupId the group ID
-	 * @param start the lower bound of the range of recent layout branchs
-	 * @param end the upper bound of the range of recent layout branchs (not inclusive)
+	 * @param start the lower bound of the range of recent layout branches
+	 * @param end the upper bound of the range of recent layout branches (not inclusive)
 	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
-	 * @param retrieveFromCache whether to retrieve from the finder cache
-	 * @return the ordered range of matching recent layout branchs
+	 * @param useFinderCache whether to use the finder cache
+	 * @return the ordered range of matching recent layout branches
 	 */
 	@Override
-	public List<RecentLayoutBranch> findByGroupId(long groupId, int start,
-		int end, OrderByComparator<RecentLayoutBranch> orderByComparator,
-		boolean retrieveFromCache) {
-		boolean pagination = true;
+	public List<RecentLayoutBranch> findByGroupId(
+		long groupId, int start, int end,
+		OrderByComparator<RecentLayoutBranch> orderByComparator,
+		boolean useFinderCache) {
+
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
 
 		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
-				(orderByComparator == null)) {
-			pagination = false;
-			finderPath = FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_GROUPID;
-			finderArgs = new Object[] { groupId };
+			(orderByComparator == null)) {
+
+			if (useFinderCache) {
+				finderPath = _finderPathWithoutPaginationFindByGroupId;
+				finderArgs = new Object[] {groupId};
+			}
 		}
-		else {
-			finderPath = FINDER_PATH_WITH_PAGINATION_FIND_BY_GROUPID;
-			finderArgs = new Object[] { groupId, start, end, orderByComparator };
+		else if (useFinderCache) {
+			finderPath = _finderPathWithPaginationFindByGroupId;
+			finderArgs = new Object[] {groupId, start, end, orderByComparator};
 		}
 
 		List<RecentLayoutBranch> list = null;
 
-		if (retrieveFromCache) {
-			list = (List<RecentLayoutBranch>)finderCache.getResult(finderPath,
-					finderArgs, this);
+		if (useFinderCache) {
+			list = (List<RecentLayoutBranch>)FinderCacheUtil.getResult(
+				finderPath, finderArgs);
 
 			if ((list != null) && !list.isEmpty()) {
 				for (RecentLayoutBranch recentLayoutBranch : list) {
-					if ((groupId != recentLayoutBranch.getGroupId())) {
+					if (groupId != recentLayoutBranch.getGroupId()) {
 						list = null;
 
 						break;
@@ -207,63 +192,52 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 		}
 
 		if (list == null) {
-			StringBundler query = null;
+			StringBundler sb = null;
 
 			if (orderByComparator != null) {
-				query = new StringBundler(3 +
-						(orderByComparator.getOrderByFields().length * 2));
+				sb = new StringBundler(
+					3 + (orderByComparator.getOrderByFields().length * 2));
 			}
 			else {
-				query = new StringBundler(3);
+				sb = new StringBundler(3);
 			}
 
-			query.append(_SQL_SELECT_RECENTLAYOUTBRANCH_WHERE);
+			sb.append(_SQL_SELECT_RECENTLAYOUTBRANCH_WHERE);
 
-			query.append(_FINDER_COLUMN_GROUPID_GROUPID_2);
+			sb.append(_FINDER_COLUMN_GROUPID_GROUPID_2);
 
 			if (orderByComparator != null) {
-				appendOrderByComparator(query, _ORDER_BY_ENTITY_ALIAS,
-					orderByComparator);
+				appendOrderByComparator(
+					sb, _ORDER_BY_ENTITY_ALIAS, orderByComparator);
 			}
-			else
-			 if (pagination) {
-				query.append(RecentLayoutBranchModelImpl.ORDER_BY_JPQL);
+			else {
+				sb.append(RecentLayoutBranchModelImpl.ORDER_BY_JPQL);
 			}
 
-			String sql = query.toString();
+			String sql = sb.toString();
 
 			Session session = null;
 
 			try {
 				session = openSession();
 
-				Query q = session.createQuery(sql);
+				Query query = session.createQuery(sql);
 
-				QueryPos qPos = QueryPos.getInstance(q);
+				QueryPos queryPos = QueryPos.getInstance(query);
 
-				qPos.add(groupId);
+				queryPos.add(groupId);
 
-				if (!pagination) {
-					list = (List<RecentLayoutBranch>)QueryUtil.list(q,
-							getDialect(), start, end, false);
-
-					Collections.sort(list);
-
-					list = Collections.unmodifiableList(list);
-				}
-				else {
-					list = (List<RecentLayoutBranch>)QueryUtil.list(q,
-							getDialect(), start, end);
-				}
+				list = (List<RecentLayoutBranch>)QueryUtil.list(
+					query, getDialect(), start, end);
 
 				cacheResult(list);
 
-				finderCache.putResult(finderPath, finderArgs, list);
+				if (useFinderCache) {
+					FinderCacheUtil.putResult(finderPath, finderArgs, list);
+				}
 			}
-			catch (Exception e) {
-				finderCache.removeResult(finderPath, finderArgs);
-
-				throw processException(e);
+			catch (Exception exception) {
+				throw processException(exception);
 			}
 			finally {
 				closeSession(session);
@@ -282,26 +256,28 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 	 * @throws NoSuchRecentLayoutBranchException if a matching recent layout branch could not be found
 	 */
 	@Override
-	public RecentLayoutBranch findByGroupId_First(long groupId,
-		OrderByComparator<RecentLayoutBranch> orderByComparator)
+	public RecentLayoutBranch findByGroupId_First(
+			long groupId,
+			OrderByComparator<RecentLayoutBranch> orderByComparator)
 		throws NoSuchRecentLayoutBranchException {
-		RecentLayoutBranch recentLayoutBranch = fetchByGroupId_First(groupId,
-				orderByComparator);
+
+		RecentLayoutBranch recentLayoutBranch = fetchByGroupId_First(
+			groupId, orderByComparator);
 
 		if (recentLayoutBranch != null) {
 			return recentLayoutBranch;
 		}
 
-		StringBundler msg = new StringBundler(4);
+		StringBundler sb = new StringBundler(4);
 
-		msg.append(_NO_SUCH_ENTITY_WITH_KEY);
+		sb.append(_NO_SUCH_ENTITY_WITH_KEY);
 
-		msg.append("groupId=");
-		msg.append(groupId);
+		sb.append("groupId=");
+		sb.append(groupId);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		sb.append("}");
 
-		throw new NoSuchRecentLayoutBranchException(msg.toString());
+		throw new NoSuchRecentLayoutBranchException(sb.toString());
 	}
 
 	/**
@@ -312,10 +288,11 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 	 * @return the first matching recent layout branch, or <code>null</code> if a matching recent layout branch could not be found
 	 */
 	@Override
-	public RecentLayoutBranch fetchByGroupId_First(long groupId,
-		OrderByComparator<RecentLayoutBranch> orderByComparator) {
-		List<RecentLayoutBranch> list = findByGroupId(groupId, 0, 1,
-				orderByComparator);
+	public RecentLayoutBranch fetchByGroupId_First(
+		long groupId, OrderByComparator<RecentLayoutBranch> orderByComparator) {
+
+		List<RecentLayoutBranch> list = findByGroupId(
+			groupId, 0, 1, orderByComparator);
 
 		if (!list.isEmpty()) {
 			return list.get(0);
@@ -333,26 +310,28 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 	 * @throws NoSuchRecentLayoutBranchException if a matching recent layout branch could not be found
 	 */
 	@Override
-	public RecentLayoutBranch findByGroupId_Last(long groupId,
-		OrderByComparator<RecentLayoutBranch> orderByComparator)
+	public RecentLayoutBranch findByGroupId_Last(
+			long groupId,
+			OrderByComparator<RecentLayoutBranch> orderByComparator)
 		throws NoSuchRecentLayoutBranchException {
-		RecentLayoutBranch recentLayoutBranch = fetchByGroupId_Last(groupId,
-				orderByComparator);
+
+		RecentLayoutBranch recentLayoutBranch = fetchByGroupId_Last(
+			groupId, orderByComparator);
 
 		if (recentLayoutBranch != null) {
 			return recentLayoutBranch;
 		}
 
-		StringBundler msg = new StringBundler(4);
+		StringBundler sb = new StringBundler(4);
 
-		msg.append(_NO_SUCH_ENTITY_WITH_KEY);
+		sb.append(_NO_SUCH_ENTITY_WITH_KEY);
 
-		msg.append("groupId=");
-		msg.append(groupId);
+		sb.append("groupId=");
+		sb.append(groupId);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		sb.append("}");
 
-		throw new NoSuchRecentLayoutBranchException(msg.toString());
+		throw new NoSuchRecentLayoutBranchException(sb.toString());
 	}
 
 	/**
@@ -363,16 +342,17 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 	 * @return the last matching recent layout branch, or <code>null</code> if a matching recent layout branch could not be found
 	 */
 	@Override
-	public RecentLayoutBranch fetchByGroupId_Last(long groupId,
-		OrderByComparator<RecentLayoutBranch> orderByComparator) {
+	public RecentLayoutBranch fetchByGroupId_Last(
+		long groupId, OrderByComparator<RecentLayoutBranch> orderByComparator) {
+
 		int count = countByGroupId(groupId);
 
 		if (count == 0) {
 			return null;
 		}
 
-		List<RecentLayoutBranch> list = findByGroupId(groupId, count - 1,
-				count, orderByComparator);
+		List<RecentLayoutBranch> list = findByGroupId(
+			groupId, count - 1, count, orderByComparator);
 
 		if (!list.isEmpty()) {
 			return list.get(0);
@@ -382,7 +362,7 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 	}
 
 	/**
-	 * Returns the recent layout branchs before and after the current recent layout branch in the ordered set where groupId = &#63;.
+	 * Returns the recent layout branches before and after the current recent layout branch in the ordered set where groupId = &#63;.
 	 *
 	 * @param recentLayoutBranchId the primary key of the current recent layout branch
 	 * @param groupId the group ID
@@ -392,10 +372,12 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 	 */
 	@Override
 	public RecentLayoutBranch[] findByGroupId_PrevAndNext(
-		long recentLayoutBranchId, long groupId,
-		OrderByComparator<RecentLayoutBranch> orderByComparator)
+			long recentLayoutBranchId, long groupId,
+			OrderByComparator<RecentLayoutBranch> orderByComparator)
 		throws NoSuchRecentLayoutBranchException {
-		RecentLayoutBranch recentLayoutBranch = findByPrimaryKey(recentLayoutBranchId);
+
+		RecentLayoutBranch recentLayoutBranch = findByPrimaryKey(
+			recentLayoutBranchId);
 
 		Session session = null;
 
@@ -404,122 +386,125 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 
 			RecentLayoutBranch[] array = new RecentLayoutBranchImpl[3];
 
-			array[0] = getByGroupId_PrevAndNext(session, recentLayoutBranch,
-					groupId, orderByComparator, true);
+			array[0] = getByGroupId_PrevAndNext(
+				session, recentLayoutBranch, groupId, orderByComparator, true);
 
 			array[1] = recentLayoutBranch;
 
-			array[2] = getByGroupId_PrevAndNext(session, recentLayoutBranch,
-					groupId, orderByComparator, false);
+			array[2] = getByGroupId_PrevAndNext(
+				session, recentLayoutBranch, groupId, orderByComparator, false);
 
 			return array;
 		}
-		catch (Exception e) {
-			throw processException(e);
+		catch (Exception exception) {
+			throw processException(exception);
 		}
 		finally {
 			closeSession(session);
 		}
 	}
 
-	protected RecentLayoutBranch getByGroupId_PrevAndNext(Session session,
-		RecentLayoutBranch recentLayoutBranch, long groupId,
+	protected RecentLayoutBranch getByGroupId_PrevAndNext(
+		Session session, RecentLayoutBranch recentLayoutBranch, long groupId,
 		OrderByComparator<RecentLayoutBranch> orderByComparator,
 		boolean previous) {
-		StringBundler query = null;
+
+		StringBundler sb = null;
 
 		if (orderByComparator != null) {
-			query = new StringBundler(4 +
-					(orderByComparator.getOrderByConditionFields().length * 3) +
+			sb = new StringBundler(
+				4 + (orderByComparator.getOrderByConditionFields().length * 3) +
 					(orderByComparator.getOrderByFields().length * 3));
 		}
 		else {
-			query = new StringBundler(3);
+			sb = new StringBundler(3);
 		}
 
-		query.append(_SQL_SELECT_RECENTLAYOUTBRANCH_WHERE);
+		sb.append(_SQL_SELECT_RECENTLAYOUTBRANCH_WHERE);
 
-		query.append(_FINDER_COLUMN_GROUPID_GROUPID_2);
+		sb.append(_FINDER_COLUMN_GROUPID_GROUPID_2);
 
 		if (orderByComparator != null) {
-			String[] orderByConditionFields = orderByComparator.getOrderByConditionFields();
+			String[] orderByConditionFields =
+				orderByComparator.getOrderByConditionFields();
 
 			if (orderByConditionFields.length > 0) {
-				query.append(WHERE_AND);
+				sb.append(WHERE_AND);
 			}
 
 			for (int i = 0; i < orderByConditionFields.length; i++) {
-				query.append(_ORDER_BY_ENTITY_ALIAS);
-				query.append(orderByConditionFields[i]);
+				sb.append(_ORDER_BY_ENTITY_ALIAS);
+				sb.append(orderByConditionFields[i]);
 
 				if ((i + 1) < orderByConditionFields.length) {
 					if (orderByComparator.isAscending() ^ previous) {
-						query.append(WHERE_GREATER_THAN_HAS_NEXT);
+						sb.append(WHERE_GREATER_THAN_HAS_NEXT);
 					}
 					else {
-						query.append(WHERE_LESSER_THAN_HAS_NEXT);
+						sb.append(WHERE_LESSER_THAN_HAS_NEXT);
 					}
 				}
 				else {
 					if (orderByComparator.isAscending() ^ previous) {
-						query.append(WHERE_GREATER_THAN);
+						sb.append(WHERE_GREATER_THAN);
 					}
 					else {
-						query.append(WHERE_LESSER_THAN);
+						sb.append(WHERE_LESSER_THAN);
 					}
 				}
 			}
 
-			query.append(ORDER_BY_CLAUSE);
+			sb.append(ORDER_BY_CLAUSE);
 
 			String[] orderByFields = orderByComparator.getOrderByFields();
 
 			for (int i = 0; i < orderByFields.length; i++) {
-				query.append(_ORDER_BY_ENTITY_ALIAS);
-				query.append(orderByFields[i]);
+				sb.append(_ORDER_BY_ENTITY_ALIAS);
+				sb.append(orderByFields[i]);
 
 				if ((i + 1) < orderByFields.length) {
 					if (orderByComparator.isAscending() ^ previous) {
-						query.append(ORDER_BY_ASC_HAS_NEXT);
+						sb.append(ORDER_BY_ASC_HAS_NEXT);
 					}
 					else {
-						query.append(ORDER_BY_DESC_HAS_NEXT);
+						sb.append(ORDER_BY_DESC_HAS_NEXT);
 					}
 				}
 				else {
 					if (orderByComparator.isAscending() ^ previous) {
-						query.append(ORDER_BY_ASC);
+						sb.append(ORDER_BY_ASC);
 					}
 					else {
-						query.append(ORDER_BY_DESC);
+						sb.append(ORDER_BY_DESC);
 					}
 				}
 			}
 		}
 		else {
-			query.append(RecentLayoutBranchModelImpl.ORDER_BY_JPQL);
+			sb.append(RecentLayoutBranchModelImpl.ORDER_BY_JPQL);
 		}
 
-		String sql = query.toString();
+		String sql = sb.toString();
 
-		Query q = session.createQuery(sql);
+		Query query = session.createQuery(sql);
 
-		q.setFirstResult(0);
-		q.setMaxResults(2);
+		query.setFirstResult(0);
+		query.setMaxResults(2);
 
-		QueryPos qPos = QueryPos.getInstance(q);
+		QueryPos queryPos = QueryPos.getInstance(query);
 
-		qPos.add(groupId);
+		queryPos.add(groupId);
 
 		if (orderByComparator != null) {
-			Object[] values = orderByComparator.getOrderByConditionValues(recentLayoutBranch);
+			for (Object orderByConditionValue :
+					orderByComparator.getOrderByConditionValues(
+						recentLayoutBranch)) {
 
-			for (Object value : values) {
-				qPos.add(value);
+				queryPos.add(orderByConditionValue);
 			}
 		}
 
-		List<RecentLayoutBranch> list = q.list();
+		List<RecentLayoutBranch> list = query.list();
 
 		if (list.size() == 2) {
 			return list.get(1);
@@ -530,60 +515,60 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 	}
 
 	/**
-	 * Removes all the recent layout branchs where groupId = &#63; from the database.
+	 * Removes all the recent layout branches where groupId = &#63; from the database.
 	 *
 	 * @param groupId the group ID
 	 */
 	@Override
 	public void removeByGroupId(long groupId) {
-		for (RecentLayoutBranch recentLayoutBranch : findByGroupId(groupId,
-				QueryUtil.ALL_POS, QueryUtil.ALL_POS, null)) {
+		for (RecentLayoutBranch recentLayoutBranch :
+				findByGroupId(
+					groupId, QueryUtil.ALL_POS, QueryUtil.ALL_POS, null)) {
+
 			remove(recentLayoutBranch);
 		}
 	}
 
 	/**
-	 * Returns the number of recent layout branchs where groupId = &#63;.
+	 * Returns the number of recent layout branches where groupId = &#63;.
 	 *
 	 * @param groupId the group ID
-	 * @return the number of matching recent layout branchs
+	 * @return the number of matching recent layout branches
 	 */
 	@Override
 	public int countByGroupId(long groupId) {
-		FinderPath finderPath = FINDER_PATH_COUNT_BY_GROUPID;
+		FinderPath finderPath = _finderPathCountByGroupId;
 
-		Object[] finderArgs = new Object[] { groupId };
+		Object[] finderArgs = new Object[] {groupId};
 
-		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
+		Long count = (Long)FinderCacheUtil.getResult(finderPath, finderArgs);
 
 		if (count == null) {
-			StringBundler query = new StringBundler(2);
+			StringBundler sb = new StringBundler(2);
 
-			query.append(_SQL_COUNT_RECENTLAYOUTBRANCH_WHERE);
+			sb.append(_SQL_COUNT_RECENTLAYOUTBRANCH_WHERE);
 
-			query.append(_FINDER_COLUMN_GROUPID_GROUPID_2);
+			sb.append(_FINDER_COLUMN_GROUPID_GROUPID_2);
 
-			String sql = query.toString();
+			String sql = sb.toString();
 
 			Session session = null;
 
 			try {
 				session = openSession();
 
-				Query q = session.createQuery(sql);
+				Query query = session.createQuery(sql);
 
-				QueryPos qPos = QueryPos.getInstance(q);
+				QueryPos queryPos = QueryPos.getInstance(query);
 
-				qPos.add(groupId);
+				queryPos.add(groupId);
 
-				count = (Long)q.uniqueResult();
+				count = (Long)query.uniqueResult();
 
-				finderCache.putResult(finderPath, finderArgs, count);
+				FinderCacheUtil.putResult(finderPath, finderArgs, count);
 			}
-			catch (Exception e) {
-				finderCache.removeResult(finderPath, finderArgs);
-
-				throw processException(e);
+			catch (Exception exception) {
+				throw processException(exception);
 			}
 			finally {
 				closeSession(session);
@@ -593,34 +578,18 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 		return count.intValue();
 	}
 
-	private static final String _FINDER_COLUMN_GROUPID_GROUPID_2 = "recentLayoutBranch.groupId = ?";
-	public static final FinderPath FINDER_PATH_WITH_PAGINATION_FIND_BY_USERID = new FinderPath(RecentLayoutBranchModelImpl.ENTITY_CACHE_ENABLED,
-			RecentLayoutBranchModelImpl.FINDER_CACHE_ENABLED,
-			RecentLayoutBranchImpl.class,
-			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByUserId",
-			new String[] {
-				Long.class.getName(),
-				
-			Integer.class.getName(), Integer.class.getName(),
-				OrderByComparator.class.getName()
-			});
-	public static final FinderPath FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_USERID =
-		new FinderPath(RecentLayoutBranchModelImpl.ENTITY_CACHE_ENABLED,
-			RecentLayoutBranchModelImpl.FINDER_CACHE_ENABLED,
-			RecentLayoutBranchImpl.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByUserId",
-			new String[] { Long.class.getName() },
-			RecentLayoutBranchModelImpl.USERID_COLUMN_BITMASK);
-	public static final FinderPath FINDER_PATH_COUNT_BY_USERID = new FinderPath(RecentLayoutBranchModelImpl.ENTITY_CACHE_ENABLED,
-			RecentLayoutBranchModelImpl.FINDER_CACHE_ENABLED, Long.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByUserId",
-			new String[] { Long.class.getName() });
+	private static final String _FINDER_COLUMN_GROUPID_GROUPID_2 =
+		"recentLayoutBranch.groupId = ?";
+
+	private FinderPath _finderPathWithPaginationFindByUserId;
+	private FinderPath _finderPathWithoutPaginationFindByUserId;
+	private FinderPath _finderPathCountByUserId;
 
 	/**
-	 * Returns all the recent layout branchs where userId = &#63;.
+	 * Returns all the recent layout branches where userId = &#63;.
 	 *
 	 * @param userId the user ID
-	 * @return the matching recent layout branchs
+	 * @return the matching recent layout branches
 	 */
 	@Override
 	public List<RecentLayoutBranch> findByUserId(long userId) {
@@ -628,83 +597,90 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 	}
 
 	/**
-	 * Returns a range of all the recent layout branchs where userId = &#63;.
+	 * Returns a range of all the recent layout branches where userId = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link RecentLayoutBranchModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>RecentLayoutBranchModelImpl</code>.
 	 * </p>
 	 *
 	 * @param userId the user ID
-	 * @param start the lower bound of the range of recent layout branchs
-	 * @param end the upper bound of the range of recent layout branchs (not inclusive)
-	 * @return the range of matching recent layout branchs
+	 * @param start the lower bound of the range of recent layout branches
+	 * @param end the upper bound of the range of recent layout branches (not inclusive)
+	 * @return the range of matching recent layout branches
 	 */
 	@Override
-	public List<RecentLayoutBranch> findByUserId(long userId, int start, int end) {
+	public List<RecentLayoutBranch> findByUserId(
+		long userId, int start, int end) {
+
 		return findByUserId(userId, start, end, null);
 	}
 
 	/**
-	 * Returns an ordered range of all the recent layout branchs where userId = &#63;.
+	 * Returns an ordered range of all the recent layout branches where userId = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link RecentLayoutBranchModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>RecentLayoutBranchModelImpl</code>.
 	 * </p>
 	 *
 	 * @param userId the user ID
-	 * @param start the lower bound of the range of recent layout branchs
-	 * @param end the upper bound of the range of recent layout branchs (not inclusive)
+	 * @param start the lower bound of the range of recent layout branches
+	 * @param end the upper bound of the range of recent layout branches (not inclusive)
 	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
-	 * @return the ordered range of matching recent layout branchs
+	 * @return the ordered range of matching recent layout branches
 	 */
 	@Override
-	public List<RecentLayoutBranch> findByUserId(long userId, int start,
-		int end, OrderByComparator<RecentLayoutBranch> orderByComparator) {
+	public List<RecentLayoutBranch> findByUserId(
+		long userId, int start, int end,
+		OrderByComparator<RecentLayoutBranch> orderByComparator) {
+
 		return findByUserId(userId, start, end, orderByComparator, true);
 	}
 
 	/**
-	 * Returns an ordered range of all the recent layout branchs where userId = &#63;.
+	 * Returns an ordered range of all the recent layout branches where userId = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link RecentLayoutBranchModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>RecentLayoutBranchModelImpl</code>.
 	 * </p>
 	 *
 	 * @param userId the user ID
-	 * @param start the lower bound of the range of recent layout branchs
-	 * @param end the upper bound of the range of recent layout branchs (not inclusive)
+	 * @param start the lower bound of the range of recent layout branches
+	 * @param end the upper bound of the range of recent layout branches (not inclusive)
 	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
-	 * @param retrieveFromCache whether to retrieve from the finder cache
-	 * @return the ordered range of matching recent layout branchs
+	 * @param useFinderCache whether to use the finder cache
+	 * @return the ordered range of matching recent layout branches
 	 */
 	@Override
-	public List<RecentLayoutBranch> findByUserId(long userId, int start,
-		int end, OrderByComparator<RecentLayoutBranch> orderByComparator,
-		boolean retrieveFromCache) {
-		boolean pagination = true;
+	public List<RecentLayoutBranch> findByUserId(
+		long userId, int start, int end,
+		OrderByComparator<RecentLayoutBranch> orderByComparator,
+		boolean useFinderCache) {
+
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
 
 		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
-				(orderByComparator == null)) {
-			pagination = false;
-			finderPath = FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_USERID;
-			finderArgs = new Object[] { userId };
+			(orderByComparator == null)) {
+
+			if (useFinderCache) {
+				finderPath = _finderPathWithoutPaginationFindByUserId;
+				finderArgs = new Object[] {userId};
+			}
 		}
-		else {
-			finderPath = FINDER_PATH_WITH_PAGINATION_FIND_BY_USERID;
-			finderArgs = new Object[] { userId, start, end, orderByComparator };
+		else if (useFinderCache) {
+			finderPath = _finderPathWithPaginationFindByUserId;
+			finderArgs = new Object[] {userId, start, end, orderByComparator};
 		}
 
 		List<RecentLayoutBranch> list = null;
 
-		if (retrieveFromCache) {
-			list = (List<RecentLayoutBranch>)finderCache.getResult(finderPath,
-					finderArgs, this);
+		if (useFinderCache) {
+			list = (List<RecentLayoutBranch>)FinderCacheUtil.getResult(
+				finderPath, finderArgs);
 
 			if ((list != null) && !list.isEmpty()) {
 				for (RecentLayoutBranch recentLayoutBranch : list) {
-					if ((userId != recentLayoutBranch.getUserId())) {
+					if (userId != recentLayoutBranch.getUserId()) {
 						list = null;
 
 						break;
@@ -714,63 +690,52 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 		}
 
 		if (list == null) {
-			StringBundler query = null;
+			StringBundler sb = null;
 
 			if (orderByComparator != null) {
-				query = new StringBundler(3 +
-						(orderByComparator.getOrderByFields().length * 2));
+				sb = new StringBundler(
+					3 + (orderByComparator.getOrderByFields().length * 2));
 			}
 			else {
-				query = new StringBundler(3);
+				sb = new StringBundler(3);
 			}
 
-			query.append(_SQL_SELECT_RECENTLAYOUTBRANCH_WHERE);
+			sb.append(_SQL_SELECT_RECENTLAYOUTBRANCH_WHERE);
 
-			query.append(_FINDER_COLUMN_USERID_USERID_2);
+			sb.append(_FINDER_COLUMN_USERID_USERID_2);
 
 			if (orderByComparator != null) {
-				appendOrderByComparator(query, _ORDER_BY_ENTITY_ALIAS,
-					orderByComparator);
+				appendOrderByComparator(
+					sb, _ORDER_BY_ENTITY_ALIAS, orderByComparator);
 			}
-			else
-			 if (pagination) {
-				query.append(RecentLayoutBranchModelImpl.ORDER_BY_JPQL);
+			else {
+				sb.append(RecentLayoutBranchModelImpl.ORDER_BY_JPQL);
 			}
 
-			String sql = query.toString();
+			String sql = sb.toString();
 
 			Session session = null;
 
 			try {
 				session = openSession();
 
-				Query q = session.createQuery(sql);
+				Query query = session.createQuery(sql);
 
-				QueryPos qPos = QueryPos.getInstance(q);
+				QueryPos queryPos = QueryPos.getInstance(query);
 
-				qPos.add(userId);
+				queryPos.add(userId);
 
-				if (!pagination) {
-					list = (List<RecentLayoutBranch>)QueryUtil.list(q,
-							getDialect(), start, end, false);
-
-					Collections.sort(list);
-
-					list = Collections.unmodifiableList(list);
-				}
-				else {
-					list = (List<RecentLayoutBranch>)QueryUtil.list(q,
-							getDialect(), start, end);
-				}
+				list = (List<RecentLayoutBranch>)QueryUtil.list(
+					query, getDialect(), start, end);
 
 				cacheResult(list);
 
-				finderCache.putResult(finderPath, finderArgs, list);
+				if (useFinderCache) {
+					FinderCacheUtil.putResult(finderPath, finderArgs, list);
+				}
 			}
-			catch (Exception e) {
-				finderCache.removeResult(finderPath, finderArgs);
-
-				throw processException(e);
+			catch (Exception exception) {
+				throw processException(exception);
 			}
 			finally {
 				closeSession(session);
@@ -789,26 +754,28 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 	 * @throws NoSuchRecentLayoutBranchException if a matching recent layout branch could not be found
 	 */
 	@Override
-	public RecentLayoutBranch findByUserId_First(long userId,
-		OrderByComparator<RecentLayoutBranch> orderByComparator)
+	public RecentLayoutBranch findByUserId_First(
+			long userId,
+			OrderByComparator<RecentLayoutBranch> orderByComparator)
 		throws NoSuchRecentLayoutBranchException {
-		RecentLayoutBranch recentLayoutBranch = fetchByUserId_First(userId,
-				orderByComparator);
+
+		RecentLayoutBranch recentLayoutBranch = fetchByUserId_First(
+			userId, orderByComparator);
 
 		if (recentLayoutBranch != null) {
 			return recentLayoutBranch;
 		}
 
-		StringBundler msg = new StringBundler(4);
+		StringBundler sb = new StringBundler(4);
 
-		msg.append(_NO_SUCH_ENTITY_WITH_KEY);
+		sb.append(_NO_SUCH_ENTITY_WITH_KEY);
 
-		msg.append("userId=");
-		msg.append(userId);
+		sb.append("userId=");
+		sb.append(userId);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		sb.append("}");
 
-		throw new NoSuchRecentLayoutBranchException(msg.toString());
+		throw new NoSuchRecentLayoutBranchException(sb.toString());
 	}
 
 	/**
@@ -819,10 +786,11 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 	 * @return the first matching recent layout branch, or <code>null</code> if a matching recent layout branch could not be found
 	 */
 	@Override
-	public RecentLayoutBranch fetchByUserId_First(long userId,
-		OrderByComparator<RecentLayoutBranch> orderByComparator) {
-		List<RecentLayoutBranch> list = findByUserId(userId, 0, 1,
-				orderByComparator);
+	public RecentLayoutBranch fetchByUserId_First(
+		long userId, OrderByComparator<RecentLayoutBranch> orderByComparator) {
+
+		List<RecentLayoutBranch> list = findByUserId(
+			userId, 0, 1, orderByComparator);
 
 		if (!list.isEmpty()) {
 			return list.get(0);
@@ -840,26 +808,28 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 	 * @throws NoSuchRecentLayoutBranchException if a matching recent layout branch could not be found
 	 */
 	@Override
-	public RecentLayoutBranch findByUserId_Last(long userId,
-		OrderByComparator<RecentLayoutBranch> orderByComparator)
+	public RecentLayoutBranch findByUserId_Last(
+			long userId,
+			OrderByComparator<RecentLayoutBranch> orderByComparator)
 		throws NoSuchRecentLayoutBranchException {
-		RecentLayoutBranch recentLayoutBranch = fetchByUserId_Last(userId,
-				orderByComparator);
+
+		RecentLayoutBranch recentLayoutBranch = fetchByUserId_Last(
+			userId, orderByComparator);
 
 		if (recentLayoutBranch != null) {
 			return recentLayoutBranch;
 		}
 
-		StringBundler msg = new StringBundler(4);
+		StringBundler sb = new StringBundler(4);
 
-		msg.append(_NO_SUCH_ENTITY_WITH_KEY);
+		sb.append(_NO_SUCH_ENTITY_WITH_KEY);
 
-		msg.append("userId=");
-		msg.append(userId);
+		sb.append("userId=");
+		sb.append(userId);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		sb.append("}");
 
-		throw new NoSuchRecentLayoutBranchException(msg.toString());
+		throw new NoSuchRecentLayoutBranchException(sb.toString());
 	}
 
 	/**
@@ -870,16 +840,17 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 	 * @return the last matching recent layout branch, or <code>null</code> if a matching recent layout branch could not be found
 	 */
 	@Override
-	public RecentLayoutBranch fetchByUserId_Last(long userId,
-		OrderByComparator<RecentLayoutBranch> orderByComparator) {
+	public RecentLayoutBranch fetchByUserId_Last(
+		long userId, OrderByComparator<RecentLayoutBranch> orderByComparator) {
+
 		int count = countByUserId(userId);
 
 		if (count == 0) {
 			return null;
 		}
 
-		List<RecentLayoutBranch> list = findByUserId(userId, count - 1, count,
-				orderByComparator);
+		List<RecentLayoutBranch> list = findByUserId(
+			userId, count - 1, count, orderByComparator);
 
 		if (!list.isEmpty()) {
 			return list.get(0);
@@ -889,7 +860,7 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 	}
 
 	/**
-	 * Returns the recent layout branchs before and after the current recent layout branch in the ordered set where userId = &#63;.
+	 * Returns the recent layout branches before and after the current recent layout branch in the ordered set where userId = &#63;.
 	 *
 	 * @param recentLayoutBranchId the primary key of the current recent layout branch
 	 * @param userId the user ID
@@ -899,10 +870,12 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 	 */
 	@Override
 	public RecentLayoutBranch[] findByUserId_PrevAndNext(
-		long recentLayoutBranchId, long userId,
-		OrderByComparator<RecentLayoutBranch> orderByComparator)
+			long recentLayoutBranchId, long userId,
+			OrderByComparator<RecentLayoutBranch> orderByComparator)
 		throws NoSuchRecentLayoutBranchException {
-		RecentLayoutBranch recentLayoutBranch = findByPrimaryKey(recentLayoutBranchId);
+
+		RecentLayoutBranch recentLayoutBranch = findByPrimaryKey(
+			recentLayoutBranchId);
 
 		Session session = null;
 
@@ -911,122 +884,125 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 
 			RecentLayoutBranch[] array = new RecentLayoutBranchImpl[3];
 
-			array[0] = getByUserId_PrevAndNext(session, recentLayoutBranch,
-					userId, orderByComparator, true);
+			array[0] = getByUserId_PrevAndNext(
+				session, recentLayoutBranch, userId, orderByComparator, true);
 
 			array[1] = recentLayoutBranch;
 
-			array[2] = getByUserId_PrevAndNext(session, recentLayoutBranch,
-					userId, orderByComparator, false);
+			array[2] = getByUserId_PrevAndNext(
+				session, recentLayoutBranch, userId, orderByComparator, false);
 
 			return array;
 		}
-		catch (Exception e) {
-			throw processException(e);
+		catch (Exception exception) {
+			throw processException(exception);
 		}
 		finally {
 			closeSession(session);
 		}
 	}
 
-	protected RecentLayoutBranch getByUserId_PrevAndNext(Session session,
-		RecentLayoutBranch recentLayoutBranch, long userId,
+	protected RecentLayoutBranch getByUserId_PrevAndNext(
+		Session session, RecentLayoutBranch recentLayoutBranch, long userId,
 		OrderByComparator<RecentLayoutBranch> orderByComparator,
 		boolean previous) {
-		StringBundler query = null;
+
+		StringBundler sb = null;
 
 		if (orderByComparator != null) {
-			query = new StringBundler(4 +
-					(orderByComparator.getOrderByConditionFields().length * 3) +
+			sb = new StringBundler(
+				4 + (orderByComparator.getOrderByConditionFields().length * 3) +
 					(orderByComparator.getOrderByFields().length * 3));
 		}
 		else {
-			query = new StringBundler(3);
+			sb = new StringBundler(3);
 		}
 
-		query.append(_SQL_SELECT_RECENTLAYOUTBRANCH_WHERE);
+		sb.append(_SQL_SELECT_RECENTLAYOUTBRANCH_WHERE);
 
-		query.append(_FINDER_COLUMN_USERID_USERID_2);
+		sb.append(_FINDER_COLUMN_USERID_USERID_2);
 
 		if (orderByComparator != null) {
-			String[] orderByConditionFields = orderByComparator.getOrderByConditionFields();
+			String[] orderByConditionFields =
+				orderByComparator.getOrderByConditionFields();
 
 			if (orderByConditionFields.length > 0) {
-				query.append(WHERE_AND);
+				sb.append(WHERE_AND);
 			}
 
 			for (int i = 0; i < orderByConditionFields.length; i++) {
-				query.append(_ORDER_BY_ENTITY_ALIAS);
-				query.append(orderByConditionFields[i]);
+				sb.append(_ORDER_BY_ENTITY_ALIAS);
+				sb.append(orderByConditionFields[i]);
 
 				if ((i + 1) < orderByConditionFields.length) {
 					if (orderByComparator.isAscending() ^ previous) {
-						query.append(WHERE_GREATER_THAN_HAS_NEXT);
+						sb.append(WHERE_GREATER_THAN_HAS_NEXT);
 					}
 					else {
-						query.append(WHERE_LESSER_THAN_HAS_NEXT);
+						sb.append(WHERE_LESSER_THAN_HAS_NEXT);
 					}
 				}
 				else {
 					if (orderByComparator.isAscending() ^ previous) {
-						query.append(WHERE_GREATER_THAN);
+						sb.append(WHERE_GREATER_THAN);
 					}
 					else {
-						query.append(WHERE_LESSER_THAN);
+						sb.append(WHERE_LESSER_THAN);
 					}
 				}
 			}
 
-			query.append(ORDER_BY_CLAUSE);
+			sb.append(ORDER_BY_CLAUSE);
 
 			String[] orderByFields = orderByComparator.getOrderByFields();
 
 			for (int i = 0; i < orderByFields.length; i++) {
-				query.append(_ORDER_BY_ENTITY_ALIAS);
-				query.append(orderByFields[i]);
+				sb.append(_ORDER_BY_ENTITY_ALIAS);
+				sb.append(orderByFields[i]);
 
 				if ((i + 1) < orderByFields.length) {
 					if (orderByComparator.isAscending() ^ previous) {
-						query.append(ORDER_BY_ASC_HAS_NEXT);
+						sb.append(ORDER_BY_ASC_HAS_NEXT);
 					}
 					else {
-						query.append(ORDER_BY_DESC_HAS_NEXT);
+						sb.append(ORDER_BY_DESC_HAS_NEXT);
 					}
 				}
 				else {
 					if (orderByComparator.isAscending() ^ previous) {
-						query.append(ORDER_BY_ASC);
+						sb.append(ORDER_BY_ASC);
 					}
 					else {
-						query.append(ORDER_BY_DESC);
+						sb.append(ORDER_BY_DESC);
 					}
 				}
 			}
 		}
 		else {
-			query.append(RecentLayoutBranchModelImpl.ORDER_BY_JPQL);
+			sb.append(RecentLayoutBranchModelImpl.ORDER_BY_JPQL);
 		}
 
-		String sql = query.toString();
+		String sql = sb.toString();
 
-		Query q = session.createQuery(sql);
+		Query query = session.createQuery(sql);
 
-		q.setFirstResult(0);
-		q.setMaxResults(2);
+		query.setFirstResult(0);
+		query.setMaxResults(2);
 
-		QueryPos qPos = QueryPos.getInstance(q);
+		QueryPos queryPos = QueryPos.getInstance(query);
 
-		qPos.add(userId);
+		queryPos.add(userId);
 
 		if (orderByComparator != null) {
-			Object[] values = orderByComparator.getOrderByConditionValues(recentLayoutBranch);
+			for (Object orderByConditionValue :
+					orderByComparator.getOrderByConditionValues(
+						recentLayoutBranch)) {
 
-			for (Object value : values) {
-				qPos.add(value);
+				queryPos.add(orderByConditionValue);
 			}
 		}
 
-		List<RecentLayoutBranch> list = q.list();
+		List<RecentLayoutBranch> list = query.list();
 
 		if (list.size() == 2) {
 			return list.get(1);
@@ -1037,60 +1013,60 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 	}
 
 	/**
-	 * Removes all the recent layout branchs where userId = &#63; from the database.
+	 * Removes all the recent layout branches where userId = &#63; from the database.
 	 *
 	 * @param userId the user ID
 	 */
 	@Override
 	public void removeByUserId(long userId) {
-		for (RecentLayoutBranch recentLayoutBranch : findByUserId(userId,
-				QueryUtil.ALL_POS, QueryUtil.ALL_POS, null)) {
+		for (RecentLayoutBranch recentLayoutBranch :
+				findByUserId(
+					userId, QueryUtil.ALL_POS, QueryUtil.ALL_POS, null)) {
+
 			remove(recentLayoutBranch);
 		}
 	}
 
 	/**
-	 * Returns the number of recent layout branchs where userId = &#63;.
+	 * Returns the number of recent layout branches where userId = &#63;.
 	 *
 	 * @param userId the user ID
-	 * @return the number of matching recent layout branchs
+	 * @return the number of matching recent layout branches
 	 */
 	@Override
 	public int countByUserId(long userId) {
-		FinderPath finderPath = FINDER_PATH_COUNT_BY_USERID;
+		FinderPath finderPath = _finderPathCountByUserId;
 
-		Object[] finderArgs = new Object[] { userId };
+		Object[] finderArgs = new Object[] {userId};
 
-		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
+		Long count = (Long)FinderCacheUtil.getResult(finderPath, finderArgs);
 
 		if (count == null) {
-			StringBundler query = new StringBundler(2);
+			StringBundler sb = new StringBundler(2);
 
-			query.append(_SQL_COUNT_RECENTLAYOUTBRANCH_WHERE);
+			sb.append(_SQL_COUNT_RECENTLAYOUTBRANCH_WHERE);
 
-			query.append(_FINDER_COLUMN_USERID_USERID_2);
+			sb.append(_FINDER_COLUMN_USERID_USERID_2);
 
-			String sql = query.toString();
+			String sql = sb.toString();
 
 			Session session = null;
 
 			try {
 				session = openSession();
 
-				Query q = session.createQuery(sql);
+				Query query = session.createQuery(sql);
 
-				QueryPos qPos = QueryPos.getInstance(q);
+				QueryPos queryPos = QueryPos.getInstance(query);
 
-				qPos.add(userId);
+				queryPos.add(userId);
 
-				count = (Long)q.uniqueResult();
+				count = (Long)query.uniqueResult();
 
-				finderCache.putResult(finderPath, finderArgs, count);
+				FinderCacheUtil.putResult(finderPath, finderArgs, count);
 			}
-			catch (Exception e) {
-				finderCache.removeResult(finderPath, finderArgs);
-
-				throw processException(e);
+			catch (Exception exception) {
+				throw processException(exception);
 			}
 			finally {
 				closeSession(session);
@@ -1100,128 +1076,115 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 		return count.intValue();
 	}
 
-	private static final String _FINDER_COLUMN_USERID_USERID_2 = "recentLayoutBranch.userId = ?";
-	public static final FinderPath FINDER_PATH_WITH_PAGINATION_FIND_BY_LAYOUTBRANCHID =
-		new FinderPath(RecentLayoutBranchModelImpl.ENTITY_CACHE_ENABLED,
-			RecentLayoutBranchModelImpl.FINDER_CACHE_ENABLED,
-			RecentLayoutBranchImpl.class,
-			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByLayoutBranchId",
-			new String[] {
-				Long.class.getName(),
-				
-			Integer.class.getName(), Integer.class.getName(),
-				OrderByComparator.class.getName()
-			});
-	public static final FinderPath FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_LAYOUTBRANCHID =
-		new FinderPath(RecentLayoutBranchModelImpl.ENTITY_CACHE_ENABLED,
-			RecentLayoutBranchModelImpl.FINDER_CACHE_ENABLED,
-			RecentLayoutBranchImpl.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByLayoutBranchId",
-			new String[] { Long.class.getName() },
-			RecentLayoutBranchModelImpl.LAYOUTBRANCHID_COLUMN_BITMASK);
-	public static final FinderPath FINDER_PATH_COUNT_BY_LAYOUTBRANCHID = new FinderPath(RecentLayoutBranchModelImpl.ENTITY_CACHE_ENABLED,
-			RecentLayoutBranchModelImpl.FINDER_CACHE_ENABLED, Long.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByLayoutBranchId",
-			new String[] { Long.class.getName() });
+	private static final String _FINDER_COLUMN_USERID_USERID_2 =
+		"recentLayoutBranch.userId = ?";
+
+	private FinderPath _finderPathWithPaginationFindByLayoutBranchId;
+	private FinderPath _finderPathWithoutPaginationFindByLayoutBranchId;
+	private FinderPath _finderPathCountByLayoutBranchId;
 
 	/**
-	 * Returns all the recent layout branchs where layoutBranchId = &#63;.
+	 * Returns all the recent layout branches where layoutBranchId = &#63;.
 	 *
 	 * @param layoutBranchId the layout branch ID
-	 * @return the matching recent layout branchs
+	 * @return the matching recent layout branches
 	 */
 	@Override
 	public List<RecentLayoutBranch> findByLayoutBranchId(long layoutBranchId) {
-		return findByLayoutBranchId(layoutBranchId, QueryUtil.ALL_POS,
-			QueryUtil.ALL_POS, null);
+		return findByLayoutBranchId(
+			layoutBranchId, QueryUtil.ALL_POS, QueryUtil.ALL_POS, null);
 	}
 
 	/**
-	 * Returns a range of all the recent layout branchs where layoutBranchId = &#63;.
+	 * Returns a range of all the recent layout branches where layoutBranchId = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link RecentLayoutBranchModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>RecentLayoutBranchModelImpl</code>.
 	 * </p>
 	 *
 	 * @param layoutBranchId the layout branch ID
-	 * @param start the lower bound of the range of recent layout branchs
-	 * @param end the upper bound of the range of recent layout branchs (not inclusive)
-	 * @return the range of matching recent layout branchs
+	 * @param start the lower bound of the range of recent layout branches
+	 * @param end the upper bound of the range of recent layout branches (not inclusive)
+	 * @return the range of matching recent layout branches
 	 */
 	@Override
-	public List<RecentLayoutBranch> findByLayoutBranchId(long layoutBranchId,
-		int start, int end) {
+	public List<RecentLayoutBranch> findByLayoutBranchId(
+		long layoutBranchId, int start, int end) {
+
 		return findByLayoutBranchId(layoutBranchId, start, end, null);
 	}
 
 	/**
-	 * Returns an ordered range of all the recent layout branchs where layoutBranchId = &#63;.
+	 * Returns an ordered range of all the recent layout branches where layoutBranchId = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link RecentLayoutBranchModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>RecentLayoutBranchModelImpl</code>.
 	 * </p>
 	 *
 	 * @param layoutBranchId the layout branch ID
-	 * @param start the lower bound of the range of recent layout branchs
-	 * @param end the upper bound of the range of recent layout branchs (not inclusive)
+	 * @param start the lower bound of the range of recent layout branches
+	 * @param end the upper bound of the range of recent layout branches (not inclusive)
 	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
-	 * @return the ordered range of matching recent layout branchs
+	 * @return the ordered range of matching recent layout branches
 	 */
 	@Override
-	public List<RecentLayoutBranch> findByLayoutBranchId(long layoutBranchId,
-		int start, int end,
+	public List<RecentLayoutBranch> findByLayoutBranchId(
+		long layoutBranchId, int start, int end,
 		OrderByComparator<RecentLayoutBranch> orderByComparator) {
-		return findByLayoutBranchId(layoutBranchId, start, end,
-			orderByComparator, true);
+
+		return findByLayoutBranchId(
+			layoutBranchId, start, end, orderByComparator, true);
 	}
 
 	/**
-	 * Returns an ordered range of all the recent layout branchs where layoutBranchId = &#63;.
+	 * Returns an ordered range of all the recent layout branches where layoutBranchId = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link RecentLayoutBranchModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>RecentLayoutBranchModelImpl</code>.
 	 * </p>
 	 *
 	 * @param layoutBranchId the layout branch ID
-	 * @param start the lower bound of the range of recent layout branchs
-	 * @param end the upper bound of the range of recent layout branchs (not inclusive)
+	 * @param start the lower bound of the range of recent layout branches
+	 * @param end the upper bound of the range of recent layout branches (not inclusive)
 	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
-	 * @param retrieveFromCache whether to retrieve from the finder cache
-	 * @return the ordered range of matching recent layout branchs
+	 * @param useFinderCache whether to use the finder cache
+	 * @return the ordered range of matching recent layout branches
 	 */
 	@Override
-	public List<RecentLayoutBranch> findByLayoutBranchId(long layoutBranchId,
-		int start, int end,
+	public List<RecentLayoutBranch> findByLayoutBranchId(
+		long layoutBranchId, int start, int end,
 		OrderByComparator<RecentLayoutBranch> orderByComparator,
-		boolean retrieveFromCache) {
-		boolean pagination = true;
+		boolean useFinderCache) {
+
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
 
 		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
-				(orderByComparator == null)) {
-			pagination = false;
-			finderPath = FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_LAYOUTBRANCHID;
-			finderArgs = new Object[] { layoutBranchId };
+			(orderByComparator == null)) {
+
+			if (useFinderCache) {
+				finderPath = _finderPathWithoutPaginationFindByLayoutBranchId;
+				finderArgs = new Object[] {layoutBranchId};
+			}
 		}
-		else {
-			finderPath = FINDER_PATH_WITH_PAGINATION_FIND_BY_LAYOUTBRANCHID;
+		else if (useFinderCache) {
+			finderPath = _finderPathWithPaginationFindByLayoutBranchId;
 			finderArgs = new Object[] {
-					layoutBranchId,
-					
-					start, end, orderByComparator
-				};
+				layoutBranchId, start, end, orderByComparator
+			};
 		}
 
 		List<RecentLayoutBranch> list = null;
 
-		if (retrieveFromCache) {
-			list = (List<RecentLayoutBranch>)finderCache.getResult(finderPath,
-					finderArgs, this);
+		if (useFinderCache) {
+			list = (List<RecentLayoutBranch>)FinderCacheUtil.getResult(
+				finderPath, finderArgs);
 
 			if ((list != null) && !list.isEmpty()) {
 				for (RecentLayoutBranch recentLayoutBranch : list) {
-					if ((layoutBranchId != recentLayoutBranch.getLayoutBranchId())) {
+					if (layoutBranchId !=
+							recentLayoutBranch.getLayoutBranchId()) {
+
 						list = null;
 
 						break;
@@ -1231,63 +1194,52 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 		}
 
 		if (list == null) {
-			StringBundler query = null;
+			StringBundler sb = null;
 
 			if (orderByComparator != null) {
-				query = new StringBundler(3 +
-						(orderByComparator.getOrderByFields().length * 2));
+				sb = new StringBundler(
+					3 + (orderByComparator.getOrderByFields().length * 2));
 			}
 			else {
-				query = new StringBundler(3);
+				sb = new StringBundler(3);
 			}
 
-			query.append(_SQL_SELECT_RECENTLAYOUTBRANCH_WHERE);
+			sb.append(_SQL_SELECT_RECENTLAYOUTBRANCH_WHERE);
 
-			query.append(_FINDER_COLUMN_LAYOUTBRANCHID_LAYOUTBRANCHID_2);
+			sb.append(_FINDER_COLUMN_LAYOUTBRANCHID_LAYOUTBRANCHID_2);
 
 			if (orderByComparator != null) {
-				appendOrderByComparator(query, _ORDER_BY_ENTITY_ALIAS,
-					orderByComparator);
+				appendOrderByComparator(
+					sb, _ORDER_BY_ENTITY_ALIAS, orderByComparator);
 			}
-			else
-			 if (pagination) {
-				query.append(RecentLayoutBranchModelImpl.ORDER_BY_JPQL);
+			else {
+				sb.append(RecentLayoutBranchModelImpl.ORDER_BY_JPQL);
 			}
 
-			String sql = query.toString();
+			String sql = sb.toString();
 
 			Session session = null;
 
 			try {
 				session = openSession();
 
-				Query q = session.createQuery(sql);
+				Query query = session.createQuery(sql);
 
-				QueryPos qPos = QueryPos.getInstance(q);
+				QueryPos queryPos = QueryPos.getInstance(query);
 
-				qPos.add(layoutBranchId);
+				queryPos.add(layoutBranchId);
 
-				if (!pagination) {
-					list = (List<RecentLayoutBranch>)QueryUtil.list(q,
-							getDialect(), start, end, false);
-
-					Collections.sort(list);
-
-					list = Collections.unmodifiableList(list);
-				}
-				else {
-					list = (List<RecentLayoutBranch>)QueryUtil.list(q,
-							getDialect(), start, end);
-				}
+				list = (List<RecentLayoutBranch>)QueryUtil.list(
+					query, getDialect(), start, end);
 
 				cacheResult(list);
 
-				finderCache.putResult(finderPath, finderArgs, list);
+				if (useFinderCache) {
+					FinderCacheUtil.putResult(finderPath, finderArgs, list);
+				}
 			}
-			catch (Exception e) {
-				finderCache.removeResult(finderPath, finderArgs);
-
-				throw processException(e);
+			catch (Exception exception) {
+				throw processException(exception);
 			}
 			finally {
 				closeSession(session);
@@ -1306,26 +1258,28 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 	 * @throws NoSuchRecentLayoutBranchException if a matching recent layout branch could not be found
 	 */
 	@Override
-	public RecentLayoutBranch findByLayoutBranchId_First(long layoutBranchId,
-		OrderByComparator<RecentLayoutBranch> orderByComparator)
+	public RecentLayoutBranch findByLayoutBranchId_First(
+			long layoutBranchId,
+			OrderByComparator<RecentLayoutBranch> orderByComparator)
 		throws NoSuchRecentLayoutBranchException {
-		RecentLayoutBranch recentLayoutBranch = fetchByLayoutBranchId_First(layoutBranchId,
-				orderByComparator);
+
+		RecentLayoutBranch recentLayoutBranch = fetchByLayoutBranchId_First(
+			layoutBranchId, orderByComparator);
 
 		if (recentLayoutBranch != null) {
 			return recentLayoutBranch;
 		}
 
-		StringBundler msg = new StringBundler(4);
+		StringBundler sb = new StringBundler(4);
 
-		msg.append(_NO_SUCH_ENTITY_WITH_KEY);
+		sb.append(_NO_SUCH_ENTITY_WITH_KEY);
 
-		msg.append("layoutBranchId=");
-		msg.append(layoutBranchId);
+		sb.append("layoutBranchId=");
+		sb.append(layoutBranchId);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		sb.append("}");
 
-		throw new NoSuchRecentLayoutBranchException(msg.toString());
+		throw new NoSuchRecentLayoutBranchException(sb.toString());
 	}
 
 	/**
@@ -1336,10 +1290,12 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 	 * @return the first matching recent layout branch, or <code>null</code> if a matching recent layout branch could not be found
 	 */
 	@Override
-	public RecentLayoutBranch fetchByLayoutBranchId_First(long layoutBranchId,
+	public RecentLayoutBranch fetchByLayoutBranchId_First(
+		long layoutBranchId,
 		OrderByComparator<RecentLayoutBranch> orderByComparator) {
-		List<RecentLayoutBranch> list = findByLayoutBranchId(layoutBranchId, 0,
-				1, orderByComparator);
+
+		List<RecentLayoutBranch> list = findByLayoutBranchId(
+			layoutBranchId, 0, 1, orderByComparator);
 
 		if (!list.isEmpty()) {
 			return list.get(0);
@@ -1357,26 +1313,28 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 	 * @throws NoSuchRecentLayoutBranchException if a matching recent layout branch could not be found
 	 */
 	@Override
-	public RecentLayoutBranch findByLayoutBranchId_Last(long layoutBranchId,
-		OrderByComparator<RecentLayoutBranch> orderByComparator)
+	public RecentLayoutBranch findByLayoutBranchId_Last(
+			long layoutBranchId,
+			OrderByComparator<RecentLayoutBranch> orderByComparator)
 		throws NoSuchRecentLayoutBranchException {
-		RecentLayoutBranch recentLayoutBranch = fetchByLayoutBranchId_Last(layoutBranchId,
-				orderByComparator);
+
+		RecentLayoutBranch recentLayoutBranch = fetchByLayoutBranchId_Last(
+			layoutBranchId, orderByComparator);
 
 		if (recentLayoutBranch != null) {
 			return recentLayoutBranch;
 		}
 
-		StringBundler msg = new StringBundler(4);
+		StringBundler sb = new StringBundler(4);
 
-		msg.append(_NO_SUCH_ENTITY_WITH_KEY);
+		sb.append(_NO_SUCH_ENTITY_WITH_KEY);
 
-		msg.append("layoutBranchId=");
-		msg.append(layoutBranchId);
+		sb.append("layoutBranchId=");
+		sb.append(layoutBranchId);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		sb.append("}");
 
-		throw new NoSuchRecentLayoutBranchException(msg.toString());
+		throw new NoSuchRecentLayoutBranchException(sb.toString());
 	}
 
 	/**
@@ -1387,16 +1345,18 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 	 * @return the last matching recent layout branch, or <code>null</code> if a matching recent layout branch could not be found
 	 */
 	@Override
-	public RecentLayoutBranch fetchByLayoutBranchId_Last(long layoutBranchId,
+	public RecentLayoutBranch fetchByLayoutBranchId_Last(
+		long layoutBranchId,
 		OrderByComparator<RecentLayoutBranch> orderByComparator) {
+
 		int count = countByLayoutBranchId(layoutBranchId);
 
 		if (count == 0) {
 			return null;
 		}
 
-		List<RecentLayoutBranch> list = findByLayoutBranchId(layoutBranchId,
-				count - 1, count, orderByComparator);
+		List<RecentLayoutBranch> list = findByLayoutBranchId(
+			layoutBranchId, count - 1, count, orderByComparator);
 
 		if (!list.isEmpty()) {
 			return list.get(0);
@@ -1406,7 +1366,7 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 	}
 
 	/**
-	 * Returns the recent layout branchs before and after the current recent layout branch in the ordered set where layoutBranchId = &#63;.
+	 * Returns the recent layout branches before and after the current recent layout branch in the ordered set where layoutBranchId = &#63;.
 	 *
 	 * @param recentLayoutBranchId the primary key of the current recent layout branch
 	 * @param layoutBranchId the layout branch ID
@@ -1416,10 +1376,12 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 	 */
 	@Override
 	public RecentLayoutBranch[] findByLayoutBranchId_PrevAndNext(
-		long recentLayoutBranchId, long layoutBranchId,
-		OrderByComparator<RecentLayoutBranch> orderByComparator)
+			long recentLayoutBranchId, long layoutBranchId,
+			OrderByComparator<RecentLayoutBranch> orderByComparator)
 		throws NoSuchRecentLayoutBranchException {
-		RecentLayoutBranch recentLayoutBranch = findByPrimaryKey(recentLayoutBranchId);
+
+		RecentLayoutBranch recentLayoutBranch = findByPrimaryKey(
+			recentLayoutBranchId);
 
 		Session session = null;
 
@@ -1428,18 +1390,20 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 
 			RecentLayoutBranch[] array = new RecentLayoutBranchImpl[3];
 
-			array[0] = getByLayoutBranchId_PrevAndNext(session,
-					recentLayoutBranch, layoutBranchId, orderByComparator, true);
+			array[0] = getByLayoutBranchId_PrevAndNext(
+				session, recentLayoutBranch, layoutBranchId, orderByComparator,
+				true);
 
 			array[1] = recentLayoutBranch;
 
-			array[2] = getByLayoutBranchId_PrevAndNext(session,
-					recentLayoutBranch, layoutBranchId, orderByComparator, false);
+			array[2] = getByLayoutBranchId_PrevAndNext(
+				session, recentLayoutBranch, layoutBranchId, orderByComparator,
+				false);
 
 			return array;
 		}
-		catch (Exception e) {
-			throw processException(e);
+		catch (Exception exception) {
+			throw processException(exception);
 		}
 		finally {
 			closeSession(session);
@@ -1451,100 +1415,103 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 		long layoutBranchId,
 		OrderByComparator<RecentLayoutBranch> orderByComparator,
 		boolean previous) {
-		StringBundler query = null;
+
+		StringBundler sb = null;
 
 		if (orderByComparator != null) {
-			query = new StringBundler(4 +
-					(orderByComparator.getOrderByConditionFields().length * 3) +
+			sb = new StringBundler(
+				4 + (orderByComparator.getOrderByConditionFields().length * 3) +
 					(orderByComparator.getOrderByFields().length * 3));
 		}
 		else {
-			query = new StringBundler(3);
+			sb = new StringBundler(3);
 		}
 
-		query.append(_SQL_SELECT_RECENTLAYOUTBRANCH_WHERE);
+		sb.append(_SQL_SELECT_RECENTLAYOUTBRANCH_WHERE);
 
-		query.append(_FINDER_COLUMN_LAYOUTBRANCHID_LAYOUTBRANCHID_2);
+		sb.append(_FINDER_COLUMN_LAYOUTBRANCHID_LAYOUTBRANCHID_2);
 
 		if (orderByComparator != null) {
-			String[] orderByConditionFields = orderByComparator.getOrderByConditionFields();
+			String[] orderByConditionFields =
+				orderByComparator.getOrderByConditionFields();
 
 			if (orderByConditionFields.length > 0) {
-				query.append(WHERE_AND);
+				sb.append(WHERE_AND);
 			}
 
 			for (int i = 0; i < orderByConditionFields.length; i++) {
-				query.append(_ORDER_BY_ENTITY_ALIAS);
-				query.append(orderByConditionFields[i]);
+				sb.append(_ORDER_BY_ENTITY_ALIAS);
+				sb.append(orderByConditionFields[i]);
 
 				if ((i + 1) < orderByConditionFields.length) {
 					if (orderByComparator.isAscending() ^ previous) {
-						query.append(WHERE_GREATER_THAN_HAS_NEXT);
+						sb.append(WHERE_GREATER_THAN_HAS_NEXT);
 					}
 					else {
-						query.append(WHERE_LESSER_THAN_HAS_NEXT);
+						sb.append(WHERE_LESSER_THAN_HAS_NEXT);
 					}
 				}
 				else {
 					if (orderByComparator.isAscending() ^ previous) {
-						query.append(WHERE_GREATER_THAN);
+						sb.append(WHERE_GREATER_THAN);
 					}
 					else {
-						query.append(WHERE_LESSER_THAN);
+						sb.append(WHERE_LESSER_THAN);
 					}
 				}
 			}
 
-			query.append(ORDER_BY_CLAUSE);
+			sb.append(ORDER_BY_CLAUSE);
 
 			String[] orderByFields = orderByComparator.getOrderByFields();
 
 			for (int i = 0; i < orderByFields.length; i++) {
-				query.append(_ORDER_BY_ENTITY_ALIAS);
-				query.append(orderByFields[i]);
+				sb.append(_ORDER_BY_ENTITY_ALIAS);
+				sb.append(orderByFields[i]);
 
 				if ((i + 1) < orderByFields.length) {
 					if (orderByComparator.isAscending() ^ previous) {
-						query.append(ORDER_BY_ASC_HAS_NEXT);
+						sb.append(ORDER_BY_ASC_HAS_NEXT);
 					}
 					else {
-						query.append(ORDER_BY_DESC_HAS_NEXT);
+						sb.append(ORDER_BY_DESC_HAS_NEXT);
 					}
 				}
 				else {
 					if (orderByComparator.isAscending() ^ previous) {
-						query.append(ORDER_BY_ASC);
+						sb.append(ORDER_BY_ASC);
 					}
 					else {
-						query.append(ORDER_BY_DESC);
+						sb.append(ORDER_BY_DESC);
 					}
 				}
 			}
 		}
 		else {
-			query.append(RecentLayoutBranchModelImpl.ORDER_BY_JPQL);
+			sb.append(RecentLayoutBranchModelImpl.ORDER_BY_JPQL);
 		}
 
-		String sql = query.toString();
+		String sql = sb.toString();
 
-		Query q = session.createQuery(sql);
+		Query query = session.createQuery(sql);
 
-		q.setFirstResult(0);
-		q.setMaxResults(2);
+		query.setFirstResult(0);
+		query.setMaxResults(2);
 
-		QueryPos qPos = QueryPos.getInstance(q);
+		QueryPos queryPos = QueryPos.getInstance(query);
 
-		qPos.add(layoutBranchId);
+		queryPos.add(layoutBranchId);
 
 		if (orderByComparator != null) {
-			Object[] values = orderByComparator.getOrderByConditionValues(recentLayoutBranch);
+			for (Object orderByConditionValue :
+					orderByComparator.getOrderByConditionValues(
+						recentLayoutBranch)) {
 
-			for (Object value : values) {
-				qPos.add(value);
+				queryPos.add(orderByConditionValue);
 			}
 		}
 
-		List<RecentLayoutBranch> list = q.list();
+		List<RecentLayoutBranch> list = query.list();
 
 		if (list.size() == 2) {
 			return list.get(1);
@@ -1555,60 +1522,61 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 	}
 
 	/**
-	 * Removes all the recent layout branchs where layoutBranchId = &#63; from the database.
+	 * Removes all the recent layout branches where layoutBranchId = &#63; from the database.
 	 *
 	 * @param layoutBranchId the layout branch ID
 	 */
 	@Override
 	public void removeByLayoutBranchId(long layoutBranchId) {
-		for (RecentLayoutBranch recentLayoutBranch : findByLayoutBranchId(
-				layoutBranchId, QueryUtil.ALL_POS, QueryUtil.ALL_POS, null)) {
+		for (RecentLayoutBranch recentLayoutBranch :
+				findByLayoutBranchId(
+					layoutBranchId, QueryUtil.ALL_POS, QueryUtil.ALL_POS,
+					null)) {
+
 			remove(recentLayoutBranch);
 		}
 	}
 
 	/**
-	 * Returns the number of recent layout branchs where layoutBranchId = &#63;.
+	 * Returns the number of recent layout branches where layoutBranchId = &#63;.
 	 *
 	 * @param layoutBranchId the layout branch ID
-	 * @return the number of matching recent layout branchs
+	 * @return the number of matching recent layout branches
 	 */
 	@Override
 	public int countByLayoutBranchId(long layoutBranchId) {
-		FinderPath finderPath = FINDER_PATH_COUNT_BY_LAYOUTBRANCHID;
+		FinderPath finderPath = _finderPathCountByLayoutBranchId;
 
-		Object[] finderArgs = new Object[] { layoutBranchId };
+		Object[] finderArgs = new Object[] {layoutBranchId};
 
-		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
+		Long count = (Long)FinderCacheUtil.getResult(finderPath, finderArgs);
 
 		if (count == null) {
-			StringBundler query = new StringBundler(2);
+			StringBundler sb = new StringBundler(2);
 
-			query.append(_SQL_COUNT_RECENTLAYOUTBRANCH_WHERE);
+			sb.append(_SQL_COUNT_RECENTLAYOUTBRANCH_WHERE);
 
-			query.append(_FINDER_COLUMN_LAYOUTBRANCHID_LAYOUTBRANCHID_2);
+			sb.append(_FINDER_COLUMN_LAYOUTBRANCHID_LAYOUTBRANCHID_2);
 
-			String sql = query.toString();
+			String sql = sb.toString();
 
 			Session session = null;
 
 			try {
 				session = openSession();
 
-				Query q = session.createQuery(sql);
+				Query query = session.createQuery(sql);
 
-				QueryPos qPos = QueryPos.getInstance(q);
+				QueryPos queryPos = QueryPos.getInstance(query);
 
-				qPos.add(layoutBranchId);
+				queryPos.add(layoutBranchId);
 
-				count = (Long)q.uniqueResult();
+				count = (Long)query.uniqueResult();
 
-				finderCache.putResult(finderPath, finderArgs, count);
+				FinderCacheUtil.putResult(finderPath, finderArgs, count);
 			}
-			catch (Exception e) {
-				finderCache.removeResult(finderPath, finderArgs);
-
-				throw processException(e);
+			catch (Exception exception) {
+				throw processException(exception);
 			}
 			finally {
 				closeSession(session);
@@ -1618,26 +1586,14 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 		return count.intValue();
 	}
 
-	private static final String _FINDER_COLUMN_LAYOUTBRANCHID_LAYOUTBRANCHID_2 = "recentLayoutBranch.layoutBranchId = ?";
-	public static final FinderPath FINDER_PATH_FETCH_BY_U_L_P = new FinderPath(RecentLayoutBranchModelImpl.ENTITY_CACHE_ENABLED,
-			RecentLayoutBranchModelImpl.FINDER_CACHE_ENABLED,
-			RecentLayoutBranchImpl.class, FINDER_CLASS_NAME_ENTITY,
-			"fetchByU_L_P",
-			new String[] {
-				Long.class.getName(), Long.class.getName(), Long.class.getName()
-			},
-			RecentLayoutBranchModelImpl.USERID_COLUMN_BITMASK |
-			RecentLayoutBranchModelImpl.LAYOUTSETBRANCHID_COLUMN_BITMASK |
-			RecentLayoutBranchModelImpl.PLID_COLUMN_BITMASK);
-	public static final FinderPath FINDER_PATH_COUNT_BY_U_L_P = new FinderPath(RecentLayoutBranchModelImpl.ENTITY_CACHE_ENABLED,
-			RecentLayoutBranchModelImpl.FINDER_CACHE_ENABLED, Long.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByU_L_P",
-			new String[] {
-				Long.class.getName(), Long.class.getName(), Long.class.getName()
-			});
+	private static final String _FINDER_COLUMN_LAYOUTBRANCHID_LAYOUTBRANCHID_2 =
+		"recentLayoutBranch.layoutBranchId = ?";
+
+	private FinderPath _finderPathFetchByU_L_P;
+	private FinderPath _finderPathCountByU_L_P;
 
 	/**
-	 * Returns the recent layout branch where userId = &#63; and layoutSetBranchId = &#63; and plid = &#63; or throws a {@link NoSuchRecentLayoutBranchException} if it could not be found.
+	 * Returns the recent layout branch where userId = &#63; and layoutSetBranchId = &#63; and plid = &#63; or throws a <code>NoSuchRecentLayoutBranchException</code> if it could not be found.
 	 *
 	 * @param userId the user ID
 	 * @param layoutSetBranchId the layout set branch ID
@@ -1646,32 +1602,34 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 	 * @throws NoSuchRecentLayoutBranchException if a matching recent layout branch could not be found
 	 */
 	@Override
-	public RecentLayoutBranch findByU_L_P(long userId, long layoutSetBranchId,
-		long plid) throws NoSuchRecentLayoutBranchException {
-		RecentLayoutBranch recentLayoutBranch = fetchByU_L_P(userId,
-				layoutSetBranchId, plid);
+	public RecentLayoutBranch findByU_L_P(
+			long userId, long layoutSetBranchId, long plid)
+		throws NoSuchRecentLayoutBranchException {
+
+		RecentLayoutBranch recentLayoutBranch = fetchByU_L_P(
+			userId, layoutSetBranchId, plid);
 
 		if (recentLayoutBranch == null) {
-			StringBundler msg = new StringBundler(8);
+			StringBundler sb = new StringBundler(8);
 
-			msg.append(_NO_SUCH_ENTITY_WITH_KEY);
+			sb.append(_NO_SUCH_ENTITY_WITH_KEY);
 
-			msg.append("userId=");
-			msg.append(userId);
+			sb.append("userId=");
+			sb.append(userId);
 
-			msg.append(", layoutSetBranchId=");
-			msg.append(layoutSetBranchId);
+			sb.append(", layoutSetBranchId=");
+			sb.append(layoutSetBranchId);
 
-			msg.append(", plid=");
-			msg.append(plid);
+			sb.append(", plid=");
+			sb.append(plid);
 
-			msg.append(StringPool.CLOSE_CURLY_BRACE);
+			sb.append("}");
 
 			if (_log.isDebugEnabled()) {
-				_log.debug(msg.toString());
+				_log.debug(sb.toString());
 			}
 
-			throw new NoSuchRecentLayoutBranchException(msg.toString());
+			throw new NoSuchRecentLayoutBranchException(sb.toString());
 		}
 
 		return recentLayoutBranch;
@@ -1686,8 +1644,9 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 	 * @return the matching recent layout branch, or <code>null</code> if a matching recent layout branch could not be found
 	 */
 	@Override
-	public RecentLayoutBranch fetchByU_L_P(long userId, long layoutSetBranchId,
-		long plid) {
+	public RecentLayoutBranch fetchByU_L_P(
+		long userId, long layoutSetBranchId, long plid) {
+
 		return fetchByU_L_P(userId, layoutSetBranchId, plid, true);
 	}
 
@@ -1697,64 +1656,74 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 	 * @param userId the user ID
 	 * @param layoutSetBranchId the layout set branch ID
 	 * @param plid the plid
-	 * @param retrieveFromCache whether to retrieve from the finder cache
+	 * @param useFinderCache whether to use the finder cache
 	 * @return the matching recent layout branch, or <code>null</code> if a matching recent layout branch could not be found
 	 */
 	@Override
-	public RecentLayoutBranch fetchByU_L_P(long userId, long layoutSetBranchId,
-		long plid, boolean retrieveFromCache) {
-		Object[] finderArgs = new Object[] { userId, layoutSetBranchId, plid };
+	public RecentLayoutBranch fetchByU_L_P(
+		long userId, long layoutSetBranchId, long plid,
+		boolean useFinderCache) {
+
+		Object[] finderArgs = null;
+
+		if (useFinderCache) {
+			finderArgs = new Object[] {userId, layoutSetBranchId, plid};
+		}
 
 		Object result = null;
 
-		if (retrieveFromCache) {
-			result = finderCache.getResult(FINDER_PATH_FETCH_BY_U_L_P,
-					finderArgs, this);
+		if (useFinderCache) {
+			result = FinderCacheUtil.getResult(
+				_finderPathFetchByU_L_P, finderArgs);
 		}
 
 		if (result instanceof RecentLayoutBranch) {
 			RecentLayoutBranch recentLayoutBranch = (RecentLayoutBranch)result;
 
 			if ((userId != recentLayoutBranch.getUserId()) ||
-					(layoutSetBranchId != recentLayoutBranch.getLayoutSetBranchId()) ||
-					(plid != recentLayoutBranch.getPlid())) {
+				(layoutSetBranchId !=
+					recentLayoutBranch.getLayoutSetBranchId()) ||
+				(plid != recentLayoutBranch.getPlid())) {
+
 				result = null;
 			}
 		}
 
 		if (result == null) {
-			StringBundler query = new StringBundler(5);
+			StringBundler sb = new StringBundler(5);
 
-			query.append(_SQL_SELECT_RECENTLAYOUTBRANCH_WHERE);
+			sb.append(_SQL_SELECT_RECENTLAYOUTBRANCH_WHERE);
 
-			query.append(_FINDER_COLUMN_U_L_P_USERID_2);
+			sb.append(_FINDER_COLUMN_U_L_P_USERID_2);
 
-			query.append(_FINDER_COLUMN_U_L_P_LAYOUTSETBRANCHID_2);
+			sb.append(_FINDER_COLUMN_U_L_P_LAYOUTSETBRANCHID_2);
 
-			query.append(_FINDER_COLUMN_U_L_P_PLID_2);
+			sb.append(_FINDER_COLUMN_U_L_P_PLID_2);
 
-			String sql = query.toString();
+			String sql = sb.toString();
 
 			Session session = null;
 
 			try {
 				session = openSession();
 
-				Query q = session.createQuery(sql);
+				Query query = session.createQuery(sql);
 
-				QueryPos qPos = QueryPos.getInstance(q);
+				QueryPos queryPos = QueryPos.getInstance(query);
 
-				qPos.add(userId);
+				queryPos.add(userId);
 
-				qPos.add(layoutSetBranchId);
+				queryPos.add(layoutSetBranchId);
 
-				qPos.add(plid);
+				queryPos.add(plid);
 
-				List<RecentLayoutBranch> list = q.list();
+				List<RecentLayoutBranch> list = query.list();
 
 				if (list.isEmpty()) {
-					finderCache.putResult(FINDER_PATH_FETCH_BY_U_L_P,
-						finderArgs, list);
+					if (useFinderCache) {
+						FinderCacheUtil.putResult(
+							_finderPathFetchByU_L_P, finderArgs, list);
+					}
 				}
 				else {
 					RecentLayoutBranch recentLayoutBranch = list.get(0);
@@ -1762,19 +1731,10 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 					result = recentLayoutBranch;
 
 					cacheResult(recentLayoutBranch);
-
-					if ((recentLayoutBranch.getUserId() != userId) ||
-							(recentLayoutBranch.getLayoutSetBranchId() != layoutSetBranchId) ||
-							(recentLayoutBranch.getPlid() != plid)) {
-						finderCache.putResult(FINDER_PATH_FETCH_BY_U_L_P,
-							finderArgs, recentLayoutBranch);
-					}
 				}
 			}
-			catch (Exception e) {
-				finderCache.removeResult(FINDER_PATH_FETCH_BY_U_L_P, finderArgs);
-
-				throw processException(e);
+			catch (Exception exception) {
+				throw processException(exception);
 			}
 			finally {
 				closeSession(session);
@@ -1798,67 +1758,66 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 	 * @return the recent layout branch that was removed
 	 */
 	@Override
-	public RecentLayoutBranch removeByU_L_P(long userId,
-		long layoutSetBranchId, long plid)
+	public RecentLayoutBranch removeByU_L_P(
+			long userId, long layoutSetBranchId, long plid)
 		throws NoSuchRecentLayoutBranchException {
-		RecentLayoutBranch recentLayoutBranch = findByU_L_P(userId,
-				layoutSetBranchId, plid);
+
+		RecentLayoutBranch recentLayoutBranch = findByU_L_P(
+			userId, layoutSetBranchId, plid);
 
 		return remove(recentLayoutBranch);
 	}
 
 	/**
-	 * Returns the number of recent layout branchs where userId = &#63; and layoutSetBranchId = &#63; and plid = &#63;.
+	 * Returns the number of recent layout branches where userId = &#63; and layoutSetBranchId = &#63; and plid = &#63;.
 	 *
 	 * @param userId the user ID
 	 * @param layoutSetBranchId the layout set branch ID
 	 * @param plid the plid
-	 * @return the number of matching recent layout branchs
+	 * @return the number of matching recent layout branches
 	 */
 	@Override
 	public int countByU_L_P(long userId, long layoutSetBranchId, long plid) {
-		FinderPath finderPath = FINDER_PATH_COUNT_BY_U_L_P;
+		FinderPath finderPath = _finderPathCountByU_L_P;
 
-		Object[] finderArgs = new Object[] { userId, layoutSetBranchId, plid };
+		Object[] finderArgs = new Object[] {userId, layoutSetBranchId, plid};
 
-		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
+		Long count = (Long)FinderCacheUtil.getResult(finderPath, finderArgs);
 
 		if (count == null) {
-			StringBundler query = new StringBundler(4);
+			StringBundler sb = new StringBundler(4);
 
-			query.append(_SQL_COUNT_RECENTLAYOUTBRANCH_WHERE);
+			sb.append(_SQL_COUNT_RECENTLAYOUTBRANCH_WHERE);
 
-			query.append(_FINDER_COLUMN_U_L_P_USERID_2);
+			sb.append(_FINDER_COLUMN_U_L_P_USERID_2);
 
-			query.append(_FINDER_COLUMN_U_L_P_LAYOUTSETBRANCHID_2);
+			sb.append(_FINDER_COLUMN_U_L_P_LAYOUTSETBRANCHID_2);
 
-			query.append(_FINDER_COLUMN_U_L_P_PLID_2);
+			sb.append(_FINDER_COLUMN_U_L_P_PLID_2);
 
-			String sql = query.toString();
+			String sql = sb.toString();
 
 			Session session = null;
 
 			try {
 				session = openSession();
 
-				Query q = session.createQuery(sql);
+				Query query = session.createQuery(sql);
 
-				QueryPos qPos = QueryPos.getInstance(q);
+				QueryPos queryPos = QueryPos.getInstance(query);
 
-				qPos.add(userId);
+				queryPos.add(userId);
 
-				qPos.add(layoutSetBranchId);
+				queryPos.add(layoutSetBranchId);
 
-				qPos.add(plid);
+				queryPos.add(plid);
 
-				count = (Long)q.uniqueResult();
+				count = (Long)query.uniqueResult();
 
-				finderCache.putResult(finderPath, finderArgs, count);
+				FinderCacheUtil.putResult(finderPath, finderArgs, count);
 			}
-			catch (Exception e) {
-				finderCache.removeResult(finderPath, finderArgs);
-
-				throw processException(e);
+			catch (Exception exception) {
+				throw processException(exception);
 			}
 			finally {
 				closeSession(session);
@@ -1868,12 +1827,22 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 		return count.intValue();
 	}
 
-	private static final String _FINDER_COLUMN_U_L_P_USERID_2 = "recentLayoutBranch.userId = ? AND ";
-	private static final String _FINDER_COLUMN_U_L_P_LAYOUTSETBRANCHID_2 = "recentLayoutBranch.layoutSetBranchId = ? AND ";
-	private static final String _FINDER_COLUMN_U_L_P_PLID_2 = "recentLayoutBranch.plid = ?";
+	private static final String _FINDER_COLUMN_U_L_P_USERID_2 =
+		"recentLayoutBranch.userId = ? AND ";
+
+	private static final String _FINDER_COLUMN_U_L_P_LAYOUTSETBRANCHID_2 =
+		"recentLayoutBranch.layoutSetBranchId = ? AND ";
+
+	private static final String _FINDER_COLUMN_U_L_P_PLID_2 =
+		"recentLayoutBranch.plid = ?";
 
 	public RecentLayoutBranchPersistenceImpl() {
 		setModelClass(RecentLayoutBranch.class);
+
+		setModelImplClass(RecentLayoutBranchImpl.class);
+		setModelPKClass(long.class);
+
+		setTable(RecentLayoutBranchTable.INSTANCE);
 	}
 
 	/**
@@ -1883,128 +1852,95 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 	 */
 	@Override
 	public void cacheResult(RecentLayoutBranch recentLayoutBranch) {
-		entityCache.putResult(RecentLayoutBranchModelImpl.ENTITY_CACHE_ENABLED,
+		EntityCacheUtil.putResult(
 			RecentLayoutBranchImpl.class, recentLayoutBranch.getPrimaryKey(),
 			recentLayoutBranch);
 
-		finderCache.putResult(FINDER_PATH_FETCH_BY_U_L_P,
+		FinderCacheUtil.putResult(
+			_finderPathFetchByU_L_P,
 			new Object[] {
 				recentLayoutBranch.getUserId(),
 				recentLayoutBranch.getLayoutSetBranchId(),
 				recentLayoutBranch.getPlid()
-			}, recentLayoutBranch);
-
-		recentLayoutBranch.resetOriginalValues();
+			},
+			recentLayoutBranch);
 	}
 
 	/**
-	 * Caches the recent layout branchs in the entity cache if it is enabled.
+	 * Caches the recent layout branches in the entity cache if it is enabled.
 	 *
-	 * @param recentLayoutBranchs the recent layout branchs
+	 * @param recentLayoutBranchs the recent layout branches
 	 */
 	@Override
 	public void cacheResult(List<RecentLayoutBranch> recentLayoutBranchs) {
 		for (RecentLayoutBranch recentLayoutBranch : recentLayoutBranchs) {
-			if (entityCache.getResult(
-						RecentLayoutBranchModelImpl.ENTITY_CACHE_ENABLED,
-						RecentLayoutBranchImpl.class,
-						recentLayoutBranch.getPrimaryKey()) == null) {
+			if (EntityCacheUtil.getResult(
+					RecentLayoutBranchImpl.class,
+					recentLayoutBranch.getPrimaryKey()) == null) {
+
 				cacheResult(recentLayoutBranch);
-			}
-			else {
-				recentLayoutBranch.resetOriginalValues();
 			}
 		}
 	}
 
 	/**
-	 * Clears the cache for all recent layout branchs.
+	 * Clears the cache for all recent layout branches.
 	 *
 	 * <p>
-	 * The {@link EntityCache} and {@link FinderCache} are both cleared by this method.
+	 * The <code>EntityCache</code> and <code>FinderCache</code> are both cleared by this method.
 	 * </p>
 	 */
 	@Override
 	public void clearCache() {
-		entityCache.clearCache(RecentLayoutBranchImpl.class);
+		EntityCacheUtil.clearCache(RecentLayoutBranchImpl.class);
 
-		finderCache.clearCache(FINDER_CLASS_NAME_ENTITY);
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		FinderCacheUtil.clearCache(RecentLayoutBranchImpl.class);
 	}
 
 	/**
 	 * Clears the cache for the recent layout branch.
 	 *
 	 * <p>
-	 * The {@link EntityCache} and {@link FinderCache} are both cleared by this method.
+	 * The <code>EntityCache</code> and <code>FinderCache</code> are both cleared by this method.
 	 * </p>
 	 */
 	@Override
 	public void clearCache(RecentLayoutBranch recentLayoutBranch) {
-		entityCache.removeResult(RecentLayoutBranchModelImpl.ENTITY_CACHE_ENABLED,
-			RecentLayoutBranchImpl.class, recentLayoutBranch.getPrimaryKey());
-
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
-
-		clearUniqueFindersCache((RecentLayoutBranchModelImpl)recentLayoutBranch,
-			true);
+		EntityCacheUtil.removeResult(
+			RecentLayoutBranchImpl.class, recentLayoutBranch);
 	}
 
 	@Override
 	public void clearCache(List<RecentLayoutBranch> recentLayoutBranchs) {
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
-
 		for (RecentLayoutBranch recentLayoutBranch : recentLayoutBranchs) {
-			entityCache.removeResult(RecentLayoutBranchModelImpl.ENTITY_CACHE_ENABLED,
-				RecentLayoutBranchImpl.class, recentLayoutBranch.getPrimaryKey());
+			EntityCacheUtil.removeResult(
+				RecentLayoutBranchImpl.class, recentLayoutBranch);
+		}
+	}
 
-			clearUniqueFindersCache((RecentLayoutBranchModelImpl)recentLayoutBranch,
-				true);
+	@Override
+	public void clearCache(Set<Serializable> primaryKeys) {
+		FinderCacheUtil.clearCache(RecentLayoutBranchImpl.class);
+
+		for (Serializable primaryKey : primaryKeys) {
+			EntityCacheUtil.removeResult(
+				RecentLayoutBranchImpl.class, primaryKey);
 		}
 	}
 
 	protected void cacheUniqueFindersCache(
 		RecentLayoutBranchModelImpl recentLayoutBranchModelImpl) {
+
 		Object[] args = new Object[] {
-				recentLayoutBranchModelImpl.getUserId(),
-				recentLayoutBranchModelImpl.getLayoutSetBranchId(),
-				recentLayoutBranchModelImpl.getPlid()
-			};
+			recentLayoutBranchModelImpl.getUserId(),
+			recentLayoutBranchModelImpl.getLayoutSetBranchId(),
+			recentLayoutBranchModelImpl.getPlid()
+		};
 
-		finderCache.putResult(FINDER_PATH_COUNT_BY_U_L_P, args,
-			Long.valueOf(1), false);
-		finderCache.putResult(FINDER_PATH_FETCH_BY_U_L_P, args,
-			recentLayoutBranchModelImpl, false);
-	}
-
-	protected void clearUniqueFindersCache(
-		RecentLayoutBranchModelImpl recentLayoutBranchModelImpl,
-		boolean clearCurrent) {
-		if (clearCurrent) {
-			Object[] args = new Object[] {
-					recentLayoutBranchModelImpl.getUserId(),
-					recentLayoutBranchModelImpl.getLayoutSetBranchId(),
-					recentLayoutBranchModelImpl.getPlid()
-				};
-
-			finderCache.removeResult(FINDER_PATH_COUNT_BY_U_L_P, args);
-			finderCache.removeResult(FINDER_PATH_FETCH_BY_U_L_P, args);
-		}
-
-		if ((recentLayoutBranchModelImpl.getColumnBitmask() &
-				FINDER_PATH_FETCH_BY_U_L_P.getColumnBitmask()) != 0) {
-			Object[] args = new Object[] {
-					recentLayoutBranchModelImpl.getOriginalUserId(),
-					recentLayoutBranchModelImpl.getOriginalLayoutSetBranchId(),
-					recentLayoutBranchModelImpl.getOriginalPlid()
-				};
-
-			finderCache.removeResult(FINDER_PATH_COUNT_BY_U_L_P, args);
-			finderCache.removeResult(FINDER_PATH_FETCH_BY_U_L_P, args);
-		}
+		FinderCacheUtil.putResult(
+			_finderPathCountByU_L_P, args, Long.valueOf(1));
+		FinderCacheUtil.putResult(
+			_finderPathFetchByU_L_P, args, recentLayoutBranchModelImpl);
 	}
 
 	/**
@@ -2020,7 +1956,7 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 		recentLayoutBranch.setNew(true);
 		recentLayoutBranch.setPrimaryKey(recentLayoutBranchId);
 
-		recentLayoutBranch.setCompanyId(companyProvider.getCompanyId());
+		recentLayoutBranch.setCompanyId(CompanyThreadLocal.getCompanyId());
 
 		return recentLayoutBranch;
 	}
@@ -2035,6 +1971,7 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 	@Override
 	public RecentLayoutBranch remove(long recentLayoutBranchId)
 		throws NoSuchRecentLayoutBranchException {
+
 		return remove((Serializable)recentLayoutBranchId);
 	}
 
@@ -2048,30 +1985,32 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 	@Override
 	public RecentLayoutBranch remove(Serializable primaryKey)
 		throws NoSuchRecentLayoutBranchException {
+
 		Session session = null;
 
 		try {
 			session = openSession();
 
-			RecentLayoutBranch recentLayoutBranch = (RecentLayoutBranch)session.get(RecentLayoutBranchImpl.class,
-					primaryKey);
+			RecentLayoutBranch recentLayoutBranch =
+				(RecentLayoutBranch)session.get(
+					RecentLayoutBranchImpl.class, primaryKey);
 
 			if (recentLayoutBranch == null) {
 				if (_log.isDebugEnabled()) {
 					_log.debug(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY + primaryKey);
 				}
 
-				throw new NoSuchRecentLayoutBranchException(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY +
-					primaryKey);
+				throw new NoSuchRecentLayoutBranchException(
+					_NO_SUCH_ENTITY_WITH_PRIMARY_KEY + primaryKey);
 			}
 
 			return remove(recentLayoutBranch);
 		}
-		catch (NoSuchRecentLayoutBranchException nsee) {
-			throw nsee;
+		catch (NoSuchRecentLayoutBranchException noSuchEntityException) {
+			throw noSuchEntityException;
 		}
-		catch (Exception e) {
-			throw processException(e);
+		catch (Exception exception) {
+			throw processException(exception);
 		}
 		finally {
 			closeSession(session);
@@ -2081,7 +2020,6 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 	@Override
 	protected RecentLayoutBranch removeImpl(
 		RecentLayoutBranch recentLayoutBranch) {
-		recentLayoutBranch = toUnwrappedModel(recentLayoutBranch);
 
 		Session session = null;
 
@@ -2089,16 +2027,17 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 			session = openSession();
 
 			if (!session.contains(recentLayoutBranch)) {
-				recentLayoutBranch = (RecentLayoutBranch)session.get(RecentLayoutBranchImpl.class,
-						recentLayoutBranch.getPrimaryKeyObj());
+				recentLayoutBranch = (RecentLayoutBranch)session.get(
+					RecentLayoutBranchImpl.class,
+					recentLayoutBranch.getPrimaryKeyObj());
 			}
 
 			if (recentLayoutBranch != null) {
 				session.delete(recentLayoutBranch);
 			}
 		}
-		catch (Exception e) {
-			throw processException(e);
+		catch (Exception exception) {
+			throw processException(exception);
 		}
 		finally {
 			closeSession(session);
@@ -2112,160 +2051,68 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 	}
 
 	@Override
-	public RecentLayoutBranch updateImpl(RecentLayoutBranch recentLayoutBranch) {
-		recentLayoutBranch = toUnwrappedModel(recentLayoutBranch);
+	public RecentLayoutBranch updateImpl(
+		RecentLayoutBranch recentLayoutBranch) {
 
 		boolean isNew = recentLayoutBranch.isNew();
 
-		RecentLayoutBranchModelImpl recentLayoutBranchModelImpl = (RecentLayoutBranchModelImpl)recentLayoutBranch;
+		if (!(recentLayoutBranch instanceof RecentLayoutBranchModelImpl)) {
+			InvocationHandler invocationHandler = null;
+
+			if (ProxyUtil.isProxyClass(recentLayoutBranch.getClass())) {
+				invocationHandler = ProxyUtil.getInvocationHandler(
+					recentLayoutBranch);
+
+				throw new IllegalArgumentException(
+					"Implement ModelWrapper in recentLayoutBranch proxy " +
+						invocationHandler.getClass());
+			}
+
+			throw new IllegalArgumentException(
+				"Implement ModelWrapper in custom RecentLayoutBranch implementation " +
+					recentLayoutBranch.getClass());
+		}
+
+		RecentLayoutBranchModelImpl recentLayoutBranchModelImpl =
+			(RecentLayoutBranchModelImpl)recentLayoutBranch;
 
 		Session session = null;
 
 		try {
 			session = openSession();
 
-			if (recentLayoutBranch.isNew()) {
+			if (isNew) {
 				session.save(recentLayoutBranch);
-
-				recentLayoutBranch.setNew(false);
 			}
 			else {
-				recentLayoutBranch = (RecentLayoutBranch)session.merge(recentLayoutBranch);
+				recentLayoutBranch = (RecentLayoutBranch)session.merge(
+					recentLayoutBranch);
 			}
 		}
-		catch (Exception e) {
-			throw processException(e);
+		catch (Exception exception) {
+			throw processException(exception);
 		}
 		finally {
 			closeSession(session);
 		}
 
-		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
+		EntityCacheUtil.putResult(
+			RecentLayoutBranchImpl.class, recentLayoutBranchModelImpl, false,
+			true);
 
-		if (!RecentLayoutBranchModelImpl.COLUMN_BITMASK_ENABLED) {
-			finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
-		}
-		else
-		 if (isNew) {
-			Object[] args = new Object[] {
-					recentLayoutBranchModelImpl.getGroupId()
-				};
-
-			finderCache.removeResult(FINDER_PATH_COUNT_BY_GROUPID, args);
-			finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_GROUPID,
-				args);
-
-			args = new Object[] { recentLayoutBranchModelImpl.getUserId() };
-
-			finderCache.removeResult(FINDER_PATH_COUNT_BY_USERID, args);
-			finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_USERID,
-				args);
-
-			args = new Object[] { recentLayoutBranchModelImpl.getLayoutBranchId() };
-
-			finderCache.removeResult(FINDER_PATH_COUNT_BY_LAYOUTBRANCHID, args);
-			finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_LAYOUTBRANCHID,
-				args);
-
-			finderCache.removeResult(FINDER_PATH_COUNT_ALL, FINDER_ARGS_EMPTY);
-			finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_ALL,
-				FINDER_ARGS_EMPTY);
-		}
-
-		else {
-			if ((recentLayoutBranchModelImpl.getColumnBitmask() &
-					FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_GROUPID.getColumnBitmask()) != 0) {
-				Object[] args = new Object[] {
-						recentLayoutBranchModelImpl.getOriginalGroupId()
-					};
-
-				finderCache.removeResult(FINDER_PATH_COUNT_BY_GROUPID, args);
-				finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_GROUPID,
-					args);
-
-				args = new Object[] { recentLayoutBranchModelImpl.getGroupId() };
-
-				finderCache.removeResult(FINDER_PATH_COUNT_BY_GROUPID, args);
-				finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_GROUPID,
-					args);
-			}
-
-			if ((recentLayoutBranchModelImpl.getColumnBitmask() &
-					FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_USERID.getColumnBitmask()) != 0) {
-				Object[] args = new Object[] {
-						recentLayoutBranchModelImpl.getOriginalUserId()
-					};
-
-				finderCache.removeResult(FINDER_PATH_COUNT_BY_USERID, args);
-				finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_USERID,
-					args);
-
-				args = new Object[] { recentLayoutBranchModelImpl.getUserId() };
-
-				finderCache.removeResult(FINDER_PATH_COUNT_BY_USERID, args);
-				finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_USERID,
-					args);
-			}
-
-			if ((recentLayoutBranchModelImpl.getColumnBitmask() &
-					FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_LAYOUTBRANCHID.getColumnBitmask()) != 0) {
-				Object[] args = new Object[] {
-						recentLayoutBranchModelImpl.getOriginalLayoutBranchId()
-					};
-
-				finderCache.removeResult(FINDER_PATH_COUNT_BY_LAYOUTBRANCHID,
-					args);
-				finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_LAYOUTBRANCHID,
-					args);
-
-				args = new Object[] {
-						recentLayoutBranchModelImpl.getLayoutBranchId()
-					};
-
-				finderCache.removeResult(FINDER_PATH_COUNT_BY_LAYOUTBRANCHID,
-					args);
-				finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_LAYOUTBRANCHID,
-					args);
-			}
-		}
-
-		entityCache.putResult(RecentLayoutBranchModelImpl.ENTITY_CACHE_ENABLED,
-			RecentLayoutBranchImpl.class, recentLayoutBranch.getPrimaryKey(),
-			recentLayoutBranch, false);
-
-		clearUniqueFindersCache(recentLayoutBranchModelImpl, false);
 		cacheUniqueFindersCache(recentLayoutBranchModelImpl);
+
+		if (isNew) {
+			recentLayoutBranch.setNew(false);
+		}
 
 		recentLayoutBranch.resetOriginalValues();
 
 		return recentLayoutBranch;
 	}
 
-	protected RecentLayoutBranch toUnwrappedModel(
-		RecentLayoutBranch recentLayoutBranch) {
-		if (recentLayoutBranch instanceof RecentLayoutBranchImpl) {
-			return recentLayoutBranch;
-		}
-
-		RecentLayoutBranchImpl recentLayoutBranchImpl = new RecentLayoutBranchImpl();
-
-		recentLayoutBranchImpl.setNew(recentLayoutBranch.isNew());
-		recentLayoutBranchImpl.setPrimaryKey(recentLayoutBranch.getPrimaryKey());
-
-		recentLayoutBranchImpl.setMvccVersion(recentLayoutBranch.getMvccVersion());
-		recentLayoutBranchImpl.setRecentLayoutBranchId(recentLayoutBranch.getRecentLayoutBranchId());
-		recentLayoutBranchImpl.setGroupId(recentLayoutBranch.getGroupId());
-		recentLayoutBranchImpl.setCompanyId(recentLayoutBranch.getCompanyId());
-		recentLayoutBranchImpl.setUserId(recentLayoutBranch.getUserId());
-		recentLayoutBranchImpl.setLayoutBranchId(recentLayoutBranch.getLayoutBranchId());
-		recentLayoutBranchImpl.setLayoutSetBranchId(recentLayoutBranch.getLayoutSetBranchId());
-		recentLayoutBranchImpl.setPlid(recentLayoutBranch.getPlid());
-
-		return recentLayoutBranchImpl;
-	}
-
 	/**
-	 * Returns the recent layout branch with the primary key or throws a {@link com.liferay.portal.kernel.exception.NoSuchModelException} if it could not be found.
+	 * Returns the recent layout branch with the primary key or throws a <code>com.liferay.portal.kernel.exception.NoSuchModelException</code> if it could not be found.
 	 *
 	 * @param primaryKey the primary key of the recent layout branch
 	 * @return the recent layout branch
@@ -2274,6 +2121,7 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 	@Override
 	public RecentLayoutBranch findByPrimaryKey(Serializable primaryKey)
 		throws NoSuchRecentLayoutBranchException {
+
 		RecentLayoutBranch recentLayoutBranch = fetchByPrimaryKey(primaryKey);
 
 		if (recentLayoutBranch == null) {
@@ -2281,15 +2129,15 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 				_log.debug(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY + primaryKey);
 			}
 
-			throw new NoSuchRecentLayoutBranchException(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY +
-				primaryKey);
+			throw new NoSuchRecentLayoutBranchException(
+				_NO_SUCH_ENTITY_WITH_PRIMARY_KEY + primaryKey);
 		}
 
 		return recentLayoutBranch;
 	}
 
 	/**
-	 * Returns the recent layout branch with the primary key or throws a {@link NoSuchRecentLayoutBranchException} if it could not be found.
+	 * Returns the recent layout branch with the primary key or throws a <code>NoSuchRecentLayoutBranchException</code> if it could not be found.
 	 *
 	 * @param recentLayoutBranchId the primary key of the recent layout branch
 	 * @return the recent layout branch
@@ -2298,55 +2146,8 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 	@Override
 	public RecentLayoutBranch findByPrimaryKey(long recentLayoutBranchId)
 		throws NoSuchRecentLayoutBranchException {
+
 		return findByPrimaryKey((Serializable)recentLayoutBranchId);
-	}
-
-	/**
-	 * Returns the recent layout branch with the primary key or returns <code>null</code> if it could not be found.
-	 *
-	 * @param primaryKey the primary key of the recent layout branch
-	 * @return the recent layout branch, or <code>null</code> if a recent layout branch with the primary key could not be found
-	 */
-	@Override
-	public RecentLayoutBranch fetchByPrimaryKey(Serializable primaryKey) {
-		Serializable serializable = entityCache.getResult(RecentLayoutBranchModelImpl.ENTITY_CACHE_ENABLED,
-				RecentLayoutBranchImpl.class, primaryKey);
-
-		if (serializable == nullModel) {
-			return null;
-		}
-
-		RecentLayoutBranch recentLayoutBranch = (RecentLayoutBranch)serializable;
-
-		if (recentLayoutBranch == null) {
-			Session session = null;
-
-			try {
-				session = openSession();
-
-				recentLayoutBranch = (RecentLayoutBranch)session.get(RecentLayoutBranchImpl.class,
-						primaryKey);
-
-				if (recentLayoutBranch != null) {
-					cacheResult(recentLayoutBranch);
-				}
-				else {
-					entityCache.putResult(RecentLayoutBranchModelImpl.ENTITY_CACHE_ENABLED,
-						RecentLayoutBranchImpl.class, primaryKey, nullModel);
-				}
-			}
-			catch (Exception e) {
-				entityCache.removeResult(RecentLayoutBranchModelImpl.ENTITY_CACHE_ENABLED,
-					RecentLayoutBranchImpl.class, primaryKey);
-
-				throw processException(e);
-			}
-			finally {
-				closeSession(session);
-			}
-		}
-
-		return recentLayoutBranch;
 	}
 
 	/**
@@ -2360,105 +2161,10 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 		return fetchByPrimaryKey((Serializable)recentLayoutBranchId);
 	}
 
-	@Override
-	public Map<Serializable, RecentLayoutBranch> fetchByPrimaryKeys(
-		Set<Serializable> primaryKeys) {
-		if (primaryKeys.isEmpty()) {
-			return Collections.emptyMap();
-		}
-
-		Map<Serializable, RecentLayoutBranch> map = new HashMap<Serializable, RecentLayoutBranch>();
-
-		if (primaryKeys.size() == 1) {
-			Iterator<Serializable> iterator = primaryKeys.iterator();
-
-			Serializable primaryKey = iterator.next();
-
-			RecentLayoutBranch recentLayoutBranch = fetchByPrimaryKey(primaryKey);
-
-			if (recentLayoutBranch != null) {
-				map.put(primaryKey, recentLayoutBranch);
-			}
-
-			return map;
-		}
-
-		Set<Serializable> uncachedPrimaryKeys = null;
-
-		for (Serializable primaryKey : primaryKeys) {
-			Serializable serializable = entityCache.getResult(RecentLayoutBranchModelImpl.ENTITY_CACHE_ENABLED,
-					RecentLayoutBranchImpl.class, primaryKey);
-
-			if (serializable != nullModel) {
-				if (serializable == null) {
-					if (uncachedPrimaryKeys == null) {
-						uncachedPrimaryKeys = new HashSet<Serializable>();
-					}
-
-					uncachedPrimaryKeys.add(primaryKey);
-				}
-				else {
-					map.put(primaryKey, (RecentLayoutBranch)serializable);
-				}
-			}
-		}
-
-		if (uncachedPrimaryKeys == null) {
-			return map;
-		}
-
-		StringBundler query = new StringBundler((uncachedPrimaryKeys.size() * 2) +
-				1);
-
-		query.append(_SQL_SELECT_RECENTLAYOUTBRANCH_WHERE_PKS_IN);
-
-		for (Serializable primaryKey : uncachedPrimaryKeys) {
-			query.append((long)primaryKey);
-
-			query.append(StringPool.COMMA);
-		}
-
-		query.setIndex(query.index() - 1);
-
-		query.append(StringPool.CLOSE_PARENTHESIS);
-
-		String sql = query.toString();
-
-		Session session = null;
-
-		try {
-			session = openSession();
-
-			Query q = session.createQuery(sql);
-
-			for (RecentLayoutBranch recentLayoutBranch : (List<RecentLayoutBranch>)q.list()) {
-				map.put(recentLayoutBranch.getPrimaryKeyObj(),
-					recentLayoutBranch);
-
-				cacheResult(recentLayoutBranch);
-
-				uncachedPrimaryKeys.remove(recentLayoutBranch.getPrimaryKeyObj());
-			}
-
-			for (Serializable primaryKey : uncachedPrimaryKeys) {
-				entityCache.putResult(RecentLayoutBranchModelImpl.ENTITY_CACHE_ENABLED,
-					RecentLayoutBranchImpl.class, primaryKey, nullModel);
-			}
-		}
-		catch (Exception e) {
-			throw processException(e);
-		}
-		finally {
-			closeSession(session);
-		}
-
-		return map;
-	}
-
 	/**
-	 * Returns all the recent layout branchs.
+	 * Returns all the recent layout branches.
 	 *
-	 * @return the recent layout branchs
+	 * @return the recent layout branches
 	 */
 	@Override
 	public List<RecentLayoutBranch> findAll() {
@@ -2466,15 +2172,15 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 	}
 
 	/**
-	 * Returns a range of all the recent layout branchs.
+	 * Returns a range of all the recent layout branches.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link RecentLayoutBranchModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>RecentLayoutBranchModelImpl</code>.
 	 * </p>
 	 *
-	 * @param start the lower bound of the range of recent layout branchs
-	 * @param end the upper bound of the range of recent layout branchs (not inclusive)
-	 * @return the range of recent layout branchs
+	 * @param start the lower bound of the range of recent layout branches
+	 * @param end the upper bound of the range of recent layout branches (not inclusive)
+	 * @return the range of recent layout branches
 	 */
 	@Override
 	public List<RecentLayoutBranch> findAll(int start, int end) {
@@ -2482,83 +2188,86 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 	}
 
 	/**
-	 * Returns an ordered range of all the recent layout branchs.
+	 * Returns an ordered range of all the recent layout branches.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link RecentLayoutBranchModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>RecentLayoutBranchModelImpl</code>.
 	 * </p>
 	 *
-	 * @param start the lower bound of the range of recent layout branchs
-	 * @param end the upper bound of the range of recent layout branchs (not inclusive)
+	 * @param start the lower bound of the range of recent layout branches
+	 * @param end the upper bound of the range of recent layout branches (not inclusive)
 	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
-	 * @return the ordered range of recent layout branchs
+	 * @return the ordered range of recent layout branches
 	 */
 	@Override
-	public List<RecentLayoutBranch> findAll(int start, int end,
+	public List<RecentLayoutBranch> findAll(
+		int start, int end,
 		OrderByComparator<RecentLayoutBranch> orderByComparator) {
+
 		return findAll(start, end, orderByComparator, true);
 	}
 
 	/**
-	 * Returns an ordered range of all the recent layout branchs.
+	 * Returns an ordered range of all the recent layout branches.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link RecentLayoutBranchModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>RecentLayoutBranchModelImpl</code>.
 	 * </p>
 	 *
-	 * @param start the lower bound of the range of recent layout branchs
-	 * @param end the upper bound of the range of recent layout branchs (not inclusive)
+	 * @param start the lower bound of the range of recent layout branches
+	 * @param end the upper bound of the range of recent layout branches (not inclusive)
 	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
-	 * @param retrieveFromCache whether to retrieve from the finder cache
-	 * @return the ordered range of recent layout branchs
+	 * @param useFinderCache whether to use the finder cache
+	 * @return the ordered range of recent layout branches
 	 */
 	@Override
-	public List<RecentLayoutBranch> findAll(int start, int end,
+	public List<RecentLayoutBranch> findAll(
+		int start, int end,
 		OrderByComparator<RecentLayoutBranch> orderByComparator,
-		boolean retrieveFromCache) {
-		boolean pagination = true;
+		boolean useFinderCache) {
+
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
 
 		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
-				(orderByComparator == null)) {
-			pagination = false;
-			finderPath = FINDER_PATH_WITHOUT_PAGINATION_FIND_ALL;
-			finderArgs = FINDER_ARGS_EMPTY;
+			(orderByComparator == null)) {
+
+			if (useFinderCache) {
+				finderPath = _finderPathWithoutPaginationFindAll;
+				finderArgs = FINDER_ARGS_EMPTY;
+			}
 		}
-		else {
-			finderPath = FINDER_PATH_WITH_PAGINATION_FIND_ALL;
-			finderArgs = new Object[] { start, end, orderByComparator };
+		else if (useFinderCache) {
+			finderPath = _finderPathWithPaginationFindAll;
+			finderArgs = new Object[] {start, end, orderByComparator};
 		}
 
 		List<RecentLayoutBranch> list = null;
 
-		if (retrieveFromCache) {
-			list = (List<RecentLayoutBranch>)finderCache.getResult(finderPath,
-					finderArgs, this);
+		if (useFinderCache) {
+			list = (List<RecentLayoutBranch>)FinderCacheUtil.getResult(
+				finderPath, finderArgs);
 		}
 
 		if (list == null) {
-			StringBundler query = null;
+			StringBundler sb = null;
 			String sql = null;
 
 			if (orderByComparator != null) {
-				query = new StringBundler(2 +
-						(orderByComparator.getOrderByFields().length * 2));
+				sb = new StringBundler(
+					2 + (orderByComparator.getOrderByFields().length * 2));
 
-				query.append(_SQL_SELECT_RECENTLAYOUTBRANCH);
+				sb.append(_SQL_SELECT_RECENTLAYOUTBRANCH);
 
-				appendOrderByComparator(query, _ORDER_BY_ENTITY_ALIAS,
-					orderByComparator);
+				appendOrderByComparator(
+					sb, _ORDER_BY_ENTITY_ALIAS, orderByComparator);
 
-				sql = query.toString();
+				sql = sb.toString();
 			}
 			else {
 				sql = _SQL_SELECT_RECENTLAYOUTBRANCH;
 
-				if (pagination) {
-					sql = sql.concat(RecentLayoutBranchModelImpl.ORDER_BY_JPQL);
-				}
+				sql = sql.concat(RecentLayoutBranchModelImpl.ORDER_BY_JPQL);
 			}
 
 			Session session = null;
@@ -2566,29 +2275,19 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 			try {
 				session = openSession();
 
-				Query q = session.createQuery(sql);
+				Query query = session.createQuery(sql);
 
-				if (!pagination) {
-					list = (List<RecentLayoutBranch>)QueryUtil.list(q,
-							getDialect(), start, end, false);
-
-					Collections.sort(list);
-
-					list = Collections.unmodifiableList(list);
-				}
-				else {
-					list = (List<RecentLayoutBranch>)QueryUtil.list(q,
-							getDialect(), start, end);
-				}
+				list = (List<RecentLayoutBranch>)QueryUtil.list(
+					query, getDialect(), start, end);
 
 				cacheResult(list);
 
-				finderCache.putResult(finderPath, finderArgs, list);
+				if (useFinderCache) {
+					FinderCacheUtil.putResult(finderPath, finderArgs, list);
+				}
 			}
-			catch (Exception e) {
-				finderCache.removeResult(finderPath, finderArgs);
-
-				throw processException(e);
+			catch (Exception exception) {
+				throw processException(exception);
 			}
 			finally {
 				closeSession(session);
@@ -2599,7 +2298,7 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 	}
 
 	/**
-	 * Removes all the recent layout branchs from the database.
+	 * Removes all the recent layout branches from the database.
 	 *
 	 */
 	@Override
@@ -2610,14 +2309,14 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 	}
 
 	/**
-	 * Returns the number of recent layout branchs.
+	 * Returns the number of recent layout branches.
 	 *
-	 * @return the number of recent layout branchs
+	 * @return the number of recent layout branches
 	 */
 	@Override
 	public int countAll() {
-		Long count = (Long)finderCache.getResult(FINDER_PATH_COUNT_ALL,
-				FINDER_ARGS_EMPTY, this);
+		Long count = (Long)FinderCacheUtil.getResult(
+			_finderPathCountAll, FINDER_ARGS_EMPTY);
 
 		if (count == null) {
 			Session session = null;
@@ -2625,18 +2324,16 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 			try {
 				session = openSession();
 
-				Query q = session.createQuery(_SQL_COUNT_RECENTLAYOUTBRANCH);
+				Query query = session.createQuery(
+					_SQL_COUNT_RECENTLAYOUTBRANCH);
 
-				count = (Long)q.uniqueResult();
+				count = (Long)query.uniqueResult();
 
-				finderCache.putResult(FINDER_PATH_COUNT_ALL, FINDER_ARGS_EMPTY,
-					count);
+				FinderCacheUtil.putResult(
+					_finderPathCountAll, FINDER_ARGS_EMPTY, count);
 			}
-			catch (Exception e) {
-				finderCache.removeResult(FINDER_PATH_COUNT_ALL,
-					FINDER_ARGS_EMPTY);
-
-				throw processException(e);
+			catch (Exception exception) {
+				throw processException(exception);
 			}
 			finally {
 				closeSession(session);
@@ -2644,6 +2341,21 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 		}
 
 		return count.intValue();
+	}
+
+	@Override
+	protected EntityCache getEntityCache() {
+		return EntityCacheUtil.getEntityCache();
+	}
+
+	@Override
+	protected String getPKDBName() {
+		return "recentLayoutBranchId";
+	}
+
+	@Override
+	protected String getSelectSQL() {
+		return _SQL_SELECT_RECENTLAYOUTBRANCH;
 	}
 
 	@Override
@@ -2655,26 +2367,217 @@ public class RecentLayoutBranchPersistenceImpl extends BasePersistenceImpl<Recen
 	 * Initializes the recent layout branch persistence.
 	 */
 	public void afterPropertiesSet() {
+		Registry registry = RegistryUtil.getRegistry();
+
+		_argumentsResolverServiceRegistration = registry.registerService(
+			ArgumentsResolver.class,
+			new RecentLayoutBranchModelArgumentsResolver());
+
+		_finderPathWithPaginationFindAll = new FinderPath(
+			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findAll", new String[0],
+			new String[0], true);
+
+		_finderPathWithoutPaginationFindAll = new FinderPath(
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findAll", new String[0],
+			new String[0], true);
+
+		_finderPathCountAll = new FinderPath(
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countAll",
+			new String[0], new String[0], false);
+
+		_finderPathWithPaginationFindByGroupId = new FinderPath(
+			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByGroupId",
+			new String[] {
+				Long.class.getName(), Integer.class.getName(),
+				Integer.class.getName(), OrderByComparator.class.getName()
+			},
+			new String[] {"groupId"}, true);
+
+		_finderPathWithoutPaginationFindByGroupId = new FinderPath(
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByGroupId",
+			new String[] {Long.class.getName()}, new String[] {"groupId"},
+			true);
+
+		_finderPathCountByGroupId = new FinderPath(
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByGroupId",
+			new String[] {Long.class.getName()}, new String[] {"groupId"},
+			false);
+
+		_finderPathWithPaginationFindByUserId = new FinderPath(
+			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByUserId",
+			new String[] {
+				Long.class.getName(), Integer.class.getName(),
+				Integer.class.getName(), OrderByComparator.class.getName()
+			},
+			new String[] {"userId"}, true);
+
+		_finderPathWithoutPaginationFindByUserId = new FinderPath(
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByUserId",
+			new String[] {Long.class.getName()}, new String[] {"userId"}, true);
+
+		_finderPathCountByUserId = new FinderPath(
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByUserId",
+			new String[] {Long.class.getName()}, new String[] {"userId"},
+			false);
+
+		_finderPathWithPaginationFindByLayoutBranchId = new FinderPath(
+			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByLayoutBranchId",
+			new String[] {
+				Long.class.getName(), Integer.class.getName(),
+				Integer.class.getName(), OrderByComparator.class.getName()
+			},
+			new String[] {"layoutBranchId"}, true);
+
+		_finderPathWithoutPaginationFindByLayoutBranchId = new FinderPath(
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByLayoutBranchId",
+			new String[] {Long.class.getName()},
+			new String[] {"layoutBranchId"}, true);
+
+		_finderPathCountByLayoutBranchId = new FinderPath(
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByLayoutBranchId",
+			new String[] {Long.class.getName()},
+			new String[] {"layoutBranchId"}, false);
+
+		_finderPathFetchByU_L_P = new FinderPath(
+			FINDER_CLASS_NAME_ENTITY, "fetchByU_L_P",
+			new String[] {
+				Long.class.getName(), Long.class.getName(), Long.class.getName()
+			},
+			new String[] {"userId", "layoutSetBranchId", "plid"}, true);
+
+		_finderPathCountByU_L_P = new FinderPath(
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByU_L_P",
+			new String[] {
+				Long.class.getName(), Long.class.getName(), Long.class.getName()
+			},
+			new String[] {"userId", "layoutSetBranchId", "plid"}, false);
 	}
 
 	public void destroy() {
-		entityCache.removeCache(RecentLayoutBranchImpl.class.getName());
-		finderCache.removeCache(FINDER_CLASS_NAME_ENTITY);
-		finderCache.removeCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		finderCache.removeCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		EntityCacheUtil.removeCache(RecentLayoutBranchImpl.class.getName());
+
+		_argumentsResolverServiceRegistration.unregister();
 	}
 
-	@BeanReference(type = CompanyProviderWrapper.class)
-	protected CompanyProvider companyProvider;
-	protected EntityCache entityCache = EntityCacheUtil.getEntityCache();
-	protected FinderCache finderCache = FinderCacheUtil.getFinderCache();
-	private static final String _SQL_SELECT_RECENTLAYOUTBRANCH = "SELECT recentLayoutBranch FROM RecentLayoutBranch recentLayoutBranch";
-	private static final String _SQL_SELECT_RECENTLAYOUTBRANCH_WHERE_PKS_IN = "SELECT recentLayoutBranch FROM RecentLayoutBranch recentLayoutBranch WHERE recentLayoutBranchId IN (";
-	private static final String _SQL_SELECT_RECENTLAYOUTBRANCH_WHERE = "SELECT recentLayoutBranch FROM RecentLayoutBranch recentLayoutBranch WHERE ";
-	private static final String _SQL_COUNT_RECENTLAYOUTBRANCH = "SELECT COUNT(recentLayoutBranch) FROM RecentLayoutBranch recentLayoutBranch";
-	private static final String _SQL_COUNT_RECENTLAYOUTBRANCH_WHERE = "SELECT COUNT(recentLayoutBranch) FROM RecentLayoutBranch recentLayoutBranch WHERE ";
+	private static final String _SQL_SELECT_RECENTLAYOUTBRANCH =
+		"SELECT recentLayoutBranch FROM RecentLayoutBranch recentLayoutBranch";
+
+	private static final String _SQL_SELECT_RECENTLAYOUTBRANCH_WHERE =
+		"SELECT recentLayoutBranch FROM RecentLayoutBranch recentLayoutBranch WHERE ";
+
+	private static final String _SQL_COUNT_RECENTLAYOUTBRANCH =
+		"SELECT COUNT(recentLayoutBranch) FROM RecentLayoutBranch recentLayoutBranch";
+
+	private static final String _SQL_COUNT_RECENTLAYOUTBRANCH_WHERE =
+		"SELECT COUNT(recentLayoutBranch) FROM RecentLayoutBranch recentLayoutBranch WHERE ";
+
 	private static final String _ORDER_BY_ENTITY_ALIAS = "recentLayoutBranch.";
-	private static final String _NO_SUCH_ENTITY_WITH_PRIMARY_KEY = "No RecentLayoutBranch exists with the primary key ";
-	private static final String _NO_SUCH_ENTITY_WITH_KEY = "No RecentLayoutBranch exists with the key {";
-	private static final Log _log = LogFactoryUtil.getLog(RecentLayoutBranchPersistenceImpl.class);
+
+	private static final String _NO_SUCH_ENTITY_WITH_PRIMARY_KEY =
+		"No RecentLayoutBranch exists with the primary key ";
+
+	private static final String _NO_SUCH_ENTITY_WITH_KEY =
+		"No RecentLayoutBranch exists with the key {";
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		RecentLayoutBranchPersistenceImpl.class);
+
+	@Override
+	protected FinderCache getFinderCache() {
+		return FinderCacheUtil.getFinderCache();
+	}
+
+	private ServiceRegistration<ArgumentsResolver>
+		_argumentsResolverServiceRegistration;
+
+	private static class RecentLayoutBranchModelArgumentsResolver
+		implements ArgumentsResolver {
+
+		@Override
+		public Object[] getArguments(
+			FinderPath finderPath, BaseModel<?> baseModel, boolean checkColumn,
+			boolean original) {
+
+			String[] columnNames = finderPath.getColumnNames();
+
+			if ((columnNames == null) || (columnNames.length == 0)) {
+				if (baseModel.isNew()) {
+					return FINDER_ARGS_EMPTY;
+				}
+
+				return null;
+			}
+
+			RecentLayoutBranchModelImpl recentLayoutBranchModelImpl =
+				(RecentLayoutBranchModelImpl)baseModel;
+
+			long columnBitmask = recentLayoutBranchModelImpl.getColumnBitmask();
+
+			if (!checkColumn || (columnBitmask == 0)) {
+				return _getValue(
+					recentLayoutBranchModelImpl, columnNames, original);
+			}
+
+			Long finderPathColumnBitmask = _finderPathColumnBitmasksCache.get(
+				finderPath);
+
+			if (finderPathColumnBitmask == null) {
+				finderPathColumnBitmask = 0L;
+
+				for (String columnName : columnNames) {
+					finderPathColumnBitmask |=
+						recentLayoutBranchModelImpl.getColumnBitmask(
+							columnName);
+				}
+
+				_finderPathColumnBitmasksCache.put(
+					finderPath, finderPathColumnBitmask);
+			}
+
+			if ((columnBitmask & finderPathColumnBitmask) != 0) {
+				return _getValue(
+					recentLayoutBranchModelImpl, columnNames, original);
+			}
+
+			return null;
+		}
+
+		@Override
+		public String getClassName() {
+			return RecentLayoutBranchImpl.class.getName();
+		}
+
+		@Override
+		public String getTableName() {
+			return RecentLayoutBranchTable.INSTANCE.getTableName();
+		}
+
+		private Object[] _getValue(
+			RecentLayoutBranchModelImpl recentLayoutBranchModelImpl,
+			String[] columnNames, boolean original) {
+
+			Object[] arguments = new Object[columnNames.length];
+
+			for (int i = 0; i < arguments.length; i++) {
+				String columnName = columnNames[i];
+
+				if (original) {
+					arguments[i] =
+						recentLayoutBranchModelImpl.getColumnOriginalValue(
+							columnName);
+				}
+				else {
+					arguments[i] = recentLayoutBranchModelImpl.getColumnValue(
+						columnName);
+				}
+			}
+
+			return arguments;
+		}
+
+		private static Map<FinderPath, Long> _finderPathColumnBitmasksCache =
+			new ConcurrentHashMap<>();
+
+	}
+
 }

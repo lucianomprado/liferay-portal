@@ -14,8 +14,6 @@
 
 package com.liferay.portal.model.impl;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.service.LayoutLocalServiceUtil;
 
@@ -31,12 +29,12 @@ import com.liferay.portal.kernel.service.LayoutLocalServiceUtil;
  * @see Layout
  * @generated
  */
-@ProviderType
 public abstract class LayoutBaseImpl extends LayoutModelImpl implements Layout {
+
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. All methods that expect a layout model instance should use the {@link Layout} interface instead.
+	 * Never modify or reference this class directly. All methods that expect a layout model instance should use the <code>Layout</code> interface instead.
 	 */
 	@Override
 	public void persist() {
@@ -47,4 +45,5 @@ public abstract class LayoutBaseImpl extends LayoutModelImpl implements Layout {
 			LayoutLocalServiceUtil.updateLayout(this);
 		}
 	}
+
 }

@@ -31,22 +31,24 @@ public abstract class BaseJSPDynamicInclude extends BaseDynamicInclude {
 
 	@Override
 	public void include(
-			HttpServletRequest request, HttpServletResponse response,
-			String key)
+			HttpServletRequest httpServletRequest,
+			HttpServletResponse httpServletResponse, String key)
 		throws IOException {
 
 		RequestDispatcher requestDispatcher =
 			_servletContext.getRequestDispatcher(getJspPath());
 
 		try {
-			requestDispatcher.include(request, response);
+			requestDispatcher.include(httpServletRequest, httpServletResponse);
 		}
-		catch (ServletException se) {
+		catch (ServletException servletException) {
 			Log log = getLog();
 
-			log.error("Unable to include JSP " + getJspPath(), se);
+			log.error(
+				"Unable to include JSP " + getJspPath(), servletException);
 
-			throw new IOException("Unable to include JSP " + getJspPath(), se);
+			throw new IOException(
+				"Unable to include JSP " + getJspPath(), servletException);
 		}
 	}
 

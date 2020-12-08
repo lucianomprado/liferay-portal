@@ -18,7 +18,6 @@ import com.liferay.source.formatter.SourceFormatter;
 import com.liferay.source.formatter.SourceFormatterArgs;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 
 import org.apache.maven.plugin.AbstractMojo;
@@ -43,15 +42,12 @@ public class FormatSourceMojo extends AbstractMojo {
 
 			sourceFormatter.format();
 
-			List<String> modifiedFileNames =
-				sourceFormatter.getModifiedFileNames();
-
 			pluginContext.put(
 				SourceFormatterArgs.OUTPUT_KEY_MODIFIED_FILES,
-				modifiedFileNames);
+				sourceFormatter.getModifiedFileNames());
 		}
-		catch (Exception e) {
-			throw new MojoExecutionException(e.getMessage(), e);
+		catch (Exception exception) {
+			throw new MojoExecutionException(exception.getMessage(), exception);
 		}
 	}
 
@@ -67,6 +63,20 @@ public class FormatSourceMojo extends AbstractMojo {
 	 */
 	public void setBaseDir(String baseDir) {
 		_sourceFormatterArgs.setBaseDirName(baseDir);
+	}
+
+	/**
+	 * @parameter
+	 */
+	public void setFailOnAutoFix(boolean failOnAutoFix) {
+		_sourceFormatterArgs.setFailOnAutoFix(failOnAutoFix);
+	}
+
+	/**
+	 * @parameter
+	 */
+	public void setFailOnHasWarning(boolean failOnHasWarning) {
+		_sourceFormatterArgs.setFailOnHasWarning(failOnHasWarning);
 	}
 
 	/**
@@ -135,6 +145,13 @@ public class FormatSourceMojo extends AbstractMojo {
 	/**
 	 * @parameter
 	 */
+	public void setShowDebugInformation(boolean showDebugInformation) {
+		_sourceFormatterArgs.setShowDebugInformation(showDebugInformation);
+	}
+
+	/**
+	 * @parameter
+	 */
 	public void setShowDocumentation(boolean showDocumentation) {
 		_sourceFormatterArgs.setShowDocumentation(showDocumentation);
 	}
@@ -142,8 +159,15 @@ public class FormatSourceMojo extends AbstractMojo {
 	/**
 	 * @parameter
 	 */
-	public void setThrowException(boolean throwException) {
-		_sourceFormatterArgs.setThrowException(throwException);
+	public void setShowStatusUpdates(boolean showStatusUpdates) {
+		_sourceFormatterArgs.setShowStatusUpdates(showStatusUpdates);
+	}
+
+	/**
+	 * @parameter
+	 */
+	public void setValidateCommitMessages(boolean validateCommitMessages) {
+		_sourceFormatterArgs.setValidateCommitMessages(validateCommitMessages);
 	}
 
 	private final SourceFormatterArgs _sourceFormatterArgs =

@@ -14,6 +14,8 @@
 
 package com.liferay.portal.layoutconfiguration.util.velocity;
 
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.model.CustomizedPages;
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.model.LayoutConstants;
@@ -21,11 +23,9 @@ import com.liferay.portal.kernel.portlet.PortletProvider;
 import com.liferay.portal.kernel.portlet.PortletProviderUtil;
 import com.liferay.portal.kernel.service.LayoutLocalServiceUtil;
 import com.liferay.portal.kernel.servlet.JSPSupportServlet;
-import com.liferay.portal.kernel.util.ClassLoaderUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.PortalClassLoaderUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.sites.kernel.util.SitesUtil;
 import com.liferay.taglib.aui.InputTag;
@@ -47,23 +47,25 @@ import javax.servlet.jsp.tagext.Tag;
 public class CustomizationSettingsProcessor implements ColumnProcessor {
 
 	public CustomizationSettingsProcessor(
-		HttpServletRequest request, HttpServletResponse response) {
+		HttpServletRequest httpServletRequest,
+		HttpServletResponse httpServletResponse) {
 
 		JspFactory jspFactory = JspFactory.getDefaultFactory();
 
-		ClassLoader contextClassLoader =
-			ClassLoaderUtil.getContextClassLoader();
+		Thread currentThread = Thread.currentThread();
+
+		ClassLoader contextClassLoader = currentThread.getContextClassLoader();
 
 		try {
-			ClassLoaderUtil.setContextClassLoader(
+			currentThread.setContextClassLoader(
 				PortalClassLoaderUtil.getClassLoader());
 
 			_pageContext = jspFactory.getPageContext(
-				new JSPSupportServlet(request.getServletContext()), request,
-				response, null, false, 0, false);
+				new JSPSupportServlet(httpServletRequest.getServletContext()),
+				httpServletRequest, httpServletResponse, null, false, 0, false);
 		}
 		finally {
-			ClassLoaderUtil.setContextClassLoader(contextClassLoader);
+			currentThread.setContextClassLoader(contextClassLoader);
 		}
 
 		_writer = _pageContext.getOut();
@@ -71,13 +73,14 @@ public class CustomizationSettingsProcessor implements ColumnProcessor {
 		Layout selLayout = null;
 
 		long selPlid = ParamUtil.getLong(
-			request, "selPlid", LayoutConstants.DEFAULT_PLID);
+			httpServletRequest, "selPlid", LayoutConstants.DEFAULT_PLID);
 
 		if (selPlid != LayoutConstants.DEFAULT_PLID) {
 			selLayout = LayoutLocalServiceUtil.fetchLayout(selPlid);
 		}
 
-		_layoutTypeSettings = selLayout.getTypeSettingsProperties();
+		_layoutTypeSettingsUnicodeProperties =
+			selLayout.getTypeSettingsProperties();
 
 		if (!SitesUtil.isLayoutUpdateable(selLayout) ||
 			selLayout.isLayoutPrototypeLinkActive()) {
@@ -104,8 +107,8 @@ public class CustomizationSettingsProcessor implements ColumnProcessor {
 
 		if (_customizationEnabled) {
 			customizable = GetterUtil.getBoolean(
-				_layoutTypeSettings.getProperty(
-					customizableKey, String.valueOf(false)));
+				_layoutTypeSettingsUnicodeProperties.getProperty(
+					customizableKey, Boolean.FALSE.toString()));
 		}
 
 		_writer.append("<div class=\"");
@@ -125,7 +128,8 @@ public class CustomizationSettingsProcessor implements ColumnProcessor {
 			StringPool.BLANK, "labelOn", "customizable");
 		inputTag.setLabel(StringPool.BLANK);
 		inputTag.setName(
-			"TypeSettingsProperties--".concat(customizableKey).concat("--"));
+			StringBundler.concat(
+				"TypeSettingsProperties--", customizableKey, "--"));
 		inputTag.setPageContext(_pageContext);
 		inputTag.setType("toggle-switch");
 		inputTag.setValue(customizable);
@@ -137,6 +141,13 @@ public class CustomizationSettingsProcessor implements ColumnProcessor {
 		}
 
 		_writer.append("</div>");
+
+		return StringPool.BLANK;
+	}
+
+	@Override
+	public String processDynamicColumn(String columnId, String classNames)
+		throws Exception {
 
 		return StringPool.BLANK;
 	}
@@ -176,7 +187,7 @@ public class CustomizationSettingsProcessor implements ColumnProcessor {
 	}
 
 	private final boolean _customizationEnabled;
-	private final UnicodeProperties _layoutTypeSettings;
+	private final UnicodeProperties _layoutTypeSettingsUnicodeProperties;
 	private final PageContext _pageContext;
 	private final Writer _writer;
 

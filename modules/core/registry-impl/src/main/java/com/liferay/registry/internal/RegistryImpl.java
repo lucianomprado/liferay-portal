@@ -38,9 +38,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.BundleReference;
 import org.osgi.framework.InvalidSyntaxException;
 
 /**
@@ -50,6 +52,47 @@ public class RegistryImpl implements Registry {
 
 	public RegistryImpl(BundleContext bundleContext) {
 		_bundleContext = bundleContext;
+	}
+
+	@Override
+	public <S, R> R callService(
+		Class<S> serviceClass, Function<S, R> function) {
+
+		org.osgi.framework.ServiceReference<S> serviceReference =
+			_bundleContext.getServiceReference(serviceClass);
+
+		if (serviceReference == null) {
+			return function.apply(null);
+		}
+
+		S service = _bundleContext.getService(serviceReference);
+
+		try {
+			return function.apply(service);
+		}
+		finally {
+			_bundleContext.ungetService(serviceReference);
+		}
+	}
+
+	@Override
+	public <S, R> R callService(String className, Function<S, R> function) {
+		org.osgi.framework.ServiceReference<S> serviceReference =
+			(org.osgi.framework.ServiceReference<S>)
+				_bundleContext.getServiceReference(className);
+
+		if (serviceReference == null) {
+			return function.apply(null);
+		}
+
+		S service = _bundleContext.getService(serviceReference);
+
+		try {
+			return function.apply(service);
+		}
+		finally {
+			_bundleContext.ungetService(serviceReference);
+		}
 	}
 
 	public void closeServiceTrackers() {
@@ -69,7 +112,7 @@ public class RegistryImpl implements Registry {
 				try {
 					serviceTracker.close();
 				}
-				catch (Throwable t) {
+				catch (Throwable throwable) {
 				}
 			}
 		}
@@ -81,30 +124,34 @@ public class RegistryImpl implements Registry {
 	}
 
 	@Override
+	public <T> ServiceReference<T>[] getAllServiceReferences(
+			String className, String filterString)
+		throws Exception {
+
+		org.osgi.framework.ServiceReference<T>[] osgiServiceReferences =
+			(org.osgi.framework.ServiceReference<T>[])
+				_bundleContext.getAllServiceReferences(className, filterString);
+
+		if (osgiServiceReferences == null) {
+			return null;
+		}
+
+		return _toServiceReferences(osgiServiceReferences);
+	}
+
+	@Override
 	public Filter getFilter(String filterString) throws RuntimeException {
 		try {
 			return new FilterWrapper(_bundleContext.createFilter(filterString));
 		}
-		catch (InvalidSyntaxException ise) {
-			throw new RuntimeException(ise);
+		catch (InvalidSyntaxException invalidSyntaxException) {
+			throw new RuntimeException(invalidSyntaxException);
 		}
 	}
 
 	@Override
 	public Registry getRegistry() throws SecurityException {
 		return this;
-	}
-
-	@Override
-	public <T> T getService(Class<T> clazz) {
-		org.osgi.framework.ServiceReference<T> serviceReference =
-			_bundleContext.getServiceReference(clazz);
-
-		if (serviceReference == null) {
-			return null;
-		}
-
-		return _bundleContext.getService(serviceReference);
 	}
 
 	@Override
@@ -118,18 +165,6 @@ public class RegistryImpl implements Registry {
 
 		return _bundleContext.getService(
 			serviceReferenceWrapper.getServiceReference());
-	}
-
-	@Override
-	public <T> T getService(String className) {
-		org.osgi.framework.ServiceReference<?> serviceReference =
-			_bundleContext.getServiceReference(className);
-
-		if (serviceReference == null) {
-			return null;
-		}
-
-		return (T)_bundleContext.getService(serviceReference);
 	}
 
 	@Override
@@ -207,18 +242,7 @@ public class RegistryImpl implements Registry {
 			return null;
 		}
 
-		ServiceReference<T>[] serviceReferences =
-			new ServiceReference[osgiServiceReferences.length];
-
-		for (int i = 0; i < osgiServiceReferences.length; i++) {
-			org.osgi.framework.ServiceReference<T> osgiServiceReference =
-				osgiServiceReferences[i];
-
-			serviceReferences[i] = new ServiceReferenceWrapper<>(
-				osgiServiceReference);
-		}
-
-		return serviceReferences;
+		return _toServiceReferences(osgiServiceReferences);
 	}
 
 	@Override
@@ -286,6 +310,19 @@ public class RegistryImpl implements Registry {
 		}
 
 		return services;
+	}
+
+	@Override
+	public String getSymbolicName(ClassLoader classLoader) {
+		if (classLoader instanceof BundleReference) {
+			BundleReference bundleReference = (BundleReference)classLoader;
+
+			Bundle bundle = bundleReference.getBundle();
+
+			return bundle.getSymbolicName();
+		}
+
+		return null;
 	}
 
 	@Override
@@ -484,9 +521,14 @@ public class RegistryImpl implements Registry {
 
 		_serviceTrackerReferences.add(reference);
 
-		while ((reference =
-					(Reference<org.osgi.util.tracker.ServiceTracker<?, ?>>)
-						_referenceQueue.poll()) != null) {
+		while (true) {
+			reference =
+				(Reference<org.osgi.util.tracker.ServiceTracker<?, ?>>)
+					_referenceQueue.poll();
+
+			if (reference == null) {
+				return;
+			}
 
 			_serviceTrackerReferences.remove(reference);
 		}
@@ -508,6 +550,23 @@ public class RegistryImpl implements Registry {
 		return properties;
 	}
 
+	private <T> ServiceReference<T>[] _toServiceReferences(
+		org.osgi.framework.ServiceReference<T>[] osgiServiceReferences) {
+
+		ServiceReference<T>[] serviceReferences =
+			new ServiceReference[osgiServiceReferences.length];
+
+		for (int i = 0; i < osgiServiceReferences.length; i++) {
+			org.osgi.framework.ServiceReference<T> osgiServiceReference =
+				osgiServiceReferences[i];
+
+			serviceReferences[i] = new ServiceReferenceWrapper<>(
+				osgiServiceReference);
+		}
+
+		return serviceReferences;
+	}
+
 	private final BundleContext _bundleContext;
 	private final ReferenceQueue<org.osgi.util.tracker.ServiceTracker<?, ?>>
 		_referenceQueue = new ReferenceQueue<>();
@@ -517,6 +576,6 @@ public class RegistryImpl implements Registry {
 		_serviceTrackerReferences = Collections.newSetFromMap(
 			new ConcurrentHashMap
 				<Reference<org.osgi.util.tracker.ServiceTracker<?, ?>>,
-					Boolean>());
+				 Boolean>());
 
 }

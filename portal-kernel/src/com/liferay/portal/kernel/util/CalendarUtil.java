@@ -14,6 +14,8 @@
 
 package com.liferay.portal.kernel.util;
 
+import com.liferay.petra.string.StringBundler;
+
 import java.sql.Timestamp;
 
 import java.text.Format;
@@ -30,7 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class CalendarUtil {
 
-	public static final String[] DAYS_ABBREVIATION = new String[] {
+	public static final String[] DAYS_ABBREVIATION = {
 		"sunday-abbreviation", "monday-abbreviation", "tuesday-abbreviation",
 		"wednesday-abbreviation", "thursday-abbreviation",
 		"friday-abbreviation", "saturday-abbreviation"
@@ -38,7 +40,7 @@ public class CalendarUtil {
 
 	public static final String ICAL_EXTENSION = "ics";
 
-	public static final int[] MONTH_IDS = new int[] {
+	public static final int[] MONTH_IDS = {
 		Calendar.JANUARY, Calendar.FEBRUARY, Calendar.MARCH, Calendar.APRIL,
 		Calendar.MAY, Calendar.JUNE, Calendar.JULY, Calendar.AUGUST,
 		Calendar.SEPTEMBER, Calendar.OCTOBER, Calendar.NOVEMBER,
@@ -52,9 +54,8 @@ public class CalendarUtil {
 		if (millis1 > millis2) {
 			return true;
 		}
-		else {
-			return false;
-		}
+
+		return false;
 	}
 
 	public static boolean beforeByDay(Date date1, Date date2) {
@@ -64,9 +65,8 @@ public class CalendarUtil {
 		if (millis1 < millis2) {
 			return true;
 		}
-		else {
-			return false;
-		}
+
+		return false;
 	}
 
 	public static boolean equalsByDay(Date date1, Date date2) {
@@ -76,9 +76,8 @@ public class CalendarUtil {
 		if (millis1 == millis2) {
 			return true;
 		}
-		else {
-			return false;
-		}
+
+		return false;
 	}
 
 	public static int getAge(Date date, Calendar today) {
@@ -165,12 +164,11 @@ public class CalendarUtil {
 			return 30;
 		}
 
-		if (((year % 4) == 0) && ((year % 100) != 0) || ((year % 400) == 0)) {
+		if ((((year % 4) == 0) && ((year % 100) != 0)) || ((year % 400) == 0)) {
 			return 29;
 		}
-		else {
-			return 28;
-		}
+
+		return 28;
 	}
 
 	public static int getGregorianDay(Calendar cal) {
@@ -184,11 +182,9 @@ public class CalendarUtil {
 
 		int day = cal.get(Calendar.DATE);
 
-		int gregorianDay =
-			(int)(6286 + (year * 365.25) - (year / 100) + (year / 400) +
+		return (int)
+			(6286 + (year * 365.25) - (year / 100) + (year / 400) +
 				(30.6 * month) + 0.2 + day);
-
-		return gregorianDay;
 	}
 
 	public static Date getGTDate(Calendar cal) {
@@ -290,9 +286,8 @@ public class CalendarUtil {
 		if (date == null) {
 			return null;
 		}
-		else {
-			return new Timestamp(date.getTime());
-		}
+
+		return new Timestamp(date.getTime());
 	}
 
 	public static boolean isAfter(
@@ -464,9 +459,7 @@ public class CalendarUtil {
 
 		cal.set(year, month, day, hour, minute, second);
 
-		long millis = cal.getTimeInMillis() / Time.DAY;
-
-		return millis;
+		return cal.getTimeInMillis() / Time.DAY;
 	}
 
 	private static final Map<String, String[]> _calendarPool =

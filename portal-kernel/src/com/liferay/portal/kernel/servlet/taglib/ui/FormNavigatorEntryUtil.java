@@ -14,8 +14,8 @@
 
 package com.liferay.portal.kernel.servlet.taglib.ui;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.model.User;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.registry.Registry;
 import com.liferay.registry.RegistryUtil;
@@ -35,7 +35,10 @@ import java.util.Optional;
 
 /**
  * @author Sergio González
+ * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+ *             com.liferay.frontend.taglib.form.navigator.FormNavigatorEntryUtil}
  */
+@Deprecated
 public class FormNavigatorEntryUtil {
 
 	public static <T> List<FormNavigatorEntry<T>> getFormNavigatorEntries(
@@ -90,7 +93,7 @@ public class FormNavigatorEntryUtil {
 			}
 		}
 
-		return keys.toArray(new String[keys.size()]);
+		return keys.toArray(new String[0]);
 	}
 
 	public static <T> String[] getLabels(
@@ -111,7 +114,7 @@ public class FormNavigatorEntryUtil {
 			}
 		}
 
-		return labels.toArray(new String[labels.size()]);
+		return labels.toArray(new String[0]);
 	}
 
 	protected static <T> List<FormNavigatorEntry<T>>
@@ -137,7 +140,7 @@ public class FormNavigatorEntryUtil {
 
 		FormNavigatorEntryConfigurationHelper
 			formNavigatorEntryConfigurationHelper =
-				_instance._serviceTracker.getService();
+				_formNavigatorEntryUtil._serviceTracker.getService();
 
 		if (formNavigatorEntryConfigurationHelper == null) {
 			return Optional.empty();
@@ -157,10 +160,9 @@ public class FormNavigatorEntryUtil {
 		if (formNavigationEntriesOptional.isPresent()) {
 			return formNavigationEntriesOptional.get();
 		}
-		else {
-			return (List)_instance._formNavigatorEntries.getService(
-				_getKey(formNavigatorId, categoryKey));
-		}
+
+		return (List)_formNavigatorEntryUtil._formNavigatorEntries.getService(
+			_getKey(formNavigatorId, categoryKey));
 	}
 
 	private static String _getKey(String formNavigatorId, String categoryKey) {
@@ -201,7 +203,7 @@ public class FormNavigatorEntryUtil {
 		_serviceTracker.open();
 	}
 
-	private static final FormNavigatorEntryUtil _instance =
+	private static final FormNavigatorEntryUtil _formNavigatorEntryUtil =
 		new FormNavigatorEntryUtil();
 
 	@SuppressWarnings("rawtypes")
@@ -210,7 +212,7 @@ public class FormNavigatorEntryUtil {
 
 	private final ServiceTracker
 		<FormNavigatorEntryConfigurationHelper,
-			FormNavigatorEntryConfigurationHelper> _serviceTracker;
+		 FormNavigatorEntryConfigurationHelper> _serviceTracker;
 
 	/**
 	 * @see com.liferay.osgi.service.tracker.collections.map.PropertyServiceReferenceComparator
@@ -231,9 +233,8 @@ public class FormNavigatorEntryUtil {
 				if (serviceReference2 == null) {
 					return 0;
 				}
-				else {
-					return 1;
-				}
+
+				return 1;
 			}
 			else if (serviceReference2 == null) {
 				return -1;
@@ -246,9 +247,8 @@ public class FormNavigatorEntryUtil {
 				if (propertyValue2 == null) {
 					return 0;
 				}
-				else {
-					return 1;
-				}
+
+				return 1;
 			}
 			else if (propertyValue2 == null) {
 				return -1;

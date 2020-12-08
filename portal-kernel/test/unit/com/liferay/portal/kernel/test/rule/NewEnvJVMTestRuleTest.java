@@ -14,11 +14,9 @@
 
 package com.liferay.portal.kernel.test.rule;
 
-import com.liferay.portal.kernel.test.rule.NewEnv.Environment;
-import com.liferay.portal.kernel.test.rule.NewEnv.JVMArgsLine;
-import com.liferay.portal.kernel.util.CharPool;
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringUtil;
 
 import java.lang.management.ManagementFactory;
@@ -26,7 +24,6 @@ import java.lang.management.RuntimeMXBean;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.After;
@@ -39,9 +36,9 @@ import org.junit.Test;
 /**
  * @author Shuyang Zhou
  */
-@Environment(variables = {"ENV_KEY=ENV_VALUE"})
-@JVMArgsLine("-Dkey1=default1 -Dkey2=default2")
 @NewEnv(type = NewEnv.Type.JVM)
+@NewEnv.Environment(variables = "ENV_KEY=ENV_VALUE")
+@NewEnv.JVMArgsLine("-Dkey1=default1 -Dkey2=default2")
 public class NewEnvJVMTestRuleTest {
 
 	@BeforeClass
@@ -79,7 +76,7 @@ public class NewEnvJVMTestRuleTest {
 		Assert.assertNull(System.getProperty("key3"));
 	}
 
-	@JVMArgsLine("-Dkey1=value1")
+	@NewEnv.JVMArgsLine("-Dkey1=value1")
 	@Test
 	public void testNewJVM2() {
 		Assert.assertEquals(1, _counter.getAndIncrement());
@@ -91,7 +88,7 @@ public class NewEnvJVMTestRuleTest {
 		Assert.assertNull(System.getProperty("key3"));
 	}
 
-	@JVMArgsLine("-Dkey2=value2")
+	@NewEnv.JVMArgsLine("-Dkey2=value2")
 	@Test
 	public void testNewJVM3() {
 		Assert.assertEquals(1, _counter.getAndIncrement());
@@ -103,7 +100,7 @@ public class NewEnvJVMTestRuleTest {
 		Assert.assertNull(System.getProperty("key3"));
 	}
 
-	@JVMArgsLine("-Dkey1=value1 -Dkey2=value2")
+	@NewEnv.JVMArgsLine("-Dkey1=value1 -Dkey2=value2")
 	@Test
 	public void testNewJVM4() {
 		Assert.assertEquals(1, _counter.getAndIncrement());
@@ -115,7 +112,7 @@ public class NewEnvJVMTestRuleTest {
 		Assert.assertNull(System.getProperty("key3"));
 	}
 
-	@JVMArgsLine("-Dkey1=value1 -Dkey2=value2 -Dkey3=value3")
+	@NewEnv.JVMArgsLine("-Dkey1=value1 -Dkey2=value2 -Dkey3=value3")
 	@Test
 	public void testNewJVM5() {
 		Assert.assertEquals(1, _counter.getAndIncrement());
@@ -127,8 +124,8 @@ public class NewEnvJVMTestRuleTest {
 		Assert.assertEquals("value3", System.getProperty("key3"));
 	}
 
-	@Environment(variables = {})
-	@JVMArgsLine(
+	@NewEnv.Environment(variables = {})
+	@NewEnv.JVMArgsLine(
 		"-D" + _SYSTEM_PROPERTY_KEY_ENVIRONMENT + "=${" +
 			_SYSTEM_PROPERTY_KEY_ENVIRONMENT + "}"
 	)
@@ -147,8 +144,8 @@ public class NewEnvJVMTestRuleTest {
 		Assert.assertEquals(_parentEnvironment, environment);
 	}
 
-	@Environment(variables = {"USER=UNIT_TEST", "ENV_KEY=NEW_VALUE"})
-	@JVMArgsLine(
+	@NewEnv.Environment(variables = {"USER=UNIT_TEST", "ENV_KEY=NEW_VALUE"})
+	@NewEnv.JVMArgsLine(
 		"-D" + _SYSTEM_PROPERTY_KEY_ENVIRONMENT + "=${" +
 			_SYSTEM_PROPERTY_KEY_ENVIRONMENT + "}"
 	)
@@ -170,8 +167,8 @@ public class NewEnvJVMTestRuleTest {
 		Assert.assertEquals(_parentEnvironment, environment);
 	}
 
-	@Environment(append = false, variables = {"KEY1=VALUE1"})
-	@JVMArgsLine(
+	@NewEnv.Environment(append = false, variables = "KEY1=VALUE1")
+	@NewEnv.JVMArgsLine(
 		"-D" + _SYSTEM_PROPERTY_KEY_ENVIRONMENT + "=${" +
 			_SYSTEM_PROPERTY_KEY_ENVIRONMENT + "}"
 	)
@@ -221,7 +218,33 @@ public class NewEnvJVMTestRuleTest {
 		return pid;
 	}
 
-	private static Map<String, String> _fromString(String s) {
+	private static Map<String, String> _getEnvironment() {
+		Map<String, String> environment = new HashMap<>(System.getenv());
+
+		environment.remove("MODULES_BASE_DIR_NAMES_WITH_CHANGES");
+		environment.remove("PROJECT_NAMES");
+		environment.remove("SUBREPOSITORY_PACKAGE_NAMES");
+		environment.remove("TERMCAP");
+
+		return environment;
+	}
+
+	private static String _toString(Map<String, String> map) {
+		StringBundler sb = new StringBundler();
+
+		for (Map.Entry<String, String> entry : map.entrySet()) {
+			sb.append(entry.getKey());
+			sb.append(_SEPARATOR_KEY_VALUE);
+			sb.append(entry.getValue());
+			sb.append(_SEPARATOR_VARIABLE);
+		}
+
+		sb.setIndex(sb.index() - 1);
+
+		return sb.toString();
+	}
+
+	private Map<String, String> _fromString(String s) {
 		Map<String, String> map = new HashMap<>();
 
 		for (String entry : StringUtil.split(s, _SEPARATOR_VARIABLE)) {
@@ -236,29 +259,6 @@ public class NewEnvJVMTestRuleTest {
 		}
 
 		return map;
-	}
-
-	private static Map<String, String> _getEnvironment() {
-		Map<String, String> environment = new HashMap<>(System.getenv());
-
-		environment.remove("TERMCAP");
-
-		return environment;
-	}
-
-	private static String _toString(Map<String, String> map) {
-		StringBundler sb = new StringBundler();
-
-		for (Entry<String, String> entry : map.entrySet()) {
-			sb.append(entry.getKey());
-			sb.append(_SEPARATOR_KEY_VALUE);
-			sb.append(entry.getValue());
-			sb.append(_SEPARATOR_VARIABLE);
-		}
-
-		sb.setIndex(sb.index() - 1);
-
-		return sb.toString();
 	}
 
 	private static final String _ENVIRONMENT_KEY_USER = "USER";

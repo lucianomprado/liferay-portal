@@ -14,10 +14,10 @@
 
 package com.liferay.portal.templateparser;
 
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.configuration.Filter;
 import com.liferay.portal.kernel.io.unsync.UnsyncStringWriter;
-import com.liferay.portal.kernel.log.Log;
-import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.mobile.device.Device;
 import com.liferay.portal.kernel.mobile.device.UnknownDevice;
 import com.liferay.portal.kernel.model.Company;
@@ -32,8 +32,6 @@ import com.liferay.portal.kernel.template.URLTemplateResource;
 import com.liferay.portal.kernel.templateparser.TransformException;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.util.PropsUtil;
@@ -42,6 +40,9 @@ import java.net.URL;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * @author Brian Wing Shun Chan
@@ -87,7 +88,9 @@ public class Transformer {
 	public String transform(
 			ThemeDisplay themeDisplay, Map<String, Object> contextObjects,
 			String script, String langType,
-			UnsyncStringWriter unsyncStringWriter)
+			UnsyncStringWriter unsyncStringWriter,
+			HttpServletRequest httpServletRequest,
+			HttpServletResponse httpServletResponse)
 		throws Exception {
 
 		if (Validator.isNull(langType)) {
@@ -138,15 +141,18 @@ public class Transformer {
 			template.put("siteGroupId", siteGroupId);
 			template.put("templatesPath", templatesPath);
 
+			template.prepareTaglib(httpServletRequest, httpServletResponse);
+
 			// Deprecated variables
 
 			template.put("groupId", scopeGroupId);
 			template.put("journalTemplatesPath", templatesPath);
 
-			mergeTemplate(template, unsyncStringWriter, false);
+			template.processTemplate(
+				unsyncStringWriter, () -> getErrorTemplateResource(langType));
 		}
-		catch (Exception e) {
-			throw new TransformException("Unhandled exception", e);
+		catch (Exception exception) {
+			throw new TransformException("Unhandled exception", exception);
 		}
 
 		return unsyncStringWriter.toString();
@@ -187,11 +193,8 @@ public class Transformer {
 		TemplateResource templateResource = new StringTemplateResource(
 			templateId, script);
 
-		TemplateResource errorTemplateResource = getErrorTemplateResource(
-			langType);
-
 		return TemplateManagerUtil.getTemplate(
-			langType, templateResource, errorTemplateResource, _restricted);
+			langType, templateResource, _restricted);
 	}
 
 	protected String getTemplateId(
@@ -231,19 +234,6 @@ public class Transformer {
 		return sb.toString();
 	}
 
-	protected void mergeTemplate(
-			Template template, UnsyncStringWriter unsyncStringWriter,
-			boolean propagateException)
-		throws Exception {
-
-		if (propagateException) {
-			template.doProcessTemplate(unsyncStringWriter);
-		}
-		else {
-			template.processTemplate(unsyncStringWriter);
-		}
-	}
-
 	protected void prepareTemplate(ThemeDisplay themeDisplay, Template template)
 		throws Exception {
 
@@ -253,8 +243,6 @@ public class Transformer {
 
 		template.prepare(themeDisplay.getRequest());
 	}
-
-	private static final Log _log = LogFactoryUtil.getLog(Transformer.class);
 
 	private final Map<String, TemplateResource> _errorTemplateResources =
 		new HashMap<>();

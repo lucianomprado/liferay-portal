@@ -16,6 +16,7 @@ package com.liferay.gradle.plugins.db.support.tasks;
 
 import com.liferay.gradle.plugins.db.support.internal.util.GradleUtil;
 import com.liferay.gradle.util.FileUtil;
+import com.liferay.gradle.util.GUtil;
 import com.liferay.gradle.util.Validator;
 
 import java.io.File;
@@ -23,15 +24,18 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.gradle.api.tasks.CacheableTask;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.JavaExec;
 import org.gradle.api.tasks.Optional;
-import org.gradle.util.GUtil;
+import org.gradle.api.tasks.PathSensitive;
+import org.gradle.api.tasks.PathSensitivity;
 
 /**
  * @author Andrea Di Giorgi
  */
+@CacheableTask
 public abstract class BaseDBSupportTask extends JavaExec {
 
 	public BaseDBSupportTask() {
@@ -56,6 +60,7 @@ public abstract class BaseDBSupportTask extends JavaExec {
 
 	@InputFile
 	@Optional
+	@PathSensitive(PathSensitivity.RELATIVE)
 	public File getPropertiesFile() {
 		return GradleUtil.toFile(getProject(), _propertiesFile);
 	}

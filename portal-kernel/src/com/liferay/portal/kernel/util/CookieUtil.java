@@ -14,6 +14,8 @@
 
 package com.liferay.portal.kernel.util;
 
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.io.Deserializer;
 import com.liferay.portal.kernel.io.Serializer;
 
@@ -38,6 +40,7 @@ public class CookieUtil {
 		String name = deserializer.readString();
 		String path = deserializer.readString();
 		boolean secure = deserializer.readBoolean();
+
 		String value = deserializer.readString();
 
 		if (value.isEmpty()) {

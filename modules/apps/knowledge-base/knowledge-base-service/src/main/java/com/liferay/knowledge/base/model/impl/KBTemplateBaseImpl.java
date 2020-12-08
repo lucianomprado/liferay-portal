@@ -14,8 +14,6 @@
 
 package com.liferay.knowledge.base.model.impl;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.knowledge.base.model.KBTemplate;
 import com.liferay.knowledge.base.service.KBTemplateLocalServiceUtil;
 
@@ -31,13 +29,13 @@ import com.liferay.knowledge.base.service.KBTemplateLocalServiceUtil;
  * @see KBTemplate
  * @generated
  */
-@ProviderType
-public abstract class KBTemplateBaseImpl extends KBTemplateModelImpl
-	implements KBTemplate {
+public abstract class KBTemplateBaseImpl
+	extends KBTemplateModelImpl implements KBTemplate {
+
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. All methods that expect a kb template model instance should use the {@link KBTemplate} interface instead.
+	 * Never modify or reference this class directly. All methods that expect a kb template model instance should use the <code>KBTemplate</code> interface instead.
 	 */
 	@Override
 	public void persist() {
@@ -48,4 +46,5 @@ public abstract class KBTemplateBaseImpl extends KBTemplateModelImpl
 			KBTemplateLocalServiceUtil.updateKBTemplate(this);
 		}
 	}
+
 }

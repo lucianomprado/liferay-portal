@@ -21,7 +21,7 @@ import com.liferay.portal.kernel.util.PortletKeys;
 import com.liferay.portal.kernel.util.PrefsPropsUtil;
 
 /**
- * @author Ivan Zaera
+ * @author Iván Zaera
  * @author Jorge Ferrer
  */
 public class PortletInstanceSettingsLocator implements SettingsLocator {
@@ -29,11 +29,9 @@ public class PortletInstanceSettingsLocator implements SettingsLocator {
 	public PortletInstanceSettingsLocator(
 		Layout layout, String portletInstanceKey) {
 
-		_layout = layout;
-		_portletInstanceKey = portletInstanceKey;
-
-		_configurationPid = PortletIdCodec.decodePortletName(
-			portletInstanceKey);
+		this(
+			layout, portletInstanceKey,
+			PortletIdCodec.decodePortletName(portletInstanceKey));
 	}
 
 	public PortletInstanceSettingsLocator(
@@ -42,6 +40,10 @@ public class PortletInstanceSettingsLocator implements SettingsLocator {
 		_layout = layout;
 		_portletInstanceKey = portletInstanceKey;
 		_configurationPid = configurationPid;
+	}
+
+	public String getConfigurationPid() {
+		return _configurationPid;
 	}
 
 	public long getOwnerId() {
@@ -62,13 +64,12 @@ public class PortletInstanceSettingsLocator implements SettingsLocator {
 
 	@Override
 	public Settings getSettings() throws SettingsException {
-		Settings configurationBeanSettings =
-			_settingsLocatorHelper.getConfigurationBeanSettings(
-				_configurationPid);
+		SystemSettingsLocator systemSettingsLocator = new SystemSettingsLocator(
+			_configurationPid);
 
 		Settings portalPreferencesSettings = new PortletPreferencesSettings(
 			PrefsPropsUtil.getPreferences(_layout.getCompanyId()),
-			configurationBeanSettings);
+			systemSettingsLocator.getSettings());
 
 		return PortletPreferencesLocalServiceUtil.getPortletInstanceSettings(
 			_layout.getCompanyId(), _layout.getGroupId(), _portletInstanceKey,
@@ -78,14 +79,6 @@ public class PortletInstanceSettingsLocator implements SettingsLocator {
 	@Override
 	public String getSettingsId() {
 		return _portletInstanceKey;
-	}
-
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	protected long getCompanyId(long groupId) {
-		return _layout.getCompanyId();
 	}
 
 	protected boolean isEmbeddedPortlet() {
@@ -107,7 +100,5 @@ public class PortletInstanceSettingsLocator implements SettingsLocator {
 	private Boolean _embeddedPortlet;
 	private final Layout _layout;
 	private final String _portletInstanceKey;
-	private final SettingsLocatorHelper _settingsLocatorHelper =
-		SettingsLocatorHelperUtil.getSettingsLocatorHelper();
 
 }

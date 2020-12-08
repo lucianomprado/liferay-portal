@@ -14,6 +14,8 @@
 
 package com.liferay.source.formatter;
 
+import java.io.IOException;
+
 import java.util.List;
 
 /**
@@ -22,13 +24,13 @@ import java.util.List;
 public class FTLSourceProcessor extends BaseSourceProcessor {
 
 	@Override
-	protected List<String> doGetFileNames() throws Exception {
-		String[] excludes = new String[] {
-			"**/journal/dependencies/template.ftl",
-			"**/service/builder/dependencies/props.ftl"
-		};
-
-		return getFileNames(excludes, getIncludes());
+	protected List<String> doGetFileNames() throws IOException {
+		return getFileNames(
+			new String[] {
+				"**/journal/dependencies/template.ftl",
+				"**/service/builder/dependencies/props.ftl"
+			},
+			getIncludes());
 	}
 
 	@Override
@@ -36,6 +38,11 @@ public class FTLSourceProcessor extends BaseSourceProcessor {
 		return _INCLUDES;
 	}
 
-	private static final String[] _INCLUDES = new String[] {"**/*.ftl"};
+	@Override
+	protected boolean hasGeneratedTag(String content) {
+		return false;
+	}
+
+	private static final String[] _INCLUDES = {"**/*.ftl"};
 
 }

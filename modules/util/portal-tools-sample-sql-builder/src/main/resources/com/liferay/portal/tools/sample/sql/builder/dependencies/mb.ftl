@@ -2,7 +2,9 @@
 
 <#list mbCategoryModels as mbCategoryModel>
 	${dataFactory.toInsertSQL(mbCategoryModel)}
-	${dataFactory.toInsertSQL(dataFactory.newMBMailingListModel(mbCategoryModel))}
+	${dataFactory.toInsertSQL(dataFactory.newMBMailingListModel(mbCategoryModel, sampleUserModel))}
+
+	${csvFileWriter.write("mbCategory", mbCategoryModel.categoryId + "," + mbCategoryModel.name + "\n")}
 
 	<#assign mbThreadModels = dataFactory.newMBThreadModels(mbCategoryModel) />
 
@@ -23,6 +25,6 @@
 			${dataFactory.toInsertSQL(dataFactory.newSocialActivityModel(mbMessageModel))}
 		</#list>
 
-		${dataFactory.getCSVWriter("messageBoard").write(mbCategoryModel.categoryId + "," + mbThreadModel.threadId + "," + mbThreadModel.rootMessageId + "\n")}
+		${csvFileWriter.write("mbThread", mbCategoryModel.categoryId + "," + mbThreadModel.threadId + "," + mbThreadModel.rootMessageId + "\n")}
 	</#list>
 </#list>

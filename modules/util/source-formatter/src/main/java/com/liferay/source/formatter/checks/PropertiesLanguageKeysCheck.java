@@ -14,23 +14,41 @@
 
 package com.liferay.source.formatter.checks;
 
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.io.unsync.UnsyncBufferedReader;
 import com.liferay.portal.kernel.io.unsync.UnsyncStringReader;
-import com.liferay.portal.kernel.util.ArrayUtil;
+
+import java.io.IOException;
+import java.io.InputStream;
+
+import java.util.List;
+import java.util.Properties;
 
 /**
  * @author Peter Shin
+ * @author Hugo Huijser
  */
 public class PropertiesLanguageKeysCheck extends BaseFileCheck {
 
 	@Override
+	public boolean isLiferaySourceCheck() {
+		return true;
+	}
+
+	@Override
 	protected String doProcess(
 			String fileName, String absolutePath, String content)
-		throws Exception {
+		throws IOException {
 
 		if (!fileName.endsWith("/content/Language.properties")) {
 			return content;
 		}
+
+		StringBundler sb = new StringBundler();
+
+		Properties portalImplLanguageProperties =
+			_getPortalImplLanguageProperties(absolutePath);
 
 		try (UnsyncBufferedReader unsyncBufferedReader =
 				new UnsyncBufferedReader(new UnsyncStringReader(content))) {
@@ -41,43 +59,95 @@ public class PropertiesLanguageKeysCheck extends BaseFileCheck {
 				String[] array = line.split("=", 2);
 
 				if (array.length < 2) {
+					sb.append(line);
+					sb.append("\n");
+
 					continue;
 				}
 
 				String key = array[0];
-
-				if (ArrayUtil.contains(_LEGACY_LANGUAGE_KEYS, key)) {
-					continue;
-				}
-
 				String value = array[1];
 
-				if (value.matches("(?s).*<a\\b[^>]*>.*?</a>.*")) {
+				if ((portalImplLanguageProperties != null) &&
+					!absolutePath.contains("/modules/dxp/apps/") &&
+					!absolutePath.contains("/modules/private/apps/")) {
+
+					String portalImplValue =
+						portalImplLanguageProperties.getProperty(key);
+
+					if (value.equals(portalImplValue)) {
+						continue;
+					}
+				}
+
+				if (!_isAllowedLanguageKey(key, absolutePath) &&
+					value.matches("(?s).*<([a-zA-Z0-9]+)[^>]*>.*?<\\/\\1>.*")) {
+
 					addMessage(
 						fileName, "Remove HTML markup for '" + key + "'",
-						"language_keys.markdown",
-						getLineCount(content, content.indexOf(line)));
+						getLineNumber(content, content.indexOf(line)));
 				}
+
+				sb.append(line);
+				sb.append("\n");
 			}
+		}
+
+		content = sb.toString();
+
+		if (content.endsWith("\n")) {
+			content = content.substring(0, content.length() - 1);
 		}
 
 		return content;
 	}
 
-	private static final String[] _LEGACY_LANGUAGE_KEYS = {
-		"application-adapter-help", "by-x-x",
-		"check-your-email-or-configure-email-accounts",
-		"click-here-to-save-it-now", "get-url", "get-url-or-webdav-url",
-		"set-up-the-communication-among-the-portlets-that-use-public-render-parameters",
-		"the-page-will-be-refreshed-when-you-close-this-dialog.alternatively-you-can-hide-this-dialog-x",
-		"this-organization-is-already-assigned-to-password-policy-x",
-		"this-user-is-already-assigned-to-password-policy-x",
-		"x-added-a-comment", "xuggler-help", "uploaded-by-x-x",
-		"use-my-account-to-change-regular-account-settings", "webdav-help",
-		"webdav-windows-help",
-		"you-are-about-to-report-a-violation-of-our-x-terms-of-use.-all-reports-are-strictly-confidential",
-		"you-can-also-forcibly-disable-remote-staging",
-		"you-have-to-be-signed-in-to-register-for-this-meetup"
-	};
+	private Properties _getPortalImplLanguageProperties(String absolutePath)
+		throws IOException {
+
+		if (absolutePath.endsWith(_PORTAL_IMPL_LANGUAGE_PROPERTIES_FILE_NAME)) {
+			return null;
+		}
+
+		if (_portalImplLanguageProperties != null) {
+			return _portalImplLanguageProperties;
+		}
+
+		Properties portalImplLanguageProperties = new Properties();
+
+		InputStream inputStream = getPortalInputStream(
+			_PORTAL_IMPL_LANGUAGE_PROPERTIES_FILE_NAME, absolutePath);
+
+		if (inputStream != null) {
+			portalImplLanguageProperties.load(inputStream);
+		}
+
+		_portalImplLanguageProperties = portalImplLanguageProperties;
+
+		return _portalImplLanguageProperties;
+	}
+
+	private boolean _isAllowedLanguageKey(String key, String absolutePath) {
+		String s = key.replaceAll("[^\\w.-]", StringPool.BLANK);
+
+		List<String> allowedLanguageKeys = getAttributeValues(
+			_ALLOWED_LANGUAGE_KEYS_KEY, absolutePath);
+
+		for (String allowedLanguageKey : allowedLanguageKeys) {
+			if (s.equals(allowedLanguageKey)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	private static final String _ALLOWED_LANGUAGE_KEYS_KEY =
+		"allowedLanguageKeys";
+
+	private static final String _PORTAL_IMPL_LANGUAGE_PROPERTIES_FILE_NAME =
+		"portal-impl/src/content/Language.properties";
+
+	private Properties _portalImplLanguageProperties;
 
 }

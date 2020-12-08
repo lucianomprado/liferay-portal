@@ -14,26 +14,26 @@
 
 package com.liferay.portal.upload;
 
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.tools.ToolDependencies;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.fileupload.disk.DiskFileItem;
 
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import org.powermock.api.mockito.PowerMockito;
 
 import org.springframework.mock.web.MockHttpServletRequest;
 
 /**
  * @author Roberto Díaz
  */
-public class UploadServletRequestImplTest extends PowerMockito {
+public class UploadServletRequestImplTest {
 
 	@Before
 	public void setUp() {
@@ -53,10 +53,11 @@ public class UploadServletRequestImplTest extends PowerMockito {
 
 	@Test
 	public void testSort() {
-		UploadServletRequestImpl uploadServletRequest =
+		UploadServletRequestImpl uploadServletRequestImpl =
 			new UploadServletRequestImpl(new MockHttpServletRequest());
 
-		List<FileItem> sortedFileItems = uploadServletRequest.sort(_fileItems);
+		List<FileItem> sortedFileItems = uploadServletRequestImpl.sort(
+			_fileItems);
 
 		Assert.assertEquals(
 			sortedFileItems.toString(), 10, sortedFileItems.size());
@@ -79,10 +80,11 @@ public class UploadServletRequestImplTest extends PowerMockito {
 
 	@Test
 	public void testSortKeepsOriginalOrderWithSameParameterName() {
-		UploadServletRequestImpl uploadServletRequest =
+		UploadServletRequestImpl uploadServletRequestImpl =
 			new UploadServletRequestImpl(new MockHttpServletRequest());
 
-		List<FileItem> sortedFileItems = uploadServletRequest.sort(_fileItems);
+		List<FileItem> sortedFileItems = uploadServletRequestImpl.sort(
+			_fileItems);
 
 		FileItem fileItem1 = sortedFileItems.get(1);
 
@@ -98,19 +100,10 @@ public class UploadServletRequestImplTest extends PowerMockito {
 	}
 
 	private FileItem _getFileItem(String fieldName, long size) {
-		FileItem fileItem = mock(FileItem.class);
+		FileItem fileItem = new DiskFileItem(
+			fieldName, null, false, null, 0, null);
 
-		when(
-			fileItem.getFieldName()
-		).thenReturn(
-			fieldName
-		);
-
-		when(
-			fileItem.getSize()
-		).thenReturn(
-			size
-		);
+		ReflectionTestUtil.setFieldValue(fileItem, "size", size);
 
 		return fileItem;
 	}

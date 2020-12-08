@@ -15,9 +15,7 @@
 package com.liferay.source.formatter.checkstyle.checks;
 
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.source.formatter.checkstyle.util.DetailASTUtil;
 
-import com.puppycrawl.tools.checkstyle.api.AbstractCheck;
 import com.puppycrawl.tools.checkstyle.api.DetailAST;
 import com.puppycrawl.tools.checkstyle.api.TokenTypes;
 
@@ -26,7 +24,7 @@ import java.util.List;
 /**
  * @author Hugo Huijser
  */
-public class SizeIsZeroCheck extends AbstractCheck {
+public class SizeIsZeroCheck extends BaseCheck {
 
 	@Override
 	public int[] getDefaultTokens() {
@@ -34,67 +32,70 @@ public class SizeIsZeroCheck extends AbstractCheck {
 	}
 
 	@Override
-	public void visitToken(DetailAST detailAST) {
-		List<DetailAST> methodCallASTList = DetailASTUtil.getMethodCalls(
+	protected void doVisitToken(DetailAST detailAST) {
+		List<DetailAST> methodCallDetailASTList = getMethodCalls(
 			detailAST, "size");
 
-		for (DetailAST methodCallAST : methodCallASTList) {
-			_checkMethodCall(detailAST, methodCallAST);
+		for (DetailAST methodCallDetailAST : methodCallDetailASTList) {
+			_checkMethodCall(detailAST, methodCallDetailAST);
 		}
 	}
 
 	private void _checkMethodCall(
-		DetailAST detailAST, DetailAST methodCallAST) {
+		DetailAST detailAST, DetailAST methodCallDetailAST) {
 
-		DetailAST nextSibling = methodCallAST.getNextSibling();
+		DetailAST nextSiblingDetailAST = methodCallDetailAST.getNextSibling();
 
-		if ((nextSibling == null) ||
-			(nextSibling.getType() != TokenTypes.NUM_INT)) {
+		if ((nextSiblingDetailAST == null) ||
+			(nextSiblingDetailAST.getType() != TokenTypes.NUM_INT)) {
 
 			return;
 		}
 
-		int compareCount = GetterUtil.getInteger(nextSibling.getText());
+		int compareCount = GetterUtil.getInteger(
+			nextSiblingDetailAST.getText());
 
-		DetailAST parentAST = methodCallAST.getParent();
+		DetailAST parentDetailAST = methodCallDetailAST.getParent();
 
 		if (((compareCount != 0) ||
-			 ((parentAST.getType() != TokenTypes.EQUAL) &&
-			  (parentAST.getType() != TokenTypes.NOT_EQUAL) &&
-			  (parentAST.getType() != TokenTypes.GT))) &&
+			 ((parentDetailAST.getType() != TokenTypes.EQUAL) &&
+			  (parentDetailAST.getType() != TokenTypes.NOT_EQUAL) &&
+			  (parentDetailAST.getType() != TokenTypes.GT))) &&
 			((compareCount != 1) ||
-			 ((parentAST.getType() != TokenTypes.GE) &&
-			  (parentAST.getType() != TokenTypes.LT)))) {
+			 ((parentDetailAST.getType() != TokenTypes.GE) &&
+			  (parentDetailAST.getType() != TokenTypes.LT)))) {
 
 			return;
 		}
 
-		DetailAST dotAST = methodCallAST.getFirstChild();
+		DetailAST dotDetailAST = methodCallDetailAST.getFirstChild();
 
-		DetailAST nameAST = dotAST.findFirstToken(TokenTypes.IDENT);
+		DetailAST nameDetailAST = dotDetailAST.findFirstToken(TokenTypes.IDENT);
 
-		String variableName = nameAST.getText();
+		String variableName = nameDetailAST.getText();
 
-		List<DetailAST> definitionASTList = DetailASTUtil.getAllChildTokens(
+		List<DetailAST> definitionDetailASTList = getAllChildTokens(
 			detailAST, true, TokenTypes.PARAMETER_DEF, TokenTypes.VARIABLE_DEF);
 
-		for (DetailAST definitionAST : definitionASTList) {
-			DetailAST definitionNameAST = definitionAST.findFirstToken(
-				TokenTypes.IDENT);
+		for (DetailAST definitionDetailAST : definitionDetailASTList) {
+			DetailAST definitionNameDetailAST =
+				definitionDetailAST.findFirstToken(TokenTypes.IDENT);
 
-			if (!variableName.equals(definitionNameAST.getText())) {
+			if (!variableName.equals(definitionNameDetailAST.getText())) {
 				continue;
 			}
 
-			DetailAST typeAST = definitionAST.findFirstToken(TokenTypes.TYPE);
+			DetailAST typeDetailAST = definitionDetailAST.findFirstToken(
+				TokenTypes.TYPE);
 
-			DetailAST typeNameAST = typeAST.findFirstToken(TokenTypes.IDENT);
+			DetailAST typeNameDetailAST = typeDetailAST.findFirstToken(
+				TokenTypes.IDENT);
 
-			String typeName = typeNameAST.getText();
+			String typeName = typeNameDetailAST.getText();
 
 			if (typeName.matches(".*(Collection|List|Map|Set)")) {
 				log(
-					methodCallAST.getLineNo(), _MSG_USE_METHOD,
+					methodCallDetailAST, _MSG_USE_METHOD,
 					variableName + ".isEmpty()");
 			}
 		}

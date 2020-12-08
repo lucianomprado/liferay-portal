@@ -14,6 +14,8 @@
 
 package com.liferay.portal.kernel.util;
 
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.io.Deserializer;
 import com.liferay.portal.kernel.io.Serializer;
 
@@ -27,7 +29,9 @@ import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 
 import java.util.Arrays;
+import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Provides a serializable loose representation for {@link Method}, considering
@@ -44,6 +48,10 @@ import java.util.Objects;
  * @author Shuyang Zhou
  */
 public class MethodKey implements Externalizable {
+
+	public static void resetCache() {
+		_methods.clear();
+	}
 
 	/**
 	 * The empty constructor is required by {@link Externalizable}. Do not use
@@ -67,41 +75,17 @@ public class MethodKey implements Externalizable {
 			method.getParameterTypes());
 	}
 
-	/**
-	 * @deprecated As of 6.2.0, replaced by {@link #MethodKey(Class, String,
-	 *             Class...)}
-	 */
-	@Deprecated
-	public MethodKey(
-		String declaringClassName, String methodName,
-		Class<?>... parameterTypes) {
-
-		Thread currentThread = Thread.currentThread();
-
-		ClassLoader classLoader = currentThread.getContextClassLoader();
-
-		try {
-			_declaringClass = classLoader.loadClass(declaringClassName);
-		}
-		catch (ClassNotFoundException cnfe) {
-			throw new RuntimeException(cnfe);
-		}
-
-		_methodName = methodName;
-		_parameterTypes = parameterTypes;
-	}
-
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
+	public boolean equals(Object object) {
+		if (this == object) {
 			return true;
 		}
 
-		if (!(obj instanceof MethodKey)) {
+		if (!(object instanceof MethodKey)) {
 			return false;
 		}
 
-		MethodKey methodKey = (MethodKey)obj;
+		MethodKey methodKey = (MethodKey)object;
 
 		if ((_declaringClass == methodKey._declaringClass) &&
 			Objects.equals(_methodName, methodKey._methodName) &&
@@ -118,7 +102,18 @@ public class MethodKey implements Externalizable {
 	}
 
 	public Method getMethod() throws NoSuchMethodException {
-		return MethodCache.get(this);
+		Method method = _methods.get(this);
+
+		if (method == null) {
+			method = _declaringClass.getDeclaredMethod(
+				_methodName, _parameterTypes);
+
+			_methods.put(this, method);
+		}
+
+		method.setAccessible(true);
+
+		return method;
 	}
 
 	public String getMethodName() {
@@ -134,7 +129,9 @@ public class MethodKey implements Externalizable {
 
 		// Using the same hash algorithm as java.lang.reflect.Method
 
-		return _declaringClass.getName().hashCode() ^ _methodName.hashCode();
+		String declaringClassName = _declaringClass.getName();
+
+		return declaringClassName.hashCode() ^ _methodName.hashCode();
 	}
 
 	@Override
@@ -167,7 +164,7 @@ public class MethodKey implements Externalizable {
 			return _toString;
 		}
 
-		StringBundler sb = new StringBundler(4 + _parameterTypes.length * 2);
+		StringBundler sb = new StringBundler(4 + (_parameterTypes.length * 2));
 
 		sb.append(_declaringClass.getName());
 		sb.append(StringPool.PERIOD);
@@ -179,7 +176,9 @@ public class MethodKey implements Externalizable {
 			sb.append(StringPool.COMMA);
 		}
 
-		sb.setIndex(sb.index() - 1);
+		if (_parameterTypes.length != 0) {
+			sb.setIndex(sb.index() - 1);
+		}
 
 		sb.append(StringPool.CLOSE_PARENTHESIS);
 
@@ -223,6 +222,8 @@ public class MethodKey implements Externalizable {
 			byteBuffer.array(), byteBuffer.position(), byteBuffer.remaining());
 	}
 
+	private static final Map<MethodKey, Method> _methods =
+		new ConcurrentHashMap<>();
 	private static final long serialVersionUID = 1L;
 
 	private Class<?> _declaringClass;

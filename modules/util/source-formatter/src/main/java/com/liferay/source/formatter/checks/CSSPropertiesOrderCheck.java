@@ -14,10 +14,10 @@
 
 package com.liferay.source.formatter.checks;
 
-import com.liferay.portal.kernel.util.CharPool;
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.NaturalOrderStringComparator;
-import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringUtil;
 
 import java.util.Collections;
@@ -73,7 +73,7 @@ public class CSSPropertiesOrderCheck extends BaseFileCheck {
 		return content;
 	}
 
-	private final Pattern _propertiesPattern = Pattern.compile(
+	private static final Pattern _propertiesPattern = Pattern.compile(
 		"(^(\t*)[a-z]\\S*: .+;\n)+", Pattern.MULTILINE);
 
 	private class PropertyComparator extends NaturalOrderStringComparator {

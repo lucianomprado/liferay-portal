@@ -14,12 +14,12 @@
 
 package com.liferay.taglib.aui;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.search.DisplayTerms;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.util.JavaConstants;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.taglib.aui.base.BaseNavBarSearchTag;
 
@@ -112,11 +112,12 @@ public class NavBarSearchTag extends BaseNavBarSearchTag {
 	}
 
 	@Override
-	protected void setAttributes(HttpServletRequest request) {
-		super.setAttributes(request);
+	protected void setAttributes(HttpServletRequest httpServletRequest) {
+		super.setAttributes(httpServletRequest);
 
-		setNamespacedAttribute(request, "id", _getNamespacedId());
-		setNamespacedAttribute(request, "searchResults", _hasSearchResults());
+		setNamespacedAttribute(httpServletRequest, "id", _getNamespacedId());
+		setNamespacedAttribute(
+			httpServletRequest, "searchResults", _hasSearchResults());
 	}
 
 	private String _getNamespacedId() {
@@ -126,16 +127,18 @@ public class NavBarSearchTag extends BaseNavBarSearchTag {
 
 		_namespacedId = getId();
 
-		HttpServletRequest request =
+		HttpServletRequest httpServletRequest =
 			(HttpServletRequest)pageContext.getRequest();
 
 		if (Validator.isNull(_namespacedId)) {
 			_namespacedId = PortalUtil.getUniqueElementId(
-				request, StringPool.BLANK, AUIUtil.normalizeId("navBar"));
+				httpServletRequest, StringPool.BLANK,
+				AUIUtil.normalizeId("navBar"));
 		}
 
-		PortletResponse portletResponse = (PortletResponse)request.getAttribute(
-			JavaConstants.JAVAX_PORTLET_RESPONSE);
+		PortletResponse portletResponse =
+			(PortletResponse)httpServletRequest.getAttribute(
+				JavaConstants.JAVAX_PORTLET_RESPONSE);
 
 		if (portletResponse != null) {
 			_namespacedId = portletResponse.getNamespace() + _namespacedId;

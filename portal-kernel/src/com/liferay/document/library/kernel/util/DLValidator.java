@@ -14,8 +14,6 @@
 
 package com.liferay.document.library.kernel.util;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.document.library.kernel.exception.FileExtensionException;
 import com.liferay.document.library.kernel.exception.FileNameException;
 import com.liferay.document.library.kernel.exception.FileSizeException;
@@ -25,6 +23,8 @@ import com.liferay.document.library.kernel.exception.SourceFileNameException;
 
 import java.io.File;
 import java.io.InputStream;
+
+import org.osgi.annotation.versioning.ProviderType;
 
 /**
  * @author Adolfo Pérez
@@ -52,7 +52,7 @@ public interface DLValidator {
 	public void validateFileSize(String fileName, File file)
 		throws FileSizeException;
 
-	public void validateFileSize(String fileName, InputStream is)
+	public void validateFileSize(String fileName, InputStream inputStream)
 		throws FileSizeException;
 
 	public void validateFileSize(String fileName, long size)

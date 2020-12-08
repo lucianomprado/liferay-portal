@@ -14,8 +14,6 @@
 
 package com.liferay.sync.model;
 
-import aQute.bnd.annotation.ProviderType;
-
 import java.io.Serializable;
 
 import java.util.ArrayList;
@@ -26,15 +24,20 @@ import java.util.List;
  * This class is used by SOAP remote services.
  *
  * @author Brian Wing Shun Chan
+ * @deprecated As of Athanasius (7.3.x), with no direct replacement
  * @generated
  */
-@ProviderType
+@Deprecated
 public class SyncDLFileVersionDiffSoap implements Serializable {
+
 	public static SyncDLFileVersionDiffSoap toSoapModel(
 		SyncDLFileVersionDiff model) {
+
 		SyncDLFileVersionDiffSoap soapModel = new SyncDLFileVersionDiffSoap();
 
-		soapModel.setSyncDLFileVersionDiffId(model.getSyncDLFileVersionDiffId());
+		soapModel.setSyncDLFileVersionDiffId(
+			model.getSyncDLFileVersionDiffId());
+		soapModel.setCompanyId(model.getCompanyId());
 		soapModel.setFileEntryId(model.getFileEntryId());
 		soapModel.setSourceFileVersionId(model.getSourceFileVersionId());
 		soapModel.setTargetFileVersionId(model.getTargetFileVersionId());
@@ -47,7 +50,9 @@ public class SyncDLFileVersionDiffSoap implements Serializable {
 
 	public static SyncDLFileVersionDiffSoap[] toSoapModels(
 		SyncDLFileVersionDiff[] models) {
-		SyncDLFileVersionDiffSoap[] soapModels = new SyncDLFileVersionDiffSoap[models.length];
+
+		SyncDLFileVersionDiffSoap[] soapModels =
+			new SyncDLFileVersionDiffSoap[models.length];
 
 		for (int i = 0; i < models.length; i++) {
 			soapModels[i] = toSoapModel(models[i]);
@@ -58,10 +63,12 @@ public class SyncDLFileVersionDiffSoap implements Serializable {
 
 	public static SyncDLFileVersionDiffSoap[][] toSoapModels(
 		SyncDLFileVersionDiff[][] models) {
+
 		SyncDLFileVersionDiffSoap[][] soapModels = null;
 
 		if (models.length > 0) {
-			soapModels = new SyncDLFileVersionDiffSoap[models.length][models[0].length];
+			soapModels =
+				new SyncDLFileVersionDiffSoap[models.length][models[0].length];
 		}
 		else {
 			soapModels = new SyncDLFileVersionDiffSoap[0][0];
@@ -76,13 +83,16 @@ public class SyncDLFileVersionDiffSoap implements Serializable {
 
 	public static SyncDLFileVersionDiffSoap[] toSoapModels(
 		List<SyncDLFileVersionDiff> models) {
-		List<SyncDLFileVersionDiffSoap> soapModels = new ArrayList<SyncDLFileVersionDiffSoap>(models.size());
+
+		List<SyncDLFileVersionDiffSoap> soapModels =
+			new ArrayList<SyncDLFileVersionDiffSoap>(models.size());
 
 		for (SyncDLFileVersionDiff model : models) {
 			soapModels.add(toSoapModel(model));
 		}
 
-		return soapModels.toArray(new SyncDLFileVersionDiffSoap[soapModels.size()]);
+		return soapModels.toArray(
+			new SyncDLFileVersionDiffSoap[soapModels.size()]);
 	}
 
 	public SyncDLFileVersionDiffSoap() {
@@ -102,6 +112,14 @@ public class SyncDLFileVersionDiffSoap implements Serializable {
 
 	public void setSyncDLFileVersionDiffId(long syncDLFileVersionDiffId) {
 		_syncDLFileVersionDiffId = syncDLFileVersionDiffId;
+	}
+
+	public long getCompanyId() {
+		return _companyId;
+	}
+
+	public void setCompanyId(long companyId) {
+		_companyId = companyId;
 	}
 
 	public long getFileEntryId() {
@@ -153,10 +171,12 @@ public class SyncDLFileVersionDiffSoap implements Serializable {
 	}
 
 	private long _syncDLFileVersionDiffId;
+	private long _companyId;
 	private long _fileEntryId;
 	private long _sourceFileVersionId;
 	private long _targetFileVersionId;
 	private long _dataFileEntryId;
 	private long _size;
 	private Date _expirationDate;
+
 }

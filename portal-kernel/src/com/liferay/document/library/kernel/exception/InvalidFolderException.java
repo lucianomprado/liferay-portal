@@ -14,16 +14,14 @@
 
 package com.liferay.document.library.kernel.exception;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.document.library.kernel.model.DLFolderConstants;
 import com.liferay.document.library.kernel.service.DLAppLocalServiceUtil;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.repository.model.Folder;
-import com.liferay.portal.kernel.util.StringPool;
 
 import java.util.Locale;
 
@@ -31,7 +29,6 @@ import java.util.Locale;
  * @author Brian Wing Shun Chan
  * @author Hugo Huijser
  */
-@ProviderType
 public class InvalidFolderException extends PortalException {
 
 	public static final int CANNOT_MOVE_INTO_CHILD_FOLDER = 1;
@@ -57,9 +54,9 @@ public class InvalidFolderException extends PortalException {
 
 			return folder.getName();
 		}
-		catch (PortalException pe) {
+		catch (PortalException portalException) {
 			if (_log.isWarnEnabled()) {
-				_log.warn(pe, pe);
+				_log.warn(portalException, portalException);
 			}
 
 			return StringPool.BLANK;

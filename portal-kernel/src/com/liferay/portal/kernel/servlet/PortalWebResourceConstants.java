@@ -23,18 +23,19 @@ public class PortalWebResourceConstants {
 
 	public static final String RESOURCE_TYPE_EDITOR_ALLOYEDITOR = "alloyeditor";
 
-	/**
-	 * @deprecated As of 7.0.0, with no direct replacement
-	 */
-	@Deprecated
-	public static final String RESOURCE_TYPE_EDITOR_BBCODEEDITOR =
-		"bbcodeeditor";
-
 	public static final String RESOURCE_TYPE_EDITOR_CKEDITOR = "ckeditor";
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x)
+	 */
+	@Deprecated
 	public static final String RESOURCE_TYPE_EDITOR_SIMPLEEDITOR =
 		"simpleeditor";
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x)
+	 */
+	@Deprecated
 	public static final String RESOURCE_TYPE_EDITOR_TINYMCEEDITOR =
 		"tinymceeditor";
 
@@ -42,9 +43,6 @@ public class PortalWebResourceConstants {
 
 	public static final String RESOURCE_TYPE_JS_BUNDLE_CONFIG =
 		"js_bundle_config";
-
-	public static final String RESOURCE_TYPE_JS_LOADER_MODULES =
-		"js_loader_modules";
 
 	public static final String RESOURCE_TYPE_THEME_ADMIN = "theme_admin";
 

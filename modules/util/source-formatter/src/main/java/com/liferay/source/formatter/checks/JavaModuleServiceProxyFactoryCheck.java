@@ -22,7 +22,7 @@ import com.liferay.source.formatter.checks.util.JavaSourceUtil;
 public class JavaModuleServiceProxyFactoryCheck extends BaseFileCheck {
 
 	@Override
-	public boolean isModulesCheck() {
+	public boolean isModuleSourceCheck() {
 		return true;
 	}
 
@@ -30,9 +30,9 @@ public class JavaModuleServiceProxyFactoryCheck extends BaseFileCheck {
 	protected String doProcess(
 		String fileName, String absolutePath, String content) {
 
-		String packagePath = JavaSourceUtil.getPackagePath(content);
+		String packageName = JavaSourceUtil.getPackageName(content);
 
-		if (!packagePath.startsWith("com.liferay")) {
+		if (!packageName.startsWith("com.liferay")) {
 			return content;
 		}
 

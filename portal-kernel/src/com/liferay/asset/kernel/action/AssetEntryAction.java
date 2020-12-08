@@ -14,8 +14,6 @@
 
 package com.liferay.asset.kernel.action;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.asset.kernel.model.AssetRenderer;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
@@ -23,6 +21,8 @@ import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import java.util.Locale;
 
 import javax.servlet.http.HttpServletRequest;
+
+import org.osgi.annotation.versioning.ProviderType;
 
 /**
  * @author Jürgen Kappler
@@ -33,8 +33,11 @@ public interface AssetEntryAction<T> {
 	public String getDialogTitle(Locale locale);
 
 	public String getDialogURL(
-			HttpServletRequest request, AssetRenderer<T> assetRenderer)
+			HttpServletRequest httpServletRequest,
+			AssetRenderer<T> assetRenderer)
 		throws PortalException;
+
+	public String getIcon();
 
 	public String getMessage(Locale locale);
 

@@ -14,12 +14,15 @@
 
 package com.liferay.portal.model.impl;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.ColorScheme;
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.model.LayoutBranch;
+import com.liferay.portal.kernel.model.LayoutConstants;
 import com.liferay.portal.kernel.model.LayoutRevision;
 import com.liferay.portal.kernel.model.LayoutSet;
+import com.liferay.portal.kernel.model.LayoutTypePortlet;
 import com.liferay.portal.kernel.model.LayoutTypePortletConstants;
 import com.liferay.portal.kernel.model.Theme;
 import com.liferay.portal.kernel.service.LayoutBranchLocalServiceUtil;
@@ -29,9 +32,10 @@ import com.liferay.portal.kernel.service.LayoutSetLocalServiceUtil;
 import com.liferay.portal.kernel.service.ThemeLocalServiceUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.CookieKeys;
+import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
@@ -40,6 +44,7 @@ import java.util.List;
 import java.util.Locale;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
 /**
  * @author Brian Wing Shun Chan
@@ -57,10 +62,9 @@ public class LayoutRevisionImpl extends LayoutRevisionBaseImpl {
 		if (isInheritLookAndFeel()) {
 			return getLayoutSet().getColorScheme();
 		}
-		else {
-			return ThemeLocalServiceUtil.getColorScheme(
-				getCompanyId(), getTheme().getThemeId(), getColorSchemeId());
-		}
+
+		return ThemeLocalServiceUtil.getColorScheme(
+			getCompanyId(), getTheme().getThemeId(), getColorSchemeId());
 	}
 
 	@Override
@@ -68,9 +72,8 @@ public class LayoutRevisionImpl extends LayoutRevisionBaseImpl {
 		if (isInheritLookAndFeel()) {
 			return getLayoutSet().getCss();
 		}
-		else {
-			return getCss();
-		}
+
+		return getCss();
 	}
 
 	@Override
@@ -113,26 +116,38 @@ public class LayoutRevisionImpl extends LayoutRevisionBaseImpl {
 	}
 
 	@Override
-	public String getRegularURL(HttpServletRequest request)
+	public String getRegularURL(HttpServletRequest httpServletRequest)
 		throws PortalException {
 
-		ThemeDisplay themeDisplay = (ThemeDisplay)request.getAttribute(
-			WebKeys.THEME_DISPLAY);
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)httpServletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
 
-		String portalURL = PortalUtil.getPortalURL(request);
+		String portalURL = PortalUtil.getPortalURL(httpServletRequest);
 
-		Layout layout = LayoutLocalServiceUtil.getLayout(getPlid());
+		String url = PortalUtil.getLayoutURL(
+			LayoutLocalServiceUtil.getLayout(getPlid()), themeDisplay);
 
-		String url = PortalUtil.getLayoutURL(layout, themeDisplay);
-
-		if (!CookieKeys.hasSessionId(request) &&
+		if (!CookieKeys.hasSessionId(httpServletRequest) &&
 			(url.startsWith(portalURL) || url.startsWith(StringPool.SLASH))) {
 
-			url = PortalUtil.getURLWithSessionId(
-				url, request.getSession().getId());
+			HttpSession session = httpServletRequest.getSession();
+
+			url = PortalUtil.getURLWithSessionId(url, session.getId());
 		}
 
 		return url;
+	}
+
+	@Override
+	public String getTarget() {
+		String target = getTypeSettingsProperty("target");
+
+		if (Validator.isNull(target)) {
+			return StringPool.BLANK;
+		}
+
+		return "target=\"" + HtmlUtil.escapeAttribute(target) + "\"";
 	}
 
 	@Override
@@ -140,16 +155,16 @@ public class LayoutRevisionImpl extends LayoutRevisionBaseImpl {
 		if (isInheritLookAndFeel()) {
 			return getLayoutSet().getTheme();
 		}
-		else {
-			return ThemeLocalServiceUtil.getTheme(getCompanyId(), getThemeId());
-		}
+
+		return ThemeLocalServiceUtil.getTheme(getCompanyId(), getThemeId());
 	}
 
 	@Override
 	public String getThemeSetting(String key, String device) {
-		UnicodeProperties typeSettingsProperties = getTypeSettingsProperties();
+		UnicodeProperties typeSettingsUnicodeProperties =
+			getTypeSettingsProperties();
 
-		String value = typeSettingsProperties.getProperty(
+		String value = typeSettingsUnicodeProperties.getProperty(
 			ThemeSettingImpl.namespaceProperty(device, key));
 
 		if (value != null) {
@@ -162,7 +177,7 @@ public class LayoutRevisionImpl extends LayoutRevisionBaseImpl {
 
 				return theme.getSetting(key);
 			}
-			catch (Exception e) {
+			catch (Exception exception) {
 			}
 		}
 
@@ -171,7 +186,7 @@ public class LayoutRevisionImpl extends LayoutRevisionBaseImpl {
 
 			value = layoutSet.getThemeSetting(key, device);
 		}
-		catch (Exception e) {
+		catch (Exception exception) {
 		}
 
 		return value;
@@ -179,37 +194,38 @@ public class LayoutRevisionImpl extends LayoutRevisionBaseImpl {
 
 	@Override
 	public String getTypeSettings() {
-		if (_typeSettingsProperties == null) {
+		if (_typeSettingsUnicodeProperties == null) {
 			return super.getTypeSettings();
 		}
-		else {
-			return _typeSettingsProperties.toString();
-		}
+
+		return _typeSettingsUnicodeProperties.toString();
 	}
 
 	@Override
 	public UnicodeProperties getTypeSettingsProperties() {
-		if (_typeSettingsProperties == null) {
-			_typeSettingsProperties = new UnicodeProperties(true);
+		if (_typeSettingsUnicodeProperties == null) {
+			_typeSettingsUnicodeProperties = new UnicodeProperties(true);
 
-			_typeSettingsProperties.fastLoad(super.getTypeSettings());
+			_typeSettingsUnicodeProperties.fastLoad(super.getTypeSettings());
 		}
 
-		return _typeSettingsProperties;
+		return _typeSettingsUnicodeProperties;
 	}
 
 	@Override
 	public String getTypeSettingsProperty(String key) {
-		UnicodeProperties typeSettingsProperties = getTypeSettingsProperties();
+		UnicodeProperties typeSettingsUnicodeProperties =
+			getTypeSettingsProperties();
 
-		return typeSettingsProperties.getProperty(key);
+		return typeSettingsUnicodeProperties.getProperty(key);
 	}
 
 	@Override
 	public String getTypeSettingsProperty(String key, String defaultValue) {
-		UnicodeProperties typeSettingsProperties = getTypeSettingsProperties();
+		UnicodeProperties typeSettingsUnicodeProperties =
+			getTypeSettingsProperties();
 
-		return typeSettingsProperties.getProperty(key, defaultValue);
+		return typeSettingsUnicodeProperties.getProperty(key, defaultValue);
 	}
 
 	@Override
@@ -223,18 +239,42 @@ public class LayoutRevisionImpl extends LayoutRevisionBaseImpl {
 
 	@Override
 	public boolean isContentDisplayPage() {
-		UnicodeProperties typeSettingsProperties = getTypeSettingsProperties();
+		UnicodeProperties typeSettingsUnicodeProperties =
+			getTypeSettingsProperties();
 
 		String defaultAssetPublisherPortletId =
-			typeSettingsProperties.getProperty(
+			typeSettingsUnicodeProperties.getProperty(
 				LayoutTypePortletConstants.DEFAULT_ASSET_PUBLISHER_PORTLET_ID);
 
 		if (Validator.isNotNull(defaultAssetPublisherPortletId)) {
 			return true;
 		}
-		else {
+
+		return false;
+	}
+
+	@Override
+	public boolean isCustomizable() throws PortalException {
+		Layout layout = LayoutLocalServiceUtil.getLayout(getPlid());
+
+		if (!layout.isTypePortlet()) {
 			return false;
 		}
+
+		if (GetterUtil.getBoolean(
+				getTypeSettingsProperty(LayoutConstants.CUSTOMIZABLE_LAYOUT))) {
+
+			return true;
+		}
+
+		LayoutTypePortlet layoutTypePortlet =
+			(LayoutTypePortlet)layout.getLayoutType();
+
+		if (layoutTypePortlet.isCustomizable()) {
+			return true;
+		}
+
+		return false;
 	}
 
 	@Override
@@ -249,27 +289,26 @@ public class LayoutRevisionImpl extends LayoutRevisionBaseImpl {
 
 			return true;
 		}
-		else {
-			return false;
-		}
+
+		return false;
 	}
 
 	@Override
 	public void setTypeSettings(String typeSettings) {
-		_typeSettingsProperties = null;
+		_typeSettingsUnicodeProperties = null;
 
 		super.setTypeSettings(typeSettings);
 	}
 
 	@Override
 	public void setTypeSettingsProperties(
-		UnicodeProperties typeSettingsProperties) {
+		UnicodeProperties typeSettingsUnicodeProperties) {
 
-		_typeSettingsProperties = typeSettingsProperties;
+		_typeSettingsUnicodeProperties = typeSettingsUnicodeProperties;
 
-		super.setTypeSettings(_typeSettingsProperties.toString());
+		super.setTypeSettings(_typeSettingsUnicodeProperties.toString());
 	}
 
-	private UnicodeProperties _typeSettingsProperties;
+	private UnicodeProperties _typeSettingsUnicodeProperties;
 
 }

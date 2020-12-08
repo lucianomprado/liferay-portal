@@ -14,12 +14,12 @@
 
 package com.liferay.portal.kernel.util;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.settings.LocalizedValuesMap;
 import com.liferay.portal.kernel.settings.Settings;
 import com.liferay.portal.kernel.xml.Document;
+
+import java.io.Serializable;
 
 import java.util.Collection;
 import java.util.Locale;
@@ -30,6 +30,8 @@ import javax.portlet.PortletPreferences;
 import javax.portlet.PortletRequest;
 
 import javax.servlet.http.HttpServletRequest;
+
+import org.osgi.annotation.versioning.ProviderType;
 
 /**
  * Stores and retrieves localized strings from XML, and provides utility methods
@@ -84,6 +86,19 @@ public interface Localization {
 	 */
 	public Locale getDefaultImportLocale(
 		String className, long classPK, Locale contentDefaultLocale,
+		Locale[] contentAvailableLocales);
+
+	/**
+	 * Returns a valid default locale for importing a localized entity.
+	 *
+	 * @param  className the class name of the entity
+	 * @param  primaryKey the primary keys of the entity
+	 * @param  contentDefaultLocale the default Locale of the entity
+	 * @param  contentAvailableLocales the available locales of the entity
+	 * @return the valid locale
+	 */
+	public Locale getDefaultImportLocale(
+		String className, Serializable primaryKey, Locale contentDefaultLocale,
 		Locale[] contentAvailableLocales);
 
 	public String getDefaultLanguageId(Document document);
@@ -168,14 +183,14 @@ public interface Localization {
 	 * Returns a map of locales and localized strings for the parameter in the
 	 * request.
 	 *
-	 * @param  request the request
+	 * @param  httpServletRequest the request
 	 * @param  parameter the prefix of the parameters containing the localized
 	 *         strings. Each localization is loaded from a parameter with this
 	 *         prefix, followed by an underscore, and the language ID.
 	 * @return the locales and localized strings
 	 */
 	public Map<Locale, String> getLocalizationMap(
-		HttpServletRequest request, String parameter);
+		HttpServletRequest httpServletRequest, String parameter);
 
 	/**
 	 * Returns a map of locales and localized strings for the preference in the
@@ -327,19 +342,6 @@ public interface Localization {
 	public Map<Locale, String> getMap(LocalizedValuesMap localizedValuesMap);
 
 	/**
-	 * Returns the localized preferences key in the language. Generally this is
-	 * just the preferences key, followed by an underscore, and the language ID.
-	 *
-	 * @param      key the preferences key
-	 * @param      languageId the ID of the language
-	 * @return     the localized preferences key
-	 * @deprecated As of 7.0.0, replaced by {@link #getLocalizedName(String,
-	 *             String)}
-	 */
-	@Deprecated
-	public String getPreferencesKey(String key, String languageId);
-
-	/**
 	 * Returns the localized preferences value for the key in the language. The
 	 * default language is used if no localization exists for the requested
 	 * language.
@@ -465,6 +467,10 @@ public interface Localization {
 
 	public String getXml(
 		Map<String, String> map, String defaultLanguageId, String key);
+
+	public Map<Locale, String> populateLocalizationMap(
+		Map<Locale, String> localizationMap, String defaultLanguageId,
+		long groupId);
 
 	/**
 	 * Removes the localization for the language from the localizations XML. The

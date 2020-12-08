@@ -14,8 +14,6 @@
 
 package com.liferay.portal.model.impl;
 
-import aQute.bnd.annotation.ProviderType;
-
 import com.liferay.portal.kernel.model.Role;
 import com.liferay.portal.kernel.service.RoleLocalServiceUtil;
 
@@ -31,12 +29,12 @@ import com.liferay.portal.kernel.service.RoleLocalServiceUtil;
  * @see Role
  * @generated
  */
-@ProviderType
 public abstract class RoleBaseImpl extends RoleModelImpl implements Role {
+
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. All methods that expect a role model instance should use the {@link Role} interface instead.
+	 * Never modify or reference this class directly. All methods that expect a role model instance should use the <code>Role</code> interface instead.
 	 */
 	@Override
 	public void persist() {
@@ -47,4 +45,5 @@ public abstract class RoleBaseImpl extends RoleModelImpl implements Role {
 			RoleLocalServiceUtil.updateRole(this);
 		}
 	}
+
 }

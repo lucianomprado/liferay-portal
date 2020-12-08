@@ -14,6 +14,7 @@
 
 package com.liferay.gradle.plugins.node.tasks;
 
+import com.liferay.gradle.util.GUtil;
 import com.liferay.gradle.util.GradleUtil;
 
 import groovy.json.JsonOutput;
@@ -32,13 +33,14 @@ import java.util.Set;
 
 import org.gradle.api.Task;
 import org.gradle.api.specs.Spec;
+import org.gradle.api.tasks.CacheableTask;
 import org.gradle.api.tasks.Input;
-import org.gradle.util.GUtil;
 
 /**
  * @author Andrea Di Giorgi
  */
-public class NpmShrinkwrapTask extends ExecuteNpmTask {
+@CacheableTask
+public class NpmShrinkwrapTask extends ExecutePackageManagerTask {
 
 	public NpmShrinkwrapTask() {
 		onlyIf(
@@ -138,7 +140,6 @@ public class NpmShrinkwrapTask extends ExecuteNpmTask {
 		Map<String, Object> map, Iterable<String> excludedDependencies) {
 
 		for (Map.Entry<String, Object> entry : map.entrySet()) {
-			String key = entry.getKey();
 			Object value = entry.getValue();
 
 			if (!(value instanceof Map<?, ?>)) {
@@ -146,6 +147,8 @@ public class NpmShrinkwrapTask extends ExecuteNpmTask {
 			}
 
 			Map<String, Object> valueMap = (Map<String, Object>)value;
+
+			String key = entry.getKey();
 
 			if (key.equals("dependencies")) {
 				for (String excludedDependency : excludedDependencies) {

@@ -14,6 +14,7 @@
 
 package com.liferay.portal.servlet.filters.i18n;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
@@ -27,7 +28,6 @@ import com.liferay.portal.kernel.util.CookieKeys;
 import com.liferay.portal.kernel.util.JavaConstants;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
@@ -43,8 +43,6 @@ import javax.servlet.FilterChain;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-
-import org.apache.struts.Globals;
 
 /**
  * @author Brian Wing Shun Chan
@@ -72,20 +70,23 @@ public class I18nFilter extends BasePortalFilter {
 
 	@Override
 	public boolean isFilterEnabled(
-		HttpServletRequest request, HttpServletResponse response) {
+		HttpServletRequest httpServletRequest,
+		HttpServletResponse httpServletResponse) {
 
-		if (!isAlreadyFiltered(request) && !isForwardedByI18nServlet(request) &&
-			!isWidget(request)) {
+		if (!isAlreadyFiltered(httpServletRequest) &&
+			!isForwardedByI18nServlet(httpServletRequest) &&
+			!isWidget(httpServletRequest)) {
 
 			return true;
 		}
-		else {
-			return false;
-		}
+
+		return false;
 	}
 
-	protected String getDefaultLanguageId(HttpServletRequest request) {
-		String defaultLanguageId = getSiteDefaultLanguageId(request);
+	protected String getDefaultLanguageId(
+		HttpServletRequest httpServletRequest) {
+
+		String defaultLanguageId = getSiteDefaultLanguageId(httpServletRequest);
 
 		if (Validator.isNull(defaultLanguageId)) {
 			defaultLanguageId = LocaleUtil.toLanguageId(
@@ -95,17 +96,15 @@ public class I18nFilter extends BasePortalFilter {
 		return defaultLanguageId;
 	}
 
-	protected String getFriendlyURL(HttpServletRequest request) {
+	protected String getFriendlyURL(HttpServletRequest httpServletRequest) {
 		String friendlyURL = StringPool.BLANK;
 
-		String pathInfo = request.getPathInfo();
+		String pathInfo = httpServletRequest.getPathInfo();
 
 		if (Validator.isNotNull(pathInfo)) {
 			String[] pathInfoElements = pathInfo.split("/");
 
-			if (Validator.isNotNull(pathInfoElements) &&
-				(pathInfoElements.length > 1)) {
-
+			if ((pathInfoElements != null) && (pathInfoElements.length > 1)) {
 				friendlyURL = StringPool.SLASH + pathInfoElements[1];
 			}
 		}
@@ -113,12 +112,14 @@ public class I18nFilter extends BasePortalFilter {
 		return friendlyURL;
 	}
 
-	protected String getRedirect(HttpServletRequest request) throws Exception {
+	protected String getRedirect(HttpServletRequest httpServletRequest)
+		throws Exception {
+
 		if (PropsValues.LOCALE_PREPEND_FRIENDLY_URL_STYLE == 0) {
 			return null;
 		}
 
-		String method = request.getMethod();
+		String method = httpServletRequest.getMethod();
 
 		if (method.equals(HttpMethods.POST)) {
 			return null;
@@ -126,10 +127,10 @@ public class I18nFilter extends BasePortalFilter {
 
 		String contextPath = PortalUtil.getPathContext();
 
-		String requestURI = request.getRequestURI();
+		String requestURI = httpServletRequest.getRequestURI();
 
 		if (Validator.isNotNull(contextPath) &&
-			requestURI.contains(contextPath)) {
+			requestURI.startsWith(contextPath)) {
 
 			requestURI = requestURI.substring(contextPath.length());
 		}
@@ -138,7 +139,7 @@ public class I18nFilter extends BasePortalFilter {
 			requestURI, StringPool.DOUBLE_SLASH, StringPool.SLASH);
 
 		String i18nLanguageId = prependI18nLanguageId(
-			request, PropsValues.LOCALE_PREPEND_FRIENDLY_URL_STYLE);
+			httpServletRequest, PropsValues.LOCALE_PREPEND_FRIENDLY_URL_STYLE);
 
 		if (i18nLanguageId == null) {
 			return null;
@@ -166,21 +167,18 @@ public class I18nFilter extends BasePortalFilter {
 
 		String groupFriendlyURL = StringPool.BLANK;
 
-		int friendlyURLStart = 0;
 		int friendlyURLEnd = 0;
 
 		if (groupFriendlyURLIndex != null) {
-			friendlyURLStart = groupFriendlyURLIndex[0];
+			int friendlyURLStart = groupFriendlyURLIndex[0];
 			friendlyURLEnd = groupFriendlyURLIndex[1];
 
 			groupFriendlyURL = requestURI.substring(
 				friendlyURLStart, friendlyURLEnd);
 		}
 
-		long companyId = PortalUtil.getCompanyId(request);
-
 		Group friendlyURLGroup = GroupLocalServiceUtil.fetchFriendlyURLGroup(
-			companyId, groupFriendlyURL);
+			PortalUtil.getCompanyId(httpServletRequest), groupFriendlyURL);
 
 		if ((friendlyURLGroup != null) &&
 			!LanguageUtil.isAvailableLocale(
@@ -189,10 +187,10 @@ public class I18nFilter extends BasePortalFilter {
 			return null;
 		}
 
-		LayoutSet layoutSet = (LayoutSet)request.getAttribute(
+		LayoutSet layoutSet = (LayoutSet)httpServletRequest.getAttribute(
 			WebKeys.VIRTUAL_HOST_LAYOUT_SET);
 
-		if ((layoutSet != null) &&
+		if ((layoutSet != null) && !layoutSet.isPrivateLayout() &&
 			requestURI.startsWith(
 				PropsValues.LAYOUT_FRIENDLY_URL_PUBLIC_SERVLET_MAPPING)) {
 
@@ -205,10 +203,10 @@ public class I18nFilter extends BasePortalFilter {
 			}
 		}
 
-		String queryString = request.getQueryString();
+		String queryString = httpServletRequest.getQueryString();
 
 		if (Validator.isNull(queryString)) {
-			queryString = (String)request.getAttribute(
+			queryString = (String)httpServletRequest.getAttribute(
 				JavaConstants.JAVAX_SERVLET_FORWARD_QUERY_STRING);
 		}
 
@@ -220,15 +218,15 @@ public class I18nFilter extends BasePortalFilter {
 	}
 
 	protected String getRequestedLanguageId(
-		HttpServletRequest request, String userLanguageId) {
+		HttpServletRequest httpServletRequest, String userLanguageId) {
 
-		HttpSession session = request.getSession();
+		HttpSession session = httpServletRequest.getSession();
 
-		Locale locale = (Locale)session.getAttribute(Globals.LOCALE_KEY);
+		Locale locale = (Locale)session.getAttribute(WebKeys.LOCALE);
 
 		String requestedLanguageId = null;
 
-		if (Validator.isNotNull(locale)) {
+		if (locale != null) {
 			requestedLanguageId = LocaleUtil.toLanguageId(locale);
 		}
 
@@ -238,16 +236,18 @@ public class I18nFilter extends BasePortalFilter {
 
 		if (Validator.isNull(requestedLanguageId)) {
 			requestedLanguageId = CookieKeys.getCookie(
-				request, CookieKeys.GUEST_LANGUAGE_ID, false);
+				httpServletRequest, CookieKeys.GUEST_LANGUAGE_ID, false);
 		}
 
 		return requestedLanguageId;
 	}
 
-	protected String getSiteDefaultLanguageId(HttpServletRequest request) {
-		String friendlyURL = getFriendlyURL(request);
+	protected String getSiteDefaultLanguageId(
+		HttpServletRequest httpServletRequest) {
 
-		long companyId = PortalUtil.getCompanyId(request);
+		String friendlyURL = getFriendlyURL(httpServletRequest);
+
+		long companyId = PortalUtil.getCompanyId(httpServletRequest);
 
 		try {
 			Group group = GroupLocalServiceUtil.getFriendlyURLGroup(
@@ -258,48 +258,48 @@ public class I18nFilter extends BasePortalFilter {
 
 			return LocaleUtil.toLanguageId(siteDefaultLocale);
 		}
-		catch (PortalException pe) {
+		catch (PortalException portalException) {
 			if (_log.isDebugEnabled()) {
-				pe.printStackTrace();
+				_log.debug(portalException.getMessage(), portalException);
 			}
 
 			return StringPool.BLANK;
 		}
 	}
 
-	protected boolean isAlreadyFiltered(HttpServletRequest request) {
-		if (request.getAttribute(SKIP_FILTER) != null) {
+	protected boolean isAlreadyFiltered(HttpServletRequest httpServletRequest) {
+		if (httpServletRequest.getAttribute(SKIP_FILTER) != null) {
 			return true;
 		}
-		else {
-			return false;
-		}
+
+		return false;
 	}
 
-	protected boolean isForwardedByI18nServlet(HttpServletRequest request) {
-		if ((request.getAttribute(WebKeys.I18N_LANGUAGE_ID) != null) ||
-			(request.getAttribute(WebKeys.I18N_PATH) != null)) {
+	protected boolean isForwardedByI18nServlet(
+		HttpServletRequest httpServletRequest) {
+
+		if ((httpServletRequest.getAttribute(WebKeys.I18N_LANGUAGE_ID) !=
+				null) ||
+			(httpServletRequest.getAttribute(WebKeys.I18N_PATH) != null)) {
 
 			return true;
 		}
-		else {
-			return false;
-		}
+
+		return false;
 	}
 
-	protected boolean isWidget(HttpServletRequest request) {
-		if (request.getAttribute(WebKeys.WIDGET) != null) {
+	protected boolean isWidget(HttpServletRequest httpServletRequest) {
+		if (httpServletRequest.getAttribute(WebKeys.WIDGET) != null) {
 			return true;
 		}
-		else {
-			return false;
-		}
+
+		return false;
 	}
 
 	protected String prependI18nLanguageId(
-		HttpServletRequest request, int prependFriendlyUrlStyle) {
+		HttpServletRequest httpServletRequest, int prependFriendlyUrlStyle) {
 
-		User user = (User)request.getAttribute(WebKeys.USER);
+		User user = (User)httpServletRequest.getAttribute(WebKeys.USER);
 
 		String userLanguageId = null;
 
@@ -308,9 +308,9 @@ public class I18nFilter extends BasePortalFilter {
 		}
 
 		String requestedLanguageId = getRequestedLanguageId(
-			request, userLanguageId);
+			httpServletRequest, userLanguageId);
 
-		String defaultLanguageId = getDefaultLanguageId(request);
+		String defaultLanguageId = getDefaultLanguageId(httpServletRequest);
 
 		if (Validator.isNull(requestedLanguageId)) {
 			requestedLanguageId = defaultLanguageId;
@@ -321,6 +321,11 @@ public class I18nFilter extends BasePortalFilter {
 				defaultLanguageId, requestedLanguageId);
 		}
 		else if (prependFriendlyUrlStyle == 2) {
+			if (PropsValues.LOCALE_DEFAULT_REQUEST) {
+				return LocaleUtil.toLanguageId(
+					PortalUtil.getLocale(httpServletRequest));
+			}
+
 			return requestedLanguageId;
 		}
 		else if (prependFriendlyUrlStyle == 3) {
@@ -331,10 +336,9 @@ public class I18nFilter extends BasePortalFilter {
 
 				return requestedLanguageId;
 			}
-			else {
-				return prependIfRequestedLocaleDiffersFromDefaultLocale(
-					defaultLanguageId, requestedLanguageId);
-			}
+
+			return prependIfRequestedLocaleDiffersFromDefaultLocale(
+				defaultLanguageId, requestedLanguageId);
 		}
 
 		return null;
@@ -352,17 +356,18 @@ public class I18nFilter extends BasePortalFilter {
 
 	@Override
 	protected void processFilter(
-			HttpServletRequest request, HttpServletResponse response,
-			FilterChain filterChain)
+			HttpServletRequest httpServletRequest,
+			HttpServletResponse httpServletResponse, FilterChain filterChain)
 		throws Exception {
 
-		request.setAttribute(SKIP_FILTER, Boolean.TRUE);
+		httpServletRequest.setAttribute(SKIP_FILTER, Boolean.TRUE);
 
-		String redirect = getRedirect(request);
+		String redirect = getRedirect(httpServletRequest);
 
 		if (redirect == null) {
 			processFilter(
-				I18nFilter.class.getName(), request, response, filterChain);
+				I18nFilter.class.getName(), httpServletRequest,
+				httpServletResponse, filterChain);
 
 			return;
 		}
@@ -371,7 +376,7 @@ public class I18nFilter extends BasePortalFilter {
 			_log.debug("Redirect " + redirect);
 		}
 
-		response.sendRedirect(redirect);
+		httpServletResponse.sendRedirect(redirect);
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(I18nFilter.class);

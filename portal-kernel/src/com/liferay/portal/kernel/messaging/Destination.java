@@ -36,6 +36,8 @@ public interface Destination {
 
 	public DestinationStatistics getDestinationStatistics();
 
+	public String getDestinationType();
+
 	public int getMessageListenerCount();
 
 	public Set<MessageListener> getMessageListeners();
@@ -49,7 +51,7 @@ public interface Destination {
 	public boolean register(MessageListener messageListener);
 
 	public boolean register(
-		MessageListener messageListener, ClassLoader classloader);
+		MessageListener messageListener, ClassLoader classLoader);
 
 	public boolean removeDestinationEventListener(
 		DestinationEventListener destinationEventListener);

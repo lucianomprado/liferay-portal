@@ -3,6 +3,58 @@
 <project basedir="." name="portal-test-authentication" xmlns:antelope="antlib:ise.antelope.tasks">
 	<import file="build-test.xml" />
 
+	<macrodef name="deploy-cas">
+		<sequential>
+			<delete dir="${app.server.deploy.dir}/cas-web" />
+
+			<if>
+				<not>
+					<available file="${app.server.dir}/cas-web.war" />
+				</not>
+				<then>
+					<mirrors-get
+						dest="${app.server.dir}/cas-web.war"
+						src="http://files.liferay.com/private/apps/jasig/cas/3.3.5/cas-web.war"
+						verbose="true"
+					/>
+
+					<move
+						file="${app.server.dir}/cas-web.war"
+						tofile="${app.server.deploy.dir}/cas-web.war"
+					/>
+				</then>
+			</if>
+
+			<unzip
+				dest="${app.server.deploy.dir}/cas-web"
+				src="${app.server.deploy.dir}/cas-web.war"
+			/>
+
+			<delete dir="${app.server.deploy.dir}/cas-web.war" />
+
+			<replace
+				file="${app.server.deploy.dir}/cas-web/WEB-INF/deployerConfigContext.xml"
+			>
+				<replacetoken><![CDATA[<entry key="uid" value="uid" />]]></replacetoken>
+				<replacevalue><![CDATA[<entry key="uid"><list><value>uid</value></list></entry>]]></replacevalue>
+			</replace>
+
+			<replace
+				file="${app.server.deploy.dir}/cas-web/WEB-INF/deployerConfigContext.xml"
+			>
+				<replacetoken><![CDATA[<entry key="eduPersonAffiliation" value="eduPersonAffiliation" />]]></replacetoken>
+				<replacevalue><![CDATA[<entry key="eduPersonAffiliation"><list><value>eduPersonAffiliation</value></list></entry>]]></replacevalue>
+			</replace>
+
+			<replace
+				file="${app.server.deploy.dir}/cas-web/WEB-INF/deployerConfigContext.xml"
+			>
+				<replacetoken><![CDATA[<entry key="groupMembership" value="groupMembership" />]]></replacetoken>
+				<replacevalue><![CDATA[<entry key="groupMembership"><list><value>groupMembership</value></list></entry>]]></replacevalue>
+			</replace>
+		</sequential>
+	</macrodef>
+
 	<macrodef name="deploy-openam">
 		<sequential>
 			<delete dir="${app.server.deploy.dir}/openam" />
@@ -101,7 +153,11 @@ PLATFORM_LOCALE=en_US
 ROOT_SUFFIX=dc=openam,dc=forgerock,dc=org
 SERVER_URL=http://test.able.com:8080</echo>
 
-			<java failonerror="true" fork="true" jar="${openam.configurator.tools.dir}/openam-configurator-tool-12.0.0.jar">
+			<java
+				failonerror="true"
+				fork="true"
+				jar="${openam.configurator.tools.dir}/openam-configurator-tool-${openam.version}.jar"
+			>
 				<arg line="--file ${openam.configurator.tools.dir}/config.properties" />
 			</java>
 
@@ -112,14 +168,20 @@ SERVER_URL=http://test.able.com:8080</echo>
 			<if>
 				<os family="unix" />
 				<then>
-					<chmod file="${openam.admin.tools.dir}/**" perm="a+x" />
+					<chmod
+						file="${openam.admin.tools.dir}/**"
+						perm="a+x"
+					/>
 
 					<exec dir="${openam.admin.tools.dir}" executable="/bin/bash" failonerror="true">
 						<arg value="-c" />
 						<arg value="./setup -p ${openam.config.dir} -d ${openam.admin.tools.dir}/debug -l ${openam.admin.tools.dir}/log --acceptLicense" />
 					</exec>
 
-					<chmod file="${openam.admin.tools.dir}/passwordfile" perm="400" />
+					<chmod
+						file="${openam.admin.tools.dir}/passwordfile"
+						perm="400"
+					/>
 
 					<exec dir="${openam.admin.tools.dir}/openam/bin" executable="/bin/bash" failonerror="true">
 						<arg value="-c" />
@@ -154,6 +216,10 @@ SERVER_URL=http://test.able.com:8080</echo>
 		</sequential>
 	</target>
 
+	<target name="setup-cas">
+		<deploy-cas />
+	</target>
+
 	<target name="setup-openam">
 		<deploy-openam />
 
@@ -164,13 +230,15 @@ SERVER_URL=http://test.able.com:8080</echo>
 
 	<target name="verify-token-based-login">
 		<exec executable="curl" outputproperty="curl.output">
-		    <arg line="-H SM_USER:test@liferay.com localhost:8080" />
+			<arg line="-H SM_USER:${user.token} ${portal.url}" />
 		</exec>
 
 		<echo>${curl.output}</echo>
 
 		<if>
-			<contains string="${curl.output}" substring="Test Test" />
+			<not>
+				<contains string="${curl.output}" substring="Sign In" />
+			</not>
 			<then>
 				<echo>Signed in successfully.</echo>
 			</then>

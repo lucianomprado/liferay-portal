@@ -14,9 +14,6 @@
 
 package com.liferay.source.formatter.checkstyle.checks;
 
-import com.liferay.source.formatter.checkstyle.util.DetailASTUtil;
-
-import com.puppycrawl.tools.checkstyle.api.AbstractCheck;
 import com.puppycrawl.tools.checkstyle.api.DetailAST;
 import com.puppycrawl.tools.checkstyle.api.TokenTypes;
 
@@ -25,98 +22,99 @@ import java.util.List;
 /**
  * @author Hugo Huijser
  */
-public class UnusedParameterCheck extends AbstractCheck {
+public class UnusedParameterCheck extends BaseCheck {
 
 	@Override
 	public int[] getDefaultTokens() {
-		return new int[] {TokenTypes.CLASS_DEF};
+		return new int[] {
+			TokenTypes.CLASS_DEF, TokenTypes.ENUM_DEF, TokenTypes.INTERFACE_DEF
+		};
 	}
 
 	@Override
-	public void visitToken(DetailAST detailAST) {
-		DetailAST parentAST = detailAST.getParent();
+	protected void doVisitToken(DetailAST detailAST) {
+		DetailAST parentDetailAST = detailAST.getParent();
 
-		if (parentAST != null) {
+		if (parentDetailAST != null) {
 			return;
 		}
 
-		List<DetailAST> constructorsAndMethodsASTList =
-			DetailASTUtil.getAllChildTokens(
-				detailAST, true, TokenTypes.CTOR_DEF, TokenTypes.METHOD_DEF);
+		List<DetailAST> constructorsAndMethodsASTList = getAllChildTokens(
+			detailAST, true, TokenTypes.CTOR_DEF, TokenTypes.METHOD_DEF);
 
-		for (DetailAST constructorOrMethodAST : constructorsAndMethodsASTList) {
-			_checkUnusedParameters(detailAST, constructorOrMethodAST);
+		for (DetailAST constructorOrMethodDetailAST :
+				constructorsAndMethodsASTList) {
+
+			_checkUnusedParameters(detailAST, constructorOrMethodDetailAST);
 		}
 	}
 
 	private void _checkUnusedParameters(
-		DetailAST classAST, DetailAST detailAST) {
+		DetailAST classDetailAST, DetailAST detailAST) {
 
-		DetailAST modifiersAST = detailAST.findFirstToken(TokenTypes.MODIFIERS);
+		DetailAST modifiersDetailAST = detailAST.findFirstToken(
+			TokenTypes.MODIFIERS);
 
-		if (!modifiersAST.branchContains(TokenTypes.LITERAL_PRIVATE)) {
+		if (!modifiersDetailAST.branchContains(TokenTypes.LITERAL_PRIVATE)) {
 			return;
 		}
 
-		DetailAST nameAST = detailAST.findFirstToken(TokenTypes.IDENT);
+		DetailAST nameDetailAST = detailAST.findFirstToken(TokenTypes.IDENT);
 
-		String name = nameAST.getText();
+		String name = nameDetailAST.getText();
 
 		if (name.equals("readObject") || name.equals("writeObject")) {
 			return;
 		}
 
-		List<String> parameterNames = DetailASTUtil.getParameterNames(
-			detailAST);
+		List<String> parameterNames = getParameterNames(detailAST);
 
 		if (parameterNames.isEmpty()) {
 			return;
 		}
 
-		DetailAST statementsAST = detailAST.findFirstToken(TokenTypes.SLIST);
+		DetailAST statementsDetailAST = detailAST.findFirstToken(
+			TokenTypes.SLIST);
 
-		List<DetailAST> allIdentsAST = DetailASTUtil.getAllChildTokens(
-			statementsAST, true, TokenTypes.IDENT);
+		List<DetailAST> allIdentsAST = getAllChildTokens(
+			statementsDetailAST, true, TokenTypes.IDENT);
 
 		parameterNameLoop:
-		for (String parameterName :
-				DetailASTUtil.getParameterNames(detailAST)) {
-
-			for (DetailAST identAST : allIdentsAST) {
-				if (parameterName.equals(identAST.getText())) {
+		for (String parameterName : getParameterNames(detailAST)) {
+			for (DetailAST identDetailAST : allIdentsAST) {
+				if (parameterName.equals(identDetailAST.getText())) {
 					continue parameterNameLoop;
 				}
 			}
 
-			if (!_isReferencedMethod(classAST, detailAST)) {
-				log(
-					detailAST.getLineNo(), _MSG_UNUSED_PARAMETER,
-					parameterName);
+			if (!_isReferencedMethod(classDetailAST, detailAST)) {
+				log(detailAST, _MSG_UNUSED_PARAMETER, parameterName);
 			}
 		}
 	}
 
 	private boolean _isReferencedMethod(
-		DetailAST classAST, DetailAST detailAST) {
+		DetailAST classDetailAST, DetailAST detailAST) {
 
-		List<DetailAST> methodReferenceASTList =
-			DetailASTUtil.getAllChildTokens(
-				classAST, true, TokenTypes.METHOD_REF);
+		List<DetailAST> methodReferenceDetailASTList = getAllChildTokens(
+			classDetailAST, true, TokenTypes.METHOD_REF);
 
-		if (methodReferenceASTList.isEmpty()) {
+		if (methodReferenceDetailASTList.isEmpty()) {
 			return false;
 		}
 
-		DetailAST nameAST = detailAST.findFirstToken(TokenTypes.IDENT);
+		DetailAST nameDetailAST = detailAST.findFirstToken(TokenTypes.IDENT);
 
-		String name = nameAST.getText();
+		String name = nameDetailAST.getText();
 
-		for (DetailAST methodReferenceAST : methodReferenceASTList) {
-			for (DetailAST identAST :
-					DetailASTUtil.getAllChildTokens(
-						methodReferenceAST, true, TokenTypes.IDENT)) {
+		for (DetailAST methodReferenceDetailAST :
+				methodReferenceDetailASTList) {
 
-				if (name.equals(identAST.getText())) {
+			for (DetailAST identDetailAST :
+					getAllChildTokens(
+						methodReferenceDetailAST, true, TokenTypes.IDENT)) {
+
+				if (name.equals(identDetailAST.getText())) {
 					return true;
 				}
 			}

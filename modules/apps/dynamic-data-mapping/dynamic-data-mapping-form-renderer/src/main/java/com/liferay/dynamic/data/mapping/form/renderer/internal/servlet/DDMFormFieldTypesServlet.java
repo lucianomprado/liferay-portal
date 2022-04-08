@@ -20,22 +20,16 @@ import com.liferay.frontend.js.loader.modules.extender.npm.NPMResolver;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.events.EventsProcessorUtil;
 import com.liferay.portal.json.JSONObjectImpl;
-import com.liferay.portal.kernel.editor.configuration.EditorConfiguration;
-import com.liferay.portal.kernel.editor.configuration.EditorConfigurationFactoryUtil;
 import com.liferay.portal.kernel.events.ActionException;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.portlet.RequestBackedPortletURLFactoryUtil;
 import com.liferay.portal.kernel.servlet.ServletResponseUtil;
-import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.PropsKeys;
-import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
-import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.util.PropsValues;
 
 import java.io.IOException;
@@ -91,7 +85,7 @@ public class DDMFormFieldTypesServlet extends HttpServlet {
 		}
 		catch (ActionException actionException) {
 			if (_log.isDebugEnabled()) {
-				_log.debug(actionException, actionException);
+				_log.debug(actionException);
 			}
 		}
 	}
@@ -110,9 +104,8 @@ public class DDMFormFieldTypesServlet extends HttpServlet {
 		Stream<String> stream = ddmFormFieldTypeNames.stream();
 
 		stream.map(
-			ddmFormFieldTypeName -> getFieldTypeMetadataJSONObject(
-				ddmFormFieldTypeName,
-				getFieldConfiguration(ddmFormFieldTypeName, httpServletRequest))
+			ddmFormFieldTypeName -> _getFieldTypeMetadataJSONObject(
+				ddmFormFieldTypeName, Collections.emptyMap())
 		).forEach(
 			fieldTypesJSONArray::put
 		);
@@ -124,37 +117,26 @@ public class DDMFormFieldTypesServlet extends HttpServlet {
 			httpServletResponse, fieldTypesJSONArray.toJSONString());
 	}
 
-	protected Map<String, Object> getFieldConfiguration(
-		String ddmFormFieldName, HttpServletRequest httpServletRequest) {
+	@Reference
+	protected NPMResolver npmResolver;
 
-		if (StringUtil.equals(ddmFormFieldName, "rich_text")) {
-			EditorConfiguration richTextEditorConfiguration =
-				EditorConfigurationFactoryUtil.getEditorConfiguration(
-					StringPool.BLANK, ddmFormFieldName, "ckeditor_classic",
-					Collections.emptyMap(),
-					(ThemeDisplay)httpServletRequest.getAttribute(
-						WebKeys.THEME_DISPLAY),
-					RequestBackedPortletURLFactoryUtil.create(
-						httpServletRequest));
-
-			return richTextEditorConfiguration.getData();
-		}
-
-		return Collections.emptyMap();
-	}
-
-	protected JSONObject getFieldTypeMetadataJSONObject(
+	private JSONObject _getFieldTypeMetadataJSONObject(
 		String ddmFormFieldName, Map<String, Object> configuration) {
 
 		JSONObject jsonObject = new JSONObjectImpl();
 
-		if (!configuration.isEmpty()) {
-			jsonObject.put("configuration", configuration);
-		}
-
 		return jsonObject.put(
+			"configuration",
+			() -> {
+				if (!configuration.isEmpty()) {
+					return configuration;
+				}
+
+				return null;
+			}
+		).put(
 			"javaScriptModule",
-			resolveModuleName(
+			_resolveModuleName(
 				_ddmFormFieldTypeServicesTracker.getDDMFormFieldType(
 					ddmFormFieldName))
 		).put(
@@ -162,7 +144,7 @@ public class DDMFormFieldTypesServlet extends HttpServlet {
 		);
 	}
 
-	protected String resolveModuleName(DDMFormFieldType ddmFormFieldType) {
+	private String _resolveModuleName(DDMFormFieldType ddmFormFieldType) {
 		if (Validator.isNull(ddmFormFieldType.getModuleName())) {
 			return StringPool.BLANK;
 		}
@@ -173,9 +155,6 @@ public class DDMFormFieldTypesServlet extends HttpServlet {
 
 		return npmResolver.resolveModuleName(ddmFormFieldType.getModuleName());
 	}
-
-	@Reference
-	protected NPMResolver npmResolver;
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		DDMFormFieldTypesServlet.class);

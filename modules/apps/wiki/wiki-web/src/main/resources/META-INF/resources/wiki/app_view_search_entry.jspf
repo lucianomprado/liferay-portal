@@ -26,11 +26,14 @@ if (Validator.isNotNull(description)) {
 Summary summary = new Summary(wikiPage.getTitle(), description);
 
 summary.setEscape(true);
-summary.setHighlight(queryConfig.isHighlightEnabled());
+summary.setHighlight(wikiPortletInstanceSettingsHelper.isEnableHighlighting());
+
+Hits hits = wikiSearchDisplayContext.getHits();
+
 summary.setQueryTerms(hits.getQueryTerms());
 %>
 
-<div class="app-view-entry app-view-search-entry-taglib entry-display-style <%= MathUtil.isEven(index) ? "search" : "search alt" %>" data-title="<%= HtmlUtil.escapeAttribute(StringUtil.shorten(wikiPage.getTitle(), 60)) %>">
+<div class="app-view-entry app-view-search-entry-taglib <%= MathUtil.isEven(index) ? "search" : "search alt" %>" data-title="<%= HtmlUtil.escapeAttribute(StringUtil.shorten(wikiPage.getTitle(), 60)) %>">
 	<a class="entry-link" href="<%= HtmlUtil.escapeAttribute(rowURL) %>" title="<%= HtmlUtil.escapeAttribute(linkTitle) %>">
 		<div class="entry-metadata">
 			<span class="entry-title">
@@ -58,7 +61,7 @@ summary.setQueryTerms(hits.getQueryTerms());
 
 			summary = fileEntryRelatedSearchResult.getSummary();
 
-			summary.setHighlight(queryConfig.isHighlightEnabled());
+			summary.setHighlight(wikiPortletInstanceSettingsHelper.isEnableHighlighting());
 			summary.setQueryTerms(hits.getQueryTerms());
 		%>
 
@@ -109,7 +112,7 @@ summary.setQueryTerms(hits.getQueryTerms());
 
 			summary = commentRelatedSearchResult.getSummary();
 
-			summary.setHighlight(queryConfig.isHighlightEnabled());
+			summary.setHighlight(wikiPortletInstanceSettingsHelper.isEnableHighlighting());
 			summary.setQueryTerms(hits.getQueryTerms());
 		%>
 

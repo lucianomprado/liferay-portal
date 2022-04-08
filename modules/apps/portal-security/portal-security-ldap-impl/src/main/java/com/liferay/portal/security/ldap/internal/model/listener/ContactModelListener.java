@@ -55,7 +55,9 @@ public class ContactModelListener extends BaseLDAPExportModelListener<Contact> {
 	}
 
 	@Override
-	public void onAfterUpdate(Contact contact) throws ModelListenerException {
+	public void onAfterUpdate(Contact originalContact, Contact contact)
+		throws ModelListenerException {
+
 		try {
 			exportToLDAP(contact);
 		}
@@ -67,7 +69,7 @@ public class ContactModelListener extends BaseLDAPExportModelListener<Contact> {
 		}
 	}
 
-	protected void exportToLDAP(final Contact contact) {
+	protected void exportToLDAP(Contact contact) {
 		if (UserImportTransactionThreadLocal.isOriginatesFromImport()) {
 			return;
 		}

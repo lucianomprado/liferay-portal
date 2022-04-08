@@ -14,11 +14,13 @@
 
 package com.liferay.frontend.taglib.clay.servlet.taglib.display.context;
 
+import com.liferay.frontend.taglib.clay.internal.configuration.FFManagementToolbarConfigurationUtil;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemList;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemListBuilder;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.ViewTypeItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.ViewTypeItemList;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -56,6 +58,8 @@ public class BaseManagementToolbarDisplayContext
 
 		currentURLObj = PortletURLUtil.getCurrent(
 			liferayPortletRequest, liferayPortletResponse);
+
+		request = httpServletRequest;
 	}
 
 	/**
@@ -74,6 +78,10 @@ public class BaseManagementToolbarDisplayContext
 
 	@Override
 	public List<DropdownItem> getFilterDropdownItems() {
+		if (FFManagementToolbarConfigurationUtil.showDesignImprovements()) {
+			return getFilterNavigationDropdownItems();
+		}
+
 		List<DropdownItem> filterNavigationDropdownItems =
 			getFilterNavigationDropdownItems();
 		List<DropdownItem> orderByDropdownItems = getOrderByDropdownItems();
@@ -104,6 +112,11 @@ public class BaseManagementToolbarDisplayContext
 	@Override
 	public String getNamespace() {
 		return liferayPortletResponse.getNamespace();
+	}
+
+	@Override
+	public List<DropdownItem> getOrderDropdownItems() {
+		return getOrderByDropdownItems();
 	}
 
 	@Override
@@ -275,14 +288,14 @@ public class BaseManagementToolbarDisplayContext
 		}
 		catch (PortletException portletException) {
 			if (_log.isWarnEnabled()) {
-				_log.warn(portletException, portletException);
+				_log.warn(portletException);
 			}
 
-			PortletURL portletURL = liferayPortletResponse.createRenderURL();
-
-			portletURL.setParameters(currentURLObj.getParameterMap());
-
-			return portletURL;
+			return PortletURLBuilder.createRenderURL(
+				liferayPortletResponse
+			).setParameters(
+				currentURLObj.getParameterMap()
+			).buildPortletURL();
 		}
 	}
 

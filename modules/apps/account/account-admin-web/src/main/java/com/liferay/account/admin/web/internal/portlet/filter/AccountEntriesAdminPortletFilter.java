@@ -19,6 +19,7 @@ import com.liferay.account.constants.AccountPortletKeys;
 import com.liferay.account.model.AccountRole;
 import com.liferay.account.service.AccountRoleLocalService;
 import com.liferay.frontend.taglib.servlet.taglib.util.JSPRenderer;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCPortlet;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCRenderCommand;
 import com.liferay.portal.kernel.util.ParamUtil;
@@ -102,25 +103,25 @@ public class AccountEntriesAdminPortletFilter
 			if (mvcPath.equals("/edit_role_permissions.jsp")) {
 				renderRequest.removeAttribute("mvcPath");
 
-				PortletURL portletURL = _portal.getControlPanelPortletURL(
-					renderRequest, AccountPortletKeys.ACCOUNT_ENTRIES_ADMIN,
-					PortletRequest.RENDER_PHASE);
-
-				portletURL.setParameter(
-					"mvcRenderCommandName",
-					"/account_admin/edit_account_role_permissions");
-				portletURL.setParameter(
+				PortletURL portletURL = PortletURLBuilder.create(
+					_portal.getControlPanelPortletURL(
+						renderRequest, AccountPortletKeys.ACCOUNT_ENTRIES_ADMIN,
+						PortletRequest.RENDER_PHASE)
+				).setMVCRenderCommandName(
+					"/account_admin/edit_account_role"
+				).setBackURL(
+					ParamUtil.getString(renderRequest, "backURL")
+				).setParameter(
+					"cur", ParamUtil.getString(renderRequest, "cur")
+				).setParameter(
+					"delta", ParamUtil.getString(renderRequest, "delta")
+				).setParameter(
+					"resetCur", ParamUtil.getString(renderRequest, "resetCur")
+				).setParameter(
 					"screenNavigationCategoryKey",
 					AccountScreenNavigationEntryConstants.
-						CATEGORY_KEY_DEFINE_PERMISSIONS);
-				portletURL.setParameter(
-					"cur", ParamUtil.getString(renderRequest, "cur"));
-				portletURL.setParameter(
-					"delta", ParamUtil.getString(renderRequest, "delta"));
-				portletURL.setParameter(
-					"resetCur", ParamUtil.getString(renderRequest, "resetCur"));
-				portletURL.setParameter(
-					"backURL", ParamUtil.getString(renderRequest, "backURL"));
+						CATEGORY_KEY_DEFINE_PERMISSIONS
+				).buildPortletURL();
 
 				long roleId = ParamUtil.getLong(renderRequest, "roleId");
 
@@ -186,7 +187,7 @@ public class AccountEntriesAdminPortletFilter
 	private JSPRenderer _jspRenderer;
 
 	@Reference(
-		target = "(component.name=com.liferay.account.admin.web.internal.portlet.action.EditAccountRolePermissionsMVCRenderCommand)"
+		target = "(component.name=com.liferay.account.admin.web.internal.portlet.action.EditAccountRoleMVCRenderCommand)"
 	)
 	private MVCRenderCommand _mvcRenderCommand;
 

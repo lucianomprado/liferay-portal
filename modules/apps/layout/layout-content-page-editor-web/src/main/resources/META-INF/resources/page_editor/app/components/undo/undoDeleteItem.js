@@ -14,6 +14,7 @@
 
 import addItem from '../../actions/addItem';
 import LayoutService from '../../services/LayoutService';
+import getFragmentEntryLinkIdsFromItemId from '../../utils/getFragmentEntryLinkIdsFromItemId';
 
 function undoAction({action, store}) {
 	const {itemId, portletIds} = action;
@@ -24,7 +25,14 @@ function undoAction({action, store}) {
 			onNetworkStatus: dispatch,
 			segmentsExperienceId: store.segmentsExperienceId,
 		}).then(({layoutData}) => {
-			dispatch(addItem({itemId, layoutData, portletIds}));
+			const fragmentEntryLinkIds = getFragmentEntryLinkIdsFromItemId({
+				itemId,
+				layoutData,
+			});
+
+			dispatch(
+				addItem({fragmentEntryLinkIds, itemId, layoutData, portletIds})
+			);
 		});
 	};
 }

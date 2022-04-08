@@ -75,6 +75,7 @@ import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.LocalizationUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 
@@ -96,6 +97,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.BiConsumer;
@@ -136,7 +138,7 @@ public class ${entity.name}ModelImpl extends BaseModelImpl<${entity.name}> imple
 	<#compress>
 		public static final Object[][] TABLE_COLUMNS = {
 			<#list entity.databaseRegularEntityColumns as entityColumn>
-				<#assign sqlType = serviceBuilder.getSqlType(entity.getName(), entityColumn.getName(), entityColumn.getType()) />
+				<#assign sqlType = serviceBuilder.getSqlType(entity.getName(), entityColumn) />
 
 				{"${entityColumn.DBName}", Types.${sqlType}}
 
@@ -150,7 +152,7 @@ public class ${entity.name}ModelImpl extends BaseModelImpl<${entity.name}> imple
 
 		static {
 			<#list entity.databaseRegularEntityColumns as entityColumn>
-				<#assign sqlType = serviceBuilder.getSqlType(entity.getName(), entityColumn.getName(), entityColumn.getType()) />
+				<#assign sqlType = serviceBuilder.getSqlType(entity.getName(), entityColumn) />
 
 				TABLE_COLUMNS_MAP.put("${entityColumn.DBName}", Types.${sqlType});
 			</#list>
@@ -288,7 +290,7 @@ public class ${entity.name}ModelImpl extends BaseModelImpl<${entity.name}> imple
 		<#list entity.finderEntityColumns as entityColumn>
 			<#if serviceBuilder.isVersionGTE_7_3_0()>
 				/**
-				 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+				 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 				 */
 				@Deprecated
 			</#if>
@@ -302,7 +304,7 @@ public class ${entity.name}ModelImpl extends BaseModelImpl<${entity.name}> imple
 				<#if serviceBuilder.isVersionGTE_7_3_0()>
 					/**
 					* @deprecated As of Athanasius (7.3.x), replaced by {@link
-					*		#getColumnBitmask(String)
+					*		#getColumnBitmask(String)}
 					*/
 					@Deprecated
 				</#if>
@@ -339,7 +341,7 @@ public class ${entity.name}ModelImpl extends BaseModelImpl<${entity.name}> imple
 		}
 	</#if>
 
-	<#if entity.hasRemoteService()>
+	<#if entity.hasRemoteService() && serviceBuilder.isVersionLTE_7_3_0()>
 		/**
 		 * Converts the soap model instance into a normal model instance.
 		 *
@@ -409,7 +411,7 @@ public class ${entity.name}ModelImpl extends BaseModelImpl<${entity.name}> imple
 
 					<#list mappingEntities?keys as mapEntityName>
 						<#list mappingEntities[mapEntityName] as mapColumn>
-							<#assign sqlType = serviceBuilder.getSqlType(mapEntityName, mapColumn.getName(), mapColumn.getType()) />
+							<#assign sqlType = serviceBuilder.getSqlType(mapEntityName, mapColumn) />
 
 							{"${mapColumn.DBName}", Types.${sqlType}}
 
@@ -881,7 +883,7 @@ public class ${entity.name}ModelImpl extends BaseModelImpl<${entity.name}> imple
 			}
 		</#if>
 
-		<#if entity.hasEntityColumn("createDate", "Date") && entity.hasEntityColumn("modifiedDate", "Date") && stringUtil.equals(entityColumn.name, "modifiedDate")>
+		<#if entity.hasEntityColumn("modifiedDate", "Date") && stringUtil.equals(entityColumn.name, "modifiedDate")>
 			public boolean hasSetModifiedDate() {
 				return _setModifiedDate;
 			}
@@ -891,7 +893,7 @@ public class ${entity.name}ModelImpl extends BaseModelImpl<${entity.name}> imple
 			@Override
 		</#if>
 		public void set${entityColumn.methodName}(${entityColumn.genericizedType} ${entityColumn.name}) {
-			<#if entity.hasEntityColumn("createDate", "Date") && entity.hasEntityColumn("modifiedDate", "Date") && stringUtil.equals(entityColumn.name, "modifiedDate")>
+			<#if entity.hasEntityColumn("modifiedDate", "Date") && stringUtil.equals(entityColumn.name, "modifiedDate")>
 				_setModifiedDate = true;
 			</#if>
 
@@ -899,20 +901,26 @@ public class ${entity.name}ModelImpl extends BaseModelImpl<${entity.name}> imple
 				if (_columnOriginalValues == Collections.EMPTY_MAP) {
 					_setColumnOriginalValues();
 				}
-			<#elseif entityColumn.isFinderPath() || (validator.isNotNull(parentPKColumn) && (parentPKColumn.name == entityColumn.name))>
-				<#if columnBitmaskEnabled>
-					_columnBitmask |= ${entityColumn.name?upper_case}_COLUMN_BITMASK;
+			<#else>
+				<#if entityColumn.isOrderColumn() && columnBitmaskEnabled>
+					_columnBitmask = -1L;
 				</#if>
 
-				<#if entityColumn.isPrimitiveType()>
-					if (!_setOriginal${entityColumn.methodName}) {
+				<#if entityColumn.isFinderPath() || (validator.isNotNull(parentPKColumn) && (parentPKColumn.name == entityColumn.name))>
+					<#if !entityColumn.isOrderColumn() && columnBitmaskEnabled>
+						_columnBitmask |= ${entityColumn.name?upper_case}_COLUMN_BITMASK;
+					</#if>
+
+					<#if entityColumn.isPrimitiveType()>
+						if (!_setOriginal${entityColumn.methodName}) {
 						_setOriginal${entityColumn.methodName} = true;
-				<#else>
-					if (_original${entityColumn.methodName} == null) {
-				</#if>
+					<#else>
+						if (_original${entityColumn.methodName} == null) {
+					</#if>
 
 					_original${entityColumn.methodName} = _${entityColumn.name};
-				}
+					}
+				</#if>
 			</#if>
 
 			<#if entity.versionEntity?? && stringUtil.equals(entityColumn.name, "headId")>
@@ -1036,13 +1044,13 @@ public class ${entity.name}ModelImpl extends BaseModelImpl<${entity.name}> imple
 		<#assign
 			variableName = serviceBuilder.getVariableName(cacheField)
 			methodName = serviceBuilder.getCacheFieldMethodName(cacheField)
-			typeName = serviceBuilder.getGenericValue(cacheField.getType())
+			typeGenericsName = serviceBuilder.getTypeGenericsName(cacheField.getType())
 		/>
 
 		<#if !stringUtil.equals(methodName, "DefaultLanguageId")>
-			public ${typeName} get${methodName}() {
+			public ${typeGenericsName} get${methodName}() {
 				<#if cacheField.getType().isPrimitive()>
-					<#if stringUtil.equals(typeName, "boolean")>
+					<#if stringUtil.equals(typeGenericsName, "boolean")>
 						return false;
 					<#else>
 						return 0;
@@ -1053,7 +1061,7 @@ public class ${entity.name}ModelImpl extends BaseModelImpl<${entity.name}> imple
 			}
 		</#if>
 
-		public void set${methodName}(${typeName} ${variableName}) {
+		public void set${methodName}(${typeGenericsName} ${variableName}) {
 		}
 	</#list>
 
@@ -1378,7 +1386,7 @@ public class ${entity.name}ModelImpl extends BaseModelImpl<${entity.name}> imple
 				}
 
 				for (Map.Entry<String, Object> entry : _columnOriginalValues.entrySet()) {
-					if (entry.getValue() != getColumnValue(entry.getKey())) {
+					if (!Objects.equals(entry.getValue(), getColumnValue(entry.getKey()))) {
 						_columnBitmask |= _columnBitmasks.get(entry.getKey());
 					}
 				}
@@ -1527,6 +1535,21 @@ public class ${entity.name}ModelImpl extends BaseModelImpl<${entity.name}> imple
 
 		return ${entity.variableName}Impl;
 	}
+
+	<#if serviceBuilder.isVersionGTE_7_4_0()>
+		@Override
+		public ${entity.name} cloneWithOriginalValues() {
+			${entity.name}Impl ${entity.variableName}Impl = new ${entity.name}Impl();
+
+			<#list entity.regularEntityColumns as entityColumn>
+				<#if !stringUtil.equals(entityColumn.type, "Blob")>
+					${entity.variableName}Impl.set${entityColumn.methodName}(this.<${serviceBuilder.getPrimitiveObj(entityColumn.type)}>getColumnOriginalValue("${entityColumn.DBName}"));
+				</#if>
+			</#list>
+
+			return ${entity.variableName}Impl;
+		}
+	</#if>
 
 	@Override
 	public int compareTo(${entity.name} ${entity.variableName}) {
@@ -1684,7 +1707,7 @@ public class ${entity.name}ModelImpl extends BaseModelImpl<${entity.name}> imple
 				</#if>
 			</#if>
 
-			<#if entity.hasEntityColumn("createDate", "Date") && entity.hasEntityColumn("modifiedDate", "Date") && stringUtil.equals(entityColumn.name, "modifiedDate")>
+			<#if entity.hasEntityColumn("modifiedDate", "Date") && stringUtil.equals(entityColumn.name, "modifiedDate")>
 				_setModifiedDate = false;
 			</#if>
 		</#list>
@@ -1749,6 +1772,8 @@ public class ${entity.name}ModelImpl extends BaseModelImpl<${entity.name}> imple
 		<#list cacheFields as cacheField>
 			<#assign methodName = serviceBuilder.getCacheFieldMethodName(cacheField) />
 
+			set${methodName}(null);
+
 			${entity.variableName}CacheModel.${cacheField.name} = get${methodName}();
 		</#list>
 
@@ -1763,15 +1788,19 @@ public class ${entity.name}ModelImpl extends BaseModelImpl<${entity.name}> imple
 			<#list entity.regularEntityColumns as entityColumn>
 				<#if !stringUtil.equals(entityColumn.type, "Blob") || !entityColumn.lazy>
 					<#if entityColumn_index == 0>
-						sb.append("{${entityColumn.name}=");
+						sb.append("{\"${entityColumn.name}\": ");
 					<#else>
-						sb.append(", ${entityColumn.name}=");
+						sb.append(", \"${entityColumn.name}\": ");
 					</#if>
+
 					<#if stringUtil.equals(entityColumn.type, "boolean")>
 						sb.append(is${entityColumn.methodName}());
+					<#elseif stringUtil.equals(entityColumn.type, "Blob") || stringUtil.equals(entityColumn.type, "Date") || stringUtil.equals(entityColumn.type, "Map") || stringUtil.equals(entityColumn.type, "String")>
+						sb.append("\"" + get${entityColumn.methodName}() + "\"");
 					<#else>
 						sb.append(get${entityColumn.methodName}());
 					</#if>
+
 					<#if !entityColumn_has_next>
 						sb.append("}");
 					</#if>
@@ -1792,11 +1821,13 @@ public class ${entity.name}ModelImpl extends BaseModelImpl<${entity.name}> imple
 			<#list entity.regularEntityColumns as entityColumn>
 				<#if !stringUtil.equals(entityColumn.type, "Blob") || !entityColumn.lazy>
 					sb.append("<column><column-name>${entityColumn.name}</column-name><column-value><![CDATA[");
+
 					<#if stringUtil.equals(entityColumn.type, "boolean")>
 						sb.append(is${entityColumn.methodName}());
 					<#else>
 						sb.append(get${entityColumn.methodName}());
 					</#if>
+
 					sb.append("]]></column-value></column>");
 				</#if>
 			</#list>
@@ -1810,7 +1841,7 @@ public class ${entity.name}ModelImpl extends BaseModelImpl<${entity.name}> imple
 		public String toString() {
 			Map<String, Function<${entity.name}, Object>> attributeGetterFunctions = getAttributeGetterFunctions();
 
-			StringBundler sb = new StringBundler(4 * attributeGetterFunctions.size() + 2);
+			StringBundler sb = new StringBundler(5 * attributeGetterFunctions.size() + 2);
 
 			sb.append("{");
 
@@ -1818,9 +1849,26 @@ public class ${entity.name}ModelImpl extends BaseModelImpl<${entity.name}> imple
 				String attributeName = entry.getKey();
 				Function<${entity.name}, Object> attributeGetterFunction = entry.getValue();
 
+				sb.append("\"");
 				sb.append(attributeName);
-				sb.append("=");
-				sb.append(attributeGetterFunction.apply((${entity.name})this));
+				sb.append("\": ");
+
+				Object value = attributeGetterFunction.apply((${entity.name})this);
+
+				if (value == null) {
+					sb.append("null");
+				}
+				else if ((value instanceof Blob) ||
+						 (value instanceof Date) ||
+						 (value instanceof Map) ||
+						 (value instanceof String)) {
+
+					sb.append("\"" + StringUtil.replace(value.toString(), "\"", "'") + "\"");
+				}
+				else {
+					sb.append(value);
+				}
+
 				sb.append(", ");
 			}
 
@@ -1894,7 +1942,7 @@ public class ${entity.name}ModelImpl extends BaseModelImpl<${entity.name}> imple
 				</#if>
 			</#if>
 
-			<#if entity.hasEntityColumn("createDate", "Date") && entity.hasEntityColumn("modifiedDate", "Date") && stringUtil.equals(entityColumn.name, "modifiedDate")>
+			<#if entity.hasEntityColumn("modifiedDate", "Date") && stringUtil.equals(entityColumn.name, "modifiedDate")>
 				private boolean _setModifiedDate;
 			</#if>
 		</#if>

@@ -25,10 +25,12 @@ function resolvePath(
 	priceModifierId = '',
 	priceModifierProductGroupId = ''
 ) {
-	return `${basePath}${VERSION}${PRICE_MODIFIERS_PATH}/${priceModifierId}/${PRICE_MODIFIER_RULES_PATH}/${priceModifierProductGroupId}`;
+	return `${basePath}${VERSION}${PRICE_MODIFIERS_PATH}/${priceModifierId}${PRICE_MODIFIER_RULES_PATH}/${priceModifierProductGroupId}`;
 }
 
-export default (basePath) => ({
-	addPriceModifierProductGroup: (priceModifierId, json) =>
-		AJAX.POST(resolvePath(basePath, priceModifierId), json),
-});
+export default function PriceModifierProductGroup(basePath) {
+	return {
+		addPriceModifierProductGroup: (priceModifierId, json) =>
+			AJAX.POST(resolvePath(basePath, priceModifierId), json),
+	};
+}

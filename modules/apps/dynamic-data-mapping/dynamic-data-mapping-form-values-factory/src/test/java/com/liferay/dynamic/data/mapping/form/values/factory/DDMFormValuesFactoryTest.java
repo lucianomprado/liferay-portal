@@ -21,6 +21,7 @@ import com.liferay.dynamic.data.mapping.io.DDMFormValuesSerializerSerializeReque
 import com.liferay.dynamic.data.mapping.io.DDMFormValuesSerializerSerializeResponse;
 import com.liferay.dynamic.data.mapping.model.DDMForm;
 import com.liferay.dynamic.data.mapping.model.DDMFormField;
+import com.liferay.dynamic.data.mapping.model.DDMFormFieldType;
 import com.liferay.dynamic.data.mapping.model.LocalizedValue;
 import com.liferay.dynamic.data.mapping.model.UnlocalizedValue;
 import com.liferay.dynamic.data.mapping.model.Value;
@@ -39,10 +40,12 @@ import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.util.LocaleThreadLocal;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.PropsUtil;
+import com.liferay.portal.kernel.util.ProxyFactory;
 import com.liferay.portal.util.PropsImpl;
 
 import java.lang.reflect.Field;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -165,7 +168,14 @@ public class DDMFormValuesFactoryTest extends PowerMockito {
 
 	@Test
 	public void testCreateWithDifferentLanguageFromRequest() throws Exception {
-		DDMForm ddmForm = DDMFormTestUtil.createDDMForm();
+		when(
+			LocaleUtil.getSiteDefault()
+		).thenReturn(
+			LocaleUtil.BRAZIL
+		);
+
+		DDMForm ddmForm = DDMFormTestUtil.createDDMForm(
+			new HashSet<Locale>(), LocaleUtil.getSiteDefault());
 
 		ddmForm.addDDMFormField(
 			DDMFormTestUtil.createTextDDMFormField(
@@ -710,8 +720,8 @@ public class DDMFormValuesFactoryTest extends PowerMockito {
 		ddmForm.setDefaultLocale(defaultLocale);
 
 		DDMFormField separatorDDMFormField = DDMFormTestUtil.createDDMFormField(
-			"Separator", "Separator", "ddm-separator", StringPool.BLANK, false,
-			true, false);
+			"Separator", "Separator", DDMFormFieldType.SEPARATOR,
+			StringPool.BLANK, false, true, false);
 
 		DDMFormField nameDDMFormField = DDMFormTestUtil.createTextDDMFormField(
 			"Name", true, false, false);
@@ -839,11 +849,8 @@ public class DDMFormValuesFactoryTest extends PowerMockito {
 				"Paragraph", "Paragraph", "paragraph", StringPool.BLANK, false,
 				false, false));
 
-		MockHttpServletRequest mockHttpServletRequest =
-			new MockHttpServletRequest();
-
 		DDMFormValues ddmFormValues = _ddmFormValuesFactory.create(
-			mockHttpServletRequest, ddmForm);
+			new MockHttpServletRequest(), ddmForm);
 
 		List<DDMFormFieldValue> ddmFormFieldValues =
 			ddmFormValues.getDDMFormFieldValues();
@@ -1043,6 +1050,13 @@ public class DDMFormValuesFactoryTest extends PowerMockito {
 		).set(
 			_ddmFormValuesJSONSerializer, new JSONFactoryImpl()
 		);
+
+		field(
+			DDMFormValuesJSONSerializer.class, "_serviceTrackerMap"
+		).set(
+			_ddmFormValuesJSONSerializer,
+			ProxyFactory.newDummyInstance(ServiceTrackerMap.class)
+		);
 	}
 
 	protected void setUpJSONFactoryUtil() {
@@ -1116,6 +1130,12 @@ public class DDMFormValuesFactoryTest extends PowerMockito {
 			LocaleUtil.getSiteDefault()
 		).thenReturn(
 			LocaleUtil.US
+		);
+
+		when(
+			LocaleUtil.toLanguageIds(Matchers.anyCollection())
+		).thenReturn(
+			new String[] {"en_US", "pt_BR"}
 		);
 	}
 

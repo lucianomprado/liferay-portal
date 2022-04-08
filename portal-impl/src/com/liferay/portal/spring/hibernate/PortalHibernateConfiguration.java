@@ -21,8 +21,6 @@ import com.liferay.portal.asm.ASMWrapperUtil;
 import com.liferay.portal.change.tracking.registry.CTModelRegistration;
 import com.liferay.portal.change.tracking.registry.CTModelRegistry;
 import com.liferay.portal.dao.orm.hibernate.event.MVCCSynchronizerPostUpdateEventListener;
-import com.liferay.portal.dao.orm.hibernate.event.NestableAutoFlushEventListener;
-import com.liferay.portal.dao.orm.hibernate.event.NestableFlushEventListener;
 import com.liferay.portal.dao.orm.hibernate.event.ResetOriginalValuesLoadEventListener;
 import com.liferay.portal.dao.orm.hibernate.event.ResetOriginalValuesPostLoadEventListener;
 import com.liferay.portal.internal.change.tracking.hibernate.CTSQLInterceptor;
@@ -60,13 +58,10 @@ import org.hibernate.EntityMode;
 import org.hibernate.HibernateException;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
-import org.hibernate.cfg.Environment;
 import org.hibernate.dialect.Dialect;
 import org.hibernate.engine.SessionFactoryImplementor;
 import org.hibernate.engine.query.QueryPlanCache;
-import org.hibernate.event.AutoFlushEventListener;
 import org.hibernate.event.EventListeners;
-import org.hibernate.event.FlushEventListener;
 import org.hibernate.event.LoadEventListener;
 import org.hibernate.event.PostLoadEventListener;
 import org.hibernate.event.PostUpdateEventListener;
@@ -251,7 +246,7 @@ public class PortalHibernateConfiguration extends LocalSessionFactoryBean {
 				}
 				catch (Exception exception) {
 					if (_log.isWarnEnabled()) {
-						_log.warn(exception, exception);
+						_log.warn(exception);
 					}
 				}
 			}
@@ -268,14 +263,6 @@ public class PortalHibernateConfiguration extends LocalSessionFactoryBean {
 				});
 
 			if (_mvccEnabled) {
-				eventListeners.setAutoFlushEventListeners(
-					new AutoFlushEventListener[] {
-						NestableAutoFlushEventListener.INSTANCE
-					});
-				eventListeners.setFlushEventListeners(
-					new FlushEventListener[] {
-						NestableFlushEventListener.INSTANCE
-					});
 				eventListeners.setPostUpdateEventListeners(
 					new PostUpdateEventListener[] {
 						MVCCSynchronizerPostUpdateEventListener.INSTANCE
@@ -285,7 +272,7 @@ public class PortalHibernateConfiguration extends LocalSessionFactoryBean {
 			}
 		}
 		catch (Exception exception) {
-			_log.error(exception, exception);
+			_log.error(exception);
 		}
 
 		return configuration;
@@ -331,23 +318,6 @@ public class PortalHibernateConfiguration extends LocalSessionFactoryBean {
 		}
 
 		return sessionFactory;
-	}
-
-	@Override
-	protected void postProcessConfiguration(Configuration configuration) {
-
-		// Make sure that the Hibernate settings from PropsUtil are set. See the
-		// buildSessionFactory implementation in the LocalSessionFactoryBean
-		// class to understand how Spring automates a lot of configuration for
-		// Hibernate.
-
-		String connectionReleaseMode = PropsUtil.get(
-			Environment.RELEASE_CONNECTIONS);
-
-		if (Validator.isNotNull(connectionReleaseMode)) {
-			configuration.setProperty(
-				Environment.RELEASE_CONNECTIONS, connectionReleaseMode);
-		}
 	}
 
 	protected void readResource(

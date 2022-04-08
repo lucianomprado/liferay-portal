@@ -16,6 +16,7 @@ package com.liferay.dynamic.data.mapping.form.field.type.internal.select;
 
 import com.liferay.dynamic.data.mapping.form.field.type.DDMFormFieldValueValidationException;
 import com.liferay.dynamic.data.mapping.form.field.type.DDMFormFieldValueValidator;
+import com.liferay.dynamic.data.mapping.form.field.type.constants.DDMFormFieldTypeConstants;
 import com.liferay.dynamic.data.mapping.model.DDMFormField;
 import com.liferay.dynamic.data.mapping.model.DDMFormFieldOptions;
 import com.liferay.dynamic.data.mapping.model.Value;
@@ -37,7 +38,8 @@ import org.osgi.service.component.annotations.Reference;
  * @author Marcellus Tavares
  */
 @Component(
-	immediate = true, property = "ddm.form.field.type.name=select",
+	immediate = true,
+	property = "ddm.form.field.type.name=" + DDMFormFieldTypeConstants.SELECT,
 	service = DDMFormFieldValueValidator.class
 )
 public class SelectDDMFormFieldValueValidator
@@ -49,7 +51,7 @@ public class SelectDDMFormFieldValueValidator
 
 		if (Objects.equals(ddmFormField.getDataSourceType(), "manual")) {
 			try {
-				validateDDMFormFieldOptions(ddmFormField, value);
+				_validateDDMFormFieldOptions(ddmFormField, value);
 			}
 			catch (DDMFormFieldValueValidationException
 						ddmFormFieldValueValidationException) {
@@ -58,7 +60,7 @@ public class SelectDDMFormFieldValueValidator
 			}
 			catch (Exception exception) {
 				if (_log.isDebugEnabled()) {
-					_log.debug(exception, exception);
+					_log.debug(exception);
 				}
 
 				throw new DDMFormFieldValueValidationException(exception);
@@ -66,7 +68,10 @@ public class SelectDDMFormFieldValueValidator
 		}
 	}
 
-	protected void validateDDMFormFieldOptions(
+	@Reference
+	protected JSONFactory jsonFactory;
+
+	private void _validateDDMFormFieldOptions(
 			DDMFormField ddmFormField, Value value)
 		throws Exception {
 
@@ -90,11 +95,11 @@ public class SelectDDMFormFieldValueValidator
 		Map<Locale, String> selectedValues = value.getValues();
 
 		for (String selectedValue : selectedValues.values()) {
-			validateSelectedValue(ddmFormField, optionsValues, selectedValue);
+			_validateSelectedValue(ddmFormField, optionsValues, selectedValue);
 		}
 	}
 
-	protected void validateSelectedValue(
+	private void _validateSelectedValue(
 			DDMFormField ddmFormField, Set<String> optionValues,
 			String selectedValue)
 		throws Exception {
@@ -116,9 +121,6 @@ public class SelectDDMFormFieldValueValidator
 			}
 		}
 	}
-
-	@Reference
-	protected JSONFactory jsonFactory;
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		SelectDDMFormFieldValueValidator.class);

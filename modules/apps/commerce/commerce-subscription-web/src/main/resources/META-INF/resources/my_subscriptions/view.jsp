@@ -36,7 +36,6 @@ CommerceSubscriptionContentDisplayContext commerceSubscriptionContentDisplayCont
 				>
 					<liferay-ui:search-container-row
 						className="com.liferay.commerce.model.CommerceSubscriptionEntry"
-						cssClass="entry-display-style"
 						keyProperty="commerceSubscriptionEntryId"
 						modelVar="commerceSubscriptionEntry"
 					>
@@ -46,11 +45,9 @@ CommerceSubscriptionContentDisplayContext commerceSubscriptionContentDisplayCont
 
 						String thumbnailSrc = commerceSubscriptionContentDisplayContext.getCommerceSubscriptionEntryThumbnailSrc(commerceSubscriptionEntry);
 
-						List<KeyValuePair> keyValuePairs = commerceSubscriptionContentDisplayContext.getKeyValuePairs(commerceSubscriptionEntry);
-
 						StringJoiner stringJoiner = new StringJoiner(StringPool.COMMA);
 
-						for (KeyValuePair keyValuePair : keyValuePairs) {
+						for (KeyValuePair keyValuePair : commerceSubscriptionContentDisplayContext.getKeyValuePairs(commerceSubscriptionEntry)) {
 							stringJoiner.add(keyValuePair.getValue());
 						}
 						%>
@@ -63,7 +60,7 @@ CommerceSubscriptionContentDisplayContext commerceSubscriptionContentDisplayCont
 						<liferay-ui:search-container-column-text
 							name="description"
 						>
-							<a class="font-weight-bold" href="<%= commerceSubscriptionContentDisplayContext.getCPDefinitionURL(commerceSubscriptionEntry, themeDisplay) %>">
+							<a class="font-weight-bold" href="<%= HtmlUtil.escapeHREF(commerceSubscriptionContentDisplayContext.getCPDefinitionURL(commerceSubscriptionEntry, themeDisplay)) %>">
 								<%= (commerceOrderItem == null) ? StringPool.BLANK : HtmlUtil.escape(commerceOrderItem.getName(languageId)) %>
 							</a>
 
@@ -117,7 +114,7 @@ CommerceSubscriptionContentDisplayContext commerceSubscriptionContentDisplayCont
 											%>
 
 											<clay:link
-												buttonStyle="secondary"
+												displayType="secondary"
 												href='<%= String.valueOf(dropdownItem.get("href")) %>'
 												label='<%= String.valueOf(dropdownItem.get("label")) %>'
 											/>

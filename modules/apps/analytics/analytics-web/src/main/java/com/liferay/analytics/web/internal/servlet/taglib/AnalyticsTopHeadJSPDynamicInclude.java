@@ -80,6 +80,9 @@ public class AnalyticsTopHeadJSPDynamicInclude extends BaseJSPDynamicInclude {
 				).put(
 					"endpointUrl",
 					_getLiferayAnalyticsEndpointURL(themeDisplay.getCompany())
+				).put(
+					"projectId",
+					_getLiferayAnalyticsProjectId(themeDisplay.getCompany())
 				).build()));
 
 		httpServletRequest.setAttribute(
@@ -156,28 +159,25 @@ public class AnalyticsTopHeadJSPDynamicInclude extends BaseJSPDynamicInclude {
 			company.getCompanyId(), "liferayAnalyticsEndpointURL");
 	}
 
+	private String _getLiferayAnalyticsProjectId(Company company) {
+		return PrefsPropsUtil.getString(
+			company.getCompanyId(), "liferayAnalyticsProjectId");
+	}
+
 	private boolean _isAnalyticsTrackingEnabled(
 		HttpServletRequest httpServletRequest, ThemeDisplay themeDisplay) {
 
 		Layout layout = themeDisplay.getLayout();
 
-		if (layout == null) {
-			return false;
-		}
-
-		if (layout.isTypeControlPanel()) {
+		if ((layout == null) || layout.isTypeControlPanel()) {
 			return false;
 		}
 
 		Company company = themeDisplay.getCompany();
 
 		if (Validator.isNull(_getLiferayAnalyticsDataSourceId(company)) ||
-			Validator.isNull(_getLiferayAnalyticsEndpointURL(company))) {
-
-			return false;
-		}
-
-		if (Objects.equals(
+			Validator.isNull(_getLiferayAnalyticsEndpointURL(company)) ||
+			Objects.equals(
 				httpServletRequest.getRequestURI(), "/c/portal/api/jsonws")) {
 
 			return false;

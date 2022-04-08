@@ -16,6 +16,7 @@ package com.liferay.commerce.frontend.internal.util;
 
 import com.liferay.commerce.constants.CPDefinitionInventoryConstants;
 import com.liferay.commerce.context.CommerceContext;
+import com.liferay.commerce.currency.model.CommerceCurrency;
 import com.liferay.commerce.currency.model.CommerceMoney;
 import com.liferay.commerce.currency.util.CommercePriceFormatter;
 import com.liferay.commerce.discount.CommerceDiscountValue;
@@ -24,6 +25,7 @@ import com.liferay.commerce.frontend.model.ProductSettingsModel;
 import com.liferay.commerce.frontend.util.ProductHelper;
 import com.liferay.commerce.inventory.CPDefinitionInventoryEngineRegistry;
 import com.liferay.commerce.model.CPDefinitionInventory;
+import com.liferay.commerce.percentage.PercentageFormatter;
 import com.liferay.commerce.price.CommerceProductPrice;
 import com.liferay.commerce.price.CommerceProductPriceCalculation;
 import com.liferay.commerce.price.CommerceProductPriceRequest;
@@ -106,7 +108,7 @@ public class ProductHelperImpl implements ProductHelper {
 			String commerceOptionValuesJSON, Locale locale)
 		throws PortalException {
 
-		final CommerceProductPriceRequest commerceProductPriceRequest =
+		CommerceProductPriceRequest commerceProductPriceRequest =
 			new CommerceProductPriceRequest();
 
 		commerceProductPriceRequest.setCpInstanceId(cpInstanceId);
@@ -184,6 +186,8 @@ public class ProductHelperImpl implements ProductHelper {
 					allowedOrderQuantitiesArray);
 			}
 
+			productSettingsModel.setBackOrders(
+				cpDefinitionInventory.isBackOrders());
 			productSettingsModel.setLowStockQuantity(
 				cpDefinitionInventory.getMinStockQuantity());
 			productSettingsModel.setShowAvailabilityDot(
@@ -287,9 +291,14 @@ public class ProductHelperImpl implements ProductHelper {
 
 		priceModel.setDiscount(discountAmountCommerceMoney.format(locale));
 
+		CommerceCurrency commerceCurrency =
+			discountAmountCommerceMoney.getCommerceCurrency();
+
 		priceModel.setDiscountPercentage(
-			_commercePriceFormatter.format(
-				commerceDiscountValue.getDiscountPercentage(), locale));
+			_percentageFormatter.getLocalizedPercentage(
+				locale, commerceCurrency.getMaxFractionDigits(),
+				commerceCurrency.getMinFractionDigits(),
+				commerceDiscountValue.getDiscountPercentage()));
 
 		priceModel.setDiscountPercentages(
 			_getFormattedDiscountPercentages(
@@ -325,5 +334,8 @@ public class ProductHelperImpl implements ProductHelper {
 
 	@Reference
 	private CPInstanceLocalService _cpInstanceLocalService;
+
+	@Reference
+	private PercentageFormatter _percentageFormatter;
 
 }

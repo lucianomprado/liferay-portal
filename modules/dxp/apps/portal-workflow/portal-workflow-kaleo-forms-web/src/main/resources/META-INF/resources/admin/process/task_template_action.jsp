@@ -42,12 +42,13 @@ KaleoTaskFormPair kaleoTaskFormPair = (KaleoTaskFormPair)row.getObject();
 	String initialStateName = KaleoFormsUtil.getInitialStateName(company.getCompanyId(), workflowDefinition);
 
 	String mode = initialStateName.equals(kaleoTaskFormPair.getWorkflowTaskName()) ? DDMTemplateConstants.TEMPLATE_MODE_CREATE : DDMTemplateConstants.TEMPLATE_MODE_EDIT;
-	String paramName = HtmlUtil.escapeJS(liferayPortletResponse.getNamespace() + ddmStructureId + workflowDefinition + kaleoTaskFormPair.getWorkflowTaskName());
+
+	String workflowTaskName = HtmlUtil.escapeJS(kaleoTaskFormPair.getWorkflowTaskName());
 	%>
 
 	<liferay-ui:icon
 		message="assign-form"
-		onClick='<%= "javascript:" + liferayPortletResponse.getNamespace() + "selectFormTemplate(" + ddmStructureId + ",'" + mode + "', '" + paramName + "');" %>'
+		onClick='<%= "javascript:" + liferayPortletResponse.getNamespace() + "selectFormTemplate(" + ddmStructureId + ", '" + mode + "', '" + HtmlUtil.escapeJS(workflowDefinition) + "', '" + workflowTaskName + "');" %>'
 		url="javascript:;"
 	/>
 
@@ -69,7 +70,7 @@ KaleoTaskFormPair kaleoTaskFormPair = (KaleoTaskFormPair)row.getObject();
 
 		<liferay-ui:icon
 			message="unassign-form"
-			onClick='<%= "javascript:" + liferayPortletResponse.getNamespace() + "unassignForm({taskFormPairsParamName: '" + paramName + "', node: this});" %>'
+			onClick='<%= "javascript:" + liferayPortletResponse.getNamespace() + "unassignForm({ddmStructureId: '" + ddmStructureId + "', workflowDefinition: '" + HtmlUtil.escapeJS(workflowDefinition) + "', workflowTaskName: '" + workflowTaskName + "', node: this});" %>'
 			url="javascript:;"
 		/>
 

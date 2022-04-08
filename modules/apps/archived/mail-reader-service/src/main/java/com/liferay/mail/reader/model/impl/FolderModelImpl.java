@@ -29,12 +29,14 @@ import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
+import com.liferay.portal.kernel.util.StringUtil;
 
 import java.io.Serializable;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
 
+import java.sql.Blob;
 import java.sql.Types;
 
 import java.util.Collections;
@@ -42,6 +44,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
@@ -107,13 +110,13 @@ public class FolderModelImpl
 	public static final String TX_MANAGER = "liferayTransactionManager";
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long ACCOUNTID_COLUMN_BITMASK = 1L;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long FULLNAME_COLUMN_BITMASK = 2L;
@@ -500,7 +503,9 @@ public class FolderModelImpl
 		for (Map.Entry<String, Object> entry :
 				_columnOriginalValues.entrySet()) {
 
-			if (entry.getValue() != getColumnValue(entry.getKey())) {
+			if (!Objects.equals(
+					entry.getValue(), getColumnValue(entry.getKey()))) {
+
 				_columnBitmask |= _columnBitmasks.get(entry.getKey());
 			}
 		}
@@ -552,6 +557,28 @@ public class FolderModelImpl
 		folderImpl.setRemoteMessageCount(getRemoteMessageCount());
 
 		folderImpl.resetOriginalValues();
+
+		return folderImpl;
+	}
+
+	@Override
+	public Folder cloneWithOriginalValues() {
+		FolderImpl folderImpl = new FolderImpl();
+
+		folderImpl.setFolderId(this.<Long>getColumnOriginalValue("folderId"));
+		folderImpl.setCompanyId(this.<Long>getColumnOriginalValue("companyId"));
+		folderImpl.setUserId(this.<Long>getColumnOriginalValue("userId"));
+		folderImpl.setUserName(this.<String>getColumnOriginalValue("userName"));
+		folderImpl.setCreateDate(
+			this.<Date>getColumnOriginalValue("createDate"));
+		folderImpl.setModifiedDate(
+			this.<Date>getColumnOriginalValue("modifiedDate"));
+		folderImpl.setAccountId(this.<Long>getColumnOriginalValue("accountId"));
+		folderImpl.setFullName(this.<String>getColumnOriginalValue("fullName"));
+		folderImpl.setDisplayName(
+			this.<String>getColumnOriginalValue("displayName"));
+		folderImpl.setRemoteMessageCount(
+			this.<Integer>getColumnOriginalValue("remoteMessageCount"));
 
 		return folderImpl;
 	}
@@ -688,7 +715,7 @@ public class FolderModelImpl
 			getAttributeGetterFunctions();
 
 		StringBundler sb = new StringBundler(
-			(4 * attributeGetterFunctions.size()) + 2);
+			(5 * attributeGetterFunctions.size()) + 2);
 
 		sb.append("{");
 
@@ -698,9 +725,26 @@ public class FolderModelImpl
 			String attributeName = entry.getKey();
 			Function<Folder, Object> attributeGetterFunction = entry.getValue();
 
+			sb.append("\"");
 			sb.append(attributeName);
-			sb.append("=");
-			sb.append(attributeGetterFunction.apply((Folder)this));
+			sb.append("\": ");
+
+			Object value = attributeGetterFunction.apply((Folder)this);
+
+			if (value == null) {
+				sb.append("null");
+			}
+			else if (value instanceof Blob || value instanceof Date ||
+					 value instanceof Map || value instanceof String) {
+
+				sb.append(
+					"\"" + StringUtil.replace(value.toString(), "\"", "'") +
+						"\"");
+			}
+			else {
+				sb.append(value);
+			}
+
 			sb.append(", ");
 		}
 

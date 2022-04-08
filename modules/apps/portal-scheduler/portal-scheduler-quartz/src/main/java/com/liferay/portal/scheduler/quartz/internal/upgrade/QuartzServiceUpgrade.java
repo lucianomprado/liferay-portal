@@ -15,7 +15,7 @@
 package com.liferay.portal.scheduler.quartz.internal.upgrade;
 
 import com.liferay.portal.kernel.upgrade.DummyUpgradeStep;
-import com.liferay.portal.scheduler.quartz.internal.upgrade.v1_0_0.UpgradeQuartz;
+import com.liferay.portal.scheduler.quartz.internal.upgrade.v1_0_0.QuartzUpgradeProcess;
 import com.liferay.portal.upgrade.registry.UpgradeStepRegistrator;
 
 import org.osgi.service.component.annotations.Component;
@@ -23,16 +23,14 @@ import org.osgi.service.component.annotations.Component;
 /**
  * @author Akos Thurzo
  */
-@Component(
-	enabled = false, immediate = true, service = UpgradeStepRegistrator.class
-)
+@Component(immediate = true, service = UpgradeStepRegistrator.class)
 public class QuartzServiceUpgrade implements UpgradeStepRegistrator {
 
 	@Override
 	public void register(Registry registry) {
 		registry.register("0.0.0", "1.0.0", new DummyUpgradeStep());
 
-		registry.register("0.0.1", "1.0.0", new UpgradeQuartz());
+		registry.register("0.0.1", "1.0.0", new QuartzUpgradeProcess());
 	}
 
 }

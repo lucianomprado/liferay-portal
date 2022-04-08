@@ -21,10 +21,13 @@ int delta = ParamUtil.getInteger(request, SearchContainer.DEFAULT_DELTA_PARAM);
 String orderByCol = ParamUtil.getString(request, "orderByCol", "title");
 String orderByType = ParamUtil.getString(request, "orderByType", "asc");
 
-PortletURL portletURL = renderResponse.createRenderURL();
-
-portletURL.setParameter("mvcRenderCommandName", "/blogs/view");
-portletURL.setParameter("navigation", "images");
+PortletURL portletURL = PortletURLBuilder.createRenderURL(
+	renderResponse
+).setMVCRenderCommandName(
+	"/blogs/view"
+).setNavigation(
+	"images"
+).buildPortletURL();
 
 if (delta > 0) {
 	portletURL.setParameter("delta", String.valueOf(delta));
@@ -45,31 +48,30 @@ BlogImagesDisplayContext blogImagesDisplayContext = new BlogImagesDisplayContext
 
 blogImagesDisplayContext.populateResults(blogImagesSearchContainer);
 
-BlogImagesManagementToolbarDisplayContext blogImagesManagementToolbarDisplayContext = new BlogImagesManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, currentURLObj);
+BlogImagesManagementToolbarDisplayContext blogImagesManagementToolbarDisplayContext = new BlogImagesManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, blogImagesSearchContainer);
 
 String displayStyle = blogImagesManagementToolbarDisplayContext.getDisplayStyle();
 %>
 
-<clay:management-toolbar-v2
+<clay:management-toolbar
 	actionDropdownItems="<%= blogImagesManagementToolbarDisplayContext.getActionDropdownItems() %>"
 	clearResultsURL="<%= blogImagesManagementToolbarDisplayContext.getSearchActionURL() %>"
-	componentId="blogImagesManagementToolbar"
 	disabled="<%= blogImagesSearchContainer.getTotal() <= 0 %>"
 	filterDropdownItems="<%= blogImagesManagementToolbarDisplayContext.getFilterDropdownItems() %>"
 	itemsTotal="<%= blogImagesSearchContainer.getTotal() %>"
+	managementToolbarDisplayContext="<%= blogImagesManagementToolbarDisplayContext %>"
+	propsTransformer="blogs_admin/js/BlogImagesManagementToolbarPropsTransformer"
 	searchActionURL="<%= blogImagesManagementToolbarDisplayContext.getSearchActionURL() %>"
 	searchContainerId="images"
 	searchFormName="searchFm"
 	showCreationMenu="<%= false %>"
 	showInfoButton="<%= false %>"
 	sortingOrder="<%= blogImagesManagementToolbarDisplayContext.getOrderByType() %>"
-	sortingURL="<%= String.valueOf(blogImagesManagementToolbarDisplayContext.getSortingURL()) %>"
+	sortingURL="<%= blogImagesManagementToolbarDisplayContext.getSortingURL() %>"
 	viewTypeItems="<%= blogImagesManagementToolbarDisplayContext.getViewTypes() %>"
 />
 
-<clay:container-fluid
-	cssClass="main-content-body"
->
+<clay:container-fluid>
 	<portlet:actionURL name="/blogs/edit_image" var="editImageURL" />
 
 	<aui:form action="<%= editImageURL %>" name="fm">
@@ -108,57 +110,3 @@ String displayStyle = blogImagesManagementToolbarDisplayContext.getDisplayStyle(
 		</liferay-ui:search-container>
 	</aui:form>
 </clay:container-fluid>
-
-<aui:script>
-	var deleteImages = function () {
-		if (
-			confirm(
-				'<liferay-ui:message key="are-you-sure-you-want-to-delete-the-selected-images" />'
-			)
-		) {
-			var form = document.getElementById('<portlet:namespace />fm');
-
-			if (form) {
-				var cmd = form.querySelector(
-					'#<portlet:namespace /><%= Constants.CMD %>'
-				);
-
-				if (cmd) {
-					cmd.setAttribute('value', '<%= Constants.DELETE %>');
-				}
-
-				var deleteFileEntryIds = form.querySelector(
-					'#<portlet:namespace />deleteFileEntryIds'
-				);
-
-				if (deleteFileEntryIds) {
-					deleteFileEntryIds.setAttribute(
-						'value',
-						Liferay.Util.listCheckedExcept(
-							form,
-							'<portlet:namespace />allRowIds'
-						)
-					);
-				}
-
-				submitForm(form);
-			}
-		}
-	};
-
-	var ACTIONS = {
-		deleteImages: deleteImages,
-	};
-
-	Liferay.componentReady('blogImagesManagementToolbar').then(function (
-		managementToolbar
-	) {
-		managementToolbar.on('actionItemClicked', function (event) {
-			var itemData = event.data.item.data;
-
-			if (itemData && itemData.action && ACTIONS[itemData.action]) {
-				ACTIONS[itemData.action]();
-			}
-		});
-	});
-</aui:script>

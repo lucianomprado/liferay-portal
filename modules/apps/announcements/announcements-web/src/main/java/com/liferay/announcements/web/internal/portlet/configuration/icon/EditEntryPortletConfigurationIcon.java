@@ -17,8 +17,11 @@ package com.liferay.announcements.web.internal.portlet.configuration.icon;
 import com.liferay.announcements.constants.AnnouncementsPortletKeys;
 import com.liferay.announcements.kernel.model.AnnouncementsEntry;
 import com.liferay.announcements.web.internal.portlet.action.ActionUtil;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.portlet.configuration.icon.BasePortletConfigurationIcon;
 import com.liferay.portal.kernel.portlet.configuration.icon.PortletConfigurationIcon;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
@@ -58,17 +61,21 @@ public class EditEntryPortletConfigurationIcon
 	public String getURL(
 		PortletRequest portletRequest, PortletResponse portletResponse) {
 
-		PortletURL portletURL = _portal.getControlPanelPortletURL(
-			portletRequest, AnnouncementsPortletKeys.ANNOUNCEMENTS_ADMIN,
-			PortletRequest.RENDER_PHASE);
+		PortletURL portletURL = PortletURLBuilder.create(
+			_portal.getControlPanelPortletURL(
+				portletRequest, AnnouncementsPortletKeys.ANNOUNCEMENTS_ADMIN,
+				PortletRequest.RENDER_PHASE)
+		).setMVCRenderCommandName(
+			"/announcements/edit_entry"
+		).setRedirect(
+			() -> {
+				ThemeDisplay themeDisplay =
+					(ThemeDisplay)portletRequest.getAttribute(
+						WebKeys.THEME_DISPLAY);
 
-		portletURL.setParameter(
-			"mvcRenderCommandName", "/announcements/edit_entry");
-
-		ThemeDisplay themeDisplay = (ThemeDisplay)portletRequest.getAttribute(
-			WebKeys.THEME_DISPLAY);
-
-		portletURL.setParameter("redirect", themeDisplay.getURLCurrent());
+				return themeDisplay.getURLCurrent();
+			}
+		).buildPortletURL();
 
 		try {
 			AnnouncementsEntry entry = ActionUtil.getEntry(portletRequest);
@@ -77,6 +84,10 @@ public class EditEntryPortletConfigurationIcon
 				"entryId", String.valueOf(entry.getEntryId()));
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception);
+			}
+
 			return null;
 		}
 
@@ -108,6 +119,9 @@ public class EditEntryPortletConfigurationIcon
 	public boolean isToolTip() {
 		return false;
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		EditEntryPortletConfigurationIcon.class);
 
 	@Reference
 	private Portal _portal;

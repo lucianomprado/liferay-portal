@@ -23,6 +23,7 @@ import com.liferay.gradle.plugins.js.module.config.generator.JSModuleConfigGener
 import com.liferay.gradle.plugins.js.transpiler.JSTranspilerBasePlugin;
 import com.liferay.gradle.plugins.js.transpiler.JSTranspilerPlugin;
 import com.liferay.gradle.plugins.node.NodePlugin;
+import com.liferay.gradle.plugins.rest.builder.RESTBuilderPlugin;
 import com.liferay.gradle.plugins.service.builder.ServiceBuilderPlugin;
 import com.liferay.gradle.plugins.soy.SoyPlugin;
 import com.liferay.gradle.plugins.soy.SoyTranslationPlugin;
@@ -130,16 +131,12 @@ public class ModulesProjectConfigurator extends BaseProjectConfigurator {
 			}
 
 			GradleUtil.applyPlugin(project, LiferayOSGiPlugin.class);
-
-			if (FileUtil.exists(project, "service.xml")) {
-				GradleUtil.applyPlugin(project, ServiceBuilderPlugin.class);
-				GradleUtil.applyPlugin(
-					project, UpgradeTableBuilderPlugin.class);
-				GradleUtil.applyPlugin(project, WSDDBuilderPlugin.class);
-			}
-
+			GradleUtil.applyPlugin(project, RESTBuilderPlugin.class);
+			GradleUtil.applyPlugin(project, ServiceBuilderPlugin.class);
 			GradleUtil.applyPlugin(project, SoyPlugin.class);
 			GradleUtil.applyPlugin(project, SoyTranslationPlugin.class);
+			GradleUtil.applyPlugin(project, UpgradeTableBuilderPlugin.class);
+			GradleUtil.applyPlugin(project, WSDDBuilderPlugin.class);
 
 			if (GradleUtil.hasTask(
 					project, NodePlugin.PACKAGE_RUN_BUILD_TASK_NAME)) {
@@ -321,7 +318,7 @@ public class ModulesProjectConfigurator extends BaseProjectConfigurator {
 
 	@SuppressWarnings("serial")
 	private void _configureRootTaskDistBundle(final Jar jar) {
-		final Project project = jar.getProject();
+		Project project = jar.getProject();
 
 		Copy copy = (Copy)GradleUtil.getTask(
 			project.getRootProject(),
@@ -339,7 +336,7 @@ public class ModulesProjectConfigurator extends BaseProjectConfigurator {
 			});
 	}
 
-	private void _configureRootTaskDistBundle(final Task buildTask) {
+	private void _configureRootTaskDistBundle(Task buildTask) {
 		Project project = buildTask.getProject();
 
 		Copy copy = (Copy)GradleUtil.getTask(

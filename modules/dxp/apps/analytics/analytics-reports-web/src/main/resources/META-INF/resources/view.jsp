@@ -16,65 +16,22 @@
 
 <%@ include file="/init.jsp" %>
 
-<%
-String analyticsReportsPanelState = SessionClicks.get(request, "com.liferay.analytics.reports.web_panelState", "closed");
-%>
-
 <div class="lfr-analytics-reports-sidebar" id="analyticsReportsSidebar">
-	<div class="sidebar-header">
-		<clay:content-row
-			cssClass="sidebar-section"
-		>
-			<clay:content-col
-				expand="<%= true %>"
-			>
-				<h1 class="sr-only"><liferay-ui:message key="content-performance-panel" /></h1>
+	<div class="d-flex justify-content-between p-3 sidebar-header">
+		<h1 class="sr-only"><liferay-ui:message key="content-performance-panel" /></h1>
 
-				<span><liferay-ui:message key="content-performance" /></span>
-			</clay:content-col>
+		<span class="font-weight-bold"><liferay-ui:message key="content-performance" /></span>
 
-			<clay:content-col>
-				<clay:button
-					cssClass="sidenav-close"
-					displayType="unstyled"
-					icon="times-small"
-					monospaced="<%= true %>"
-				/>
-			</clay:content-col>
-		</clay:content-row>
+		<clay:button
+			aria-label='<%= LanguageUtil.get(request, "close") %>'
+			cssClass="sidenav-close text-secondary"
+			displayType="unstyled"
+			icon="times"
+			monospaced="<%= true %>"
+		/>
 	</div>
 
 	<div class="sidebar-body">
-		<c:if test='<%= Objects.equals(analyticsReportsPanelState, "open") %>'>
-			<liferay-util:include page="/analytics_reports_panel.jsp" servletContext="<%= application %>" />
-		</c:if>
+		<liferay-util:include page="/analytics_reports_panel.jsp" servletContext="<%= application %>" />
 	</div>
 </div>
-
-<aui:script>
-	var analyticsReportsPanelToggle = document.getElementById(
-		'<portlet:namespace />analyticsReportsPanelToggleId'
-	);
-
-	var sidenavInstance = Liferay.SideNavigation.initialize(
-		analyticsReportsPanelToggle
-	);
-
-	sidenavInstance.on('open.lexicon.sidenav', function (event) {
-		Liferay.Util.Session.set(
-			'com.liferay.analytics.reports.web_panelState',
-			'open'
-		);
-	});
-
-	sidenavInstance.on('closed.lexicon.sidenav', function (event) {
-		Liferay.Util.Session.set(
-			'com.liferay.analytics.reports.web_panelState',
-			'closed'
-		);
-	});
-
-	Liferay.once('screenLoad', function () {
-		Liferay.SideNavigation.destroy(analyticsReportsPanelToggle);
-	});
-</aui:script>

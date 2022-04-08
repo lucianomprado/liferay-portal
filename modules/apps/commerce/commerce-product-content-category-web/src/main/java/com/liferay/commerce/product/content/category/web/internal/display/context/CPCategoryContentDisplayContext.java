@@ -16,11 +16,14 @@ package com.liferay.commerce.product.content.category.web.internal.display.conte
 
 import com.liferay.asset.kernel.model.AssetCategory;
 import com.liferay.asset.kernel.service.AssetCategoryService;
+import com.liferay.commerce.constants.CommerceWebKeys;
+import com.liferay.commerce.context.CommerceContext;
 import com.liferay.commerce.media.CommerceMediaResolver;
+import com.liferay.commerce.product.constants.CPAttachmentFileEntryConstants;
 import com.liferay.commerce.product.content.category.web.internal.configuration.CPCategoryContentPortletInstanceConfiguration;
 import com.liferay.commerce.product.model.CPAttachmentFileEntry;
-import com.liferay.commerce.product.model.CPAttachmentFileEntryConstants;
 import com.liferay.commerce.product.service.CPAttachmentFileEntryService;
+import com.liferay.commerce.util.CommerceUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.module.configuration.ConfigurationException;
 import com.liferay.portal.kernel.theme.PortletDisplay;
@@ -78,20 +81,17 @@ public class CPCategoryContentDisplayContext {
 		return _assetCategory;
 	}
 
-	public String getDefaultImageSrc(ThemeDisplay themeDisplay)
-		throws Exception {
-
+	public String getDefaultImageSrc() throws Exception {
 		AssetCategory assetCategory = getAssetCategory();
 
 		if (assetCategory == null) {
 			return null;
 		}
 
-		long classNameId = _portal.getClassNameId(AssetCategory.class);
-
 		List<CPAttachmentFileEntry> cpAttachmentFileEntries =
 			_cpAttachmentFileEntryService.getCPAttachmentFileEntries(
-				classNameId, assetCategory.getCategoryId(),
+				_portal.getClassNameId(AssetCategory.class),
+				assetCategory.getCategoryId(),
 				CPAttachmentFileEntryConstants.TYPE_IMAGE,
 				WorkflowConstants.STATUS_APPROVED, 0, 1);
 
@@ -106,7 +106,10 @@ public class CPCategoryContentDisplayContext {
 			return null;
 		}
 
-		return _commerceMediaResolver.getUrl(
+		return _commerceMediaResolver.getURL(
+			CommerceUtil.getCommerceAccountId(
+				(CommerceContext)_httpServletRequest.getAttribute(
+					CommerceWebKeys.COMMERCE_CONTEXT)),
 			cpAttachmentFileEntry.getCPAttachmentFileEntryId());
 	}
 

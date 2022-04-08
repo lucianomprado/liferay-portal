@@ -39,7 +39,7 @@ import org.osgi.service.component.annotations.Reference;
 	enabled = false, immediate = true,
 	property = {
 		"javax.portlet.name=" + CPPortletKeys.CP_DEFINITIONS,
-		"mvc.command.name=editCProductExternalReferenceCode"
+		"mvc.command.name=/cp_definitions/edit_c_product_external_reference_code"
 	},
 	service = MVCActionCommand.class
 )
@@ -52,7 +52,7 @@ public class EditCProductExternalReferenceCodeMVCActionCommand
 		throws Exception {
 
 		try {
-			updateCProductExternalReferenceCode(actionRequest);
+			_updateCProductExternalReferenceCode(actionRequest);
 		}
 		catch (Exception exception) {
 			if (exception instanceof NoSuchCProductException ||
@@ -63,7 +63,7 @@ public class EditCProductExternalReferenceCodeMVCActionCommand
 				actionResponse.setRenderParameter("mvcPath", "/error.jsp");
 			}
 			else {
-				_log.error(exception, exception);
+				_log.error(exception);
 
 				String redirect = ParamUtil.getString(
 					actionRequest, "redirect");
@@ -73,7 +73,7 @@ public class EditCProductExternalReferenceCodeMVCActionCommand
 		}
 	}
 
-	protected void updateCProductExternalReferenceCode(
+	private void _updateCProductExternalReferenceCode(
 			ActionRequest actionRequest)
 		throws Exception {
 
@@ -85,7 +85,7 @@ public class EditCProductExternalReferenceCodeMVCActionCommand
 			actionRequest, "externalReferenceCode");
 
 		_cProductLocalService.updateCProductExternalReferenceCode(
-			cProduct.getCProductId(), externalReferenceCode);
+			externalReferenceCode, cProduct.getCProductId());
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(

@@ -14,12 +14,7 @@
 
 package com.liferay.portal.vulcan.internal.jaxrs.context.provider;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
-
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 import com.liferay.portal.vulcan.fields.FieldsQueryParam;
 
 import java.util.Set;
@@ -29,6 +24,11 @@ import javax.servlet.http.HttpServletRequest;
 import org.apache.cxf.jaxrs.ext.ContextProvider;
 import org.apache.cxf.message.Message;
 
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 import org.mockito.Mockito;
@@ -38,29 +38,36 @@ import org.mockito.Mockito;
  */
 public class FieldsQueryParamContextProviderTest {
 
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
+
 	@Test
 	public void test() {
 
 		// Null
 
-		assertThat(_getFieldNames(null), is(nullValue()));
+		MatcherAssert.assertThat(
+			_getFieldNames(null), Matchers.is(Matchers.nullValue()));
 
 		// Empty
 
-		assertThat(_getFieldNames(""), is(empty()));
+		MatcherAssert.assertThat(
+			_getFieldNames(""), Matchers.is(Matchers.empty()));
 
 		// Expanded
 
-		assertThat(
+		MatcherAssert.assertThat(
 			_getFieldNames("hello.hi.hello,potato"),
-			containsInAnyOrder(
+			Matchers.containsInAnyOrder(
 				"hello", "hello.hi", "hello.hi.hello", "potato"));
 
 		// No duplicates
 
-		assertThat(
+		MatcherAssert.assertThat(
 			_getFieldNames("hello,hi,hello"),
-			containsInAnyOrder("hello", "hi"));
+			Matchers.containsInAnyOrder("hello", "hi"));
 	}
 
 	private Set<String> _getFieldNames(String fieldNames) {

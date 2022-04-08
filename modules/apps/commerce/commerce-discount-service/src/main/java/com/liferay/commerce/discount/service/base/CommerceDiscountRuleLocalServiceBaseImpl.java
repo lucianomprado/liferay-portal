@@ -16,11 +16,13 @@ package com.liferay.commerce.discount.service.base;
 
 import com.liferay.commerce.discount.model.CommerceDiscountRule;
 import com.liferay.commerce.discount.service.CommerceDiscountRuleLocalService;
+import com.liferay.commerce.discount.service.CommerceDiscountRuleLocalServiceUtil;
 import com.liferay.commerce.discount.service.persistence.CommerceDiscountAccountRelFinder;
 import com.liferay.commerce.discount.service.persistence.CommerceDiscountAccountRelPersistence;
 import com.liferay.commerce.discount.service.persistence.CommerceDiscountCommerceAccountGroupRelFinder;
 import com.liferay.commerce.discount.service.persistence.CommerceDiscountCommerceAccountGroupRelPersistence;
 import com.liferay.commerce.discount.service.persistence.CommerceDiscountFinder;
+import com.liferay.commerce.discount.service.persistence.CommerceDiscountOrderTypeRelPersistence;
 import com.liferay.commerce.discount.service.persistence.CommerceDiscountPersistence;
 import com.liferay.commerce.discount.service.persistence.CommerceDiscountRelFinder;
 import com.liferay.commerce.discount.service.persistence.CommerceDiscountRelPersistence;
@@ -57,6 +59,8 @@ import com.liferay.portal.spring.extender.service.ServiceReference;
 
 import java.io.Serializable;
 
+import java.lang.reflect.Field;
+
 import java.util.List;
 
 import javax.sql.DataSource;
@@ -79,7 +83,7 @@ public abstract class CommerceDiscountRuleLocalServiceBaseImpl
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. Use <code>CommerceDiscountRuleLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>com.liferay.commerce.discount.service.CommerceDiscountRuleLocalServiceUtil</code>.
+	 * Never modify or reference this class directly. Use <code>CommerceDiscountRuleLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>CommerceDiscountRuleLocalServiceUtil</code>.
 	 */
 
 	/**
@@ -159,6 +163,13 @@ public abstract class CommerceDiscountRuleLocalServiceBaseImpl
 	@Override
 	public <T> T dslQuery(DSLQuery dslQuery) {
 		return commerceDiscountRulePersistence.dslQuery(dslQuery);
+	}
+
+	@Override
+	public int dslQueryCount(DSLQuery dslQuery) {
+		Long count = dslQuery(dslQuery);
+
+		return count.intValue();
 	}
 
 	@Override
@@ -616,6 +627,56 @@ public abstract class CommerceDiscountRuleLocalServiceBaseImpl
 	}
 
 	/**
+	 * Returns the commerce discount order type rel local service.
+	 *
+	 * @return the commerce discount order type rel local service
+	 */
+	public com.liferay.commerce.discount.service.
+		CommerceDiscountOrderTypeRelLocalService
+			getCommerceDiscountOrderTypeRelLocalService() {
+
+		return commerceDiscountOrderTypeRelLocalService;
+	}
+
+	/**
+	 * Sets the commerce discount order type rel local service.
+	 *
+	 * @param commerceDiscountOrderTypeRelLocalService the commerce discount order type rel local service
+	 */
+	public void setCommerceDiscountOrderTypeRelLocalService(
+		com.liferay.commerce.discount.service.
+			CommerceDiscountOrderTypeRelLocalService
+				commerceDiscountOrderTypeRelLocalService) {
+
+		this.commerceDiscountOrderTypeRelLocalService =
+			commerceDiscountOrderTypeRelLocalService;
+	}
+
+	/**
+	 * Returns the commerce discount order type rel persistence.
+	 *
+	 * @return the commerce discount order type rel persistence
+	 */
+	public CommerceDiscountOrderTypeRelPersistence
+		getCommerceDiscountOrderTypeRelPersistence() {
+
+		return commerceDiscountOrderTypeRelPersistence;
+	}
+
+	/**
+	 * Sets the commerce discount order type rel persistence.
+	 *
+	 * @param commerceDiscountOrderTypeRelPersistence the commerce discount order type rel persistence
+	 */
+	public void setCommerceDiscountOrderTypeRelPersistence(
+		CommerceDiscountOrderTypeRelPersistence
+			commerceDiscountOrderTypeRelPersistence) {
+
+		this.commerceDiscountOrderTypeRelPersistence =
+			commerceDiscountOrderTypeRelPersistence;
+	}
+
+	/**
 	 * Returns the commerce discount rel local service.
 	 *
 	 * @return the commerce discount rel local service
@@ -927,11 +988,15 @@ public abstract class CommerceDiscountRuleLocalServiceBaseImpl
 		persistedModelLocalServiceRegistry.register(
 			"com.liferay.commerce.discount.model.CommerceDiscountRule",
 			commerceDiscountRuleLocalService);
+
+		_setLocalServiceUtilService(commerceDiscountRuleLocalService);
 	}
 
 	public void destroy() {
 		persistedModelLocalServiceRegistry.unregister(
 			"com.liferay.commerce.discount.model.CommerceDiscountRule");
+
+		_setLocalServiceUtilService(null);
 	}
 
 	/**
@@ -974,6 +1039,23 @@ public abstract class CommerceDiscountRuleLocalServiceBaseImpl
 		}
 		catch (Exception exception) {
 			throw new SystemException(exception);
+		}
+	}
+
+	private void _setLocalServiceUtilService(
+		CommerceDiscountRuleLocalService commerceDiscountRuleLocalService) {
+
+		try {
+			Field field =
+				CommerceDiscountRuleLocalServiceUtil.class.getDeclaredField(
+					"_service");
+
+			field.setAccessible(true);
+
+			field.set(null, commerceDiscountRuleLocalService);
+		}
+		catch (ReflectiveOperationException reflectiveOperationException) {
+			throw new RuntimeException(reflectiveOperationException);
 		}
 	}
 
@@ -1020,6 +1102,17 @@ public abstract class CommerceDiscountRuleLocalServiceBaseImpl
 	@BeanReference(type = CommerceDiscountCommerceAccountGroupRelFinder.class)
 	protected CommerceDiscountCommerceAccountGroupRelFinder
 		commerceDiscountCommerceAccountGroupRelFinder;
+
+	@BeanReference(
+		type = com.liferay.commerce.discount.service.CommerceDiscountOrderTypeRelLocalService.class
+	)
+	protected com.liferay.commerce.discount.service.
+		CommerceDiscountOrderTypeRelLocalService
+			commerceDiscountOrderTypeRelLocalService;
+
+	@BeanReference(type = CommerceDiscountOrderTypeRelPersistence.class)
+	protected CommerceDiscountOrderTypeRelPersistence
+		commerceDiscountOrderTypeRelPersistence;
 
 	@BeanReference(
 		type = com.liferay.commerce.discount.service.CommerceDiscountRelLocalService.class

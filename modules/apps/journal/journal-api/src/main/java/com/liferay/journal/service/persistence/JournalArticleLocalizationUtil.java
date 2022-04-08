@@ -25,10 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.osgi.framework.Bundle;
-import org.osgi.framework.FrameworkUtil;
-import org.osgi.util.tracker.ServiceTracker;
-
 /**
  * The persistence utility for the journal article localization service. This utility wraps <code>com.liferay.journal.service.persistence.impl.JournalArticleLocalizationPersistenceImpl</code> and provides direct access to the database for CRUD operations. This utility should only be used by the service layer, as it must operate within a transaction. Never access this utility in a JSP, controller, model, or other front-end class.
  *
@@ -305,6 +301,76 @@ public class JournalArticleLocalizationUtil {
 	 */
 	public static int countByArticlePK(long articlePK) {
 		return getPersistence().countByArticlePK(articlePK);
+	}
+
+	/**
+	 * Returns the journal article localization where companyId = &#63; and articlePK = &#63; or throws a <code>NoSuchArticleLocalizationException</code> if it could not be found.
+	 *
+	 * @param companyId the company ID
+	 * @param articlePK the article pk
+	 * @return the matching journal article localization
+	 * @throws NoSuchArticleLocalizationException if a matching journal article localization could not be found
+	 */
+	public static JournalArticleLocalization findByC_A(
+			long companyId, long articlePK)
+		throws com.liferay.journal.exception.
+			NoSuchArticleLocalizationException {
+
+		return getPersistence().findByC_A(companyId, articlePK);
+	}
+
+	/**
+	 * Returns the journal article localization where companyId = &#63; and articlePK = &#63; or returns <code>null</code> if it could not be found. Uses the finder cache.
+	 *
+	 * @param companyId the company ID
+	 * @param articlePK the article pk
+	 * @return the matching journal article localization, or <code>null</code> if a matching journal article localization could not be found
+	 */
+	public static JournalArticleLocalization fetchByC_A(
+		long companyId, long articlePK) {
+
+		return getPersistence().fetchByC_A(companyId, articlePK);
+	}
+
+	/**
+	 * Returns the journal article localization where companyId = &#63; and articlePK = &#63; or returns <code>null</code> if it could not be found, optionally using the finder cache.
+	 *
+	 * @param companyId the company ID
+	 * @param articlePK the article pk
+	 * @param useFinderCache whether to use the finder cache
+	 * @return the matching journal article localization, or <code>null</code> if a matching journal article localization could not be found
+	 */
+	public static JournalArticleLocalization fetchByC_A(
+		long companyId, long articlePK, boolean useFinderCache) {
+
+		return getPersistence().fetchByC_A(
+			companyId, articlePK, useFinderCache);
+	}
+
+	/**
+	 * Removes the journal article localization where companyId = &#63; and articlePK = &#63; from the database.
+	 *
+	 * @param companyId the company ID
+	 * @param articlePK the article pk
+	 * @return the journal article localization that was removed
+	 */
+	public static JournalArticleLocalization removeByC_A(
+			long companyId, long articlePK)
+		throws com.liferay.journal.exception.
+			NoSuchArticleLocalizationException {
+
+		return getPersistence().removeByC_A(companyId, articlePK);
+	}
+
+	/**
+	 * Returns the number of journal article localizations where companyId = &#63; and articlePK = &#63;.
+	 *
+	 * @param companyId the company ID
+	 * @param articlePK the article pk
+	 * @return the number of matching journal article localizations
+	 */
+	public static int countByC_A(long companyId, long articlePK) {
+		return getPersistence().countByC_A(companyId, articlePK);
 	}
 
 	/**
@@ -705,29 +771,9 @@ public class JournalArticleLocalizationUtil {
 	}
 
 	public static JournalArticleLocalizationPersistence getPersistence() {
-		return _serviceTracker.getService();
+		return _persistence;
 	}
 
-	private static ServiceTracker
-		<JournalArticleLocalizationPersistence,
-		 JournalArticleLocalizationPersistence> _serviceTracker;
-
-	static {
-		Bundle bundle = FrameworkUtil.getBundle(
-			JournalArticleLocalizationPersistence.class);
-
-		ServiceTracker
-			<JournalArticleLocalizationPersistence,
-			 JournalArticleLocalizationPersistence> serviceTracker =
-				new ServiceTracker
-					<JournalArticleLocalizationPersistence,
-					 JournalArticleLocalizationPersistence>(
-						 bundle.getBundleContext(),
-						 JournalArticleLocalizationPersistence.class, null);
-
-		serviceTracker.open();
-
-		_serviceTracker = serviceTracker;
-	}
+	private static volatile JournalArticleLocalizationPersistence _persistence;
 
 }

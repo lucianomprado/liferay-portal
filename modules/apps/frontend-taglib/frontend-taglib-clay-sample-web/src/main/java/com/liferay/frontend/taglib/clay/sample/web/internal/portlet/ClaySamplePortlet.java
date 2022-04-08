@@ -17,7 +17,7 @@ package com.liferay.frontend.taglib.clay.sample.web.internal.portlet;
 import com.liferay.frontend.taglib.clay.sample.web.constants.ClaySamplePortletKeys;
 import com.liferay.frontend.taglib.clay.sample.web.internal.display.context.CardsDisplayContext;
 import com.liferay.frontend.taglib.clay.sample.web.internal.display.context.DropdownsDisplayContext;
-import com.liferay.frontend.taglib.clay.sample.web.internal.display.context.ManagementToolbarsDisplayContext;
+import com.liferay.frontend.taglib.clay.sample.web.internal.display.context.MultiselectDisplayContext;
 import com.liferay.frontend.taglib.clay.sample.web.internal.display.context.NavigationBarsDisplayContext;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCPortlet;
 import com.liferay.portal.kernel.util.Portal;
@@ -63,31 +63,21 @@ public class ClaySamplePortlet extends MVCPortlet {
 			RenderRequest renderRequest, RenderResponse renderResponse)
 		throws IOException, PortletException {
 
-		CardsDisplayContext cardsDisplayContext = new CardsDisplayContext();
-
 		renderRequest.setAttribute(
-			ClaySamplePortletKeys.CARDS_DISPLAY_CONTEXT, cardsDisplayContext);
-
-		DropdownsDisplayContext dropdownsDisplayContext =
-			new DropdownsDisplayContext();
+			ClaySamplePortletKeys.CARDS_DISPLAY_CONTEXT,
+			new CardsDisplayContext());
 
 		renderRequest.setAttribute(
 			ClaySamplePortletKeys.DROPDOWNS_DISPLAY_CONTEXT,
-			dropdownsDisplayContext);
-
-		ManagementToolbarsDisplayContext managementToolbarsDisplayContext =
-			new ManagementToolbarsDisplayContext();
+			new DropdownsDisplayContext());
 
 		renderRequest.setAttribute(
-			ClaySamplePortletKeys.MANAGEMENT_TOOLBARS_DISPLAY_CONTEXT,
-			managementToolbarsDisplayContext);
-
-		NavigationBarsDisplayContext navigationBarsDisplayContext =
-			new NavigationBarsDisplayContext();
+			ClaySamplePortletKeys.MULTISELECT_DISPLAY_CONTEXT,
+			new MultiselectDisplayContext());
 
 		renderRequest.setAttribute(
 			ClaySamplePortletKeys.NAVIGATION_BARS_DISPLAY_CONTEXT,
-			navigationBarsDisplayContext);
+			new NavigationBarsDisplayContext());
 
 		super.doDispatch(renderRequest, renderResponse);
 	}

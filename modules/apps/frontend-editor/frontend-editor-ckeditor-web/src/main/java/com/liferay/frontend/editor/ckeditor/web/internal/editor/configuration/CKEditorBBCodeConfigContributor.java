@@ -54,7 +54,7 @@ public class CKEditorBBCodeConfigContributor
 			"enterMode", 2
 		).put(
 			"extraPlugins",
-			"a11yhelpbtn,bbcode,itemselector,sourcearea,wikilink"
+			"a11yhelpbtn,bbcode,filebrowser,itemselector,sourcearea"
 		).put(
 			"fontSize_defaultLabel", "14"
 		).put(
@@ -67,13 +67,13 @@ public class CKEditorBBCodeConfigContributor
 			HtmlUtil.escape(themeDisplay.getPathThemeImages()) +
 				"/message_boards/"
 		).put(
-			"lang", getLangJSONObject(inputEditorTaglibAttributes)
+			"lang", _getLangJSONObject(inputEditorTaglibAttributes)
 		).put(
 			"newThreadURL", MBThreadConstants.NEW_THREAD_URL
 		).put(
 			"removePlugins",
 			"bidi,codemirror,div,elementspath,forms,indentblock,keystrokes," +
-				"link,maximize,newpage,pagebreak,preview,print,save," +
+				"maximize,newpage,pagebreak,preview,print,save," +
 					"showblocks,templates,video"
 		).put(
 			"smiley_descriptions",
@@ -90,7 +90,7 @@ public class CKEditorBBCodeConfigContributor
 		);
 	}
 
-	protected JSONObject getLangJSONObject(
+	private JSONObject _getLangJSONObject(
 		Map<String, Object> inputEditorTaglibAttributes) {
 
 		return JSONUtil.put(

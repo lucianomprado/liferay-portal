@@ -55,7 +55,8 @@ public class ExpandoColumnModelListener
 		}
 	}
 
-	public void onAfterUpdate(ExpandoColumn expandoColumn)
+	public void onAfterUpdate(
+			ExpandoColumn originalExpandoColumn, ExpandoColumn expandoColumn)
 		throws ModelListenerException {
 
 		try {
@@ -124,9 +125,10 @@ public class ExpandoColumnModelListener
 			cpDefinitionOptionValueRelExpandoTable.getTableId(),
 			cpOptionValueExpandoColumn.getName());
 
-		if (_expandoColumnLocalService.getColumnsCount(
-				cpDefinitionOptionValueRelExpandoTable.getTableId()) == 0) {
+		int count = _expandoColumnLocalService.getColumnsCount(
+			cpDefinitionOptionValueRelExpandoTable.getTableId());
 
+		if (count == 0) {
 			_expandoTableLocalService.deleteTable(
 				cpDefinitionOptionValueRelExpandoTable.getTableId());
 		}

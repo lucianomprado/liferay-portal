@@ -78,19 +78,23 @@ public class AssetAutoTaggerTest extends BaseAssetAutoTaggerTestCase {
 		serviceContext.setWorkflowAction(WorkflowConstants.ACTION_SAVE_DRAFT);
 
 		FileEntry fileEntry = DLAppServiceUtil.addFileEntry(
-			group.getGroupId(), DLFolderConstants.DEFAULT_PARENT_FOLDER_ID,
+			null, group.getGroupId(),
+			DLFolderConstants.DEFAULT_PARENT_FOLDER_ID,
 			RandomTestUtil.randomString(), ContentTypes.TEXT_PLAIN,
 			RandomTestUtil.randomString(), StringUtil.randomString(),
-			StringUtil.randomString(), new byte[0], serviceContext);
+			StringUtil.randomString(), StringUtil.randomString(), new byte[0],
+			null, null, serviceContext);
 
 		serviceContext.setWorkflowAction(WorkflowConstants.ACTION_PUBLISH);
 
 		DLAppServiceUtil.updateFileEntry(
 			fileEntry.getFileEntryId(), fileEntry.getFileName(),
 			fileEntry.getMimeType(), fileEntry.getTitle(),
-			fileEntry.getDescription(), RandomTestUtil.randomString(),
-			DLVersionNumberIncrease.MAJOR, fileEntry.getContentStream(),
-			fileEntry.getSize(), serviceContext);
+			StringUtil.randomString(), fileEntry.getDescription(),
+			RandomTestUtil.randomString(), DLVersionNumberIncrease.MAJOR,
+			fileEntry.getContentStream(), fileEntry.getSize(),
+			fileEntry.getExpirationDate(), fileEntry.getReviewDate(),
+			serviceContext);
 
 		AssetEntry assetEntry = AssetEntryLocalServiceUtil.getEntry(
 			DLFileEntryConstants.getClassName(), fileEntry.getFileEntryId());

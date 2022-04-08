@@ -18,27 +18,43 @@ import React from 'react';
 import {DndProvider} from 'react-dnd';
 import {HTML5Backend} from 'react-dnd-html5-backend';
 
-import {
-	ControlsProvider,
-	useSelectItem,
-} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/components/Controls';
-import {EditableProcessorContextProvider} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/components/fragment-content/EditableProcessorContext';
 import FragmentWithControls from '../../../../../src/main/resources/META-INF/resources/page_editor/app/components/layout-data-items/FragmentWithControls';
 import {LAYOUT_DATA_ITEM_TYPES} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/config/constants/layoutDataItemTypes';
 import {VIEWPORT_SIZES} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/config/constants/viewportSizes';
-import {StoreAPIContextProvider} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/store';
+import {
+	ControlsProvider,
+	useSelectItem,
+} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/contexts/ControlsContext';
+import {EditableProcessorContextProvider} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/contexts/EditableProcessorContext';
+import {StoreAPIContextProvider} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/contexts/StoreContext';
 
 jest.mock(
 	'../../../../../src/main/resources/META-INF/resources/page_editor/app/config',
 	() => ({
 		config: {
+			commonStyles: [
+				{
+					styles: [
+						{
+							defaultValue: 'left',
+							name: 'textAlign',
+						},
+					],
+				},
+			],
 			frontendTokens: {},
 		},
 	})
 );
 
+jest.mock(
+	'../../../../../src/main/resources/META-INF/resources/page_editor/app/services/serviceFetch',
+	() => jest.fn(() => Promise.resolve({}))
+);
+
 const renderFragment = ({
 	activeItemId = 'fragment',
+	fragmentConfig = {styles: {}},
 	hasUpdatePermissions = true,
 	lockedExperience = false,
 } = {}) => {
@@ -50,8 +66,8 @@ const renderFragment = ({
 	const fragment = {
 		children: [],
 		config: {
+			...fragmentConfig,
 			fragmentEntryLinkId: fragmentEntryLink.fragmentEntryLinkId,
-			styles: {},
 		},
 		itemId: 'fragment',
 		parentId: null,
@@ -85,6 +101,7 @@ const renderFragment = ({
 				>
 					<EditableProcessorContextProvider>
 						<AutoSelect />
+
 						<FragmentWithControls
 							item={fragment}
 							layoutData={layoutData}
@@ -106,5 +123,37 @@ describe('FragmentWithControls', () => {
 
 		expect(queryByText(document.body, 'delete')).not.toBeInTheDocument();
 		expect(queryByText(document.body, 'duplicate')).not.toBeInTheDocument();
+	});
+
+	it('does not show the fragment if it has been hidden by the user', async () => {
+		await act(async () => {
+			renderFragment({
+				fragmentConfig: {
+					styles: {
+						display: 'none',
+					},
+				},
+			});
+		});
+
+		expect(
+			document.body.querySelector('.page-editor__fragment-content')
+		).not.toBeVisible();
+	});
+
+	it('shows the fragment if it has not been hidden by the user', async () => {
+		await act(async () => {
+			renderFragment({
+				fragmentConfig: {
+					styles: {
+						display: 'block',
+					},
+				},
+			});
+		});
+
+		expect(
+			document.body.querySelector('.page-editor__fragment-content')
+		).toBeVisible();
 	});
 });

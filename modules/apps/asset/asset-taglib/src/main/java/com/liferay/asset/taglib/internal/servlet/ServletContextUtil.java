@@ -38,27 +38,27 @@ import org.osgi.service.component.annotations.ReferencePolicyOption;
 @Component(immediate = true, service = {})
 public class ServletContextUtil {
 
-	public static final Map<String, AssetEntryUsageRecorder>
+	public static Map<String, AssetEntryUsageRecorder>
 		getAssetEntryUsageRecorders() {
 
 		return _assetEntryUsageRecorders;
 	}
 
-	public static final AssetHelper getAssetHelper() {
+	public static AssetHelper getAssetHelper() {
 		return _assetHelper;
 	}
 
-	public static final FragmentCollectionContributorTracker
+	public static FragmentCollectionContributorTracker
 		getFragmentCollectionContributorTracker() {
 
 		return _fragmentCollectionContributorTracker;
 	}
 
-	public static final FragmentRendererTracker getFragmentRendererTracker() {
+	public static FragmentRendererTracker getFragmentRendererTracker() {
 		return _fragmentRendererTracker;
 	}
 
-	public static final ServletContext getServletContext() {
+	public static ServletContext getServletContext() {
 		return _servletContext;
 	}
 

@@ -37,7 +37,7 @@
 				label="display-settings"
 			>
 				<div class="display-template">
-					<liferay-ddm:template-selector
+					<liferay-template:template-selector
 						className="<%= LanguageEntry.class.getName() %>"
 						displayStyle="<%= languagePortletInstanceConfiguration.displayStyle() %>"
 						displayStyleGroupId="<%= siteNavigationLanguageDisplayContext.getDisplayStyleGroupId() %>"
@@ -45,7 +45,7 @@
 					/>
 				</div>
 
-				<aui:input name="preferences--displayCurrentLocale--" type="toggle-switch" value="<%= languagePortletInstanceConfiguration.displayCurrentLocale() %>" />
+				<aui:input inlineLabel="right" labelCssClass="simple-toggle-switch" name="preferences--displayCurrentLocale--" type="toggle-switch" value="<%= languagePortletInstanceConfiguration.displayCurrentLocale() %>" />
 			</liferay-frontend:fieldset>
 
 			<liferay-frontend:fieldset

@@ -88,12 +88,12 @@ public class FloatType implements CompositeUserType, Serializable {
 
 	@Override
 	public Object nullSafeGet(
-			ResultSet rs, String[] names, SessionImplementor session,
+			ResultSet resultSet, String[] names, SessionImplementor session,
 			Object owner)
 		throws SQLException {
 
 		Float value = StandardBasicTypes.FLOAT.nullSafeGet(
-			rs, names[0], session);
+			resultSet, names[0], session);
 
 		if (value == null) {
 			return DEFAULT_VALUE;
@@ -104,7 +104,7 @@ public class FloatType implements CompositeUserType, Serializable {
 
 	@Override
 	public void nullSafeSet(
-			PreparedStatement ps, Object target, int index,
+			PreparedStatement preparedStatement, Object target, int index,
 			SessionImplementor session)
 		throws SQLException {
 
@@ -112,7 +112,7 @@ public class FloatType implements CompositeUserType, Serializable {
 			target = DEFAULT_VALUE;
 		}
 
-		ps.setFloat(index, (Float)target);
+		preparedStatement.setFloat(index, (Float)target);
 	}
 
 	@Override

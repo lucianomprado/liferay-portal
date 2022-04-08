@@ -14,88 +14,64 @@
 
 package com.liferay.jenkins.results.parser;
 
-import com.liferay.jenkins.results.parser.test.clazz.group.BatchTestClassGroup;
-import com.liferay.jenkins.results.parser.test.clazz.group.SegmentTestClassGroup;
+import com.liferay.jenkins.results.parser.job.property.JobProperty;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Properties;
 import java.util.Set;
+
+import org.json.JSONObject;
 
 /**
  * @author Yi-Chen Tsai
  */
 public abstract class PortalAcceptanceTestSuiteJob
-	extends PortalGitRepositoryJob implements BatchDependentJob, TestSuiteJob {
+	extends PortalGitRepositoryJob implements TestSuiteJob {
 
-	public PortalAcceptanceTestSuiteJob(
-		String jobName, BuildProfile buildProfile) {
+	@Override
+	public DistType getDistType() {
+		JobProperty jobProperty = getJobProperty("dist.type");
 
-		this(jobName, buildProfile, null);
-	}
+		String distType = jobProperty.getValue();
 
-	public PortalAcceptanceTestSuiteJob(
-		String jobName, BuildProfile buildProfile, String testSuiteName) {
+		if (!JenkinsResultsParserUtil.isNullOrEmpty(distType)) {
+			for (DistType distTypeValue : DistType.values()) {
+				if (distType.equals(distTypeValue.toString())) {
+					recordJobProperty(jobProperty);
 
-		super(jobName, buildProfile);
-
-		if (testSuiteName == null) {
-			testSuiteName = "default";
+					return distTypeValue;
+				}
+			}
 		}
 
-		_testSuiteName = testSuiteName;
-	}
-
-	@Override
-	public Set<String> getDependentBatchNames() {
-		return getFilteredBatchNames(getRawDependentBatchNames());
-	}
-
-	@Override
-	public List<BatchTestClassGroup> getDependentBatchTestClassGroups() {
-		return getBatchTestClassGroups(getRawDependentBatchNames());
-	}
-
-	@Override
-	public Set<String> getDependentSegmentNames() {
-		return getFilteredSegmentNames(getRawDependentBatchNames());
-	}
-
-	@Override
-	public List<SegmentTestClassGroup> getDependentSegmentTestClassGroups() {
-		return getSegmentTestClassGroups(getRawDependentBatchNames());
+		return DistType.CI;
 	}
 
 	@Override
 	public Set<String> getDistTypes() {
-		Properties jobProperties = getJobProperties();
-
-		String testBatchDistAppServers = JenkinsResultsParserUtil.getProperty(
-			jobProperties,
-			"test.batch.dist.app.servers[" + _testSuiteName + "]");
-
-		if (testBatchDistAppServers == null) {
-			testBatchDistAppServers = JenkinsResultsParserUtil.getProperty(
-				jobProperties, "test.batch.dist.app.servers");
-		}
-
-		Set<String> testBatchDistAppServersSet = getSetFromString(
-			testBatchDistAppServers);
+		Set<String> distTypes = super.getDistTypes();
 
 		if (!_testSuiteName.equals("relevant")) {
-			return testBatchDistAppServersSet;
+			return distTypes;
 		}
 
-		String stableTestBatchDistAppServers =
-			JenkinsResultsParserUtil.getProperty(
-				jobProperties, "test.batch.dist.app.servers[stable]");
+		JobProperty jobProperty = getJobProperty(
+			"test.batch.dist.app.servers[stable]");
 
-		if (stableTestBatchDistAppServers != null) {
-			testBatchDistAppServersSet.addAll(
-				getSetFromString(stableTestBatchDistAppServers));
+		distTypes.addAll(getSetFromString(jobProperty.getValue()));
+
+		return distTypes;
+	}
+
+	@Override
+	public JSONObject getJSONObject() {
+		if (jsonObject != null) {
+			return jsonObject;
 		}
 
-		return testBatchDistAppServersSet;
+		jsonObject = super.getJSONObject();
+
+		jsonObject.put("test_suite_name", _testSuiteName);
+
+		return jsonObject;
 	}
 
 	@Override
@@ -103,44 +79,43 @@ public abstract class PortalAcceptanceTestSuiteJob
 		return _testSuiteName;
 	}
 
-	@Override
-	protected Set<String> getRawBatchNames() {
-		Properties jobProperties = getJobProperties();
+	protected PortalAcceptanceTestSuiteJob(
+		BuildProfile buildProfile, String jobName,
+		PortalGitWorkingDirectory portalGitWorkingDirectory,
+		String testSuiteName, String upstreamBranchName) {
 
-		String testBatchNames = JenkinsResultsParserUtil.getProperty(
-			jobProperties, "test.batch.names[" + _testSuiteName + "]");
+		super(
+			buildProfile, jobName, portalGitWorkingDirectory,
+			upstreamBranchName);
 
-		if (testBatchNames == null) {
-			testBatchNames = JenkinsResultsParserUtil.getProperty(
-				jobProperties, "test.batch.names");
+		if (JenkinsResultsParserUtil.isNullOrEmpty(testSuiteName)) {
+			testSuiteName = "default";
 		}
 
-		Set<String> batchNames = getSetFromString(testBatchNames);
-
-		if (!_testSuiteName.equals("relevant")) {
-			return batchNames;
-		}
-
-		String stableTestBatchNames = JenkinsResultsParserUtil.getProperty(
-			jobProperties, "test.batch.names[stable]");
-
-		if (stableTestBatchNames != null) {
-			batchNames.addAll(getSetFromString(stableTestBatchNames));
-		}
-
-		return batchNames;
+		_testSuiteName = testSuiteName;
 	}
 
-	protected Set<String> getRawDependentBatchNames() {
-		String dependentBatchNames = JenkinsResultsParserUtil.getProperty(
-			getJobProperties(), "test.batch.names.smoke", getBranchName(),
-			getTestSuiteName());
+	protected PortalAcceptanceTestSuiteJob(JSONObject jsonObject) {
+		super(jsonObject);
 
-		if ((dependentBatchNames == null) || dependentBatchNames.isEmpty()) {
-			return new HashSet<>();
+		_testSuiteName = jsonObject.getString("test_suite_name");
+	}
+
+	@Override
+	protected Set<String> getRawBatchNames() {
+		Set<String> rawBatchNames = super.getRawBatchNames();
+
+		if (!testRelevantChanges()) {
+			return rawBatchNames;
 		}
 
-		return getSetFromString(dependentBatchNames);
+		JobProperty jobProperty = getJobProperty("test.batch.names[stable]");
+
+		recordJobProperty(jobProperty);
+
+		rawBatchNames.addAll(getSetFromString(jobProperty.getValue()));
+
+		return rawBatchNames;
 	}
 
 	private final String _testSuiteName;

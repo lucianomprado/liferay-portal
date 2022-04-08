@@ -23,16 +23,16 @@ CommerceInventoryWarehousesDisplayContext commerceInventoryWarehousesDisplayCont
 <c:if test="<%= commerceInventoryWarehousesDisplayContext.hasManageCommerceInventoryWarehousePermission() %>">
 
 	<%
-	String commerceCountryTwoLettersIsoCode = commerceInventoryWarehousesDisplayContext.getCommerceCountryTwoLettersIsoCode();
+	String countryTwoLettersIsoCode = commerceInventoryWarehousesDisplayContext.getCountryTwoLettersIsoCode();
 	List<ManagementBarFilterItem> managementBarFilterItems = commerceInventoryWarehousesDisplayContext.getManagementBarFilterItems();
 
 	String managementBarFilterValue = null;
 
-	if (Validator.isNotNull(commerceCountryTwoLettersIsoCode)) {
-		CommerceCountry commerceCountry = commerceInventoryWarehousesDisplayContext.getCommerceCountry(commerceCountryTwoLettersIsoCode);
+	if (Validator.isNotNull(countryTwoLettersIsoCode)) {
+		Country country = commerceInventoryWarehousesDisplayContext.getCountry(countryTwoLettersIsoCode);
 
 		for (ManagementBarFilterItem managementBarFilterItem : managementBarFilterItems) {
-			if (commerceCountry.getCommerceCountryId() == Long.valueOf(managementBarFilterItem.getId())) {
+			if (country.getCountryId() == Long.valueOf(managementBarFilterItem.getId())) {
 				managementBarFilterValue = managementBarFilterItem.getLabel();
 
 				break;
@@ -42,7 +42,7 @@ CommerceInventoryWarehousesDisplayContext commerceInventoryWarehousesDisplayCont
 	%>
 
 	<liferay-ui:error exception="<%= CommerceGeocoderException.class %>">
-		<liferay-ui:message arguments="<%= errorException %>" key="an-unexpected-error-occurred-while-invoking-the-geolocation-service-x" translateArguments="<%= false %>" />
+		<liferay-ui:message arguments="<%= HtmlUtil.escape(errorException.toString()) %>" key="an-unexpected-error-occurred-while-invoking-the-geolocation-service-x" translateArguments="<%= false %>" />
 	</liferay-ui:error>
 
 	<liferay-frontend:management-bar
@@ -83,9 +83,9 @@ CommerceInventoryWarehousesDisplayContext commerceInventoryWarehousesDisplayCont
 			/>
 
 			<portlet:renderURL var="addCommerceInventoryWarehouseURL">
-				<portlet:param name="mvcRenderCommandName" value="editCommerceInventoryWarehouse" />
+				<portlet:param name="mvcRenderCommandName" value="/commerce_inventory_warehouse/edit_commerce_inventory_warehouse" />
 				<portlet:param name="redirect" value="<%= currentURL %>" />
-				<portlet:param name="commerceCountryId" value="<%= String.valueOf(commerceCountryTwoLettersIsoCode) %>" />
+				<portlet:param name="countryId" value="<%= String.valueOf(countryTwoLettersIsoCode) %>" />
 			</portlet:renderURL>
 
 			<liferay-frontend:add-menu
@@ -109,18 +109,19 @@ CommerceInventoryWarehousesDisplayContext commerceInventoryWarehousesDisplayCont
 				keyProperty="commerceInventoryWarehouseId"
 				modelVar="commerceInventoryWarehouse"
 			>
-
-				<%
-				PortletURL rowURL = renderResponse.createRenderURL();
-
-				rowURL.setParameter("mvcRenderCommandName", "editCommerceInventoryWarehouse");
-				rowURL.setParameter("redirect", currentURL);
-				rowURL.setParameter("commerceInventoryWarehouseId", String.valueOf(commerceInventoryWarehouse.getCommerceInventoryWarehouseId()));
-				%>
-
 				<liferay-ui:search-container-column-text
-					cssClass="important table-cell-expand"
-					href="<%= rowURL %>"
+					cssClass="font-weight-bold important table-cell-expand"
+					href='<%=
+						PortletURLBuilder.createRenderURL(
+							renderResponse
+						).setMVCRenderCommandName(
+							"/commerce_inventory_warehouse/edit_commerce_inventory_warehouse"
+						).setRedirect(
+							currentURL
+						).setParameter(
+							"commerceInventoryWarehouseId", commerceInventoryWarehouse.getCommerceInventoryWarehouseId()
+						).buildPortletURL()
+					%>'
 					name="name"
 					value="<%= HtmlUtil.escape(commerceInventoryWarehouse.getName()) %>"
 				/>

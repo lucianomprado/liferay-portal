@@ -38,14 +38,32 @@ import org.osgi.service.component.annotations.Reference;
 	enabled = false, immediate = true,
 	property = {
 		"javax.portlet.name=" + CPPortletKeys.CP_DEFINITIONS,
-		"mvc.command.name=editCPDefinitionGroupedEntry"
+		"mvc.command.name=/cp_definitions/edit_cp_definition_grouped_entry"
 	},
 	service = MVCActionCommand.class
 )
 public class EditCPDefinitionGroupedEntryMVCActionCommand
 	extends BaseMVCActionCommand {
 
-	protected void addCPDefinitionGroupedEntries(ActionRequest actionRequest)
+	@Override
+	protected void doProcessAction(
+			ActionRequest actionRequest, ActionResponse actionResponse)
+		throws Exception {
+
+		String cmd = ParamUtil.getString(actionRequest, Constants.CMD);
+
+		if (cmd.equals(Constants.ADD)) {
+			_addCPDefinitionGroupedEntries(actionRequest);
+		}
+		else if (cmd.equals(Constants.DELETE)) {
+			_deleteCPDefinitionGroupedEntries(actionRequest);
+		}
+		else if (cmd.equals(Constants.UPDATE)) {
+			_updateCPDefinitionGroupedEntry(actionRequest);
+		}
+	}
+
+	private void _addCPDefinitionGroupedEntries(ActionRequest actionRequest)
 		throws Exception {
 
 		long cpDefinitionId = ParamUtil.getLong(
@@ -60,7 +78,7 @@ public class EditCPDefinitionGroupedEntryMVCActionCommand
 			cpDefinitionId, entryCPDefinitionIds, serviceContext);
 	}
 
-	protected void deleteCPDefinitionGroupedEntries(ActionRequest actionRequest)
+	private void _deleteCPDefinitionGroupedEntries(ActionRequest actionRequest)
 		throws Exception {
 
 		long[] deleteCPDefinitionGroupedEntryIds = null;
@@ -88,25 +106,7 @@ public class EditCPDefinitionGroupedEntryMVCActionCommand
 		}
 	}
 
-	@Override
-	protected void doProcessAction(
-			ActionRequest actionRequest, ActionResponse actionResponse)
-		throws Exception {
-
-		String cmd = ParamUtil.getString(actionRequest, Constants.CMD);
-
-		if (cmd.equals(Constants.ADD)) {
-			addCPDefinitionGroupedEntries(actionRequest);
-		}
-		else if (cmd.equals(Constants.DELETE)) {
-			deleteCPDefinitionGroupedEntries(actionRequest);
-		}
-		else if (cmd.equals(Constants.UPDATE)) {
-			updateCPDefinitionGroupedEntry(actionRequest);
-		}
-	}
-
-	protected CPDefinitionGroupedEntry updateCPDefinitionGroupedEntry(
+	private CPDefinitionGroupedEntry _updateCPDefinitionGroupedEntry(
 			ActionRequest actionRequest)
 		throws Exception {
 

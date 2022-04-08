@@ -14,7 +14,6 @@
 
 package com.liferay.commerce.product.type.virtual.order.content.web.internal.portlet.action;
 
-import com.liferay.commerce.account.util.CommerceAccountHelper;
 import com.liferay.commerce.product.service.CommerceChannelLocalService;
 import com.liferay.commerce.product.type.virtual.order.constants.CommerceVirtualOrderPortletKeys;
 import com.liferay.commerce.product.type.virtual.order.content.web.internal.display.context.CommerceVirtualOrderItemContentDisplayContext;
@@ -43,7 +42,7 @@ import org.osgi.service.component.annotations.Reference;
 	enabled = false, immediate = true,
 	property = {
 		"javax.portlet.name=" + CommerceVirtualOrderPortletKeys.COMMERCE_VIRTUAL_ORDER_ITEM_CONTENT,
-		"mvc.command.name=viewCommerceVirtualOrderItemTermsOfUse"
+		"mvc.command.name=/commerce_virtual_order_item_content/view_commerce_virtual_order_item_terms_of_use"
 	},
 	service = MVCRenderCommand.class
 )
@@ -61,8 +60,8 @@ public class ViewCommerceVirtualOrderItemTermsOfUseMVCRenderCommand
 					new CommerceVirtualOrderItemContentDisplayContext(
 						_commerceChannelLocalService,
 						_commerceVirtualOrderItemLocalService,
-						_cpDefinitionHelper, _commerceAccountHelper,
-						_cpDefinitionVirtualSettingService, _cpInstanceHelper,
+						_cpDefinitionHelper, _cpDefinitionVirtualSettingService,
+						_cpInstanceHelper,
 						_portal.getHttpServletRequest(renderRequest));
 
 			renderRequest.setAttribute(
@@ -70,17 +69,14 @@ public class ViewCommerceVirtualOrderItemTermsOfUseMVCRenderCommand
 				commerceVirtualOrderItemContentDisplayContext);
 		}
 		catch (PortalException portalException) {
-			_log.error(portalException, portalException);
+			_log.error(portalException);
 		}
 
-		return "/terms_of_use.jsp";
+		return "/view_commerce_virtual_order_item_terms_of_use.jsp";
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		ViewCommerceVirtualOrderItemTermsOfUseMVCRenderCommand.class);
-
-	@Reference
-	private CommerceAccountHelper _commerceAccountHelper;
 
 	@Reference
 	private CommerceChannelLocalService _commerceChannelLocalService;

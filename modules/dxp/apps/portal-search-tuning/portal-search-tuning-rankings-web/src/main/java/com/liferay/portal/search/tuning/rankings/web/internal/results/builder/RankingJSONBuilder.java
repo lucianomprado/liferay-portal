@@ -63,11 +63,12 @@ public class RankingJSONBuilder {
 			WebKeys.THEME_DISPLAY);
 
 		_dlAppLocalService = dlAppLocalService;
+		_fastDateFormatFactory = fastDateFormatFactory;
+		_resourceActions = resourceActions;
+
 		_dlConfiguration = ConfigurableUtil.createConfigurable(
 			DLConfiguration.class, new HashMap<String, Object>());
-		_fastDateFormatFactory = fastDateFormatFactory;
 		_locale = themeDisplay.getLocale();
-		_resourceActions = resourceActions;
 		_themeDisplay = themeDisplay;
 	}
 
@@ -95,7 +96,7 @@ public class RankingJSONBuilder {
 		).put(
 			"type", _getType()
 		).put(
-			"viewURL", _getViewURL()
+			"viewURL", _viewURL
 		);
 	}
 
@@ -313,10 +314,6 @@ public class RankingJSONBuilder {
 		String entryClassName = _document.getString(Field.ENTRY_CLASS_NAME);
 
 		return _resourceActions.getModelResource(_locale, entryClassName);
-	}
-
-	private String _getViewURL() {
-		return _viewURL;
 	}
 
 	private boolean _isFileEntry() {

@@ -83,8 +83,8 @@ renderResponse.setTitle(kbCommentTitle);
 </div>
 
 <%
-int previousStatus = KBUtil.getPreviousStatus(kbComment.getStatus());
 int nextStatus = KBUtil.getNextStatus(kbComment.getStatus());
+int previousStatus = KBUtil.getPreviousStatus(kbComment.getStatus());
 %>
 
 <c:if test="<%= KBArticlePermission.contains(permissionChecker, kbArticle, KBActionKeys.UPDATE) || KBCommentPermission.contains(permissionChecker, kbComment, KBActionKeys.DELETE) %>">
@@ -128,7 +128,7 @@ int nextStatus = KBUtil.getNextStatus(kbComment.getStatus());
 	);
 
 	if (deleteButtonElement) {
-		deleteButtonElement.addEventListener('click', function (event) {
+		deleteButtonElement.addEventListener('click', (event) => {
 			if (
 				!confirm(
 					'<liferay-ui:message key="are-you-sure-you-want-to-delete-this" />'

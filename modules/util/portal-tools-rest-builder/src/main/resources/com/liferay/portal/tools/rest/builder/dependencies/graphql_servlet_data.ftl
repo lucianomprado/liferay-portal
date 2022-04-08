@@ -26,7 +26,7 @@ import org.osgi.service.component.annotations.ReferenceScope;
  * @author ${configYAML.author}
  * @generated
  */
-@Component(immediate = true, service = ServletData.class)
+@Component(<#if configYAML.liferayEnterpriseApp>enabled = false,</#if> immediate = true, service = ServletData.class)
 @Generated("")
 public class ServletDataImpl implements ServletData {
 
@@ -45,6 +45,13 @@ public class ServletDataImpl implements ServletData {
 			Query.set${schemaName}ResourceComponentServiceObjects(_${freeMarkerTool.getSchemaVarName(schemaName)}ResourceComponentServiceObjects);
 		</#list>
 	}
+
+	<#if configYAML.graphQLNamespace??>
+		@Override
+		public String getGraphQLNamespace() {
+			return "${configYAML.graphQLNamespace}";
+		}
+	</#if>
 
 	@Override
 	public Mutation getMutation() {

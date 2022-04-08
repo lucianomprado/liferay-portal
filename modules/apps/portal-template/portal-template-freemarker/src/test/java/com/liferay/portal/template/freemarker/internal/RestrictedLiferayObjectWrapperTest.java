@@ -14,29 +14,52 @@
 
 package com.liferay.portal.template.freemarker.internal;
 
+import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
-import com.liferay.portal.kernel.test.CaptureHandler;
-import com.liferay.portal.kernel.test.JDKLoggerTestUtil;
+import com.liferay.portal.kernel.model.impl.BaseModelImpl;
+import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
+import com.liferay.portal.kernel.service.BaseLocalService;
+import com.liferay.portal.kernel.service.BaseService;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
+import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.CodeCoverageAssertor;
+import com.liferay.portal.kernel.test.rule.NewEnv;
+import com.liferay.portal.kernel.transaction.TransactionConfig;
+import com.liferay.portal.kernel.transaction.TransactionInvoker;
+import com.liferay.portal.kernel.transaction.TransactionInvokerUtil;
+import com.liferay.portal.kernel.util.ProxyUtil;
+import com.liferay.portal.spring.aop.AopCacheManager;
+import com.liferay.portal.test.log.LogCapture;
+import com.liferay.portal.test.log.LogEntry;
+import com.liferay.portal.test.log.LoggerTestUtil;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
+import com.liferay.portal.util.PropsValues;
 
 import freemarker.ext.beans.InvalidPropertyException;
 import freemarker.ext.beans.SimpleMethodModel;
+import freemarker.ext.beans.StringModel;
 
+import freemarker.template.ObjectWrapper;
 import freemarker.template.SimpleScalar;
 import freemarker.template.TemplateModel;
 import freemarker.template.TemplateModelException;
 
+import java.io.Serializable;
+
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.function.Function;
 import java.util.logging.Level;
-import java.util.logging.LogRecord;
 
 import org.hamcrest.CoreMatchers;
 
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 /**
@@ -46,15 +69,24 @@ public class RestrictedLiferayObjectWrapperTest
 	extends BaseObjectWrapperTestCase {
 
 	@ClassRule
-	public static final CodeCoverageAssertor codeCoverageAssertor =
-		CodeCoverageAssertor.INSTANCE;
+	@Rule
+	public static final AggregateTestRule aggregateTestRule =
+		new AggregateTestRule(
+			CodeCoverageAssertor.INSTANCE, LiferayUnitTestRule.INSTANCE);
+
+	@BeforeClass
+	public static void setUpClass() {
+		TransactionInvokerUtil transactionInvokerUtil =
+			new TransactionInvokerUtil();
+
+		transactionInvokerUtil.setTransactionInvoker(
+			new TestTransactionInvoker());
+	}
 
 	@Test
 	public void testConstructor() {
-		try (CaptureHandler captureHandler =
-				JDKLoggerTestUtil.configureJDKLogger(
-					RestrictedLiferayObjectWrapper.class.getName(),
-					Level.INFO)) {
+		try (LogCapture logCapture = LoggerTestUtil.configureJDKLogger(
+				RestrictedLiferayObjectWrapper.class.getName(), Level.INFO)) {
 
 			Assert.assertEquals(
 				Collections.singletonList("com.liferay.package.name"),
@@ -63,22 +95,20 @@ public class RestrictedLiferayObjectWrapperTest
 						null, new String[] {"com.liferay.package.name"}, null),
 					"_restrictedPackageNames"));
 
-			List<LogRecord> logRecords = captureHandler.getLogRecords();
+			List<LogEntry> logEntries = logCapture.getLogEntries();
 
-			Assert.assertEquals(logRecords.toString(), 1, logRecords.size());
+			Assert.assertEquals(logEntries.toString(), 1, logEntries.size());
 
-			LogRecord logRecord = logRecords.get(0);
+			LogEntry logEntry = logEntries.get(0);
 
 			Assert.assertEquals(
 				"Unable to find restricted class com.liferay.package.name. " +
 					"Registering as a package.",
-				logRecord.getMessage());
+				logEntry.getMessage());
 		}
 
-		try (CaptureHandler captureHandler =
-				JDKLoggerTestUtil.configureJDKLogger(
-					RestrictedLiferayObjectWrapper.class.getName(),
-					Level.OFF)) {
+		try (LogCapture logCapture = LoggerTestUtil.configureJDKLogger(
+				RestrictedLiferayObjectWrapper.class.getName(), Level.OFF)) {
 
 			Assert.assertEquals(
 				Collections.singletonList("com.liferay.package.name"),
@@ -87,9 +117,9 @@ public class RestrictedLiferayObjectWrapperTest
 						null, new String[] {"com.liferay.package.name"}, null),
 					"_restrictedPackageNames"));
 
-			List<LogRecord> logRecords = captureHandler.getLogRecords();
+			List<LogEntry> logEntries = logCapture.getLogEntries();
 
-			Assert.assertEquals(logRecords.toString(), 0, logRecords.size());
+			Assert.assertEquals(logEntries.toString(), 0, logEntries.size());
 		}
 	}
 
@@ -239,10 +269,8 @@ public class RestrictedLiferayObjectWrapperTest
 
 	@Test
 	public void testRestrictedMethodNamesIncorrectSyntax() {
-		try (CaptureHandler captureHandler =
-				JDKLoggerTestUtil.configureJDKLogger(
-					RestrictedLiferayObjectWrapper.class.getName(),
-					Level.INFO)) {
+		try (LogCapture logCapture = LoggerTestUtil.configureJDKLogger(
+				RestrictedLiferayObjectWrapper.class.getName(), Level.INFO)) {
 
 			String methodName =
 				TestLiferayMethodObject.class.getName() + ".getName";
@@ -250,54 +278,54 @@ public class RestrictedLiferayObjectWrapperTest
 			new RestrictedLiferayObjectWrapper(
 				null, null, new String[] {methodName});
 
-			List<LogRecord> logRecords = captureHandler.getLogRecords();
+			List<LogEntry> logEntries = logCapture.getLogEntries();
 
-			Assert.assertEquals(logRecords.toString(), 1, logRecords.size());
+			Assert.assertEquals(logEntries.toString(), 1, logEntries.size());
 
-			LogRecord logRecord = logRecords.get(0);
+			LogEntry logEntry = logEntries.get(0);
 
 			Assert.assertEquals(
 				StringBundler.concat(
 					"\"", methodName, "\" does not match format ",
 					"\"className#methodName\""),
-				logRecord.getMessage());
+				logEntry.getMessage());
 		}
 	}
 
+	@NewEnv(type = NewEnv.Type.CLASSLOADER)
 	@Test
-	public void testWrap() throws Exception {
-		testWrap(new RestrictedLiferayObjectWrapper(null, null, null));
-		testWrap(
-			new RestrictedLiferayObjectWrapper(
-				new String[] {StringPool.STAR}, null, null));
-		testWrap(
-			new RestrictedLiferayObjectWrapper(
-				new String[] {StringPool.STAR},
-				new String[] {LiferayObjectWrapper.class.getName()}, null));
-		testWrap(
-			new RestrictedLiferayObjectWrapper(
-				new String[] {StringPool.BLANK}, null, null));
-		testWrap(
-			new RestrictedLiferayObjectWrapper(
-				null, new String[] {StringPool.BLANK}, null));
-		testWrap(
-			new RestrictedLiferayObjectWrapper(
-				new String[] {StringPool.BLANK},
-				new String[] {StringPool.BLANK}, null));
+	public void testWrapWithTransactionStrictReadOnlyForFalse()
+		throws Exception {
 
-		testWrap(
-			new RestrictedLiferayObjectWrapper(
-				new String[] {StringPool.BLANK},
-				new String[] {StringPool.BLANK},
-				new String[] {StringPool.BLANK}));
+		TransactionInvokerUtil transactionInvokerUtil =
+			new TransactionInvokerUtil();
 
-		testWrap(
-			new RestrictedLiferayObjectWrapper(
-				new String[] {StringPool.BLANK},
-				new String[] {StringPool.BLANK},
-				new String[] {
-					TestLiferayMethodObject.class.getName() + "#getName"
-				}));
+		transactionInvokerUtil.setTransactionInvoker(
+			new TestTransactionInvoker());
+
+		ReflectionTestUtil.setFieldValue(
+			PropsValues.class,
+			"TEMPLATE_ENGINE_FREEMARKER_TRANSACTION_READ_ONLY", false);
+
+		_testWrap();
+	}
+
+	@NewEnv(type = NewEnv.Type.CLASSLOADER)
+	@Test
+	public void testWrapWithTransactionStrictReadOnlyForTrue()
+		throws Exception {
+
+		TransactionInvokerUtil transactionInvokerUtil =
+			new TransactionInvokerUtil();
+
+		transactionInvokerUtil.setTransactionInvoker(
+			new TestTransactionInvoker());
+
+		ReflectionTestUtil.setFieldValue(
+			PropsValues.class,
+			"TEMPLATE_ENGINE_FREEMARKER_TRANSACTION_READ_ONLY", true);
+
+		_testWrap();
 	}
 
 	public class TestLiferayMethodObject {
@@ -325,6 +353,116 @@ public class RestrictedLiferayObjectWrapperTest
 
 		private String _name;
 
+	}
+
+	@Override
+	protected void testWrap(ObjectWrapper objectWrapper) throws Exception {
+		super.testWrap(objectWrapper);
+
+		// Local service object without proxy
+
+		assertTemplateModel(
+			"TestLocalServiceObject", stringModel -> stringModel.getAsString(),
+			StringModel.class.cast(
+				objectWrapper.wrap(
+					new TestLocalService("TestLocalServiceObject"))));
+
+		// Local service object with proxy
+
+		assertTemplateModel(
+			"TestLocalServiceObject1", stringModel -> stringModel.getAsString(),
+			StringModel.class.cast(
+				objectWrapper.wrap(
+					_createAopProxy(
+						new TestLocalService("TestLocalServiceObject1")))));
+
+		assertTemplateModel(
+			"TestLocalServiceObject2", stringModel -> stringModel.getAsString(),
+			StringModel.class.cast(
+				objectWrapper.wrap(
+					_createAopProxy(
+						new TestLocalService("TestLocalServiceObject2")))));
+
+		// Service object
+
+		assertTemplateModel(
+			"TestServiceObject", stringModel -> stringModel.getAsString(),
+			StringModel.class.cast(
+				objectWrapper.wrap(
+					_createAopProxy(new TestService("TestServiceObject")))));
+
+		// System company ID
+
+		assertTemplateModel(
+			"123", stringModel -> stringModel.getAsString(),
+			StringModel.class.cast(
+				objectWrapper.wrap(new TestBaseModel(123L))));
+
+		try (LogCapture logCapture = LoggerTestUtil.configureJDKLogger(
+				CompanyThreadLocal.class.getName(), Level.OFF)) {
+
+			try {
+				CompanyThreadLocal.setCompanyId(1L);
+
+				// Base model without company ID
+
+				assertTemplateModel(
+					"123", stringModel -> stringModel.getAsString(),
+					StringModel.class.cast(
+						objectWrapper.wrap(
+							new TestBaseModel(123L) {
+
+								public Map
+									<String, Function<TestBaseModel, Object>>
+										getAttributeGetterFunctions() {
+
+									return Collections.emptyMap();
+								}
+
+							})));
+
+				// Base model with company ID
+
+				assertTemplateModel(
+					"1", stringModel -> stringModel.getAsString(),
+					StringModel.class.cast(
+						objectWrapper.wrap(new TestBaseModel(1L))));
+
+				// Base model with wrong company ID
+
+				try {
+					objectWrapper.wrap(new TestBaseModel(123L));
+
+					Assert.fail();
+				}
+				catch (TemplateModelException templateModelException) {
+					Assert.assertEquals(
+						"Denied access to model object as it does not belong " +
+							"to current company 1",
+						templateModelException.getMessage());
+				}
+
+				// Base model with wrong company ID and disabled checking
+
+				try (SafeCloseable safeCloseable =
+						CompanyThreadLocal.setInitializingPortalInstance(
+							true)) {
+
+					objectWrapper.wrap(new TestBaseModel(123L));
+				}
+			}
+			finally {
+				CompanyThreadLocal.setCompanyId(0L);
+			}
+		}
+	}
+
+	private Object _createAopProxy(Object target) {
+		Class<?> clazz = target.getClass();
+
+		return ProxyUtil.newProxyInstance(
+			clazz.getClassLoader(), clazz.getInterfaces(),
+			AopCacheManager.create(target, null));
 	}
 
 	private boolean _isRestricted(
@@ -355,6 +493,179 @@ public class RestrictedLiferayObjectWrapperTest
 					TestLiferayMethodObject.class.toString()),
 				templateModelException.getMessage());
 		}
+	}
+
+	private void _testWrap() throws Exception {
+		testWrap(new RestrictedLiferayObjectWrapper(null, null, null));
+
+		testWrap(
+			new RestrictedLiferayObjectWrapper(
+				new String[] {StringPool.STAR}, null, null));
+		testWrap(
+			new RestrictedLiferayObjectWrapper(
+				new String[] {StringPool.STAR},
+				new String[] {LiferayObjectWrapper.class.getName()}, null));
+
+		testWrap(
+			new RestrictedLiferayObjectWrapper(
+				new String[] {StringPool.BLANK}, null, null));
+		testWrap(
+			new RestrictedLiferayObjectWrapper(
+				null, new String[] {StringPool.BLANK}, null));
+		testWrap(
+			new RestrictedLiferayObjectWrapper(
+				new String[] {StringPool.BLANK},
+				new String[] {StringPool.BLANK}, null));
+		testWrap(
+			new RestrictedLiferayObjectWrapper(
+				new String[] {StringPool.BLANK},
+				new String[] {StringPool.BLANK},
+				new String[] {StringPool.BLANK}));
+		testWrap(
+			new RestrictedLiferayObjectWrapper(
+				new String[] {StringPool.BLANK},
+				new String[] {StringPool.BLANK},
+				new String[] {TestBaseModel.class.getName() + "#getName"}));
+		testWrap(
+			new RestrictedLiferayObjectWrapper(
+				new String[] {StringPool.BLANK},
+				new String[] {StringPool.BLANK},
+				new String[] {
+					TestLiferayMethodObject.class.getName() + "#getName"
+				}));
+	}
+
+	private static class TestBaseModel extends BaseModelImpl<TestBaseModel> {
+
+		@Override
+		public Object clone() {
+			return null;
+		}
+
+		@Override
+		public TestBaseModel cloneWithOriginalValues() {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public int compareTo(TestBaseModel testBaseModel) {
+			return 0;
+		}
+
+		public Map<String, Function<TestBaseModel, Object>>
+			getAttributeGetterFunctions() {
+
+			return Collections.singletonMap(
+				"companyId", TestBaseModel::getCompanyId);
+		}
+
+		public long getCompanyId() {
+			return _companyId;
+		}
+
+		@Override
+		public Map<String, Object> getModelAttributes() {
+			return null;
+		}
+
+		@Override
+		public Class<?> getModelClass() {
+			return null;
+		}
+
+		@Override
+		public String getModelClassName() {
+			return null;
+		}
+
+		@Override
+		public Serializable getPrimaryKeyObj() {
+			return null;
+		}
+
+		@Override
+		public boolean isEntityCacheEnabled() {
+			return false;
+		}
+
+		@Override
+		public boolean isFinderCacheEnabled() {
+			return false;
+		}
+
+		@Override
+		public void setPrimaryKeyObj(Serializable primaryKeyObj) {
+		}
+
+		@Override
+		public String toString() {
+			return String.valueOf(_companyId);
+		}
+
+		@Override
+		public String toXmlString() {
+			return null;
+		}
+
+		private TestBaseModel(long companyId) {
+			_companyId = companyId;
+		}
+
+		private final long _companyId;
+
+	}
+
+	private static class TestLocalService implements BaseLocalService {
+
+		@Override
+		public String toString() {
+			return _name;
+		}
+
+		private TestLocalService(String name) {
+			_name = name;
+		}
+
+		private final String _name;
+
+	}
+
+	private static class TestService implements BaseService {
+
+		@Override
+		public String toString() {
+			return _name;
+		}
+
+		private TestService(String name) {
+			_name = name;
+		}
+
+		private final String _name;
+
+	}
+
+	private static class TestTransactionInvoker implements TransactionInvoker {
+
+		@Override
+		public <T> T invoke(
+				TransactionConfig transactionConfig, Callable<T> callable)
+			throws Throwable {
+
+			boolean transactionReadOnly = ReflectionTestUtil.getFieldValue(
+				PropsValues.class,
+				"TEMPLATE_ENGINE_FREEMARKER_TRANSACTION_READ_ONLY");
+
+			if ((transactionConfig.isStrictReadOnly() && transactionReadOnly) ||
+				(!transactionConfig.isStrictReadOnly() &&
+				 !transactionReadOnly)) {
+
+				return callable.call();
+			}
+
+			return null;
+		}
+
 	}
 
 }

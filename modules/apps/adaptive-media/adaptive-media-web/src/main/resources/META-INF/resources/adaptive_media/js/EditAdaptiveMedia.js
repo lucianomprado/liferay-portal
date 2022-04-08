@@ -29,6 +29,7 @@ import React, {useCallback, useState} from 'react';
 import {HelpMessage, Input, RequiredMark} from './form/Components';
 import {alphanumeric, required, validate} from './form/validations';
 
+const getRandomUuid = () => Math.floor(Math.random() * 10000);
 const scrollToTop = () => window.scrollTo({behavior: 'smooth', top: 0});
 
 const VALID_INPUT_KEYS = new Set([
@@ -84,10 +85,10 @@ const EditAdaptiveMedia = ({
 		const currentMaxWidth = properties['max-width'];
 		const currentMaxHeight = properties['max-height'];
 
-		if (currentMaxWidth != 0) {
+		if (Number(currentMaxWidth) !== 0) {
 			maxWidth = currentMaxWidth;
 		}
-		if (currentMaxHeight != 0) {
+		if (Number(currentMaxHeight) !== 0) {
 			maxHeight = currentMaxHeight;
 		}
 	}
@@ -180,7 +181,11 @@ const EditAdaptiveMedia = ({
 		const nameValue = event.target.value;
 
 		if (automaticId) {
-			setFieldValue(newUuidId, normalizeFriendlyURL(nameValue), false);
+			setFieldValue(
+				newUuidId,
+				normalizeFriendlyURL(nameValue) || getRandomUuid(),
+				false
+			);
 		}
 
 		setFieldValue(nameId, nameValue);
@@ -228,6 +233,7 @@ const EditAdaptiveMedia = ({
 			<div className="sheet-section">
 				<h3 className="sheet-subtitle">
 					{Liferay.Language.get('size')}
+
 					<RequiredMark />
 				</h3>
 
@@ -262,6 +268,7 @@ const EditAdaptiveMedia = ({
 							value={values[maxWidthId]}
 						/>
 					</ClayLayout.Col>
+
 					<ClayLayout.Col md="3">
 						<Input
 							disabled={!configurationEntryEditable}

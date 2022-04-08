@@ -13,34 +13,31 @@
  */
 
 import ClayIcon from '@clayui/icon';
-import PropTypes from 'prop-types';
 import React, {useContext} from 'react';
 
 import MiniCartContext from './MiniCartContext';
 import {ADD_PRODUCT} from './util/constants';
 
-function CartItemsList({items}) {
+function CartItemsList() {
 	const {
 		CartViews,
 		cartState,
 		isUpdating,
 		labels,
-		spritemap,
 		summaryDataMapper,
 	} = useContext(MiniCartContext);
 
-	const {summary = {}} = cartState;
-	const numberOfItems = items?.length || 0;
+	const {cartItems = [], summary = {}} = cartState;
 
 	return (
-		<div className={'mini-cart-items-list'}>
-			<CartViews.ItemsListActions numberOfItems={numberOfItems} />
+		<div className="mini-cart-items-list">
+			<CartViews.ItemsListActions />
 
-			{numberOfItems > 0 ? (
+			{cartItems.length > 0 ? (
 				<>
-					<div className={'mini-cart-cart-items'}>
-						{items.map((item) => (
-							<CartViews.Item item={item} key={item.id} />
+					<div className="mini-cart-cart-items">
+						{cartItems.map((cartItem) => (
+							<CartViews.Item key={cartItem.id} {...cartItem} />
 						))}
 					</div>
 
@@ -55,10 +52,7 @@ function CartItemsList({items}) {
 			) : (
 				<div className="empty-cart">
 					<div className="empty-cart-icon mb-3">
-						<ClayIcon
-							spritemap={spritemap}
-							symbol={'shopping-cart'}
-						/>
+						<ClayIcon symbol="shopping-cart" />
 					</div>
 
 					<p className="empty-cart-label">{labels[ADD_PRODUCT]}</p>
@@ -67,9 +61,5 @@ function CartItemsList({items}) {
 		</div>
 	);
 }
-
-CartItemsList.propTypes = {
-	items: PropTypes.array,
-};
 
 export default CartItemsList;

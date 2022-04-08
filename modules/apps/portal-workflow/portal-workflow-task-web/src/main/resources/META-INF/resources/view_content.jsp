@@ -42,13 +42,13 @@ renderResponse.setTitle(assetRenderer.getTitle(workflowTaskDisplayContext.getTas
 %>
 
 <clay:container-fluid
-	cssClass="main-content-body"
+	cssClass="container-view"
 >
 	<clay:col
 		cssClass="lfr-asset-column lfr-asset-column-details"
 		md="12"
 	>
-		<div class="card-horizontal main-content-card">
+		<div class="card">
 			<div class="panel-body">
 				<c:if test="<%= assetEntry != null %>">
 					<c:if test="<%= assetRenderer.isLocalizable() %>">

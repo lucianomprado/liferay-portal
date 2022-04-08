@@ -49,6 +49,10 @@ public final class DDMDataProviderResponse implements Serializable {
 		return _ddmDataProviderResponseOutputs.containsKey(output);
 	}
 
+	public int size() {
+		return _ddmDataProviderResponseOutputs.size();
+	}
+
 	public static class Builder {
 
 		public static Builder newBuilder() {
@@ -86,7 +90,7 @@ public final class DDMDataProviderResponse implements Serializable {
 	private DDMDataProviderResponse() {
 	}
 
-	private Map<String, Object> _ddmDataProviderResponseOutputs =
+	private final Map<String, Object> _ddmDataProviderResponseOutputs =
 		new HashMap<>();
 	private DDMDataProviderResponseStatus _ddmDataProviderResponseStatus =
 		DDMDataProviderResponseStatus.OK;

@@ -16,6 +16,7 @@ package com.liferay.commerce.product.service.base;
 
 import com.liferay.commerce.product.model.CProduct;
 import com.liferay.commerce.product.service.CProductLocalService;
+import com.liferay.commerce.product.service.CProductLocalServiceUtil;
 import com.liferay.commerce.product.service.persistence.CPAttachmentFileEntryFinder;
 import com.liferay.commerce.product.service.persistence.CPAttachmentFileEntryPersistence;
 import com.liferay.commerce.product.service.persistence.CPDefinitionFinder;
@@ -47,6 +48,7 @@ import com.liferay.exportimport.kernel.lar.ManifestSummary;
 import com.liferay.exportimport.kernel.lar.PortletDataContext;
 import com.liferay.exportimport.kernel.lar.StagedModelDataHandlerUtil;
 import com.liferay.exportimport.kernel.lar.StagedModelType;
+import com.liferay.petra.function.UnsafeFunction;
 import com.liferay.petra.sql.dsl.query.DSLQuery;
 import com.liferay.portal.kernel.bean.BeanReference;
 import com.liferay.portal.kernel.dao.db.DB;
@@ -68,15 +70,19 @@ import com.liferay.portal.kernel.search.Indexable;
 import com.liferay.portal.kernel.search.IndexableType;
 import com.liferay.portal.kernel.service.BaseLocalServiceImpl;
 import com.liferay.portal.kernel.service.PersistedModelLocalServiceRegistry;
+import com.liferay.portal.kernel.service.change.tracking.CTService;
 import com.liferay.portal.kernel.service.persistence.BasePersistence;
 import com.liferay.portal.kernel.service.persistence.ClassNamePersistence;
 import com.liferay.portal.kernel.service.persistence.UserPersistence;
+import com.liferay.portal.kernel.service.persistence.change.tracking.CTPersistence;
 import com.liferay.portal.kernel.transaction.Transactional;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.spring.extender.service.ServiceReference;
 
 import java.io.Serializable;
+
+import java.lang.reflect.Field;
 
 import java.util.List;
 
@@ -95,12 +101,13 @@ import javax.sql.DataSource;
  */
 public abstract class CProductLocalServiceBaseImpl
 	extends BaseLocalServiceImpl
-	implements CProductLocalService, IdentifiableOSGiService {
+	implements CProductLocalService, CTService<CProduct>,
+			   IdentifiableOSGiService {
 
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. Use <code>CProductLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>com.liferay.commerce.product.service.CProductLocalServiceUtil</code>.
+	 * Never modify or reference this class directly. Use <code>CProductLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>CProductLocalServiceUtil</code>.
 	 */
 
 	/**
@@ -170,6 +177,13 @@ public abstract class CProductLocalServiceBaseImpl
 	@Override
 	public <T> T dslQuery(DSLQuery dslQuery) {
 		return cProductPersistence.dslQuery(dslQuery);
+	}
+
+	@Override
+	public int dslQueryCount(DSLQuery dslQuery) {
+		Long count = dslQuery(dslQuery);
+
+		return count.intValue();
 	}
 
 	@Override
@@ -284,10 +298,39 @@ public abstract class CProductLocalServiceBaseImpl
 	 * @return the matching c product, or <code>null</code> if a matching c product could not be found
 	 */
 	@Override
-	public CProduct fetchCProductByReferenceCode(
+	public CProduct fetchCProductByExternalReferenceCode(
 		long companyId, String externalReferenceCode) {
 
 		return cProductPersistence.fetchByC_ERC(
+			companyId, externalReferenceCode);
+	}
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link #fetchCProductByExternalReferenceCode(long, String)}
+	 */
+	@Deprecated
+	@Override
+	public CProduct fetchCProductByReferenceCode(
+		long companyId, String externalReferenceCode) {
+
+		return fetchCProductByExternalReferenceCode(
+			companyId, externalReferenceCode);
+	}
+
+	/**
+	 * Returns the c product with the matching external reference code and company.
+	 *
+	 * @param companyId the primary key of the company
+	 * @param externalReferenceCode the c product's external reference code
+	 * @return the matching c product
+	 * @throws PortalException if a matching c product could not be found
+	 */
+	@Override
+	public CProduct getCProductByExternalReferenceCode(
+			long companyId, String externalReferenceCode)
+		throws PortalException {
+
+		return cProductPersistence.findByC_ERC(
 			companyId, externalReferenceCode);
 	}
 
@@ -1660,11 +1703,15 @@ public abstract class CProductLocalServiceBaseImpl
 		persistedModelLocalServiceRegistry.register(
 			"com.liferay.commerce.product.model.CProduct",
 			cProductLocalService);
+
+		_setLocalServiceUtilService(cProductLocalService);
 	}
 
 	public void destroy() {
 		persistedModelLocalServiceRegistry.unregister(
 			"com.liferay.commerce.product.model.CProduct");
+
+		_setLocalServiceUtilService(null);
 	}
 
 	/**
@@ -1677,8 +1724,22 @@ public abstract class CProductLocalServiceBaseImpl
 		return CProductLocalService.class.getName();
 	}
 
-	protected Class<?> getModelClass() {
+	@Override
+	public CTPersistence<CProduct> getCTPersistence() {
+		return cProductPersistence;
+	}
+
+	@Override
+	public Class<CProduct> getModelClass() {
 		return CProduct.class;
+	}
+
+	@Override
+	public <R, E extends Throwable> R updateWithUnsafeFunction(
+			UnsafeFunction<CTPersistence<CProduct>, R, E> updateUnsafeFunction)
+		throws E {
+
+		return updateUnsafeFunction.apply(cProductPersistence);
 	}
 
 	protected String getModelClassName() {
@@ -1706,6 +1767,22 @@ public abstract class CProductLocalServiceBaseImpl
 		}
 		catch (Exception exception) {
 			throw new SystemException(exception);
+		}
+	}
+
+	private void _setLocalServiceUtilService(
+		CProductLocalService cProductLocalService) {
+
+		try {
+			Field field = CProductLocalServiceUtil.class.getDeclaredField(
+				"_service");
+
+			field.setAccessible(true);
+
+			field.set(null, cProductLocalService);
+		}
+		catch (ReflectiveOperationException reflectiveOperationException) {
+			throw new RuntimeException(reflectiveOperationException);
 		}
 	}
 

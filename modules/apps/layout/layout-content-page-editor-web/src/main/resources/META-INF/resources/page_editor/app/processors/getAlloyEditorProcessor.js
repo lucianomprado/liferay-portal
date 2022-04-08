@@ -15,6 +15,7 @@
 import {debounce, openSelectionModal} from 'frontend-js-web';
 
 import {config} from '../config/index';
+import isNullOrUndefined from '../utils/isNullOrUndefined';
 
 const KEY_ENTER = 13;
 const KEY_SPACE = 32;
@@ -31,7 +32,9 @@ const defaultGetEditorWrapper = (element) => {
 };
 
 const defaultRender = (element, value) => {
-	element.innerHTML = value;
+	if (!isNullOrUndefined(value)) {
+		element.innerHTML = value;
+	}
 };
 
 const keyupHandler = (event) => {
@@ -95,7 +98,7 @@ export default function getAlloyEditorProcessor(
 				) => {
 					openSelectionModal({
 						onSelect: changeLinkCallback,
-						selectEventName: editor.title + 'selectItem',
+						selectEventName: editorName + 'selectItem',
 						title: Liferay.Language.get('select-item'),
 						url,
 					});
@@ -116,7 +119,7 @@ export default function getAlloyEditorProcessor(
 					editorName
 				),
 
-				title: editorName,
+				title: '',
 			});
 
 			const nativeEditor = _editor.get('nativeEditor');
@@ -137,14 +140,24 @@ export default function getAlloyEditorProcessor(
 				nativeEditor.on('blur', () => {
 					if (_editor._mainUI.state.hidden) {
 						if (_callbacks.changeCallback) {
-							_callbacks.changeCallback(nativeEditor.getData());
+							_callbacks
+								.changeCallback(nativeEditor.getData())
+								.then(() => {
+									if (_callbacks.destroyCallback) {
+										_callbacks.destroyCallback();
+									}
+								})
+								.catch(() => {
+									if (_callbacks.destroyCallback) {
+										_callbacks.destroyCallback();
+									}
+								});
 						}
-
-						requestAnimationFrame(() => {
-							if (_callbacks.destroyCallback) {
-								_callbacks.destroyCallback();
-							}
-						});
+						else if (_callbacks.destroyCallback) {
+							requestAnimationFrame(() =>
+								_callbacks.destroyCallback()
+							);
+						}
 					}
 				}),
 
@@ -158,9 +171,7 @@ export default function getAlloyEditorProcessor(
 						nativeEditor.execCommand('selectAll');
 					}
 				}),
-			];
 
-			_eventHandlers.push(
 				nativeEditor.on(
 					'saveSnapshot',
 					debounce(() => {
@@ -168,8 +179,8 @@ export default function getAlloyEditorProcessor(
 							_callbacks.changeCallback(nativeEditor.getData());
 						}
 					}, 100)
-				)
-			);
+				),
+			];
 		},
 
 		/**

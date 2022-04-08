@@ -68,7 +68,7 @@ function LayoutFinder(props) {
 				`#${props.namespace}layoutsTree`
 			);
 
-			if (newKeywords.length == 0) {
+			if (newKeywords.length === 0) {
 				setLoading(false);
 				setLayouts([]);
 				setTotalCount(0);
@@ -133,13 +133,14 @@ function LayoutFinder(props) {
 	return (
 		<div className="layout-finder">
 			<button
-				className={`back-to-menu btn btn-sm btn-unstyled mb-3 pr-3`}
+				className="back-to-menu btn btn-sm btn-unstyled mb-3 pr-3"
 				onClick={handleOnClick}
 			>
-				<ClayIcon className={`icon-monospaced`} symbol="angle-left" />
+				<ClayIcon className="icon-monospaced" symbol="angle-left" />
 
 				{`${Liferay.Language.get('back-to-menu')} `}
 			</button>
+
 			<form onSubmit={handleFormSubmit} role="search">
 				<label
 					className="sr-only"

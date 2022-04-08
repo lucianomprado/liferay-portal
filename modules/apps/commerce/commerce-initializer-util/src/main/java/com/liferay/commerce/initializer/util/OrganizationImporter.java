@@ -45,9 +45,9 @@ public class OrganizationImporter {
 
 		ServiceContext serviceContext = new ServiceContext();
 
+		serviceContext.setCompanyId(user.getCompanyId());
 		serviceContext.setScopeGroupId(scopeGroupId);
 		serviceContext.setUserId(userId);
-		serviceContext.setCompanyId(user.getCompanyId());
 
 		for (int i = 0; i < jsonArray.length(); i++) {
 			_importOrganization(jsonArray.getJSONObject(i), 0, serviceContext);
@@ -70,7 +70,8 @@ public class OrganizationImporter {
 
 		String twoLetterISOCode = jsonObject.getString("twoLetterISOCode");
 
-		Country country = _countryService.getCountryByA2(twoLetterISOCode);
+		Country country = _countryService.getCountryByA2(
+			serviceContext.getCompanyId(), twoLetterISOCode);
 
 		organization = _organizationLocalService.addOrganization(
 			serviceContext.getUserId(), parentOrganizationId, name,

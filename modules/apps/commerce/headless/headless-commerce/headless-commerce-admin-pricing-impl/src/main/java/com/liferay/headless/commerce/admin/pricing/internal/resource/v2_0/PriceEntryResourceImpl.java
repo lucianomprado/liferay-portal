@@ -37,8 +37,8 @@ import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.search.filter.Filter;
+import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
 import com.liferay.portal.kernel.service.ServiceContext;
-import com.liferay.portal.kernel.util.CalendarFactoryUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.Validator;
@@ -53,11 +53,8 @@ import com.liferay.portal.vulcan.util.SearchUtil;
 import java.math.BigDecimal;
 
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.TimeZone;
 
 import javax.ws.rs.core.MultivaluedMap;
 
@@ -91,7 +88,7 @@ public class PriceEntryResourceImpl extends BasePriceEntryResourceImpl {
 
 		if (commercePriceEntry == null) {
 			throw new NoSuchPriceEntryException(
-				"Unable to find Price Entry with externalReferenceCode: " +
+				"Unable to find price entry with external reference code " +
 					externalReferenceCode);
 		}
 
@@ -125,7 +122,7 @@ public class PriceEntryResourceImpl extends BasePriceEntryResourceImpl {
 
 		if (commercePriceEntry == null) {
 			throw new NoSuchPriceEntryException(
-				"Unable to find Price Entry with externalReferenceCode: " +
+				"Unable to find price entry with external reference code " +
 					externalReferenceCode);
 		}
 
@@ -139,11 +136,11 @@ public class PriceEntryResourceImpl extends BasePriceEntryResourceImpl {
 
 		CommercePriceList commercePriceList =
 			_commercePriceListService.fetchByExternalReferenceCode(
-				contextCompany.getCompanyId(), externalReferenceCode);
+				externalReferenceCode, contextCompany.getCompanyId());
 
 		if (commercePriceList == null) {
 			throw new NoSuchPriceListException(
-				"Unable to find Price List with externalReferenceCode: " +
+				"Unable to find price list with external reference code " +
 					externalReferenceCode);
 		}
 
@@ -176,7 +173,7 @@ public class PriceEntryResourceImpl extends BasePriceEntryResourceImpl {
 
 		return SearchUtil.search(
 			null, booleanQuery -> booleanQuery.getPreBooleanFilter(), filter,
-			CommercePriceEntry.class, search, pagination,
+			CommercePriceEntry.class.getName(), search, pagination,
 			queryConfig -> queryConfig.setSelectedFieldNames(
 				Field.ENTRY_CLASS_PK),
 			new UnsafeConsumer() {
@@ -217,7 +214,7 @@ public class PriceEntryResourceImpl extends BasePriceEntryResourceImpl {
 
 		if (commercePriceEntry == null) {
 			throw new NoSuchPriceEntryException(
-				"Unable to find Price Entry with externalReferenceCode: " +
+				"Unable to find price entry with external reference code " +
 					externalReferenceCode);
 		}
 
@@ -231,15 +228,15 @@ public class PriceEntryResourceImpl extends BasePriceEntryResourceImpl {
 
 		CommercePriceList commercePriceList =
 			_commercePriceListService.fetchByExternalReferenceCode(
-				contextCompany.getCompanyId(), externalReferenceCode);
+				externalReferenceCode, contextCompany.getCompanyId());
 
 		if (commercePriceList == null) {
 			throw new NoSuchPriceListException(
-				"Unable to find Price List with externalReferenceCode: " +
+				"Unable to find price list with external reference code " +
 					externalReferenceCode);
 		}
 
-		CommercePriceEntry commercePriceEntry = _upsertCommercePriceEntry(
+		CommercePriceEntry commercePriceEntry = _addOrUpdateCommercePriceEntry(
 			commercePriceList, priceEntry);
 
 		return _toPriceEntry(commercePriceEntry.getCommercePriceEntryId());
@@ -249,70 +246,95 @@ public class PriceEntryResourceImpl extends BasePriceEntryResourceImpl {
 	public PriceEntry postPriceListIdPriceEntry(Long id, PriceEntry priceEntry)
 		throws Exception {
 
-		CommercePriceEntry commercePriceEntry = _upsertCommercePriceEntry(
+		CommercePriceEntry commercePriceEntry = _addOrUpdateCommercePriceEntry(
 			_commercePriceListService.getCommercePriceList(id), priceEntry);
 
 		return _toPriceEntry(commercePriceEntry.getCommercePriceEntryId());
+	}
+
+	private CommercePriceEntry _addOrUpdateCommercePriceEntry(
+			CommercePriceList commercePriceList, PriceEntry priceEntry)
+		throws Exception {
+
+		ServiceContext serviceContext = _serviceContextHelper.getServiceContext(
+			commercePriceList.getGroupId());
+
+		// Commerce price entry
+
+		long cProductId = 0;
+		String cpInstanceUuid = null;
+		CPInstance cpInstance = null;
+
+		long skuId = GetterUtil.getLong(priceEntry.getSkuId());
+		String skuExternalReferenceCode =
+			priceEntry.getSkuExternalReferenceCode();
+
+		if (skuId > 0) {
+			cpInstance = _cpInstanceService.fetchCPInstance(skuId);
+		}
+		else if (Validator.isNotNull(skuExternalReferenceCode)) {
+			cpInstance = _cpInstanceService.fetchByExternalReferenceCode(
+				skuExternalReferenceCode, serviceContext.getCompanyId());
+		}
+
+		if (cpInstance != null) {
+			CPDefinition cpDefinition = cpInstance.getCPDefinition();
+
+			cProductId = cpDefinition.getCProductId();
+
+			cpInstanceUuid = cpInstance.getCPInstanceUuid();
+		}
+
+		DateConfig displayDateConfig = DateConfig.toDisplayDateConfig(
+			priceEntry.getDisplayDate(), serviceContext.getTimeZone());
+		DateConfig expirationDateConfig = DateConfig.toExpirationDateConfig(
+			priceEntry.getExpirationDate(), serviceContext.getTimeZone());
+
+		CommercePriceEntry commercePriceEntry =
+			_commercePriceEntryService.addOrUpdateCommercePriceEntry(
+				priceEntry.getExternalReferenceCode(),
+				GetterUtil.getLong(priceEntry.getPriceEntryId()), cProductId,
+				cpInstanceUuid, commercePriceList.getCommercePriceListId(),
+				BigDecimal.valueOf(priceEntry.getPrice()),
+				GetterUtil.getBoolean(priceEntry.getDiscountDiscovery(), true),
+				priceEntry.getDiscountLevel1(), priceEntry.getDiscountLevel2(),
+				priceEntry.getDiscountLevel3(), priceEntry.getDiscountLevel4(),
+				displayDateConfig.getMonth(), displayDateConfig.getDay(),
+				displayDateConfig.getYear(), displayDateConfig.getHour(),
+				displayDateConfig.getMinute(), expirationDateConfig.getMonth(),
+				expirationDateConfig.getDay(), expirationDateConfig.getYear(),
+				expirationDateConfig.getHour(),
+				expirationDateConfig.getMinute(),
+				GetterUtil.getBoolean(priceEntry.getNeverExpire(), true),
+				priceEntry.getSkuExternalReferenceCode(), serviceContext);
+
+		// Update nested resources
+
+		_updateNestedResources(priceEntry, commercePriceEntry);
+
+		return commercePriceEntry;
 	}
 
 	private Map<String, Map<String, String>> _getActions(
 			CommercePriceEntry commercePriceEntry)
 		throws Exception {
 
-		CommercePriceList commercePriceList =
-			commercePriceEntry.getCommercePriceList();
-
 		return HashMapBuilder.<String, Map<String, String>>put(
 			"delete",
 			addAction(
-				"UPDATE", commercePriceList.getCommercePriceListId(),
-				"deletePriceEntry", commercePriceEntry.getUserId(),
-				"com.liferay.commerce.price.list.model.CommercePriceList",
-				commercePriceList.getGroupId())
+				"UPDATE", commercePriceEntry.getCommercePriceEntryId(),
+				"deletePriceEntry", _commercePriceEntryModelResourcePermission)
 		).put(
 			"get",
 			addAction(
-				"VIEW", commercePriceList.getCommercePriceListId(),
-				"getPriceEntry", commercePriceEntry.getUserId(),
-				"com.liferay.commerce.price.list.model.CommercePriceList",
-				commercePriceList.getGroupId())
+				"VIEW", commercePriceEntry.getCommercePriceEntryId(),
+				"getPriceEntry", _commercePriceEntryModelResourcePermission)
 		).put(
 			"update",
 			addAction(
-				"UPDATE", commercePriceList.getCommercePriceListId(),
-				"patchPriceEntry", commercePriceEntry.getUserId(),
-				"com.liferay.commerce.price.list.model.CommercePriceList",
-				commercePriceList.getGroupId())
+				"UPDATE", commercePriceEntry.getCommercePriceEntryId(),
+				"patchPriceEntry", _commercePriceEntryModelResourcePermission)
 		).build();
-	}
-
-	private DateConfig _getDisplayDateConfig(Date date, TimeZone timeZone) {
-		if (date == null) {
-			return new DateConfig(CalendarFactoryUtil.getCalendar(timeZone));
-		}
-
-		long time = date.getTime();
-
-		Calendar calendar = CalendarFactoryUtil.getCalendar(time, timeZone);
-
-		return new DateConfig(calendar);
-	}
-
-	private DateConfig _getExpirationDateConfig(Date date, TimeZone timeZone) {
-		if (date == null) {
-			Calendar expirationCalendar = CalendarFactoryUtil.getCalendar(
-				timeZone);
-
-			expirationCalendar.add(Calendar.MONTH, 1);
-
-			return new DateConfig(expirationCalendar);
-		}
-
-		long time = date.getTime();
-
-		Calendar calendar = CalendarFactoryUtil.getCalendar(time, timeZone);
-
-		return new DateConfig(calendar);
 	}
 
 	private List<PriceEntry> _toPriceEntries(
@@ -359,7 +381,7 @@ public class PriceEntryResourceImpl extends BasePriceEntryResourceImpl {
 
 		if (tierPrices != null) {
 			for (TierPrice tierPrice : tierPrices) {
-				TierPriceUtil.upsertCommerceTierPriceEntry(
+				TierPriceUtil.addOrUpdateCommerceTierPriceEntry(
 					_commerceTierPriceEntryService, tierPrice,
 					commercePriceEntry, _serviceContextHelper);
 			}
@@ -375,10 +397,9 @@ public class PriceEntryResourceImpl extends BasePriceEntryResourceImpl {
 		ServiceContext serviceContext =
 			_serviceContextHelper.getServiceContext();
 
-		DateConfig displayDateConfig = _getDisplayDateConfig(
+		DateConfig displayDateConfig = DateConfig.toDisplayDateConfig(
 			priceEntry.getDisplayDate(), serviceContext.getTimeZone());
-
-		DateConfig expirationDateConfig = _getExpirationDateConfig(
+		DateConfig expirationDateConfig = DateConfig.toExpirationDateConfig(
 			priceEntry.getExpirationDate(), serviceContext.getTimeZone());
 
 		commercePriceEntry =
@@ -405,71 +426,13 @@ public class PriceEntryResourceImpl extends BasePriceEntryResourceImpl {
 		return commercePriceEntry;
 	}
 
-	private CommercePriceEntry _upsertCommercePriceEntry(
-			CommercePriceList commercePriceList, PriceEntry priceEntry)
-		throws Exception {
-
-		ServiceContext serviceContext = _serviceContextHelper.getServiceContext(
-			commercePriceList.getGroupId());
-
-		// Commerce price entry
-
-		long cProductId = 0;
-		String cpInstanceUuid = null;
-		CPInstance cpInstance = null;
-
-		long skuId = GetterUtil.getLong(priceEntry.getSkuId());
-		String skuExternalReferenceCode =
-			priceEntry.getSkuExternalReferenceCode();
-
-		if (skuId > 0) {
-			cpInstance = _cpInstanceService.fetchCPInstance(skuId);
-		}
-		else if (Validator.isNotNull(skuExternalReferenceCode)) {
-			cpInstance = _cpInstanceService.fetchByExternalReferenceCode(
-				serviceContext.getCompanyId(), skuExternalReferenceCode);
-		}
-
-		if (cpInstance != null) {
-			CPDefinition cpDefinition = cpInstance.getCPDefinition();
-
-			cProductId = cpDefinition.getCProductId();
-
-			cpInstanceUuid = cpInstance.getCPInstanceUuid();
-		}
-
-		DateConfig displayDateConfig = _getDisplayDateConfig(
-			priceEntry.getDisplayDate(), serviceContext.getTimeZone());
-
-		DateConfig expirationDateConfig = _getExpirationDateConfig(
-			priceEntry.getExpirationDate(), serviceContext.getTimeZone());
-
-		CommercePriceEntry commercePriceEntry =
-			_commercePriceEntryService.upsertCommercePriceEntry(
-				priceEntry.getExternalReferenceCode(),
-				GetterUtil.getLong(priceEntry.getPriceEntryId()), cProductId,
-				cpInstanceUuid, commercePriceList.getCommercePriceListId(),
-				BigDecimal.valueOf(priceEntry.getPrice()),
-				GetterUtil.getBoolean(priceEntry.getDiscountDiscovery(), true),
-				priceEntry.getDiscountLevel1(), priceEntry.getDiscountLevel2(),
-				priceEntry.getDiscountLevel3(), priceEntry.getDiscountLevel4(),
-				displayDateConfig.getMonth(), displayDateConfig.getDay(),
-				displayDateConfig.getYear(), displayDateConfig.getHour(),
-				displayDateConfig.getMinute(), expirationDateConfig.getMonth(),
-				expirationDateConfig.getDay(), expirationDateConfig.getYear(),
-				expirationDateConfig.getHour(),
-				expirationDateConfig.getMinute(),
-				GetterUtil.getBoolean(priceEntry.getNeverExpire(), true),
-				priceEntry.getSkuExternalReferenceCode(), serviceContext);
-
-		// Update nested resources
-
-		_updateNestedResources(priceEntry, commercePriceEntry);
-
-		return commercePriceEntry;
-	}
-
 	private static final EntityModel _entityModel = new PriceEntryEntityModel();
+
+	@Reference(
+		target = "(model.class.name=com.liferay.commerce.price.list.model.CommercePriceEntry)"
+	)
+	private ModelResourcePermission<CommercePriceEntry>
+		_commercePriceEntryModelResourcePermission;
 
 	@Reference
 	private CommercePriceEntryService _commercePriceEntryService;

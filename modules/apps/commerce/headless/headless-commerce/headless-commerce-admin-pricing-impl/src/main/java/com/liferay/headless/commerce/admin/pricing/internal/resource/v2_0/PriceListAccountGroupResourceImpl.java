@@ -28,6 +28,7 @@ import com.liferay.headless.commerce.admin.pricing.resource.v2_0.PriceListAccoun
 import com.liferay.headless.commerce.core.util.ServiceContextHelper;
 import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.search.filter.Filter;
+import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.vulcan.dto.converter.DTOConverterRegistry;
 import com.liferay.portal.vulcan.dto.converter.DefaultDTOConverterContext;
@@ -71,11 +72,11 @@ public class PriceListAccountGroupResourceImpl
 
 		CommercePriceList commercePriceList =
 			_commercePriceListService.fetchByExternalReferenceCode(
-				contextCompany.getCompanyId(), externalReferenceCode);
+				externalReferenceCode, contextCompany.getCompanyId());
 
 		if (commercePriceList == null) {
 			throw new NoSuchPriceListException(
-				"Unable to find Price List with externalReferenceCode: " +
+				"Unable to find price list with external reference code " +
 					externalReferenceCode);
 		}
 
@@ -141,11 +142,11 @@ public class PriceListAccountGroupResourceImpl
 
 		CommercePriceList commercePriceList =
 			_commercePriceListService.fetchByExternalReferenceCode(
-				contextCompany.getCompanyId(), externalReferenceCode);
+				externalReferenceCode, contextCompany.getCompanyId());
 
 		if (commercePriceList == null) {
 			throw new NoSuchPriceListException(
-				"Unable to find Price List with externalReferenceCode: " +
+				"Unable to find price list with external reference code " +
 					externalReferenceCode);
 		}
 
@@ -168,16 +169,14 @@ public class PriceListAccountGroupResourceImpl
 			Long id, PriceListAccountGroup priceListAccountGroup)
 		throws Exception {
 
-		CommercePriceList commercePriceList =
-			_commercePriceListService.getCommercePriceList(id);
-
 		CommercePriceListCommerceAccountGroupRel
 			commercePriceListCommerceAccountGroupRel =
 				PriceListAccountGroupUtil.
 					addCommercePriceListCommerceAccountGroupRel(
 						_commerceAccountGroupService,
 						_commercePriceListCommerceAccountGroupRelService,
-						priceListAccountGroup, commercePriceList,
+						priceListAccountGroup,
+						_commercePriceListService.getCommercePriceList(id),
 						_serviceContextHelper);
 
 		return _toPriceListAccountGroup(
@@ -192,18 +191,12 @@ public class PriceListAccountGroupResourceImpl
 
 		return HashMapBuilder.<String, Map<String, String>>put(
 			"delete",
-			() -> {
-				CommercePriceList commercePriceList =
-					commercePriceListCommerceAccountGroupRel.
-						getCommercePriceList();
-
-				return addAction(
-					"UPDATE", commercePriceList.getCommercePriceListId(),
-					"deletePriceListAccountGroup",
-					commercePriceList.getUserId(),
-					"com.liferay.commerce.price.list.model.CommercePriceList",
-					commercePriceList.getGroupId());
-			}
+			addAction(
+				"UPDATE",
+				commercePriceListCommerceAccountGroupRel.
+					getCommercePriceListCommerceAccountGroupRelId(),
+				"deletePriceListAccountGroup",
+				_commercePriceListAccountGroupRelModelResourcePermission)
 		).build();
 	}
 
@@ -249,6 +242,12 @@ public class PriceListAccountGroupResourceImpl
 
 	@Reference
 	private CommerceAccountGroupService _commerceAccountGroupService;
+
+	@Reference(
+		target = "(model.class.name=com.liferay.commerce.price.list.model.CommercePriceListCommerceAccountGroupRel)"
+	)
+	private ModelResourcePermission<CommercePriceListCommerceAccountGroupRel>
+		_commercePriceListAccountGroupRelModelResourcePermission;
 
 	@Reference
 	private CommercePriceListCommerceAccountGroupRelService

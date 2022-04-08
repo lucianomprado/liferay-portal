@@ -18,7 +18,6 @@ import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
-import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.module.framework.ModuleServiceLifecycle;
 import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.util.StringUtil;
@@ -45,7 +44,7 @@ public abstract class BaseWorkflowMetricsIndex implements WorkflowMetricsIndex {
 		workflowMetricsPortalExecutor.execute(
 			() -> {
 				if ((searchEngineAdapter == null) ||
-					hasIndex(getIndexName(companyId))) {
+					_hasIndex(getIndexName(companyId))) {
 
 					return;
 				}
@@ -53,15 +52,20 @@ public abstract class BaseWorkflowMetricsIndex implements WorkflowMetricsIndex {
 				CreateIndexRequest createIndexRequest = new CreateIndexRequest(
 					getIndexName(companyId));
 
-				JSONObject jsonObject = JSONFactoryUtil.createJSONObject(
-					StringUtil.read(
-						getClass(), "/META-INF/search/mappings.json"));
-
 				createIndexRequest.setSource(
 					JSONUtil.put(
 						"mappings",
 						JSONUtil.put(
-							getIndexType(), jsonObject.get(getIndexType()))
+							getIndexType(),
+							() -> {
+								JSONObject jsonObject =
+									JSONFactoryUtil.createJSONObject(
+										StringUtil.read(
+											getClass(),
+											"/META-INF/search/mappings.json"));
+
+								return jsonObject.get(getIndexType());
+							})
 					).put(
 						"settings",
 						JSONFactoryUtil.createJSONObject(
@@ -78,7 +82,7 @@ public abstract class BaseWorkflowMetricsIndex implements WorkflowMetricsIndex {
 		workflowMetricsPortalExecutor.execute(
 			() -> {
 				if ((searchEngineAdapter == null) ||
-					!hasIndex(getIndexName(companyId))) {
+					!_hasIndex(getIndexName(companyId))) {
 
 					return;
 				}
@@ -90,23 +94,8 @@ public abstract class BaseWorkflowMetricsIndex implements WorkflowMetricsIndex {
 
 	@Activate
 	protected void activate() throws Exception {
-		for (Company company : companyLocalService.getCompanies()) {
-			createIndex(company.getCompanyId());
-		}
-	}
-
-	protected boolean hasIndex(String indexName) {
-		if (searchEngineAdapter == null) {
-			return false;
-		}
-
-		IndicesExistsIndexRequest indicesExistsIndexRequest =
-			new IndicesExistsIndexRequest(indexName);
-
-		IndicesExistsIndexResponse indicesExistsIndexResponse =
-			searchEngineAdapter.execute(indicesExistsIndexRequest);
-
-		return indicesExistsIndexResponse.isExists();
+		companyLocalService.forEachCompanyId(
+			companyId -> createIndex(companyId));
 	}
 
 	@Reference(
@@ -129,5 +118,19 @@ public abstract class BaseWorkflowMetricsIndex implements WorkflowMetricsIndex {
 
 	@Reference
 	protected WorkflowMetricsPortalExecutor workflowMetricsPortalExecutor;
+
+	private boolean _hasIndex(String indexName) {
+		if (searchEngineAdapter == null) {
+			return false;
+		}
+
+		IndicesExistsIndexRequest indicesExistsIndexRequest =
+			new IndicesExistsIndexRequest(indexName);
+
+		IndicesExistsIndexResponse indicesExistsIndexResponse =
+			searchEngineAdapter.execute(indicesExistsIndexRequest);
+
+		return indicesExistsIndexResponse.isExists();
+	}
 
 }

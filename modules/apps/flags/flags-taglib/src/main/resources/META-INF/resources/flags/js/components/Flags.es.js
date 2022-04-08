@@ -15,7 +15,7 @@
 import ClayButton from '@clayui/button';
 import ClayIcon from '@clayui/icon';
 import {useModal} from '@clayui/modal';
-import {useIsMounted} from 'frontend-js-react-web';
+import {useIsMounted} from '@liferay/frontend-js-react-web';
 import {fetch, objectToFormData} from 'frontend-js-web';
 import PropTypes from 'prop-types';
 import React, {useContext, useState} from 'react';
@@ -42,6 +42,7 @@ const Flags = ({
 	reasons,
 	signedIn = false,
 	uri,
+	viewMode,
 }) => {
 	const [isSending, setIsSending] = useState(false);
 	const [reportDialogOpen, setReportDialogOpen] = useState(false);
@@ -142,7 +143,7 @@ const Flags = ({
 					onlyIcon ? 'lfr-portal-tooltip' : ''
 				}`}
 				data-title={onlyIcon ? message : undefined}
-				disabled={disabled}
+				disabled={!viewMode || disabled}
 				displayType="secondary"
 				monospaced={onlyIcon}
 				onClick={handleClickShow}
@@ -155,6 +156,7 @@ const Flags = ({
 				>
 					<ClayIcon symbol="flag-empty" />
 				</span>
+
 				<span className={onlyIcon ? 'sr-only' : undefined}>
 					{message}
 				</span>

@@ -22,9 +22,10 @@ import com.liferay.commerce.product.service.CPTaxCategoryService;
 import com.liferay.commerce.product.service.CommerceChannelLocalService;
 import com.liferay.commerce.tax.engine.fixed.model.CommerceTaxFixedRate;
 import com.liferay.commerce.tax.engine.fixed.service.CommerceTaxFixedRateService;
-import com.liferay.commerce.tax.engine.fixed.web.internal.servlet.taglib.ui.CommerceTaxMethodFixedRatesScreenNavigationEntry;
+import com.liferay.commerce.tax.engine.fixed.web.internal.frontend.taglib.servlet.taglib.CommerceTaxMethodFixedRatesScreenNavigationCategory;
 import com.liferay.commerce.tax.service.CommerceTaxMethodService;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.CreationMenu;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.portlet.LiferayWindowState;
@@ -33,7 +34,6 @@ import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 
 import javax.portlet.PortletRequest;
-import javax.portlet.PortletURL;
 import javax.portlet.RenderRequest;
 
 /**
@@ -54,27 +54,27 @@ public class CommerceTaxFixedRatesDisplayContext
 		PercentageFormatter percentageFormatter, RenderRequest renderRequest) {
 
 		super(
-			commerceChannelLocalService, commerceChannelModelResourcePermission,
-			commerceCurrencyLocalService, commerceTaxMethodService,
-			cpTaxCategoryService, percentageFormatter, renderRequest);
+			commerceChannelLocalService, commerceCurrencyLocalService,
+			commerceTaxMethodService, cpTaxCategoryService,
+			commerceChannelModelResourcePermission, percentageFormatter,
+			renderRequest);
 
 		_commerceTaxFixedRateService = commerceTaxFixedRateService;
 	}
 
 	public String getAddTaxRateURL() throws Exception {
-		PortletURL portletURL = PortalUtil.getControlPanelPortletURL(
-			commerceTaxFixedRateRequestHelper.getRequest(),
-			CommercePortletKeys.COMMERCE_TAX_METHODS,
-			PortletRequest.RENDER_PHASE);
-
-		portletURL.setParameter(
-			"mvcRenderCommandName", "editCommerceTaxFixedRate");
-		portletURL.setParameter(
-			"commerceTaxMethodId", String.valueOf(getCommerceTaxMethodId()));
-
-		portletURL.setWindowState(LiferayWindowState.POP_UP);
-
-		return portletURL.toString();
+		return PortletURLBuilder.create(
+			PortalUtil.getControlPanelPortletURL(
+				commerceTaxFixedRateRequestHelper.getRequest(),
+				CommercePortletKeys.COMMERCE_TAX_METHODS,
+				PortletRequest.RENDER_PHASE)
+		).setMVCRenderCommandName(
+			"/commerce_tax_methods/edit_commerce_tax_fixed_rate"
+		).setParameter(
+			"commerceTaxMethodId", getCommerceTaxMethodId()
+		).setWindowState(
+			LiferayWindowState.POP_UP
+		).buildString();
 	}
 
 	public CommerceTaxFixedRate getCommerceTaxFixedRate()
@@ -108,7 +108,7 @@ public class CommerceTaxFixedRatesDisplayContext
 
 	@Override
 	public String getScreenNavigationCategoryKey() {
-		return CommerceTaxMethodFixedRatesScreenNavigationEntry.CATEGORY_KEY;
+		return CommerceTaxMethodFixedRatesScreenNavigationCategory.CATEGORY_KEY;
 	}
 
 	private final CommerceTaxFixedRateService _commerceTaxFixedRateService;

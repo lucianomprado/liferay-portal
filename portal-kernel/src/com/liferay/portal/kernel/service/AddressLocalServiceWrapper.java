@@ -24,6 +24,10 @@ package com.liferay.portal.kernel.service;
 public class AddressLocalServiceWrapper
 	implements AddressLocalService, ServiceWrapper<AddressLocalService> {
 
+	public AddressLocalServiceWrapper() {
+		this(null);
+	}
+
 	public AddressLocalServiceWrapper(AddressLocalService addressLocalService) {
 		_addressLocalService = addressLocalService;
 	}
@@ -46,7 +50,10 @@ public class AddressLocalServiceWrapper
 	}
 
 	/**
-	 * @deprecated As of Cavanaugh (7.4.x)
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 #addAddress(String, long, String, long, String, String,
+	 String, String, String, String, String, long, long, long,
+	 boolean, boolean, String, ServiceContext)}
 	 */
 	@Deprecated
 	@Override
@@ -183,6 +190,13 @@ public class AddressLocalServiceWrapper
 	}
 
 	@Override
+	public int dslQueryCount(
+		com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
+
+		return _addressLocalService.dslQueryCount(dslQuery);
+	}
+
+	@Override
 	public com.liferay.portal.kernel.dao.orm.DynamicQuery dynamicQuery() {
 		return _addressLocalService.dynamicQuery();
 	}
@@ -286,6 +300,19 @@ public class AddressLocalServiceWrapper
 	 * @return the matching address, or <code>null</code> if a matching address could not be found
 	 */
 	@Override
+	public com.liferay.portal.kernel.model.Address
+		fetchAddressByExternalReferenceCode(
+			long companyId, java.lang.String externalReferenceCode) {
+
+		return _addressLocalService.fetchAddressByExternalReferenceCode(
+			companyId, externalReferenceCode);
+	}
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link #fetchAddressByExternalReferenceCode(long, String)}
+	 */
+	@Deprecated
+	@Override
 	public com.liferay.portal.kernel.model.Address fetchAddressByReferenceCode(
 		long companyId, java.lang.String externalReferenceCode) {
 
@@ -327,6 +354,24 @@ public class AddressLocalServiceWrapper
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		return _addressLocalService.getAddress(addressId);
+	}
+
+	/**
+	 * Returns the address with the matching external reference code and company.
+	 *
+	 * @param companyId the primary key of the company
+	 * @param externalReferenceCode the address's external reference code
+	 * @return the matching address
+	 * @throws PortalException if a matching address could not be found
+	 */
+	@Override
+	public com.liferay.portal.kernel.model.Address
+			getAddressByExternalReferenceCode(
+				long companyId, java.lang.String externalReferenceCode)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _addressLocalService.getAddressByExternalReferenceCode(
+			companyId, externalReferenceCode);
 	}
 
 	/**
@@ -443,6 +488,29 @@ public class AddressLocalServiceWrapper
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		return _addressLocalService.getPersistedModel(primaryKeyObj);
+	}
+
+	@Override
+	public java.util.List<com.liferay.portal.kernel.model.Address>
+		getTypeAddresses(
+			long companyId, java.lang.String className, long classPK,
+			long[] typeIds) {
+
+		return _addressLocalService.getTypeAddresses(
+			companyId, className, classPK, typeIds);
+	}
+
+	@Override
+	public java.util.List<com.liferay.portal.kernel.model.Address>
+		getTypeAddresses(
+			long companyId, java.lang.String className, long classPK,
+			long[] typeIds, int start, int end,
+			com.liferay.portal.kernel.util.OrderByComparator
+				<com.liferay.portal.kernel.model.Address> orderByComparator) {
+
+		return _addressLocalService.getTypeAddresses(
+			companyId, className, classPK, typeIds, start, end,
+			orderByComparator);
 	}
 
 	@Override

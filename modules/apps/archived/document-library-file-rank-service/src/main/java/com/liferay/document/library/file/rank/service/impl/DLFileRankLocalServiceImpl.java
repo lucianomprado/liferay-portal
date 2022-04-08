@@ -19,6 +19,7 @@ import com.liferay.document.library.file.rank.model.DLFileRank;
 import com.liferay.document.library.file.rank.service.base.DLFileRankLocalServiceBaseImpl;
 import com.liferay.document.library.file.rank.util.comparator.FileRankCreateDateComparator;
 import com.liferay.document.library.kernel.model.DLFolder;
+import com.liferay.document.library.kernel.service.DLFolderLocalService;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.aop.AopService;
 import com.liferay.portal.configuration.metatype.bnd.util.ConfigurableUtil;
@@ -37,6 +38,7 @@ import java.util.Map;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Modified;
+import org.osgi.service.component.annotations.Reference;
 
 /**
  * @author Brian Wing Shun Chan
@@ -109,7 +111,9 @@ public class DLFileRankLocalServiceImpl extends DLFileRankLocalServiceBaseImpl {
 				}
 				catch (Exception exception) {
 					if (_log.isWarnEnabled()) {
-						_log.warn("Unable to remove file rank " + fileRankId);
+						_log.warn(
+							"Unable to remove file rank " + fileRankId,
+							exception);
 					}
 				}
 			}
@@ -166,7 +170,7 @@ public class DLFileRankLocalServiceImpl extends DLFileRankLocalServiceBaseImpl {
 	public void disableFileRanksByFolderId(long folderId)
 		throws PortalException {
 
-		updateFileRanks(dlFolderLocalService.getDLFolder(folderId), false);
+		updateFileRanks(_dlFolderLocalService.getDLFolder(folderId), false);
 	}
 
 	@Override
@@ -185,7 +189,7 @@ public class DLFileRankLocalServiceImpl extends DLFileRankLocalServiceBaseImpl {
 	public void enableFileRanksByFolderId(long folderId)
 		throws PortalException {
 
-		updateFileRanks(dlFolderLocalService.getDLFolder(folderId), true);
+		updateFileRanks(_dlFolderLocalService.getDLFolder(folderId), true);
 	}
 
 	@Override
@@ -217,7 +221,8 @@ public class DLFileRankLocalServiceImpl extends DLFileRankLocalServiceBaseImpl {
 						StringBundler.concat(
 							"Update failed, fetch {companyId=", companyId,
 							", userId=", userId, ", fileEntryId=", fileEntryId,
-							"}"));
+							"}"),
+						exception);
 				}
 			}
 		}
@@ -237,7 +242,7 @@ public class DLFileRankLocalServiceImpl extends DLFileRankLocalServiceBaseImpl {
 	}
 
 	protected void updateFileRanks(DLFolder dlFolder, boolean active) {
-		List<DLFolder> dlFolders = dlFolderLocalService.getFolders(
+		List<DLFolder> dlFolders = _dlFolderLocalService.getFolders(
 			dlFolder.getGroupId(), dlFolder.getFolderId());
 
 		for (DLFolder curDLFolder : dlFolders) {
@@ -259,5 +264,8 @@ public class DLFileRankLocalServiceImpl extends DLFileRankLocalServiceBaseImpl {
 
 	private volatile DLFileRankServiceConfiguration
 		_dlFileRankServiceConfiguration;
+
+	@Reference
+	private DLFolderLocalService _dlFolderLocalService;
 
 }

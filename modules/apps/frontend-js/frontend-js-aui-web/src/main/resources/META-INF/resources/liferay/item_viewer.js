@@ -132,7 +132,7 @@ AUI.add(
 			'<dt class="{dtClassName}">{dt}</dt><dd class="{ddClassName}">{dd}</dd>';
 
 		var TPL_INFO_TAB_TITLE =
-			'<li><a aria-expanded="false" class="{className}" data-toggle="liferay-tab" href="#{tabId}">{tabTitle}</a></li>';
+			'<li class="nav-item"><a aria-expanded="false" class="nav-link {className}" data-toggle="liferay-tab" href="#{tabId}">{tabTitle}</a></li>';
 
 		var LiferayItemViewer = A.Component.create({
 			ATTRS: {
@@ -330,8 +330,8 @@ AUI.add(
 						.get('links')
 						.item(instance.get('currentIndex'));
 
-					var itemTitle = item.getAttribute('data-title');
-					var itemURL = item.getAttribute('data-url');
+					var itemTitle = item.dataset.title;
+					var itemURL = item.dataset.url;
 
 					var editDialogTitle = Lang.sub(TPL_EDIT_DIALOG_TITLE, {
 						copy: Liferay.Language.get('copy'),
@@ -662,7 +662,7 @@ AUI.add(
 					Liferay.Util.getLexiconIconTpl('times') +
 					'</a>' +
 					'<h4 class="image-viewer-sidenav-header">' +
-					'<ul class="nav nav-tabs nav-tabs-default"></ul>' +
+					'<ul class="nav nav-tabs"></ul>' +
 					'</h4>' +
 					'</div>' +
 					'<div class="image-viewer-sidenav-body sidebar-body">' +

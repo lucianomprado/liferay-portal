@@ -27,6 +27,10 @@ public class CommerceShippingMethodLocalServiceWrapper
 	implements CommerceShippingMethodLocalService,
 			   ServiceWrapper<CommerceShippingMethodLocalService> {
 
+	public CommerceShippingMethodLocalServiceWrapper() {
+		this(null);
+	}
+
 	public CommerceShippingMethodLocalServiceWrapper(
 		CommerceShippingMethodLocalService commerceShippingMethodLocalService) {
 
@@ -38,12 +42,12 @@ public class CommerceShippingMethodLocalServiceWrapper
 	public com.liferay.commerce.model.CommerceAddressRestriction
 			addCommerceAddressRestriction(
 				long userId, long groupId, long commerceShippingMethodId,
-				long commerceCountryId)
+				long countryId)
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		return _commerceShippingMethodLocalService.
 			addCommerceAddressRestriction(
-				userId, groupId, commerceShippingMethodId, commerceCountryId);
+				userId, groupId, commerceShippingMethodId, countryId);
 	}
 
 	/**
@@ -53,13 +57,13 @@ public class CommerceShippingMethodLocalServiceWrapper
 	@Override
 	public com.liferay.commerce.model.CommerceAddressRestriction
 			addCommerceAddressRestriction(
-				long commerceShippingMethodId, long commerceCountryId,
+				long commerceShippingMethodId, long countryId,
 				com.liferay.portal.kernel.service.ServiceContext serviceContext)
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		return _commerceShippingMethodLocalService.
 			addCommerceAddressRestriction(
-				commerceShippingMethodId, commerceCountryId, serviceContext);
+				commerceShippingMethodId, countryId, serviceContext);
 	}
 
 	/**
@@ -197,6 +201,13 @@ public class CommerceShippingMethodLocalServiceWrapper
 	@Override
 	public <T> T dslQuery(com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
 		return _commerceShippingMethodLocalService.dslQuery(dslQuery);
+	}
+
+	@Override
+	public int dslQueryCount(
+		com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
+
+		return _commerceShippingMethodLocalService.dslQueryCount(dslQuery);
 	}
 
 	@Override
@@ -372,27 +383,35 @@ public class CommerceShippingMethodLocalServiceWrapper
 
 	@Override
 	public java.util.List<com.liferay.commerce.model.CommerceShippingMethod>
-		getCommerceShippingMethods(long groupId) {
+		getCommerceShippingMethods(
+			long groupId, boolean active, int start, int end,
+			com.liferay.portal.kernel.util.OrderByComparator
+				<com.liferay.commerce.model.CommerceShippingMethod>
+					orderByComparator) {
 
 		return _commerceShippingMethodLocalService.getCommerceShippingMethods(
-			groupId);
-	}
-
-	@Override
-	public java.util.List<com.liferay.commerce.model.CommerceShippingMethod>
-		getCommerceShippingMethods(long groupId, boolean active) {
-
-		return _commerceShippingMethodLocalService.getCommerceShippingMethods(
-			groupId, active);
+			groupId, active, start, end, orderByComparator);
 	}
 
 	@Override
 	public java.util.List<com.liferay.commerce.model.CommerceShippingMethod>
 		getCommerceShippingMethods(
-			long groupId, long commerceCountryId, boolean active) {
+			long groupId, int start, int end,
+			com.liferay.portal.kernel.util.OrderByComparator
+				<com.liferay.commerce.model.CommerceShippingMethod>
+					orderByComparator) {
 
 		return _commerceShippingMethodLocalService.getCommerceShippingMethods(
-			groupId, commerceCountryId, active);
+			groupId, start, end, orderByComparator);
+	}
+
+	@Override
+	public java.util.List<com.liferay.commerce.model.CommerceShippingMethod>
+		getCommerceShippingMethods(
+			long groupId, long countryId, boolean active) {
+
+		return _commerceShippingMethodLocalService.getCommerceShippingMethods(
+			groupId, countryId, active);
 	}
 
 	/**
@@ -404,6 +423,12 @@ public class CommerceShippingMethodLocalServiceWrapper
 	public int getCommerceShippingMethodsCount() {
 		return _commerceShippingMethodLocalService.
 			getCommerceShippingMethodsCount();
+	}
+
+	@Override
+	public int getCommerceShippingMethodsCount(long groupId) {
+		return _commerceShippingMethodLocalService.
+			getCommerceShippingMethodsCount(groupId);
 	}
 
 	@Override

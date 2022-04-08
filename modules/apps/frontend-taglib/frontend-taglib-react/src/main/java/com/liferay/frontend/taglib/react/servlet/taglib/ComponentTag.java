@@ -15,7 +15,8 @@
 package com.liferay.frontend.taglib.react.servlet.taglib;
 
 import com.liferay.frontend.js.loader.modules.extender.npm.NPMResolvedPackageNameUtil;
-import com.liferay.frontend.taglib.react.internal.util.ReactRendererProvider;
+import com.liferay.frontend.js.module.launcher.JSModuleResolver;
+import com.liferay.frontend.taglib.react.internal.util.ServicesProvider;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.theme.PortletDisplay;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
@@ -30,6 +31,7 @@ import java.util.Collections;
 import java.util.Map;
 
 import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspWriter;
 
@@ -50,11 +52,10 @@ public class ComponentTag extends ParamAndPropertyAncestorTagImpl {
 			ComponentDescriptor componentDescriptor = new ComponentDescriptor(
 				getModule(), getComponentId(), null, isPositionInLine());
 
-			ReactRenderer reactRenderer =
-				ReactRendererProvider.getReactRenderer();
+			ReactRenderer reactRenderer = ServicesProvider.getReactRenderer();
 
 			reactRenderer.renderReact(
-				componentDescriptor, props, request, jspWriter);
+				componentDescriptor, props, getRequest(), jspWriter);
 		}
 		catch (Exception exception) {
 			throw new JspException(exception);
@@ -76,16 +77,7 @@ public class ComponentTag extends ParamAndPropertyAncestorTagImpl {
 	}
 
 	public String getModule() {
-		if (_setServletContext) {
-			String namespace = NPMResolvedPackageNameUtil.get(servletContext);
-
-			return StringBundler.concat(namespace, "/", _module);
-		}
-
-		String namespace = NPMResolvedPackageNameUtil.get(
-			pageContext.getServletContext());
-
-		return StringBundler.concat(namespace, "/", _module);
+		return StringBundler.concat(getNamespace(), "/", _module);
 	}
 
 	@Override
@@ -137,19 +129,40 @@ public class ComponentTag extends ParamAndPropertyAncestorTagImpl {
 		return getProps();
 	}
 
+	protected String getNamespace() {
+		ServletContext servletContext = pageContext.getServletContext();
+
+		if (_setServletContext) {
+			servletContext = getServletContext();
+		}
+
+		try {
+			return NPMResolvedPackageNameUtil.get(servletContext);
+		}
+		catch (UnsupportedOperationException unsupportedOperationException) {
+			JSModuleResolver jsModuleResolver =
+				ServicesProvider.getJSModuleResolver();
+
+			return jsModuleResolver.resolveModule(servletContext, null);
+		}
+	}
+
 	protected Map<String, Object> getProps() {
 		return _props;
 	}
 
 	protected boolean isPositionInLine() {
-		String fragmentId = ParamUtil.getString(request, "p_f_id");
+		HttpServletRequest httpServletRequest = getRequest();
+
+		String fragmentId = ParamUtil.getString(httpServletRequest, "p_f_id");
 
 		if (Validator.isNotNull(fragmentId)) {
 			return true;
 		}
 
-		ThemeDisplay themeDisplay = (ThemeDisplay)request.getAttribute(
-			WebKeys.THEME_DISPLAY);
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)httpServletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
 
 		if (themeDisplay.isIsolated() || themeDisplay.isLifecycleResource() ||
 			themeDisplay.isStateExclusive()) {

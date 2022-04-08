@@ -30,6 +30,8 @@ import java.util.Set;
  */
 public class DDMFormLayout implements Serializable {
 
+	public static final String MULTI_PAGES = "multi-pages";
+
 	public static final String SETTINGS_MODE = "settings";
 
 	public static final String SINGLE_PAGE_MODE = "single-page";
@@ -46,6 +48,10 @@ public class DDMFormLayout implements Serializable {
 		_paginationMode = ddmFormLayout._paginationMode;
 		_definitionSchemaVersion = ddmFormLayout._definitionSchemaVersion;
 
+		for (DDMFormField ddmFormField : ddmFormLayout._ddmFormFields) {
+			_ddmFormFields.add(new DDMFormField(ddmFormField));
+		}
+
 		for (DDMFormLayoutPage ddmFormLayoutPage :
 				ddmFormLayout._ddmFormLayoutPages) {
 
@@ -53,16 +59,12 @@ public class DDMFormLayout implements Serializable {
 		}
 
 		for (DDMFormRule ddmFormRule : ddmFormLayout._ddmFormRules) {
-			addDDMFormRule(new DDMFormRule(ddmFormRule));
+			_ddmFormRules.add(new DDMFormRule(ddmFormRule));
 		}
 	}
 
 	public void addDDMFormLayoutPage(DDMFormLayoutPage ddmFormLayoutPage) {
 		_ddmFormLayoutPages.add(ddmFormLayoutPage);
-	}
-
-	public void addDDMFormRule(DDMFormRule ddmFormRule) {
-		_ddmFormRules.add(ddmFormRule);
 	}
 
 	@Override
@@ -79,6 +81,7 @@ public class DDMFormLayout implements Serializable {
 
 		if (Objects.equals(
 				_availableLocales, ddmFormLayout._availableLocales) &&
+			Objects.equals(_ddmFormFields, ddmFormLayout._ddmFormFields) &&
 			Objects.equals(
 				_ddmFormLayoutPages, ddmFormLayout._ddmFormLayoutPages) &&
 			Objects.equals(_ddmFormRules, ddmFormLayout._ddmFormRules) &&
@@ -96,6 +99,10 @@ public class DDMFormLayout implements Serializable {
 
 	public Set<Locale> getAvailableLocales() {
 		return _availableLocales;
+	}
+
+	public List<DDMFormField> getDDMFormFields() {
+		return _ddmFormFields;
 	}
 
 	public DDMFormLayoutPage getDDMFormLayoutPage(int index) {
@@ -118,14 +125,23 @@ public class DDMFormLayout implements Serializable {
 		return _definitionSchemaVersion;
 	}
 
+	public Integer getNextPage() {
+		return _nextPage;
+	}
+
 	public String getPaginationMode() {
 		return _paginationMode;
+	}
+
+	public Integer getPreviousPage() {
+		return _previousPage;
 	}
 
 	@Override
 	public int hashCode() {
 		int hash = HashUtil.hash(0, _availableLocales);
 
+		hash = HashUtil.hash(hash, _ddmFormFields);
 		hash = HashUtil.hash(hash, _ddmFormLayoutPages);
 		hash = HashUtil.hash(hash, _ddmFormRules);
 		hash = HashUtil.hash(hash, _defaultLocale);
@@ -136,6 +152,14 @@ public class DDMFormLayout implements Serializable {
 
 	public void setAvailableLocales(Set<Locale> availableLocales) {
 		_availableLocales = availableLocales;
+	}
+
+	public void setDDMFormFields(List<DDMFormField> ddmFormFields) {
+		for (DDMFormField ddmFormField : ddmFormFields) {
+			ddmFormField.setDDMFormLayout(this);
+		}
+
+		_ddmFormFields = ddmFormFields;
 	}
 
 	public void setDDMFormLayoutPages(
@@ -156,15 +180,26 @@ public class DDMFormLayout implements Serializable {
 		_definitionSchemaVersion = definitionSchemaVersion;
 	}
 
+	public void setNextPage(Integer nextPage) {
+		_nextPage = nextPage;
+	}
+
 	public void setPaginationMode(String paginationMode) {
 		_paginationMode = paginationMode;
 	}
 
+	public void setPreviousPage(Integer previousPage) {
+		_previousPage = previousPage;
+	}
+
 	private Set<Locale> _availableLocales = new LinkedHashSet<>();
+	private List<DDMFormField> _ddmFormFields = new ArrayList<>();
 	private List<DDMFormLayoutPage> _ddmFormLayoutPages = new ArrayList<>();
 	private List<DDMFormRule> _ddmFormRules = new ArrayList<>();
 	private Locale _defaultLocale;
 	private String _definitionSchemaVersion;
+	private Integer _nextPage;
 	private String _paginationMode;
+	private Integer _previousPage;
 
 }

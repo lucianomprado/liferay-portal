@@ -37,7 +37,7 @@ import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.UserLocalService;
-import com.liferay.portal.kernel.util.FriendlyURLNormalizerUtil;
+import com.liferay.portal.kernel.util.FriendlyURLNormalizer;
 import com.liferay.portal.kernel.util.GetterUtil;
 
 import java.time.LocalDateTime;
@@ -67,9 +67,9 @@ public class CommerceMLForecastImporter {
 
 		ServiceContext serviceContext = new ServiceContext();
 
+		serviceContext.setCompanyId(user.getCompanyId());
 		serviceContext.setScopeGroupId(scopeGroupId);
 		serviceContext.setUserId(userId);
-		serviceContext.setCompanyId(user.getCompanyId());
 
 		for (int i = 0; i < jsonArray.length(); i++) {
 			JSONObject jsonObject = jsonArray.getJSONObject(i);
@@ -124,11 +124,10 @@ public class CommerceMLForecastImporter {
 			JSONObject jsonObject, ServiceContext serviceContext)
 		throws PortalException {
 
-		Date currentDate = _getCurrentDate(jsonObject.getString("period"));
-
 		AssetCategoryCommerceMLForecast assetCategoryCommerceMLForecast =
 			_setFields(
-				serviceContext.getCompanyId(), currentDate,
+				serviceContext.getCompanyId(),
+				_getCurrentDate(jsonObject.getString("period")),
 				_assetCategoryCommerceMLForecastManager.create(), jsonObject);
 
 		Company company = _companyLocalService.getCompany(
@@ -173,7 +172,7 @@ public class CommerceMLForecastImporter {
 		CommerceAccount commerceAccount =
 			_commerceAccountLocalService.fetchByExternalReferenceCode(
 				serviceContext.getCompanyId(),
-				FriendlyURLNormalizerUtil.normalize(accountName));
+				_friendlyURLNormalizer.normalize(accountName));
 
 		if (commerceAccount == null) {
 			if (_log.isDebugEnabled()) {
@@ -194,11 +193,10 @@ public class CommerceMLForecastImporter {
 			JSONObject jsonObject, ServiceContext serviceContext)
 		throws PortalException {
 
-		Date currentDate = _getCurrentDate(jsonObject.getString("period"));
-
 		CommerceAccountCommerceMLForecast commerceAccountCommerceMLForecast =
 			_setFields(
-				serviceContext.getCompanyId(), currentDate,
+				serviceContext.getCompanyId(),
+				_getCurrentDate(jsonObject.getString("period")),
 				_commerceAccountCommerceMLForecastManager.create(), jsonObject);
 
 		String accountName = jsonObject.getString("account");
@@ -206,7 +204,7 @@ public class CommerceMLForecastImporter {
 		CommerceAccount commerceAccount =
 			_commerceAccountLocalService.fetchByExternalReferenceCode(
 				serviceContext.getCompanyId(),
-				FriendlyURLNormalizerUtil.normalize(accountName));
+				_friendlyURLNormalizer.normalize(accountName));
 
 		if (commerceAccount == null) {
 			if (_log.isDebugEnabled()) {
@@ -275,6 +273,9 @@ public class CommerceMLForecastImporter {
 
 	@Reference
 	private CompanyLocalService _companyLocalService;
+
+	@Reference
+	private FriendlyURLNormalizer _friendlyURLNormalizer;
 
 	@Reference
 	private UserLocalService _userLocalService;

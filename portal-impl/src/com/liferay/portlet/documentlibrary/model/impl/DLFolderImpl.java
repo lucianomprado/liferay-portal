@@ -137,6 +137,9 @@ public class DLFolderImpl extends DLFolderBaseImpl {
 			return DLFolderServiceUtil.hasFolderLock(getFolderId());
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception);
+			}
 		}
 
 		return false;
@@ -161,7 +164,7 @@ public class DLFolderImpl extends DLFolderBaseImpl {
 		}
 		catch (PortalException portalException) {
 			if (_log.isWarnEnabled()) {
-				_log.warn(portalException, portalException);
+				_log.warn(portalException);
 			}
 		}
 

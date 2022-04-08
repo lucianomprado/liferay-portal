@@ -52,6 +52,11 @@ exports[`Options shows the options 1`] = `
                 type="text"
                 value="Option 1"
               />
+              <input
+                name="keyValueLabeloption0_edited"
+                type="hidden"
+                value="false"
+              />
               
             </div>
             <div
@@ -86,6 +91,11 @@ exports[`Options shows the options 1`] = `
                 value="Option1"
               />
             </div>
+            <input
+              name="option0_edited"
+              type="hidden"
+              value="false"
+            />
             
           </div>
           <button
@@ -144,6 +154,11 @@ exports[`Options shows the options 1`] = `
                 type="text"
                 value="Option 2"
               />
+              <input
+                name="keyValueLabeloption1_edited"
+                type="hidden"
+                value="false"
+              />
               
             </div>
             <div
@@ -178,6 +193,11 @@ exports[`Options shows the options 1`] = `
                 value="Option2"
               />
             </div>
+            <input
+              name="option1_edited"
+              type="hidden"
+              value="false"
+            />
             
           </div>
           <button
@@ -236,6 +256,11 @@ exports[`Options shows the options 1`] = `
                 type="text"
                 value=""
               />
+              <input
+                name="keyValueLabeloption2_edited"
+                type="hidden"
+                value="false"
+              />
               
             </div>
             <div
@@ -270,11 +295,21 @@ exports[`Options shows the options 1`] = `
                 value="Any<String>"
               />
             </div>
+            <input
+              name="option2_edited"
+              type="hidden"
+              value="false"
+            />
             
           </div>
         </div>
       </div>
     </div>
+    <input
+      name="options_edited"
+      type="hidden"
+      value="false"
+    />
     
   </div>
 </div>

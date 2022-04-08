@@ -155,6 +155,16 @@ public class PageFragmentInstanceDefinitionSerDes {
 			sb.append("]");
 		}
 
+		if (pageFragmentInstanceDefinition.getIndexed() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"indexed\": ");
+
+			sb.append(pageFragmentInstanceDefinition.getIndexed());
+		}
+
 		if (pageFragmentInstanceDefinition.getWidgetInstances() != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -254,6 +264,15 @@ public class PageFragmentInstanceDefinitionSerDes {
 					pageFragmentInstanceDefinition.getFragmentViewports()));
 		}
 
+		if (pageFragmentInstanceDefinition.getIndexed() == null) {
+			map.put("indexed", null);
+		}
+		else {
+			map.put(
+				"indexed",
+				String.valueOf(pageFragmentInstanceDefinition.getIndexed()));
+		}
+
 		if (pageFragmentInstanceDefinition.getWidgetInstances() == null) {
 			map.put("widgetInstances", null);
 		}
@@ -330,6 +349,12 @@ public class PageFragmentInstanceDefinitionSerDes {
 						));
 				}
 			}
+			else if (Objects.equals(jsonParserFieldName, "indexed")) {
+				if (jsonParserFieldValue != null) {
+					pageFragmentInstanceDefinition.setIndexed(
+						(Boolean)jsonParserFieldValue);
+				}
+			}
 			else if (Objects.equals(jsonParserFieldName, "widgetInstances")) {
 				if (jsonParserFieldValue != null) {
 					pageFragmentInstanceDefinition.setWidgetInstances(
@@ -341,9 +366,6 @@ public class PageFragmentInstanceDefinitionSerDes {
 							size -> new WidgetInstance[size]
 						));
 				}
-			}
-			else if (jsonParserFieldName.equals("status")) {
-				throw new IllegalArgumentException();
 			}
 		}
 
@@ -373,7 +395,7 @@ public class PageFragmentInstanceDefinitionSerDes {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -409,7 +431,7 @@ public class PageFragmentInstanceDefinitionSerDes {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

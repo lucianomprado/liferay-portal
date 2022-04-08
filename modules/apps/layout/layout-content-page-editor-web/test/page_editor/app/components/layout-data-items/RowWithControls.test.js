@@ -18,19 +18,29 @@ import React from 'react';
 import {DndProvider} from 'react-dnd';
 import {HTML5Backend} from 'react-dnd-html5-backend';
 
-import {
-	ControlsProvider,
-	useSelectItem,
-} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/components/Controls';
 import {RowWithControls} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/components/layout-data-items';
 import {LAYOUT_DATA_ITEM_TYPES} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/config/constants/layoutDataItemTypes';
 import {VIEWPORT_SIZES} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/config/constants/viewportSizes';
-import {StoreAPIContextProvider} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/store';
+import {
+	ControlsProvider,
+	useSelectItem,
+} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/contexts/ControlsContext';
+import {StoreAPIContextProvider} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/contexts/StoreContext';
 
 jest.mock(
 	'../../../../../src/main/resources/META-INF/resources/page_editor/app/config',
 	() => ({
 		config: {
+			commonStyles: [
+				{
+					styles: [
+						{
+							defaultValue: 'left',
+							name: 'textAlign',
+						},
+					],
+				},
+			],
 			frontendTokens: {},
 		},
 	})
@@ -41,6 +51,7 @@ const renderRow = ({
 	columnConfiguration = [],
 	hasUpdatePermissions = true,
 	lockedExperience = false,
+	rowConfig = {styles: {}},
 	viewportSize = VIEWPORT_SIZES.desktop,
 } = {}) => {
 	const childrenItems = {};
@@ -62,7 +73,7 @@ const renderRow = ({
 
 	const row = {
 		children: Object.keys(childrenItems),
-		config: {styles: {}},
+		config: rowConfig,
 		itemId: 'row',
 		parentId: null,
 		type: LAYOUT_DATA_ITEM_TYPES.row,
@@ -100,6 +111,7 @@ const renderRow = ({
 					})}
 				>
 					<AutoSelect />
+
 					<RowWithControls item={row} layoutData={layoutData} />
 				</StoreAPIContextProvider>
 			</ControlsProvider>
@@ -159,5 +171,33 @@ describe('RowWithControls', () => {
 		expect(
 			baseElement.querySelector('.page-editor__row.empty')
 		).toBeInTheDocument();
+	});
+
+	it('does not show the row if it has been hidden by the user', async () => {
+		const {baseElement} = renderRow({
+			rowConfig: {
+				styles: {
+					display: 'none',
+				},
+			},
+		});
+
+		const row = baseElement.querySelector('.page-editor__row');
+
+		expect(row).not.toBeVisible();
+	});
+
+	it('shows the row if it has not been hidden by the user', async () => {
+		const {baseElement} = renderRow({
+			rowConfig: {
+				styles: {
+					display: 'block',
+				},
+			},
+		});
+
+		const row = baseElement.querySelector('.page-editor__row');
+
+		expect(row).toBeVisible();
 	});
 });

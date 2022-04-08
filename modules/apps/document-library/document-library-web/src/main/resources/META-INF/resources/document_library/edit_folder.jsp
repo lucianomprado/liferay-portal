@@ -38,7 +38,9 @@ renderResponse.setTitle(dlEditFolderDisplayContext.getHeaderTitle());
 	/>
 </liferay-util:buffer>
 
-<clay:container-fluid>
+<clay:container-fluid
+	cssClass="container-form-lg"
+>
 	<portlet:actionURL name="/document_library/edit_folder" var="editFolderURL">
 		<portlet:param name="mvcRenderCommandName" value="/document_library/edit_folder" />
 	</portlet:actionURL>
@@ -226,13 +228,13 @@ renderResponse.setTitle(dlEditFolderDisplayContext.getHeaderTitle());
 					</aui:fieldset>
 				</c:if>
 			</c:if>
+
+			<div class="sheet-footer">
+				<aui:button type="submit" />
+
+				<aui:button href="<%= dlEditFolderDisplayContext.getRedirect() %>" type="cancel" />
+			</div>
 		</aui:fieldset-group>
-
-		<aui:button-row>
-			<aui:button type="submit" />
-
-			<aui:button href="<%= dlEditFolderDisplayContext.getRedirect() %>" type="cancel" />
-		</aui:button-row>
 	</aui:form>
 </clay:container-fluid>
 
@@ -375,7 +377,7 @@ renderResponse.setTitle(dlEditFolderDisplayContext.getHeaderTitle());
 	);
 
 	if (selectDocumentTypeButton) {
-		selectDocumentTypeButton.addEventListener('click', function () {
+		selectDocumentTypeButton.addEventListener('click', () => {
 			var searchContainer = Liferay.SearchContainer.get(
 				'<portlet:namespace />dlFileEntryTypesSearchContainer'
 			);
@@ -412,7 +414,7 @@ renderResponse.setTitle(dlEditFolderDisplayContext.getHeaderTitle());
 
 	searchContainer.get('contentBox').delegate(
 		'click',
-		function (event) {
+		(event) => {
 			var A = AUI();
 
 			var link = event.currentTarget;

@@ -63,21 +63,9 @@ public abstract class BaseJSPAssetRenderer<T>
 		RequestDispatcher requestDispatcher =
 			servletContext.getRequestDispatcher(jspPath);
 
-		ResourceBundleLoader resourceBundleLoader =
-			new AggregateResourceBundleLoader(
-				new ClassResourceBundleLoader("content.Language", getClass()),
-				ResourceBundleLoaderUtil.getPortalResourceBundleLoader());
-
-		if (_servletContext != null) {
-			resourceBundleLoader =
-				ResourceBundleLoaderUtil.
-					getResourceBundleLoaderByServletContextName(
-						_servletContext.getServletContextName());
-		}
-
 		try {
 			httpServletRequest.setAttribute(
-				WebKeys.RESOURCE_BUNDLE_LOADER, resourceBundleLoader);
+				WebKeys.RESOURCE_BUNDLE_LOADER, acquireResourceBundleLoader());
 
 			requestDispatcher.include(httpServletRequest, httpServletResponse);
 
@@ -101,9 +89,16 @@ public abstract class BaseJSPAssetRenderer<T>
 
 	protected ResourceBundleLoader acquireResourceBundleLoader() {
 		if (_servletContext != null) {
-			return ResourceBundleLoaderUtil.
-				getResourceBundleLoaderByServletContextName(
-					_servletContext.getServletContextName());
+			ResourceBundleLoader resourceBundleLoader =
+				ResourceBundleLoaderUtil.
+					getResourceBundleLoaderByServletContextName(
+						_servletContext.getServletContextName());
+
+			if (resourceBundleLoader == null) {
+				return ResourceBundleLoaderUtil.getPortalResourceBundleLoader();
+			}
+
+			return resourceBundleLoader;
 		}
 
 		return new AggregateResourceBundleLoader(

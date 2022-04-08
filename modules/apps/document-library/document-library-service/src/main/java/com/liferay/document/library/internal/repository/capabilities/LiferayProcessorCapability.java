@@ -14,7 +14,6 @@
 
 package com.liferay.document.library.internal.repository.capabilities;
 
-import com.liferay.document.library.kernel.util.DLAppHelperThreadLocal;
 import com.liferay.document.library.kernel.util.DLProcessorRegistryUtil;
 import com.liferay.document.library.security.io.InputStreamSanitizer;
 import com.liferay.document.library.service.DLFileVersionPreviewLocalService;
@@ -56,30 +55,18 @@ public class LiferayProcessorCapability
 
 	@Override
 	public void cleanUp(FileEntry fileEntry) {
-		if (!DLAppHelperThreadLocal.isEnabled()) {
-			return;
-		}
-
 		DLProcessorRegistryUtil.cleanUp(fileEntry);
 	}
 
 	@Override
 	public void cleanUp(FileVersion fileVersion) {
-		if (!DLAppHelperThreadLocal.isEnabled()) {
-			return;
-		}
-
 		DLProcessorRegistryUtil.cleanUp(fileVersion);
 	}
 
 	@Override
 	public void copy(FileEntry fileEntry, FileVersion fileVersion) {
-		if (!DLAppHelperThreadLocal.isEnabled()) {
-			return;
-		}
-
 		if (_resourceGenerationStrategy == ResourceGenerationStrategy.REUSE) {
-			registerDLProcessorCallback(fileEntry, fileVersion);
+			_registerDLProcessorCallback(fileEntry, fileVersion);
 		}
 		else {
 			generateNew(fileEntry);
@@ -88,11 +75,7 @@ public class LiferayProcessorCapability
 
 	@Override
 	public void generateNew(FileEntry fileEntry) {
-		if (!DLAppHelperThreadLocal.isEnabled()) {
-			return;
-		}
-
-		registerDLProcessorCallback(fileEntry, null);
+		_registerDLProcessorCallback(fileEntry, null);
 	}
 
 	@Override
@@ -123,8 +106,8 @@ public class LiferayProcessorCapability
 		return new LiferayProcessorRepositoryWrapper(repository, this);
 	}
 
-	protected void registerDLProcessorCallback(
-		final FileEntry fileEntry, final FileVersion fileVersion) {
+	private void _registerDLProcessorCallback(
+		FileEntry fileEntry, FileVersion fileVersion) {
 
 		TransactionCommitCallbackUtil.registerCallback(
 			() -> {

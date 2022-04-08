@@ -36,6 +36,7 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 /**
@@ -1164,6 +1165,14 @@ public class ArrayUtil {
 		return !isEmpty(array);
 	}
 
+	public static <T> void isNotEmptyForEach(T[] array, Consumer<T> consumer) {
+		if (isNotEmpty(array)) {
+			for (T t : array) {
+				consumer.accept(t);
+			}
+		}
+	}
+
 	public static boolean[] remove(boolean[] array, boolean value) {
 		if (isEmpty(array)) {
 			return array;
@@ -2081,7 +2090,14 @@ public class ArrayUtil {
 		for (int i = 0; i < array.length; i++) {
 			Object bean = array[i];
 
-			Object value = BeanPropertiesUtil.getObject(bean, param);
+			Object value = null;
+
+			if (Validator.isNull(param)) {
+				value = String.valueOf(bean);
+			}
+			else {
+				value = BeanPropertiesUtil.getObject(bean, param);
+			}
 
 			if (value != null) {
 				if (locale != null) {
@@ -2177,14 +2193,14 @@ public class ArrayUtil {
 		return newArray;
 	}
 
-	public static String[] toStringArray(Collection<String> collection) {
+	public static String[] toStringArray(Collection<?> collection) {
 		String[] newArray = new String[collection.size()];
 
 		if (collection instanceof List) {
-			List<String> list = (List<String>)collection;
+			List<?> list = (List<?>)collection;
 
 			for (int i = 0; i < list.size(); i++) {
-				String value = list.get(i);
+				Object value = list.get(i);
 
 				newArray[i] = String.valueOf(value);
 			}
@@ -2192,10 +2208,10 @@ public class ArrayUtil {
 		else {
 			int i = 0;
 
-			Iterator<String> iterator = collection.iterator();
+			Iterator<?> iterator = collection.iterator();
 
 			while (iterator.hasNext()) {
-				String value = iterator.next();
+				Object value = iterator.next();
 
 				newArray[i++] = String.valueOf(value);
 			}

@@ -16,6 +16,9 @@ package com.liferay.layout.admin.web.internal.servlet.taglib.clay;
 
 import com.liferay.frontend.taglib.clay.servlet.taglib.soy.VerticalCard;
 import com.liferay.layout.page.template.model.LayoutPageTemplateEntry;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.LayoutConstants;
 import com.liferay.portal.kernel.portlet.LiferayWindowState;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
@@ -26,7 +29,6 @@ import com.liferay.portal.kernel.util.WebKeys;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.portlet.PortletURL;
 import javax.portlet.RenderRequest;
 import javax.portlet.RenderResponse;
 
@@ -62,32 +64,35 @@ public class SelectBasicTemplatesVerticalCard implements VerticalCard {
 		String redirect = ParamUtil.getString(_httpServletRequest, "redirect");
 
 		try {
-			PortletURL addLayoutURL = _renderResponse.createRenderURL();
-
-			addLayoutURL.setParameter(
-				"mvcRenderCommandName", "/layout_admin/add_layout");
-			addLayoutURL.setParameter("backURL", redirect);
-
-			long selPlid = ParamUtil.getLong(_httpServletRequest, "selPlid");
-
-			addLayoutURL.setParameter("selPlid", String.valueOf(selPlid));
-
-			boolean privateLayout = ParamUtil.getBoolean(
-				_httpServletRequest, "privateLayout");
-
-			addLayoutURL.setParameter(
-				"privateLayout", String.valueOf(privateLayout));
-
-			addLayoutURL.setParameter("type", LayoutConstants.TYPE_CONTENT);
-			addLayoutURL.setParameter(
-				"masterLayoutPlid",
-				String.valueOf(_layoutPageTemplateEntry.getPlid()));
-			addLayoutURL.setWindowState(LiferayWindowState.POP_UP);
-
-			data.put("data-add-layout-url", addLayoutURL.toString());
+			data.put(
+				"data-add-layout-url",
+				PortletURLBuilder.createRenderURL(
+					_renderResponse
+				).setMVCRenderCommandName(
+					"/layout_admin/add_layout"
+				).setBackURL(
+					redirect
+				).setParameter(
+					"masterLayoutPlid", _layoutPageTemplateEntry.getPlid()
+				).setParameter(
+					"privateLayout",
+					ParamUtil.getBoolean(_httpServletRequest, "privateLayout")
+				).setParameter(
+					"selPlid", ParamUtil.getLong(_httpServletRequest, "selPlid")
+				).setParameter(
+					"type", LayoutConstants.TYPE_CONTENT
+				).setWindowState(
+					LiferayWindowState.POP_UP
+				).buildString());
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception);
+			}
 		}
+
+		data.put("role", "button");
+		data.put("tabIndex", "0");
 
 		return data;
 	}
@@ -111,6 +116,9 @@ public class SelectBasicTemplatesVerticalCard implements VerticalCard {
 	public boolean isSelectable() {
 		return false;
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		SelectBasicTemplatesVerticalCard.class);
 
 	private final HttpServletRequest _httpServletRequest;
 	private final LayoutPageTemplateEntry _layoutPageTemplateEntry;

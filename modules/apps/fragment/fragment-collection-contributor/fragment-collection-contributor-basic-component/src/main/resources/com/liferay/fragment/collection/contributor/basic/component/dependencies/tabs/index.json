@@ -1,7 +1,6 @@
 {
 	"fieldSets": [
 		{
-			"configurationRole": "style",
 			"fields": [
 				{
 					"dataType": "int",
@@ -17,7 +16,8 @@
 						}
 					}
 				}
-			]
+			],
+			"label": "tabs-options"
 		}
 	]
 }

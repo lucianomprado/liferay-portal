@@ -26,7 +26,7 @@ import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.portlet.JSONPortletResponseUtil;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCActionCommand;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
-import com.liferay.portal.kernel.util.FriendlyURLNormalizerUtil;
+import com.liferay.portal.kernel.util.FriendlyURLNormalizer;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.HtmlUtil;
@@ -93,7 +93,7 @@ public class EditImageConfigurationEntryMVCActionCommand
 
 		if (automaticUuid) {
 			String normalizedName =
-				FriendlyURLNormalizerUtil.normalizeWithPeriodsAndSlashes(name);
+				_friendlyURLNormalizer.normalizeWithPeriodsAndSlashes(name);
 
 			newUuid = _getAutomaticUuid(
 				themeDisplay.getCompanyId(), normalizedName, uuid);
@@ -265,8 +265,7 @@ public class EditImageConfigurationEntryMVCActionCommand
 
 			String suffix = StringPool.DASH + i;
 
-			curUuid = FriendlyURLNormalizerUtil.normalize(
-				normalizedName + suffix);
+			curUuid = _friendlyURLNormalizer.normalize(normalizedName + suffix);
 		}
 
 		return curUuid;
@@ -292,6 +291,10 @@ public class EditImageConfigurationEntryMVCActionCommand
 					DuplicateAMImageConfigurationNameException.class,
 				"a-configuration-with-this-name-already-exists"
 			).put(
+				AMImageConfigurationException.
+					DuplicateAMImageConfigurationUuidException.class,
+				"a-configuration-with-this-id-already-exists"
+			).put(
 				AMImageConfigurationException.InvalidHeightException.class,
 				"please-enter-a-max-height-value-larger-than-0"
 			).put(
@@ -314,5 +317,8 @@ public class EditImageConfigurationEntryMVCActionCommand
 
 	@Reference
 	private AMImageEntryLocalService _amImageEntryLocalService;
+
+	@Reference
+	private FriendlyURLNormalizer _friendlyURLNormalizer;
 
 }

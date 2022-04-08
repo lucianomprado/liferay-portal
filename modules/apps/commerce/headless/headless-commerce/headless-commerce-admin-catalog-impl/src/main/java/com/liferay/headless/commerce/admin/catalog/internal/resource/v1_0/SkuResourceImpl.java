@@ -30,12 +30,14 @@ import com.liferay.headless.commerce.admin.catalog.internal.util.v1_0.SkuUtil;
 import com.liferay.headless.commerce.admin.catalog.resource.v1_0.SkuResource;
 import com.liferay.headless.commerce.core.util.DateConfig;
 import com.liferay.headless.commerce.core.util.ServiceContextHelper;
+import com.liferay.portal.kernel.change.tracking.CTAware;
 import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.search.filter.Filter;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.util.CalendarFactoryUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.odata.entity.EntityModel;
 import com.liferay.portal.vulcan.dto.converter.DefaultDTOConverterContext;
@@ -47,8 +49,6 @@ import com.liferay.portal.vulcan.pagination.Pagination;
 
 import java.util.Calendar;
 import java.util.List;
-
-import javax.validation.constraints.NotNull;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -66,6 +66,7 @@ import org.osgi.service.component.annotations.ServiceScope;
 	scope = ServiceScope.PROTOTYPE,
 	service = {NestedFieldSupport.class, SkuResource.class}
 )
+@CTAware
 public class SkuResourceImpl
 	extends BaseSkuResourceImpl implements NestedFieldSupport {
 
@@ -84,11 +85,11 @@ public class SkuResourceImpl
 		throws Exception {
 
 		CPInstance cpInstance = _cpInstanceService.fetchByExternalReferenceCode(
-			contextCompany.getCompanyId(), externalReferenceCode);
+			externalReferenceCode, contextCompany.getCompanyId());
 
 		if (cpInstance == null) {
 			throw new NoSuchCPInstanceException(
-				"Unable to find Sku with externalReferenceCode: " +
+				"Unable to find SKU with external reference code " +
 					externalReferenceCode);
 		}
 
@@ -112,11 +113,11 @@ public class SkuResourceImpl
 		CPDefinition cpDefinition =
 			_cpDefinitionService.
 				fetchCPDefinitionByCProductExternalReferenceCode(
-					contextCompany.getCompanyId(), externalReferenceCode);
+					externalReferenceCode, contextCompany.getCompanyId());
 
 		if (cpDefinition == null) {
 			throw new NoSuchCPDefinitionException(
-				"Unable to find Product with externalReferenceCode: " +
+				"Unable to find product with external reference code " +
 					externalReferenceCode);
 		}
 
@@ -140,8 +141,7 @@ public class SkuResourceImpl
 	@NestedField(parentClass = Product.class, value = "skus")
 	@Override
 	public Page<Sku> getProductIdSkusPage(
-			@NestedFieldId(value = "productId") @NotNull Long id,
-			Pagination pagination)
+			@NestedFieldId(value = "productId") Long id, Pagination pagination)
 		throws Exception {
 
 		return _skuHelper.getSkusPage(
@@ -158,11 +158,11 @@ public class SkuResourceImpl
 		throws Exception {
 
 		CPInstance cpInstance = _cpInstanceService.fetchByExternalReferenceCode(
-			contextCompany.getCompanyId(), externalReferenceCode);
+			externalReferenceCode, contextCompany.getCompanyId());
 
 		if (cpInstance == null) {
 			throw new NoSuchCPInstanceException(
-				"Unable to find Sku with externalReferenceCode: " +
+				"Unable to find SKU with external reference code " +
 					externalReferenceCode);
 		}
 
@@ -195,11 +195,11 @@ public class SkuResourceImpl
 		throws Exception {
 
 		CPInstance cpInstance = _cpInstanceService.fetchByExternalReferenceCode(
-			contextCompany.getCompanyId(), externalReferenceCode);
+			externalReferenceCode, contextCompany.getCompanyId());
 
 		if (cpInstance == null) {
 			throw new NoSuchCPInstanceException(
-				"Unable to find Sku with externalReferenceCode: " +
+				"Unable to find SKU with external reference code " +
 					externalReferenceCode);
 		}
 
@@ -218,19 +218,19 @@ public class SkuResourceImpl
 		CPDefinition cpDefinition =
 			_cpDefinitionService.
 				fetchCPDefinitionByCProductExternalReferenceCode(
-					contextCompany.getCompanyId(), externalReferenceCode);
+					externalReferenceCode, contextCompany.getCompanyId());
 
 		if (cpDefinition == null) {
 			throw new NoSuchCPDefinitionException(
-				"Unable to find Product with externalReferenceCode: " +
+				"Unable to find product with external reference code " +
 					externalReferenceCode);
 		}
 
-		return _upsertSKU(cpDefinition, sku);
+		return _addOrUpdateSKU(cpDefinition, sku);
 	}
 
 	@Override
-	public Sku postProductIdSku(@NotNull Long id, Sku sku) throws Exception {
+	public Sku postProductIdSku(Long id, Sku sku) throws Exception {
 		CPDefinition cpDefinition =
 			_cpDefinitionService.fetchCPDefinitionByCProductId(id);
 
@@ -239,7 +239,17 @@ public class SkuResourceImpl
 				"Unable to find Product with ID: " + id);
 		}
 
-		return _upsertSKU(cpDefinition, sku);
+		return _addOrUpdateSKU(cpDefinition, sku);
+	}
+
+	private Sku _addOrUpdateSKU(CPDefinition cpDefinition, Sku sku)
+		throws Exception {
+
+		CPInstance cpInstance = SkuUtil.addOrUpdateCPInstance(
+			_cpInstanceService, sku, cpDefinition,
+			_serviceContextHelper.getServiceContext(cpDefinition.getGroupId()));
+
+		return _toSku(cpInstance.getCPInstanceId());
 	}
 
 	private Sku _toSku(Long cpInstanceId) throws Exception {
@@ -251,6 +261,50 @@ public class SkuResourceImpl
 	private Sku _updateSKU(CPInstance cpInstance, Sku sku) throws Exception {
 		ServiceContext serviceContext = _serviceContextHelper.getServiceContext(
 			cpInstance.getGroupId());
+
+		long replacementCProductId = 0;
+		String replacementCPInstanceUuid = null;
+
+		if (sku.getDiscontinued()) {
+			CPInstance discontinuedCPInstance = null;
+
+			if (Validator.isNotNull(
+					sku.getReplacementSkuExternalReferenceCode())) {
+
+				discontinuedCPInstance =
+					_cpInstanceService.fetchByExternalReferenceCode(
+						sku.getReplacementSkuExternalReferenceCode(),
+						contextCompany.getCompanyId());
+			}
+
+			if ((discontinuedCPInstance == null) &&
+				(sku.getReplacementSkuId() > 0)) {
+
+				discontinuedCPInstance = _cpInstanceService.fetchCPInstance(
+					sku.getReplacementSkuId());
+			}
+
+			if (discontinuedCPInstance != null) {
+				CPDefinition cpDefinition =
+					discontinuedCPInstance.getCPDefinition();
+
+				replacementCProductId = cpDefinition.getCProductId();
+
+				replacementCPInstanceUuid =
+					discontinuedCPInstance.getCPInstanceUuid();
+			}
+		}
+
+		Calendar discontinuedCalendar = CalendarFactoryUtil.getCalendar(
+			serviceContext.getTimeZone());
+
+		if (sku.getDiscontinuedDate() != null) {
+			discontinuedCalendar = DateConfigUtil.convertDateToCalendar(
+				sku.getDiscontinuedDate());
+		}
+
+		DateConfig discontinuedDateConfig = new DateConfig(
+			discontinuedCalendar);
 
 		Calendar displayCalendar = CalendarFactoryUtil.getCalendar(
 			serviceContext.getTimeZone());
@@ -287,17 +341,10 @@ public class SkuResourceImpl
 			GetterUtil.get(
 				sku.getNeverExpire(),
 				(cpInstance.getExpirationDate() == null) ? true : false),
-			sku.getUnspsc(), serviceContext);
-
-		return _toSku(cpInstance.getCPInstanceId());
-	}
-
-	private Sku _upsertSKU(CPDefinition cpDefinition, Sku sku)
-		throws Exception {
-
-		CPInstance cpInstance = SkuUtil.upsertCPInstance(
-			_cpInstanceService, sku, cpDefinition,
-			_serviceContextHelper.getServiceContext(cpDefinition.getGroupId()));
+			sku.getUnspsc(), sku.getDiscontinued(), replacementCPInstanceUuid,
+			replacementCProductId, discontinuedDateConfig.getMonth(),
+			discontinuedDateConfig.getDay(), discontinuedDateConfig.getYear(),
+			serviceContext);
 
 		return _toSku(cpInstance.getCPInstanceId());
 	}

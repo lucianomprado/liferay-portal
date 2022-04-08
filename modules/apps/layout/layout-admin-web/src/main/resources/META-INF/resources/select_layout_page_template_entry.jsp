@@ -25,7 +25,7 @@ if (Validator.isNull(backURL)) {
 	backURL = portletURL.toString();
 }
 
-SelectLayoutPageTemplateEntryDisplayContext selectLayoutPageTemplateEntryDisplayContext = new SelectLayoutPageTemplateEntryDisplayContext(request);
+SelectLayoutPageTemplateEntryDisplayContext selectLayoutPageTemplateEntryDisplayContext = new SelectLayoutPageTemplateEntryDisplayContext(request, liferayPortletResponse);
 
 portletDisplay.setShowBackIcon(true);
 portletDisplay.setURLBack(backURL);
@@ -45,21 +45,19 @@ renderResponse.setTitle(LanguageUtil.get(request, "select-template"));
 				<ul class="nav nav-nested">
 					<li class="nav-item">
 						<p class="text-uppercase">
-							<strong><liferay-ui:message key="collections" /></strong>
+							<strong><liferay-ui:message key="page-template-sets" /></strong>
 						</p>
 
 						<ul class="nav nav-stacked">
 
 							<%
-							List<LayoutPageTemplateCollection> layoutPageTemplateCollections = LayoutPageTemplateCollectionServiceUtil.getLayoutPageTemplateCollections(scopeGroupId);
-
-							for (LayoutPageTemplateCollection layoutPageTemplateCollection : layoutPageTemplateCollections) {
+							for (LayoutPageTemplateCollection layoutPageTemplateCollection : LayoutPageTemplateCollectionServiceUtil.getLayoutPageTemplateCollections(scopeGroupId)) {
 								int layoutPageTemplateEntriesCount = LayoutPageTemplateEntryServiceUtil.getLayoutPageTemplateEntriesCount(themeDisplay.getScopeGroupId(), layoutPageTemplateCollection.getLayoutPageTemplateCollectionId(), WorkflowConstants.STATUS_APPROVED);
 							%>
 
 								<c:if test="<%= layoutPageTemplateEntriesCount > 0 %>">
 									<li class="nav-item">
-										<a class="nav-link text-truncate <%= (selectLayoutPageTemplateEntryDisplayContext.getLayoutPageTemplateCollectionId() == layoutPageTemplateCollection.getLayoutPageTemplateCollectionId()) ? "active" : StringPool.BLANK %>" href="<%= layoutsAdminDisplayContext.getSelectLayoutPageTemplateEntryURL(layoutPageTemplateCollection.getLayoutPageTemplateCollectionId(), layoutsAdminDisplayContext.isPrivateLayout()) %>">
+										<a class="nav-link text-truncate <%= (selectLayoutPageTemplateEntryDisplayContext.getLayoutPageTemplateCollectionId() == layoutPageTemplateCollection.getLayoutPageTemplateCollectionId()) ? "active" : StringPool.BLANK %>" href="<%= layoutsAdminDisplayContext.getSelectLayoutPageTemplateEntryURL(layoutPageTemplateCollection.getLayoutPageTemplateCollectionId(), layoutsAdminDisplayContext.getSelPlid(), layoutsAdminDisplayContext.isPrivateLayout()) %>">
 											<%= HtmlUtil.escape(layoutPageTemplateCollection.getName()) %>
 										</a>
 									</li>
@@ -137,11 +135,6 @@ renderResponse.setTitle(LanguageUtil.get(request, "select-template"));
 								keyProperty="layoutPageTemplateEntryId"
 								modelVar="layoutPageTemplateEntry"
 							>
-
-								<%
-								row.setCssClass("entry-card lfr-asset-item " + row.getCssClass());
-								%>
-
 								<liferay-ui:search-container-column-text>
 									<clay:vertical-card
 										verticalCard="<%= new SelectLayoutPageTemplateEntryVerticalCard(layoutPageTemplateEntry, renderRequest, renderResponse) %>"
@@ -178,8 +171,9 @@ renderResponse.setTitle(LanguageUtil.get(request, "select-template"));
 		layoutPageTemplateEntries,
 		'click',
 		'.add-layout-action-option',
-		function (event) {
+		(event) => {
 			Liferay.Util.openModal({
+				disableAutoClose: true,
 				height: '60vh',
 				id: '<portlet:namespace />addLayoutDialog',
 				size: 'md',
@@ -189,8 +183,21 @@ renderResponse.setTitle(LanguageUtil.get(request, "select-template"));
 		}
 	);
 
+	var addLayoutActionOptionQueryKeyDownHandler = delegate(
+		layoutPageTemplateEntries,
+		'keydown',
+		'.add-layout-action-option',
+		(event) => {
+			if (event.code === 'Space' || event.code === 'Enter') {
+				event.preventDefault();
+				event.delegateTarget.click();
+			}
+		}
+	);
+
 	function handleDestroyPortlet() {
 		addLayoutActionOptionQueryClickHandler.dispose();
+		addLayoutActionOptionQueryKeyDownHandler.dispose();
 
 		Liferay.detach('destroyPortlet', handleDestroyPortlet);
 	}

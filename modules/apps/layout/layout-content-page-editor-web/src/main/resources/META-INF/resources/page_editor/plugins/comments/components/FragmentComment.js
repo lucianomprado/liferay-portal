@@ -15,15 +15,15 @@
 import ClayButton from '@clayui/button';
 import ClayDropDown from '@clayui/drop-down';
 import ClayIcon from '@clayui/icon';
+import {useIsMounted} from '@liferay/frontend-js-react-web';
 import classNames from 'classnames';
-import {useIsMounted} from 'frontend-js-react-web';
 import {openToast} from 'frontend-js-web';
 import PropTypes from 'prop-types';
 import React, {useEffect, useState} from 'react';
 
 import {HIGHLIGHTED_COMMENT_ID_KEY} from '../../../app/config/constants/highlightedCommentIdKey';
+import {useDispatch, useSelector} from '../../../app/contexts/StoreContext';
 import FragmentService from '../../../app/services/FragmentService';
-import {useDispatch, useSelector} from '../../../app/store/index';
 import deleteFragmentComment from '../../../app/thunks/deleteFragmentComment';
 import InlineConfirm from '../../../common/components/InlineConfirm';
 import UserIcon from '../../../common/components/UserIcon';
@@ -177,6 +177,11 @@ export default function FragmentComment({
 				{Liferay.ThemeDisplay.getUserId() === author.userId && (
 					<ClayDropDown
 						active={dropDownActive}
+						menuElementAttrs={{
+							containerProps: {
+								className: 'cadmin',
+							},
+						}}
 						onActiveChange={setDropDownActive}
 						trigger={
 							<ClayButton

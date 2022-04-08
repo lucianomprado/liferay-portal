@@ -18,6 +18,7 @@
 
 <%
 DLAdminDisplayContext dlAdminDisplayContext = (DLAdminDisplayContext)request.getAttribute(DLAdminDisplayContext.class.getName());
+DLAdminManagementToolbarDisplayContext dlAdminManagementToolbarDisplayContext = (DLAdminManagementToolbarDisplayContext)request.getAttribute(DLAdminManagementToolbarDisplayContext.class.getName());
 
 DLViewDisplayContext dlViewDisplayContext = new DLViewDisplayContext(dlAdminDisplayContext, request, renderRequest, renderResponse);
 %>
@@ -46,8 +47,42 @@ DLViewDisplayContext dlViewDisplayContext = new DLViewDisplayContext(dlAdminDisp
 
 		<liferay-util:include page="/document_library/navigation.jsp" servletContext="<%= application %>" />
 
-		<clay:management-toolbar-v2
-			displayContext="<%= (DLAdminManagementToolbarDisplayContext)request.getAttribute(DLAdminManagementToolbarDisplayContext.class.getName()) %>"
+		<clay:management-toolbar
+			additionalProps='<%=
+				HashMapBuilder.<String, Object>put(
+					"collectDigitalSignaturePortlet", DigitalSignaturePortletKeys.COLLECT_DIGITAL_SIGNATURE
+				).put(
+					"downloadEntryURL", dlViewDisplayContext.getDownloadEntryURL()
+				).put(
+					"editEntryURL", dlViewDisplayContext.getEditEntryURL()
+				).put(
+					"folderConfiguration",
+					HashMapBuilder.<String, Object>put(
+						"defaultParentFolderId", dlViewDisplayContext.getFolderId()
+					).put(
+						"dimensions",
+						HashMapBuilder.<String, Object>put(
+							"height", PrefsPropsUtil.getLong(PropsKeys.DL_FILE_ENTRY_THUMBNAIL_MAX_HEIGHT)
+						).put(
+							"width", PrefsPropsUtil.getLong(PropsKeys.DL_FILE_ENTRY_THUMBNAIL_MAX_WIDTH)
+						).build()
+					).build()
+				).put(
+					"openViewMoreFileEntryTypesURL", dlViewDisplayContext.getViewMoreFileEntryTypesURL()
+				).put(
+					"selectFileEntryTypeURL", dlViewDisplayContext.getSelectFileEntryTypeURL()
+				).put(
+					"selectFolderURL", dlViewDisplayContext.getSelectFolderURL()
+				).put(
+					"trashEnabled", dlTrashHelper.isTrashEnabled(scopeGroupId, dlViewDisplayContext.getRepositoryId())
+				).put(
+					"viewFileEntryTypeURL", dlViewDisplayContext.getViewFileEntryTypeURL()
+				).put(
+					"viewFileEntryURL", dlViewDisplayContext.getViewFileEntryURL()
+				).build()
+			%>'
+			managementToolbarDisplayContext="<%= dlAdminManagementToolbarDisplayContext %>"
+			propsTransformer="document_library/js/DLManagementToolbarPropsTransformer"
 		/>
 
 		<%
@@ -75,7 +110,7 @@ DLViewDisplayContext dlViewDisplayContext = new DLViewDisplayContext(dlAdminDisp
 			boolean portletTitleBasedNavigation = GetterUtil.getBoolean(portletConfig.getInitParameter("portlet-title-based-navigation"));
 			%>
 
-			<div class="closed <%= portletTitleBasedNavigation ? "container-fluid container-fluid-max-xl" : StringPool.BLANK %> sidenav-container sidenav-right" id="<portlet:namespace />infoPanelId">
+			<div class="closed sidenav-container sidenav-right" id="<portlet:namespace />infoPanelId">
 				<liferay-frontend:sidebar-panel
 					resourceURL="<%= dlViewDisplayContext.getSidebarPanelURL() %>"
 					searchContainerId="entries"
@@ -84,45 +119,46 @@ DLViewDisplayContext dlViewDisplayContext = new DLViewDisplayContext(dlAdminDisp
 				</liferay-frontend:sidebar-panel>
 
 				<div class="sidenav-content">
-					<div class="document-library-breadcrumb" id="<portlet:namespace />breadcrumbContainer">
-						<c:if test="<%= !dlViewDisplayContext.isSearch() %>">
+					<div class="<%= portletTitleBasedNavigation ? "container-fluid container-fluid-max-xl container-view" : StringPool.BLANK %>">
+						<div class="document-library-breadcrumb" id="<portlet:namespace />breadcrumbContainer">
+							<c:if test="<%= !dlViewDisplayContext.isSearch() %>">
 
-							<%
-							DLBreadcrumbUtil.addPortletBreadcrumbEntries(dlViewDisplayContext.getFolder(), request, liferayPortletResponse);
-							%>
+								<%
+								DLBreadcrumbUtil.addPortletBreadcrumbEntries(dlViewDisplayContext.getFolder(), request, liferayPortletResponse);
+								%>
 
-							<liferay-ui:breadcrumb
-								showCurrentGroup="<%= false %>"
-								showGuestGroup="<%= false %>"
-								showLayout="<%= false %>"
-								showParentGroups="<%= false %>"
-							/>
+								<liferay-ui:breadcrumb
+									showCurrentGroup="<%= false %>"
+									showGuestGroup="<%= false %>"
+									showLayout="<%= false %>"
+									showParentGroups="<%= false %>"
+								/>
+							</c:if>
+						</div>
+
+						<c:if test="<%= dlViewDisplayContext.isOpenInMSOfficeEnabled() %>">
+							<div class="alert alert-danger hide" id="<portlet:namespace />openMSOfficeError"></div>
 						</c:if>
-					</div>
 
-					<c:if test="<%= dlViewDisplayContext.isOpenInMSOfficeEnabled() %>">
-						<div class="alert alert-danger hide" id="<portlet:namespace />openMSOfficeError"></div>
-					</c:if>
+						<aui:form action="<%= dlViewDisplayContext.getEditFileEntryURL() %>" method="get" name="fm2">
+							<aui:input name="<%= Constants.CMD %>" type="hidden" />
+							<aui:input name="redirect" type="hidden" value="<%= currentURL %>" />
+							<aui:input name="repositoryId" type="hidden" value="<%= dlViewDisplayContext.getRepositoryId() %>" />
+							<aui:input name="newFolderId" type="hidden" />
+							<aui:input name="folderId" type="hidden" value="<%= dlViewDisplayContext.getFolderId() %>" />
+							<aui:input name="changeLog" type="hidden" />
+							<aui:input name="versionIncrease" type="hidden" />
+							<aui:input name="selectAll" type="hidden" value="<%= false %>" />
 
-					<aui:form action="<%= dlViewDisplayContext.getEditFileEntryURL() %>" method="get" name="fm2">
-						<aui:input name="<%= Constants.CMD %>" type="hidden" />
-						<aui:input name="redirect" type="hidden" value="<%= currentURL %>" />
-						<aui:input name="repositoryId" type="hidden" value="<%= dlViewDisplayContext.getRepositoryId() %>" />
-						<aui:input name="newFolderId" type="hidden" />
-						<aui:input name="folderId" type="hidden" value="<%= dlViewDisplayContext.getFolderId() %>" />
-						<aui:input name="changeLog" type="hidden" />
-						<aui:input name="versionIncrease" type="hidden" />
-						<aui:input name="selectAll" type="hidden" value="<%= false %>" />
+							<liferay-util:dynamic-include key="com.liferay.document.library.web#/document_library/view.jsp#errors" />
 
-						<liferay-util:dynamic-include key="com.liferay.document.library.web#/document_library/view.jsp#errors" />
+							<liferay-ui:error exception="<%= AuthenticationRepositoryException.class %>" message="you-cannot-access-the-repository-because-you-are-not-allowed-to-or-it-is-unavailable" />
+							<liferay-ui:error exception="<%= DuplicateFileEntryException.class %>" message="the-folder-you-selected-already-has-an-entry-with-this-name.-please-select-a-different-folder" />
+							<liferay-ui:error exception="<%= DuplicateFolderNameException.class %>" message="the-folder-you-selected-already-has-an-entry-with-this-name.-please-select-a-different-folder" />
+							<liferay-ui:error exception="<%= FileEntryLockException.MustBeUnlocked.class %>" message="you-cannot-perform-this-operation-on-checked-out-documents-.please-check-it-in-or-cancel-the-checkout-first" />
+							<liferay-ui:error exception="<%= FileEntryLockException.MustOwnLock.class %>" message="you-can-only-checkin-documents-you-have-checked-out-yourself" />
+							<liferay-ui:error key="externalServiceFailed" message="you-cannot-access-external-service-because-you-are-not-allowed-to-or-it-is-unavailable" />
 
-						<liferay-ui:error exception="<%= AuthenticationRepositoryException.class %>" message="you-cannot-access-the-repository-because-you-are-not-allowed-to-or-it-is-unavailable" />
-						<liferay-ui:error exception="<%= DuplicateFileEntryException.class %>" message="the-folder-you-selected-already-has-an-entry-with-this-name.-please-select-a-different-folder" />
-						<liferay-ui:error exception="<%= FileEntryLockException.MustBeUnlocked.class %>" message="you-cannot-perform-this-operation-on-checked-out-documents-.please-check-it-in-or-cancel-the-checkout-first" />
-						<liferay-ui:error exception="<%= FileEntryLockException.MustOwnLock.class %>" message="you-can-only-checkin-documents-you-have-checked-out-yourself" />
-						<liferay-ui:error key="externalServiceFailed" message="you-cannot-access-external-service-because-you-are-not-allowed-to-or-it-is-unavailable" />
-
-						<div class="document-container">
 							<c:choose>
 								<c:when test="<%= dlViewDisplayContext.isSearch() %>">
 									<liferay-util:include page="/document_library/search_resources.jsp" servletContext="<%= application %>" />
@@ -132,49 +168,52 @@ DLViewDisplayContext dlViewDisplayContext = new DLViewDisplayContext(dlAdminDisp
 								</c:otherwise>
 							</c:choose>
 
-							<div class="lfr-template" id="<portlet:namespace />appViewEntryTemplates">
-
-								<%
-								String thumbnailSrc = themeDisplay.getPathThemeImages() + "/file_system/large/default.png";
-								%>
-
-								<liferay-frontend:vertical-card
-									cssClass="display-icon entry-display-style"
-									imageUrl="<%= thumbnailSrc %>"
+							<div class="d-none" id="<portlet:namespace />appViewEntryTemplates">
+								<liferay-frontend:icon-vertical-card
+									cssClass="card-type-asset display-icon entry-display-style file-card form-check form-check-card"
+									icon="documents-and-media"
 									title="{title}"
 									url="<%= dlViewDisplayContext.getUploadURL() %>"
 								>
+									<liferay-frontend:vertical-card-sticker-bottom>
+										<clay:sticker
+											cssClass="file-icon-color-0 sticker-bottom-left sticker-document"
+											icon="document-default"
+										/>
+									</liferay-frontend:vertical-card-sticker-bottom>
+
 									<liferay-frontend:vertical-card-header>
 										<liferay-ui:message arguments="<%= HtmlUtil.escape(user.getFullName()) %>" key="right-now-by-x" />
 									</liferay-frontend:vertical-card-header>
-								</liferay-frontend:vertical-card>
+								</liferay-frontend:icon-vertical-card>
 
-								<li class="display-descriptive entry-display-style list-group-item">
-									<div class="list-group-item-field"></div>
+								<dd class="display-descriptive entry-display-style list-group-item list-group-item-flex">
+									<div class="autofit-col"></div>
 
-									<div class="list-group-item-field">
-										<div class="click-selector user-icon user-icon-square user-icon-xl">
-											<img alt="thumbnail" class="img-fluid rounded" src="<%= thumbnailSrc %>" />
-										</div>
+									<div class="autofit-col">
+										<clay:sticker
+											cssClass="file-icon-color-0"
+											icon="document-default"
+										/>
 									</div>
 
-									<div class="list-group-item-content">
-										<h5 class="text-default">
-											<liferay-ui:message arguments="<%= HtmlUtil.escape(user.getFullName()) %>" key="right-now-by-x" />
-										</h5>
-
-										<h4>
+									<div class="autofit-col autofit-col-expand">
+										<h2 class="h5">
 											<aui:a href="<%= dlViewDisplayContext.getUploadURL() %>">
 												{title}
 											</aui:a>
-										</h4>
+										</h2>
+
+										<span>
+											<liferay-ui:message arguments="<%= HtmlUtil.escape(user.getFullName()) %>" key="right-now-by-x" />
+										</span>
 									</div>
 
-									<div class="list-group-item-field"></div>
-								</li>
+									<div class="autofit-col"></div>
+								</dd>
 							</div>
-						</div>
-					</aui:form>
+						</aui:form>
+					</div>
 				</div>
 			</div>
 
@@ -235,7 +274,7 @@ DLViewDisplayContext dlViewDisplayContext = new DLViewDisplayContext(dlAdminDisp
 						method: 'POST',
 						node: A.one(document.<portlet:namespace />fm2),
 					},
-					maxFileSize: <%= dlConfiguration.fileMaxSize() %>,
+					maxFileSize: <%= DLValidatorUtil.getMaxAllowableSize(null) %>,
 					namespace: '<portlet:namespace />',
 					openViewMoreFileEntryTypesURL:
 						'<%= dlViewDisplayContext.getViewMoreFileEntryTypesURL() %>',
@@ -251,7 +290,7 @@ DLViewDisplayContext dlViewDisplayContext = new DLViewDisplayContext(dlAdminDisp
 					uploadable: <%= dlViewDisplayContext.isUploadable() %>,
 					uploadURL: '<%= dlViewDisplayContext.getUploadURL() %>',
 					viewFileEntryTypeURL:
-						'<%= dlViewDisplayContext.getViewFileEntryURL() %>',
+						'<%= dlViewDisplayContext.getViewFileEntryTypeURL() %>',
 					viewFileEntryURL: '<%= dlViewDisplayContext.getViewFileEntryURL() %>',
 				}),
 				{
@@ -326,6 +365,21 @@ DLViewDisplayContext dlViewDisplayContext = new DLViewDisplayContext(dlAdminDisp
 						"context", Collections.singletonMap("namespace", liferayPortletResponse.getNamespace())
 					).put(
 						"props", editCategoriesProps
+					).build()
+				%>'
+			/>
+		</div>
+
+		<portlet:actionURL name="/document_library/edit_file_entry_image_editor" var="editImageURL" />
+
+		<div>
+			<react:component
+				module="document_library/js/image-editor/EditImageWithImageEditor"
+				props='<%=
+					HashMapBuilder.<String, Object>put(
+						"editImageURL", editImageURL
+					).put(
+						"redirectURL", currentURL
 					).build()
 				%>'
 			/>

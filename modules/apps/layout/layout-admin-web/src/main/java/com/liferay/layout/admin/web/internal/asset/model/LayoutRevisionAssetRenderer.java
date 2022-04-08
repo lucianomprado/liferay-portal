@@ -18,6 +18,8 @@ import com.liferay.asset.kernel.model.BaseJSPAssetRenderer;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.model.LayoutBranch;
 import com.liferay.portal.kernel.model.LayoutRevision;
@@ -102,25 +104,15 @@ public class LayoutRevisionAssetRenderer
 
 		Locale locale = getLocale(portletRequest);
 
-		StringBundler sb = new StringBundler(15);
-
-		sb.append(LanguageUtil.get(locale, "page"));
-		sb.append(": ");
-		sb.append(_layoutRevision.getHTMLTitle(locale));
-		sb.append("\n");
-		sb.append(LanguageUtil.get(locale, "site-pages-variation"));
-		sb.append(": ");
-		sb.append(LanguageUtil.get(locale, _layoutSetBranch.getName()));
-		sb.append("\n");
-		sb.append(LanguageUtil.get(locale, "page-variation"));
-		sb.append(": ");
-		sb.append(LanguageUtil.get(locale, _layoutBranch.getName()));
-		sb.append("\n");
-		sb.append(LanguageUtil.get(locale, "revision-id"));
-		sb.append(": ");
-		sb.append(_layoutRevision.getLayoutRevisionId());
-
-		return sb.toString();
+		return StringBundler.concat(
+			LanguageUtil.get(locale, "page"), ": ",
+			_layoutRevision.getHTMLTitle(locale), "\n",
+			LanguageUtil.get(locale, "site-pages-variation"), ": ",
+			LanguageUtil.get(locale, _layoutSetBranch.getName()), "\n",
+			LanguageUtil.get(locale, "page-variation"), ": ",
+			LanguageUtil.get(locale, _layoutBranch.getName()), "\n",
+			LanguageUtil.get(locale, "revision-id"), ": ",
+			_layoutRevision.getLayoutRevisionId());
 	}
 
 	@Override
@@ -154,6 +146,10 @@ public class LayoutRevisionAssetRenderer
 			return layoutURL;
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception);
+			}
+
 			return StringPool.BLANK;
 		}
 	}
@@ -189,6 +185,9 @@ public class LayoutRevisionAssetRenderer
 	public boolean isPreviewInContext() {
 		return true;
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		LayoutRevisionAssetRenderer.class);
 
 	private final LayoutBranch _layoutBranch;
 	private final LayoutRevision _layoutRevision;

@@ -47,14 +47,49 @@ import org.osgi.service.component.annotations.Reference;
 	enabled = false, immediate = true,
 	property = {
 		"javax.portlet.name=" + CPPortletKeys.CP_DEFINITIONS,
-		"mvc.command.name=editProductDefinitionSpecificationOptionValue"
+		"mvc.command.name=/cp_definitions/edit_cp_definition_specification_option_value"
 	},
 	service = MVCActionCommand.class
 )
 public class EditCPDefinitionSpecificationOptionValueMVCActionCommand
 	extends BaseMVCActionCommand {
 
-	protected void addCPDefinitionSpecificationOptionValues(
+	@Override
+	protected void doProcessAction(
+			ActionRequest actionRequest, ActionResponse actionResponse)
+		throws Exception {
+
+		String cmd = ParamUtil.getString(actionRequest, Constants.CMD);
+
+		try {
+			if (cmd.equals(Constants.ADD) ||
+				cmd.equals(Constants.ADD_MULTIPLE)) {
+
+				_addCPDefinitionSpecificationOptionValues(actionRequest);
+			}
+			else if (cmd.equals(Constants.DELETE)) {
+				_deleteCPDefinitionSpecificationOptionValues(actionRequest);
+			}
+			else if (cmd.equals(Constants.UPDATE)) {
+				_updateCPDefinitionSpecificationOptionValue(actionRequest);
+			}
+		}
+		catch (Exception exception) {
+			if (exception instanceof
+					NoSuchCPDefinitionSpecificationOptionValueException ||
+				exception instanceof PrincipalException) {
+
+				SessionErrors.add(actionRequest, exception.getClass());
+
+				actionResponse.setRenderParameter("mvcPath", "/error.jsp");
+			}
+			else {
+				throw exception;
+			}
+		}
+	}
+
+	private void _addCPDefinitionSpecificationOptionValues(
 			ActionRequest actionRequest)
 		throws Exception {
 
@@ -94,7 +129,7 @@ public class EditCPDefinitionSpecificationOptionValueMVCActionCommand
 		}
 	}
 
-	protected void deleteCPDefinitionSpecificationOptionValues(
+	private void _deleteCPDefinitionSpecificationOptionValues(
 			ActionRequest actionRequest)
 		throws Exception {
 
@@ -125,43 +160,8 @@ public class EditCPDefinitionSpecificationOptionValueMVCActionCommand
 		}
 	}
 
-	@Override
-	protected void doProcessAction(
-			ActionRequest actionRequest, ActionResponse actionResponse)
-		throws Exception {
-
-		String cmd = ParamUtil.getString(actionRequest, Constants.CMD);
-
-		try {
-			if (cmd.equals(Constants.ADD) ||
-				cmd.equals(Constants.ADD_MULTIPLE)) {
-
-				addCPDefinitionSpecificationOptionValues(actionRequest);
-			}
-			else if (cmd.equals(Constants.DELETE)) {
-				deleteCPDefinitionSpecificationOptionValues(actionRequest);
-			}
-			else if (cmd.equals(Constants.UPDATE)) {
-				updateCPDefinitionSpecificationOptionValue(actionRequest);
-			}
-		}
-		catch (Exception exception) {
-			if (exception instanceof
-					NoSuchCPDefinitionSpecificationOptionValueException ||
-				exception instanceof PrincipalException) {
-
-				SessionErrors.add(actionRequest, exception.getClass());
-
-				actionResponse.setRenderParameter("mvcPath", "/error.jsp");
-			}
-			else {
-				throw exception;
-			}
-		}
-	}
-
-	protected CPDefinitionSpecificationOptionValue
-			updateCPDefinitionSpecificationOptionValue(
+	private CPDefinitionSpecificationOptionValue
+			_updateCPDefinitionSpecificationOptionValue(
 				ActionRequest actionRequest)
 		throws Exception {
 

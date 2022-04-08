@@ -27,6 +27,7 @@ long totalContactsSelected = 0;
 
 if (analyticsConfiguration != null) {
 	syncedGroupIds = analyticsConfiguration.syncedGroupIds();
+
 	token = analyticsConfiguration.token();
 
 	if (!Validator.isBlank(token)) {
@@ -106,13 +107,14 @@ if (analyticsConfiguration != null) {
 
 			<aui:button-row cssClass="mt-2">
 				<c:if test="<%= connected %>">
-					<a class="btn btn-primary mr-2" href="<%= analyticsConfiguration.liferayAnalyticsURL() %>" target="_blank">
-						<span class="lfr-btn-label"><liferay-ui:message key="go-to-workspace" /></span>
+					<a class="btn btn-primary mr-2" href="<%= analyticsConfiguration.liferayAnalyticsURL() %>" rel="noopener noreferrer" target="_blank">
+						<liferay-ui:message key="go-to-workspace" />
 
-						<liferay-ui:icon
-							icon="shortcut"
-							markupView="lexicon"
-						/>
+						<span class="inline-item inline-item-after">
+							<clay:icon
+								symbol="shortcut"
+							/>
+						</span>
 					</a>
 				</c:if>
 

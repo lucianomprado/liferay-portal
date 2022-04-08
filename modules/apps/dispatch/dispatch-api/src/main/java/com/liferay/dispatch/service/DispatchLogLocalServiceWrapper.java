@@ -27,6 +27,10 @@ public class DispatchLogLocalServiceWrapper
 	implements DispatchLogLocalService,
 			   ServiceWrapper<DispatchLogLocalService> {
 
+	public DispatchLogLocalServiceWrapper() {
+		this(null);
+	}
+
 	public DispatchLogLocalServiceWrapper(
 		DispatchLogLocalService dispatchLogLocalService) {
 
@@ -144,6 +148,13 @@ public class DispatchLogLocalServiceWrapper
 	}
 
 	@Override
+	public int dslQueryCount(
+		com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
+
+		return _dispatchLogLocalService.dslQueryCount(dslQuery);
+	}
+
+	@Override
 	public com.liferay.portal.kernel.dao.orm.DynamicQuery dynamicQuery() {
 		return _dispatchLogLocalService.dynamicQuery();
 	}
@@ -249,6 +260,15 @@ public class DispatchLogLocalServiceWrapper
 	}
 
 	@Override
+	public com.liferay.dispatch.model.DispatchLog fetchLatestDispatchLog(
+		long dispatchTriggerId,
+		com.liferay.dispatch.executor.DispatchTaskStatus dispatchTaskStatus) {
+
+		return _dispatchLogLocalService.fetchLatestDispatchLog(
+			dispatchTriggerId, dispatchTaskStatus);
+	}
+
+	@Override
 	public com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery
 		getActionableDynamicQuery() {
 
@@ -294,6 +314,17 @@ public class DispatchLogLocalServiceWrapper
 
 		return _dispatchLogLocalService.getDispatchLogs(
 			dispatchTriggerId, start, end);
+	}
+
+	@Override
+	public java.util.List<com.liferay.dispatch.model.DispatchLog>
+		getDispatchLogs(
+			long dispatchTriggerId, int start, int end,
+			com.liferay.portal.kernel.util.OrderByComparator
+				<com.liferay.dispatch.model.DispatchLog> orderByComparator) {
+
+		return _dispatchLogLocalService.getDispatchLogs(
+			dispatchTriggerId, start, end, orderByComparator);
 	}
 
 	/**

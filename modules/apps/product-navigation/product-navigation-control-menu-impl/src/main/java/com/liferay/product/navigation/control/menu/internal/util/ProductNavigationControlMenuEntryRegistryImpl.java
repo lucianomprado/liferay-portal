@@ -17,7 +17,6 @@ package com.liferay.product.navigation.control.menu.internal.util;
 import com.liferay.osgi.service.tracker.collections.ServiceTrackerMapBuilder;
 import com.liferay.osgi.service.tracker.collections.map.PropertyServiceReferenceComparator;
 import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMap;
-import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.ListUtil;
@@ -66,7 +65,7 @@ public class ProductNavigationControlMenuEntryRegistryImpl
 		getProductNavigationControlMenuEntries(
 			ProductNavigationControlMenuCategory
 				productNavigationControlMenuCategory,
-			final HttpServletRequest httpServletRequest) {
+			HttpServletRequest httpServletRequest) {
 
 		List<ProductNavigationControlMenuEntry>
 			productNavigationControlMenuEntries =
@@ -84,8 +83,10 @@ public class ProductNavigationControlMenuEntryRegistryImpl
 					return productNavigationControlMenuEntry.isShow(
 						httpServletRequest);
 				}
-				catch (PortalException portalException) {
-					_log.error(portalException, portalException);
+				catch (Exception exception) {
+					if (_log.isDebugEnabled()) {
+						_log.debug(exception);
+					}
 				}
 
 				return false;

@@ -16,7 +16,6 @@ package com.liferay.commerce.product.model.impl;
 
 import com.liferay.commerce.product.model.CPInstanceOptionValueRel;
 import com.liferay.commerce.product.model.CPInstanceOptionValueRelModel;
-import com.liferay.commerce.product.model.CPInstanceOptionValueRelSoap;
 import com.liferay.expando.kernel.model.ExpandoBridge;
 import com.liferay.expando.kernel.util.ExpandoBridgeFactoryUtil;
 import com.liferay.exportimport.kernel.lar.StagedModelType;
@@ -33,21 +32,22 @@ import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
+import com.liferay.portal.kernel.util.StringUtil;
 
 import java.io.Serializable;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
 
+import java.sql.Blob;
 import java.sql.Types;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
@@ -75,6 +75,7 @@ public class CPInstanceOptionValueRelModelImpl
 	public static final String TABLE_NAME = "CPInstanceOptionValueRel";
 
 	public static final Object[][] TABLE_COLUMNS = {
+		{"mvccVersion", Types.BIGINT}, {"ctCollectionId", Types.BIGINT},
 		{"uuid_", Types.VARCHAR}, {"CPInstanceOptionValueRelId", Types.BIGINT},
 		{"groupId", Types.BIGINT}, {"companyId", Types.BIGINT},
 		{"userId", Types.BIGINT}, {"userName", Types.VARCHAR},
@@ -88,6 +89,8 @@ public class CPInstanceOptionValueRelModelImpl
 		new HashMap<String, Integer>();
 
 	static {
+		TABLE_COLUMNS_MAP.put("mvccVersion", Types.BIGINT);
+		TABLE_COLUMNS_MAP.put("ctCollectionId", Types.BIGINT);
 		TABLE_COLUMNS_MAP.put("uuid_", Types.VARCHAR);
 		TABLE_COLUMNS_MAP.put("CPInstanceOptionValueRelId", Types.BIGINT);
 		TABLE_COLUMNS_MAP.put("groupId", Types.BIGINT);
@@ -102,7 +105,7 @@ public class CPInstanceOptionValueRelModelImpl
 	}
 
 	public static final String TABLE_SQL_CREATE =
-		"create table CPInstanceOptionValueRel (uuid_ VARCHAR(75) null,CPInstanceOptionValueRelId LONG not null primary key,groupId LONG,companyId LONG,userId LONG,userName VARCHAR(75) null,createDate DATE null,modifiedDate DATE null,CPDefinitionOptionRelId LONG,CPDefinitionOptionValueRelId LONG,CPInstanceId LONG)";
+		"create table CPInstanceOptionValueRel (mvccVersion LONG default 0 not null,ctCollectionId LONG default 0 not null,uuid_ VARCHAR(75) null,CPInstanceOptionValueRelId LONG not null,groupId LONG,companyId LONG,userId LONG,userName VARCHAR(75) null,createDate DATE null,modifiedDate DATE null,CPDefinitionOptionRelId LONG,CPDefinitionOptionValueRelId LONG,CPInstanceId LONG,primary key (CPInstanceOptionValueRelId, ctCollectionId))";
 
 	public static final String TABLE_SQL_DROP =
 		"drop table CPInstanceOptionValueRel";
@@ -138,107 +141,47 @@ public class CPInstanceOptionValueRelModelImpl
 	public static final boolean COLUMN_BITMASK_ENABLED = true;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long CPDEFINITIONOPTIONRELID_COLUMN_BITMASK = 1L;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long CPDEFINITIONOPTIONVALUERELID_COLUMN_BITMASK = 2L;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long CPINSTANCEID_COLUMN_BITMASK = 4L;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long COMPANYID_COLUMN_BITMASK = 8L;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long GROUPID_COLUMN_BITMASK = 16L;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long UUID_COLUMN_BITMASK = 32L;
 
 	/**
 	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-	 *		#getColumnBitmask(String)
+	 *		#getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long CPINSTANCEOPTIONVALUERELID_COLUMN_BITMASK = 64L;
-
-	/**
-	 * Converts the soap model instance into a normal model instance.
-	 *
-	 * @param soapModel the soap model instance to convert
-	 * @return the normal model instance
-	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
-	 */
-	@Deprecated
-	public static CPInstanceOptionValueRel toModel(
-		CPInstanceOptionValueRelSoap soapModel) {
-
-		if (soapModel == null) {
-			return null;
-		}
-
-		CPInstanceOptionValueRel model = new CPInstanceOptionValueRelImpl();
-
-		model.setUuid(soapModel.getUuid());
-		model.setCPInstanceOptionValueRelId(
-			soapModel.getCPInstanceOptionValueRelId());
-		model.setGroupId(soapModel.getGroupId());
-		model.setCompanyId(soapModel.getCompanyId());
-		model.setUserId(soapModel.getUserId());
-		model.setUserName(soapModel.getUserName());
-		model.setCreateDate(soapModel.getCreateDate());
-		model.setModifiedDate(soapModel.getModifiedDate());
-		model.setCPDefinitionOptionRelId(
-			soapModel.getCPDefinitionOptionRelId());
-		model.setCPDefinitionOptionValueRelId(
-			soapModel.getCPDefinitionOptionValueRelId());
-		model.setCPInstanceId(soapModel.getCPInstanceId());
-
-		return model;
-	}
-
-	/**
-	 * Converts the soap model instances into normal model instances.
-	 *
-	 * @param soapModels the soap model instances to convert
-	 * @return the normal model instances
-	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
-	 */
-	@Deprecated
-	public static List<CPInstanceOptionValueRel> toModels(
-		CPInstanceOptionValueRelSoap[] soapModels) {
-
-		if (soapModels == null) {
-			return null;
-		}
-
-		List<CPInstanceOptionValueRel> models =
-			new ArrayList<CPInstanceOptionValueRel>(soapModels.length);
-
-		for (CPInstanceOptionValueRelSoap soapModel : soapModels) {
-			models.add(toModel(soapModel));
-		}
-
-		return models;
-	}
 
 	public static final long LOCK_EXPIRATION_TIME = GetterUtil.getLong(
 		com.liferay.commerce.product.service.util.ServiceProps.get(
@@ -374,6 +317,18 @@ public class CPInstanceOptionValueRelModelImpl
 				new LinkedHashMap
 					<String, BiConsumer<CPInstanceOptionValueRel, ?>>();
 
+		attributeGetterFunctions.put(
+			"mvccVersion", CPInstanceOptionValueRel::getMvccVersion);
+		attributeSetterBiConsumers.put(
+			"mvccVersion",
+			(BiConsumer<CPInstanceOptionValueRel, Long>)
+				CPInstanceOptionValueRel::setMvccVersion);
+		attributeGetterFunctions.put(
+			"ctCollectionId", CPInstanceOptionValueRel::getCtCollectionId);
+		attributeSetterBiConsumers.put(
+			"ctCollectionId",
+			(BiConsumer<CPInstanceOptionValueRel, Long>)
+				CPInstanceOptionValueRel::setCtCollectionId);
 		attributeGetterFunctions.put("uuid", CPInstanceOptionValueRel::getUuid);
 		attributeSetterBiConsumers.put(
 			"uuid",
@@ -447,6 +402,36 @@ public class CPInstanceOptionValueRelModelImpl
 			attributeGetterFunctions);
 		_attributeSetterBiConsumers = Collections.unmodifiableMap(
 			(Map)attributeSetterBiConsumers);
+	}
+
+	@JSON
+	@Override
+	public long getMvccVersion() {
+		return _mvccVersion;
+	}
+
+	@Override
+	public void setMvccVersion(long mvccVersion) {
+		if (_columnOriginalValues == Collections.EMPTY_MAP) {
+			_setColumnOriginalValues();
+		}
+
+		_mvccVersion = mvccVersion;
+	}
+
+	@JSON
+	@Override
+	public long getCtCollectionId() {
+		return _ctCollectionId;
+	}
+
+	@Override
+	public void setCtCollectionId(long ctCollectionId) {
+		if (_columnOriginalValues == Collections.EMPTY_MAP) {
+			_setColumnOriginalValues();
+		}
+
+		_ctCollectionId = ctCollectionId;
 	}
 
 	@JSON
@@ -727,7 +712,9 @@ public class CPInstanceOptionValueRelModelImpl
 		for (Map.Entry<String, Object> entry :
 				_columnOriginalValues.entrySet()) {
 
-			if (entry.getValue() != getColumnValue(entry.getKey())) {
+			if (!Objects.equals(
+					entry.getValue(), getColumnValue(entry.getKey()))) {
+
 				_columnBitmask |= _columnBitmasks.get(entry.getKey());
 			}
 		}
@@ -769,6 +756,8 @@ public class CPInstanceOptionValueRelModelImpl
 		CPInstanceOptionValueRelImpl cpInstanceOptionValueRelImpl =
 			new CPInstanceOptionValueRelImpl();
 
+		cpInstanceOptionValueRelImpl.setMvccVersion(getMvccVersion());
+		cpInstanceOptionValueRelImpl.setCtCollectionId(getCtCollectionId());
 		cpInstanceOptionValueRelImpl.setUuid(getUuid());
 		cpInstanceOptionValueRelImpl.setCPInstanceOptionValueRelId(
 			getCPInstanceOptionValueRelId());
@@ -785,6 +774,41 @@ public class CPInstanceOptionValueRelModelImpl
 		cpInstanceOptionValueRelImpl.setCPInstanceId(getCPInstanceId());
 
 		cpInstanceOptionValueRelImpl.resetOriginalValues();
+
+		return cpInstanceOptionValueRelImpl;
+	}
+
+	@Override
+	public CPInstanceOptionValueRel cloneWithOriginalValues() {
+		CPInstanceOptionValueRelImpl cpInstanceOptionValueRelImpl =
+			new CPInstanceOptionValueRelImpl();
+
+		cpInstanceOptionValueRelImpl.setMvccVersion(
+			this.<Long>getColumnOriginalValue("mvccVersion"));
+		cpInstanceOptionValueRelImpl.setCtCollectionId(
+			this.<Long>getColumnOriginalValue("ctCollectionId"));
+		cpInstanceOptionValueRelImpl.setUuid(
+			this.<String>getColumnOriginalValue("uuid_"));
+		cpInstanceOptionValueRelImpl.setCPInstanceOptionValueRelId(
+			this.<Long>getColumnOriginalValue("CPInstanceOptionValueRelId"));
+		cpInstanceOptionValueRelImpl.setGroupId(
+			this.<Long>getColumnOriginalValue("groupId"));
+		cpInstanceOptionValueRelImpl.setCompanyId(
+			this.<Long>getColumnOriginalValue("companyId"));
+		cpInstanceOptionValueRelImpl.setUserId(
+			this.<Long>getColumnOriginalValue("userId"));
+		cpInstanceOptionValueRelImpl.setUserName(
+			this.<String>getColumnOriginalValue("userName"));
+		cpInstanceOptionValueRelImpl.setCreateDate(
+			this.<Date>getColumnOriginalValue("createDate"));
+		cpInstanceOptionValueRelImpl.setModifiedDate(
+			this.<Date>getColumnOriginalValue("modifiedDate"));
+		cpInstanceOptionValueRelImpl.setCPDefinitionOptionRelId(
+			this.<Long>getColumnOriginalValue("CPDefinitionOptionRelId"));
+		cpInstanceOptionValueRelImpl.setCPDefinitionOptionValueRelId(
+			this.<Long>getColumnOriginalValue("CPDefinitionOptionValueRelId"));
+		cpInstanceOptionValueRelImpl.setCPInstanceId(
+			this.<Long>getColumnOriginalValue("CPInstanceId"));
 
 		return cpInstanceOptionValueRelImpl;
 	}
@@ -864,6 +888,10 @@ public class CPInstanceOptionValueRelModelImpl
 		CPInstanceOptionValueRelCacheModel cpInstanceOptionValueRelCacheModel =
 			new CPInstanceOptionValueRelCacheModel();
 
+		cpInstanceOptionValueRelCacheModel.mvccVersion = getMvccVersion();
+
+		cpInstanceOptionValueRelCacheModel.ctCollectionId = getCtCollectionId();
+
 		cpInstanceOptionValueRelCacheModel.uuid = getUuid();
 
 		String uuid = cpInstanceOptionValueRelCacheModel.uuid;
@@ -926,7 +954,7 @@ public class CPInstanceOptionValueRelModelImpl
 			attributeGetterFunctions = getAttributeGetterFunctions();
 
 		StringBundler sb = new StringBundler(
-			(4 * attributeGetterFunctions.size()) + 2);
+			(5 * attributeGetterFunctions.size()) + 2);
 
 		sb.append("{");
 
@@ -937,10 +965,27 @@ public class CPInstanceOptionValueRelModelImpl
 			Function<CPInstanceOptionValueRel, Object> attributeGetterFunction =
 				entry.getValue();
 
+			sb.append("\"");
 			sb.append(attributeName);
-			sb.append("=");
-			sb.append(
-				attributeGetterFunction.apply((CPInstanceOptionValueRel)this));
+			sb.append("\": ");
+
+			Object value = attributeGetterFunction.apply(
+				(CPInstanceOptionValueRel)this);
+
+			if (value == null) {
+				sb.append("null");
+			}
+			else if (value instanceof Blob || value instanceof Date ||
+					 value instanceof Map || value instanceof String) {
+
+				sb.append(
+					"\"" + StringUtil.replace(value.toString(), "\"", "'") +
+						"\"");
+			}
+			else {
+				sb.append(value);
+			}
+
 			sb.append(", ");
 		}
 
@@ -994,6 +1039,8 @@ public class CPInstanceOptionValueRelModelImpl
 
 	}
 
+	private long _mvccVersion;
+	private long _ctCollectionId;
 	private String _uuid;
 	private long _CPInstanceOptionValueRelId;
 	private long _groupId;
@@ -1036,6 +1083,8 @@ public class CPInstanceOptionValueRelModelImpl
 	private void _setColumnOriginalValues() {
 		_columnOriginalValues = new HashMap<String, Object>();
 
+		_columnOriginalValues.put("mvccVersion", _mvccVersion);
+		_columnOriginalValues.put("ctCollectionId", _ctCollectionId);
 		_columnOriginalValues.put("uuid_", _uuid);
 		_columnOriginalValues.put(
 			"CPInstanceOptionValueRelId", _CPInstanceOptionValueRelId);
@@ -1073,27 +1122,31 @@ public class CPInstanceOptionValueRelModelImpl
 	static {
 		Map<String, Long> columnBitmasks = new HashMap<>();
 
-		columnBitmasks.put("uuid_", 1L);
+		columnBitmasks.put("mvccVersion", 1L);
 
-		columnBitmasks.put("CPInstanceOptionValueRelId", 2L);
+		columnBitmasks.put("ctCollectionId", 2L);
 
-		columnBitmasks.put("groupId", 4L);
+		columnBitmasks.put("uuid_", 4L);
 
-		columnBitmasks.put("companyId", 8L);
+		columnBitmasks.put("CPInstanceOptionValueRelId", 8L);
 
-		columnBitmasks.put("userId", 16L);
+		columnBitmasks.put("groupId", 16L);
 
-		columnBitmasks.put("userName", 32L);
+		columnBitmasks.put("companyId", 32L);
 
-		columnBitmasks.put("createDate", 64L);
+		columnBitmasks.put("userId", 64L);
 
-		columnBitmasks.put("modifiedDate", 128L);
+		columnBitmasks.put("userName", 128L);
 
-		columnBitmasks.put("CPDefinitionOptionRelId", 256L);
+		columnBitmasks.put("createDate", 256L);
 
-		columnBitmasks.put("CPDefinitionOptionValueRelId", 512L);
+		columnBitmasks.put("modifiedDate", 512L);
 
-		columnBitmasks.put("CPInstanceId", 1024L);
+		columnBitmasks.put("CPDefinitionOptionRelId", 1024L);
+
+		columnBitmasks.put("CPDefinitionOptionValueRelId", 2048L);
+
+		columnBitmasks.put("CPInstanceId", 4096L);
 
 		_columnBitmasks = Collections.unmodifiableMap(columnBitmasks);
 	}

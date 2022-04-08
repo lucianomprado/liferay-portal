@@ -132,10 +132,6 @@
 		display: none;
 	}
 
-	.button-holder.dialog-footer {
-		position: relative;
-	}
-
 	.calendar-create-event-btn-row {
 		margin: 0 0 1em;
 		text-align: center;
@@ -187,6 +183,7 @@
 			display: block;
 			left: unset;
 			padding: 10px 0;
+			position: relative !important;
 
 			.btn {
 				margin-left: 0;
@@ -202,9 +199,19 @@
 		text-transform: capitalize;
 	}
 
-	.portlet-body .panel {
+	.header-title {
 		margin-top: 1rem;
-		padding: 1rem;
+	}
+
+	.popover.scheduler-event-recorder-popover {
+		max-width: none;
+		padding: 10px 15px 0;
+
+		.popover-content .close {
+			position: absolute;
+			right: 10px;
+			top: 5px;
+		}
 	}
 
 	.scheduler-event-content,
@@ -213,10 +220,6 @@
 		font-size: inherit;
 		line-height: inherit;
 		padding: 2px 4px;
-	}
-
-	.popover.scheduler-event-recorder-popover {
-		max-width: none;
 	}
 
 	.scheduler-view-agenda-info-container {
@@ -446,6 +449,10 @@
 	}
 }
 
+.col-md-4 .calendar-portlet .popover.scheduler-event-recorder-popover {
+	max-width: 232px;
+}
+
 .portal-popup .calendar-portlet .fieldset {
 	margin-bottom: 2em;
 }
@@ -476,27 +483,34 @@
 	}
 }
 
-.scheduler-base-hd .scheduler-base-views {
-	align-items: start;
+.scheduler-base-hd {
+	&.row {
+		justify-content: space-between;
+		margin: 0;
+	}
 
-	button {
-		border-color: #cdced9;
-		border-right: 1px;
-		color: #6b6c7e;
-		margin-left: 0 !important;
+	.scheduler-base-views {
+		align-items: start;
 
-		&:hover,
-		&:focus,
-		&:hover,
-		&.active {
-			background-color: #f1f2f5;
-			color: inherit;
-		}
+		button {
+			border-color: #cdced9;
+			border-right: 1px;
+			color: #6b6c7e;
+			margin-left: 0 !important;
 
-		&.btn:last-of-type {
-			border-bottom-right-radius: 4px;
-			border-right: solid 1px #cdced9;
-			border-top-right-radius: 4px;
+			&:hover,
+			&:focus,
+			&:hover,
+			&.active {
+				background-color: #f1f2f5;
+				color: inherit;
+			}
+
+			&.btn:last-of-type {
+				border-bottom-right-radius: 4px;
+				border-right: solid 1px #cdced9;
+				border-top-right-radius: 4px;
+			}
 		}
 	}
 }
@@ -526,12 +540,6 @@
 		background: #ffc;
 		border-color: #fc0;
 	}
-}
-
-.scheduler-event-recorder-popover .popover-content .close {
-	position: absolute;
-	right: 10px;
-	top: 5px;
 }
 
 .scheduler-view-agenda {
@@ -659,7 +667,7 @@
 	}
 
 	.yui3-calendar-weekday {
-		color: #4599e2;
+		color: $primary-d2;
 	}
 
 	.yui3-calendar-day {
@@ -815,6 +823,8 @@
 
 		.calendar-portlet-column-grid,
 		.calendar-portlet-column-options {
+			flex: 0 0 100%;
+			max-width: 100%;
 			width: 100%;
 		}
 
@@ -878,7 +888,15 @@
 @mixin col-md-6 {
 	.calendar-portlet-column-parent {
 		.calendar-portlet-column-grid {
+			flex: 0 0 60%;
+			max-width: 60%;
 			width: 60%;
+
+			&.col-md-12 {
+				flex-basis: 100%;
+				max-width: 100%;
+				width: 100%;
+			}
 
 			.scheduler-base-content .scheduler-base-hd {
 				.scheduler-base-controls {
@@ -930,6 +948,8 @@
 		}
 
 		.calendar-portlet-column-options {
+			flex: 0 0 40%;
+			max-width: 40%;
 			width: 40%;
 		}
 	}
@@ -938,7 +958,15 @@
 @mixin col-md-8 {
 	.calendar-portlet-column-parent {
 		.calendar-portlet-column-grid {
+			flex: 0 0 65%;
+			max-width: 65%;
 			width: 65%;
+
+			&.col-md-12 {
+				flex-basis: 100%;
+				max-width: 100%;
+				width: 100%;
+			}
 
 			.scheduler-base-content .scheduler-base-hd {
 				.scheduler-base-controls {
@@ -986,6 +1014,8 @@
 		}
 
 		.calendar-portlet-column-options {
+			flex: 0 0 35%;
+			max-width: 35%;
 			width: 35%;
 		}
 	}
@@ -1020,5 +1050,36 @@
 	.scheduler-base-views {
 		margin-bottom: 20px;
 		margin-top: 20px;
+	}
+}
+
+@media (min-width: 767px) {
+	.portal-popup .calendar-portlet .dialog-footer {
+		position: relative;
+	}
+}
+
+.definition-of-terms {
+	dt {
+		color: $dark;
+		font-weight: normal;
+		margin-bottom: 2em;
+		width: 25em;
+		word-break: break-word;
+	}
+
+	@include media-breakpoint-up(sm) {
+		dt {
+			float: left;
+			width: auto;
+		}
+
+		dd:after {
+			clear: both;
+			content: '';
+			display: block;
+			height: 0;
+			visibility: hidden;
+		}
 	}
 }

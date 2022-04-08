@@ -20,7 +20,7 @@
 AuthorizeNetGroupServiceConfiguration authorizeNetCommercePaymentEngineGroupServiceConfiguration = (AuthorizeNetGroupServiceConfiguration)request.getAttribute(AuthorizeNetGroupServiceConfiguration.class.getName());
 %>
 
-<portlet:actionURL name="editAuthorizeNetCommercePaymentMethodConfiguration" var="editCommercePaymentMethodActionURL" />
+<portlet:actionURL name="/commerce_payment_methods/edit_authorize_net_commerce_payment_method_configuration" var="editCommercePaymentMethodActionURL" />
 
 <aui:form action="<%= editCommercePaymentMethodActionURL %>" cssClass="container-fluid container-fluid-max-xl" method="post" name="fm">
 	<aui:input name="<%= Constants.CMD %>" type="hidden" value="<%= Constants.UPDATE %>" />
@@ -29,7 +29,7 @@ AuthorizeNetGroupServiceConfiguration authorizeNetCommercePaymentEngineGroupServ
 
 	<commerce-ui:panel>
 		<commerce-ui:info-box
-			title="authentication"
+			title='<%= LanguageUtil.get(request, "authentication") %>'
 		>
 			<aui:input label="api-login-id" name="settings--apiLoginId--" value="<%= authorizeNetCommercePaymentEngineGroupServiceConfiguration.apiLoginId() %>" />
 
@@ -51,7 +51,7 @@ AuthorizeNetGroupServiceConfiguration authorizeNetCommercePaymentEngineGroupServ
 		</commerce-ui:info-box>
 
 		<commerce-ui:info-box
-			title="display"
+			title='<%= LanguageUtil.get(request, "display") %>'
 		>
 			<aui:input checked="<%= authorizeNetCommercePaymentEngineGroupServiceConfiguration.showBankAccount() %>" label="show-bank-account" name="settings--showBankAccount--" type="checkbox" />
 
@@ -61,7 +61,7 @@ AuthorizeNetGroupServiceConfiguration authorizeNetCommercePaymentEngineGroupServ
 		</commerce-ui:info-box>
 
 		<commerce-ui:info-box
-			title="security"
+			title='<%= LanguageUtil.get(request, "security") %>'
 		>
 			<aui:input checked="<%= authorizeNetCommercePaymentEngineGroupServiceConfiguration.requireCaptcha() %>" label="require-captcha" name="settings--requireCaptcha--" type="checkbox" />
 

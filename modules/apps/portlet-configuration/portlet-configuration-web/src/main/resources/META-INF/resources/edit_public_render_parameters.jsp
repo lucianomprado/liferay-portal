@@ -17,18 +17,10 @@
 <%@ include file="/init.jsp" %>
 
 <%
-String redirect = ParamUtil.getString(request, "redirect");
 String returnToFullPageURL = ParamUtil.getString(request, "returnToFullPageURL");
 
 List<PublicRenderParameterConfiguration> publicRenderParameterConfigurations = (List<PublicRenderParameterConfiguration>)request.getAttribute(WebKeys.PUBLIC_RENDER_PARAMETER_CONFIGURATIONS);
 Set<PublicRenderParameter> publicRenderParameters = (Set<PublicRenderParameter>)request.getAttribute(WebKeys.PUBLIC_RENDER_PARAMETERS);
-
-PortletURL editPublicRenderParameterURL = renderResponse.createRenderURL();
-
-editPublicRenderParameterURL.setParameter("mvcPath", "/edit_public_render_parameters.jsp");
-editPublicRenderParameterURL.setParameter("redirect", redirect);
-editPublicRenderParameterURL.setParameter("returnToFullPageURL", returnToFullPageURL);
-editPublicRenderParameterURL.setParameter("portletResource", portletResource);
 %>
 
 <portlet:actionURL name="editPublicRenderParameters" var="editPublicRenderParametersURL">
@@ -47,7 +39,24 @@ editPublicRenderParameterURL.setParameter("portletResource", portletResource);
 		method="post"
 		name="fm"
 	>
-		<aui:input name="redirect" type="hidden" value="<%= editPublicRenderParameterURL.toString() %>" />
+		<aui:input
+			name="redirect"
+			type="hidden"
+			value='<%=
+				PortletURLBuilder.createRenderURL(
+					renderResponse
+				).setMVCPath(
+					"/edit_public_render_parameters.jsp"
+				).setRedirect(
+					ParamUtil.getString(request, "redirect")
+				).setPortletResource(
+					portletResource
+				).setParameter(
+					"returnToFullPageURL", returnToFullPageURL
+				).buildString()
+			%>'
+		/>
+
 		<aui:input name="returnToFullPageURL" type="hidden" value="<%= returnToFullPageURL %>" />
 		<aui:input name="portletResource" type="hidden" value="<%= portletResource %>" />
 
@@ -57,7 +66,7 @@ editPublicRenderParameterURL.setParameter("portletResource", portletResource);
 					<liferay-ui:error key="duplicateMapping" message="several-shared-parameters-are-mapped-to-the-same-parameter" />
 
 					<div class="alert alert-info">
-						<liferay-ui:message arguments='<%= "https://dev.liferay.com/en/discover/portal/-/knowledge_base/7-0/communication-between-apps" %>' key="set-up-the-communication-among-the-portlets-that-use-public-render-parameters" translateArguments="<%= false %>" />
+						<liferay-ui:message arguments="https://dev.liferay.com/en/discover/portal/-/knowledge_base/7-0/communication-between-apps" key="set-up-the-communication-among-the-portlets-that-use-public-render-parameters" translateArguments="<%= false %>" />
 					</div>
 
 					<liferay-ui:search-container

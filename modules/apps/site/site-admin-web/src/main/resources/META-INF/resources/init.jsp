@@ -36,6 +36,7 @@ page import="com.liferay.frontend.taglib.clay.servlet.taglib.util.JSPNavigationI
 page import="com.liferay.frontend.taglib.clay.servlet.taglib.util.NavigationItem" %><%@
 page import="com.liferay.frontend.taglib.form.navigator.constants.FormNavigatorConstants" %><%@
 page import="com.liferay.map.constants.MapProviderWebKeys" %><%@
+page import="com.liferay.petra.portlet.url.builder.PortletURLBuilder" %><%@
 page import="com.liferay.petra.string.StringPool" %><%@
 page import="com.liferay.portal.kernel.exception.AvailableLocaleException" %><%@
 page import="com.liferay.portal.kernel.exception.DuplicateGroupException" %><%@
@@ -110,14 +111,15 @@ page import="com.liferay.ratings.kernel.display.context.CompanyPortletRatingsDef
 page import="com.liferay.ratings.kernel.display.context.GroupPortletRatingsDefinitionDisplayContext" %><%@
 page import="com.liferay.ratings.kernel.transformer.RatingsDataTransformerUtil" %><%@
 page import="com.liferay.site.admin.web.internal.configuration.SiteAdminConfiguration" %><%@
-page import="com.liferay.site.admin.web.internal.constants.SiteAdminPortletKeys" %><%@
 page import="com.liferay.site.admin.web.internal.constants.SiteAdminWebKeys" %><%@
+page import="com.liferay.site.admin.web.internal.display.context.AddGroupDisplayContext" %><%@
 page import="com.liferay.site.admin.web.internal.display.context.DisplaySettingsDisplayContext" %><%@
 page import="com.liferay.site.admin.web.internal.display.context.SelectSiteInitializerDisplayContext" %><%@
 page import="com.liferay.site.admin.web.internal.display.context.SiteAdminDisplayContext" %><%@
 page import="com.liferay.site.admin.web.internal.display.context.SiteAdminManagementToolbarDisplayContext" %><%@
 page import="com.liferay.site.admin.web.internal.servlet.taglib.clay.SelectSiteInitializerVerticalCard" %><%@
 page import="com.liferay.site.admin.web.internal.servlet.taglib.clay.SiteVerticalCard" %><%@
+page import="com.liferay.site.settings.configuration.admin.display.SiteSettingsConfigurationScreenContributor" %><%@
 page import="com.liferay.sites.kernel.util.Sites" %><%@
 page import="com.liferay.sites.kernel.util.SitesUtil" %>
 
@@ -141,12 +143,6 @@ page import="javax.portlet.WindowState" %>
 <portlet:defineObjects />
 
 <%
-SiteAdminConfiguration siteAdminConfiguration = ConfigurationProviderUtil.getSystemConfiguration(SiteAdminConfiguration.class);
-
-SiteAdminDisplayContext siteAdminDisplayContext = new SiteAdminDisplayContext(request, liferayPortletRequest, liferayPortletResponse);
-
-SiteAdminManagementToolbarDisplayContext siteAdminManagementToolbarDisplayContext = new SiteAdminManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, siteAdminDisplayContext);
-
 portletDisplay.setShowStagingIcon(false);
 %>
 

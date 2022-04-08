@@ -51,18 +51,6 @@ public interface JournalServiceConfiguration {
 	)
 	public String errorTemplateFTL();
 
-	@Meta.AD(
-		deflt = "${resource:com/liferay/journal/dependencies/error.vm}",
-		name = "error-template-vm", required = false
-	)
-	public String errorTemplateVM();
-
-	@Meta.AD(
-		deflt = "${resource:com/liferay/journal/dependencies/error.xsl}",
-		name = "error-template-xsl", required = false
-	)
-	public String errorTemplateXSL();
-
 	@Meta.AD(deflt = "15", name = "check-interval", required = false)
 	public int checkInterval();
 

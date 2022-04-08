@@ -1,12 +1,30 @@
-@import './miller_columns/DragPreview';
-@import './miller_columns/MillerColumns';
 @import 'atlas-variables';
 
-.portlet-layouts-admin {
-	@import './FriendlyURLHistory';
+@import 'miller_columns/DragPreview';
+@import 'miller_columns/MillerColumns';
 
-	.active > .card {
+.portlet-layouts-admin {
+	.active.card {
 		box-shadow: 0 0 0 2px $primary-l1;
+
+		& .select-master-layout-option-sticker,
+		& .select-style-book-option-sticker {
+			display: block;
+		}
+	}
+
+	.card {
+		& .select-master-layout-option-sticker,
+		& .select-style-book-option-sticker {
+			display: none;
+		}
+	}
+
+	.card-page-item-directory {
+		@include media-breakpoint-up(lg) {
+			flex-basis: 33.33333%;
+			max-width: 33.33333%;
+		}
 	}
 
 	.customization-settings #main-content {

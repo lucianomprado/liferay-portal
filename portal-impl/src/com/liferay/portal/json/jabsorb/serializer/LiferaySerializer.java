@@ -55,6 +55,9 @@ public class LiferaySerializer extends AbstractSerializer {
 			constructor = clazz.getConstructor();
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception);
+			}
 		}
 
 		if (Serializable.class.isAssignableFrom(clazz) &&
@@ -204,27 +207,28 @@ public class LiferaySerializer extends AbstractSerializer {
 		}
 
 		try {
-			ClassLoader classLoader = null;
+			boolean loadedClassFromContext = false;
 
 			if (jsonObject.has("contextName")) {
 				String contextName = jsonObject.getString("contextName");
 
-				classLoader = ClassLoaderPool.getClassLoader(contextName);
+				ClassLoader classLoader = ClassLoaderPool.getClassLoader(
+					contextName);
 
-				if (classLoader == null) {
-					if (_log.isWarnEnabled()) {
-						_log.warn(
-							StringBundler.concat(
-								"Unable to get class loader for class ",
-								javaClassName, " in context ", contextName));
-					}
+				if (classLoader != null) {
+					Class.forName(javaClassName, true, classLoader);
+
+					loadedClassFromContext = true;
+				}
+				else if (_log.isWarnEnabled()) {
+					_log.warn(
+						StringBundler.concat(
+							"Unable to get class loader for class ",
+							javaClassName, " in context ", contextName));
 				}
 			}
 
-			if (classLoader != null) {
-				Class.forName(javaClassName, true, classLoader);
-			}
-			else {
+			if (!loadedClassFromContext) {
 				Class.forName(javaClassName);
 			}
 		}
@@ -303,27 +307,36 @@ public class LiferaySerializer extends AbstractSerializer {
 		Object javaClassInstance = null;
 
 		try {
-			ClassLoader classLoader = null;
-
 			if (jsonObject.has("contextName")) {
 				String contextName = jsonObject.getString("contextName");
 
-				classLoader = ClassLoaderPool.getClassLoader(contextName);
+				ClassLoader classLoader = ClassLoaderPool.getClassLoader(
+					contextName);
 
-				if (classLoader == null) {
-					if (_log.isWarnEnabled()) {
-						_log.warn(
-							StringBundler.concat(
-								"Unable to get class loader for class ",
-								javaClassName, " in context ", contextName));
+				if (classLoader != null) {
+					try {
+						javaClass = Class.forName(
+							javaClassName, true, classLoader);
 					}
+					catch (ClassNotFoundException classNotFoundException) {
+						if (_log.isWarnEnabled()) {
+							_log.warn(
+								StringBundler.concat(
+									"Unable to load class ", javaClassName,
+									" in context ", contextName),
+								classNotFoundException);
+						}
+					}
+				}
+				else if (_log.isWarnEnabled()) {
+					_log.warn(
+						StringBundler.concat(
+							"Unable to get class loader for class ",
+							javaClassName, " in context ", contextName));
 				}
 			}
 
-			if (classLoader != null) {
-				javaClass = Class.forName(javaClassName, true, classLoader);
-			}
-			else {
+			if (javaClass == null) {
 				javaClass = Class.forName(javaClassName);
 			}
 
@@ -399,7 +412,7 @@ public class LiferaySerializer extends AbstractSerializer {
 					}
 					catch (Exception exception) {
 						if (_log.isDebugEnabled()) {
-							_log.debug(exception, exception);
+							_log.debug(exception);
 						}
 					}
 
@@ -408,7 +421,7 @@ public class LiferaySerializer extends AbstractSerializer {
 							field.set(javaClassInstance, value);
 						}
 						catch (Exception exception) {
-							_log.error(exception, exception);
+							_log.error(exception);
 						}
 					}
 				}

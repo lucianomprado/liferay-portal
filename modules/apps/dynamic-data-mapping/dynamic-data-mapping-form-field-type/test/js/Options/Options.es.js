@@ -14,7 +14,7 @@
 
 import {act, cleanup, fireEvent, render} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import {PageProvider} from 'dynamic-data-mapping-form-renderer';
+import {PageProvider} from 'data-engine-js-components-web';
 import React from 'react';
 
 import Options from '../../../src/main/resources/META-INF/resources/Options/Options.es';
@@ -22,6 +22,9 @@ import Options from '../../../src/main/resources/META-INF/resources/Options/Opti
 const DEFAULT_OPTION_NAME_REGEX = /^Option[0-9]{8}$/;
 
 let liferayLanguageSpy;
+
+const globalLanguageDirection = Liferay.Language.direction;
+
 const spritemap = 'icons.svg';
 
 const OptionsWithProvider = (props) => (
@@ -75,11 +78,17 @@ describe('Options', () => {
 			}
 			originalWarn.call(console, ...args);
 		};
+
+		Liferay.Language.direction = {
+			en_US: 'rtl',
+		};
 	});
 
 	afterAll(() => {
 		// eslint-disable-next-line no-console
 		console.warn = originalWarn;
+
+		Liferay.Language.direction = globalLanguageDirection;
 	});
 
 	afterEach(cleanup);
@@ -176,6 +185,7 @@ describe('Options', () => {
 						{
 							id: 'option1',
 							label: 'Option 1',
+							reference: 'Reference1',
 							value: 'Option1',
 						},
 					],
@@ -563,7 +573,23 @@ describe('Options', () => {
 				name="options"
 				onChange={jest.fn()}
 				spritemap={spritemap}
-				value={optionsValue}
+				value={{
+					...optionsValue,
+					pt_BR: [
+						{
+							id: 'option1',
+							label: 'Option 1',
+							reference: 'Option1',
+							value: 'Option1',
+						},
+						{
+							id: 'option2',
+							label: 'Option 2',
+							reference: 'Option2',
+							value: 'Option2',
+						},
+					],
+				}}
 			/>
 		);
 
@@ -609,45 +635,95 @@ describe('Options', () => {
 		unmockLiferayLanguage();
 	});
 
-	it('adds the default option value to the reference property when it is empty and leaves the field', () => {
-		mockLiferayLanguage();
+	describe('Normalize option reference during the onBlur event', () => {
+		it('changes to the option value when the reference is duplicated', () => {
+			mockLiferayLanguage();
 
-		const {container} = render(
-			<OptionsWithProvider
-				name="options"
-				onChange={jest.fn()}
-				spritemap={spritemap}
-				value={{
-					[themeDisplay.getLanguageId()]: [
-						{
-							id: 'bar',
-							label: 'Bar',
-							reference: 'Bar',
-							value: 'Bar',
-						},
-					],
-				}}
-			/>
-		);
+			const {container} = render(
+				<OptionsWithProvider
+					name="options"
+					onChange={jest.fn()}
+					spritemap={spritemap}
+					value={{
+						[themeDisplay.getLanguageId()]: [
+							{
+								id: 'option1',
+								label: 'Option 1',
+								reference: 'Reference1',
+								value: 'Option1',
+							},
+							{
+								id: 'option2',
+								label: 'Option 2',
+								reference: 'Reference2',
+								value: 'Option2',
+							},
+						],
+					}}
+				/>
+			);
 
-		const referenceInput = container.querySelector(
-			'.key-value-reference-input'
-		);
+			const referenceInputs = container.querySelectorAll(
+				'.key-value-reference-input'
+			);
 
-		expect(referenceInput.value).toBe('Bar');
+			expect(referenceInputs[0].value).toBe('Reference1');
+			expect(referenceInputs[1].value).toBe('Reference2');
 
-		fireEvent.input(referenceInput, {target: {value: ''}});
+			fireEvent.input(referenceInputs[0], {
+				target: {value: 'Reference2'},
+			});
 
-		fireEvent.blur(referenceInput);
+			fireEvent.blur(referenceInputs[0]);
 
-		act(() => {
-			jest.runAllTimers();
+			act(() => {
+				jest.runAllTimers();
+			});
+
+			expect(referenceInputs[0].value).toBe('Option1');
+			expect(referenceInputs[1].value).toBe('Reference2');
+
+			unmockLiferayLanguage();
 		});
 
-		expect(referenceInput.value).toEqual(
-			expect.stringMatching(DEFAULT_OPTION_NAME_REGEX)
-		);
+		it('changes to the option value when the reference is empty', () => {
+			mockLiferayLanguage();
 
-		unmockLiferayLanguage();
+			const {container} = render(
+				<OptionsWithProvider
+					name="options"
+					onChange={jest.fn()}
+					spritemap={spritemap}
+					value={{
+						[themeDisplay.getLanguageId()]: [
+							{
+								id: 'id',
+								label: 'Label',
+								reference: 'Reference',
+								value: 'Value',
+							},
+						],
+					}}
+				/>
+			);
+
+			const referenceInput = container.querySelector(
+				'.key-value-reference-input'
+			);
+
+			expect(referenceInput.value).toBe('Reference');
+
+			fireEvent.input(referenceInput, {target: {value: ''}});
+
+			fireEvent.blur(referenceInput);
+
+			act(() => {
+				jest.runAllTimers();
+			});
+
+			expect(referenceInput.value).toEqual('Value');
+
+			unmockLiferayLanguage();
+		});
 	});
 });

@@ -14,12 +14,14 @@
 
 package com.liferay.commerce.checkout.web.internal.portlet;
 
+import com.liferay.commerce.account.constants.CommerceAccountConstants;
 import com.liferay.commerce.checkout.web.internal.display.context.CheckoutDisplayContext;
 import com.liferay.commerce.constants.CommerceCheckoutWebKeys;
 import com.liferay.commerce.constants.CommerceOrderConstants;
 import com.liferay.commerce.constants.CommercePortletKeys;
 import com.liferay.commerce.model.CommerceOrder;
 import com.liferay.commerce.order.CommerceOrderHttpHelper;
+import com.liferay.commerce.order.CommerceOrderValidatorRegistry;
 import com.liferay.commerce.product.service.CommerceChannelLocalService;
 import com.liferay.commerce.service.CommerceOrderService;
 import com.liferay.commerce.util.CommerceCheckoutStepServicesTracker;
@@ -33,6 +35,7 @@ import com.liferay.portal.kernel.service.WorkflowDefinitionLinkLocalService;
 import com.liferay.portal.kernel.service.WorkflowInstanceLinkLocalService;
 import com.liferay.portal.kernel.util.CookieKeys;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.Validator;
@@ -50,6 +53,7 @@ import javax.portlet.PortletURL;
 import javax.portlet.RenderRequest;
 import javax.portlet.RenderResponse;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.osgi.service.component.annotations.Component;
@@ -77,7 +81,8 @@ import org.osgi.service.component.annotations.Reference;
 		"javax.portlet.init-param.view-template=/view.jsp",
 		"javax.portlet.name=" + CommercePortletKeys.COMMERCE_CHECKOUT,
 		"javax.portlet.resource-bundle=content.Language",
-		"javax.portlet.security-role-ref=power-user,user"
+		"javax.portlet.security-role-ref=power-user,user",
+		"javax.portlet.version=3.0"
 	},
 	service = {CommerceCheckoutPortlet.class, Portlet.class}
 )
@@ -91,7 +96,7 @@ public class CommerceCheckoutPortlet extends MVCPortlet {
 		try {
 			actionRequest.setAttribute(
 				CommerceCheckoutWebKeys.COMMERCE_ORDER,
-				getCommerceOrder(actionRequest));
+				_getCommerceOrder(actionRequest));
 		}
 		catch (Exception exception) {
 			throw new PortletException(exception);
@@ -106,28 +111,47 @@ public class CommerceCheckoutPortlet extends MVCPortlet {
 		throws IOException, PortletException {
 
 		try {
-			CommerceOrder commerceOrder = getCommerceOrder(renderRequest);
+			CommerceOrder commerceOrder = _getCommerceOrder(renderRequest);
 
 			if (commerceOrder != null) {
+				HttpServletRequest httpServletRequest =
+					_portal.getHttpServletRequest(renderRequest);
 				HttpServletResponse httpServletResponse =
 					_portal.getHttpServletResponse(renderResponse);
 
-				if (commerceOrder.isGuestOrder()) {
-					boolean continueAsGuest = GetterUtil.getBoolean(
-						CookieKeys.getCookie(
-							_portal.getHttpServletRequest(renderRequest),
-							"continueAsGuest"));
+				boolean continueAsGuest = GetterUtil.getBoolean(
+					CookieKeys.getCookie(
+						_portal.getHttpServletRequest(renderRequest),
+						CookieKeys.COMMERCE_CONTINUE_AS_GUEST));
 
-					if (!continueAsGuest) {
-						httpServletResponse.sendRedirect(
-							getCheckoutURL(renderRequest));
-					}
-				}
-				else if (commerceOrder.isOpen() &&
-						 !isOrderApproved(commerceOrder)) {
+				if ((commerceOrder.getCommerceAccountId() ==
+						CommerceAccountConstants.ACCOUNT_ID_GUEST) &&
+					!continueAsGuest) {
 
 					httpServletResponse.sendRedirect(
-						getOrderDetailsURL(renderRequest));
+						_getCheckoutURL(renderRequest));
+				}
+				else if ((commerceOrder.isOpen() &&
+						  !_isOrderApproved(commerceOrder)) ||
+						 !_commerceOrderValidatorRegistry.isValid(
+							 LocaleUtil.getSiteDefault(), commerceOrder)) {
+
+					httpServletResponse.sendRedirect(
+						_getOrderDetailsURL(renderRequest));
+				}
+				else if (!commerceOrder.isOpen() &&
+						 (continueAsGuest || commerceOrder.isGuestOrder())) {
+
+					CookieKeys.deleteCookies(
+						httpServletRequest, httpServletResponse,
+						CookieKeys.getDomain(httpServletRequest),
+						CommerceOrder.class.getName() + StringPool.POUND +
+							commerceOrder.getGroupId());
+
+					CookieKeys.deleteCookies(
+						httpServletRequest, httpServletResponse,
+						CookieKeys.getDomain(httpServletRequest),
+						CookieKeys.COMMERCE_CONTINUE_AS_GUEST);
 				}
 
 				renderRequest.setAttribute(
@@ -150,7 +174,7 @@ public class CommerceCheckoutPortlet extends MVCPortlet {
 		}
 	}
 
-	protected String getCheckoutURL(PortletRequest portletRequest)
+	private String _getCheckoutURL(PortletRequest portletRequest)
 		throws PortalException {
 
 		PortletURL portletURL =
@@ -164,7 +188,7 @@ public class CommerceCheckoutPortlet extends MVCPortlet {
 		return portletURL.toString();
 	}
 
-	protected CommerceOrder getCommerceOrder(PortletRequest portletRequest)
+	private CommerceOrder _getCommerceOrder(PortletRequest portletRequest)
 		throws PortalException {
 
 		String commerceOrderUuid = ParamUtil.getString(
@@ -184,13 +208,13 @@ public class CommerceCheckoutPortlet extends MVCPortlet {
 			_portal.getHttpServletRequest(portletRequest));
 	}
 
-	protected String getOrderDetailsURL(PortletRequest portletRequest)
+	private String _getOrderDetailsURL(PortletRequest portletRequest)
 		throws PortalException {
 
 		PortletURL portletURL =
 			_commerceOrderHttpHelper.getCommerceCartPortletURL(
 				_portal.getHttpServletRequest(portletRequest),
-				getCommerceOrder(portletRequest));
+				_getCommerceOrder(portletRequest));
 
 		if (portletURL == null) {
 			return StringPool.BLANK;
@@ -199,7 +223,7 @@ public class CommerceCheckoutPortlet extends MVCPortlet {
 		return portletURL.toString();
 	}
 
-	protected boolean isOrderApproved(CommerceOrder commerceOrder)
+	private boolean _isOrderApproved(CommerceOrder commerceOrder)
 		throws PortalException {
 
 		WorkflowInstanceLink workflowInstanceLink =
@@ -241,6 +265,9 @@ public class CommerceCheckoutPortlet extends MVCPortlet {
 
 	@Reference
 	private CommerceOrderService _commerceOrderService;
+
+	@Reference
+	private CommerceOrderValidatorRegistry _commerceOrderValidatorRegistry;
 
 	@Reference
 	private CompanyLocalService _companyLocalService;

@@ -1,7 +1,9 @@
 definition {
 
 	macro addCP {
-		DMNavigator.gotoAddDocumentTypeCP(dmDocumentTypeName = "External Video Shortcut");
+		if (!(isSet(skipNavigation))) {
+			DMNavigator.gotoAddDocumentTypeCP(dmDocumentTypeName = "External Video Shortcut");
+		}
 
 		Type(
 			key_text = "Video URL",
@@ -57,7 +59,9 @@ definition {
 	}
 
 	macro addPG {
-		DMNavigator.gotoAddDocumentTypePG(dmDocumentTypeName = "External Video Shortcut");
+		DMNavigator.gotoAddDocumentTypePG(
+			contentPage = "${contentPage}",
+			dmDocumentTypeName = "External Video Shortcut");
 
 		Type(
 			key_text = "Video URL",
@@ -96,6 +100,47 @@ definition {
 			value1 = "Publish");
 	}
 
+	macro editCP {
+		LexiconEntry.gotoEntryMenuItem(
+			menuItem = "Edit",
+			rowEntry = "${videoShortcutTitle}");
+
+		if (isSet(videoShortcutPreviousTitle)) {
+			AssertTextEquals(
+				locator1 = "TextInput#TITLE",
+				value1 = "${videoShortcutPreviousTitle}");
+		}
+
+		if (isSet(videoShortcutPreviousDescription)) {
+			AssertTextEquals(
+				locator1 = "TextArea#DESCRIPTION",
+				value1 = "${videoShortcutPreviousDescription}");
+		}
+
+		Type(
+			key_text = "Video URL",
+			locator1 = "TextInput#ANY",
+			value1 = "${videoURLEdit}");
+
+		Pause(locator1 = "5000");
+
+		if (isSet(videoShortcutPreview)) {
+			AssertVisible(
+				key_videoShortcutPreview = "${videoShortcutPreview}",
+				locator1 = "DocumentsAndMediaDocument#VIDEO_SHORTCUT_PREVIEW");
+		}
+
+		if (isSet(videoShortcutTitleEdit)) {
+			PortletEntry.inputTitle(title = "${videoShortcutTitleEdit}");
+		}
+
+		if (isSet(videoShortcutDescriptionEdit)) {
+			PortletEntry.inputDescription(description = "${videoShortcutDescriptionEdit}");
+		}
+
+		PortletEntry.publish();
+	}
+
 	macro validateURL {
 		Type(
 			key_text = "Video URL",
@@ -113,7 +158,6 @@ definition {
 				locator1 = "Message#ERROR_INVALID_YOUTUBE_VIDEO",
 				value1 = "An error occurred. Please try again later.");
 		}
-
 		else if (isSet(facebook)) {
 			SelectFrame.selectFrameNoLoading(locator1 = "IFrame#EXTERNAL_VIDEO_IFRAME");
 
@@ -121,7 +165,6 @@ definition {
 				locator1 = "Message#ERROR_INVALID_FACEBOOK_VIDEO",
 				value1 = "Video Unavailable");
 		}
-
 		else if (isSet(vimeo)) {
 			SelectFrame.selectFrameNoLoading(locator1 = "IFrame#EXTERNAL_VIDEO_IFRAME");
 
@@ -129,7 +172,6 @@ definition {
 				locator1 = "Message#ERROR_INVALID_VIMEO_VIDEO",
 				value1 = "The embed code for this video is not valid.");
 		}
-
 		else {
 			AssertTextEquals(
 				locator1 = "Message#INFO_EXTERNAL_VIDEO_PREVIEW",
@@ -169,6 +211,23 @@ definition {
 				locator1 = "DocumentsAndMediaDocument#DOCUMENT_INFO_DESCRIPTION",
 				value1 = "${videoShortcutDescription}");
 		}
+	}
+
+	macro viewPlayedVideo {
+		SelectFrame.selectFrameNoLoading(locator1 = "IFrame#EXTERNAL_VIDEO_IFRAME");
+
+		Pause(locator1 = "5000");
+
+		if (IsElementPresent(locator1 = "Button#TWITCH_PLAY")) {
+			Click(locator1 = "Button#TWITCH_PLAY");
+
+			AssertElementPresent(locator1 = "DocumentsAndMediaDocument#TWITCH_VIDEO_INACTIVE");
+		}
+		else {
+			AssertElementNotPresent(locator1 = "DocumentsAndMediaDocument#TWITCH_VIDEO_INACTIVE");
+		}
+
+		SelectFrameTop(value1 = "relative=top");
 	}
 
 }

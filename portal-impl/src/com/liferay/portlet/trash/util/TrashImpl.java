@@ -256,7 +256,8 @@ public class TrashImpl implements Trash {
 					_log.warn(
 						StringBundler.concat(
 							"Unable to find trash entry for ", entryClassName,
-							" with primary key ", classPK));
+							" with primary key ", classPK),
+						exception);
 				}
 			}
 		}
@@ -305,13 +306,7 @@ public class TrashImpl implements Trash {
 
 	@Override
 	public String getNewName(String oldName, String token) {
-		StringBundler sb = new StringBundler(3);
-
-		sb.append(oldName);
-		sb.append(StringPool.SPACE);
-		sb.append(token);
-
-		return sb.toString();
+		return StringBundler.concat(oldName, StringPool.SPACE, token);
 	}
 
 	@Override
@@ -586,7 +581,8 @@ public class TrashImpl implements Trash {
 			if (_log.isDebugEnabled()) {
 				_log.debug(
 					"No trash entry or trash version exists with ID " +
-						trashEntryId);
+						trashEntryId,
+					exception);
 			}
 		}
 

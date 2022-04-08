@@ -14,6 +14,7 @@
 
 package com.liferay.commerce.catalog.web.internal.frontend;
 
+import com.liferay.commerce.catalog.web.internal.frontend.constants.CommerceCatalogDataSetConstants;
 import com.liferay.commerce.catalog.web.internal.model.Catalog;
 import com.liferay.commerce.product.model.CommerceCatalog;
 import com.liferay.commerce.product.service.CommerceCatalogService;
@@ -57,11 +58,10 @@ public class CommerceCatalogDataSetDataProvider
 			(ThemeDisplay)httpServletRequest.getAttribute(
 				WebKeys.THEME_DISPLAY);
 
-		List<CommerceCatalog> commerceCatalogs =
-			_commerceCatalogService.searchCommerceCatalogs(
-				themeDisplay.getCompanyId(), filter.getKeywords(),
-				pagination.getStartPosition(), pagination.getEndPosition(),
-				new Sort(Field.NAME, false));
+		List<CommerceCatalog> commerceCatalogs = _commerceCatalogService.search(
+			themeDisplay.getCompanyId(), filter.getKeywords(),
+			pagination.getStartPosition(), pagination.getEndPosition(),
+			new Sort(Field.NAME, false));
 
 		for (CommerceCatalog catalog : commerceCatalogs) {
 			catalogs.add(

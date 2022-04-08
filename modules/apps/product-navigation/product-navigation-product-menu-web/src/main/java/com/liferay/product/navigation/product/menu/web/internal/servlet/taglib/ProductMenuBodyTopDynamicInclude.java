@@ -20,7 +20,6 @@ import com.liferay.application.list.PanelCategoryRegistry;
 import com.liferay.application.list.constants.PanelCategoryKeys;
 import com.liferay.application.list.display.context.logic.PanelCategoryHelper;
 import com.liferay.petra.reflect.ReflectionUtil;
-import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Group;
@@ -102,18 +101,18 @@ public class ProductMenuBodyTopDynamicInclude extends BaseDynamicInclude {
 
 			String productMenuState = SessionClicks.get(
 				httpServletRequest,
-				"com.liferay.product.navigation.product.menu.web_" +
-					"productMenuState",
+				"com.liferay.product.navigation.product.menu." +
+					"web_productMenuState",
 				"closed");
 
 			if (Objects.equals(productMenuState, "open")) {
-				productMenuState += StringPool.SPACE + "product-menu-open";
+				productMenuState += " product-menu-open";
 			}
 
 			jspWriter.write(productMenuState);
 
 			jspWriter.write(
-				" d-print-none lfr-product-menu-panel sidenav-fixed " +
+				" cadmin d-print-none lfr-product-menu-panel sidenav-fixed " +
 					"sidenav-menu-slider\" id=\"");
 
 			String portletNamespace = _portal.getPortletNamespace(
@@ -228,7 +227,7 @@ public class ProductMenuBodyTopDynamicInclude extends BaseDynamicInclude {
 	private static final Log _log = LogFactoryUtil.getLog(
 		ProductMenuBodyTopDynamicInclude.class);
 
-	private BundleContext _bundleContext;
+	private volatile BundleContext _bundleContext;
 
 	@Reference
 	private ConfigurationProvider _configurationProvider;

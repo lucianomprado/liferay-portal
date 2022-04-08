@@ -14,10 +14,12 @@
 
 package com.liferay.dynamic.data.mapping.test.util;
 
+import com.liferay.dynamic.data.mapping.form.field.type.constants.DDMFormFieldTypeConstants;
 import com.liferay.dynamic.data.mapping.model.DDMForm;
 import com.liferay.dynamic.data.mapping.model.DDMFormField;
 import com.liferay.dynamic.data.mapping.model.DDMFormFieldOptions;
 import com.liferay.dynamic.data.mapping.model.LocalizedValue;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 
@@ -47,8 +49,9 @@ public class DDMFormTestUtil {
 		List<DDMFormField> ddmFormFields = ddmForm.getDDMFormFields();
 
 		DDMFormField ddmFormField = createDDMFormField(
-			fieldName, RandomTestUtil.randomString(), "ddm-documentlibrary",
-			"document-library", true, false, true);
+			fieldName, RandomTestUtil.randomString(),
+			DDMFormFieldTypeConstants.DOCUMENT_LIBRARY, "document-library",
+			true, false, true);
 
 		ddmFormField.setDDMForm(ddmForm);
 		ddmFormField.setLocalizable(true);
@@ -239,6 +242,40 @@ public class DDMFormTestUtil {
 		return createDDMFormField(
 			name, label, "numeric", dataType, localizable, repeatable, required,
 			tip, null, placeHolder, toolTip, null);
+	}
+
+	public static DDMFormField createRedirectButtonDDMFormField(
+		Object[] buttonLabel, Object[] message, Object[] messageArguments,
+		Object[] mvcRenderCommandName, String name, Object[] parameters,
+		Object[] portletId, Object[] title) {
+
+		DDMFormField ddmFormField = createDDMFormField(
+			name, null, DDMFormFieldTypeConstants.REDIRECT_BUTTON,
+			StringPool.BLANK, false, false, false, null, null, null, null,
+			null);
+
+		ddmFormField.setProperty("buttonLabel", buttonLabel);
+		ddmFormField.setProperty("messageArguments", messageArguments);
+		ddmFormField.setProperty("messageKey", message);
+		ddmFormField.setProperty("mvcRenderCommandName", mvcRenderCommandName);
+		ddmFormField.setProperty("parameters", parameters);
+		ddmFormField.setProperty("portletId", portletId);
+		ddmFormField.setProperty("title", title);
+
+		return ddmFormField;
+	}
+
+	public static DDMFormField createSearchLocationDDMFormField(
+		LocalizedValue layout, String name, LocalizedValue visibleFields) {
+
+		DDMFormField ddmFormField = createDDMFormField(
+			name, null, DDMFormFieldTypeConstants.SEARCH_LOCATION, null, false,
+			false, false, null, null, null, null, null);
+
+		ddmFormField.setProperty("layout", layout);
+		ddmFormField.setProperty("visibleFields", visibleFields);
+
+		return ddmFormField;
 	}
 
 	public static DDMFormField createSeparatorDDMFormField(

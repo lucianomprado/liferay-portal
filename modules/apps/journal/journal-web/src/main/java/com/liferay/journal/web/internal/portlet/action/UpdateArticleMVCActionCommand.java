@@ -35,8 +35,11 @@ import com.liferay.journal.web.internal.asset.model.JournalArticleAssetRenderer;
 import com.liferay.journal.web.internal.util.JournalUtil;
 import com.liferay.layout.model.LayoutClassedModelUsage;
 import com.liferay.layout.service.LayoutClassedModelUsageLocalService;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.json.JSONFactory;
+import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Layout;
@@ -52,6 +55,8 @@ import com.liferay.portal.kernel.servlet.MultiSessionMessages;
 import com.liferay.portal.kernel.upload.LiferayFileItemException;
 import com.liferay.portal.kernel.upload.UploadException;
 import com.liferay.portal.kernel.upload.UploadPortletRequest;
+import com.liferay.portal.kernel.util.FriendlyURLNormalizer;
+import com.liferay.portal.kernel.util.Html;
 import com.liferay.portal.kernel.util.Http;
 import com.liferay.portal.kernel.util.LocalizationUtil;
 import com.liferay.portal.kernel.util.MapUtil;
@@ -65,7 +70,9 @@ import com.liferay.portal.util.PropsValues;
 
 import java.io.File;
 
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
@@ -74,7 +81,8 @@ import javax.portlet.ActionRequest;
 import javax.portlet.ActionResponse;
 import javax.portlet.PortletPreferences;
 import javax.portlet.PortletRequest;
-import javax.portlet.PortletURL;
+
+import javax.servlet.http.HttpServletRequest;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -134,7 +142,7 @@ public class UpdateArticleMVCActionCommand extends BaseMVCActionCommand {
 		long folderId = ParamUtil.getLong(uploadPortletRequest, "folderId");
 		String articleId = ParamUtil.getString(
 			uploadPortletRequest, "articleId");
-		double version = ParamUtil.getDouble(uploadPortletRequest, "version");
+
 		Map<Locale, String> titleMap = LocalizationUtil.getLocalizationMap(
 			actionRequest, "titleMapAsXML");
 
@@ -192,7 +200,10 @@ public class UpdateArticleMVCActionCommand extends BaseMVCActionCommand {
 					layoutUuid = latestArticle.getLayoutUuid();
 				}
 			}
-			else if (targetLayout == null) {
+			else if ((displayPageType ==
+						AssetDisplayPageConstants.TYPE_DEFAULT) ||
+					 (targetLayout == null)) {
+
 				layoutUuid = null;
 			}
 		}
@@ -301,7 +312,7 @@ public class UpdateArticleMVCActionCommand extends BaseMVCActionCommand {
 				uploadPortletRequest, "autoArticleId");
 
 			article = _journalArticleService.addArticle(
-				groupId, folderId, classNameId, classPK, articleId,
+				null, groupId, folderId, classNameId, classPK, articleId,
 				autoArticleId, titleMap, descriptionMap, friendlyURLMap,
 				content, ddmStructureKey, ddmTemplateKey, layoutUuid,
 				displayDateMonth, displayDateDay, displayDateYear,
@@ -315,6 +326,9 @@ public class UpdateArticleMVCActionCommand extends BaseMVCActionCommand {
 		else {
 
 			// Update article
+
+			double version = ParamUtil.getDouble(
+				uploadPortletRequest, "version");
 
 			article = _journalArticleService.getArticle(
 				groupId, articleId, version);
@@ -374,7 +388,7 @@ public class UpdateArticleMVCActionCommand extends BaseMVCActionCommand {
 
 				portletPreferences.store();
 
-				updateContentSearch(
+				_updateContentSearch(
 					refererPlid, portletResource, article.getArticleId());
 			}
 
@@ -396,14 +410,30 @@ public class UpdateArticleMVCActionCommand extends BaseMVCActionCommand {
 		int workflowAction = ParamUtil.getInteger(
 			actionRequest, "workflowAction", WorkflowConstants.ACTION_PUBLISH);
 
-		if (Validator.isNotNull(portletResource) &&
-			(workflowAction != WorkflowConstants.ACTION_SAVE_DRAFT)) {
+		if (workflowAction != WorkflowConstants.ACTION_SAVE_DRAFT) {
+			String referringPortletResource = ParamUtil.getString(
+				actionRequest, "referringPortletResource");
 
-			MultiSessionMessages.add(
-				actionRequest, portletResource + "requestProcessed");
+			if (Validator.isNotNull(referringPortletResource)) {
+				MultiSessionMessages.add(
+					actionRequest,
+					referringPortletResource + "requestProcessed");
+			}
+			else if (Validator.isNotNull(portletResource)) {
+				MultiSessionMessages.add(
+					actionRequest, portletResource + "requestProcessed");
+			}
 		}
 
-		sendEditArticleRedirect(actionRequest, article, oldUrlTitle);
+		String friendlyURLChangedMessage = _getFriendlyURLChangedMessage(
+			actionRequest, friendlyURLMap, article.getFriendlyURLMap());
+
+		if (Validator.isNotNull(friendlyURLChangedMessage)) {
+			MultiSessionMessages.add(
+				actionRequest, "friendlyURLChanged", friendlyURLChangedMessage);
+		}
+
+		_sendEditArticleRedirect(actionRequest, article, oldUrlTitle);
 
 		boolean hideDefaultSuccessMessage = ParamUtil.getBoolean(
 			actionRequest, "hideDefaultSuccessMessage");
@@ -413,48 +443,101 @@ public class UpdateArticleMVCActionCommand extends BaseMVCActionCommand {
 		}
 	}
 
-	protected String getSaveAndContinueRedirect(
+	private String _getFriendlyURLChangedMessage(
+		ActionRequest actionRequest, Map<Locale, String> originalFriendlyURLMap,
+		Map<Locale, String> currentFriendlyURLMap) {
+
+		List<String> messages = new ArrayList<>();
+
+		HttpServletRequest httpServletRequest = _portal.getHttpServletRequest(
+			actionRequest);
+
+		for (Map.Entry<Locale, String> entry :
+				currentFriendlyURLMap.entrySet()) {
+
+			Locale locale = entry.getKey();
+
+			String originalFriendlyURL = originalFriendlyURLMap.get(locale);
+
+			String normalizedOriginalFriendlyURL =
+				_friendlyURLNormalizer.normalizeWithEncoding(
+					originalFriendlyURL);
+
+			String currentFriendlyURL = entry.getValue();
+
+			if (Validator.isNotNull(originalFriendlyURL) &&
+				!currentFriendlyURL.equals(normalizedOriginalFriendlyURL)) {
+
+				messages.add(
+					LanguageUtil.format(
+						httpServletRequest, "for-locale-x-x-was-changed-to-x",
+						new Object[] {
+							"<strong>" + locale.getLanguage() + "</strong>",
+							"<strong>" + _html.escapeURL(originalFriendlyURL) +
+								"</strong>",
+							"<strong>" + currentFriendlyURL + "</strong>"
+						}));
+			}
+		}
+
+		if (!messages.isEmpty()) {
+			messages.add(
+				0,
+				LanguageUtil.get(
+					httpServletRequest,
+					"the-following-friendly-urls-were-changed-to-ensure-" +
+						"uniqueness"));
+		}
+
+		return StringUtil.merge(messages, "<br />");
+	}
+
+	private String _getSaveAndContinueRedirect(
 			ActionRequest actionRequest, JournalArticle article,
 			String redirect)
 		throws Exception {
 
-		String portletResource = ParamUtil.getString(
-			actionRequest, "portletResource");
+		return PortletURLBuilder.create(
+			PortletURLFactoryUtil.create(
+				actionRequest, JournalPortletKeys.JOURNAL,
+				PortletRequest.RENDER_PHASE)
+		).setMVCPath(
+			"/edit_article.jsp"
+		).setRedirect(
+			redirect
+		).setPortletResource(
+			ParamUtil.getString(actionRequest, "portletResource")
+		).setParameter(
+			"articleId", article.getArticleId()
+		).setParameter(
+			"folderId", article.getFolderId()
+		).setParameter(
+			"groupId", article.getGroupId()
+		).setParameter(
+			"languageId",
+			() -> {
+				String languageId = ParamUtil.getString(
+					actionRequest, "languageId");
 
-		String referringPortletResource = ParamUtil.getString(
-			actionRequest, "referringPortletResource");
+				if (Validator.isNotNull(languageId)) {
+					return languageId;
+				}
 
-		String languageId = ParamUtil.getString(actionRequest, "languageId");
-
-		PortletURL portletURL = PortletURLFactoryUtil.create(
-			actionRequest, JournalPortletKeys.JOURNAL,
-			PortletRequest.RENDER_PHASE);
-
-		portletURL.setParameter("mvcPath", "/edit_article.jsp");
-		portletURL.setParameter("redirect", redirect);
-		portletURL.setParameter("portletResource", portletResource);
-		portletURL.setParameter(
-			"referringPortletResource", referringPortletResource);
-		portletURL.setParameter(
-			"resourcePrimKey", String.valueOf(article.getResourcePrimKey()));
-		portletURL.setParameter(
-			"groupId", String.valueOf(article.getGroupId()));
-		portletURL.setParameter(
-			"folderId", String.valueOf(article.getFolderId()));
-		portletURL.setParameter("articleId", article.getArticleId());
-		portletURL.setParameter(
-			"version", String.valueOf(article.getVersion()));
-
-		if (Validator.isNotNull(languageId)) {
-			portletURL.setParameter("languageId", languageId);
-		}
-
-		portletURL.setWindowState(actionRequest.getWindowState());
-
-		return portletURL.toString();
+				return null;
+			}
+		).setParameter(
+			"referringPortletResource",
+			ParamUtil.getString(actionRequest, "referringPortletResource")
+		).setParameter(
+			"resourcePrimKey", article.getResourcePrimKey()
+		).setParameter(
+			"version", article.getVersion()
+		).setWindowState(
+			actionRequest.getWindowState()
+		).buildString();
 	}
 
-	protected void sendEditArticleRedirect(
+	private void _sendEditArticleRedirect(
 			ActionRequest actionRequest, JournalArticle article,
 			String oldUrlTitle)
 		throws Exception {
@@ -496,7 +579,7 @@ public class UpdateArticleMVCActionCommand extends BaseMVCActionCommand {
 		if ((article != null) &&
 			(workflowAction == WorkflowConstants.ACTION_SAVE_DRAFT)) {
 
-			redirect = getSaveAndContinueRedirect(
+			redirect = _getSaveAndContinueRedirect(
 				actionRequest, article, redirect);
 		}
 		else {
@@ -519,7 +602,7 @@ public class UpdateArticleMVCActionCommand extends BaseMVCActionCommand {
 		actionRequest.setAttribute(WebKeys.REDIRECT, redirect);
 	}
 
-	protected void updateContentSearch(
+	private void _updateContentSearch(
 			long plid, String portletResource, String articleId)
 		throws Exception {
 
@@ -568,6 +651,12 @@ public class UpdateArticleMVCActionCommand extends BaseMVCActionCommand {
 	private DDMStructureLocalService _ddmStructureLocalService;
 
 	@Reference
+	private FriendlyURLNormalizer _friendlyURLNormalizer;
+
+	@Reference
+	private Html _html;
+
+	@Reference
 	private Http _http;
 
 	@Reference
@@ -581,6 +670,9 @@ public class UpdateArticleMVCActionCommand extends BaseMVCActionCommand {
 
 	@Reference
 	private JournalHelper _journalHelper;
+
+	@Reference
+	private JSONFactory _jsonFactory;
 
 	@Reference
 	private LayoutClassedModelUsageLocalService

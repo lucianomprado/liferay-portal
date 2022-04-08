@@ -60,12 +60,11 @@ ImportDisplayContext importDisplayContext = new ImportDisplayContext(request, re
 		<c:if test="<%= MapUtil.isNotEmpty(layoutPageTemplatesImporterResultEntryMap) %>">
 
 			<%
-			String dialogMessage = importDisplayContext.getDialogMessage();
 			String dialogType = importDisplayContext.getDialogType();
 			%>
 
 			<div class="alert alert-<%= dialogType %> <%= dialogType %>-dialog">
-				<span class="<%= dialogType %>-message"><%= dialogMessage %></span>
+				<span class="<%= dialogType %>-message"><%= importDisplayContext.getDialogMessage() %></span>
 
 				<ul class="<%= dialogType %>-list-items">
 
@@ -137,6 +136,7 @@ ImportDisplayContext importDisplayContext = new ImportDisplayContext(request, re
 
 						<%
 						total = notImportedLayoutPageTemplatesImporterResultEntries.size();
+
 						viewTotal = (total > 10) ? 10 : total;
 
 						for (int i = 0; i < viewTotal; i++) {

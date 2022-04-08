@@ -16,12 +16,15 @@ package com.liferay.change.tracking.spi.display;
 
 import com.liferay.change.tracking.spi.display.context.DisplayContext;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
+import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
 
 import java.io.InputStream;
 
 import java.util.Locale;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * Display renderer used to describe and render models of a given type. If an
@@ -31,6 +34,46 @@ import javax.servlet.http.HttpServletRequest;
  * @see    DisplayContext
  */
 public interface CTDisplayRenderer<T> {
+
+	public default T fetchLatestVersionedModel(T model) {
+		return null;
+	}
+
+	public default String[] getAvailableLanguageIds(T model) {
+		return null;
+	}
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 *             #renderPreview(DisplayContext)}
+	 */
+	@Deprecated
+	public default String getContent(
+			HttpServletRequest httpServletRequest,
+			HttpServletResponse httpServletResponse, Locale locale, T model)
+		throws Exception {
+
+		return null;
+	}
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 *             #getContent(
+	 *             		HttpServletRequest, HttpServletResponse, Locale,
+	 *             		Object)}
+	 */
+	@Deprecated
+	public default String getContent(
+			LiferayPortletRequest liferayPortletRequest,
+			LiferayPortletResponse liferayPortletResponse, T model)
+		throws Exception {
+
+		return null;
+	}
+
+	public default String getDefaultLanguageId(T model) {
+		return null;
+	}
 
 	/**
 	 * Returns the input stream for the model and key from when the URL was
@@ -66,6 +109,28 @@ public interface CTDisplayRenderer<T> {
 	public Class<T> getModelClass();
 
 	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
+	public default String getPreviousContent(
+			LiferayPortletRequest liferayPortletRequest,
+			LiferayPortletResponse liferayPortletResponse, T currentModel,
+			T previousModel)
+		throws Exception {
+
+		return null;
+	}
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 *             #fetchLatestVersionedModel(Object)}
+	 */
+	@Deprecated
+	public default T getPreviousVersionedModel(T model) throws PortalException {
+		return null;
+	}
+
+	/**
 	 * Returns the title for the model.
 	 *
 	 * @param  locale to use for translation
@@ -83,6 +148,18 @@ public interface CTDisplayRenderer<T> {
 	 */
 	public String getTypeName(Locale locale);
 
+	public default String getVersionName(T model) {
+		return null;
+	}
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
+	public default boolean hasContent() {
+		return false;
+	}
+
 	/**
 	 * Returns whether the model may be hidden by default. Hidden models may be
 	 * filtered out in some views.
@@ -95,11 +172,32 @@ public interface CTDisplayRenderer<T> {
 	}
 
 	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
+	public default boolean isVersioned() {
+		return false;
+	}
+
+	/**
 	 * Renders the model with the display context.
 	 *
 	 * @param  displayContext the context for rendering the model
 	 * @throws Exception if an exception occurred
 	 */
 	public void render(DisplayContext<T> displayContext) throws Exception;
+
+	public default String renderPreview(DisplayContext<T> displayContext)
+		throws Exception {
+
+		return getContent(
+			displayContext.getHttpServletRequest(),
+			displayContext.getHttpServletResponse(), displayContext.getLocale(),
+			displayContext.getModel());
+	}
+
+	public default boolean showPreviewDiff() {
+		return false;
+	}
 
 }

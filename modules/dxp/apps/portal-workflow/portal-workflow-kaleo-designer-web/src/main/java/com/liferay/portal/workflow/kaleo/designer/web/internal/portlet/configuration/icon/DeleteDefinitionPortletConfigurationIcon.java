@@ -14,6 +14,7 @@
 
 package com.liferay.portal.workflow.kaleo.designer.web.internal.portlet.configuration.icon;
 
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.LanguageUtil;
@@ -31,10 +32,8 @@ import com.liferay.portal.workflow.kaleo.designer.web.internal.permission.KaleoD
 import com.liferay.portal.workflow.kaleo.model.KaleoDefinition;
 import com.liferay.portal.workflow.kaleo.model.KaleoDefinitionVersion;
 
-import javax.portlet.ActionRequest;
 import javax.portlet.PortletRequest;
 import javax.portlet.PortletResponse;
-import javax.portlet.PortletURL;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -69,14 +68,9 @@ public class DeleteDefinitionPortletConfigurationIcon
 
 		String deleteURL = getURL(portletRequest, portletResponse);
 
-		StringBundler sb = new StringBundler(4);
-
-		sb.append(portletNamespace);
-		sb.append("confirmDeleteDefinition('");
-		sb.append(deleteURL);
-		sb.append("'); return false;");
-
-		return sb.toString();
+		return StringBundler.concat(
+			portletNamespace, "confirmDeleteDefinition('", deleteURL,
+			"'); return false;");
 	}
 
 	/**
@@ -92,18 +86,17 @@ public class DeleteDefinitionPortletConfigurationIcon
 	public String getURL(
 		PortletRequest portletRequest, PortletResponse portletResponse) {
 
-		PortletURL portletURL = _portal.getControlPanelPortletURL(
-			portletRequest, KaleoDesignerPortletKeys.CONTROL_PANEL_WORKFLOW,
-			PortletRequest.ACTION_PHASE);
-
-		portletURL.setParameter(
-			ActionRequest.ACTION_NAME,
-			"/portal_workflow/delete_workflow_definition");
-		portletURL.setParameter("name", portletRequest.getParameter("name"));
-		portletURL.setParameter(
-			"version", portletRequest.getParameter("draftVersion"));
-
-		return portletURL.toString();
+		return PortletURLBuilder.create(
+			_portal.getControlPanelPortletURL(
+				portletRequest, KaleoDesignerPortletKeys.CONTROL_PANEL_WORKFLOW,
+				PortletRequest.ACTION_PHASE)
+		).setActionName(
+			"/portal_workflow/delete_workflow_definition"
+		).setParameter(
+			"name", portletRequest.getParameter("name")
+		).setParameter(
+			"version", portletRequest.getParameter("draftVersion")
+		).buildString();
 	}
 
 	@Override
@@ -139,7 +132,7 @@ public class DeleteDefinitionPortletConfigurationIcon
 		}
 		catch (PortalException portalException) {
 			if (_log.isDebugEnabled()) {
-				_log.debug(portalException, portalException);
+				_log.debug(portalException);
 			}
 		}
 

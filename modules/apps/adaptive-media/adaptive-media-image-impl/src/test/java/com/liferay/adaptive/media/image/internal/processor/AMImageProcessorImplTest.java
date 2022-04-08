@@ -32,13 +32,17 @@ import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.repository.model.FileVersion;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import java.io.InputStream;
 
 import java.util.Collections;
+import java.util.Date;
 import java.util.Optional;
 
 import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 import org.mockito.Mockito;
@@ -47,6 +51,11 @@ import org.mockito.Mockito;
  * @author Adolfo Pérez
  */
 public class AMImageProcessorImplTest {
+
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
 
 	@Before
 	public void setUp() {
@@ -163,13 +172,31 @@ public class AMImageProcessorImplTest {
 			_amImageEntryLocalService.fetchAMImageEntry(
 				Mockito.anyString(), Mockito.anyLong())
 		).thenReturn(
-			Mockito.mock(AMImageEntry.class)
+			_amImageEntry
 		);
 
 		Mockito.when(
 			_fileVersion.getFileEntry()
 		).thenReturn(
 			_fileEntry
+		);
+
+		Date creationDate = new Date();
+
+		Date modifiedDate = new Date(
+			creationDate.getYear(), creationDate.getMonth(),
+			creationDate.getDate() - 1);
+
+		Mockito.when(
+			_amImageEntry.getCreateDate()
+		).thenReturn(
+			creationDate
+		);
+
+		Mockito.when(
+			_fileVersion.getModifiedDate()
+		).thenReturn(
+			modifiedDate
 		);
 
 		Mockito.when(
@@ -183,6 +210,94 @@ public class AMImageProcessorImplTest {
 
 		Mockito.verify(
 			_amImageScaler, Mockito.never()
+		).scaleImage(
+			Mockito.any(FileVersion.class),
+			Mockito.any(AMImageConfigurationEntry.class)
+		);
+	}
+
+	@Test
+	public void testProcessConfigurationWhenAMImageEntryAlreadyExistsAndShouldBeUpdated()
+		throws Exception {
+
+		Mockito.when(
+			_amImageValidator.isProcessingSupported(_fileVersion)
+		).thenReturn(
+			true
+		);
+
+		Mockito.when(
+			_amImageConfigurationHelper.getAMImageConfigurationEntry(
+				Mockito.anyLong(), Mockito.anyString())
+		).thenReturn(
+			Optional.of(
+				new AMImageConfigurationEntryImpl(
+					RandomTestUtil.randomString(),
+					RandomTestUtil.randomString(), Collections.emptyMap()))
+		);
+
+		Mockito.when(
+			_amImageEntryLocalService.fetchAMImageEntry(
+				Mockito.anyString(), Mockito.anyLong())
+		).thenReturn(
+			_amImageEntry
+		);
+
+		Mockito.when(
+			_fileVersion.getFileEntry()
+		).thenReturn(
+			_fileEntry
+		);
+
+		Date creationDate = new Date();
+
+		Date modifiedDate = new Date(
+			creationDate.getYear(), creationDate.getMonth(),
+			creationDate.getDate() + 1);
+
+		Mockito.when(
+			_amImageEntry.getCreateDate()
+		).thenReturn(
+			creationDate
+		);
+
+		Mockito.when(
+			_fileVersion.getModifiedDate()
+		).thenReturn(
+			modifiedDate
+		);
+
+		Mockito.when(
+			_fileEntry.isCheckedOut()
+		).thenReturn(
+			false
+		);
+
+		Mockito.when(
+			_amImageScalerTracker.getAMImageScaler(Mockito.anyString())
+		).thenReturn(
+			_amImageScaler
+		);
+
+		Mockito.when(
+			_amImageScaler.scaleImage(
+				Mockito.any(FileVersion.class),
+				Mockito.any(AMImageConfigurationEntry.class))
+		).thenReturn(
+			new AMImageScaledImageImpl(new byte[100], 100, 100)
+		);
+
+		_amImageProcessorImpl.process(
+			_fileVersion, RandomTestUtil.randomString());
+
+		Mockito.verify(
+			_amImageEntryLocalService
+		).deleteAMImageEntry(
+			Mockito.anyLong()
+		);
+
+		Mockito.verify(
+			_amImageScaler
 		).scaleImage(
 			Mockito.any(FileVersion.class),
 			Mockito.any(AMImageConfigurationEntry.class)
@@ -631,6 +746,7 @@ public class AMImageProcessorImplTest {
 
 	private final AMImageConfigurationHelper _amImageConfigurationHelper =
 		Mockito.mock(AMImageConfigurationHelper.class);
+	private final AMImageEntry _amImageEntry = Mockito.mock(AMImageEntry.class);
 	private final AMImageEntryLocalService _amImageEntryLocalService =
 		Mockito.mock(AMImageEntryLocalService.class);
 	private final AMImageProcessorImpl _amImageProcessorImpl =

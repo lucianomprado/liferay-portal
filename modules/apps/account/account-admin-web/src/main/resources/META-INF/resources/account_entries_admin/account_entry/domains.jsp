@@ -112,7 +112,7 @@ List<String> domains = accountEntryDisplay.getDomains();
 
 	searchContainerContentBox.delegate(
 		'click',
-		function (event) {
+		(event) => {
 			var link = event.currentTarget;
 
 			var rowId = link.attr('data-rowId');
@@ -131,18 +131,18 @@ List<String> domains = accountEntryDisplay.getDomains();
 	var addDomainsIcon = document.getElementById('<portlet:namespace />addDomains');
 
 	if (addDomainsIcon) {
-		addDomainsIcon.addEventListener('click', function (event) {
+		addDomainsIcon.addEventListener('click', (event) => {
 			event.preventDefault();
 
 			Liferay.Util.openModal({
 				customEvents: [
 					{
 						name:
-							'<%= liferayPortletResponse.getNamespace() + "addDomains" %>',
+							'<%= liferayPortletResponse.getNamespace() %>addDomains',
 						onEvent: function (event) {
 							var newDomains = event.data.split(',');
 
-							newDomains.forEach(function (domain) {
+							newDomains.forEach((domain) => {
 								domain = domain.trim();
 
 								if (!domains.includes(domain)) {
@@ -167,17 +167,18 @@ List<String> domains = accountEntryDisplay.getDomains();
 						},
 					},
 				],
-				id: '<%= liferayPortletResponse.getNamespace() + "addDomains" %>',
+				id: '<%= liferayPortletResponse.getNamespace() %>addDomains',
 				title: '<liferay-ui:message key="add-domain" />',
-
-				<%
-				PortletURL addDomainsURL = renderResponse.createRenderURL();
-
-				addDomainsURL.setParameter("mvcPath", "/account_entries_admin/account_entry/add_domains.jsp");
-				addDomainsURL.setWindowState(LiferayWindowState.POP_UP);
-				%>
-
-				url: '<%= addDomainsURL.toString() %>',
+				url:
+					'<%=
+						PortletURLBuilder.createRenderURL(
+							renderResponse
+						).setMVCPath(
+							"/account_entries_admin/account_entry/add_domains.jsp"
+						).setWindowState(
+							LiferayWindowState.POP_UP
+						).buildPortletURL()
+				%>',
 			});
 		});
 	}

@@ -16,17 +16,14 @@ package com.liferay.portal.util;
 
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.module.util.SystemBundleUtil;
 import com.liferay.portal.kernel.security.auth.AlwaysAllowDoAsUser;
 import com.liferay.portal.kernel.servlet.PersistentHttpServletRequestWrapper;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.util.HttpUtil;
-import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
 import com.liferay.portal.kernel.util.WebKeys;
-import com.liferay.registry.BasicRegistryImpl;
-import com.liferay.registry.Registry;
-import com.liferay.registry.RegistryUtil;
-import com.liferay.registry.ServiceRegistration;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import java.util.Collections;
 import java.util.Objects;
@@ -36,8 +33,11 @@ import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpSession;
 
 import org.junit.Assert;
-import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
+
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceRegistration;
 
 import org.springframework.mock.web.MockHttpServletRequest;
 
@@ -46,14 +46,9 @@ import org.springframework.mock.web.MockHttpServletRequest;
  */
 public class PortalImplUnitTest {
 
-	@BeforeClass
-	public static void setUpClass() {
-		RegistryUtil.setRegistry(new BasicRegistryImpl());
-
-		HttpUtil httpUtil = new HttpUtil();
-
-		httpUtil.setHttp(new HttpImpl());
-	}
+	@ClassRule
+	public static LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
 
 	@Test
 	public void testGetForwardedHost() {
@@ -324,14 +319,12 @@ public class PortalImplUnitTest {
 
 	@Test
 	public void testGetUserId() {
-		PropsUtil.setProps(new PropsImpl());
-
-		Registry registry = RegistryUtil.getRegistry();
+		BundleContext bundleContext = SystemBundleUtil.getBundleContext();
 
 		boolean[] calledAlwaysAllowDoAsUser = {false};
 
 		ServiceRegistration<AlwaysAllowDoAsUser> serviceRegistration =
-			registry.registerService(
+			bundleContext.registerService(
 				AlwaysAllowDoAsUser.class,
 				(AlwaysAllowDoAsUser)ProxyUtil.newProxyInstance(
 					AlwaysAllowDoAsUser.class.getClassLoader(),
@@ -348,7 +341,8 @@ public class PortalImplUnitTest {
 						}
 
 						return Collections.emptyList();
-					}));
+					}),
+				null);
 
 		try {
 			MockHttpServletRequest mockHttpServletRequest =

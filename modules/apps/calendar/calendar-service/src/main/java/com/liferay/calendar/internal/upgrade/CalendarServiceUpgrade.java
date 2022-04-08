@@ -14,14 +14,13 @@
 
 package com.liferay.calendar.internal.upgrade;
 
-import com.liferay.asset.kernel.service.AssetEntryLocalService;
-import com.liferay.calendar.internal.upgrade.v1_0_2.UpgradeCalendar;
+import com.liferay.calendar.internal.upgrade.v1_0_2.CalendarUpgradeProcess;
 import com.liferay.calendar.internal.upgrade.v1_0_4.UpgradeClassNames;
-import com.liferay.calendar.internal.upgrade.v1_0_5.UpgradeCalendarResource;
+import com.liferay.calendar.internal.upgrade.v1_0_5.CalendarResourceUpgradeProcess;
 import com.liferay.calendar.internal.upgrade.v1_0_5.UpgradeCompanyId;
 import com.liferay.calendar.internal.upgrade.v1_0_5.UpgradeLastPublishDate;
-import com.liferay.calendar.internal.upgrade.v1_0_6.UpgradeResourcePermission;
-import com.liferay.calendar.internal.upgrade.v2_0_0.UpgradeSchema;
+import com.liferay.calendar.internal.upgrade.v1_0_6.ResourcePermissionUpgradeProcess;
+import com.liferay.calendar.internal.upgrade.v2_0_0.SchemaUpgradeProcess;
 import com.liferay.calendar.internal.upgrade.v3_0_0.UpgradeCalendarBookingResourceBlock;
 import com.liferay.calendar.internal.upgrade.v3_0_0.UpgradeCalendarResourceBlock;
 import com.liferay.calendar.internal.upgrade.v3_0_0.UpgradeCalendarResourceResourceBlock;
@@ -37,9 +36,10 @@ import com.liferay.portal.kernel.service.ResourceActionLocalService;
 import com.liferay.portal.kernel.service.ResourcePermissionLocalService;
 import com.liferay.portal.kernel.service.RoleLocalService;
 import com.liferay.portal.kernel.service.UserLocalService;
-import com.liferay.portal.kernel.upgrade.BaseUpgradeSQLServerDatetime;
+import com.liferay.portal.kernel.upgrade.BaseSQLServerDatetimeUpgradeProcess;
+import com.liferay.portal.kernel.upgrade.CTModelUpgradeProcess;
 import com.liferay.portal.kernel.upgrade.DummyUpgradeStep;
-import com.liferay.portal.kernel.upgrade.UpgradeMVCCVersion;
+import com.liferay.portal.kernel.upgrade.MVCCVersionUpgradeProcess;
 import com.liferay.portal.upgrade.registry.UpgradeStepRegistrator;
 import com.liferay.subscription.service.SubscriptionLocalService;
 
@@ -61,14 +61,14 @@ public class CalendarServiceUpgrade implements UpgradeStepRegistrator {
 		registry.register(
 			"0.0.1", "1.0.0",
 			new com.liferay.calendar.internal.upgrade.v1_0_0.
-				UpgradeCalendarBooking());
+				CalendarBookingUpgradeProcess());
 
 		registry.register(
 			"1.0.0", "1.0.1",
 			new com.liferay.calendar.internal.upgrade.v1_0_1.
-				UpgradeCalendarBooking());
+				CalendarBookingUpgradeProcess());
 
-		registry.register("1.0.1", "1.0.2", new UpgradeCalendar());
+		registry.register("1.0.1", "1.0.2", new CalendarUpgradeProcess());
 
 		registry.register("1.0.2", "1.0.3", new DummyUpgradeStep());
 
@@ -76,20 +76,20 @@ public class CalendarServiceUpgrade implements UpgradeStepRegistrator {
 
 		registry.register(
 			"1.0.4", "1.0.5",
-			new UpgradeCalendarResource(
+			new CalendarResourceUpgradeProcess(
 				_classNameLocalService, _companyLocalService,
 				_userLocalService),
 			new UpgradeCompanyId(), new UpgradeLastPublishDate());
 
 		registry.register(
 			"1.0.5", "1.0.6",
-			new UpgradeResourcePermission(
+			new ResourcePermissionUpgradeProcess(
 				_resourceActionLocalService, _resourcePermissionLocalService,
 				_roleLocalService));
 
 		registry.register("1.0.6", "1.0.7", new DummyUpgradeStep());
 
-		registry.register("1.0.7", "2.0.0", new UpgradeSchema());
+		registry.register("1.0.7", "2.0.0", new SchemaUpgradeProcess());
 
 		registry.register(
 			"2.0.0", "3.0.0", new UpgradeCalendarBookingResourceBlock(),
@@ -99,13 +99,13 @@ public class CalendarServiceUpgrade implements UpgradeStepRegistrator {
 		registry.register(
 			"3.0.0", "3.0.1",
 			new UpgradeDiscussionSubscriptionClassName(
-				_assetEntryLocalService, _classNameLocalService,
-				_subscriptionLocalService, CalendarBooking.class.getName(),
+				_classNameLocalService, _subscriptionLocalService,
+				CalendarBooking.class.getName(),
 				UpgradeDiscussionSubscriptionClassName.DeletionMode.UPDATE));
 
 		registry.register(
 			"3.0.1", "4.0.0",
-			new BaseUpgradeSQLServerDatetime(
+			new BaseSQLServerDatetimeUpgradeProcess(
 				new Class<?>[] {
 					CalendarBookingTable.class,
 					CalendarNotificationTemplateTable.class,
@@ -115,14 +115,14 @@ public class CalendarServiceUpgrade implements UpgradeStepRegistrator {
 		registry.register(
 			"4.0.0", "4.0.1",
 			new UpgradeDiscussionSubscriptionClassName(
-				_assetEntryLocalService, _classNameLocalService,
-				_subscriptionLocalService, CalendarBooking.class.getName(),
+				_classNameLocalService, _subscriptionLocalService,
+				CalendarBooking.class.getName(),
 				UpgradeDiscussionSubscriptionClassName.DeletionMode.
 					DELETE_OLD));
 
 		registry.register(
 			"4.0.1", "4.1.0",
-			new UpgradeMVCCVersion() {
+			new MVCCVersionUpgradeProcess() {
 
 				@Override
 				protected String[] getModuleTableNames() {
@@ -137,16 +137,19 @@ public class CalendarServiceUpgrade implements UpgradeStepRegistrator {
 		registry.register(
 			"4.1.0", "4.1.1",
 			new com.liferay.calendar.internal.upgrade.v4_1_1.
-				UpgradeCalendarNotificationTemplate());
+				CalendarNotificationTemplateUpgradeProcess());
 
 		registry.register(
 			"4.1.1", "4.1.2",
 			new com.liferay.calendar.internal.upgrade.v4_1_2.
-				UpgradeCalendarNotificationTemplate());
-	}
+				CalendarNotificationTemplateUpgradeProcess());
 
-	@Reference
-	private AssetEntryLocalService _assetEntryLocalService;
+		registry.register(
+			"4.1.2", "4.2.0",
+			new CTModelUpgradeProcess(
+				"Calendar", "CalendarBooking", "CalendarNotificationTemplate",
+				"CalendarResource"));
+	}
 
 	@Reference
 	private ClassNameLocalService _classNameLocalService;

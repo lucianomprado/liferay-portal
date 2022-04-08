@@ -15,6 +15,7 @@
 package com.liferay.dynamic.data.mapping.form.field.type.internal.checkbox.multiple;
 
 import com.liferay.dynamic.data.mapping.form.field.type.DDMFormFieldValueRequestParameterRetriever;
+import com.liferay.dynamic.data.mapping.form.field.type.constants.DDMFormFieldTypeConstants;
 import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -36,7 +37,8 @@ import org.osgi.service.component.annotations.Reference;
  * @author Dylan Rebelak
  */
 @Component(
-	immediate = true, property = "ddm.form.field.type.name=checkbox_multiple",
+	immediate = true,
+	property = "ddm.form.field.type.name=" + DDMFormFieldTypeConstants.CHECKBOX_MULTIPLE,
 	service = DDMFormFieldValueRequestParameterRetriever.class
 )
 public class CheckboxMultipleDDMFormFieldValueRequestParameterRetriever
@@ -47,15 +49,17 @@ public class CheckboxMultipleDDMFormFieldValueRequestParameterRetriever
 		HttpServletRequest httpServletRequest, String ddmFormFieldParameterName,
 		String defaultDDMFormFieldParameterValue) {
 
-		String[] parameterValues = getParameterValues(
-			httpServletRequest, ddmFormFieldParameterName,
-			getDefaultDDMFormFieldParameterValues(
-				defaultDDMFormFieldParameterValue));
-
-		return jsonFactory.serialize(parameterValues);
+		return jsonFactory.serialize(
+			_getParameterValues(
+				httpServletRequest, ddmFormFieldParameterName,
+				_getDefaultDDMFormFieldParameterValues(
+					defaultDDMFormFieldParameterValue)));
 	}
 
-	protected String[] getDefaultDDMFormFieldParameterValues(
+	@Reference
+	protected JSONFactory jsonFactory;
+
+	private String[] _getDefaultDDMFormFieldParameterValues(
 		String defaultDDMFormFieldParameterValue) {
 
 		if (Validator.isNull(defaultDDMFormFieldParameterValue) ||
@@ -70,14 +74,14 @@ public class CheckboxMultipleDDMFormFieldValueRequestParameterRetriever
 		}
 		catch (Exception exception) {
 			if (_log.isDebugEnabled()) {
-				_log.debug(exception, exception);
+				_log.debug(exception);
 			}
 
 			return StringUtil.split(defaultDDMFormFieldParameterValue);
 		}
 	}
 
-	protected String[] getParameterValues(
+	private String[] _getParameterValues(
 		HttpServletRequest httpServletRequest, String ddmFormFieldParameterName,
 		String[] defaultDDMFormFieldParameterValues) {
 
@@ -94,9 +98,6 @@ public class CheckboxMultipleDDMFormFieldValueRequestParameterRetriever
 			httpServletRequest, ddmFormFieldParameterName,
 			defaultDDMFormFieldParameterValues);
 	}
-
-	@Reference
-	protected JSONFactory jsonFactory;
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		CheckboxMultipleDDMFormFieldValueRequestParameterRetriever.class);

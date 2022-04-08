@@ -15,10 +15,14 @@
 package com.liferay.asset.publisher.web.internal.messaging;
 
 import com.liferay.asset.publisher.web.internal.configuration.AssetPublisherWebConfiguration;
+import com.liferay.asset.publisher.web.internal.messaging.helper.AssetEntriesCheckerHelper;
 import com.liferay.portal.configuration.metatype.bnd.util.ConfigurableUtil;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.messaging.BaseMessageListener;
 import com.liferay.portal.kernel.messaging.DestinationNames;
 import com.liferay.portal.kernel.messaging.Message;
+import com.liferay.portal.kernel.messaging.MessageListener;
 import com.liferay.portal.kernel.module.framework.ModuleServiceLifecycle;
 import com.liferay.portal.kernel.scheduler.SchedulerEngineHelper;
 import com.liferay.portal.kernel.scheduler.SchedulerEntry;
@@ -26,6 +30,7 @@ import com.liferay.portal.kernel.scheduler.SchedulerEntryImpl;
 import com.liferay.portal.kernel.scheduler.TimeUnit;
 import com.liferay.portal.kernel.scheduler.Trigger;
 import com.liferay.portal.kernel.scheduler.TriggerFactory;
+import com.liferay.portal.kernel.util.Validator;
 
 import java.util.Map;
 
@@ -45,7 +50,7 @@ import org.osgi.service.component.annotations.Reference;
  */
 @Component(
 	configurationPid = "com.liferay.asset.publisher.web.internal.configuration.AssetPublisherWebConfiguration",
-	immediate = true, service = {}
+	immediate = true, service = MessageListener.class
 )
 public class CheckAssetEntryMessageListener extends BaseMessageListener {
 
@@ -59,9 +64,9 @@ public class CheckAssetEntryMessageListener extends BaseMessageListener {
 
 		String className = clazz.getName();
 
-		Trigger trigger = _triggerFactory.createTrigger(
-			className, className, null, null,
-			assetPublisherWebConfiguration.checkInterval(), TimeUnit.HOUR);
+		Trigger trigger = _getTrigger(
+			assetPublisherWebConfiguration.checkCronExpression(),
+			assetPublisherWebConfiguration.checkInterval());
 
 		SchedulerEntry schedulerEntry = new SchedulerEntryImpl(
 			className, trigger);
@@ -79,6 +84,36 @@ public class CheckAssetEntryMessageListener extends BaseMessageListener {
 	protected void doReceive(Message message) throws Exception {
 		_assetEntriesCheckerUtil.checkAssetEntries();
 	}
+
+	private Trigger _getTrigger(String checkCronExpression, int checkInterval) {
+		Trigger trigger = null;
+
+		Class<?> clazz = getClass();
+
+		String className = clazz.getName();
+
+		if (Validator.isNotNull(checkCronExpression)) {
+			try {
+				trigger = _triggerFactory.createTrigger(
+					className, className, null, null, checkCronExpression);
+			}
+			catch (RuntimeException runtimeException) {
+				if (_log.isWarnEnabled()) {
+					_log.warn(runtimeException);
+				}
+			}
+		}
+
+		if (trigger == null) {
+			trigger = _triggerFactory.createTrigger(
+				className, className, null, null, checkInterval, TimeUnit.HOUR);
+		}
+
+		return trigger;
+	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		CheckAssetEntryMessageListener.class);
 
 	@Reference
 	private AssetEntriesCheckerHelper _assetEntriesCheckerUtil;

@@ -16,8 +16,7 @@ package com.liferay.message.boards.service.base;
 
 import com.liferay.message.boards.model.MBThread;
 import com.liferay.message.boards.service.MBThreadService;
-import com.liferay.message.boards.service.persistence.MBMessageFinder;
-import com.liferay.message.boards.service.persistence.MBMessagePersistence;
+import com.liferay.message.boards.service.MBThreadServiceUtil;
 import com.liferay.message.boards.service.persistence.MBThreadFinder;
 import com.liferay.message.boards.service.persistence.MBThreadPersistence;
 import com.liferay.portal.aop.AopService;
@@ -30,8 +29,11 @@ import com.liferay.portal.kernel.module.framework.service.IdentifiableOSGiServic
 import com.liferay.portal.kernel.service.BaseServiceImpl;
 import com.liferay.portal.kernel.util.PortalUtil;
 
+import java.lang.reflect.Field;
+
 import javax.sql.DataSource;
 
+import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 
 /**
@@ -52,8 +54,13 @@ public abstract class MBThreadServiceBaseImpl
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. Use <code>MBThreadService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>com.liferay.message.boards.service.MBThreadServiceUtil</code>.
+	 * Never modify or reference this class directly. Use <code>MBThreadService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>MBThreadServiceUtil</code>.
 	 */
+	@Deactivate
+	protected void deactivate() {
+		_setServiceUtilService(null);
+	}
+
 	@Override
 	public Class<?>[] getAopInterfaces() {
 		return new Class<?>[] {
@@ -64,6 +71,8 @@ public abstract class MBThreadServiceBaseImpl
 	@Override
 	public void setAopProxy(Object aopProxy) {
 		mbThreadService = (MBThreadService)aopProxy;
+
+		_setServiceUtilService(mbThreadService);
 	}
 
 	/**
@@ -108,6 +117,20 @@ public abstract class MBThreadServiceBaseImpl
 		}
 	}
 
+	private void _setServiceUtilService(MBThreadService mbThreadService) {
+		try {
+			Field field = MBThreadServiceUtil.class.getDeclaredField(
+				"_service");
+
+			field.setAccessible(true);
+
+			field.set(null, mbThreadService);
+		}
+		catch (ReflectiveOperationException reflectiveOperationException) {
+			throw new RuntimeException(reflectiveOperationException);
+		}
+	}
+
 	@Reference
 	protected com.liferay.message.boards.service.MBThreadLocalService
 		mbThreadLocalService;
@@ -123,45 +146,5 @@ public abstract class MBThreadServiceBaseImpl
 	@Reference
 	protected com.liferay.counter.kernel.service.CounterLocalService
 		counterLocalService;
-
-	@Reference
-	protected MBMessagePersistence mbMessagePersistence;
-
-	@Reference
-	protected MBMessageFinder mbMessageFinder;
-
-	@Reference
-	protected com.liferay.portal.kernel.service.GroupLocalService
-		groupLocalService;
-
-	@Reference
-	protected com.liferay.portal.kernel.service.GroupService groupService;
-
-	@Reference
-	protected com.liferay.portal.kernel.service.ResourceLocalService
-		resourceLocalService;
-
-	@Reference
-	protected com.liferay.portal.kernel.service.UserLocalService
-		userLocalService;
-
-	@Reference
-	protected com.liferay.portal.kernel.service.UserService userService;
-
-	@Reference
-	protected com.liferay.portal.kernel.service.WorkflowInstanceLinkLocalService
-		workflowInstanceLinkLocalService;
-
-	@Reference
-	protected com.liferay.asset.kernel.service.AssetEntryLocalService
-		assetEntryLocalService;
-
-	@Reference
-	protected com.liferay.asset.kernel.service.AssetEntryService
-		assetEntryService;
-
-	@Reference
-	protected com.liferay.ratings.kernel.service.RatingsStatsLocalService
-		ratingsStatsLocalService;
 
 }

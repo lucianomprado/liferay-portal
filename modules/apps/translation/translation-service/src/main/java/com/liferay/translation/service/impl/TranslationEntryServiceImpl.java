@@ -36,6 +36,7 @@ import com.liferay.translation.constants.TranslationConstants;
 import com.liferay.translation.exception.XLIFFFileException;
 import com.liferay.translation.internal.util.XLIFFLocaleIdUtil;
 import com.liferay.translation.model.TranslationEntry;
+import com.liferay.translation.security.permission.TranslationPermission;
 import com.liferay.translation.service.base.TranslationEntryServiceBaseImpl;
 
 import net.sf.okapi.common.LocaleId;
@@ -130,15 +131,16 @@ public class TranslationEntryServiceImpl
 		InfoItemPermissionProvider<JournalArticle> infoItemPermissionProvider =
 			_infoItemServiceTracker.getFirstInfoItemService(
 				InfoItemPermissionProvider.class,
-				JournalArticle.class.getName());
+				infoItemReference.getClassName());
 
 		if (!infoItemPermissionProvider.hasPermission(
 				permissionChecker, infoItemReference, ActionKeys.UPDATE)) {
 
 			String name = TranslationConstants.RESOURCE_NAME + "." + languageId;
 
-			if (!permissionChecker.hasPermission(
-					groupId, name, name, TranslationActionKeys.TRANSLATE)) {
+			if (!_translationPermission.contains(
+					permissionChecker, groupId, languageId,
+					TranslationActionKeys.TRANSLATE)) {
 
 				throw new PrincipalException.MustHavePermission(
 					permissionChecker, name, name,
@@ -160,5 +162,8 @@ public class TranslationEntryServiceImpl
 
 	@Reference
 	private SAXReader _saxReader;
+
+	@Reference
+	private TranslationPermission _translationPermission;
 
 }

@@ -20,12 +20,12 @@ import com.liferay.asset.publisher.web.internal.display.context.AssetPublisherDi
 import com.liferay.asset.publisher.web.internal.helper.AssetPublisherWebHelper;
 import com.liferay.asset.util.AssetHelper;
 import com.liferay.asset.util.AssetPublisherAddItemHolder;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Layout;
-import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
 import com.liferay.portal.kernel.portlet.toolbar.contributor.BasePortletToolbarContributor;
 import com.liferay.portal.kernel.portlet.toolbar.contributor.PortletToolbarContributor;
 import com.liferay.portal.kernel.service.GroupLocalService;
@@ -72,7 +72,24 @@ import org.osgi.service.component.annotations.Reference;
 public class AssetPublisherPortletToolbarContributor
 	extends BasePortletToolbarContributor {
 
-	protected void addPortletTitleAddAssetEntryMenuItems(
+	@Override
+	protected List<MenuItem> getPortletTitleMenuItems(
+		PortletRequest portletRequest, PortletResponse portletResponse) {
+
+		List<MenuItem> menuItems = new ArrayList<>();
+
+		try {
+			_addPortletTitleAddAssetEntryMenuItems(
+				menuItems, portletRequest, portletResponse);
+		}
+		catch (Exception exception) {
+			_log.error("Unable to add folder menu item", exception);
+		}
+
+		return menuItems;
+	}
+
+	private void _addPortletTitleAddAssetEntryMenuItems(
 			List<MenuItem> menuItems, PortletRequest portletRequest,
 			PortletResponse portletResponse)
 		throws Exception {
@@ -135,51 +152,31 @@ public class AssetPublisherPortletToolbarContributor
 		String title = LanguageUtil.get(
 			resourceBundle, "add-content-select-scope-and-type");
 
-		Map<String, Object> data = HashMapBuilder.<String, Object>put(
-			"id",
-			() -> {
-				PortletDisplay portletDisplay =
-					themeDisplay.getPortletDisplay();
+		urlMenuItem.setData(
+			HashMapBuilder.<String, Object>put(
+				"id",
+				() -> {
+					PortletDisplay portletDisplay =
+						themeDisplay.getPortletDisplay();
 
-				return HtmlUtil.escape(portletDisplay.getNamespace()) +
-					"editAsset";
-			}
-		).put(
-			"title", title
-		).build();
-
-		urlMenuItem.setData(data);
-
+					return HtmlUtil.escape(portletDisplay.getNamespace()) +
+						"editAsset";
+				}
+			).put(
+				"title", title
+			).build());
 		urlMenuItem.setLabel(title);
 
-		LiferayPortletResponse liferayPortletResponse =
-			_portal.getLiferayPortletResponse(portletResponse);
-
-		PortletURL portletURL = liferayPortletResponse.createRenderURL();
-
-		portletURL.setParameter("mvcPath", "/add_asset_selector.jsp");
-		portletURL.setParameter("redirect", themeDisplay.getURLCurrent());
-
-		urlMenuItem.setURL(portletURL.toString());
+		urlMenuItem.setURL(
+			PortletURLBuilder.createRenderURL(
+				_portal.getLiferayPortletResponse(portletResponse)
+			).setMVCPath(
+				"/add_asset_selector.jsp"
+			).setRedirect(
+				themeDisplay.getURLCurrent()
+			).buildString());
 
 		menuItems.add(urlMenuItem);
-	}
-
-	@Override
-	protected List<MenuItem> getPortletTitleMenuItems(
-		PortletRequest portletRequest, PortletResponse portletResponse) {
-
-		List<MenuItem> menuItems = new ArrayList<>();
-
-		try {
-			addPortletTitleAddAssetEntryMenuItems(
-				menuItems, portletRequest, portletResponse);
-		}
-		catch (Exception exception) {
-			_log.error("Unable to add folder menu item", exception);
-		}
-
-		return menuItems;
 	}
 
 	private URLMenuItem _getPortletTitleAddAssetEntryMenuItem(
@@ -216,21 +213,21 @@ public class AssetPublisherPortletToolbarContributor
 			curGroupId = group.getLiveGroupId();
 		}
 
-		PortletURL portletURL = assetPublisherAddItemHolder.getPortletURL();
-
-		portletURL.setParameter(
-			"portletResource", AssetPublisherPortletKeys.ASSET_PUBLISHER);
+		PortletURL portletURL = PortletURLBuilder.create(
+			assetPublisherAddItemHolder.getPortletURL()
+		).setPortletResource(
+			AssetPublisherPortletKeys.ASSET_PUBLISHER
+		).buildPortletURL();
 
 		boolean addDisplayPageParameter =
 			_assetPublisherWebHelper.isDefaultAssetPublisher(
 				themeDisplay.getLayout(), portletDisplay.getId(),
 				assetPublisherDisplayContext.getPortletResource());
 
-		String url = _assetHelper.getAddURLPopUp(
-			curGroupId, themeDisplay.getPlid(), portletURL,
-			addDisplayPageParameter, themeDisplay.getLayout());
-
-		urlMenuItem.setURL(url);
+		urlMenuItem.setURL(
+			_assetHelper.getAddURLPopUp(
+				curGroupId, themeDisplay.getPlid(), portletURL,
+				addDisplayPageParameter, themeDisplay.getLayout()));
 
 		return urlMenuItem;
 	}
@@ -268,16 +265,10 @@ public class AssetPublisherPortletToolbarContributor
 		String portletName = portletDisplay.getPortletName();
 
 		if (portletName.equals(
-				AssetPublisherPortletKeys.HIGHEST_RATED_ASSETS)) {
+				AssetPublisherPortletKeys.HIGHEST_RATED_ASSETS) ||
+			portletName.equals(AssetPublisherPortletKeys.MOST_VIEWED_ASSETS) ||
+			portletName.equals(AssetPublisherPortletKeys.RELATED_ASSETS)) {
 
-			return false;
-		}
-
-		if (portletName.equals(AssetPublisherPortletKeys.MOST_VIEWED_ASSETS)) {
-			return false;
-		}
-
-		if (portletName.equals(AssetPublisherPortletKeys.RELATED_ASSETS)) {
 			return false;
 		}
 

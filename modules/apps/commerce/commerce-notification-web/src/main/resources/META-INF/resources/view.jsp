@@ -20,10 +20,6 @@
 String notificationNavigationItem = ParamUtil.getString(request, "notificationNavigationItem", "view-all-notification-queue-entries");
 
 CommerceNotificationQueueEntriesDisplayContext commerceNotificationQueueEntriesDisplayContext = (CommerceNotificationQueueEntriesDisplayContext)request.getAttribute(WebKeys.PORTLET_DISPLAY_CONTEXT);
-
-PortletURL portletURL = commerceNotificationQueueEntriesDisplayContext.getPortletURL();
-
-portletURL.setParameter("notificationNavigationItem", notificationNavigationItem);
 %>
 
 <clay:data-set-display
@@ -37,6 +33,12 @@ portletURL.setParameter("notificationNavigationItem", notificationNavigationItem
 	itemsPerPage="<%= 10 %>"
 	namespace="<%= liferayPortletResponse.getNamespace() %>"
 	pageNumber="<%= 1 %>"
-	portletURL="<%= portletURL %>"
+	portletURL='<%=
+		PortletURLBuilder.create(
+			commerceNotificationQueueEntriesDisplayContext.getPortletURL()
+		).setParameter(
+			"notificationNavigationItem", notificationNavigationItem
+		).buildPortletURL()
+	%>'
 	showManagementBar="<%= false %>"
 />

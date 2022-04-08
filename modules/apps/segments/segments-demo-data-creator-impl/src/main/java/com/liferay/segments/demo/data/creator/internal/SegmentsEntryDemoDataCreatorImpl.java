@@ -97,7 +97,7 @@ public class SegmentsEntryDemoDataCreatorImpl
 			}
 			catch (NoSuchEntryException noSuchEntryException) {
 				if (_log.isWarnEnabled()) {
-					_log.warn(noSuchEntryException, noSuchEntryException);
+					_log.warn(noSuchEntryException);
 				}
 			}
 
@@ -130,6 +130,10 @@ public class SegmentsEntryDemoDataCreatorImpl
 			return CriteriaSerializer.serialize(criteria);
 		}
 		catch (IOException ioException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(ioException);
+			}
+
 			return StringPool.BLANK;
 		}
 	}

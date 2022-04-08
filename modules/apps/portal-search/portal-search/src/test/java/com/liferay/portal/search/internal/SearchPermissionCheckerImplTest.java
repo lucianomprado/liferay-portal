@@ -27,9 +27,12 @@ import com.liferay.portal.kernel.service.RoleLocalService;
 import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.search.configuration.SearchPermissionCheckerConfiguration;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 import org.mockito.Mock;
@@ -40,6 +43,11 @@ import org.mockito.MockitoAnnotations;
  * @author André de Oliveira
  */
 public class SearchPermissionCheckerImplTest {
+
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
 
 	@Before
 	public void setUp() throws Exception {
@@ -53,7 +61,7 @@ public class SearchPermissionCheckerImplTest {
 			Mockito.anyString()
 		);
 
-		_searchPermissionChecker = createSearchPermissionChecker();
+		_searchPermissionChecker = _createSearchPermissionChecker();
 	}
 
 	@Test
@@ -69,10 +77,10 @@ public class SearchPermissionCheckerImplTest {
 
 		long userId = RandomTestUtil.randomLong();
 
-		whenIndexerIsPermissionAware(true);
-		whenPermissionCheckerGetUser(_user);
-		whenPermissionCheckerGetUserBag(_userBag);
-		whenUserGetUserId(userId);
+		_whenIndexerIsPermissionAware(true);
+		_whenPermissionCheckerGetUser(_user);
+		_whenPermissionCheckerGetUserBag(_userBag);
+		_whenUserGetUserId(userId);
 
 		BooleanFilter booleanFilter = null;
 
@@ -83,7 +91,7 @@ public class SearchPermissionCheckerImplTest {
 		Assert.assertNotNull(permissionBooleanFilter);
 	}
 
-	protected SearchPermissionCheckerImpl createSearchPermissionChecker() {
+	private SearchPermissionCheckerImpl _createSearchPermissionChecker() {
 		return new SearchPermissionCheckerImpl() {
 			{
 				indexerRegistry = _indexerRegistry;
@@ -98,7 +106,7 @@ public class SearchPermissionCheckerImplTest {
 		};
 	}
 
-	protected boolean whenIndexerIsPermissionAware(boolean permissionAware) {
+	private boolean _whenIndexerIsPermissionAware(boolean permissionAware) {
 		return Mockito.doReturn(
 			permissionAware
 		).when(
@@ -106,7 +114,7 @@ public class SearchPermissionCheckerImplTest {
 		).isPermissionAware();
 	}
 
-	protected User whenPermissionCheckerGetUser(User user) {
+	private User _whenPermissionCheckerGetUser(User user) {
 		return Mockito.doReturn(
 			user
 		).when(
@@ -114,7 +122,7 @@ public class SearchPermissionCheckerImplTest {
 		).getUser();
 	}
 
-	protected void whenPermissionCheckerGetUserBag(UserBag userBag)
+	private void _whenPermissionCheckerGetUserBag(UserBag userBag)
 		throws Exception {
 
 		Mockito.doReturn(
@@ -124,7 +132,7 @@ public class SearchPermissionCheckerImplTest {
 		).getUserBag();
 	}
 
-	protected long whenUserGetUserId(long userId) {
+	private long _whenUserGetUserId(long userId) {
 		return Mockito.doReturn(
 			userId
 		).when(

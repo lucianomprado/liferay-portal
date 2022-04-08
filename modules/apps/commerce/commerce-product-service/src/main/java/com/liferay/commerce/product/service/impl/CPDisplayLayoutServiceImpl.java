@@ -27,9 +27,10 @@ import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermissionFactory;
-import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.service.LayoutLocalService;
 import com.liferay.portal.kernel.service.permission.GroupPermissionUtil;
 import com.liferay.portal.kernel.service.permission.LayoutPermissionUtil;
+import com.liferay.portal.spring.extender.service.ServiceReference;
 import com.liferay.portlet.asset.service.permission.AssetCategoryPermission;
 
 /**
@@ -37,25 +38,9 @@ import com.liferay.portlet.asset.service.permission.AssetCategoryPermission;
  */
 public class CPDisplayLayoutServiceImpl extends CPDisplayLayoutServiceBaseImpl {
 
-	/**
-	 * @deprecated As of Athanasius (7.3.x)
-	 */
-	@Deprecated
 	@Override
 	public CPDisplayLayout addCPDisplayLayout(
-			Class<?> clazz, long classPK, String layoutUuid,
-			ServiceContext serviceContext)
-		throws PortalException {
-
-		return cpDisplayLayoutService.addCPDisplayLayout(
-			serviceContext.getUserId(), serviceContext.getScopeGroupId(), clazz,
-			classPK, layoutUuid);
-	}
-
-	@Override
-	public CPDisplayLayout addCPDisplayLayout(
-			long userId, long groupId, Class<?> clazz, long classPK,
-			String layoutUuid)
+			long groupId, Class<?> clazz, long classPK, String layoutUuid)
 		throws PortalException {
 
 		GroupPermissionUtil.check(
@@ -64,29 +49,7 @@ public class CPDisplayLayoutServiceImpl extends CPDisplayLayoutServiceBaseImpl {
 		_checkCPDisplayLayout(clazz.getName(), classPK, ActionKeys.VIEW);
 
 		return cpDisplayLayoutLocalService.addCPDisplayLayout(
-			userId, groupId, clazz, classPK, layoutUuid);
-	}
-
-	@Override
-	public void deleteCPDisplayLayout(Class<?> clazz, long classPK)
-		throws PortalException {
-
-		CPDisplayLayout cpDisplayLayout =
-			cpDisplayLayoutLocalService.fetchCPDisplayLayout(clazz, classPK);
-
-		if (cpDisplayLayout == null) {
-			return;
-		}
-
-		GroupPermissionUtil.check(
-			getPermissionChecker(), cpDisplayLayout.getGroupId(),
-			ActionKeys.ADD_LAYOUT);
-
-		_checkCPDisplayLayout(
-			cpDisplayLayout.getClassName(), cpDisplayLayout.getClassPK(),
-			ActionKeys.VIEW);
-
-		cpDisplayLayoutLocalService.deleteCPDisplayLayout(cpDisplayLayout);
+			getUserId(), groupId, clazz, classPK, layoutUuid);
 	}
 
 	@Override
@@ -142,7 +105,7 @@ public class CPDisplayLayoutServiceImpl extends CPDisplayLayoutServiceBaseImpl {
 
 	@Override
 	public CPDisplayLayout updateCPDisplayLayout(
-			long cpDisplayLayoutId, String layoutUuid)
+			long cpDisplayLayoutId, long classPK, String layoutUuid)
 		throws PortalException {
 
 		CPDisplayLayout cpDisplayLayout =
@@ -153,11 +116,10 @@ public class CPDisplayLayoutServiceImpl extends CPDisplayLayoutServiceBaseImpl {
 			ActionKeys.UPDATE);
 
 		_checkCPDisplayLayout(
-			cpDisplayLayout.getClassName(), cpDisplayLayout.getClassPK(),
-			ActionKeys.VIEW);
+			cpDisplayLayout.getClassName(), classPK, ActionKeys.VIEW);
 
 		return cpDisplayLayoutLocalService.updateCPDisplayLayout(
-			cpDisplayLayout.getCPDisplayLayoutId(), layoutUuid);
+			cpDisplayLayout.getCPDisplayLayoutId(), classPK, layoutUuid);
 	}
 
 	private void _checkCPDisplayLayout(
@@ -186,7 +148,7 @@ public class CPDisplayLayoutServiceImpl extends CPDisplayLayoutServiceBaseImpl {
 	}
 
 	private Layout _getLayout(CPDisplayLayout cpDisplayLayout) {
-		Layout layout = layoutLocalService.fetchLayout(
+		Layout layout = _layoutLocalService.fetchLayout(
 			cpDisplayLayout.getLayoutUuid(), cpDisplayLayout.getGroupId(),
 			false);
 
@@ -194,7 +156,7 @@ public class CPDisplayLayoutServiceImpl extends CPDisplayLayoutServiceBaseImpl {
 			return layout;
 		}
 
-		return layoutLocalService.fetchLayout(
+		return _layoutLocalService.fetchLayout(
 			cpDisplayLayout.getLayoutUuid(), cpDisplayLayout.getGroupId(),
 			true);
 	}
@@ -205,5 +167,8 @@ public class CPDisplayLayoutServiceImpl extends CPDisplayLayoutServiceBaseImpl {
 				CPDisplayLayoutServiceImpl.class,
 				"_commerceCatalogModelResourcePermission",
 				CommerceCatalog.class);
+
+	@ServiceReference(type = LayoutLocalService.class)
+	private LayoutLocalService _layoutLocalService;
 
 }

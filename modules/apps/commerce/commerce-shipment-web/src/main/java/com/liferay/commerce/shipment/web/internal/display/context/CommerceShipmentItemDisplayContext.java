@@ -19,8 +19,10 @@ import com.liferay.commerce.model.CommerceShipment;
 import com.liferay.commerce.model.CommerceShipmentItem;
 import com.liferay.commerce.service.CommerceOrderItemService;
 import com.liferay.commerce.service.CommerceShipmentItemService;
-import com.liferay.commerce.shipment.web.internal.portlet.action.ActionHelper;
+import com.liferay.commerce.shipment.web.internal.portlet.action.helper.ActionHelper;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.security.permission.resource.PortletResourcePermission;
 
 import javax.portlet.PortletURL;
 
@@ -35,9 +37,10 @@ public class CommerceShipmentItemDisplayContext
 	public CommerceShipmentItemDisplayContext(
 		ActionHelper actionHelper, HttpServletRequest httpServletRequest,
 		CommerceOrderItemService commerceOrderItemService,
-		CommerceShipmentItemService commerceShipmentItemService) {
+		CommerceShipmentItemService commerceShipmentItemService,
+		PortletResourcePermission portletResourcePermission) {
 
-		super(actionHelper, httpServletRequest);
+		super(actionHelper, httpServletRequest, portletResourcePermission);
 
 		_commerceOrderItemService = commerceOrderItemService;
 		_commerceShipmentItemService = commerceShipmentItemService;
@@ -80,11 +83,11 @@ public class CommerceShipmentItemDisplayContext
 
 	@Override
 	public PortletURL getPortletURL() throws PortalException {
-		PortletURL portletURL = super.getPortletURL();
-
-		portletURL.setParameter("mvcRenderCommandName", "editCommerceShipment");
-
-		return portletURL;
+		return PortletURLBuilder.create(
+			super.getPortletURL()
+		).setMVCRenderCommandName(
+			"/commerce_shipment/edit_commerce_shipment"
+		).buildPortletURL();
 	}
 
 	public int getToSendQuantity() throws PortalException {

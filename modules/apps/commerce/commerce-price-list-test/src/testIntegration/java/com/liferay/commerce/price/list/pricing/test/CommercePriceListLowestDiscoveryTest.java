@@ -38,15 +38,11 @@ import com.liferay.commerce.product.model.CommerceChannel;
 import com.liferay.commerce.product.service.CPDefinitionLocalService;
 import com.liferay.commerce.product.test.util.CPTestUtil;
 import com.liferay.commerce.test.util.CommerceTestUtil;
-import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
-import com.liferay.portal.kernel.test.rule.DataGuard;
-import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
 import com.liferay.portal.kernel.test.rule.SynchronousDestinationTestRule;
-import com.liferay.portal.kernel.test.util.CompanyTestUtil;
 import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
@@ -70,7 +66,6 @@ import org.junit.runner.RunWith;
 /**
  * @author Riccardo Alberti
  */
-@DataGuard(scope = DataGuard.Scope.METHOD)
 @RunWith(Arquillian.class)
 public class CommercePriceListLowestDiscoveryTest {
 
@@ -84,18 +79,15 @@ public class CommercePriceListLowestDiscoveryTest {
 
 	@Before
 	public void setUp() throws Exception {
-		_company = CompanyTestUtil.addCompany();
+		_group = GroupTestUtil.addGroup();
 
-		_user = UserTestUtil.addUser(_company);
-
-		_group = GroupTestUtil.addGroup(
-			_company.getCompanyId(), _user.getUserId(), 0);
+		_user = UserTestUtil.addUser();
 
 		_commerceCurrency = CommerceCurrencyTestUtil.addCommerceCurrency(
-			_company.getCompanyId());
+			_group.getCompanyId());
 
 		_serviceContext = ServiceContextTestUtil.getServiceContext(
-			_company.getCompanyId(), _group.getGroupId(), _user.getUserId());
+			_group.getCompanyId(), _group.getGroupId(), _user.getUserId());
 
 		_commerceAccount =
 			_commerceAccountLocalService.getPersonalCommerceAccount(
@@ -103,8 +95,8 @@ public class CommercePriceListLowestDiscoveryTest {
 
 		_commerceAccountGroup =
 			_commerceAccountGroupLocalService.addCommerceAccountGroup(
-				_company.getCompanyId(), RandomTestUtil.randomString(), 0,
-				false, null, _serviceContext);
+				_group.getCompanyId(), RandomTestUtil.randomString(), 0, false,
+				null, _serviceContext);
 
 		CommerceAccountGroupCommerceAccountRelLocalServiceUtil.
 			addCommerceAccountGroupCommerceAccountRel(
@@ -112,7 +104,7 @@ public class CommercePriceListLowestDiscoveryTest {
 				_commerceAccount.getCommerceAccountId(), _serviceContext);
 
 		_commerceCatalog = CommerceTestUtil.addCommerceCatalog(
-			_company.getCompanyId(), _company.getGroupId(), _user.getUserId(),
+			_group.getCompanyId(), _group.getGroupId(), _user.getUserId(),
 			_commerceCurrency.getCode());
 
 		_commerceChannel = CommerceTestUtil.addCommerceChannel(
@@ -122,7 +114,7 @@ public class CommercePriceListLowestDiscoveryTest {
 	@After
 	public void tearDown() throws Exception {
 		_commercePriceListLocalService.deleteCommercePriceLists(
-			_company.getCompanyId());
+			_group.getCompanyId());
 	}
 
 	@Test
@@ -158,16 +150,16 @@ public class CommercePriceListLowestDiscoveryTest {
 
 		CommercePriceList expectedPriceList = commerceUnqualifiedPriceList;
 
-		CommercePriceList discoveredPriceList =
+		CommercePriceList discoveredCommercePriceList =
 			_commercePriceListDiscovery.getCommercePriceList(
 				_commerceCatalog.getGroupId(),
 				_commerceAccount.getCommerceAccountId(),
-				_commerceChannel.getCommerceChannelId(),
+				_commerceChannel.getCommerceChannelId(), 0,
 				cpInstance.getCPInstanceUuid(), _TYPE);
 
 		Assert.assertEquals(
 			expectedPriceList.getCommercePriceListId(),
-			discoveredPriceList.getCommercePriceListId());
+			discoveredCommercePriceList.getCommercePriceListId());
 
 		CommercePriceList commerceChannelPriceList =
 			CommercePriceListTestUtil.addChannelPriceList(
@@ -184,15 +176,16 @@ public class CommercePriceListLowestDiscoveryTest {
 			expectedPriceList = commerceChannelPriceList;
 		}
 
-		discoveredPriceList = _commercePriceListDiscovery.getCommercePriceList(
-			_commerceCatalog.getGroupId(),
-			_commerceAccount.getCommerceAccountId(),
-			_commerceChannel.getCommerceChannelId(),
-			cpInstance.getCPInstanceUuid(), _TYPE);
+		discoveredCommercePriceList =
+			_commercePriceListDiscovery.getCommercePriceList(
+				_commerceCatalog.getGroupId(),
+				_commerceAccount.getCommerceAccountId(),
+				_commerceChannel.getCommerceChannelId(), 0,
+				cpInstance.getCPInstanceUuid(), _TYPE);
 
 		Assert.assertEquals(
 			expectedPriceList.getCommercePriceListId(),
-			discoveredPriceList.getCommercePriceListId());
+			discoveredCommercePriceList.getCommercePriceListId());
 
 		long[] commerceAccountGroupIds =
 			_commerceAccountHelper.getCommerceAccountGroupIds(
@@ -212,15 +205,16 @@ public class CommercePriceListLowestDiscoveryTest {
 			expectedPriceList = commerceAccountGroupPriceList;
 		}
 
-		discoveredPriceList = _commercePriceListDiscovery.getCommercePriceList(
-			_commerceCatalog.getGroupId(),
-			_commerceAccount.getCommerceAccountId(),
-			_commerceChannel.getCommerceChannelId(),
-			cpInstance.getCPInstanceUuid(), _TYPE);
+		discoveredCommercePriceList =
+			_commercePriceListDiscovery.getCommercePriceList(
+				_commerceCatalog.getGroupId(),
+				_commerceAccount.getCommerceAccountId(),
+				_commerceChannel.getCommerceChannelId(), 0,
+				cpInstance.getCPInstanceUuid(), _TYPE);
 
 		Assert.assertEquals(
 			expectedPriceList.getCommercePriceListId(),
-			discoveredPriceList.getCommercePriceListId());
+			discoveredCommercePriceList.getCommercePriceListId());
 
 		CommercePriceList commerceAccountGroupAndChannelPriceList =
 			CommercePriceListTestUtil.addAccountGroupAndChannelPriceList(
@@ -237,15 +231,16 @@ public class CommercePriceListLowestDiscoveryTest {
 			expectedPriceList = commerceAccountGroupAndChannelPriceList;
 		}
 
-		discoveredPriceList = _commercePriceListDiscovery.getCommercePriceList(
-			_commerceCatalog.getGroupId(),
-			_commerceAccount.getCommerceAccountId(),
-			_commerceChannel.getCommerceChannelId(),
-			cpInstance.getCPInstanceUuid(), _TYPE);
+		discoveredCommercePriceList =
+			_commercePriceListDiscovery.getCommercePriceList(
+				_commerceCatalog.getGroupId(),
+				_commerceAccount.getCommerceAccountId(),
+				_commerceChannel.getCommerceChannelId(), 0,
+				cpInstance.getCPInstanceUuid(), _TYPE);
 
 		Assert.assertEquals(
 			expectedPriceList.getCommercePriceListId(),
-			discoveredPriceList.getCommercePriceListId());
+			discoveredCommercePriceList.getCommercePriceListId());
 
 		CommercePriceList commerceAccountPriceList =
 			CommercePriceListTestUtil.addAccountPriceList(
@@ -262,15 +257,16 @@ public class CommercePriceListLowestDiscoveryTest {
 			expectedPriceList = commerceAccountPriceList;
 		}
 
-		discoveredPriceList = _commercePriceListDiscovery.getCommercePriceList(
-			_commerceCatalog.getGroupId(),
-			_commerceAccount.getCommerceAccountId(),
-			_commerceChannel.getCommerceChannelId(),
-			cpInstance.getCPInstanceUuid(), _TYPE);
+		discoveredCommercePriceList =
+			_commercePriceListDiscovery.getCommercePriceList(
+				_commerceCatalog.getGroupId(),
+				_commerceAccount.getCommerceAccountId(),
+				_commerceChannel.getCommerceChannelId(), 0,
+				cpInstance.getCPInstanceUuid(), _TYPE);
 
 		Assert.assertEquals(
 			expectedPriceList.getCommercePriceListId(),
-			discoveredPriceList.getCommercePriceListId());
+			discoveredCommercePriceList.getCommercePriceListId());
 
 		CommercePriceList commerceAccountAndChannelPriceList =
 			CommercePriceListTestUtil.addAccountAndChannelPriceList(
@@ -287,15 +283,16 @@ public class CommercePriceListLowestDiscoveryTest {
 			expectedPriceList = commerceAccountAndChannelPriceList;
 		}
 
-		discoveredPriceList = _commercePriceListDiscovery.getCommercePriceList(
-			_commerceCatalog.getGroupId(),
-			_commerceAccount.getCommerceAccountId(),
-			_commerceChannel.getCommerceChannelId(),
-			cpInstance.getCPInstanceUuid(), _TYPE);
+		discoveredCommercePriceList =
+			_commercePriceListDiscovery.getCommercePriceList(
+				_commerceCatalog.getGroupId(),
+				_commerceAccount.getCommerceAccountId(),
+				_commerceChannel.getCommerceChannelId(), 0,
+				cpInstance.getCPInstanceUuid(), _TYPE);
 
 		Assert.assertEquals(
 			expectedPriceList.getCommercePriceListId(),
-			discoveredPriceList.getCommercePriceListId());
+			discoveredCommercePriceList.getCommercePriceListId());
 	}
 
 	@Rule
@@ -304,10 +301,9 @@ public class CommercePriceListLowestDiscoveryTest {
 	private static final String _TYPE =
 		CommercePriceListConstants.TYPE_PRICE_LIST;
 
-	@DeleteAfterTestRun
-	private CommerceAccount _commerceAccount;
+	private static User _user;
 
-	@DeleteAfterTestRun
+	private CommerceAccount _commerceAccount;
 	private CommerceAccountGroup _commerceAccountGroup;
 
 	@Inject
@@ -321,8 +317,6 @@ public class CommercePriceListLowestDiscoveryTest {
 
 	private CommerceCatalog _commerceCatalog;
 	private CommerceChannel _commerceChannel;
-
-	@DeleteAfterTestRun
 	private CommerceCurrency _commerceCurrency;
 
 	@Inject(
@@ -333,14 +327,10 @@ public class CommercePriceListLowestDiscoveryTest {
 	@Inject
 	private CommercePriceListLocalService _commercePriceListLocalService;
 
-	@DeleteAfterTestRun
-	private Company _company;
-
 	@Inject
 	private CPDefinitionLocalService _cpDefinitionLocalService;
 
 	private Group _group;
 	private ServiceContext _serviceContext;
-	private User _user;
 
 }

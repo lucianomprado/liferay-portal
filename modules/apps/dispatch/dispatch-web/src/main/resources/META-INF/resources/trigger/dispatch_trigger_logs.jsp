@@ -20,50 +20,56 @@
 DispatchLogDisplayContext dispatchLogDisplayContext = (DispatchLogDisplayContext)request.getAttribute(WebKeys.PORTLET_DISPLAY_CONTEXT);
 
 DispatchTrigger dispatchTrigger = dispatchLogDisplayContext.getDispatchTrigger();
-PortletURL portletURL = dispatchLogDisplayContext.getPortletURL();
 
-portletURL.setParameter("searchContainerId", "dispatchLogs");
+PortletURL portletURL = PortletURLBuilder.create(
+	dispatchLogDisplayContext.getPortletURL()
+).setParameter(
+	"searchContainerId", "dispatchLogs"
+).buildPortletURL();
 
 request.setAttribute("view.jsp-portletURL", portletURL);
+
+SearchContainer<DispatchLog> dispatchLogSearchContainer = DispatchLogSearchContainerFactory.create(liferayPortletRequest, liferayPortletResponse);
 %>
 
-<liferay-util:include page="/dispatch_log_toolbar.jsp" servletContext="<%= application %>">
-	<liferay-util:param name="searchContainerId" value="dispatchLogs" />
-</liferay-util:include>
+<clay:management-toolbar
+	managementToolbarDisplayContext="<%= new ViewDispatchLogManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, dispatchLogSearchContainer) %>"
+	propsTransformer="trigger/js/DispatchLogManagementToolbarPropsTransformer"
+/>
 
 <div id="<portlet:namespace />triggerLogsContainer">
 	<div class="closed container-fluid container-fluid-max-xl" id="<portlet:namespace />infoPanelId">
-		<aui:form action="<%= portletURL.toString() %>" method="post" name="fm">
-			<aui:input name="<%= Constants.CMD %>" type="hidden" />
+		<aui:form action="<%= portletURL %>" method="post" name="fm">
+			<aui:input name="<%= Constants.CMD %>" type="hidden" value="<%= Constants.DELETE %>" />
 			<aui:input name="redirect" type="hidden" value="<%= portletURL.toString() %>" />
 			<aui:input name="deleteDispatchLogIds" type="hidden" />
 
 			<div class="trigger-lists-container" id="<portlet:namespace />entriesContainer">
 				<liferay-ui:search-container
 					id="dispatchLogs"
-					searchContainer="<%= dispatchLogDisplayContext.getSearchContainer() %>"
+					searchContainer="<%= dispatchLogSearchContainer %>"
 				>
 					<liferay-ui:search-container-row
 						className="com.liferay.dispatch.model.DispatchLog"
-						cssClass="entry-display-style"
 						keyProperty="dispatchLogId"
 						modelVar="dispatchLog"
 					>
-
-						<%
-						PortletURL rowURL = renderResponse.createRenderURL();
-
-						rowURL.setParameter("mvcRenderCommandName", "/dispatch/view_dispatch_log");
-						rowURL.setParameter("redirect", currentURL);
-						rowURL.setParameter("dispatchLogId", String.valueOf(dispatchLog.getDispatchLogId()));
-						%>
-
 						<liferay-ui:search-container-column-text
-							cssClass="important table-cell-expand"
-							href="<%= rowURL %>"
+							cssClass="font-weight-bold important table-cell-expand"
+							href='<%=
+								PortletURLBuilder.createRenderURL(
+									renderResponse
+								).setMVCRenderCommandName(
+									"/dispatch/view_dispatch_log"
+								).setRedirect(
+									currentURL
+								).setParameter(
+									"dispatchLogId", dispatchLog.getDispatchLogId()
+								).buildPortletURL()
+							%>'
 							name="start-date"
 						>
-							<%= dispatchLogDisplayContext.getDateString(dispatchLog.getStartDate()) %>
+							<%= fastDateFormat.format(dispatchLog.getStartDate()) %>
 						</liferay-ui:search-container-column-text>
 
 						<liferay-ui:search-container-column-text

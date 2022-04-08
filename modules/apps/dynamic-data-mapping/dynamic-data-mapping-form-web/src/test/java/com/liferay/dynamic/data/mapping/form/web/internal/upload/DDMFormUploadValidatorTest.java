@@ -20,13 +20,13 @@ import com.liferay.document.library.kernel.exception.InvalidFileException;
 import com.liferay.dynamic.data.mapping.form.web.internal.configuration.DDMFormWebConfiguration;
 import com.liferay.dynamic.data.mapping.form.web.internal.configuration.activator.DDMFormWebConfigurationActivator;
 import com.liferay.portal.configuration.metatype.bnd.util.ConfigurableUtil;
-import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.HashMapDictionary;
-import com.liferay.portal.util.FileImpl;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import java.io.File;
 
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 import org.mockito.Mockito;
@@ -39,10 +39,13 @@ import org.powermock.api.support.membermodification.MemberMatcher;
  */
 public class DDMFormUploadValidatorTest {
 
+	@ClassRule
+	public static LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
+
 	@Before
 	public void setUp() throws Exception {
-		setUpDDMFormWebConfigurationActivator();
-		setUpFileUtil();
+		_setUpDDMFormWebConfigurationActivator();
 	}
 
 	@Test(expected = InvalidFileException.class)
@@ -57,7 +60,7 @@ public class DDMFormUploadValidatorTest {
 
 	@Test(expected = FileSizeException.class)
 	public void testInvalidFileSize() throws Exception {
-		_ddmFormUploadValidator.validateFileSize(mockFile(26), "test.jpg");
+		_ddmFormUploadValidator.validateFileSize(_mockFile(26), "test.jpg");
 	}
 
 	@Test
@@ -67,10 +70,10 @@ public class DDMFormUploadValidatorTest {
 
 	@Test
 	public void testValidFileSize() throws Exception {
-		_ddmFormUploadValidator.validateFileSize(mockFile(24), "test.jpg");
+		_ddmFormUploadValidator.validateFileSize(_mockFile(24), "test.jpg");
 	}
 
-	protected File mockFile(long length) {
+	private File _mockFile(long length) {
 		File file = Mockito.mock(File.class);
 
 		PowerMockito.when(
@@ -82,7 +85,7 @@ public class DDMFormUploadValidatorTest {
 		return file;
 	}
 
-	protected void setUpDDMFormWebConfigurationActivator() throws Exception {
+	private void _setUpDDMFormWebConfigurationActivator() throws Exception {
 		DDMFormWebConfigurationActivator ddmFormWebConfigurationActivator =
 			Mockito.mock(DDMFormWebConfigurationActivator.class);
 
@@ -101,12 +104,6 @@ public class DDMFormUploadValidatorTest {
 		).thenReturn(
 			ddmFormWebConfiguration
 		);
-	}
-
-	protected void setUpFileUtil() {
-		FileUtil fileUtil = new FileUtil();
-
-		fileUtil.setFile(FileImpl.getInstance());
 	}
 
 	private static final long _FILE_LENGTH_MB = 1024 * 1024;

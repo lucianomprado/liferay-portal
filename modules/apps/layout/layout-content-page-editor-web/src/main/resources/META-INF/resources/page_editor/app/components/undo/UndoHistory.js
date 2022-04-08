@@ -15,14 +15,17 @@
 import {ClayButtonWithIcon} from '@clayui/button';
 import ClayDropDown, {Align} from '@clayui/drop-down';
 import ClayDropDownDivider from '@clayui/drop-down/lib/Divider';
-import {useEventListener, useIsMounted} from 'frontend-js-react-web';
+import {
+	ReactPortal,
+	useEventListener,
+	useIsMounted,
+} from '@liferay/frontend-js-react-web';
 import React, {useState} from 'react';
-import ReactDOM from 'react-dom';
 
 import {SELECT_SEGMENTS_EXPERIENCE} from '../../../plugins/experience/actions';
 import {UNDO_TYPES} from '../../config/constants/undoTypes';
 import {config} from '../../config/index';
-import {useDispatch, useSelector} from '../../store/index';
+import {useDispatch, useSelector} from '../../contexts/StoreContext';
 import multipleUndo from '../../thunks/multipleUndo';
 import getSegmentsExperienceName from '../../utils/getSegmentsExperienceName';
 import getActionLabel from './getActionLabel';
@@ -61,8 +64,13 @@ export default function UndoHistory() {
 			<ClayDropDown
 				active={active}
 				alignmentPosition={Align.BottomRight}
-				className="mr-3"
-				menuElementAttrs={{className: 'page-editor__undo-history'}}
+				className="ml-2"
+				menuElementAttrs={{
+					className: 'page-editor__undo-history',
+					containerProps: {
+						className: 'cadmin',
+					},
+				}}
 				onActiveChange={setActive}
 				trigger={
 					<ClayButtonWithIcon
@@ -82,12 +90,15 @@ export default function UndoHistory() {
 						onHistoryItemClick={onHistoryItemClick}
 						type={UNDO_TYPES.redo}
 					/>
+
 					<History
 						actions={undoHistory}
 						onHistoryItemClick={onHistoryItemClick}
 						type={UNDO_TYPES.undo}
 					/>
+
 					<ClayDropDownDivider />
+
 					<ClayDropDown.Item
 						disabled={!undoHistory.length}
 						onClick={(event) =>
@@ -103,7 +114,11 @@ export default function UndoHistory() {
 				</ClayDropDown.ItemList>
 			</ClayDropDown>
 
-			{loading && ReactDOM.createPortal(<Overlay />, document.body)}
+			{loading && (
+				<ReactPortal>
+					<Overlay />
+				</ReactPortal>
+			)}
 		</>
 	);
 }
@@ -122,7 +137,7 @@ const Overlay = () => {
 
 	return (
 		<div
-			className={'page-editor__undo-history__overlay'}
+			className="page-editor__undo-history__overlay"
 			onClickCapture={(event) => {
 				event.preventDefault();
 				event.stopPropagation();

@@ -30,6 +30,7 @@ import com.liferay.knowledge.base.web.internal.constants.KBWebKeys;
 import com.liferay.knowledge.base.web.internal.selector.KBArticleSelection;
 import com.liferay.knowledge.base.web.internal.selector.KBArticleSelector;
 import com.liferay.knowledge.base.web.internal.selector.KBArticleSelectorFactory;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.NoSuchSubscriptionException;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -144,7 +145,7 @@ public class DisplayPortlet extends BaseKBPortlet {
 			if ((kbArticle == null) &&
 				Validator.isNotNull(previousPreferredKBFolderURLTitle)) {
 
-				kbArticle = findClosestMatchingKBArticle(
+				kbArticle = _findClosestMatchingKBArticle(
 					kbFolderGroupId, previousPreferredKBFolderURLTitle,
 					kbFolderId, urlTitle);
 			}
@@ -161,13 +162,15 @@ public class DisplayPortlet extends BaseKBPortlet {
 			kbArticle = null;
 		}
 
-		PortletURL redirectURL = PortletURLFactoryUtil.create(
-			actionRequest, KBPortletKeys.KNOWLEDGE_BASE_DISPLAY,
-			PortletRequest.RENDER_PHASE);
-
-		redirectURL.setParameter("kbFolderId", String.valueOf(kbFolderId));
-
-		redirectURL.setParameter("kbFolderUrlTitle", kbFolderURLTitle);
+		PortletURL redirectURL = PortletURLBuilder.create(
+			PortletURLFactoryUtil.create(
+				actionRequest, KBPortletKeys.KNOWLEDGE_BASE_DISPLAY,
+				PortletRequest.RENDER_PHASE)
+		).setParameter(
+			"kbFolderId", kbFolderId
+		).setParameter(
+			"kbFolderUrlTitle", kbFolderURLTitle
+		).buildPortletURL();
 
 		if (kbArticle != null) {
 			redirectURL.setParameter("urlTitle", kbArticle.getUrlTitle());
@@ -303,39 +306,6 @@ public class DisplayPortlet extends BaseKBPortlet {
 		}
 	}
 
-	protected KBArticle findClosestMatchingKBArticle(
-			long groupId, String oldKBFolderURLTitle, long newKBFolderId,
-			String urlTitle)
-		throws PortalException {
-
-		KBArticle oldKBArticle =
-			_kbArticleLocalService.fetchKBArticleByUrlTitle(
-				groupId, oldKBFolderURLTitle, urlTitle);
-
-		KBArticle kbArticle = null;
-
-		while ((kbArticle == null) && (oldKBArticle != null)) {
-			kbArticle = _kbArticleLocalService.fetchKBArticleByUrlTitle(
-				groupId, newKBFolderId, oldKBArticle.getUrlTitle());
-
-			if (kbArticle == null) {
-				oldKBArticle = oldKBArticle.getParentKBArticle();
-			}
-		}
-
-		if (kbArticle == null) {
-			List<KBArticle> kbArticles = _kbArticleLocalService.getKBArticles(
-				groupId, newKBFolderId, WorkflowConstants.STATUS_APPROVED, 0, 1,
-				new KBArticlePriorityComparator(true));
-
-			if (!kbArticles.isEmpty()) {
-				kbArticle = kbArticles.get(0);
-			}
-		}
-
-		return kbArticle;
-	}
-
 	protected KBArticleSelection getKBArticle(RenderRequest renderRequest)
 		throws PortalException {
 
@@ -385,7 +355,7 @@ public class DisplayPortlet extends BaseKBPortlet {
 
 		String urlTitle = ParamUtil.getString(renderRequest, "urlTitle");
 
-		String preferredKBFolderURLTitle = getPreferredKBFolderUrlTitle(
+		String preferredKBFolderURLTitle = _getPreferredKBFolderUrlTitle(
 			renderRequest, portletPreferences);
 
 		if (Validator.isNotNull(urlTitle)) {
@@ -407,7 +377,47 @@ public class DisplayPortlet extends BaseKBPortlet {
 			parentResourcePrimKey, resourcePrimKey);
 	}
 
-	protected String getPreferredKBFolderUrlTitle(
+	@Reference(
+		target = "(&(release.bundle.symbolic.name=com.liferay.knowledge.base.web)(&(release.schema.version>=1.2.0)(!(release.schema.version>=2.0.0))))",
+		unbind = "-"
+	)
+	protected void setRelease(Release release) {
+	}
+
+	private KBArticle _findClosestMatchingKBArticle(
+			long groupId, String oldKBFolderURLTitle, long newKBFolderId,
+			String urlTitle)
+		throws PortalException {
+
+		KBArticle oldKBArticle =
+			_kbArticleLocalService.fetchKBArticleByUrlTitle(
+				groupId, oldKBFolderURLTitle, urlTitle);
+
+		KBArticle kbArticle = null;
+
+		while ((kbArticle == null) && (oldKBArticle != null)) {
+			kbArticle = _kbArticleLocalService.fetchKBArticleByUrlTitle(
+				groupId, newKBFolderId, oldKBArticle.getUrlTitle());
+
+			if (kbArticle == null) {
+				oldKBArticle = oldKBArticle.getParentKBArticle();
+			}
+		}
+
+		if (kbArticle == null) {
+			List<KBArticle> kbArticles = _kbArticleLocalService.getKBArticles(
+				groupId, newKBFolderId, WorkflowConstants.STATUS_APPROVED, 0, 1,
+				new KBArticlePriorityComparator(true));
+
+			if (!kbArticles.isEmpty()) {
+				kbArticle = kbArticles.get(0);
+			}
+		}
+
+		return kbArticle;
+	}
+
+	private String _getPreferredKBFolderUrlTitle(
 			RenderRequest renderRequest, PortletPreferences portletPreferences)
 		throws PortalException {
 
@@ -419,13 +429,6 @@ public class DisplayPortlet extends BaseKBPortlet {
 
 		return KBUtil.getPreferredKBFolderURLTitle(
 			portalPreferences, contentRootPrefix);
-	}
-
-	@Reference(
-		target = "(&(release.bundle.symbolic.name=com.liferay.knowledge.base.web)(&(release.schema.version>=1.2.0)(!(release.schema.version>=2.0.0))))",
-		unbind = "-"
-	)
-	protected void setRelease(Release release) {
 	}
 
 	@Reference

@@ -14,11 +14,13 @@
 
 package com.liferay.commerce.health.status.web.internal.portlet;
 
+import com.liferay.commerce.constants.CommerceConstants;
 import com.liferay.commerce.constants.CommerceHealthStatusConstants;
 import com.liferay.commerce.constants.CommercePortletKeys;
 import com.liferay.commerce.health.status.CommerceHealthHttpStatusRegistry;
 import com.liferay.commerce.health.status.web.internal.display.context.CommerceHealthStatusDisplayContext;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCPortlet;
+import com.liferay.portal.kernel.security.permission.resource.PortletResourcePermission;
 import com.liferay.portal.kernel.util.WebKeys;
 
 import java.io.IOException;
@@ -53,7 +55,8 @@ import org.osgi.service.component.annotations.Reference;
 		"javax.portlet.init-param.view-template=/view.jsp",
 		"javax.portlet.name=" + CommercePortletKeys.COMMERCE_HEALTH_CHECK,
 		"javax.portlet.resource-bundle=content.Language",
-		"javax.portlet.security-role-ref=power-user,user"
+		"javax.portlet.security-role-ref=power-user,user",
+		"javax.portlet.version=3.0"
 	},
 	service = {CommerceHealthCheckPortlet.class, Portlet.class}
 )
@@ -66,8 +69,8 @@ public class CommerceHealthCheckPortlet extends MVCPortlet {
 
 		CommerceHealthStatusDisplayContext commerceHealthStatusDisplayContext =
 			new CommerceHealthStatusDisplayContext(
-				_commerceHealthHttpStatusRegistry, renderRequest,
-				renderResponse,
+				_commerceHealthHttpStatusRegistry, _portletResourcePermission,
+				renderRequest, renderResponse,
 				CommerceHealthStatusConstants.
 					COMMERCE_HEALTH_STATUS_TYPE_VIRTUAL_INSTANCE);
 
@@ -80,5 +83,10 @@ public class CommerceHealthCheckPortlet extends MVCPortlet {
 
 	@Reference
 	private CommerceHealthHttpStatusRegistry _commerceHealthHttpStatusRegistry;
+
+	@Reference(
+		target = "(resource.name=" + CommerceConstants.RESOURCE_NAME_COMMERCE_HEALTH + ")"
+	)
+	private PortletResourcePermission _portletResourcePermission;
 
 }

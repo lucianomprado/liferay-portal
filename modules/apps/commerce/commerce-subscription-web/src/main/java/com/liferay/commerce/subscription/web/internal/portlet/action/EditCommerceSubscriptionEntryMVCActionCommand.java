@@ -50,14 +50,63 @@ import org.osgi.service.component.annotations.Reference;
 	enabled = false, immediate = true,
 	property = {
 		"javax.portlet.name=" + CPPortletKeys.COMMERCE_SUBSCRIPTION_ENTRY,
-		"mvc.command.name=editCommerceSubscriptionEntry"
+		"mvc.command.name=/commerce_subscription_entry/edit_commerce_subscription_entry"
 	},
 	service = MVCActionCommand.class
 )
 public class EditCommerceSubscriptionEntryMVCActionCommand
 	extends BaseMVCActionCommand {
 
-	protected void deleteCommerceSubscriptionEntries(
+	@Override
+	protected void doProcessAction(
+			ActionRequest actionRequest, ActionResponse actionResponse)
+		throws Exception {
+
+		long commerceSubscriptionEntryId = ParamUtil.getLong(
+			actionRequest, "commerceSubscriptionEntryId");
+
+		String cmd = ParamUtil.getString(actionRequest, Constants.CMD);
+
+		try {
+			if (cmd.equals(Constants.DELETE)) {
+				_deleteCommerceSubscriptionEntries(
+					commerceSubscriptionEntryId, actionRequest);
+			}
+			else if (cmd.equals(Constants.UPDATE)) {
+				_updateCommerceSubscriptionEntry(
+					commerceSubscriptionEntryId, actionRequest);
+			}
+		}
+		catch (Exception exception) {
+			if (exception instanceof
+					CommerceSubscriptionEntryNextIterationDateException ||
+				exception instanceof
+					CommerceSubscriptionEntrySubscriptionStatusException ||
+				exception instanceof CommerceSubscriptionTypeException) {
+
+				hideDefaultErrorMessage(actionRequest);
+
+				SessionErrors.add(actionRequest, exception.getClass());
+
+				actionResponse.setRenderParameter(
+					"mvcRenderCommandName",
+					"/commerce_subscription_entry" +
+						"/edit_commerce_subscription_entry");
+			}
+			else if (exception instanceof NoSuchSubscriptionEntryException ||
+					 exception instanceof PrincipalException) {
+
+				SessionErrors.add(actionRequest, exception.getClass());
+
+				actionResponse.setRenderParameter("mvcPath", "/error.jsp");
+			}
+			else {
+				throw exception;
+			}
+		}
+	}
+
+	private void _deleteCommerceSubscriptionEntries(
 			long commerceSubscriptionEntryId, ActionRequest actionRequest)
 		throws Exception {
 
@@ -81,141 +130,6 @@ public class EditCommerceSubscriptionEntryMVCActionCommand
 			_commerceSubscriptionEntryService.deleteCommerceSubscriptionEntry(
 				deleteCommerceSubscriptionEntryId);
 		}
-	}
-
-	@Override
-	protected void doProcessAction(
-			ActionRequest actionRequest, ActionResponse actionResponse)
-		throws Exception {
-
-		long commerceSubscriptionEntryId = ParamUtil.getLong(
-			actionRequest, "commerceSubscriptionEntryId");
-
-		String cmd = ParamUtil.getString(actionRequest, Constants.CMD);
-
-		try {
-			if (cmd.equals(Constants.DELETE)) {
-				deleteCommerceSubscriptionEntries(
-					commerceSubscriptionEntryId, actionRequest);
-			}
-			else if (cmd.equals(Constants.UPDATE)) {
-				updateCommerceSubscriptionEntry(
-					commerceSubscriptionEntryId, actionRequest);
-			}
-		}
-		catch (Exception exception) {
-			if (exception instanceof
-					CommerceSubscriptionEntryNextIterationDateException ||
-				exception instanceof
-					CommerceSubscriptionEntrySubscriptionStatusException ||
-				exception instanceof CommerceSubscriptionTypeException) {
-
-				hideDefaultErrorMessage(actionRequest);
-
-				SessionErrors.add(actionRequest, exception.getClass());
-
-				actionResponse.setRenderParameter(
-					"mvcRenderCommandName", "editCommerceSubscriptionEntry");
-			}
-			else if (exception instanceof NoSuchSubscriptionEntryException ||
-					 exception instanceof PrincipalException) {
-
-				SessionErrors.add(actionRequest, exception.getClass());
-
-				actionResponse.setRenderParameter("mvcPath", "/error.jsp");
-			}
-			else {
-				throw exception;
-			}
-		}
-	}
-
-	protected CommerceSubscriptionEntry updateCommerceSubscriptionEntry(
-			long commerceSubscriptionEntryId, ActionRequest actionRequest)
-		throws Exception {
-
-		int subscriptionLength = ParamUtil.getInteger(
-			actionRequest, "subscriptionLength");
-		String subscriptionType = ParamUtil.getString(
-			actionRequest, "subscriptionType");
-		UnicodeProperties subscriptionTypeSettingsUnicodeProperties =
-			PropertiesParamUtil.getProperties(
-				actionRequest, "subscriptionTypeSettings--");
-		long maxSubscriptionCycles = ParamUtil.getLong(
-			actionRequest, "maxSubscriptionCycles");
-		int subscriptionStatus = ParamUtil.getInteger(
-			actionRequest, "subscriptionStatus");
-
-		int nextIterationDateMonth = ParamUtil.getInteger(
-			actionRequest, "nextIterationDateMonth");
-		int nextIterationDateDay = ParamUtil.getInteger(
-			actionRequest, "nextIterationDateDay");
-		int nextIterationDateYear = ParamUtil.getInteger(
-			actionRequest, "nextIterationDateYear");
-		int nextIterationDateHour = ParamUtil.getInteger(
-			actionRequest, "nextIterationDateHour");
-		int nextIterationDateMinute = ParamUtil.getInteger(
-			actionRequest, "nextIterationDateMinute");
-		int nextIterationDateAmPm = ParamUtil.getInteger(
-			actionRequest, "nextIterationDateAmPm");
-
-		if (nextIterationDateAmPm == Calendar.PM) {
-			nextIterationDateHour += 12;
-		}
-
-		int deliverySubscriptionLength = ParamUtil.getInteger(
-			actionRequest, "deliverySubscriptionLength");
-		String deliverySubscriptionType = ParamUtil.getString(
-			actionRequest, "deliverySubscriptionType");
-		UnicodeProperties deliverySubscriptionTypeSettingsUnicodeProperties =
-			PropertiesParamUtil.getProperties(
-				actionRequest, "deliverySubscriptionTypeSettings--");
-		long deliveryMaxSubscriptionCycles = ParamUtil.getLong(
-			actionRequest, "deliveryMaxSubscriptionCycles");
-		int deliverySubscriptionStatus = ParamUtil.getInteger(
-			actionRequest, "deliverySubscriptionStatus");
-
-		int deliveryNextIterationDateMonth = ParamUtil.getInteger(
-			actionRequest, "deliveryNextIterationDateMonth");
-		int deliveryNextIterationDateDay = ParamUtil.getInteger(
-			actionRequest, "deliveryNextIterationDateDay");
-		int deliveryNextIterationDateYear = ParamUtil.getInteger(
-			actionRequest, "deliveryNextIterationDateYear");
-		int deliveryNextIterationDateHour = ParamUtil.getInteger(
-			actionRequest, "deliveryNextIterationDateHour");
-		int deliveryNextIterationDateMinute = ParamUtil.getInteger(
-			actionRequest, "deliveryNextIterationDateMinute");
-		int deliveryNextIterationDateAmPm = ParamUtil.getInteger(
-			actionRequest, "deliveryNextIterationDateAmPm");
-
-		if (deliveryNextIterationDateAmPm == Calendar.PM) {
-			deliveryNextIterationDateHour += 12;
-		}
-
-		CommerceSubscriptionEntry commerceSubscriptionEntry =
-			_commerceSubscriptionEntryService.fetchCommerceSubscriptionEntry(
-				commerceSubscriptionEntryId);
-
-		_transitionPaymentSubscription(
-			commerceSubscriptionEntry, subscriptionStatus);
-
-		_transitionDeliverySubscription(
-			commerceSubscriptionEntry, deliverySubscriptionStatus);
-
-		return _commerceSubscriptionEntryService.
-			updateCommerceSubscriptionEntry(
-				commerceSubscriptionEntryId, subscriptionLength,
-				subscriptionType, subscriptionTypeSettingsUnicodeProperties,
-				maxSubscriptionCycles, subscriptionStatus,
-				nextIterationDateMonth, nextIterationDateDay,
-				nextIterationDateYear, nextIterationDateHour,
-				nextIterationDateMinute, deliverySubscriptionLength,
-				deliverySubscriptionType,
-				deliverySubscriptionTypeSettingsUnicodeProperties,
-				deliveryMaxSubscriptionCycles, deliverySubscriptionStatus,
-				deliveryNextIterationDateMonth, deliveryNextIterationDateDay,
-				deliveryNextIterationDateYear, deliveryNextIterationDateHour,
-				deliveryNextIterationDateMinute);
 	}
 
 	private void _transitionDeliverySubscription(
@@ -330,6 +244,94 @@ public class EditCommerceSubscriptionEntryMVCActionCommand
 			throw new CommerceSubscriptionEntrySubscriptionStatusException(
 				exception);
 		}
+	}
+
+	private CommerceSubscriptionEntry _updateCommerceSubscriptionEntry(
+			long commerceSubscriptionEntryId, ActionRequest actionRequest)
+		throws Exception {
+
+		int subscriptionLength = ParamUtil.getInteger(
+			actionRequest, "subscriptionLength");
+		String subscriptionType = ParamUtil.getString(
+			actionRequest, "subscriptionType");
+		UnicodeProperties subscriptionTypeSettingsUnicodeProperties =
+			PropertiesParamUtil.getProperties(
+				actionRequest, "subscriptionTypeSettings--");
+		long maxSubscriptionCycles = ParamUtil.getLong(
+			actionRequest, "maxSubscriptionCycles");
+		int subscriptionStatus = ParamUtil.getInteger(
+			actionRequest, "subscriptionStatus");
+
+		int nextIterationDateMonth = ParamUtil.getInteger(
+			actionRequest, "nextIterationDateMonth");
+		int nextIterationDateDay = ParamUtil.getInteger(
+			actionRequest, "nextIterationDateDay");
+		int nextIterationDateYear = ParamUtil.getInteger(
+			actionRequest, "nextIterationDateYear");
+		int nextIterationDateHour = ParamUtil.getInteger(
+			actionRequest, "nextIterationDateHour");
+		int nextIterationDateMinute = ParamUtil.getInteger(
+			actionRequest, "nextIterationDateMinute");
+		int nextIterationDateAmPm = ParamUtil.getInteger(
+			actionRequest, "nextIterationDateAmPm");
+
+		if (nextIterationDateAmPm == Calendar.PM) {
+			nextIterationDateHour += 12;
+		}
+
+		int deliverySubscriptionLength = ParamUtil.getInteger(
+			actionRequest, "deliverySubscriptionLength");
+		String deliverySubscriptionType = ParamUtil.getString(
+			actionRequest, "deliverySubscriptionType");
+		UnicodeProperties deliverySubscriptionTypeSettingsUnicodeProperties =
+			PropertiesParamUtil.getProperties(
+				actionRequest, "deliverySubscriptionTypeSettings--");
+		long deliveryMaxSubscriptionCycles = ParamUtil.getLong(
+			actionRequest, "deliveryMaxSubscriptionCycles");
+		int deliverySubscriptionStatus = ParamUtil.getInteger(
+			actionRequest, "deliverySubscriptionStatus");
+
+		int deliveryNextIterationDateMonth = ParamUtil.getInteger(
+			actionRequest, "deliveryNextIterationDateMonth");
+		int deliveryNextIterationDateDay = ParamUtil.getInteger(
+			actionRequest, "deliveryNextIterationDateDay");
+		int deliveryNextIterationDateYear = ParamUtil.getInteger(
+			actionRequest, "deliveryNextIterationDateYear");
+		int deliveryNextIterationDateHour = ParamUtil.getInteger(
+			actionRequest, "deliveryNextIterationDateHour");
+		int deliveryNextIterationDateMinute = ParamUtil.getInteger(
+			actionRequest, "deliveryNextIterationDateMinute");
+		int deliveryNextIterationDateAmPm = ParamUtil.getInteger(
+			actionRequest, "deliveryNextIterationDateAmPm");
+
+		if (deliveryNextIterationDateAmPm == Calendar.PM) {
+			deliveryNextIterationDateHour += 12;
+		}
+
+		CommerceSubscriptionEntry commerceSubscriptionEntry =
+			_commerceSubscriptionEntryService.fetchCommerceSubscriptionEntry(
+				commerceSubscriptionEntryId);
+
+		_transitionPaymentSubscription(
+			commerceSubscriptionEntry, subscriptionStatus);
+
+		_transitionDeliverySubscription(
+			commerceSubscriptionEntry, deliverySubscriptionStatus);
+
+		return _commerceSubscriptionEntryService.
+			updateCommerceSubscriptionEntry(
+				commerceSubscriptionEntryId, subscriptionLength,
+				subscriptionType, subscriptionTypeSettingsUnicodeProperties,
+				maxSubscriptionCycles, subscriptionStatus,
+				nextIterationDateMonth, nextIterationDateDay,
+				nextIterationDateYear, nextIterationDateHour,
+				nextIterationDateMinute, deliverySubscriptionLength,
+				deliverySubscriptionType,
+				deliverySubscriptionTypeSettingsUnicodeProperties,
+				deliveryMaxSubscriptionCycles, deliverySubscriptionStatus,
+				deliveryNextIterationDateMonth, deliveryNextIterationDateDay,
+				deliveryNextIterationDateYear, deliveryNextIterationDateHour,
+				deliveryNextIterationDateMinute);
 	}
 
 	@Reference

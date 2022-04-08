@@ -38,9 +38,7 @@ public class UserTrackerImpl extends UserTrackerBaseImpl {
 		}
 		catch (ArrayIndexOutOfBoundsException arrayIndexOutOfBoundsException) {
 			if (_log.isWarnEnabled()) {
-				_log.warn(
-					arrayIndexOutOfBoundsException,
-					arrayIndexOutOfBoundsException);
+				_log.warn(arrayIndexOutOfBoundsException);
 			}
 		}
 
@@ -72,6 +70,9 @@ public class UserTrackerImpl extends UserTrackerBaseImpl {
 				_emailAddress = _user.getEmailAddress();
 			}
 			catch (Exception exception) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(exception);
+				}
 			}
 		}
 
@@ -93,6 +94,9 @@ public class UserTrackerImpl extends UserTrackerBaseImpl {
 				_fullName = _user.getFullName();
 			}
 			catch (Exception exception) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(exception);
+				}
 			}
 		}
 

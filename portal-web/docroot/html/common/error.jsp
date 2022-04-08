@@ -19,27 +19,38 @@
 <%@ page isErrorPage="true" %>
 
 <%
-String userId = request.getRemoteUser();
-String currentURL = PortalUtil.getCurrentURL(request);
+String message = null;
 
 if (exception instanceof PrincipalException) {
-	_log.warn("User ID " + userId);
-	_log.warn("Current URL " + currentURL);
+	_log.warn("User ID " + request.getRemoteUser());
+	_log.warn("Current URL " + PortalUtil.getCurrentURL(request));
 	_log.warn("Referer " + request.getHeader("Referer"));
 	_log.warn("Remote address " + request.getRemoteAddr());
 
-	_log.warn(exception, exception);
+	if (exception != null) {
+		_log.warn(exception, exception);
+
+		message = exception.getMessage();
+	}
+	else {
+		_log.warn("Exception is null");
+	}
 }
 else {
-	_log.error("User ID " + userId);
-	_log.error("Current URL " + currentURL);
+	_log.error("User ID " + request.getRemoteUser());
+	_log.error("Current URL " + PortalUtil.getCurrentURL(request));
 	_log.error("Referer " + request.getHeader("Referer"));
 	_log.error("Remote address " + request.getRemoteAddr());
 
-	_log.error(exception, exception);
-}
+	if (exception != null) {
+		_log.error(exception, exception);
 
-String message = exception.getMessage();
+		message = exception.getMessage();
+	}
+	else {
+		_log.error("Exception is null");
+	}
+}
 %>
 
 <center>
@@ -74,5 +85,5 @@ String message = exception.getMessage();
 </center>
 
 <%!
-private static Log _log = LogFactoryUtil.getLog("portal_web.docroot.html.common.error_jsp");
+private static final Log _log = LogFactoryUtil.getLog("portal_web.docroot.html.common.error_jsp");
 %>

@@ -24,11 +24,10 @@ import com.liferay.dynamic.data.mapping.model.DDMFormLayout;
 import com.liferay.dynamic.data.mapping.util.DDM;
 import com.liferay.frontend.js.loader.modules.extender.npm.NPMResolver;
 import com.liferay.petra.io.unsync.UnsyncStringWriter;
-import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.WebKeys;
-import com.liferay.portal.template.soy.renderer.ComponentDescriptor;
-import com.liferay.portal.template.soy.renderer.SoyComponentRenderer;
+import com.liferay.portal.template.react.renderer.ComponentDescriptor;
+import com.liferay.portal.template.react.renderer.ReactRenderer;
 
 import java.io.Writer;
 
@@ -46,63 +45,10 @@ import org.osgi.service.component.annotations.Reference;
 public class DDMFormRendererImpl implements DDMFormRenderer {
 
 	@Override
-	public String render(
-			DDMForm ddmForm, DDMFormLayout ddmFormLayout,
-			DDMFormRenderingContext ddmFormRenderingContext)
-		throws DDMFormRenderingException {
-
-		try {
-			return doRender(ddmForm, ddmFormLayout, ddmFormRenderingContext);
-		}
-		catch (DDMFormRenderingException ddmFormRenderingException) {
-			throw ddmFormRenderingException;
-		}
-		catch (Exception exception) {
-			throw new DDMFormRenderingException(exception);
-		}
-	}
-
-	@Override
-	public String render(
-			DDMForm ddmForm, DDMFormRenderingContext ddmFormRenderingContext)
-		throws DDMFormRenderingException {
-
-		try {
-			return doRender(
-				ddmForm, _ddm.getDefaultDDMFormLayout(ddmForm),
-				ddmFormRenderingContext);
-		}
-		catch (DDMFormRenderingException ddmFormRenderingException) {
-			throw ddmFormRenderingException;
-		}
-		catch (Exception exception) {
-			throw new DDMFormRenderingException(exception);
-		}
-	}
-
-	protected String doRender(
+	public Map<String, Object> getDDMFormTemplateContext(
 			DDMForm ddmForm, DDMFormLayout ddmFormLayout,
 			DDMFormRenderingContext ddmFormRenderingContext)
 		throws Exception {
-
-		ComponentDescriptor componentDescriptor = new ComponentDescriptor(
-			_TEMPLATE_NAMESPACE, _npmResolver.resolveModuleName(_MODULE_NAME),
-			ddmFormRenderingContext.getContainerId());
-
-		Writer writer = new UnsyncStringWriter();
-
-		_soyComponentRenderer.renderSoyComponent(
-			ddmFormRenderingContext.getHttpServletRequest(), writer,
-			componentDescriptor,
-			getContext(ddmForm, ddmFormLayout, ddmFormRenderingContext));
-
-		return writer.toString();
-	}
-
-	protected Map<String, Object> getContext(
-			DDMForm ddmForm, DDMFormLayout ddmFormLayout,
-			DDMFormRenderingContext ddmFormRenderingContext)
-		throws PortalException {
 
 		Map<String, Object> ddmFormTemplateContext =
 			_ddmFormTemplateContextFactory.create(
@@ -128,10 +74,66 @@ public class DDMFormRendererImpl implements DDMFormRenderer {
 		return ddmFormTemplateContext;
 	}
 
-	private static final String _MODULE_NAME =
-		"dynamic-data-mapping-form-renderer/js/containers/Form.es";
+	@Override
+	public String render(
+			DDMForm ddmForm, DDMFormLayout ddmFormLayout,
+			DDMFormRenderingContext ddmFormRenderingContext)
+		throws DDMFormRenderingException {
 
-	private static final String _TEMPLATE_NAMESPACE = "FormRenderer.render";
+		try {
+			return _render(ddmForm, ddmFormLayout, ddmFormRenderingContext);
+		}
+		catch (DDMFormRenderingException ddmFormRenderingException) {
+			throw ddmFormRenderingException;
+		}
+		catch (Exception exception) {
+			throw new DDMFormRenderingException(exception);
+		}
+	}
+
+	@Override
+	public String render(
+			DDMForm ddmForm, DDMFormRenderingContext ddmFormRenderingContext)
+		throws DDMFormRenderingException {
+
+		try {
+			return _render(
+				ddmForm, _ddm.getDefaultDDMFormLayout(ddmForm),
+				ddmFormRenderingContext);
+		}
+		catch (DDMFormRenderingException ddmFormRenderingException) {
+			throw ddmFormRenderingException;
+		}
+		catch (Exception exception) {
+			throw new DDMFormRenderingException(exception);
+		}
+	}
+
+	private String _render(
+			DDMForm ddmForm, DDMFormLayout ddmFormLayout,
+			DDMFormRenderingContext ddmFormRenderingContext)
+		throws Exception {
+
+		Writer writer = new UnsyncStringWriter();
+
+		writer.append("<div id=\"");
+		writer.append(ddmFormRenderingContext.getContainerId());
+		writer.append("\">");
+
+		_reactRenderer.renderReact(
+			new ComponentDescriptor(
+				_npmResolver.resolveModuleName(_MODULE_NAME)),
+			getDDMFormTemplateContext(
+				ddmForm, ddmFormLayout, ddmFormRenderingContext),
+			ddmFormRenderingContext.getHttpServletRequest(), writer);
+
+		writer.append("</div>");
+
+		return writer.toString();
+	}
+
+	private static final String _MODULE_NAME =
+		"data-engine-js-components-web/js/custom/form/FormView.es";
 
 	@Reference
 	private DDM _ddm;
@@ -146,6 +148,6 @@ public class DDMFormRendererImpl implements DDMFormRenderer {
 	private NPMResolver _npmResolver;
 
 	@Reference
-	private SoyComponentRenderer _soyComponentRenderer;
+	private ReactRenderer _reactRenderer;
 
 }

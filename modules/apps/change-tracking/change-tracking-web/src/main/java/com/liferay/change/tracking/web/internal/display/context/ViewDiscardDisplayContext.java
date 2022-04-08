@@ -18,11 +18,11 @@ import com.liferay.change.tracking.model.CTEntry;
 import com.liferay.change.tracking.model.CTEntryTable;
 import com.liferay.change.tracking.service.CTCollectionLocalService;
 import com.liferay.change.tracking.web.internal.display.CTDisplayRendererRegistry;
-import com.liferay.change.tracking.web.internal.util.PublicationsPortletURLUtil;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONUtil;
-import com.liferay.portal.kernel.portlet.LiferayWindowState;
+import com.liferay.portal.kernel.model.UserTable;
 import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.HashMapBuilder;
@@ -35,12 +35,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.portlet.ActionRequest;
-import javax.portlet.ActionURL;
-import javax.portlet.PortletURL;
 import javax.portlet.RenderRequest;
 import javax.portlet.RenderResponse;
-import javax.portlet.RenderURL;
+import javax.portlet.ResourceURL;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -90,19 +87,18 @@ public class ViewDiscardDisplayContext {
 					JSONFactoryUtil.createJSONArray();
 
 				for (CTEntry ctEntry : ctEntries) {
-					RenderURL viewURL = _renderResponse.createRenderURL();
+					ResourceURL dataURL = _renderResponse.createResourceURL();
 
-					viewURL.setParameter(
-						"mvcRenderCommandName", "/change_tracking/view_diff");
-					viewURL.setParameter(
+					dataURL.setResourceID(
+						"/change_tracking/get_entry_render_data");
+					dataURL.setParameter(
 						"ctEntryId", String.valueOf(ctEntry.getCtEntryId()));
-
-					PublicationsPortletURLUtil.setWindowState(
-						viewURL, LiferayWindowState.POP_UP);
 
 					ctEntriesJSONArray.put(
 						JSONUtil.put(
 							"ctEntryId", ctEntry.getCtEntryId()
+						).put(
+							"dataURL", dataURL.toString()
 						).put(
 							"description",
 							_ctDisplayRendererRegistry.getEntryDescription(
@@ -118,8 +114,6 @@ public class ViewDiscardDisplayContext {
 								_themeDisplay.getLocale())
 						).put(
 							"userId", ctEntry.getUserId()
-						).put(
-							"viewURL", viewURL.toString()
 						));
 				}
 
@@ -134,9 +128,10 @@ public class ViewDiscardDisplayContext {
 		).put(
 			"userInfo",
 			DisplayContextUtil.getUserInfoJSONObject(
+				CTEntryTable.INSTANCE.userId.eq(UserTable.INSTANCE.userId),
+				CTEntryTable.INSTANCE, _themeDisplay, _userLocalService,
 				CTEntryTable.INSTANCE.ctEntryId.in(
-					ctEntryIds.toArray(new Long[0])),
-				_themeDisplay, _userLocalService)
+					ctEntryIds.toArray(new Long[0])))
 		).build();
 	}
 
@@ -147,29 +142,29 @@ public class ViewDiscardDisplayContext {
 			return redirect;
 		}
 
-		PortletURL portletURL = _renderResponse.createRenderURL();
-
-		portletURL.setParameter(
-			"mvcRenderCommandName", "/change_tracking/view_changes");
-		portletURL.setParameter(
-			"ctCollectionId", String.valueOf(_ctCollectionId));
-
-		return portletURL.toString();
+		return PortletURLBuilder.createRenderURL(
+			_renderResponse
+		).setMVCRenderCommandName(
+			"/change_tracking/view_changes"
+		).setParameter(
+			"ctCollectionId", _ctCollectionId
+		).buildString();
 	}
 
 	public String getSubmitURL() {
-		ActionURL submitURL = _renderResponse.createActionURL();
-
-		submitURL.setParameter(
-			ActionRequest.ACTION_NAME, "/change_tracking/discard_changes");
-		submitURL.setParameter("redirect", getRedirectURL());
-		submitURL.setParameter(
-			"ctCollectionId", String.valueOf(_ctCollectionId));
-		submitURL.setParameter(
-			"modelClassNameId", String.valueOf(_modelClassNameId));
-		submitURL.setParameter("modelClassPK", String.valueOf(_modelClassPK));
-
-		return submitURL.toString();
+		return PortletURLBuilder.createActionURL(
+			_renderResponse
+		).setActionName(
+			"/change_tracking/discard_changes"
+		).setRedirect(
+			getRedirectURL()
+		).setParameter(
+			"ctCollectionId", _ctCollectionId
+		).setParameter(
+			"modelClassNameId", _modelClassNameId
+		).setParameter(
+			"modelClassPK", _modelClassPK
+		).buildString();
 	}
 
 	private final long _ctCollectionId;

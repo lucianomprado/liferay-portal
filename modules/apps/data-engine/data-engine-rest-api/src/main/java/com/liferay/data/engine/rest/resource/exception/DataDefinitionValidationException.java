@@ -61,6 +61,10 @@ public class DataDefinitionValidationException extends RuntimeException {
 
 	}
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
 	public static class MustNotRemoveNativeField
 		extends DataDefinitionValidationException {
 
@@ -149,26 +153,48 @@ public class DataDefinitionValidationException extends RuntimeException {
 			return _fieldName;
 		}
 
-		private String _fieldName;
+		private final String _fieldName;
 
 	}
 
 	public static class MustSetOptionsForField
 		extends DataDefinitionValidationException {
 
+		/**
+		 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+		 * 			#MustSetOptionsForField(String, String)}
+		 */
+		@Deprecated
 		public MustSetOptionsForField(String fieldName) {
 			super(
 				String.format(
 					"At least one option must be set for field %s", fieldName));
 
 			_fieldName = fieldName;
+
+			_fieldLabel = fieldName;
+		}
+
+		public MustSetOptionsForField(String fieldLabel, String fieldName) {
+			super(
+				String.format(
+					"At least one option must be set for field %s",
+					fieldLabel));
+
+			_fieldLabel = fieldLabel;
+			_fieldName = fieldName;
+		}
+
+		public String getFieldLabel() {
+			return _fieldLabel;
 		}
 
 		public String getFieldName() {
 			return _fieldName;
 		}
 
-		private String _fieldName;
+		private final String _fieldLabel;
+		private final String _fieldName;
 
 	}
 
@@ -196,8 +222,8 @@ public class DataDefinitionValidationException extends RuntimeException {
 			return _property;
 		}
 
-		private String _fieldName;
-		private String _property;
+		private final String _fieldName;
+		private final String _property;
 
 	}
 
@@ -216,7 +242,7 @@ public class DataDefinitionValidationException extends RuntimeException {
 			return _fieldName;
 		}
 
-		private String _fieldName;
+		private final String _fieldName;
 
 	}
 
@@ -280,8 +306,8 @@ public class DataDefinitionValidationException extends RuntimeException {
 			return _property;
 		}
 
-		private String _fieldName;
-		private String _property;
+		private final String _fieldName;
+		private final String _property;
 
 	}
 
@@ -300,7 +326,7 @@ public class DataDefinitionValidationException extends RuntimeException {
 			return _fieldName;
 		}
 
-		private String _fieldName;
+		private final String _fieldName;
 
 	}
 

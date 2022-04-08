@@ -14,10 +14,10 @@
 
 package com.liferay.portal.search.web.internal.search.bar.portlet.shared.search;
 
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Layout;
-import com.liferay.portal.kernel.model.LayoutTypePortlet;
-import com.liferay.portal.kernel.model.Portlet;
 import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ArrayUtil;
@@ -27,19 +27,17 @@ import com.liferay.portal.search.web.constants.SearchBarPortletKeys;
 import com.liferay.portal.search.web.internal.display.context.Keywords;
 import com.liferay.portal.search.web.internal.display.context.SearchScope;
 import com.liferay.portal.search.web.internal.display.context.SearchScopePreference;
-import com.liferay.portal.search.web.internal.portlet.preferences.PortletPreferencesLookup;
 import com.liferay.portal.search.web.internal.search.bar.portlet.SearchBarPortletDestinationUtil;
 import com.liferay.portal.search.web.internal.search.bar.portlet.SearchBarPortletPreferences;
 import com.liferay.portal.search.web.internal.search.bar.portlet.SearchBarPortletPreferencesImpl;
+import com.liferay.portal.search.web.internal.search.bar.portlet.helper.SearchBarPrecedenceHelper;
 import com.liferay.portal.search.web.internal.util.SearchOptionalUtil;
 import com.liferay.portal.search.web.portlet.shared.search.PortletSharedSearchContributor;
 import com.liferay.portal.search.web.portlet.shared.search.PortletSharedSearchSettings;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Stream;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -67,7 +65,7 @@ public class SearchBarPortletSharedSearchContributor
 			portletSharedSearchSettings.getFederatedSearchRequestBuilder(
 				searchBarPortletPreferences.getFederatedSearchKeyOptional());
 
-		if (!shouldContributeToCurrentPageSearch(
+		if (!_shouldContributeToCurrentPageSearch(
 				searchBarPortletPreferences, portletSharedSearchSettings)) {
 
 			return;
@@ -77,30 +75,36 @@ public class SearchBarPortletSharedSearchContributor
 			searchContext -> searchContext.setIncludeInternalAssetCategories(
 				false));
 
-		setKeywords(
+		_setKeywords(
 			searchRequestBuilder, searchBarPortletPreferences,
 			portletSharedSearchSettings);
 
-		setScopeParameterName(
+		_setScopeParameterName(
 			searchBarPortletPreferences, portletSharedSearchSettings);
 
-		filterByThisSite(
+		_filterByThisSite(
 			searchRequestBuilder, searchBarPortletPreferences,
 			portletSharedSearchSettings);
 	}
 
-	protected void filterByThisSite(
+	@Reference
+	protected GroupLocalService groupLocalService;
+
+	@Reference
+	protected SearchBarPrecedenceHelper searchBarPrecedenceHelper;
+
+	private void _filterByThisSite(
 		SearchRequestBuilder searchRequestBuilder,
 		SearchBarPortletPreferences searchBarPortletPreferences,
 		PortletSharedSearchSettings portletSharedSearchSettings) {
 
-		SearchScope searchScope = getSearchScope(
+		SearchScope searchScope = _getSearchScope(
 			searchBarPortletPreferences, portletSharedSearchSettings);
 
 		if (searchScope == SearchScope.THIS_SITE) {
 			searchRequestBuilder.withSearchContext(
 				searchContext -> searchContext.setGroupIds(
-					getGroupIds(portletSharedSearchSettings)));
+					_getGroupIds(portletSharedSearchSettings)));
 
 			return;
 		}
@@ -119,17 +123,7 @@ public class SearchBarPortletSharedSearchContributor
 		}
 	}
 
-	protected Optional<Portlet> findTopSearchBarPortletOptional(
-		ThemeDisplay themeDisplay) {
-
-		Stream<Portlet> stream = getPortletsStream(themeDisplay);
-
-		return stream.filter(
-			this::isTopSearchBar
-		).findAny();
-	}
-
-	protected SearchScope getDefaultSearchScope() {
+	private SearchScope _getDefaultSearchScope() {
 		SearchBarPortletPreferences searchBarPortletPreferences =
 			new SearchBarPortletPreferencesImpl(Optional.empty());
 
@@ -139,7 +133,7 @@ public class SearchBarPortletSharedSearchContributor
 		return searchScopePreference.getSearchScope();
 	}
 
-	protected long[] getGroupIds(
+	private long[] _getGroupIds(
 		PortletSharedSearchSettings portletSharedSearchSettings) {
 
 		ThemeDisplay themeDisplay =
@@ -161,29 +155,15 @@ public class SearchBarPortletSharedSearchContributor
 			return ArrayUtil.toLongArray(groupIds);
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception);
+			}
+
 			return new long[] {themeDisplay.getScopeGroupId()};
 		}
 	}
 
-	protected Stream<Portlet> getPortletsStream(ThemeDisplay themeDisplay) {
-		Layout layout = themeDisplay.getLayout();
-
-		LayoutTypePortlet layoutTypePortlet =
-			(LayoutTypePortlet)layout.getLayoutType();
-
-		List<Portlet> portlets = layoutTypePortlet.getAllPortlets(false);
-
-		return portlets.stream();
-	}
-
-	protected SearchBarPortletPreferences getSearchBarPortletPreferences(
-		Portlet portlet, ThemeDisplay themeDisplay) {
-
-		return new SearchBarPortletPreferencesImpl(
-			portletPreferencesLookup.fetchPreferences(portlet, themeDisplay));
-	}
-
-	protected SearchScope getSearchScope(
+	private SearchScope _getSearchScope(
 		SearchBarPortletPreferences searchBarPortletPreferences,
 		PortletSharedSearchSettings portletSharedSearchSettings) {
 
@@ -203,11 +183,11 @@ public class SearchBarPortletSharedSearchContributor
 		return optional.map(
 			SearchScope::getSearchScope
 		).orElseGet(
-			this::getDefaultSearchScope
+			this::_getDefaultSearchScope
 		);
 	}
 
-	protected boolean isLuceneSyntax(
+	private boolean _isLuceneSyntax(
 		SearchBarPortletPreferences searchBarPortletPreferences,
 		Keywords keywords) {
 
@@ -220,61 +200,7 @@ public class SearchBarPortletSharedSearchContributor
 		return false;
 	}
 
-	protected boolean isSamePortlet(
-		Portlet portlet,
-		PortletSharedSearchSettings portletSharedSearchSettings) {
-
-		if (Objects.equals(
-				portlet.getPortletId(),
-				portletSharedSearchSettings.getPortletId())) {
-
-			return true;
-		}
-
-		return false;
-	}
-
-	protected boolean isSearchBarInBodyWithTopSearchBarAlreadyPresent(
-		PortletSharedSearchSettings portletSharedSearchSettings) {
-
-		ThemeDisplay themeDisplay =
-			portletSharedSearchSettings.getThemeDisplay();
-
-		Optional<Portlet> optional = findTopSearchBarPortletOptional(
-			themeDisplay);
-
-		if (!optional.isPresent()) {
-			return false;
-		}
-
-		Portlet portlet = optional.get();
-
-		if (isSamePortlet(portlet, portletSharedSearchSettings)) {
-			return false;
-		}
-
-		if (!SearchBarPortletDestinationUtil.isSameDestination(
-				getSearchBarPortletPreferences(portlet, themeDisplay),
-				themeDisplay)) {
-
-			return false;
-		}
-
-		return true;
-	}
-
-	protected boolean isTopSearchBar(Portlet portlet) {
-		if (portlet.isStatic() &&
-			Objects.equals(
-				portlet.getPortletName(), SearchBarPortletKeys.SEARCH_BAR)) {
-
-			return true;
-		}
-
-		return false;
-	}
-
-	protected void setKeywords(
+	private void _setKeywords(
 		SearchRequestBuilder searchRequestBuilder,
 		SearchBarPortletPreferences searchBarPortletPreferences,
 		PortletSharedSearchSettings portletSharedSearchSettings) {
@@ -292,20 +218,20 @@ public class SearchBarPortletSharedSearchContributor
 
 				searchRequestBuilder.queryString(keywords.getKeywords());
 
-				if (isLuceneSyntax(searchBarPortletPreferences, keywords)) {
-					setLuceneSyntax(searchRequestBuilder);
+				if (_isLuceneSyntax(searchBarPortletPreferences, keywords)) {
+					_setLuceneSyntax(searchRequestBuilder);
 				}
 			});
 	}
 
-	protected void setLuceneSyntax(SearchRequestBuilder searchRequestBuilder) {
+	private void _setLuceneSyntax(SearchRequestBuilder searchRequestBuilder) {
 		searchRequestBuilder.withSearchContext(
 			searchContext -> searchContext.setAttribute(
 				SearchContextAttributes.ATTRIBUTE_KEY_LUCENE_SYNTAX,
 				Boolean.TRUE));
 	}
 
-	protected void setScopeParameterName(
+	private void _setScopeParameterName(
 		SearchBarPortletPreferences searchBarPortletPreferences,
 		PortletSharedSearchSettings portletSharedSearchSettings) {
 
@@ -313,19 +239,17 @@ public class SearchBarPortletSharedSearchContributor
 			searchBarPortletPreferences.getScopeParameterName());
 	}
 
-	protected boolean shouldContributeToCurrentPageSearch(
+	private boolean _shouldContributeToCurrentPageSearch(
 		SearchBarPortletPreferences searchBarPortletPreferences,
 		PortletSharedSearchSettings portletSharedSearchSettings) {
 
 		if (!SearchBarPortletDestinationUtil.isSameDestination(
 				searchBarPortletPreferences,
-				portletSharedSearchSettings.getThemeDisplay())) {
-
-			return false;
-		}
-
-		if (isSearchBarInBodyWithTopSearchBarAlreadyPresent(
-				portletSharedSearchSettings)) {
+				portletSharedSearchSettings.getThemeDisplay()) ||
+			searchBarPrecedenceHelper.
+				isSearchBarInBodyWithHeaderSearchBarAlreadyPresent(
+					portletSharedSearchSettings.getThemeDisplay(),
+					portletSharedSearchSettings.getPortletId())) {
 
 			return false;
 		}
@@ -333,10 +257,7 @@ public class SearchBarPortletSharedSearchContributor
 		return true;
 	}
 
-	@Reference
-	protected GroupLocalService groupLocalService;
-
-	@Reference
-	protected PortletPreferencesLookup portletPreferencesLookup;
+	private static final Log _log = LogFactoryUtil.getLog(
+		SearchBarPortletSharedSearchContributor.class);
 
 }

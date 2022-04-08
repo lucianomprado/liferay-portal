@@ -41,7 +41,7 @@ public class GridDDMFormFieldValueValidatorTest extends PowerMockito {
 
 	@Before
 	public void setUp() throws Exception {
-		setUpGridDDMFormFieldValueValidator();
+		_setUpGridDDMFormFieldValueValidator();
 	}
 
 	@Test(expected = DDMFormFieldValueValidationException.class)
@@ -60,9 +60,7 @@ public class GridDDMFormFieldValueValidatorTest extends PowerMockito {
 
 		ddmFormField.setProperty("rows", ddmFormFieldRows);
 
-		DDMFormFieldOptions ddmFormFieldColumns = new DDMFormFieldOptions();
-
-		ddmFormField.setProperty("columns", ddmFormFieldColumns);
+		ddmFormField.setProperty("columns", new DDMFormFieldOptions());
 
 		ddmForm.addDDMFormField(ddmFormField);
 
@@ -142,7 +140,7 @@ public class GridDDMFormFieldValueValidatorTest extends PowerMockito {
 			ddmFormField, ddmFormFieldValue.getValue());
 	}
 
-	protected void setUpGridDDMFormFieldValueValidator() throws Exception {
+	private void _setUpGridDDMFormFieldValueValidator() throws Exception {
 		_gridDDMFormFieldValueValidator = new GridDDMFormFieldValueValidator();
 
 		field(

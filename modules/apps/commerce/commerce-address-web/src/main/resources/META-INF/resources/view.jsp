@@ -20,7 +20,7 @@
 CommerceCountriesDisplayContext commerceCountriesDisplayContext = (CommerceCountriesDisplayContext)request.getAttribute(WebKeys.PORTLET_DISPLAY_CONTEXT);
 %>
 
-<c:if test="<%= commerceCountriesDisplayContext.hasPermission(CommerceActionKeys.MANAGE_COMMERCE_COUNTRIES) %>">
+<c:if test="<%= commerceCountriesDisplayContext.hasPermission(ActionKeys.MANAGE_COUNTRIES) %>">
 	<liferay-frontend:management-bar
 		includeCheckBox="<%= true %>"
 		searchContainerId="commerceCountries"
@@ -54,7 +54,7 @@ CommerceCountriesDisplayContext commerceCountriesDisplayContext = (CommerceCount
 			/>
 
 			<portlet:renderURL var="addCommerceCountryURL">
-				<portlet:param name="mvcRenderCommandName" value="editCommerceCountry" />
+				<portlet:param name="mvcRenderCommandName" value="/commerce_country/edit_commerce_country" />
 				<portlet:param name="redirect" value="<%= currentURL %>" />
 			</portlet:renderURL>
 
@@ -78,36 +78,37 @@ CommerceCountriesDisplayContext commerceCountriesDisplayContext = (CommerceCount
 	</liferay-frontend:management-bar>
 
 	<div class="container-fluid container-fluid-max-xl">
-		<portlet:actionURL name="editCommerceCountry" var="editCommerceCountryActionURL" />
+		<portlet:actionURL name="/commerce_country/edit_commerce_country" var="editCommerceCountryActionURL" />
 
 		<aui:form action="<%= editCommerceCountryActionURL %>" method="post" name="fm">
 			<aui:input name="<%= Constants.CMD %>" type="hidden" value="<%= Constants.DELETE %>" />
 			<aui:input name="redirect" type="hidden" value="<%= currentURL %>" />
-			<aui:input name="deleteCommerceCountryIds" type="hidden" />
+			<aui:input name="deleteCountryIds" type="hidden" />
 
 			<liferay-ui:search-container
 				id="commerceCountries"
 				searchContainer="<%= commerceCountriesDisplayContext.getSearchContainer() %>"
 			>
 				<liferay-ui:search-container-row
-					className="com.liferay.commerce.model.CommerceCountry"
-					keyProperty="commerceCountryId"
-					modelVar="commerceCountry"
+					className="com.liferay.portal.kernel.model.Country"
+					keyProperty="countryId"
+					modelVar="country"
 				>
-
-					<%
-					PortletURL rowURL = renderResponse.createRenderURL();
-
-					rowURL.setParameter("mvcRenderCommandName", "editCommerceCountry");
-					rowURL.setParameter("redirect", currentURL);
-					rowURL.setParameter("commerceCountryId", String.valueOf(commerceCountry.getCommerceCountryId()));
-					%>
-
 					<liferay-ui:search-container-column-text
-						cssClass="important table-cell-expand"
-						href="<%= rowURL %>"
+						cssClass="font-weight-bold important table-cell-expand"
+						href='<%=
+							PortletURLBuilder.createRenderURL(
+								renderResponse
+							).setMVCRenderCommandName(
+								"/commerce_country/edit_commerce_country"
+							).setRedirect(
+								currentURL
+							).setParameter(
+								"countryId", country.getCountryId()
+							).buildPortletURL()
+						%>'
 						name="name"
-						value="<%= HtmlUtil.escape(commerceCountry.getName(locale)) %>"
+						value="<%= HtmlUtil.escape(country.getTitle(locale)) %>"
 					/>
 
 					<liferay-ui:search-container-column-text
@@ -115,7 +116,7 @@ CommerceCountriesDisplayContext commerceCountriesDisplayContext = (CommerceCount
 						name="billing-allowed"
 					>
 						<c:choose>
-							<c:when test="<%= commerceCountry.isBillingAllowed() %>">
+							<c:when test="<%= country.isBillingAllowed() %>">
 								<liferay-ui:icon
 									cssClass="commerce-admin-icon-check"
 									icon="check"
@@ -137,7 +138,7 @@ CommerceCountriesDisplayContext commerceCountriesDisplayContext = (CommerceCount
 						name="shipping-allowed"
 					>
 						<c:choose>
-							<c:when test="<%= commerceCountry.isShippingAllowed() %>">
+							<c:when test="<%= country.isShippingAllowed() %>">
 								<liferay-ui:icon
 									cssClass="commerce-admin-icon-check"
 									icon="check"
@@ -157,14 +158,14 @@ CommerceCountriesDisplayContext commerceCountriesDisplayContext = (CommerceCount
 					<liferay-ui:search-container-column-text
 						cssClass="table-cell-expand"
 						name="two-letter-iso-code"
-						property="twoLettersISOCode"
+						property="a2"
 					/>
 
 					<liferay-ui:search-container-column-text
 						name="active"
 					>
 						<c:choose>
-							<c:when test="<%= commerceCountry.isActive() %>">
+							<c:when test="<%= country.isActive() %>">
 								<liferay-ui:icon
 									cssClass="commerce-admin-icon-check"
 									icon="check"
@@ -182,12 +183,13 @@ CommerceCountriesDisplayContext commerceCountriesDisplayContext = (CommerceCount
 					</liferay-ui:search-container-column-text>
 
 					<liferay-ui:search-container-column-text
-						property="priority"
+						name="priority"
+						property="position"
 					/>
 
 					<liferay-ui:search-container-column-jsp
 						cssClass="entry-action-column"
-						path="/country_action.jsp"
+						path="/commerce_country_action.jsp"
 					/>
 				</liferay-ui:search-container-row>
 
@@ -208,7 +210,7 @@ CommerceCountriesDisplayContext commerceCountriesDisplayContext = (CommerceCount
 				var form = window.document['<portlet:namespace />fm'];
 
 				form[
-					'<portlet:namespace />deleteCommerceCountryIds'
+					'<portlet:namespace />deleteCountryIds'
 				].value = Liferay.Util.listCheckedExcept(
 					form,
 					'<portlet:namespace />allRowIds'

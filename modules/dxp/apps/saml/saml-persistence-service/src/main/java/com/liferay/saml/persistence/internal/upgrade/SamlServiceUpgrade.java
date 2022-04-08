@@ -18,9 +18,11 @@ import com.liferay.portal.kernel.upgrade.DummyUpgradeStep;
 import com.liferay.portal.kernel.upgrade.UpgradeException;
 import com.liferay.portal.upgrade.registry.UpgradeStepRegistrator;
 import com.liferay.portal.upgrade.release.BaseUpgradeServiceModuleRelease;
-import com.liferay.saml.persistence.internal.upgrade.v1_1_0.UpgradeSamlSpAuthRequest;
-import com.liferay.saml.persistence.internal.upgrade.v1_1_0.UpgradeSamlSpMessage;
-import com.liferay.saml.persistence.internal.upgrade.v2_1_0.UpgradeSamlIdpSpConnection;
+import com.liferay.portal.upgrade.step.util.UpgradeStepFactory;
+import com.liferay.saml.persistence.internal.upgrade.v1_1_0.SamlSpAuthRequestUpgradeProcess;
+import com.liferay.saml.persistence.internal.upgrade.v1_1_0.SamlSpMessageUpgradeProcess;
+import com.liferay.saml.persistence.internal.upgrade.v2_1_0.SamlIdpSpConnectionUpgradeProcess;
+import com.liferay.saml.persistence.internal.upgrade.v2_4_0.util.SamlPeerBindingTable;
 
 import org.osgi.service.cm.ConfigurationAdmin;
 import org.osgi.service.component.annotations.Component;
@@ -66,25 +68,26 @@ public class SamlServiceUpgrade implements UpgradeStepRegistrator {
 		registry.register(
 			"1.0.0", "1.1.0",
 			new com.liferay.saml.persistence.internal.upgrade.v1_1_0.
-				UpgradeSamlIdpSpSession(),
-			new UpgradeSamlSpAuthRequest(), new UpgradeSamlSpMessage(),
+				SamlIdpSpSessionUpgradeProcess(),
+			new SamlSpAuthRequestUpgradeProcess(),
+			new SamlSpMessageUpgradeProcess(),
 			new com.liferay.saml.persistence.internal.upgrade.v1_1_0.
-				UpgradeSamlSpSession());
+				SamlSpSessionUpgradeProcess());
 
 		registry.register(
 			"1.1.0", "1.1.1",
 			new com.liferay.saml.persistence.internal.upgrade.v1_1_1.
-				UpgradeSamlSpSession());
+				SamlSpSessionUpgradeProcess());
 
 		registry.register(
 			"1.1.1", "1.1.2",
 			new com.liferay.saml.persistence.internal.upgrade.v1_1_2.
-				UpgradeSamlSpSession());
+				SamlSpSessionUpgradeProcess());
 
 		registry.register(
 			"1.1.2", "1.1.3",
 			new com.liferay.saml.persistence.internal.upgrade.v1_1_3.
-				UpgradeSamlSpIdpConnection());
+				SamlSpIdpConnectionUpgradeProcess());
 
 		registry.register(
 			"1.1.3", "1.1.4",
@@ -94,16 +97,45 @@ public class SamlServiceUpgrade implements UpgradeStepRegistrator {
 		registry.register(
 			"1.1.4", "2.0.0",
 			new com.liferay.saml.persistence.internal.upgrade.v2_0_0.
-				UpgradeSamlSpSession(),
+				SamlSpSessionUpgradeProcess(),
 			new com.liferay.saml.persistence.internal.upgrade.v2_0_0.
-				UpgradeSamlSpSessionData(_configurationAdmin));
+				SamlSpSessionDataUpgradeProcess(_configurationAdmin));
 
-		registry.register("2.0.0", "2.1.0", new UpgradeSamlIdpSpConnection());
+		registry.register(
+			"2.0.0", "2.1.0", new SamlIdpSpConnectionUpgradeProcess());
 
 		registry.register(
 			"2.1.0", "2.2.0",
 			new com.liferay.saml.persistence.internal.upgrade.v2_2_0.
-				UpgradeSamlSpIdpConnection());
+				SamlSpIdpConnectionUpgradeProcess());
+
+		registry.register(
+			"2.2.0", "2.3.0",
+			new com.liferay.saml.persistence.internal.upgrade.v2_3_0.
+				SamlSpIdpConnectionUpgradeProcess());
+
+		registry.register("2.3.0", "2.4.0", SamlPeerBindingTable.create());
+
+		registry.register(
+			"2.4.0", "2.5.0",
+			new com.liferay.saml.persistence.internal.upgrade.v3_0_0.
+				SamlIdpSpSessionUpgradeProcess(),
+			new com.liferay.saml.persistence.internal.upgrade.v3_0_0.
+				SamlSpSessionUpgradeProcess());
+
+		registry.register(
+			"2.5.0", "3.0.0",
+			UpgradeStepFactory.dropColumns("SamlIdpSpSession", "nameIdFormat"),
+			UpgradeStepFactory.dropColumns("SamlIdpSpSession", "nameIdValue"),
+			UpgradeStepFactory.dropColumns(
+				"SamlIdpSpSession", "samlSpEntityId"),
+			UpgradeStepFactory.dropColumns("SamlSpSession", "nameIdFormat"),
+			UpgradeStepFactory.dropColumns(
+				"SamlSpSession", "nameIdNameQualifier"),
+			UpgradeStepFactory.dropColumns(
+				"SamlSpSession", "nameIdSPNameQualifier"),
+			UpgradeStepFactory.dropColumns("SamlSpSession", "nameIdValue"),
+			UpgradeStepFactory.dropColumns("SamlSpSession", "samlIdpEntityId"));
 	}
 
 	@Reference

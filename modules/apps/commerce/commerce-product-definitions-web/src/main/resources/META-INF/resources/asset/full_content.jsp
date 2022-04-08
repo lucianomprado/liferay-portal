@@ -17,6 +17,7 @@
 <%@ include file="/init.jsp" %>
 
 <%
+CommerceContext commerceContext = (CommerceContext)request.getAttribute(CommerceWebKeys.COMMERCE_CONTEXT);
 CPDefinition cpDefinition = (CPDefinition)request.getAttribute(CPWebKeys.CP_DEFINITION);
 
 Portlet portlet = PortletLocalServiceUtil.getPortletById(company.getCompanyId(), portletDisplay.getId());
@@ -43,13 +44,13 @@ Portlet portlet = PortletLocalServiceUtil.getPortletById(company.getCompanyId(),
 			names="details,specs,skus"
 			param="<%= String.valueOf(cpDefinition.getCPDefinitionId()) %>"
 			refresh="<%= false %>"
-			type="tabs nav-tabs-default"
+			type="nav-tabs tabs"
 		>
 			<liferay-ui:section>
 				<dl>
 
 					<%
-					String defaultImageThumbnailSrc = cpDefinition.getDefaultImageThumbnailSrc();
+					String defaultImageThumbnailSrc = cpDefinition.getDefaultImageThumbnailSrc(CommerceUtil.getCommerceAccountId(commerceContext));
 					%>
 
 					<c:if test="<%= Validator.isNotNull(defaultImageThumbnailSrc) %>">
@@ -92,9 +93,7 @@ Portlet portlet = PortletLocalServiceUtil.getPortletById(company.getCompanyId(),
 				<dl>
 
 					<%
-					List<CPDefinitionSpecificationOptionValue> cpDefinitionSpecificationOptionValues = cpDefinition.getCPDefinitionSpecificationOptionValues();
-
-					for (CPDefinitionSpecificationOptionValue cpDefinitionSpecificationOptionValue : cpDefinitionSpecificationOptionValues) {
+					for (CPDefinitionSpecificationOptionValue cpDefinitionSpecificationOptionValue : cpDefinition.getCPDefinitionSpecificationOptionValues()) {
 						CPSpecificationOption cpSpecificationOption = cpDefinitionSpecificationOptionValue.getCPSpecificationOption();
 					%>
 
@@ -115,9 +114,7 @@ Portlet portlet = PortletLocalServiceUtil.getPortletById(company.getCompanyId(),
 			<liferay-ui:section>
 
 				<%
-				List<CPInstance> cpInstances = cpDefinition.getCPInstances();
-
-				for (CPInstance cpInstance : cpInstances) {
+				for (CPInstance cpInstance : cpDefinition.getCPInstances()) {
 				%>
 
 					<dt class="h5">

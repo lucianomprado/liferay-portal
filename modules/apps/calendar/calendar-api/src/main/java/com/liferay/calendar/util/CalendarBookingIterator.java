@@ -41,7 +41,15 @@ public class CalendarBookingIterator implements Iterator<CalendarBooking> {
 	public CalendarBookingIterator(CalendarBooking calendarBooking)
 		throws ParseException {
 
+		this(calendarBooking, calendarBooking.getTimeZone());
+	}
+
+	public CalendarBookingIterator(
+			CalendarBooking calendarBooking, TimeZone displayTimeZone)
+		throws ParseException {
+
 		_calendarBooking = calendarBooking;
+		_displayTimeZone = displayTimeZone;
 
 		_recurrenceIterator =
 			RecurrenceIteratorFactory.createRecurrenceIterator(
@@ -98,10 +106,8 @@ public class CalendarBookingIterator implements Iterator<CalendarBooking> {
 			jCalendar.get(Calendar.SECOND), jCalendar.get(Calendar.MILLISECOND),
 			_getTimeZone(_calendarBooking));
 
-		TimeZone timeZone = _getTimeZone(_calendarBooking);
-
 		int shift = JCalendarUtil.getDSTShift(
-			jCalendar, startTimeJCalendar, timeZone);
+			jCalendar, startTimeJCalendar, _displayTimeZone);
 
 		startTimeJCalendar.add(Calendar.MILLISECOND, shift);
 
@@ -118,7 +124,7 @@ public class CalendarBookingIterator implements Iterator<CalendarBooking> {
 		}
 		catch (Exception exception) {
 			if (_log.isWarnEnabled()) {
-				_log.warn(exception, exception);
+				_log.warn(exception);
 			}
 		}
 
@@ -155,6 +161,7 @@ public class CalendarBookingIterator implements Iterator<CalendarBooking> {
 
 	private final CalendarBooking _calendarBooking;
 	private DateValue _currentDateValue;
+	private final TimeZone _displayTimeZone;
 	private int _instanceIndex;
 	private final RecurrenceIterator _recurrenceIterator;
 

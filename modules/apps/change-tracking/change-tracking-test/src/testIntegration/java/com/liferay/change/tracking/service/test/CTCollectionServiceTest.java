@@ -32,7 +32,7 @@ import com.liferay.journal.service.JournalArticleLocalService;
 import com.liferay.journal.service.JournalFolderLocalService;
 import com.liferay.journal.test.util.JournalFolderFixture;
 import com.liferay.journal.test.util.JournalTestUtil;
-import com.liferay.petra.lang.SafeClosable;
+import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.change.tracking.CTCollectionThreadLocal;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
@@ -85,8 +85,8 @@ public class CTCollectionServiceTest {
 	@Before
 	public void setUp() throws Exception {
 		_group = GroupTestUtil.addGroup();
-
 		_role = RoleTestUtil.addRole(RoleConstants.TYPE_REGULAR);
+		_user = UserTestUtil.addGroupUser(_group, RoleConstants.SITE_MEMBER);
 
 		_resourcePermissionLocalService.addResourcePermission(
 			_role.getCompanyId(), CTConstants.RESOURCE_NAME,
@@ -94,9 +94,10 @@ public class CTCollectionServiceTest {
 			String.valueOf(_role.getCompanyId()), _role.getRoleId(),
 			CTActionKeys.ADD_PUBLICATION);
 
-		_user = UserTestUtil.addGroupUser(_group, RoleConstants.SITE_MEMBER);
-
 		_roleLocalService.addUserRole(_user.getUserId(), _role);
+		_roleLocalService.addUserRole(
+			_user.getUserId(),
+			_roleLocalService.getDefaultGroupRole(_group.getGroupId()));
 	}
 
 	@Test
@@ -113,8 +114,8 @@ public class CTCollectionServiceTest {
 			_user.getCompanyId(), _user.getUserId(),
 			RandomTestUtil.randomString(), RandomTestUtil.randomString());
 
-		try (SafeClosable safeClosable =
-				CTCollectionThreadLocal.setCTCollectionId(
+		try (SafeCloseable safeCloseable =
+				CTCollectionThreadLocal.setCTCollectionIdWithSafeCloseable(
 					_ctCollection.getCtCollectionId())) {
 
 			_journalArticleLocalService.moveArticle(
@@ -180,7 +181,7 @@ public class CTCollectionServiceTest {
 
 			Assert.assertTrue(resultSet.next());
 
-			Assert.assertEquals(0, resultSet.getLong(1));
+			Assert.assertEquals(0, resultSet.getInt(1));
 		}
 	}
 
@@ -191,7 +192,7 @@ public class CTCollectionServiceTest {
 		Assert.assertEquals(
 			0,
 			_ctCollectionService.getCTCollectionsCount(
-				_user.getCompanyId(), WorkflowConstants.STATUS_ANY, ""));
+				_user.getCompanyId(), null, ""));
 
 		_ctCollection = _ctCollectionService.addCTCollection(
 			_user.getCompanyId(), _user.getUserId(),
@@ -200,12 +201,12 @@ public class CTCollectionServiceTest {
 		Assert.assertEquals(
 			1,
 			_ctCollectionService.getCTCollectionsCount(
-				_user.getCompanyId(), WorkflowConstants.STATUS_ANY, ""));
+				_user.getCompanyId(), null, ""));
 
 		JournalFolder journalFolder = null;
 
-		try (SafeClosable safeClosable =
-				CTCollectionThreadLocal.setCTCollectionId(
+		try (SafeCloseable safeCloseable =
+				CTCollectionThreadLocal.setCTCollectionIdWithSafeCloseable(
 					_ctCollection.getCtCollectionId())) {
 
 			journalFolder = _journalFolderFixture.addFolder(

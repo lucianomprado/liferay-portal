@@ -47,7 +47,7 @@ CPTaxCategoryDisplayContext cpTaxCategoryDisplayContext = (CPTaxCategoryDisplayC
 			/>
 
 			<portlet:renderURL var="addCPTaxCategoryURL">
-				<portlet:param name="mvcRenderCommandName" value="editCPTaxCategory" />
+				<portlet:param name="mvcRenderCommandName" value="/cp_tax_category/edit_cp_tax_category" />
 				<portlet:param name="redirect" value="<%= currentURL %>" />
 			</portlet:renderURL>
 
@@ -71,7 +71,7 @@ CPTaxCategoryDisplayContext cpTaxCategoryDisplayContext = (CPTaxCategoryDisplayC
 	</liferay-frontend:management-bar>
 
 	<div class="container-fluid container-fluid-max-xl">
-		<portlet:actionURL name="editCPTaxCategory" var="editCPTaxCategoryActionURL" />
+		<portlet:actionURL name="/cp_tax_category/edit_cp_tax_category" var="editCPTaxCategoryActionURL" />
 
 		<aui:form action="<%= editCPTaxCategoryActionURL %>" method="post" name="fm">
 			<aui:input name="<%= Constants.CMD %>" type="hidden" value="<%= Constants.DELETE %>" />
@@ -87,18 +87,19 @@ CPTaxCategoryDisplayContext cpTaxCategoryDisplayContext = (CPTaxCategoryDisplayC
 					keyProperty="CPTaxCategoryId"
 					modelVar="cpTaxCategory"
 				>
-
-					<%
-					PortletURL rowURL = renderResponse.createRenderURL();
-
-					rowURL.setParameter("mvcRenderCommandName", "editCPTaxCategory");
-					rowURL.setParameter("redirect", currentURL);
-					rowURL.setParameter("cpTaxCategoryId", String.valueOf(cpTaxCategory.getCPTaxCategoryId()));
-					%>
-
 					<liferay-ui:search-container-column-text
-						cssClass="important table-cell-expand"
-						href="<%= rowURL %>"
+						cssClass="font-weight-bold important table-cell-expand"
+						href='<%=
+							PortletURLBuilder.createRenderURL(
+								renderResponse
+							).setMVCRenderCommandName(
+								"/cp_tax_category/edit_cp_tax_category"
+							).setRedirect(
+								currentURL
+							).setParameter(
+								"cpTaxCategoryId", cpTaxCategory.getCPTaxCategoryId()
+							).buildPortletURL()
+						%>'
 						name="name"
 						value="<%= HtmlUtil.escape(cpTaxCategory.getName(languageId)) %>"
 					/>

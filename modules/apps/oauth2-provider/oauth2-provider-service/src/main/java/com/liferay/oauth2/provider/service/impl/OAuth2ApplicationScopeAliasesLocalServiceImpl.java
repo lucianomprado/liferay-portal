@@ -21,6 +21,7 @@ import com.liferay.oauth2.provider.scope.liferay.LiferayOAuth2Scope;
 import com.liferay.oauth2.provider.scope.liferay.ScopeLocator;
 import com.liferay.oauth2.provider.service.OAuth2ScopeGrantLocalService;
 import com.liferay.oauth2.provider.service.base.OAuth2ApplicationScopeAliasesLocalServiceBaseImpl;
+import com.liferay.oauth2.provider.service.persistence.OAuth2ApplicationPersistence;
 import com.liferay.oauth2.provider.util.builder.OAuth2ScopeBuilder;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.aop.AopService;
@@ -166,7 +167,8 @@ public class OAuth2ApplicationScopeAliasesLocalServiceImpl
 		long oAuth2ApplicationId, List<String> scopeAliasesList) {
 
 		OAuth2Application oAuth2Application =
-			oAuth2ApplicationPersistence.fetchByPrimaryKey(oAuth2ApplicationId);
+			_oAuth2ApplicationPersistence.fetchByPrimaryKey(
+				oAuth2ApplicationId);
 
 		if (oAuth2Application == null) {
 			return null;
@@ -224,11 +226,10 @@ public class OAuth2ApplicationScopeAliasesLocalServiceImpl
 					getOAuth2ApplicationScopeAliasesId(),
 				QueryUtil.ALL_POS, QueryUtil.ALL_POS, null);
 
-		List<String> scopeAliasesList = _getScopeAliasesList(oAuth2ScopeGrants);
-
 		Map<LiferayOAuth2Scope, List<String>> liferayOAuth2ScopesScopeAliases =
 			_getLiferayOAuth2ScopesScopeAliases(
-				oAuth2ApplicationScopeAliases.getCompanyId(), scopeAliasesList);
+				oAuth2ApplicationScopeAliases.getCompanyId(),
+				_getScopeAliasesList(oAuth2ScopeGrants));
 
 		if (_hasUpToDateScopeGrants(
 				oAuth2ScopeGrants, liferayOAuth2ScopesScopeAliases)) {
@@ -250,17 +251,14 @@ public class OAuth2ApplicationScopeAliasesLocalServiceImpl
 	}
 
 	protected static class OAuth2ScopeBuilderImpl
-		implements OAuth2ScopeBuilder,
-				   OAuth2ScopeBuilder.ApplicationScopeAssigner,
-				   OAuth2ScopeBuilder.ApplicationScope {
+		implements OAuth2ScopeBuilder, OAuth2ScopeBuilder.ApplicationScope,
+				   OAuth2ScopeBuilder.ApplicationScopeAssigner {
 
 		public OAuth2ScopeBuilderImpl(
 			Map<Map.Entry<ScopeNamespace, String>, List<String>>
 				simpleEntryScopeAliases) {
 
 			_simpleEntryScopeAliases = simpleEntryScopeAliases;
-			_scopes = new ArrayList<>();
-			_scopeAliases = new ArrayList<>();
 		}
 
 		public ApplicationScope assignScope(Collection<String> scope) {
@@ -309,9 +307,9 @@ public class OAuth2ApplicationScopeAliasesLocalServiceImpl
 			_scopeAliases = _scopes;
 		}
 
-		private Collection<String> _scopeAliases;
+		private Collection<String> _scopeAliases = new ArrayList<>();
 		private ScopeNamespace _scopeNamespace;
-		private final Collection<String> _scopes;
+		private final Collection<String> _scopes = new ArrayList<>();
 		private final Map<Map.Entry<ScopeNamespace, String>, List<String>>
 			_simpleEntryScopeAliases;
 
@@ -487,6 +485,9 @@ public class OAuth2ApplicationScopeAliasesLocalServiceImpl
 
 		return true;
 	}
+
+	@Reference
+	private OAuth2ApplicationPersistence _oAuth2ApplicationPersistence;
 
 	@Reference
 	private OAuth2ScopeGrantLocalService _oAuth2ScopeGrantLocalService;

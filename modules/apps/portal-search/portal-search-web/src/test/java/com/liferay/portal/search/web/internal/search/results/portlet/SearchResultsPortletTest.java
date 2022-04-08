@@ -28,8 +28,6 @@ import com.liferay.portal.kernel.test.util.PropsTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.theme.PortletDisplay;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
-import com.liferay.portal.kernel.util.Html;
-import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.Http;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.search.searcher.SearchRequest;
@@ -38,10 +36,11 @@ import com.liferay.portal.search.summary.Summary;
 import com.liferay.portal.search.summary.SummaryBuilder;
 import com.liferay.portal.search.summary.SummaryBuilderFactory;
 import com.liferay.portal.search.web.internal.display.context.PortletURLFactory;
-import com.liferay.portal.search.web.internal.portlet.shared.task.PortletSharedRequestHelper;
+import com.liferay.portal.search.web.internal.portlet.shared.task.helper.PortletSharedRequestHelper;
 import com.liferay.portal.search.web.portlet.shared.search.PortletSharedSearchRequest;
 import com.liferay.portal.search.web.portlet.shared.search.PortletSharedSearchResponse;
 import com.liferay.portal.search.web.search.request.SearchSettings;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import java.io.IOException;
 
@@ -59,6 +58,8 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 import org.mockito.ArgumentCaptor;
@@ -72,35 +73,41 @@ import org.mockito.MockitoAnnotations;
  */
 public class SearchResultsPortletTest {
 
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
+
 	@Before
 	public void setUp() throws Exception {
 		MockitoAnnotations.initMocks(this);
 
-		setUpHtmlUtil();
-		setUpPortletSharedSearchResponse();
-		setUpProps();
-		setUpSearchSettings();
+		_setUpPortletSharedSearchResponse();
+		_setUpPropsUtil();
+		_setUpSearchSettings();
 
-		_portletURLFactory = createPortletURLFactory();
-		_renderRequest = createRenderRequest();
-		_renderResponse = createRenderResponse();
-		_searchResultsPortlet = createSearchResultsPortlet();
+		_portletURLFactory = _createPortletURLFactory();
+		_renderRequest = _createRenderRequest();
+		_renderResponse = _createRenderResponse();
+		_searchResultsPortlet = _createSearchResultsPortlet();
 	}
 
 	@Test
 	public void testDocumentWithoutSummaryIsRemoved() throws Exception {
-		Document document = createDocumentWithSummary();
+		Document document = _createDocumentWithSummary();
 
-		setUpSearchResponseDocuments(document, createDocument());
+		_setUpSearchResponseDocuments(document, _createDocument());
 
 		render();
 
-		assertDisplayContextDocuments(document);
+		_assertDisplayContextDocuments(document);
 	}
 
-	protected void assertDisplayContextDocuments(
-		Document... expectedDocuments) {
+	protected void render() throws IOException, PortletException {
+		_searchResultsPortlet.render(_renderRequest, _renderResponse);
+	}
 
+	private void _assertDisplayContextDocuments(Document... expectedDocuments) {
 		SearchResultsPortletDisplayContext searchResultsPortletDisplayContext =
 			_getDisplayContext();
 
@@ -109,7 +116,7 @@ public class SearchResultsPortletTest {
 			searchResultsPortletDisplayContext.getDocuments());
 	}
 
-	protected Document createDocument() {
+	private Document _createDocument() {
 		Document document = new DocumentImpl();
 
 		String className = RandomTestUtil.randomString();
@@ -119,7 +126,7 @@ public class SearchResultsPortletTest {
 		return document;
 	}
 
-	protected Document createDocumentWithSummary() throws Exception {
+	private Document _createDocumentWithSummary() throws Exception {
 		Document document = new DocumentImpl();
 
 		String className = RandomTestUtil.randomString();
@@ -137,7 +144,21 @@ public class SearchResultsPortletTest {
 		return document;
 	}
 
-	protected PortletSharedSearchRequest createPortletSharedSearchRequest() {
+	private Indexer<?> _createIndexerWithSummary() throws Exception {
+		Indexer<?> indexer = Mockito.mock(Indexer.class);
+
+		Mockito.doReturn(
+			new com.liferay.portal.kernel.search.Summary(null, null, null)
+		).when(
+			indexer
+		).getSummary(
+			Mockito.any(), Mockito.anyString(), Mockito.any(), Mockito.any()
+		);
+
+		return indexer;
+	}
+
+	private PortletSharedSearchRequest _createPortletSharedSearchRequest() {
 		PortletSharedSearchRequest portletSharedSearchRequest = Mockito.mock(
 			PortletSharedSearchRequest.class);
 
@@ -152,7 +173,7 @@ public class SearchResultsPortletTest {
 		return portletSharedSearchRequest;
 	}
 
-	protected PortletURLFactory createPortletURLFactory() throws Exception {
+	private PortletURLFactory _createPortletURLFactory() throws Exception {
 		PortletURLFactory portletURLFactory = Mockito.mock(
 			PortletURLFactory.class);
 
@@ -165,7 +186,7 @@ public class SearchResultsPortletTest {
 		return portletURLFactory;
 	}
 
-	protected RenderRequest createRenderRequest() {
+	private RenderRequest _createRenderRequest() {
 		RenderRequest renderRequest = Mockito.mock(RenderRequest.class);
 
 		Mockito.doReturn(
@@ -187,7 +208,7 @@ public class SearchResultsPortletTest {
 		return renderRequest;
 	}
 
-	protected RenderResponse createRenderResponse() {
+	private RenderResponse _createRenderResponse() {
 		RenderResponse renderResponse = Mockito.mock(RenderResponse.class);
 
 		Mockito.doReturn(
@@ -199,7 +220,7 @@ public class SearchResultsPortletTest {
 		return renderResponse;
 	}
 
-	protected SearchResultsPortlet createSearchResultsPortlet()
+	private SearchResultsPortlet _createSearchResultsPortlet()
 		throws Exception {
 
 		SearchResultsPortlet searchResultsPortlet = new SearchResultsPortlet() {
@@ -212,9 +233,10 @@ public class SearchResultsPortletTest {
 				indexerRegistry = _indexerRegistry;
 				portletSharedRequestHelper = Mockito.mock(
 					PortletSharedRequestHelper.class);
-				portletSharedSearchRequest = createPortletSharedSearchRequest();
+				portletSharedSearchRequest =
+					_createPortletSharedSearchRequest();
 				resourceActions = Mockito.mock(ResourceActions.class);
-				summaryBuilderFactory = createSummaryBuilderFactory();
+				summaryBuilderFactory = _createSummaryBuilderFactory();
 			}
 
 			@Override
@@ -270,7 +292,7 @@ public class SearchResultsPortletTest {
 		return searchResultsPortlet;
 	}
 
-	protected SummaryBuilderFactory createSummaryBuilderFactory() {
+	private SummaryBuilderFactory _createSummaryBuilderFactory() {
 		SummaryBuilder summaryBuilder = Mockito.mock(SummaryBuilder.class);
 
 		Mockito.doReturn(
@@ -291,17 +313,21 @@ public class SearchResultsPortletTest {
 		return summaryBuilderFactory;
 	}
 
-	protected void render() throws IOException, PortletException {
-		_searchResultsPortlet.render(_renderRequest, _renderResponse);
+	private SearchResultsPortletDisplayContext _getDisplayContext() {
+		ArgumentCaptor<SearchResultsPortletDisplayContext> argumentCaptor =
+			ArgumentCaptor.forClass(SearchResultsPortletDisplayContext.class);
+
+		Mockito.verify(
+			_renderRequest
+		).setAttribute(
+			Matchers.eq(WebKeys.PORTLET_DISPLAY_CONTEXT),
+			argumentCaptor.capture()
+		);
+
+		return argumentCaptor.getValue();
 	}
 
-	protected void setUpHtmlUtil() throws Exception {
-		HtmlUtil htmlUtil = new HtmlUtil();
-
-		htmlUtil.setHtml(Mockito.mock(Html.class));
-	}
-
-	protected void setUpPortletSharedSearchResponse() {
+	private void _setUpPortletSharedSearchResponse() {
 		Mockito.doReturn(
 			Optional.empty()
 		).when(
@@ -345,11 +371,11 @@ public class SearchResultsPortletTest {
 		);
 	}
 
-	protected void setUpProps() {
+	private void _setUpPropsUtil() {
 		PropsTestUtil.setProps(Collections.emptyMap());
 	}
 
-	protected void setUpSearchResponseDocuments(Document... documents) {
+	private void _setUpSearchResponseDocuments(Document... documents) {
 		Mockito.doReturn(
 			Arrays.asList(documents)
 		).when(
@@ -357,40 +383,12 @@ public class SearchResultsPortletTest {
 		).getDocuments71();
 	}
 
-	protected void setUpSearchSettings() {
+	private void _setUpSearchSettings() {
 		Mockito.when(
 			_searchSettings.getSearchContext()
 		).thenReturn(
 			_searchContext
 		);
-	}
-
-	private Indexer<?> _createIndexerWithSummary() throws Exception {
-		Indexer<?> indexer = Mockito.mock(Indexer.class);
-
-		Mockito.doReturn(
-			new com.liferay.portal.kernel.search.Summary(null, null, null)
-		).when(
-			indexer
-		).getSummary(
-			Mockito.any(), Mockito.anyString(), Mockito.any(), Mockito.any()
-		);
-
-		return indexer;
-	}
-
-	private SearchResultsPortletDisplayContext _getDisplayContext() {
-		ArgumentCaptor<SearchResultsPortletDisplayContext> argumentCaptor =
-			ArgumentCaptor.forClass(SearchResultsPortletDisplayContext.class);
-
-		Mockito.verify(
-			_renderRequest
-		).setAttribute(
-			Matchers.eq(WebKeys.PORTLET_DISPLAY_CONTEXT),
-			argumentCaptor.capture()
-		);
-
-		return argumentCaptor.getValue();
 	}
 
 	@Mock

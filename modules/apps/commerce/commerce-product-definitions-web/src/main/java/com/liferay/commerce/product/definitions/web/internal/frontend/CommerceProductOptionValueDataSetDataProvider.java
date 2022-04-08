@@ -17,6 +17,7 @@ package com.liferay.commerce.product.definitions.web.internal.frontend;
 import com.liferay.commerce.currency.model.CommerceCurrency;
 import com.liferay.commerce.currency.service.CommerceCurrencyService;
 import com.liferay.commerce.currency.util.CommercePriceFormatter;
+import com.liferay.commerce.product.definitions.web.internal.frontend.constants.CommerceProductDataSetConstants;
 import com.liferay.commerce.product.definitions.web.internal.model.ProductOptionValue;
 import com.liferay.commerce.product.model.CPDefinitionOptionRel;
 import com.liferay.commerce.product.model.CPDefinitionOptionValueRel;
@@ -33,7 +34,6 @@ import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.search.BaseModelSearchResult;
 import com.liferay.portal.kernel.search.Sort;
-import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.Validator;
@@ -76,17 +76,23 @@ public class CommerceProductOptionValueDataSetDataProvider
 
 		Locale locale = _portal.getLocale(httpServletRequest);
 
-		BaseModelSearchResult<CPDefinitionOptionValueRel>
-			baseModelSearchResult = _getBaseModelSearchResult(
-				cpDefinitionOptionRelId, filter.getKeywords(),
-				pagination.getStartPosition(), pagination.getEndPosition(),
-				sort);
+		CPDefinitionOptionRel cpDefinitionOptionRel =
+			_cpDefinitionOptionRelService.getCPDefinitionOptionRel(
+				cpDefinitionOptionRelId);
 
-		List<CPDefinitionOptionValueRel> cpDefinitionOptionValueRels =
-			baseModelSearchResult.getBaseModels();
+		BaseModelSearchResult<CPDefinitionOptionValueRel>
+			cpDefinitionOptionValueRelBaseModelSearchResult =
+				_cpDefinitionOptionValueRelService.
+					searchCPDefinitionOptionValueRels(
+						cpDefinitionOptionRel.getCompanyId(),
+						cpDefinitionOptionRel.getGroupId(),
+						cpDefinitionOptionRelId, filter.getKeywords(),
+						pagination.getStartPosition(),
+						pagination.getEndPosition(), new Sort[] {sort});
 
 		for (CPDefinitionOptionValueRel cpDefinitionOptionValueRel :
-				cpDefinitionOptionValueRels) {
+				cpDefinitionOptionValueRelBaseModelSearchResult.
+					getBaseModels()) {
 
 			productOptionValues.add(
 				new ProductOptionValue(
@@ -96,9 +102,8 @@ public class CommerceProductOptionValueDataSetDataProvider
 						commerceCurrency, _getPrice(cpDefinitionOptionValueRel),
 						locale),
 					cpDefinitionOptionValueRel.getKey(),
-					HtmlUtil.escape(
-						cpDefinitionOptionValueRel.getName(
-							LanguageUtil.getLanguageId(locale))),
+					cpDefinitionOptionValueRel.getName(
+						LanguageUtil.getLanguageId(locale)),
 					cpDefinitionOptionValueRel.getPriority(),
 					LanguageUtil.get(
 						locale,
@@ -118,28 +123,16 @@ public class CommerceProductOptionValueDataSetDataProvider
 		long cpDefinitionOptionRelId = ParamUtil.getLong(
 			httpServletRequest, "cpDefinitionOptionRelId");
 
-		BaseModelSearchResult<CPDefinitionOptionValueRel>
-			baseModelSearchResult = _getBaseModelSearchResult(
-				cpDefinitionOptionRelId, filter.getKeywords(), 0, 0, null);
-
-		return baseModelSearchResult.getLength();
-	}
-
-	private BaseModelSearchResult<CPDefinitionOptionValueRel>
-			_getBaseModelSearchResult(
-				long cpDefinitionOptionRelId, String keywords, int start,
-				int end, Sort sort)
-		throws PortalException {
-
 		CPDefinitionOptionRel cpDefinitionOptionRel =
 			_cpDefinitionOptionRelService.getCPDefinitionOptionRel(
 				cpDefinitionOptionRelId);
 
 		return _cpDefinitionOptionValueRelService.
-			searchCPDefinitionOptionValueRels(
+			searchCPDefinitionOptionValueRelsCount(
 				cpDefinitionOptionRel.getCompanyId(),
-				cpDefinitionOptionRel.getGroupId(), cpDefinitionOptionRelId,
-				keywords, start, end, sort);
+				cpDefinitionOptionRel.getGroupId(),
+				cpDefinitionOptionRel.getCPDefinitionOptionRelId(),
+				filter.getKeywords());
 	}
 
 	private CommerceCurrency _getCommerceCurrency(long cpDefinitionOptionRelId)

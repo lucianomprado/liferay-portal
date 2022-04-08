@@ -22,23 +22,25 @@ import com.liferay.commerce.model.CommerceOrderItem;
 import com.liferay.commerce.model.CommerceSubscriptionEntry;
 import com.liferay.commerce.payment.model.CommercePaymentMethodGroupRel;
 import com.liferay.commerce.payment.service.CommercePaymentMethodGroupRelLocalService;
-import com.liferay.commerce.product.display.context.util.CPRequestHelper;
+import com.liferay.commerce.product.display.context.helper.CPRequestHelper;
 import com.liferay.commerce.product.util.CPSubscriptionType;
 import com.liferay.commerce.product.util.CPSubscriptionTypeJSPContributor;
 import com.liferay.commerce.product.util.CPSubscriptionTypeJSPContributorRegistry;
 import com.liferay.commerce.product.util.CPSubscriptionTypeRegistry;
 import com.liferay.commerce.service.CommerceOrderItemLocalService;
 import com.liferay.commerce.service.CommerceSubscriptionEntryLocalService;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
 import com.liferay.portal.kernel.portlet.PortletProvider;
 import com.liferay.portal.kernel.portlet.PortletProviderUtil;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
-import com.liferay.portal.kernel.service.permission.PortalPermissionUtil;
+import com.liferay.portal.kernel.security.permission.resource.PortletResourcePermission;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
-import com.liferay.portal.kernel.util.Constants;
 import com.liferay.portal.kernel.util.FastDateFormatFactoryUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Validator;
@@ -48,9 +50,9 @@ import java.text.DateFormat;
 import java.text.Format;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
-import javax.portlet.ActionRequest;
 import javax.portlet.PortletURL;
 import javax.portlet.RenderResponse;
 
@@ -65,22 +67,25 @@ public class CommerceSubscriptionEntryDisplayContext {
 	public CommerceSubscriptionEntryDisplayContext(
 		CommercePaymentMethodGroupRelLocalService
 			commercePaymentMethodGroupRelLocalService,
-		CommerceSubscriptionEntryLocalService commerceSubscriptionEntryService,
+		CommerceSubscriptionEntryLocalService
+			commerceSubscriptionEntryLocalService,
 		CommerceOrderItemLocalService commerceOrderItemLocalService,
 		CPSubscriptionTypeJSPContributorRegistry
 			cpSubscriptionTypeJSPContributorRegistry,
 		CPSubscriptionTypeRegistry cpSubscriptionTypeRegistry,
-		HttpServletRequest httpServletRequest) {
+		HttpServletRequest httpServletRequest,
+		PortletResourcePermission portletResourcePermission) {
 
 		_commercePaymentMethodGroupRelLocalService =
 			commercePaymentMethodGroupRelLocalService;
 		_commerceSubscriptionEntryLocalService =
-			commerceSubscriptionEntryService;
+			commerceSubscriptionEntryLocalService;
 		_commerceOrderItemLocalService = commerceOrderItemLocalService;
 		_cpSubscriptionTypeJSPContributorRegistry =
 			cpSubscriptionTypeJSPContributorRegistry;
 		_cpSubscriptionTypeRegistry = cpSubscriptionTypeRegistry;
 		_httpServletRequest = httpServletRequest;
+		_portletResourcePermission = portletResourcePermission;
 
 		_cpRequestHelper = new CPRequestHelper(httpServletRequest);
 	}
@@ -156,16 +161,37 @@ public class CommerceSubscriptionEntryDisplayContext {
 	}
 
 	public String getCommerceSubscriptionEntryStartDate() {
+		Date showDate = null;
+
 		CommerceSubscriptionEntry commerceSubscriptionEntry =
 			getCommerceSubscriptionEntry();
+
+		Date deliveryStartDate =
+			commerceSubscriptionEntry.getDeliveryStartDate();
+		Date startDate = commerceSubscriptionEntry.getStartDate();
+
+		if ((deliveryStartDate != null) && (startDate != null)) {
+			showDate =
+				startDate.before(deliveryStartDate) ? startDate :
+					deliveryStartDate;
+		}
+		else if ((deliveryStartDate != null) && (startDate == null)) {
+			showDate = deliveryStartDate;
+		}
+		else if ((deliveryStartDate == null) && (startDate != null)) {
+			showDate = startDate;
+		}
+		else {
+			return "";
+		}
 
 		ThemeDisplay themeDisplay = _cpRequestHelper.getThemeDisplay();
 
 		Format dateTimeFormat = FastDateFormatFactoryUtil.getDateTime(
-			DateFormat.MEDIUM, DateFormat.MEDIUM, themeDisplay.getLocale(),
+			DateFormat.MEDIUM, DateFormat.SHORT, themeDisplay.getLocale(),
 			themeDisplay.getTimeZone());
 
-		return dateTimeFormat.format(commerceSubscriptionEntry.getStartDate());
+		return dateTimeFormat.format(showDate);
 	}
 
 	public CPSubscriptionType getCPSubscriptionType(String subscriptionType) {
@@ -187,26 +213,31 @@ public class CommerceSubscriptionEntryDisplayContext {
 	public String getEditCommerceOrderURL(long commerceOrderId)
 		throws PortalException {
 
-		String orderId;
-
-		if (commerceOrderId > 0) {
-			orderId = String.valueOf(commerceOrderId);
-		}
-		else {
-			orderId = String.valueOf(getCommerceOrderId());
-		}
-
 		ThemeDisplay themeDisplay = _cpRequestHelper.getThemeDisplay();
 
-		PortletURL portletURL = PortletProviderUtil.getPortletURL(
-			_httpServletRequest, themeDisplay.getScopeGroup(),
-			CommerceOrder.class.getName(), PortletProvider.Action.MANAGE);
+		return PortletURLBuilder.create(
+			PortletProviderUtil.getPortletURL(
+				_httpServletRequest, themeDisplay.getScopeGroup(),
+				CommerceOrder.class.getName(), PortletProvider.Action.MANAGE)
+		).setMVCRenderCommandName(
+			"/commerce_order/edit_commerce_order"
+		).setRedirect(
+			themeDisplay.getURLCurrent()
+		).setParameter(
+			"commerceOrderId",
+			() -> {
+				String orderId;
 
-		portletURL.setParameter("mvcRenderCommandName", "editCommerceOrder");
-		portletURL.setParameter("redirect", themeDisplay.getURLCurrent());
-		portletURL.setParameter("commerceOrderId", orderId);
+				if (commerceOrderId > 0) {
+					orderId = String.valueOf(commerceOrderId);
+				}
+				else {
+					orderId = String.valueOf(getCommerceOrderId());
+				}
 
-		return portletURL.toString();
+				return orderId;
+			}
+		).buildString();
 	}
 
 	public List<HeaderActionModel> getHeaderActionModels() {
@@ -224,14 +255,15 @@ public class CommerceSubscriptionEntryDisplayContext {
 			new HeaderActionModel(
 				null, null, cancelURL.toString(), null, "cancel"));
 
-		PortletURL portletURL = getTransitionOrderPortletURL();
-
-		portletURL.setParameter("transitionName", "save");
-
 		headerActionModels.add(
 			new HeaderActionModel(
 				"btn-primary", renderResponse.getNamespace() + "fm",
-				portletURL.toString(), null, "save"));
+				PortletURLBuilder.create(
+					getTransitionOrderPortletURL()
+				).setParameter(
+					"transitionName", "save"
+				).buildString(),
+				null, "save"));
 
 		return headerActionModels;
 	}
@@ -253,6 +285,10 @@ public class CommerceSubscriptionEntryDisplayContext {
 				fetchCommercePaymentMethodGroupRel(
 					commerceOrder.getGroupId(), paymentMethodKey);
 
+		if (commercePaymentMethodGroupRel == null) {
+			return StringPool.BLANK;
+		}
+
 		return commercePaymentMethodGroupRel.getImageURL(
 			_cpRequestHelper.getThemeDisplay());
 	}
@@ -273,6 +309,10 @@ public class CommerceSubscriptionEntryDisplayContext {
 			_commercePaymentMethodGroupRelLocalService.
 				fetchCommercePaymentMethodGroupRel(
 					commerceOrder.getGroupId(), paymentMethodKey);
+
+		if (commercePaymentMethodGroupRel == null) {
+			return StringPool.BLANK;
+		}
 
 		return commercePaymentMethodGroupRel.getName(
 			_cpRequestHelper.getLocale());
@@ -331,50 +371,59 @@ public class CommerceSubscriptionEntryDisplayContext {
 			portletURL.setParameter("keywords", keywords);
 		}
 
-		portletURL.setParameter("navigation", getNavigation());
+		portletURL.setParameter("navigation", _getNavigation());
 
 		return portletURL;
 	}
 
 	public PortletURL getTransitionOrderPortletURL() {
-		LiferayPortletResponse liferayPortletResponse =
-			_cpRequestHelper.getLiferayPortletResponse();
-
-		PortletURL portletURL = liferayPortletResponse.createActionURL();
-
-		portletURL.setParameter(ActionRequest.ACTION_NAME, "editCommerceOrder");
-		portletURL.setParameter(Constants.CMD, ActionKeys.UPDATE);
-		portletURL.setParameter(
+		return PortletURLBuilder.createActionURL(
+			_cpRequestHelper.getLiferayPortletResponse()
+		).setActionName(
+			"/commerce_open_order_content/edit_commerce_order"
+		).setCMD(
+			ActionKeys.UPDATE
+		).setRedirect(
+			_cpRequestHelper.getCurrentURL()
+		).setParameter(
 			"commerceSubscriptionEntryId",
-			String.valueOf(
-				_commerceSubscriptionEntry.getCommerceSubscriptionEntryId()));
-		portletURL.setParameter("redirect", _cpRequestHelper.getCurrentURL());
-
-		return portletURL;
+			_commerceSubscriptionEntry.getCommerceSubscriptionEntryId()
+		).buildPortletURL();
 	}
 
 	public boolean hasManageCommerceSubscriptionEntryPermission() {
-		return PortalPermissionUtil.contains(
-			_cpRequestHelper.getPermissionChecker(),
+		return _portletResourcePermission.contains(
+			_cpRequestHelper.getPermissionChecker(), null,
 			CommerceActionKeys.MANAGE_COMMERCE_SUBSCRIPTIONS);
 	}
 
 	public boolean isPaymentMethodActive(String engineKey) {
-		CommercePaymentMethodGroupRel commercePaymentMethodGroupRel =
-			_commercePaymentMethodGroupRelLocalService.
-				fetchCommercePaymentMethodGroupRel(
-					_cpRequestHelper.getScopeGroupId(), engineKey);
+		try {
+			CommercePaymentMethodGroupRel commercePaymentMethodGroupRel =
+				_commercePaymentMethodGroupRelLocalService.
+					fetchCommercePaymentMethodGroupRel(
+						_cpRequestHelper.getCommerceChannelGroupId(),
+						engineKey);
 
-		if (commercePaymentMethodGroupRel == null) {
-			return false;
+			if (commercePaymentMethodGroupRel == null) {
+				return false;
+			}
+
+			return commercePaymentMethodGroupRel.isActive();
+		}
+		catch (PortalException portalException) {
+			_log.error(portalException);
 		}
 
-		return commercePaymentMethodGroupRel.isActive();
+		return false;
 	}
 
-	protected String getNavigation() {
+	private String _getNavigation() {
 		return ParamUtil.getString(_httpServletRequest, "navigation", "all");
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		CommerceSubscriptionEntryDisplayContext.class);
 
 	private final CommerceOrderItemLocalService _commerceOrderItemLocalService;
 	private final CommercePaymentMethodGroupRelLocalService
@@ -387,5 +436,6 @@ public class CommerceSubscriptionEntryDisplayContext {
 		_cpSubscriptionTypeJSPContributorRegistry;
 	private final CPSubscriptionTypeRegistry _cpSubscriptionTypeRegistry;
 	private final HttpServletRequest _httpServletRequest;
+	private final PortletResourcePermission _portletResourcePermission;
 
 }

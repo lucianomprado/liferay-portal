@@ -30,12 +30,14 @@ import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.util.DateUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
+import com.liferay.portal.kernel.util.StringUtil;
 
 import java.io.Serializable;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
 
+import java.sql.Blob;
 import java.sql.Types;
 
 import java.util.Collections;
@@ -43,6 +45,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
@@ -121,14 +124,14 @@ public class PasswordTrackerModelImpl
 	public static final boolean COLUMN_BITMASK_ENABLED = true;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long USERID_COLUMN_BITMASK = 1L;
 
 	/**
 	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-	 *		#getColumnBitmask(String)
+	 *		#getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long CREATEDATE_COLUMN_BITMASK = 2L;
@@ -426,7 +429,9 @@ public class PasswordTrackerModelImpl
 		for (Map.Entry<String, Object> entry :
 				_columnOriginalValues.entrySet()) {
 
-			if (entry.getValue() != getColumnValue(entry.getKey())) {
+			if (!Objects.equals(
+					entry.getValue(), getColumnValue(entry.getKey()))) {
+
 				_columnBitmask |= _columnBitmasks.get(entry.getKey());
 			}
 		}
@@ -474,6 +479,26 @@ public class PasswordTrackerModelImpl
 		passwordTrackerImpl.setPassword(getPassword());
 
 		passwordTrackerImpl.resetOriginalValues();
+
+		return passwordTrackerImpl;
+	}
+
+	@Override
+	public PasswordTracker cloneWithOriginalValues() {
+		PasswordTrackerImpl passwordTrackerImpl = new PasswordTrackerImpl();
+
+		passwordTrackerImpl.setMvccVersion(
+			this.<Long>getColumnOriginalValue("mvccVersion"));
+		passwordTrackerImpl.setPasswordTrackerId(
+			this.<Long>getColumnOriginalValue("passwordTrackerId"));
+		passwordTrackerImpl.setCompanyId(
+			this.<Long>getColumnOriginalValue("companyId"));
+		passwordTrackerImpl.setUserId(
+			this.<Long>getColumnOriginalValue("userId"));
+		passwordTrackerImpl.setCreateDate(
+			this.<Date>getColumnOriginalValue("createDate"));
+		passwordTrackerImpl.setPassword(
+			this.<String>getColumnOriginalValue("password_"));
 
 		return passwordTrackerImpl;
 	}
@@ -601,7 +626,7 @@ public class PasswordTrackerModelImpl
 			attributeGetterFunctions = getAttributeGetterFunctions();
 
 		StringBundler sb = new StringBundler(
-			(4 * attributeGetterFunctions.size()) + 2);
+			(5 * attributeGetterFunctions.size()) + 2);
 
 		sb.append("{");
 
@@ -612,9 +637,26 @@ public class PasswordTrackerModelImpl
 			Function<PasswordTracker, Object> attributeGetterFunction =
 				entry.getValue();
 
+			sb.append("\"");
 			sb.append(attributeName);
-			sb.append("=");
-			sb.append(attributeGetterFunction.apply((PasswordTracker)this));
+			sb.append("\": ");
+
+			Object value = attributeGetterFunction.apply((PasswordTracker)this);
+
+			if (value == null) {
+				sb.append("null");
+			}
+			else if (value instanceof Blob || value instanceof Date ||
+					 value instanceof Map || value instanceof String) {
+
+				sb.append(
+					"\"" + StringUtil.replace(value.toString(), "\"", "'") +
+						"\"");
+			}
+			else {
+				sb.append(value);
+			}
+
 			sb.append(", ");
 		}
 

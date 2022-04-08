@@ -14,44 +14,93 @@
 
 package com.liferay.dispatch.model.impl;
 
+import com.liferay.dispatch.executor.DispatchTaskStatus;
+import com.liferay.dispatch.model.DispatchLog;
+import com.liferay.dispatch.service.DispatchLogLocalServiceUtil;
+import com.liferay.dispatch.service.DispatchTriggerLocalServiceUtil;
 import com.liferay.portal.kernel.util.UnicodeProperties;
+import com.liferay.portal.kernel.util.UnicodePropertiesBuilder;
+
+import java.util.Date;
 
 /**
  * @author Alessio Antonio Rendina
+ * @author Igor Beslic
  */
 public class DispatchTriggerImpl extends DispatchTriggerBaseImpl {
 
-	public DispatchTriggerImpl() {
-	}
-
-	public UnicodeProperties getTaskSettingsUnicodeProperties() {
-		if (_taskSettingsUnicodeProperties == null) {
-			_taskSettingsUnicodeProperties = new UnicodeProperties(true);
-
-			_taskSettingsUnicodeProperties.fastLoad(getTaskSettings());
+	@Override
+	public UnicodeProperties getDispatchTaskSettingsUnicodeProperties() {
+		if (_dispatchTaskSettingsUnicodeProperties == null) {
+			_dispatchTaskSettingsUnicodeProperties =
+				UnicodePropertiesBuilder.create(
+					true
+				).fastLoad(
+					getDispatchTaskSettings()
+				).build();
 		}
 
-		return _taskSettingsUnicodeProperties;
+		return _dispatchTaskSettingsUnicodeProperties;
 	}
 
-	public void setTaskSettings(String taskSettings) {
-		super.setTaskSettings(taskSettings);
-
-		_taskSettingsUnicodeProperties = null;
-	}
-
-	public void setTaskSettingsUnicodeProperties(
-		UnicodeProperties taskSettingsUnicodeProperties) {
-
-		_taskSettingsUnicodeProperties = taskSettingsUnicodeProperties;
-
-		if (_taskSettingsUnicodeProperties == null) {
-			_taskSettingsUnicodeProperties = new UnicodeProperties();
+	@Override
+	public DispatchTaskStatus getDispatchTaskStatus() {
+		if (_dispatchTaskStatus != null) {
+			return _dispatchTaskStatus;
 		}
 
-		super.setTaskSettings(_taskSettingsUnicodeProperties.toString());
+		DispatchLog dispatchLog =
+			DispatchLogLocalServiceUtil.fetchLatestDispatchLog(
+				getDispatchTriggerId());
+
+		if (dispatchLog == null) {
+			return DispatchTaskStatus.NEVER_RAN;
+		}
+
+		_dispatchTaskStatus = DispatchTaskStatus.valueOf(
+			dispatchLog.getStatus());
+
+		return _dispatchTaskStatus;
 	}
 
-	private transient UnicodeProperties _taskSettingsUnicodeProperties;
+	@Override
+	public Date getNextFireDate() {
+		if ((_nextFireDate != null) &&
+			(_nextFireDate.getTime() > System.currentTimeMillis())) {
+
+			return _nextFireDate;
+		}
+
+		_nextFireDate = DispatchTriggerLocalServiceUtil.fetchNextFireDate(
+			getDispatchTriggerId());
+
+		return _nextFireDate;
+	}
+
+	@Override
+	public void setDispatchTaskSettings(String dispatchTaskSettings) {
+		super.setDispatchTaskSettings(dispatchTaskSettings);
+
+		_dispatchTaskSettingsUnicodeProperties = null;
+	}
+
+	@Override
+	public void setDispatchTaskSettingsUnicodeProperties(
+		UnicodeProperties dispatchTaskSettingsUnicodeProperties) {
+
+		_dispatchTaskSettingsUnicodeProperties =
+			dispatchTaskSettingsUnicodeProperties;
+
+		if (_dispatchTaskSettingsUnicodeProperties == null) {
+			_dispatchTaskSettingsUnicodeProperties = new UnicodeProperties();
+		}
+
+		super.setDispatchTaskSettings(
+			_dispatchTaskSettingsUnicodeProperties.toString());
+	}
+
+	private transient UnicodeProperties _dispatchTaskSettingsUnicodeProperties;
+	private transient DispatchTaskStatus _dispatchTaskStatus;
+	private transient Date _nextFireDate;
 
 }

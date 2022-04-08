@@ -50,9 +50,7 @@ Set<String> contextNames = JSONWebServiceActionsManagerUtil.getContextNames();
 	<%
 	Map<String, Set> jsonWebServiceClasses = new LinkedHashMap<String, Set>();
 
-	List<JSONWebServiceActionMapping> jsonWebServiceActionMappings = JSONWebServiceActionsManagerUtil.getJSONWebServiceActionMappings(contextName);
-
-	for (JSONWebServiceActionMapping jsonWebServiceActionMapping : jsonWebServiceActionMappings) {
+	for (JSONWebServiceActionMapping jsonWebServiceActionMapping : JSONWebServiceActionsManagerUtil.getJSONWebServiceActionMappings(contextName)) {
 		Class<?> actionClass = jsonWebServiceActionMapping.getActionClass();
 
 		String actionClassName = actionClass.getSimpleName();
@@ -131,7 +129,7 @@ Set<String> contextNames = JSONWebServiceActionsManagerUtil.getContextNames();
 	<liferay-ui:message key="there-are-no-services-matching-that-phrase" />
 </div>
 
-<aui:script use="aui-base,autocomplete-base,autocomplete-filters,autocomplete-highlighters">
+<aui:script use="aui-base,aui-component,autocomplete-base,autocomplete-filters,autocomplete-highlighters">
 	var Lang = A.Lang;
 
 	var AArray = A.Array;

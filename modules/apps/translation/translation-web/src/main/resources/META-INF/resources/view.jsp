@@ -21,11 +21,18 @@ ViewDisplayContext viewDisplayContext = (ViewDisplayContext)request.getAttribute
 %>
 
 <clay:management-toolbar
-	displayContext="<%= viewDisplayContext.getTranslationEntryManagementToolbarDisplayContext() %>"
+	managementToolbarDisplayContext="<%= viewDisplayContext.getTranslationEntryManagementToolbarDisplayContext() %>"
+	propsTransformer="js/TranslationManagementToolbarPropsTransformer"
 />
 
-<clay:container-fluid>
-	<aui:form action="<%= viewDisplayContext.getActionURL() %>" cssClass="container-fluid container-fluid-max-xl" name="fm">
+<clay:container-fluid
+	cssClass="container-view"
+>
+	<aui:form action="<%= viewDisplayContext.getActionURL() %>" name="fm">
+		<liferay-ui:breadcrumb
+			showLayout="<%= false %>"
+		/>
+
 		<liferay-ui:search-container
 			id="searchContainer"
 			searchContainer="<%= viewDisplayContext.getSearchContainer() %>"
@@ -75,6 +82,7 @@ ViewDisplayContext viewDisplayContext = (ViewDisplayContext)request.getAttribute
 				<liferay-ui:search-container-column-text>
 					<clay:dropdown-actions
 						dropdownItems="<%= viewDisplayContext.getActionDropdownItems(translationEntry) %>"
+						propsTransformer="js/ElementsDefaultPropsTransformer"
 					/>
 				</liferay-ui:search-container-column-text>
 			</liferay-ui:search-container-row>
@@ -85,9 +93,3 @@ ViewDisplayContext viewDisplayContext = (ViewDisplayContext)request.getAttribute
 		</liferay-ui:search-container>
 	</aui:form>
 </clay:container-fluid>
-
-<liferay-frontend:component
-	componentId="<%= viewDisplayContext.getDefaultEventHandler() %>"
-	context="<%= viewDisplayContext.getComponentContext() %>"
-	module="js/translate/TranslationManagementToolbarDefaultEventHandler.es"
-/>

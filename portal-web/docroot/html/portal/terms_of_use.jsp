@@ -44,6 +44,7 @@ TermsOfUseContentProvider termsOfUseContentProvider = TermsOfUseContentProviderU
 	</div>
 
 	<aui:form action='<%= themeDisplay.getPathMain() + "/portal/update_terms_of_use" %>' name="fm">
+		<aui:input name="p_auth" type="hidden" value="<%= AuthTokenUtil.getToken(request) %>" />
 		<aui:input name="doAsUserId" type="hidden" value="<%= themeDisplay.getDoAsUserId() %>" />
 		<aui:input name="<%= WebKeys.REFERER %>" type="hidden" value="<%= referer %>" />
 
@@ -52,7 +53,7 @@ TermsOfUseContentProvider termsOfUseContentProvider = TermsOfUseContentProviderU
 				<c:when test="<%= termsOfUseContentProvider != null %>">
 
 					<%
-					termsOfUseContentProvider.includeView(request, PipingServletResponse.createPipingServletResponse(pageContext));
+					termsOfUseContentProvider.includeView(request, PipingServletResponseFactory.createPipingServletResponse(pageContext));
 					%>
 
 				</c:when>

@@ -21,10 +21,12 @@ const PRICE_LIST_RULES_PATH = '/price-list-channels';
 const VERSION = 'v2.0';
 
 function resolvePath(basePath = '', priceListId = '', priceListChannelId = '') {
-	return `${basePath}${VERSION}${PRICE_LISTS_PATH}/${priceListId}/${PRICE_LIST_RULES_PATH}/${priceListChannelId}`;
+	return `${basePath}${VERSION}${PRICE_LISTS_PATH}/${priceListId}${PRICE_LIST_RULES_PATH}/${priceListChannelId}`;
 }
 
-export default (basePath) => ({
-	addPriceListChannel: (priceListId, json) =>
-		AJAX.POST(resolvePath(basePath, priceListId), json),
-});
+export default function PriceListChannel(basePath) {
+	return {
+		addPriceListChannel: (priceListId, json) =>
+			AJAX.POST(resolvePath(basePath, priceListId), json),
+	};
+}

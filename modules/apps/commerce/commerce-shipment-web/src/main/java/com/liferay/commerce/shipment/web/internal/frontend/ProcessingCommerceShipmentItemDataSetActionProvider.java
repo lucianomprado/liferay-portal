@@ -15,6 +15,7 @@
 package com.liferay.commerce.shipment.web.internal.frontend;
 
 import com.liferay.commerce.constants.CommerceActionKeys;
+import com.liferay.commerce.constants.CommerceConstants;
 import com.liferay.commerce.constants.CommercePortletKeys;
 import com.liferay.commerce.constants.CommerceShipmentConstants;
 import com.liferay.commerce.constants.CommerceShipmentDataSetConstants;
@@ -25,6 +26,7 @@ import com.liferay.commerce.service.CommerceShipmentItemService;
 import com.liferay.frontend.taglib.clay.data.set.ClayDataSetActionProvider;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemListBuilder;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
@@ -32,7 +34,7 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.portlet.LiferayWindowState;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
-import com.liferay.portal.kernel.service.permission.PortalPermissionUtil;
+import com.liferay.portal.kernel.security.permission.resource.PortletResourcePermission;
 import com.liferay.portal.kernel.util.Portal;
 
 import java.util.List;
@@ -78,8 +80,8 @@ public class ProcessingCommerceShipmentItemDataSetActionProvider
 				CommerceShipment commerceShipment =
 					commerceShipmentItem.getCommerceShipment();
 
-				return PortalPermissionUtil.contains(
-					permissionChecker,
+				return _portletResourcePermission.contains(
+					permissionChecker, null,
 					CommerceActionKeys.MANAGE_COMMERCE_SHIPMENTS) &&
 					   (commerceShipment.getStatus() ==
 						   CommerceShipmentConstants.
@@ -94,8 +96,8 @@ public class ProcessingCommerceShipmentItemDataSetActionProvider
 				dropdownItem.setTarget("sidePanel");
 			}
 		).add(
-			() -> PortalPermissionUtil.contains(
-				permissionChecker,
+			() -> _portletResourcePermission.contains(
+				permissionChecker, null,
 				CommerceActionKeys.MANAGE_COMMERCE_SHIPMENTS),
 			dropdownItem -> {
 				dropdownItem.setHref(
@@ -103,6 +105,7 @@ public class ProcessingCommerceShipmentItemDataSetActionProvider
 						shipmentItem.getShipmentItemId(), httpServletRequest));
 				dropdownItem.setLabel(
 					LanguageUtil.get(httpServletRequest, "delete"));
+				dropdownItem.setTarget("modal");
 			}
 		).build();
 	}
@@ -110,22 +113,23 @@ public class ProcessingCommerceShipmentItemDataSetActionProvider
 	private String _getShipmentItemDeleteURL(
 		long commerceShipmentItemId, HttpServletRequest httpServletRequest) {
 
-		PortletURL portletURL = _portal.getControlPanelPortletURL(
-			httpServletRequest, CommercePortletKeys.COMMERCE_SHIPMENT,
-			ActionRequest.RENDER_PHASE);
-
-		portletURL.setParameter(
-			"mvcRenderCommandName", "deleteCommerceShipment");
-		portletURL.setParameter(
-			"redirect", _portal.getCurrentURL(httpServletRequest));
-		portletURL.setParameter(
-			"commerceShipmentItemId", String.valueOf(commerceShipmentItemId));
+		PortletURL portletURL = PortletURLBuilder.create(
+			_portal.getControlPanelPortletURL(
+				httpServletRequest, CommercePortletKeys.COMMERCE_SHIPMENT,
+				ActionRequest.RENDER_PHASE)
+		).setMVCRenderCommandName(
+			"/commerce_shipment/delete_commerce_shipment"
+		).setRedirect(
+			_portal.getCurrentURL(httpServletRequest)
+		).setParameter(
+			"commerceShipmentItemId", commerceShipmentItemId
+		).buildPortletURL();
 
 		try {
 			portletURL.setWindowState(LiferayWindowState.POP_UP);
 		}
 		catch (WindowStateException windowStateException) {
-			_log.error(windowStateException, windowStateException);
+			_log.error(windowStateException);
 		}
 
 		return portletURL.toString();
@@ -135,26 +139,26 @@ public class ProcessingCommerceShipmentItemDataSetActionProvider
 		CommerceShipmentItem commerceShipmentItem,
 		HttpServletRequest httpServletRequest) {
 
-		PortletURL portletURL = _portal.getControlPanelPortletURL(
-			httpServletRequest, CommercePortletKeys.COMMERCE_SHIPMENT,
-			PortletRequest.RENDER_PHASE);
-
-		portletURL.setParameter(
-			"mvcRenderCommandName", "editCommerceShipmentItem");
-		portletURL.setParameter(
-			"redirect", _portal.getCurrentURL(httpServletRequest));
-		portletURL.setParameter(
-			"commerceShipmentId",
-			String.valueOf(commerceShipmentItem.getCommerceShipmentId()));
-		portletURL.setParameter(
+		PortletURL portletURL = PortletURLBuilder.create(
+			_portal.getControlPanelPortletURL(
+				httpServletRequest, CommercePortletKeys.COMMERCE_SHIPMENT,
+				PortletRequest.RENDER_PHASE)
+		).setMVCRenderCommandName(
+			"/commerce_shipment/edit_commerce_shipment_item"
+		).setRedirect(
+			_portal.getCurrentURL(httpServletRequest)
+		).setParameter(
+			"commerceShipmentId", commerceShipmentItem.getCommerceShipmentId()
+		).setParameter(
 			"commerceShipmentItemId",
-			String.valueOf(commerceShipmentItem.getCommerceShipmentItemId()));
+			commerceShipmentItem.getCommerceShipmentItemId()
+		).buildPortletURL();
 
 		try {
 			portletURL.setWindowState(LiferayWindowState.POP_UP);
 		}
 		catch (WindowStateException windowStateException) {
-			_log.error(windowStateException, windowStateException);
+			_log.error(windowStateException);
 		}
 
 		return portletURL.toString();
@@ -168,5 +172,10 @@ public class ProcessingCommerceShipmentItemDataSetActionProvider
 
 	@Reference
 	private Portal _portal;
+
+	@Reference(
+		target = "(resource.name=" + CommerceConstants.RESOURCE_NAME_COMMERCE_SHIPMENT + ")"
+	)
+	private PortletResourcePermission _portletResourcePermission;
 
 }

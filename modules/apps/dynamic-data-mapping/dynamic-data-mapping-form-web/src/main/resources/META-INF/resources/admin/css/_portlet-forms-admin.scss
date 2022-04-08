@@ -1,6 +1,8 @@
 @media (min-width: 576px) {
 	.ddm-form-builder,
 	.ddm-translation-manager {
+		margin-top: 1.25rem;
+
 		.modal-sm {
 			max-width: 300px;
 			position: relative;
@@ -13,64 +15,17 @@
 	margin-right: 5px;
 }
 
-.exception-container > div:first-child {
-	margin-top: 24px;
-}
+.ddm-form-web__exception-container {
+	transition: padding ease $transition-time;
 
-.form-builder-publish-popover {
-	max-width: 500px;
-}
-
-.form-builder-publish-popover .publish-popover-content {
-	display: block;
-
-	.form-group {
-		margin-bottom: 10px;
-
-		&.has-success {
-			margin-bottom: 0;
-
-			.form-feedback-item {
-				display: block;
-			}
-
-			.publish-button-success-icon {
-				display: block;
-			}
-
-			.publish-button-text {
-				display: none;
-			}
-		}
-
-		&.has-error {
-			margin-bottom: 0;
-
-			.form-feedback-item {
-				display: block;
-			}
-		}
-
-		.form-feedback-item {
-			display: none;
-			margin-bottom: 0;
-		}
-
-		.input-group-btn {
-			vertical-align: top;
-		}
-
-		.publish-button-success-icon {
-			display: none;
-			padding-left: 10px;
-			padding-right: 10px;
-		}
+	.alert-dismissible:first-child {
+		margin-top: 24px;
 	}
-}
 
-.form-builder-publish-popover-content {
-	display: table;
-	width: 500px;
+	&--sidebar-open {
+		padding-left: 0;
+		padding-right: 338px;
+	}
 }
 
 .invalid-form-instance {
@@ -135,30 +90,6 @@
 		h5,
 		.h5 {
 			margin: 0;
-		}
-
-		.ae-placeholder:empty:before {
-			content: attr(data-placeholder);
-		}
-
-		.alloy-editor-container .alloy-editor.alloy-editor-placeholder,
-		.alloy-editor-container
-			.alloy-editor.alloy-editor-placeholder:empty:not(:focus) {
-			border-width: 0;
-			padding-left: 0;
-
-			.form-feedback-item {
-				top: -15px;
-			}
-
-			p {
-				margin: 0;
-			}
-		}
-
-		.alloy-editor-container
-			.alloy-editor.alloy-editor-placeholder:empty:not(:focus) {
-			color: $form-header-placeholder-color;
 		}
 	}
 
@@ -333,6 +264,10 @@
 	.form-builder-page-header {
 		padding-right: 62px;
 		position: relative;
+
+		.form-control {
+			background-color: transparent;
+		}
 	}
 
 	.form-builder-pages-header {

@@ -6,7 +6,7 @@
 
 	<meta content="initial-scale=1.0, width=device-width" name="viewport" />
 
-	<script type="text/javascript" src="${javascript_folder}/intersection-observer.js"></script>
+	<script src="${javascript_folder}/intersection-observer.js" type="text/javascript"></script>
 	<@liferay_util["include"] page=top_head_include />
 </head>
 
@@ -34,7 +34,7 @@
 
 	<@liferay.control_menu />
 
-	<div id="wrapper">
+	<div class="position-relative" id="wrapper">
 		<div class="liferay-top">
 			<@liferay_util["include"] page=body_top_include />
 		</div>

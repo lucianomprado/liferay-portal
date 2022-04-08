@@ -1,4 +1,6 @@
 {
+	"deletedItems": [
+	],
 	"items": {
 		"ROOT": {
 			"children": [
@@ -19,42 +21,19 @@
 					"styles": {
 					}
 				},
+				"link": {
+				},
 				"portraitMobile": {
 					"styles": {
 					}
 				},
 				"styles": {
-					"backgroundImage": {
-					},
-					"borderRadius": "",
-					"borderWidth": 0,
-					"fontFamily": "",
-					"fontSize": "",
-					"fontWeight": "",
-					"height": "",
-					"marginBottom": "",
-					"marginLeft": "",
-					"marginRight": "",
-					"marginTop": "",
-					"maxHeight": "",
-					"maxWidth": "",
-					"minHeight": "",
-					"minWidth": "",
-					"opacity": 100,
-					"overflow": "",
-					"paddingBottom": "",
-					"paddingLeft": "",
-					"paddingRight": "",
-					"paddingTop": "",
-					"shadow": "",
-					"textAlign": "",
-					"width": ""
 				},
 				"tablet": {
 					"styles": {
 					}
 				},
-				"widthType": "fluid"
+				"widthType": "fixed"
 			},
 			"itemId": "ROOT-CONTAINER0",
 			"parentId": "ROOT",
@@ -69,51 +48,22 @@
 			"config": {
 				"gutters": true,
 				"landscapeMobile": {
-					"modulesPerRow": 3,
-					"reverseOrder": false,
-					"verticalAlignment": "top"
+					"styles": {
+					}
 				},
 				"modulesPerRow": 3,
 				"numberOfColumns": 3,
 				"portraitMobile": {
-					"modulesPerRow": 3,
-					"reverseOrder": false,
-					"verticalAlignment": "top"
+					"styles": {
+					}
 				},
 				"reverseOrder": false,
 				"styles": {
-					"backgroundImage": {
-					},
-					"borderRadius": "",
-					"borderWidth": 0,
-					"fontFamily": "",
-					"fontSize": "",
-					"fontWeight": "",
-					"height": "",
-					"marginBottom": "",
-					"marginLeft": "",
-					"marginRight": "",
-					"marginTop": "",
-					"maxHeight": "",
-					"maxWidth": "",
-					"minHeight": "",
-					"minWidth": "",
-					"opacity": 100,
-					"overflow": "",
-					"paddingBottom": "",
-					"paddingLeft": "",
-					"paddingRight": "",
-					"paddingTop": "",
-					"shadow": "",
-					"textAlign": "",
-					"width": ""
 				},
 				"tablet": {
-					"modulesPerRow": 3,
-					"reverseOrder": false,
-					"verticalAlignment": "top"
-				},
-				"verticalAlignment": "top"
+					"styles": {
+					}
+				}
 			},
 			"itemId": "ROOT-CONTAINER0-ROW0",
 			"parentId": "ROOT-CONTAINER0",
@@ -123,7 +73,13 @@
 			"children": [
 			],
 			"config": {
-				"size": 4
+				"landscapeMobile": {
+				},
+				"portraitMobile": {
+				},
+				"size": 4,
+				"tablet": {
+				}
 			},
 			"itemId": "ROOT-CONTAINER0-ROW0-COLUMN0",
 			"parentId": "ROOT-CONTAINER0-ROW0",
@@ -133,7 +89,13 @@
 			"children": [
 			],
 			"config": {
-				"size": 4
+				"landscapeMobile": {
+				},
+				"portraitMobile": {
+				},
+				"size": 4,
+				"tablet": {
+				}
 			},
 			"itemId": "ROOT-CONTAINER0-ROW0-COLUMN1",
 			"parentId": "ROOT-CONTAINER0-ROW0",
@@ -143,7 +105,13 @@
 			"children": [
 			],
 			"config": {
-				"size": 4
+				"landscapeMobile": {
+				},
+				"portraitMobile": {
+				},
+				"size": 4,
+				"tablet": {
+				}
 			},
 			"itemId": "ROOT-CONTAINER0-ROW0-COLUMN2",
 			"parentId": "ROOT-CONTAINER0-ROW0",

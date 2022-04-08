@@ -19,10 +19,13 @@ import com.liferay.dispatch.exception.DispatchLogStatusException;
 import com.liferay.dispatch.executor.DispatchTaskStatus;
 import com.liferay.dispatch.model.DispatchLog;
 import com.liferay.dispatch.model.DispatchTrigger;
+import com.liferay.dispatch.model.impl.DispatchLogModelImpl;
 import com.liferay.dispatch.service.base.DispatchLogLocalServiceBaseImpl;
 import com.liferay.portal.aop.AopService;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.util.OrderByComparator;
+import com.liferay.portal.kernel.util.OrderByComparatorFactoryUtil;
 
 import java.util.Date;
 import java.util.List;
@@ -73,6 +76,23 @@ public class DispatchLogLocalServiceImpl
 	}
 
 	@Override
+	public DispatchLog deleteDispatchLog(long dispatchLogId)
+		throws PortalException {
+
+		DispatchLog dispatchLog = dispatchLogPersistence.findByPrimaryKey(
+			dispatchLogId);
+
+		if (DispatchTaskStatus.valueOf(dispatchLog.getStatus()) ==
+				DispatchTaskStatus.IN_PROGRESS) {
+
+			throw new DispatchLogStatusException(
+				"Dispatch log cannot be deleted while task is in progress");
+		}
+
+		return dispatchLogPersistence.remove(dispatchLogId);
+	}
+
+	@Override
 	public void deleteDispatchLogs(long dispatchTriggerId) {
 		dispatchLogPersistence.removeByDispatchTriggerId(dispatchTriggerId);
 	}
@@ -84,11 +104,30 @@ public class DispatchLogLocalServiceImpl
 	}
 
 	@Override
+	public DispatchLog fetchLatestDispatchLog(
+		long dispatchTriggerId, DispatchTaskStatus dispatchTaskStatus) {
+
+		return dispatchLogPersistence.fetchByDTI_S_First(
+			dispatchTriggerId, dispatchTaskStatus.getStatus(),
+			OrderByComparatorFactoryUtil.create(
+				DispatchLogModelImpl.TABLE_NAME, "startDate", "false"));
+	}
+
+	@Override
 	public List<DispatchLog> getDispatchLogs(
 		long dispatchTriggerId, int start, int end) {
 
 		return dispatchLogPersistence.findByDispatchTriggerId(
 			dispatchTriggerId, start, end);
+	}
+
+	@Override
+	public List<DispatchLog> getDispatchLogs(
+		long dispatchTriggerId, int start, int end,
+		OrderByComparator<DispatchLog> orderByComparator) {
+
+		return dispatchLogPersistence.findByDispatchTriggerId(
+			dispatchTriggerId, start, end, orderByComparator);
 	}
 
 	@Override

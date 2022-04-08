@@ -1,0 +1,83 @@
+.raylife-sign-in .form-column {
+	padding: var(--spacer-6) var(--spacer-8) var(--spacer-6) var(--spacer-2);
+}
+
+.raylife-sign-in .login-title {
+	font-weight: 900;
+	margin-bottom: var(--spacer-4);
+}
+
+.raylife-sign-in .sign-in-image {
+	background-image: url([resources:login_portlet_splash.jpg]);
+	background-position: center;
+	background-repeat: no-repeat;
+	background-size: cover;
+}
+
+.raylife-sign-in .sign-in-logo {
+	height: 40px;
+	left: 0;
+	top: 0;
+}
+
+.raylife-login-form {
+	max-width: 370px !important;
+	min-width: 200px !important;
+	width: 370px !important;
+}
+
+.raylife-login-form .form-group > label:not(.toggle-switch),
+.lfr-ddm-legend:not(.toggle-switch) .sign-in-form .sign-in-logo {
+	color: var(--color-neutral-0);
+	margin: 0;
+}
+
+.raylife-login-form li:nth-child(1) {
+	display: none;
+}
+
+.raylife-login-form li:nth-child(2) {
+	bottom: -25vh;
+	position: absolute;
+}
+
+.raylife-login-form li:nth-child(2) a {
+	color: var(--white);
+	font-weight: bold;
+	text-decoration: underline;
+}
+
+.raylife-login-form .sign-in-form .button-holder button {
+	text-transform: uppercase;
+	width: 200px;
+}
+
+.raylife-login-form .sign-in-form .form-control::placeholder {
+	color: var(--bg-neutral-10);
+	font-weight: 700 !important;
+}
+
+.raylife-login-form .sign-in-form .form-group {
+	margin-bottom: 1rem !important;
+}
+
+.raylife-login-form .sign-in-form .form-group input {
+	background: #f0f5ff;
+	border-radius: 4px !important;
+	height: 48px !important;
+}
+
+.raylife-login-form .sign-in-form .form-group label {
+	display: none;
+}
+
+.raylife-login-form .sign-in-form .input-checkbox-wrapper input {
+	margin-right: 5px;
+}
+
+.raylife-login-form .sign-in-form .input-checkbox-wrapper label {
+	align-items: center;
+	color: var(--white);
+	display: flex;
+	justify-content: center;
+}

@@ -12,17 +12,21 @@
  * details.
  */
 
+import ClayIcon from '@clayui/icon';
 import ClayModal, {useModal} from '@clayui/modal';
 import {ClayPaginationBarWithBasicItems} from '@clayui/pagination-bar';
+import ClaySticker from '@clayui/sticker';
 import ClayTable from '@clayui/table';
 import React, {useState} from 'react';
 
-const ChangeTrackingDiscardView = ({
+import ChangeTrackingRenderView from './ChangeTrackingRenderView';
+
+export default function ChangeTrackingDiscardView({
 	ctEntriesJSONArray,
 	spritemap,
 	typeNames,
 	userInfo,
-}) => {
+}) {
 	const [delta, setDelta] = useState(20);
 	const [page, setPage] = useState(1);
 	const [viewEntry, setViewEntry] = useState(null);
@@ -46,10 +50,10 @@ const ChangeTrackingDiscardView = ({
 	}
 
 	ctEntries.sort((a, b) => {
-		const titleA = a.title;
-		const titleB = b.title;
-		const typeNameA = a.typeName.toUpperCase();
-		const typeNameB = b.typeName.toUpperCase();
+		const titleA = a.title.toLowerCase();
+		const titleB = b.title.toLowerCase();
+		const typeNameA = a.typeName.toLowerCase();
+		const typeNameB = b.typeName.toLowerCase();
 
 		if (typeNameA < typeNameB) {
 			return -1;
@@ -72,45 +76,10 @@ const ChangeTrackingDiscardView = ({
 
 	const filterDisplayEntries = (entries) => {
 		if (entries.length > 5) {
-			entries = entries.slice(delta * (page - 1), delta * page);
+			return entries.slice(delta * (page - 1), delta * page);
 		}
 
 		return entries;
-	};
-
-	const getUserPortrait = (entry) => {
-		if (entry.portraitURL) {
-			return (
-				<span className="lfr-portal-tooltip" title={entry.userName}>
-					<span className="rounded-circle sticker sticker-primary">
-						<span className="sticker-overlay">
-							<img
-								alt="thumbnail"
-								className="img-fluid"
-								src={entry.portraitURL}
-							/>
-						</span>
-					</span>
-				</span>
-			);
-		}
-
-		let userPortraitCss =
-			'sticker sticker-circle sticker-light user-icon-color-';
-
-		userPortraitCss += entry.userId % 10;
-
-		return (
-			<span className="lfr-portal-tooltip" title={entry.userName}>
-				<span className={userPortraitCss}>
-					<span className="inline-item">
-						<svg className="lexicon-icon">
-							<use href={spritemap + '#user'} />
-						</svg>
-					</span>
-				</span>
-			</span>
-		);
 	};
 
 	const getTableRows = () => {
@@ -140,9 +109,32 @@ const ChangeTrackingDiscardView = ({
 					className="cursor-pointer"
 					onClick={() => setViewEntry(entry)}
 				>
-					<ClayTable.Cell>{getUserPortrait(entry)}</ClayTable.Cell>
+					<ClayTable.Cell>
+						<ClaySticker
+							className={`sticker-user-icon ${
+								entry.portraitURL
+									? ''
+									: 'user-icon-color-' + (entry.userId % 10)
+							}`}
+							data-tooltip-align="top"
+							title={entry.userName}
+						>
+							{entry.portraitURL ? (
+								<div className="sticker-overlay">
+									<img
+										className="sticker-img"
+										src={entry.portraitURL}
+									/>
+								</div>
+							) : (
+								<ClayIcon symbol="user" />
+							)}
+						</ClaySticker>
+					</ClayTable.Cell>
+
 					<ClayTable.Cell>
 						<div className="publication-name">{entry.title}</div>
+
 						<div className="publication-description">
 							{entry.description}
 						</div>
@@ -192,17 +184,46 @@ const ChangeTrackingDiscardView = ({
 				<ClayModal.Header>
 					<div className="autofit-row">
 						<div className="autofit-col publications-discard-user-portrait">
-							{getUserPortrait(viewEntry)}
+							<ClaySticker
+								className={`sticker-user-icon ${
+									viewEntry.portraitURL
+										? ''
+										: 'user-icon-color-' +
+										  (viewEntry.userId % 10)
+								}`}
+								data-tooltip-align="top"
+								title={viewEntry.userName}
+							>
+								{viewEntry.portraitURL ? (
+									<div className="sticker-overlay">
+										<img
+											className="sticker-img"
+											src={viewEntry.portraitURL}
+										/>
+									</div>
+								) : (
+									<ClayIcon symbol="user" />
+								)}
+							</ClaySticker>
 						</div>
+
 						<div className="autofit-col">
 							<div className="modal-title">{viewEntry.title}</div>
+
 							<div className="modal-description">
 								{viewEntry.description}
 							</div>
 						</div>
 					</div>
 				</ClayModal.Header>
-				<ClayModal.Body url={viewEntry.viewURL}></ClayModal.Body>
+
+				<div className="publications-modal-body">
+					<ChangeTrackingRenderView
+						dataURL={viewEntry.dataURL}
+						showHeader={false}
+						spritemap={spritemap}
+					/>
+				</div>
 			</ClayModal>
 		);
 	};
@@ -223,14 +244,11 @@ const ChangeTrackingDiscardView = ({
 						</ClayTable.Cell>
 					</ClayTable.Row>
 				</ClayTable.Head>
+
 				<ClayTable.Body>{getTableRows()}</ClayTable.Body>
 			</ClayTable>
 
 			{renderPagination()}
 		</>
 	);
-};
-
-export default function (props) {
-	return <ChangeTrackingDiscardView {...props} />;
 }

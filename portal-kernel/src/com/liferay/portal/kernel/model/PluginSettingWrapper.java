@@ -104,6 +104,11 @@ public class PluginSettingWrapper
 		model.addRole(role);
 	}
 
+	@Override
+	public PluginSetting cloneWithOriginalValues() {
+		return wrap(model.cloneWithOriginalValues());
+	}
+
 	/**
 	 * Returns the active of this plugin setting.
 	 *
@@ -203,6 +208,18 @@ public class PluginSettingWrapper
 	@Override
 	public boolean hasPermission(long userId) {
 		return model.hasPermission(userId);
+	}
+
+	/**
+	 * Returns <code>true</code> if the user has permission to use this plugin
+	 *
+	 * @param userId the primary key of the user
+	 * @param groupId the primary key of the group
+	 * @return <code>true</code> if the user has permission to use this plugin
+	 */
+	@Override
+	public boolean hasPermission(long userId, long groupId) {
+		return model.hasPermission(userId, groupId);
 	}
 
 	/**

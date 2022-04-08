@@ -55,6 +55,16 @@ public class FragmentViewportStyleSerDes {
 
 		sb.append("{");
 
+		if (fragmentViewportStyle.getHidden() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"hidden\": ");
+
+			sb.append(fragmentViewportStyle.getHidden());
+		}
+
 		if (fragmentViewportStyle.getMarginBottom() != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -167,6 +177,20 @@ public class FragmentViewportStyleSerDes {
 			sb.append("\"");
 		}
 
+		if (fragmentViewportStyle.getTextAlign() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"textAlign\": ");
+
+			sb.append("\"");
+
+			sb.append(_escape(fragmentViewportStyle.getTextAlign()));
+
+			sb.append("\"");
+		}
+
 		sb.append("}");
 
 		return sb.toString();
@@ -187,6 +211,14 @@ public class FragmentViewportStyleSerDes {
 		}
 
 		Map<String, String> map = new TreeMap<>();
+
+		if (fragmentViewportStyle.getHidden() == null) {
+			map.put("hidden", null);
+		}
+		else {
+			map.put(
+				"hidden", String.valueOf(fragmentViewportStyle.getHidden()));
+		}
 
 		if (fragmentViewportStyle.getMarginBottom() == null) {
 			map.put("marginBottom", null);
@@ -260,6 +292,15 @@ public class FragmentViewportStyleSerDes {
 				String.valueOf(fragmentViewportStyle.getPaddingTop()));
 		}
 
+		if (fragmentViewportStyle.getTextAlign() == null) {
+			map.put("textAlign", null);
+		}
+		else {
+			map.put(
+				"textAlign",
+				String.valueOf(fragmentViewportStyle.getTextAlign()));
+		}
+
 		return map;
 	}
 
@@ -281,7 +322,13 @@ public class FragmentViewportStyleSerDes {
 			FragmentViewportStyle fragmentViewportStyle,
 			String jsonParserFieldName, Object jsonParserFieldValue) {
 
-			if (Objects.equals(jsonParserFieldName, "marginBottom")) {
+			if (Objects.equals(jsonParserFieldName, "hidden")) {
+				if (jsonParserFieldValue != null) {
+					fragmentViewportStyle.setHidden(
+						(Boolean)jsonParserFieldValue);
+				}
+			}
+			else if (Objects.equals(jsonParserFieldName, "marginBottom")) {
 				if (jsonParserFieldValue != null) {
 					fragmentViewportStyle.setMarginBottom(
 						(String)jsonParserFieldValue);
@@ -329,8 +376,11 @@ public class FragmentViewportStyleSerDes {
 						(String)jsonParserFieldValue);
 				}
 			}
-			else if (jsonParserFieldName.equals("status")) {
-				throw new IllegalArgumentException();
+			else if (Objects.equals(jsonParserFieldName, "textAlign")) {
+				if (jsonParserFieldValue != null) {
+					fragmentViewportStyle.setTextAlign(
+						(String)jsonParserFieldValue);
+				}
 			}
 		}
 
@@ -360,7 +410,7 @@ public class FragmentViewportStyleSerDes {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -396,7 +446,7 @@ public class FragmentViewportStyleSerDes {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

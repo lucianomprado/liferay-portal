@@ -33,8 +33,10 @@ definition {
 	macro gotoNavigationMenuWidgetConfig {
 		WaitForElementPresent(locator1 = "//script[contains(@src,'/o/frontend-js-aui-web/liferay/menu_toggle.js')]");
 
+		WaitForLiferayEvent.initializeLiferayEventLog();
+
 		Portlet.gotoPortletOptions(
-			portletName = "Navigation Menu",
+			portletName = "Menu Display",
 			portletOption = "Configuration");
 
 		IFrame.selectModalFrame();
@@ -48,12 +50,22 @@ definition {
 				key_pageName = "${pageName}",
 				locator1 = "NavigationMenusWidget#CHILD_TOGGLE");
 
+			while (IsElementNotPresent(key_pageName = "${pageName}", locator1 = "NavigationMenusWidget#OPEN_DROPDOWN_MENU")) {
+				Pause(locator1 = "3000");
+
+				MouseOver(
+					key_pageName = "${pageName}",
+					locator1 = "NavigationMenusWidget#CHILD_TOGGLE");
+			}
+
 			Click(
 				key_itemName = "${itemName}",
 				locator1 = "NavigationMenusWidget#DROPDOWN_MENU_ITEM");
 		}
 		else if ("${type}" == "List") {
-			NavItem.click(navItem = "${itemName}");
+			Click(
+				key_itemName = "${itemName}",
+				locator1 = "NavigationMenusWidget#LIST_MENU_ANY_ITEM");
 		}
 	}
 
@@ -74,6 +86,19 @@ definition {
 		Select(
 			locator1 = "NavigationMenusWidget#SELECT_NAVIGATION",
 			value1 = "${menuType}");
+	}
+
+	macro viewMenuItemsOrder {
+		var index = "1";
+
+		for (var menuItem : list "${menuItemList}") {
+			AssertTextEquals(
+				key_index = "${index}",
+				locator1 = "NavigationMenusWidget#MENU_ITEM",
+				value1 = "${menuItem}");
+
+			var index = ${index} + 1;
+		}
 	}
 
 }

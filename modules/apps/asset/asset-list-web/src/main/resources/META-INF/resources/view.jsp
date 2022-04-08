@@ -25,8 +25,9 @@ AssetListManagementToolbarDisplayContext assetListManagementToolbarDisplayContex
 	navigationItems='<%= assetListDisplayContext.getNavigationItems("collections") %>'
 />
 
-<clay:management-toolbar-v2
-	displayContext="<%= assetListManagementToolbarDisplayContext %>"
+<clay:management-toolbar
+	managementToolbarDisplayContext="<%= assetListManagementToolbarDisplayContext %>"
+	propsTransformer="js/ManagementToolbarPropsTransformer"
 />
 
 <portlet:actionURL name="/asset_list/delete_asset_list_entries" var="deleteAssetListEntryURL">
@@ -53,14 +54,16 @@ AssetListManagementToolbarDisplayContext assetListManagementToolbarDisplayContex
 					<%
 					String editURL = StringPool.BLANK;
 
-					if (AssetListEntryPermission.contains(permissionChecker, assetListEntry, ActionKeys.UPDATE)) {
-						PortletURL editAssetListEntryURL = liferayPortletResponse.createRenderURL();
-
-						editAssetListEntryURL.setParameter("mvcPath", "/edit_asset_list_entry.jsp");
-						editAssetListEntryURL.setParameter("redirect", currentURL);
-						editAssetListEntryURL.setParameter("assetListEntryId", String.valueOf(assetListEntry.getAssetListEntryId()));
-
-						editURL = editAssetListEntryURL.toString();
+					if (AssetListEntryPermission.contains(permissionChecker, assetListEntry, ActionKeys.UPDATE) || AssetListEntryPermission.contains(permissionChecker, assetListEntry, ActionKeys.VIEW)) {
+						editURL = PortletURLBuilder.createRenderURL(
+							liferayPortletResponse
+						).setMVCPath(
+							"/edit_asset_list_entry.jsp"
+						).setRedirect(
+							currentURL
+						).setParameter(
+							"assetListEntryId", assetListEntry.getAssetListEntryId()
+						).buildString();
 					}
 
 					row.setData(
@@ -97,11 +100,11 @@ AssetListManagementToolbarDisplayContext assetListManagementToolbarDisplayContex
 								AssetRendererFactory<?> assetRendererFactory = AssetRendererFactoryRegistryUtil.getAssetRendererFactoryByClassName(assetListEntry.getAssetEntryType());
 
 								if ((assetRendererFactory != null) && assetRendererFactory.isSupportsClassTypes()) {
-									ClassTypeReader classTypeReader = assetRendererFactory.getClassTypeReader();
+									ClassType classType = assetListDisplayContext.getClassType(assetRendererFactory.getClassTypeReader(), classTypeId);
 
-									ClassType classType = classTypeReader.getClassType(classTypeId, locale);
-
-									assetEntryTypeLabel = assetEntryTypeLabel + " - " + classType.getName();
+									if (classType != null) {
+										assetEntryTypeLabel = assetEntryTypeLabel + " - " + classType.getName();
+									}
 								}
 							}
 							%>
@@ -124,8 +127,8 @@ AssetListManagementToolbarDisplayContext assetListManagementToolbarDisplayContex
 
 					<liferay-ui:search-container-column-text>
 						<clay:dropdown-actions
-							defaultEventHandler="assetEntryListDropdownDefaultEventHandler"
 							dropdownItems="<%= assetEntryListActionDropdownItems.getActionDropdownItems() %>"
+							propsTransformer="js/AssetEntryListDropdownDefaultPropsTransformer"
 						/>
 					</liferay-ui:search-container-column-text>
 				</liferay-ui:search-container-row>
@@ -139,28 +142,12 @@ AssetListManagementToolbarDisplayContext assetListManagementToolbarDisplayContex
 		<c:otherwise>
 			<liferay-frontend:empty-result-message
 				actionDropdownItems="<%= assetListDisplayContext.isShowAddAssetListEntryAction() ? assetListDisplayContext.getAddAssetListEntryDropdownItems() : null %>"
-				componentId="emptyResultMessageComponent"
-				defaultEventHandler="emptyResultMessageComponentDefaultEventHandler"
+				buttonCssClass="secondary"
 				description="<%= assetListDisplayContext.getEmptyResultMessageDescription() %>"
 				elementType='<%= LanguageUtil.get(request, "collections") %>'
+				propsTransformer="js/EmptyResultMessagePropsTransformer"
+				propsTransformerServletContext="<%= application %>"
 			/>
 		</c:otherwise>
 	</c:choose>
 </aui:form>
-
-<c:if test="<%= assetListDisplayContext.getAssetListEntriesCount() == 0 %>">
-	<liferay-frontend:component
-		componentId="emptyResultMessageComponentDefaultEventHandler"
-		module="js/EmptyResultMessageDefaultEventHandler.es"
-	/>
-</c:if>
-
-<liferay-frontend:component
-	componentId="assetEntryListDropdownDefaultEventHandler"
-	module="js/AssetEntryListDropdownDefaultEventHandler.es"
-/>
-
-<liferay-frontend:component
-	componentId="<%= assetListManagementToolbarDisplayContext.getDefaultEventHandler() %>"
-	module="js/ManagementToolbarDefaultEventHandler.es"
-/>

@@ -17,7 +17,7 @@ package com.liferay.headless.form.internal.resource.v1_0;
 import com.liferay.dynamic.data.mapping.model.DDMFormInstance;
 import com.liferay.dynamic.data.mapping.service.DDMStructureLocalService;
 import com.liferay.headless.form.dto.v1_0.FormStructure;
-import com.liferay.headless.form.internal.dto.v1_0.util.StructureUtil;
+import com.liferay.headless.form.dto.v1_0.util.StructureUtil;
 import com.liferay.headless.form.resource.v1_0.FormStructureResource;
 import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.util.Portal;
@@ -31,11 +31,13 @@ import org.osgi.service.component.annotations.ServiceScope;
 /**
  * @author Javier Gamarra
  * @author Victor Oliveira
+ * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
  */
 @Component(
 	properties = "OSGI-INF/liferay/rest/v1_0/form-structure.properties",
 	scope = ServiceScope.PROTOTYPE, service = FormStructureResource.class
 )
+@Deprecated
 public class FormStructureResourceImpl extends BaseFormStructureResourceImpl {
 
 	@Override

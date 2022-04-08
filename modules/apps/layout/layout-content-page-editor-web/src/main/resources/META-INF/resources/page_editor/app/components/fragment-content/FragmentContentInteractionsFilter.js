@@ -15,34 +15,37 @@
 import PropTypes from 'prop-types';
 import React, {useEffect, useMemo} from 'react';
 
+import {BACKGROUND_IMAGE_FRAGMENT_ENTRY_PROCESSOR} from '../../config/constants/backgroundImageFragmentEntryProcessor';
 import {EDITABLE_FRAGMENT_ENTRY_PROCESSOR} from '../../config/constants/editableFragmentEntryProcessor';
 import {ITEM_ACTIVATION_ORIGINS} from '../../config/constants/itemActivationOrigins';
 import {ITEM_TYPES} from '../../config/constants/itemTypes';
 import {VIEWPORT_SIZES} from '../../config/constants/viewportSizes';
 import {config} from '../../config/index';
-import selectCanUpdateEditables from '../../selectors/selectCanUpdateEditables';
-import selectCanUpdatePageStructure from '../../selectors/selectCanUpdatePageStructure';
-import selectLanguageId from '../../selectors/selectLanguageId';
-import {useSelector, useSelectorCallback} from '../../store/index';
-import canActivateEditable from '../../utils/canActivateEditable';
-import {deepEqual} from '../../utils/checkDeepEqual';
-import isMapped from '../../utils/isMapped';
-import {useToControlsId} from '../CollectionItemContext';
+import {useToControlsId} from '../../contexts/CollectionItemContext';
 import {
 	useActivationOrigin,
 	useActiveItemType,
 	useHoverItem,
 	useHoveredItemId,
 	useHoveredItemType,
+	useHoveringOrigin,
 	useIsActive,
 	useIsHovered,
 	useSelectItem,
-} from '../Controls';
-import {useSetEditableProcessorUniqueId} from './EditableProcessorContext';
+} from '../../contexts/ControlsContext';
+import {useSetEditableProcessorUniqueId} from '../../contexts/EditableProcessorContext';
+import {useSelector, useSelectorCallback} from '../../contexts/StoreContext';
+import selectCanUpdateEditables from '../../selectors/selectCanUpdateEditables';
+import selectCanUpdatePageStructure from '../../selectors/selectCanUpdatePageStructure';
+import selectLanguageId from '../../selectors/selectLanguageId';
+import canActivateEditable from '../../utils/canActivateEditable';
+import {deepEqual} from '../../utils/checkDeepEqual';
+import isMapped from '../../utils/editable-value/isMapped';
 import {getEditableElement} from './getEditableElement';
 
 const EDITABLE_CLASS_NAMES = {
 	active: 'page-editor__editable--active',
+	contentHovered: 'page-editor__editable--content-hovered',
 	hovered: 'page-editor__editable--hovered',
 	mapped: 'page-editor__editable--mapped',
 	translated: 'page-editor__editable--translated',
@@ -53,6 +56,7 @@ const isTranslated = (defaultLanguageId, languageId, editableValue) =>
 
 function FragmentContentInteractionsFilter({
 	children,
+	editables,
 	fragmentEntryLinkId,
 	itemId,
 }) {
@@ -60,9 +64,10 @@ function FragmentContentInteractionsFilter({
 	const activeItemType = useActiveItemType();
 	const canUpdateEditables = useSelector(selectCanUpdateEditables);
 	const canUpdatePageStructure = useSelector(selectCanUpdatePageStructure);
-	const hoverItem = useHoverItem();
 	const hoveredItemId = useHoveredItemId();
 	const hoveredItemType = useHoveredItemType();
+	const hoveringOrigin = useHoveringOrigin();
+	const hoverItem = useHoverItem();
 	const isActive = useIsActive();
 	const isHovered = useIsHovered();
 	const languageId = useSelector(selectLanguageId);
@@ -73,18 +78,22 @@ function FragmentContentInteractionsFilter({
 	const setEditableProcessorUniqueId = useSetEditableProcessorUniqueId();
 	const toControlsId = useToControlsId();
 
-	const editables = useSelectorCallback(
-		(state) => Object.values(state.editables?.[toControlsId(itemId)] || {}),
-		[itemId, toControlsId]
-	);
-
 	const editableValues = useSelectorCallback(
-		(state) =>
-			state.fragmentEntryLinks[fragmentEntryLinkId]
-				? state.fragmentEntryLinks[fragmentEntryLinkId].editableValues[
-						EDITABLE_FRAGMENT_ENTRY_PROCESSOR
-				  ]
-				: {},
+		(state) => {
+			const fragmentEntryLink =
+				state.fragmentEntryLinks[fragmentEntryLinkId];
+
+			return fragmentEntryLink
+				? {
+						...fragmentEntryLink.editableValues[
+							EDITABLE_FRAGMENT_ENTRY_PROCESSOR
+						],
+						...fragmentEntryLink.editableValues[
+							BACKGROUND_IMAGE_FRAGMENT_ENTRY_PROCESSOR
+						],
+				  }
+				: {};
+		},
 		[fragmentEntryLinkId],
 		deepEqual
 	);
@@ -136,21 +145,36 @@ function FragmentContentInteractionsFilter({
 			if (editableValues) {
 				const editableValue = editableValues[editable.editableId] || {};
 
+				const localizedEditableValue = editableValue[languageId] || {};
+
+				const editableId =
+					hoveredItemType === ITEM_TYPES.mappedContent
+						? editableValue.classNameId
+							? `${editableValue.classNameId}-${editableValue.classPK}`
+							: `${localizedEditableValue.classNameId}-${localizedEditableValue.classPK}`
+						: editable.itemId;
+
 				const hovered =
-					(hoveredItemType === ITEM_TYPES.mappedContent &&
-						`${editableValue.classNameId}-${editableValue.classPK}` ===
-							hoveredItemId) ||
+					([
+						ITEM_TYPES.mappedContent,
+						ITEM_TYPES.inlineContent,
+					].includes(hoveredItemType) &&
+						hoveredItemId === editableId) ||
 					((siblingIds.some(isActive) || !canUpdatePageStructure) &&
 						isHovered(editable.itemId));
 
+				const hoveredClass =
+					hoveringOrigin === ITEM_ACTIVATION_ORIGINS.contents
+						? EDITABLE_CLASS_NAMES.contentHovered
+						: EDITABLE_CLASS_NAMES.hovered;
+
 				if (hovered) {
-					editable.element.classList.add(
-						EDITABLE_CLASS_NAMES.hovered
-					);
+					editable.element.classList.add(hoveredClass);
 				}
 				else {
 					editable.element.classList.remove(
-						EDITABLE_CLASS_NAMES.hovered
+						EDITABLE_CLASS_NAMES.hovered,
+						EDITABLE_CLASS_NAMES.contentHovered
 					);
 				}
 			}
@@ -165,7 +189,9 @@ function FragmentContentInteractionsFilter({
 		isActive,
 		isHovered,
 		itemId,
+		languageId,
 		siblingIds,
+		hoveringOrigin,
 	]);
 
 	useEffect(() => {
@@ -192,7 +218,7 @@ function FragmentContentInteractionsFilter({
 
 				if (isActive(editable.itemId)) {
 					setEditableProcessorUniqueId(
-						editable.itemId,
+						toControlsId(editable.itemId),
 						editableClickPosition
 					);
 				}
@@ -217,9 +243,7 @@ function FragmentContentInteractionsFilter({
 					});
 				}
 
-				if (
-					activationOrigin === ITEM_ACTIVATION_ORIGINS.structureTree
-				) {
+				if (activationOrigin === ITEM_ACTIVATION_ORIGINS.sidebar) {
 					activeEditable.element.scrollIntoView({
 						behavior: 'smooth',
 						block: 'center',
@@ -248,6 +272,7 @@ function FragmentContentInteractionsFilter({
 		itemId,
 		setEditableProcessorUniqueId,
 		selectedViewportSize,
+		toControlsId,
 	]);
 
 	const hoverEditable = (event) => {

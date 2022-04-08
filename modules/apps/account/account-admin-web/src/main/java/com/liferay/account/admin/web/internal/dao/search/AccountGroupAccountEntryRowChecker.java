@@ -15,8 +15,9 @@
 package com.liferay.account.admin.web.internal.dao.search;
 
 import com.liferay.account.admin.web.internal.display.AccountEntryDisplay;
-import com.liferay.account.model.AccountGroupAccountEntryRel;
-import com.liferay.account.service.AccountGroupAccountEntryRelLocalServiceUtil;
+import com.liferay.account.model.AccountEntry;
+import com.liferay.account.model.AccountGroupRel;
+import com.liferay.account.service.AccountGroupRelLocalServiceUtil;
 import com.liferay.portal.kernel.dao.search.EmptyOnClickRowChecker;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -46,19 +47,18 @@ public class AccountGroupAccountEntryRowChecker extends EmptyOnClickRowChecker {
 		AccountEntryDisplay accountEntryDisplay = (AccountEntryDisplay)object;
 
 		try {
-			AccountGroupAccountEntryRel accountGroupAccountEntryRel =
-				AccountGroupAccountEntryRelLocalServiceUtil.
-					fetchAccountGroupAccountEntryRel(
-						_accountGroupId,
-						accountEntryDisplay.getAccountEntryId());
+			AccountGroupRel accountGroupRel =
+				AccountGroupRelLocalServiceUtil.fetchAccountGroupRel(
+					_accountGroupId, AccountEntry.class.getName(),
+					accountEntryDisplay.getAccountEntryId());
 
-			if (accountGroupAccountEntryRel != null) {
+			if (accountGroupRel != null) {
 				return true;
 			}
 		}
 		catch (Exception exception) {
 			if (_log.isWarnEnabled()) {
-				_log.warn(exception, exception);
+				_log.warn(exception);
 			}
 		}
 

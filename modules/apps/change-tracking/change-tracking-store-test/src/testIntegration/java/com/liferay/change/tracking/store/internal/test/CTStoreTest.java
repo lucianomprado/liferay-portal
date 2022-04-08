@@ -21,13 +21,12 @@ import com.liferay.change.tracking.service.CTProcessLocalService;
 import com.liferay.change.tracking.store.exception.NoSuchContentException;
 import com.liferay.change.tracking.store.model.CTSContent;
 import com.liferay.change.tracking.store.service.CTSContentLocalService;
-import com.liferay.counter.kernel.service.CounterLocalService;
 import com.liferay.document.library.kernel.exception.NoSuchFileException;
 import com.liferay.document.library.kernel.store.Store;
 import com.liferay.petra.function.UnsafeRunnable;
 import com.liferay.petra.io.StreamUtil;
 import com.liferay.petra.io.unsync.UnsyncByteArrayInputStream;
-import com.liferay.petra.lang.SafeClosable;
+import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.petra.reflect.ReflectionUtil;
 import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringBundler;
@@ -36,11 +35,12 @@ import com.liferay.petra.string.StringUtil;
 import com.liferay.portal.change.tracking.store.CTStoreFactory;
 import com.liferay.portal.kernel.change.tracking.CTCollectionThreadLocal;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.util.ProxyUtil;
-import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 
@@ -57,7 +57,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -88,11 +87,6 @@ public class CTStoreTest {
 		_companyId = TestPropsValues.getCompanyId();
 	}
 
-	@AfterClass
-	public static void tearDownClass() {
-		_methods.clear();
-	}
-
 	@Before
 	public void setUp() throws PortalException {
 		for (int i = 0; i < 4; i++) {
@@ -102,6 +96,8 @@ public class CTStoreTest {
 
 	@After
 	public void tearDown() {
+		_methods.clear();
+
 		_fileSystemStore.deleteDirectory(
 			_companyId, _REPOSITORY_ID, StringPool.BLANK);
 	}
@@ -1019,17 +1015,9 @@ public class CTStoreTest {
 	}
 
 	private CTCollection _createCTCollection() throws PortalException {
-		long ctCollectionId = _counterLocalService.increment(
-			CTCollection.class.getName());
-
-		CTCollection ctCollection =
-			_ctCollectionLocalService.createCTCollection(ctCollectionId);
-
-		ctCollection.setUserId(TestPropsValues.getUserId());
-		ctCollection.setName(String.valueOf(ctCollectionId));
-		ctCollection.setStatus(WorkflowConstants.STATUS_DRAFT);
-
-		return _ctCollectionLocalService.updateCTCollection(ctCollection);
+		return _ctCollectionLocalService.addCTCollection(
+			TestPropsValues.getCompanyId(), TestPropsValues.getUserId(),
+			CTStoreTest.class.getName(), null);
 	}
 
 	private void _deleteCTDirectory(String dirName) {
@@ -1063,8 +1051,8 @@ public class CTStoreTest {
 			CTCollection ctCollection, UnsafeRunnable<Exception> unsafeRunnable)
 		throws Exception {
 
-		try (SafeClosable safeClosable =
-				CTCollectionThreadLocal.setCTCollectionId(
+		try (SafeCloseable safeCloseable =
+				CTCollectionThreadLocal.setCTCollectionIdWithSafeCloseable(
 					ctCollection.getCtCollectionId())) {
 
 			unsafeRunnable.run();
@@ -1086,6 +1074,9 @@ public class CTStoreTest {
 			Assert.fail();
 		}
 		catch (NoSuchFileException noSuchFileException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(noSuchFileException);
+			}
 		}
 
 		_assertMethods(readMethod);
@@ -1115,6 +1106,9 @@ public class CTStoreTest {
 					Assert.fail();
 				}
 				catch (NoSuchFileException noSuchFileException) {
+					if (_log.isDebugEnabled()) {
+						_log.debug(noSuchFileException);
+					}
 				}
 
 				_assertMethods(readMethod);
@@ -1211,6 +1205,9 @@ public class CTStoreTest {
 			Assert.fail();
 		}
 		catch (NoSuchFileException noSuchFileException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(noSuchFileException);
+			}
 		}
 
 		_assertMethods(readMethod);
@@ -1221,6 +1218,9 @@ public class CTStoreTest {
 			Assert.fail();
 		}
 		catch (NoSuchFileException noSuchFileException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(noSuchFileException);
+			}
 		}
 	}
 
@@ -1288,10 +1288,9 @@ public class CTStoreTest {
 
 	private static final String _VERSION_3 = "3.0";
 
-	private static long _companyId;
+	private static final Log _log = LogFactoryUtil.getLog(CTStoreTest.class);
 
-	@Inject
-	private static CounterLocalService _counterLocalService;
+	private static long _companyId;
 
 	@Inject
 	private static CTCollectionLocalService _ctCollectionLocalService;

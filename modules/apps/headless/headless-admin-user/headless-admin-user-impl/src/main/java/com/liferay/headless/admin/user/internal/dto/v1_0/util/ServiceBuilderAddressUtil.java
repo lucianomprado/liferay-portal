@@ -26,7 +26,7 @@ import com.liferay.portal.kernel.util.Validator;
 public class ServiceBuilderAddressUtil {
 
 	public static Address toServiceBuilderAddress(
-		PostalAddress postalAddress, String type) {
+		long companyId, PostalAddress postalAddress, String type) {
 
 		String street1 = postalAddress.getStreetAddressLine1();
 		String street2 = postalAddress.getStreetAddressLine2();
@@ -34,7 +34,7 @@ public class ServiceBuilderAddressUtil {
 		String city = postalAddress.getAddressLocality();
 		String zip = postalAddress.getPostalCode();
 		long countryId = ServiceBuilderCountryUtil.toServiceBuilderCountryId(
-			postalAddress.getAddressCountry());
+			companyId, postalAddress.getAddressCountry());
 
 		if (Validator.isNull(street1) && Validator.isNull(street2) &&
 			Validator.isNull(street3) && Validator.isNull(city) &&
@@ -46,20 +46,20 @@ public class ServiceBuilderAddressUtil {
 		Address address = AddressLocalServiceUtil.createAddress(
 			GetterUtil.getLong(postalAddress.getId()));
 
-		address.setStreet1(street1);
-		address.setStreet2(street2);
-		address.setStreet3(street3);
-		address.setCity(city);
-		address.setZip(zip);
+		address.setCountryId(countryId);
 		address.setRegionId(
 			ServiceBuilderRegionUtil.getServiceBuilderRegionId(
 				postalAddress.getAddressRegion(), countryId));
-		address.setCountryId(countryId);
 		address.setTypeId(
 			ServiceBuilderListTypeUtil.toServiceBuilderListTypeId(
 				"other", postalAddress.getAddressType(), type));
+		address.setCity(city);
 		address.setMailing(true);
 		address.setPrimary(GetterUtil.getBoolean(postalAddress.getPrimary()));
+		address.setStreet1(street1);
+		address.setStreet2(street2);
+		address.setStreet3(street3);
+		address.setZip(zip);
 
 		return address;
 	}

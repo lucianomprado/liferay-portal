@@ -12,7 +12,7 @@
  * details.
  */
 
-import {normalizeFieldName} from 'dynamic-data-mapping-form-renderer';
+import {normalizeFieldName} from 'data-engine-js-components-web';
 import React, {useRef} from 'react';
 
 import {FieldBase} from '../FieldBase/ReactFieldBase.es';
@@ -44,6 +44,7 @@ const KeyValue = ({className, disabled, onChange, value, ...otherProps}) => (
 );
 
 const Main = ({
+	editingLanguageId,
 	generateKeyword,
 	keyword: initialKeyword,
 	keywordReadOnly,
@@ -57,7 +58,7 @@ const Main = ({
 	onReferenceChange,
 	placeholder,
 	readOnly,
-	reference: initalReference,
+	reference,
 	required,
 	showKeyword = false,
 	showLabel,
@@ -67,7 +68,6 @@ const Main = ({
 	...otherProps
 }) => {
 	const [keyword, setKeyword] = useSyncValue(initialKeyword);
-	const [reference, setReference] = useSyncValue(initalReference);
 
 	const generateKeywordRef = useRef(generateKeyword);
 
@@ -82,6 +82,7 @@ const Main = ({
 			visible={visible}
 		>
 			<Text
+				editingLanguageId={editingLanguageId}
 				name={`keyValueLabel${name}`}
 				onBlur={onBlur}
 				onChange={(event) => {
@@ -104,6 +105,7 @@ const Main = ({
 				value={value}
 				visible={visible}
 			/>
+
 			{showKeyword && (
 				<KeyValue
 					className="key-value-input"
@@ -119,12 +121,12 @@ const Main = ({
 					value={keyword}
 				/>
 			)}
+
 			<KeyValue
 				className="key-value-reference-input"
 				onBlur={onReferenceBlur}
 				onChange={(event) => {
 					onReferenceChange(event);
-					setReference(event.target.value);
 				}}
 				value={reference}
 			/>

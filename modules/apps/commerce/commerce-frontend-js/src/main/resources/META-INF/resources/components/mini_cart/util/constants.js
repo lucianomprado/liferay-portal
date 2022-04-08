@@ -18,10 +18,24 @@
 export const DEFAULT_ORDER_DETAILS_PORTLET_ID =
 	'com_liferay_commerce_order_content_web_internal_portlet_' +
 	'CommerceOpenOrderContentPortlet';
-export const DISCOUNT_LEVEL_PREFIX = 'discountPercentageLevel';
 export const ORDER_DETAILS_ENDPOINT = '/pending-orders';
 export const ORDER_UUID_PARAMETER = 'commerceOrderUuid';
 export const WORKFLOW_STATUS_APPROVED = 0;
+
+/**
+ * CartItem implementation constants
+ */
+
+export const INITIAL_ITEM_STATE = {
+	isGettingRemoved: false,
+	isRemovalCanceled: false,
+	isRemoved: false,
+	isShowingErrors: false,
+	removalTimeoutRef: null,
+};
+export const REMOVAL_TIMEOUT = 2000;
+export const REMOVAL_CANCELING_TIMEOUT = 700;
+export const REMOVAL_ERRORS_TIMEOUT = 4000;
 
 /**
  * Cart component types keys constants

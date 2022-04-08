@@ -38,17 +38,23 @@ public class PortalFixpackRelease {
 			String portalVersion = _portalRelease.getPortalVersion();
 			String portalFixpackType = "dxp";
 
-			String portalBuildVersion = portalVersion.replaceAll(
-				"([\\d\\.]+).*", "$1");
+			if (portalVersion.contains("7.0")) {
+				portalFixpackType = "de";
+			}
 
-			portalBuildVersion = portalBuildVersion.replaceAll("\\.", "");
+			String portalBaseVersion = portalVersion.replaceAll(
+				"(\\d)\\.(\\d)\\.(\\d\\d).*", "$1.$2.$3");
+
+			String portalBaseBuildVersion = portalBaseVersion.replaceAll(
+				"\\.", "");
 
 			_portalFixpackURL = new URL(
 				JenkinsResultsParserUtil.combine(
 					"https://files.liferay.com/private/ee/fix-packs/",
-					portalVersion, "/", portalFixpackType, "/liferay-fix-pack-",
-					portalFixpackType, "-", _portalFixpackVersion, "-",
-					portalBuildVersion, ".zip"));
+					portalBaseVersion, "/", portalFixpackType,
+					"/liferay-fix-pack-", portalFixpackType, "-",
+					_portalFixpackVersion, "-", portalBaseBuildVersion,
+					".zip"));
 		}
 		catch (MalformedURLException malformedURLException) {
 			throw new RuntimeException(malformedURLException);
@@ -209,7 +215,7 @@ public class PortalFixpackRelease {
 
 	private static final Pattern _fixpackFileNamePattern = Pattern.compile(
 		"liferay-fix-pack-(de|dxp|portal)-(?<portalFixpackVersion>\\d+)-" +
-			"(?<portalBuildVersion>\\d+)(-build\\d*)?.zip");
+			"(?<portalBuildVersion>\\d+)(-build\\d*)?(-src)?.zip");
 	private static final Pattern _fixpackURLPattern = Pattern.compile(
 		"https?://.+/(?<fixpackFileName>[^/]+.zip)");
 

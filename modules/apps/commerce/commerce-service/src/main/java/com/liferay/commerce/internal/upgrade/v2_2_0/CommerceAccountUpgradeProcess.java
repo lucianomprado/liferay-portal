@@ -60,12 +60,12 @@ public class CommerceAccountUpgradeProcess extends UpgradeProcess {
 
 		try (Statement s = connection.createStatement(
 				ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-			ResultSet rs = s.executeQuery(
+			ResultSet resultSet = s.executeQuery(
 				"select organizationId from Organization_ where type_ = " +
 					"'account'")) {
 
-			while (rs.next()) {
-				long organizationId = rs.getLong("organizationId");
+			while (resultSet.next()) {
+				long organizationId = resultSet.getLong("organizationId");
 
 				queuedOrganizationIds.add(organizationId);
 			}
@@ -97,11 +97,13 @@ public class CommerceAccountUpgradeProcess extends UpgradeProcess {
 					"Organization data is missing, so accounts cannot be " +
 						"correctly created. Aborting data transformation.");
 
+				String organizationIdsString = ListUtil.toString(
+					organizationIds, StringPool.BLANK,
+					StringPool.COMMA_AND_SPACE);
+
 				_log.error(
 					"The following organizations are orphaned: " +
-						ListUtil.toString(
-							organizationIds, StringPool.BLANK,
-							StringPool.COMMA_AND_SPACE));
+						organizationIdsString);
 
 				return;
 			}
@@ -171,10 +173,10 @@ public class CommerceAccountUpgradeProcess extends UpgradeProcess {
 				"where organizationId = " + parentOrganizationId;
 
 		try (Statement s = connection.createStatement();
-			ResultSet rs = s.executeQuery(sql)) {
+			ResultSet resultSet = s.executeQuery(sql)) {
 
-			if (rs.next()) {
-				return rs.getLong("commerceAccountId");
+			if (resultSet.next()) {
+				return resultSet.getLong("commerceAccountId");
 			}
 		}
 

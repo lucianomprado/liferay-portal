@@ -65,7 +65,7 @@ public class UserBuilderTest extends BaseVLDAPTestCase {
 		setUpExpando();
 		setUpFastDateFormat();
 		setUpGroups();
-		setUpImage();
+		_setUpImage();
 		setUpOrganizations();
 		setUpPasswordPolicy();
 		setUpPortalUtil();
@@ -789,22 +789,6 @@ public class UserBuilderTest extends BaseVLDAPTestCase {
 		);
 	}
 
-	protected void setUpImage() throws Exception {
-		Image image = mock(Image.class);
-
-		when(
-			image.getTextObj()
-		).thenReturn(
-			_IMAGE_BYTES
-		);
-
-		when(
-			imageService.getImage(Mockito.anyLong())
-		).thenReturn(
-			image
-		);
-	}
-
 	protected void setUpOrganizations() throws Exception {
 		Organization organization = mock(Organization.class);
 
@@ -853,8 +837,8 @@ public class UserBuilderTest extends BaseVLDAPTestCase {
 	}
 
 	@Override
-	protected void setUpProps() {
-		super.setUpProps();
+	protected void setUpPropsUtil() {
+		super.setUpPropsUtil();
 
 		when(
 			props.get(PortletPropsValues.POSIX_GROUP_ID)
@@ -1008,6 +992,22 @@ public class UserBuilderTest extends BaseVLDAPTestCase {
 				Mockito.anyLong(), Mockito.anyInt(), Mockito.anyInt())
 		).thenReturn(
 			_users
+		);
+	}
+
+	private void _setUpImage() throws Exception {
+		Image image = mock(Image.class);
+
+		when(
+			image.getTextObj()
+		).thenReturn(
+			_IMAGE_BYTES
+		);
+
+		when(
+			imageService.getImage(Mockito.anyLong())
+		).thenReturn(
+			image
 		);
 	}
 

@@ -82,7 +82,8 @@ public interface LocalizableTextDDMFormFieldTypeSettings
 		dataType = "string", label = "%placeholder-text",
 		properties = {
 			"placeholder=%enter-placeholder-text",
-			"tooltip=%enter-text-that-assists-the-user-but-is-not-submitted-as-a-field-value"
+			"tooltip=%enter-text-that-assists-the-user-but-is-not-submitted-as-a-field-value",
+			"visualProperty=true"
 		},
 		type = "text"
 	)

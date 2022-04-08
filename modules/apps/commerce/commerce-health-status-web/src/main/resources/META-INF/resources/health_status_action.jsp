@@ -34,7 +34,8 @@ String fixIssueButton = "fixIssueButton" + row.getRowId();
 			event
 		) {
 			var data = {
-				<portlet:namespace />key: '<%= commerceHealthHttpStatus.getKey() %>',
+				<portlet:namespace />key:
+					'<%= HtmlUtil.escapeJS(commerceHealthHttpStatus.getKey()) %>',
 			};
 
 			this.attr('disabled', true);
@@ -54,7 +55,7 @@ String fixIssueButton = "fixIssueButton" + row.getRowId();
 			iconTimesContainer.addClass('hide');
 
 			A.io.request(
-				'<liferay-portlet:actionURL name="fixCommerceHealthStatusIssue" portletName="<%= portletDisplay.getPortletName() %>" />',
+				'<liferay-portlet:actionURL name="/commerce_health_check/fix_commerce_health_status_issue" portletName="<%= portletDisplay.getPortletName() %>" />',
 				{
 					data: data,
 					on: {

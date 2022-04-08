@@ -94,7 +94,6 @@ else {
 				<portlet:renderURL var="editSyncedContactsURL">
 					<portlet:param name="mvcRenderCommandName" value="/analytics_settings/edit_synced_contacts" />
 					<portlet:param name="redirect" value="<%= currentURL %>" />
-					<portlet:param name="includeSyncContactsFields" value="true" />
 				</portlet:renderURL>
 
 				<a class="d-flex m-4 p-2 text-decoration-none" href=<%= editSyncedContactsURL %>>
@@ -106,8 +105,8 @@ else {
 
 		<div class="pr-3">
 			<clay:sticker
-				cssClass="sticker-light"
-				displayType="light"
+				cssClass="sticker-dark"
+				displayType="dark"
 				icon="user"
 			/>
 		</div>
@@ -150,8 +149,8 @@ else {
 
 		<div class="pr-3">
 			<clay:sticker
-				cssClass="sticker-light"
-				displayType="light"
+				cssClass="sticker-dark"
+				displayType="dark"
 				icon="check-square"
 			/>
 		</div>

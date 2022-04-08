@@ -52,7 +52,7 @@ CPMeasurementUnitsDisplayContext cpMeasurementUnitsDisplayContext = (CPMeasureme
 			/>
 
 			<portlet:renderURL var="addCPMeasurementUnitURL">
-				<portlet:param name="mvcRenderCommandName" value="editCPMeasurementUnit" />
+				<portlet:param name="mvcRenderCommandName" value="/cp_measurement_unit/edit_cp_measurement_unit" />
 				<portlet:param name="redirect" value="<%= currentURL %>" />
 				<portlet:param name="type" value="<%= String.valueOf(cpMeasurementUnitsDisplayContext.getType()) %>" />
 			</portlet:renderURL>
@@ -77,7 +77,7 @@ CPMeasurementUnitsDisplayContext cpMeasurementUnitsDisplayContext = (CPMeasureme
 	</liferay-frontend:management-bar>
 
 	<div class="container-fluid container-fluid-max-xl">
-		<portlet:actionURL name="editCPMeasurementUnit" var="editCPMeasurementUnitActionURL" />
+		<portlet:actionURL name="/cp_measurement_unit/edit_cp_measurement_unit" var="editCPMeasurementUnitActionURL" />
 
 		<aui:form action="<%= editCPMeasurementUnitActionURL %>" method="post" name="fm">
 			<aui:input name="<%= Constants.CMD %>" type="hidden" value="<%= Constants.DELETE %>" />
@@ -93,19 +93,21 @@ CPMeasurementUnitsDisplayContext cpMeasurementUnitsDisplayContext = (CPMeasureme
 					keyProperty="CPMeasurementUnitId"
 					modelVar="cpMeasurementUnit"
 				>
-
-					<%
-					PortletURL rowURL = renderResponse.createRenderURL();
-
-					rowURL.setParameter("mvcRenderCommandName", "editCPMeasurementUnit");
-					rowURL.setParameter("redirect", currentURL);
-					rowURL.setParameter("cpMeasurementUnitId", String.valueOf(cpMeasurementUnit.getCPMeasurementUnitId()));
-					rowURL.setParameter("type", String.valueOf(cpMeasurementUnitsDisplayContext.getType()));
-					%>
-
 					<liferay-ui:search-container-column-text
-						cssClass="important table-cell-expand"
-						href="<%= rowURL %>"
+						cssClass="font-weight-bold important table-cell-expand"
+						href='<%=
+							PortletURLBuilder.createRenderURL(
+								renderResponse
+							).setMVCRenderCommandName(
+								"/cp_measurement_unit/edit_cp_measurement_unit"
+							).setRedirect(
+								currentURL
+							).setParameter(
+								"cpMeasurementUnitId", cpMeasurementUnit.getCPMeasurementUnitId()
+							).setParameter(
+								"type", cpMeasurementUnitsDisplayContext.getType()
+							).buildPortletURL()
+						%>'
 						name="name"
 						value="<%= HtmlUtil.escape(cpMeasurementUnit.getName(locale)) %>"
 					/>

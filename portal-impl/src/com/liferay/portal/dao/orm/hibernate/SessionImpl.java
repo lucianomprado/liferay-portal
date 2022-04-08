@@ -45,15 +45,6 @@ import org.hibernate.event.EventSource;
  */
 public class SessionImpl implements Session {
 
-	/**
-	 * @deprecated As of Mueller (7.2.x), replaced by {@link
-	 *             #SessionImpl(org.hibernate.Session, ClassLoader)}
-	 */
-	@Deprecated
-	public SessionImpl(org.hibernate.Session session) {
-		this(session, null);
-	}
-
 	public SessionImpl(
 		org.hibernate.Session session, ClassLoader sessionFactoryClassLoader) {
 
@@ -352,13 +343,7 @@ public class SessionImpl implements Session {
 
 	@Override
 	public String toString() {
-		StringBundler sb = new StringBundler(3);
-
-		sb.append("{_session=");
-		sb.append(String.valueOf(_session));
-		sb.append("}");
-
-		return sb.toString();
+		return StringBundler.concat("{_session=", _session, "}");
 	}
 
 	private Query _createQuery(String queryString, boolean strictName)

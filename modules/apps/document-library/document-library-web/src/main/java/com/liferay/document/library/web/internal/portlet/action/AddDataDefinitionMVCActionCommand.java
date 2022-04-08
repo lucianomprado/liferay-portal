@@ -23,6 +23,7 @@ import com.liferay.portal.kernel.portlet.bridges.mvc.BaseMVCActionCommand;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCActionCommand;
 import com.liferay.portal.kernel.servlet.SessionErrors;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
+import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.WebKeys;
 
@@ -30,6 +31,7 @@ import javax.portlet.ActionRequest;
 import javax.portlet.ActionResponse;
 
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
 
 /**
  * @author Eudaldo Alonso
@@ -57,9 +59,11 @@ public class AddDataDefinitionMVCActionCommand extends BaseMVCActionCommand {
 
 		long groupId = ParamUtil.getLong(actionRequest, "groupId");
 
+		DataDefinitionResource.Builder dataDefinitionResourceBuilder =
+			_dataDefinitionResourceFactory.create();
+
 		DataDefinitionResource dataDefinitionResource =
-			DataDefinitionResource.builder(
-			).user(
+			dataDefinitionResourceBuilder.user(
 				themeDisplay.getUser()
 			).build();
 
@@ -70,6 +74,10 @@ public class AddDataDefinitionMVCActionCommand extends BaseMVCActionCommand {
 			DataLayout.toDTO(ParamUtil.getString(actionRequest, "dataLayout")));
 
 		try {
+			if (ArrayUtil.isEmpty(dataDefinition.getDataDefinitionFields())) {
+				throw new DataDefinitionValidationException.MustSetFields();
+			}
+
 			dataDefinitionResource.postSiteDataDefinitionByContentType(
 				groupId, "document-library", dataDefinition);
 		}
@@ -79,8 +87,12 @@ public class AddDataDefinitionMVCActionCommand extends BaseMVCActionCommand {
 			hideDefaultErrorMessage(actionRequest);
 
 			SessionErrors.add(
-				actionRequest, dataDefinitionValidationException.getClass());
+				actionRequest, dataDefinitionValidationException.getClass(),
+				dataDefinitionValidationException);
 		}
 	}
+
+	@Reference
+	private DataDefinitionResource.Factory _dataDefinitionResourceFactory;
 
 }

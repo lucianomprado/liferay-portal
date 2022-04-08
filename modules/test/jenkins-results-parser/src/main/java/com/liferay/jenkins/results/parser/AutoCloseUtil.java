@@ -318,12 +318,9 @@ public class AutoCloseUtil {
 		for (Build downstreamBuild : downstreamBuilds) {
 			String batchName = downstreamBuild.getJobVariant();
 
-			if (batchName == null) {
-				continue;
-			}
-
-			if (!batchName.contains("integration") &&
-				!batchName.contains("unit")) {
+			if ((batchName == null) ||
+				(!batchName.contains("integration") &&
+				 !batchName.contains("unit"))) {
 
 				continue;
 			}
@@ -468,7 +465,7 @@ public class AutoCloseUtil {
 
 		String gitRepositoryBranchAutoClosePropertyName =
 			propertyNameTemplate.replace(
-				"?", "-" + pullRequest.getUpstreamBranchName());
+				"?", "-" + pullRequest.getUpstreamRemoteGitBranchName());
 
 		Properties localLiferayJenkinsEEBuildProperties =
 			JenkinsResultsParserUtil.getLocalLiferayJenkinsEEBuildProperties();
@@ -498,11 +495,9 @@ public class AutoCloseUtil {
 				testBatchNamesAutoClose, ",");
 
 			for (String autoCloseRuleData : autoCloseRuleDataArray) {
-				if (autoCloseRuleData.startsWith("#")) {
-					continue;
-				}
+				if (autoCloseRuleData.startsWith("#") ||
+					autoCloseRuleData.startsWith("static_")) {
 
-				if (autoCloseRuleData.startsWith("static_")) {
 					continue;
 				}
 
@@ -538,7 +533,7 @@ public class AutoCloseUtil {
 				"test.branch.names.auto.close[", gitHubRemoteGitRepositoryName,
 				"]"));
 
-		String branchName = pullRequest.getUpstreamBranchName();
+		String branchName = pullRequest.getUpstreamRemoteGitBranchName();
 
 		if (testBranchNamesAutoClose == null) {
 			if (debug) {
@@ -579,7 +574,7 @@ public class AutoCloseUtil {
 
 		for (String criticalTestBranch : criticalTestBranches) {
 			if (criticalTestBranch.equals(
-					pullRequest.getUpstreamBranchName())) {
+					pullRequest.getUpstreamRemoteGitBranchName())) {
 
 				return true;
 			}

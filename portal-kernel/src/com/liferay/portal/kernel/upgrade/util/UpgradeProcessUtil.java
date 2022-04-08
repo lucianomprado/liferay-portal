@@ -20,6 +20,7 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeException;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.LocaleUtil;
+import com.liferay.portal.kernel.version.Version;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -47,17 +48,17 @@ public class UpgradeProcessUtil {
 			return languageId;
 		}
 
-		try (Connection con = DataAccess.getConnection();
-			PreparedStatement ps = con.prepareStatement(
+		try (Connection connection = DataAccess.getConnection();
+			PreparedStatement preparedStatement = connection.prepareStatement(
 				"select languageId from User_ where companyId = ? and " +
 					"defaultUser = ?")) {
 
-			ps.setLong(1, companyId);
-			ps.setBoolean(2, true);
+			preparedStatement.setLong(1, companyId);
+			preparedStatement.setBoolean(2, true);
 
-			try (ResultSet rs = ps.executeQuery()) {
-				if (rs.next()) {
-					languageId = rs.getString("languageId");
+			try (ResultSet resultSet = preparedStatement.executeQuery()) {
+				if (resultSet.next()) {
+					languageId = resultSet.getString("languageId");
 
 					_languageIds.put(companyId, languageId);
 
@@ -88,7 +89,8 @@ public class UpgradeProcessUtil {
 			}
 			catch (Exception exception) {
 				_log.error(
-					"Unable to initialize upgrade " + upgradeProcessClassName);
+					"Unable to initialize upgrade " + upgradeProcessClassName,
+					exception);
 
 				continue;
 			}
@@ -101,6 +103,21 @@ public class UpgradeProcessUtil {
 
 	public static boolean isCreateIGImageDocumentType() {
 		return _createIGImageDocumentType;
+	}
+
+	public static boolean isRequiredSchemaVersion(
+		Version currentSchemaVersion, Version newSchemaVersion) {
+
+		int result = newSchemaVersion.compareTo(currentSchemaVersion);
+
+		if ((result > 0) &&
+			((newSchemaVersion.getMajor() > currentSchemaVersion.getMajor()) ||
+			 (newSchemaVersion.getMinor() > currentSchemaVersion.getMinor()))) {
+
+			return true;
+		}
+
+		return false;
 	}
 
 	public static void setCreateIGImageDocumentType(

@@ -22,8 +22,8 @@ import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermissionFactory;
+import com.liferay.portal.kernel.security.permission.resource.PortletResourcePermission;
 import com.liferay.portal.kernel.service.ServiceContext;
-import com.liferay.portal.kernel.service.permission.PortalPermissionUtil;
 import com.liferay.portal.kernel.util.OrderByComparator;
 
 import java.util.List;
@@ -41,8 +41,12 @@ public class CommerceAccountGroupServiceImpl
 			ServiceContext serviceContext)
 		throws PortalException {
 
-		PortalPermissionUtil.check(
-			getPermissionChecker(),
+		PortletResourcePermission portletResourcePermission =
+			_commerceAccountGroupModelResourcePermission.
+				getPortletResourcePermission();
+
+		portletResourcePermission.check(
+			getPermissionChecker(), null,
 			CommerceAccountActionKeys.ADD_ACCOUNT_GROUP);
 
 		return commerceAccountGroupLocalService.addCommerceAccountGroup(
@@ -96,8 +100,12 @@ public class CommerceAccountGroupServiceImpl
 			OrderByComparator<CommerceAccountGroup> orderByComparator)
 		throws PortalException {
 
-		PortalPermissionUtil.check(
-			getPermissionChecker(),
+		PortletResourcePermission portletResourcePermission =
+			_commerceAccountGroupModelResourcePermission.
+				getPortletResourcePermission();
+
+		portletResourcePermission.check(
+			getPermissionChecker(), null,
 			CommerceAccountActionKeys.VIEW_COMMERCE_ACCOUNT_GROUPS);
 
 		return commerceAccountGroupLocalService.getCommerceAccountGroups(
@@ -105,11 +113,51 @@ public class CommerceAccountGroupServiceImpl
 	}
 
 	@Override
+	public List<CommerceAccountGroup>
+			getCommerceAccountGroupsByCommerceAccountId(
+				long commerceAccountId, int start, int end)
+		throws PortalException {
+
+		PortletResourcePermission portletResourcePermission =
+			_commerceAccountGroupModelResourcePermission.
+				getPortletResourcePermission();
+
+		portletResourcePermission.check(
+			getPermissionChecker(), null,
+			CommerceAccountActionKeys.VIEW_COMMERCE_ACCOUNT_GROUPS);
+
+		return commerceAccountGroupLocalService.
+			getCommerceAccountGroupsByCommerceAccountId(
+				commerceAccountId, start, end);
+	}
+
+	@Override
+	public int getCommerceAccountGroupsByCommerceAccountIdCount(
+			long commerceAccountId)
+		throws PortalException {
+
+		PortletResourcePermission portletResourcePermission =
+			_commerceAccountGroupModelResourcePermission.
+				getPortletResourcePermission();
+
+		portletResourcePermission.check(
+			getPermissionChecker(), null,
+			CommerceAccountActionKeys.VIEW_COMMERCE_ACCOUNT_GROUPS);
+
+		return commerceAccountGroupLocalService.
+			getCommerceAccountGroupsByCommerceAccountIdCount(commerceAccountId);
+	}
+
+	@Override
 	public int getCommerceAccountGroupsCount(long companyId)
 		throws PortalException {
 
-		PortalPermissionUtil.check(
-			getPermissionChecker(),
+		PortletResourcePermission portletResourcePermission =
+			_commerceAccountGroupModelResourcePermission.
+				getPortletResourcePermission();
+
+		portletResourcePermission.check(
+			getPermissionChecker(), null,
 			CommerceAccountActionKeys.VIEW_COMMERCE_ACCOUNT_GROUPS);
 
 		return commerceAccountGroupLocalService.getCommerceAccountGroupsCount(
@@ -117,15 +165,19 @@ public class CommerceAccountGroupServiceImpl
 	}
 
 	@Override
-	public List<CommerceAccountGroup> searchCommerceAccountGroups(
+	public List<CommerceAccountGroup> search(
 			long companyId, String keywords, int start, int end, Sort sort)
 		throws PortalException {
 
-		PortalPermissionUtil.check(
-			getPermissionChecker(),
+		PortletResourcePermission portletResourcePermission =
+			_commerceAccountGroupModelResourcePermission.
+				getPortletResourcePermission();
+
+		portletResourcePermission.check(
+			getPermissionChecker(), null,
 			CommerceAccountActionKeys.VIEW_COMMERCE_ACCOUNT_GROUPS);
 
-		return commerceAccountGroupLocalService.searchCommerceAccountGroups(
+		return commerceAccountGroupLocalService.search(
 			companyId, keywords, start, end, sort);
 	}
 
@@ -133,8 +185,12 @@ public class CommerceAccountGroupServiceImpl
 	public int searchCommerceAccountsGroupCount(long companyId, String keywords)
 		throws PortalException {
 
-		PortalPermissionUtil.check(
-			getPermissionChecker(),
+		PortletResourcePermission portletResourcePermission =
+			_commerceAccountGroupModelResourcePermission.
+				getPortletResourcePermission();
+
+		portletResourcePermission.check(
+			getPermissionChecker(), null,
 			CommerceAccountActionKeys.VIEW_COMMERCE_ACCOUNT_GROUPS);
 
 		return commerceAccountGroupLocalService.

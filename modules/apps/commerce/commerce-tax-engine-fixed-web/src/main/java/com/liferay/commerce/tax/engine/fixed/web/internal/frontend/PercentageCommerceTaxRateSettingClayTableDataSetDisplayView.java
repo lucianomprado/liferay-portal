@@ -14,6 +14,7 @@
 
 package com.liferay.commerce.tax.engine.fixed.web.internal.frontend;
 
+import com.liferay.commerce.tax.engine.fixed.web.internal.frontend.constants.CommerceTaxRateSettingDataSetConstants;
 import com.liferay.frontend.taglib.clay.data.set.ClayDataSetDisplayView;
 import com.liferay.frontend.taglib.clay.data.set.view.table.BaseTableClayDataSetDisplayView;
 import com.liferay.frontend.taglib.clay.data.set.view.table.ClayTableSchema;
@@ -40,11 +41,11 @@ public class PercentageCommerceTaxRateSettingClayTableDataSetDisplayView
 		ClayTableSchemaBuilder clayTableSchemaBuilder =
 			_clayTableSchemaBuilderFactory.create();
 
-		ClayTableSchemaField taxRateField =
+		ClayTableSchemaField taxRateClayTableSchemaField =
 			clayTableSchemaBuilder.addClayTableSchemaField(
 				"taxRate", "tax-rate");
 
-		taxRateField.setContentRenderer("actionLink");
+		taxRateClayTableSchemaField.setContentRenderer("actionLink");
 
 		clayTableSchemaBuilder.addClayTableSchemaField("country", "country");
 

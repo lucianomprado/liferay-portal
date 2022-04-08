@@ -31,8 +31,11 @@ import java.sql.ResultSet;
 import java.util.List;
 
 /**
- * @author Shuyang Zhou
+ * @author     Shuyang Zhou
+ * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+ *             MVCCVersionUpgradeProcess}
  */
+@Deprecated
 public class UpgradeMVCCVersion extends UpgradeProcess {
 
 	public void upgradeMVCCVersion(

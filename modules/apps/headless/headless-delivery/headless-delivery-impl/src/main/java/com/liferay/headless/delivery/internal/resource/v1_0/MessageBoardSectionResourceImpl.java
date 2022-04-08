@@ -19,14 +19,15 @@ import com.liferay.expando.kernel.service.ExpandoColumnLocalService;
 import com.liferay.expando.kernel.service.ExpandoTableLocalService;
 import com.liferay.headless.common.spi.service.context.ServiceContextRequestUtil;
 import com.liferay.headless.delivery.dto.v1_0.MessageBoardSection;
+import com.liferay.headless.delivery.dto.v1_0.util.CustomFieldsUtil;
 import com.liferay.headless.delivery.internal.dto.v1_0.converter.MessageBoardSectionDTOConverter;
-import com.liferay.headless.delivery.internal.dto.v1_0.util.CustomFieldsUtil;
 import com.liferay.headless.delivery.internal.dto.v1_0.util.EntityFieldsUtil;
 import com.liferay.headless.delivery.internal.odata.entity.v1_0.MessageBoardSectionEntityModel;
-import com.liferay.headless.delivery.internal.search.aggregation.AggregationUtil;
-import com.liferay.headless.delivery.internal.search.filter.FilterUtil;
-import com.liferay.headless.delivery.internal.search.sort.SortUtil;
 import com.liferay.headless.delivery.resource.v1_0.MessageBoardSectionResource;
+import com.liferay.headless.delivery.search.aggregation.AggregationUtil;
+import com.liferay.headless.delivery.search.filter.FilterUtil;
+import com.liferay.headless.delivery.search.sort.SortUtil;
+import com.liferay.message.boards.constants.MBConstants;
 import com.liferay.message.boards.model.MBCategory;
 import com.liferay.message.boards.service.MBCategoryService;
 import com.liferay.petra.function.UnsafeConsumer;
@@ -37,11 +38,13 @@ import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.search.filter.BooleanFilter;
 import com.liferay.portal.kernel.search.filter.Filter;
 import com.liferay.portal.kernel.search.filter.TermFilter;
+import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.odata.entity.EntityModel;
 import com.liferay.portal.search.aggregation.Aggregations;
+import com.liferay.portal.search.expando.ExpandoBridgeIndexer;
 import com.liferay.portal.search.legacy.searcher.SearchRequestBuilderFactory;
 import com.liferay.portal.search.query.Queries;
 import com.liferay.portal.search.searcher.SearchRequestBuilder;
@@ -89,8 +92,8 @@ public class MessageBoardSectionResourceImpl
 			new ArrayList<>(
 				EntityFieldsUtil.getEntityFields(
 					_portal.getClassNameId(MBCategory.class.getName()),
-					contextCompany.getCompanyId(), _expandoColumnLocalService,
-					_expandoTableLocalService)));
+					contextCompany.getCompanyId(), _expandoBridgeIndexer,
+					_expandoColumnLocalService, _expandoTableLocalService)));
 	}
 
 	@Override
@@ -117,14 +120,15 @@ public class MessageBoardSectionResourceImpl
 			HashMapBuilder.put(
 				"create",
 				addAction(
-					"ADD_CATEGORY",
+					ActionKeys.ADD_CATEGORY,
 					"postMessageBoardSectionMessageBoardSection",
-					"com.liferay.message.boards", mbCategory.getGroupId())
+					MBConstants.RESOURCE_NAME, mbCategory.getGroupId())
 			).put(
 				"get",
 				addAction(
-					"VIEW", "getMessageBoardSectionMessageBoardSectionsPage",
-					"com.liferay.message.boards", mbCategory.getGroupId())
+					ActionKeys.VIEW,
+					"getMessageBoardSectionMessageBoardSectionsPage",
+					MBConstants.RESOURCE_NAME, mbCategory.getGroupId())
 			).build(),
 			booleanQuery -> {
 				BooleanFilter booleanFilter =
@@ -151,13 +155,13 @@ public class MessageBoardSectionResourceImpl
 			HashMapBuilder.put(
 				"create",
 				addAction(
-					"ADD_CATEGORY", "postSiteMessageBoardSection",
-					"com.liferay.message.boards", siteId)
+					ActionKeys.ADD_CATEGORY, "postSiteMessageBoardSection",
+					MBConstants.RESOURCE_NAME, siteId)
 			).put(
 				"get",
 				addAction(
-					"VIEW", "getSiteMessageBoardSectionsPage",
-					"com.liferay.message.boards", siteId)
+					ActionKeys.VIEW, "getSiteMessageBoardSectionsPage",
+					MBConstants.RESOURCE_NAME, siteId)
 			).build(),
 			booleanQuery -> {
 				if (!GetterUtil.getBoolean(flatten)) {
@@ -236,6 +240,23 @@ public class MessageBoardSectionResourceImpl
 			mbCategory.getGroupId(), mbCategory.getCategoryId());
 	}
 
+	@Override
+	protected Long getPermissionCheckerGroupId(Object id) throws Exception {
+		MBCategory mbCategory = _mbCategoryService.getCategory((Long)id);
+
+		return mbCategory.getGroupId();
+	}
+
+	@Override
+	protected String getPermissionCheckerPortletName(Object id) {
+		return MBConstants.RESOURCE_NAME;
+	}
+
+	@Override
+	protected String getPermissionCheckerResourceName(Object id) {
+		return MBCategory.class.getName();
+	}
+
 	private MessageBoardSection _addMessageBoardSection(
 			long siteId, Long parentMessageBoardSectionId,
 			MessageBoardSection messageBoardSection)
@@ -270,8 +291,8 @@ public class MessageBoardSectionResourceImpl
 
 		return SearchUtil.search(
 			actions, booleanQueryUnsafeConsumer,
-			FilterUtil.processFilter(_ddmIndexer, filter), MBCategory.class,
-			keywords, pagination,
+			FilterUtil.processFilter(_ddmIndexer, filter),
+			MBCategory.class.getName(), keywords, pagination,
 			queryConfig -> queryConfig.setSelectedFieldNames(
 				Field.ENTRY_CLASS_PK),
 			searchContext -> {
@@ -305,12 +326,13 @@ public class MessageBoardSectionResourceImpl
 				HashMapBuilder.put(
 					"add-subcategory",
 					addAction(
-						"ADD_SUBCATEGORY", mbCategory,
+						ActionKeys.ADD_SUBCATEGORY, mbCategory,
 						"postMessageBoardSectionMessageBoardSection")
 				).put(
 					"add-thread",
 					ActionUtil.addAction(
-						"ADD_MESSAGE", MessageBoardThreadResourceImpl.class,
+						ActionKeys.ADD_MESSAGE,
+						MessageBoardThreadResourceImpl.class,
 						mbCategory.getCategoryId(),
 						"postMessageBoardSectionMessageBoardThread",
 						contextScopeChecker, mbCategory.getUserId(),
@@ -318,22 +340,26 @@ public class MessageBoardSectionResourceImpl
 						contextUriInfo)
 				).put(
 					"delete",
-					addAction("DELETE", mbCategory, "deleteMessageBoardSection")
+					addAction(
+						ActionKeys.DELETE, mbCategory,
+						"deleteMessageBoardSection")
 				).put(
 					"get",
-					addAction("VIEW", mbCategory, "getMessageBoardSection")
+					addAction(
+						ActionKeys.VIEW, mbCategory, "getMessageBoardSection")
 				).put(
 					"replace",
-					addAction("UPDATE", mbCategory, "putMessageBoardSection")
+					addAction(
+						ActionKeys.UPDATE, mbCategory, "putMessageBoardSection")
 				).put(
 					"subscribe",
 					addAction(
-						"SUBSCRIBE", mbCategory,
+						ActionKeys.SUBSCRIBE, mbCategory,
 						"putMessageBoardSectionSubscribe")
 				).put(
 					"unsubscribe",
 					addAction(
-						"SUBSCRIBE", mbCategory,
+						ActionKeys.SUBSCRIBE, mbCategory,
 						"putMessageBoardSectionUnsubscribe")
 				).build(),
 				_dtoConverterRegistry, mbCategory.getCategoryId(),
@@ -349,6 +375,9 @@ public class MessageBoardSectionResourceImpl
 
 	@Reference
 	private DTOConverterRegistry _dtoConverterRegistry;
+
+	@Reference
+	private ExpandoBridgeIndexer _expandoBridgeIndexer;
 
 	@Reference
 	private ExpandoColumnLocalService _expandoColumnLocalService;

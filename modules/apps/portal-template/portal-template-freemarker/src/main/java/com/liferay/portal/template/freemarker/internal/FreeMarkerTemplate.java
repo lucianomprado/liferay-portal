@@ -141,23 +141,30 @@ public class FreeMarkerTemplate extends BaseTemplate {
 			TemplateResource templateResource, Writer writer)
 		throws Exception {
 
-		TemplateResourceThreadLocal.setTemplateResource(
-			TemplateConstants.LANG_TYPE_FTL, templateResource);
+		_freeMarkerManager.render(
+			templateResource.getTemplateId(), writer, isRestricted(),
+			() -> {
+				TemplateResourceThreadLocal.setTemplateResource(
+					TemplateConstants.LANG_TYPE_FTL, templateResource);
 
-		try {
-			Template template = _configuration.getTemplate(
-				getTemplateResourceUUID(templateResource),
-				TemplateConstants.DEFAUT_ENCODING);
+				try {
+					Template template = _configuration.getTemplate(
+						getTemplateResourceUUID(templateResource),
+						TemplateConstants.DEFAUT_ENCODING);
 
-			template.setObjectWrapper(_beansWrapper);
+					template.setObjectWrapper(_beansWrapper);
 
-			template.process(
-				new CachableDefaultMapAdapter(context, _beansWrapper), writer);
-		}
-		finally {
-			TemplateResourceThreadLocal.setTemplateResource(
-				TemplateConstants.LANG_TYPE_FTL, null);
-		}
+					template.process(
+						new CachableDefaultMapAdapter(context, _beansWrapper),
+						writer);
+				}
+				finally {
+					TemplateResourceThreadLocal.setTemplateResource(
+						TemplateConstants.LANG_TYPE_FTL, null);
+				}
+
+				return null;
+			});
 	}
 
 	@Override
@@ -193,9 +200,8 @@ public class FreeMarkerTemplate extends BaseTemplate {
 
 	private class CachableDefaultMapAdapter
 		extends WrappingTemplateModel
-		implements TemplateHashModelEx, AdapterTemplateModel,
-				   WrapperTemplateModel, TemplateModelWithAPISupport,
-				   Serializable {
+		implements AdapterTemplateModel, Serializable, TemplateHashModelEx,
+				   TemplateModelWithAPISupport, WrapperTemplateModel {
 
 		@Override
 		public TemplateModel get(String key) throws TemplateModelException {
@@ -270,12 +276,12 @@ public class FreeMarkerTemplate extends BaseTemplate {
 
 			_map = map;
 			_objectWrapper = objectWrapper;
-			_wrappedValueMap = new HashMap<>();
 		}
 
 		private final Map<String, Object> _map;
 		private final ObjectWrapper _objectWrapper;
-		private final Map<String, TemplateModel> _wrappedValueMap;
+		private final Map<String, TemplateModel> _wrappedValueMap =
+			new HashMap<>();
 
 	}
 

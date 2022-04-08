@@ -31,10 +31,10 @@ import com.liferay.frontend.taglib.clay.data.set.view.table.ClayTableSchemaBuild
 import com.liferay.frontend.taglib.clay.data.set.view.table.ClayTableSchemaBuilderFactory;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemListBuilder;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.search.Sort;
-import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
@@ -43,7 +43,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 
-import javax.portlet.ActionRequest;
 import javax.portlet.PortletRequest;
 import javax.portlet.PortletURL;
 
@@ -93,22 +92,24 @@ public class CommerceChannelHealthCheckClayTable
 
 		return DropdownItemListBuilder.add(
 			dropdownItem -> {
-				HealthCheck healthCheck = (HealthCheck)model;
+				PortletURL portletURL = PortletURLBuilder.create(
+					_portal.getControlPanelPortletURL(
+						httpServletRequest, CPPortletKeys.COMMERCE_CHANNELS,
+						PortletRequest.ACTION_PHASE)
+				).setActionName(
+					"/commerce_channels/edit_commerce_channel_health_status"
+				).setRedirect(
+					ParamUtil.getString(
+						httpServletRequest, "currentUrl",
+						_portal.getCurrentURL(httpServletRequest))
+				).setParameter(
+					"commerceChannelHealthStatusKey",
+					() -> {
+						HealthCheck healthCheck = (HealthCheck)model;
 
-				PortletURL portletURL = _portal.getControlPanelPortletURL(
-					httpServletRequest, CPPortletKeys.COMMERCE_CHANNELS,
-					PortletRequest.ACTION_PHASE);
-
-				String redirect = ParamUtil.getString(
-					httpServletRequest, "currentUrl",
-					_portal.getCurrentURL(httpServletRequest));
-
-				portletURL.setParameter(
-					ActionRequest.ACTION_NAME,
-					"editCommerceChannelHealthStatus");
-				portletURL.setParameter("redirect", redirect);
-				portletURL.setParameter(
-					"commerceChannelHealthStatusKey", healthCheck.getKey());
+						return healthCheck.getKey();
+					}
+				).buildPortletURL();
 
 				long commerceChannelId = ParamUtil.getLong(
 					httpServletRequest, "commerceChannelId");
@@ -159,12 +160,10 @@ public class CommerceChannelHealthCheckClayTable
 			healthChecks.add(
 				new HealthCheck(
 					commerceChannelHealthStatus.getKey(),
-					HtmlUtil.escape(
-						commerceChannelHealthStatus.getName(
-							_portal.getLocale(httpServletRequest))),
-					HtmlUtil.escape(
-						commerceChannelHealthStatus.getDescription(
-							_portal.getLocale(httpServletRequest)))));
+					commerceChannelHealthStatus.getName(
+						_portal.getLocale(httpServletRequest)),
+					commerceChannelHealthStatus.getDescription(
+						_portal.getLocale(httpServletRequest))));
 		}
 
 		return healthChecks;

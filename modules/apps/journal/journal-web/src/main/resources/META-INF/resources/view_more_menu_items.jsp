@@ -39,8 +39,8 @@ JournalViewMoreMenuItemsDisplayContext journalViewMoreMenuItemsDisplayContext = 
 	navigationItems="<%= journalViewMoreMenuItemsDisplayContext.getNavigationItems() %>"
 />
 
-<clay:management-toolbar-v2
-	displayContext="<%= new JournalViewMoreMenuItemsManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, journalViewMoreMenuItemsDisplayContext) %>"
+<clay:management-toolbar
+	managementToolbarDisplayContext="<%= new JournalViewMoreMenuItemsManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, journalViewMoreMenuItemsDisplayContext) %>"
 />
 
 <aui:form cssClass="container-fluid container-fluid-max-xl" name="addMenuItemFm">
@@ -49,7 +49,6 @@ JournalViewMoreMenuItemsDisplayContext journalViewMoreMenuItemsDisplayContext = 
 	>
 		<liferay-ui:search-container-row
 			className="com.liferay.dynamic.data.mapping.model.DDMStructure"
-			cssClass="selectable"
 			escapedModel="<%= true %>"
 			modelVar="ddmStructure"
 		>
@@ -97,24 +96,3 @@ JournalViewMoreMenuItemsDisplayContext journalViewMoreMenuItemsDisplayContext = 
 		/>
 	</liferay-ui:search-container>
 </aui:form>
-
-<aui:script require="frontend-js-web/liferay/delegate/delegate.es as delegateModule">
-	var Util = Liferay.Util;
-
-	var addMenuItemFm = document.getElementById(
-		'<portlet:namespace />addMenuItemFm'
-	);
-
-	var delegate = delegateModule.default;
-
-	delegate(addMenuItemFm, 'click', '.selector-button', function (event) {
-		Util.getOpener().Liferay.fire(
-			'<%= HtmlUtil.escapeJS(journalViewMoreMenuItemsDisplayContext.getEventName()) %>',
-			{
-				ddmStructureKey: event.delegateTarget.getAttribute(
-					'data-ddmStructureKey'
-				),
-			}
-		);
-	});
-</aui:script>

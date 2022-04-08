@@ -17,7 +17,7 @@
 <%@ taglib uri="http://liferay.com/tld/aui" prefix="aui" %><%@
 taglib uri="http://liferay.com/tld/theme" prefix="liferay-theme" %>
 
-<%@ page import="com.liferay.commerce.product.catalog.CPMedia" %><%@
+<%@ page import="com.liferay.commerce.product.content.util.CPMedia" %><%@
 page import="com.liferay.petra.string.StringPool" %><%@
 page import="com.liferay.portal.kernel.json.JSONFactoryUtil" %><%@
 page import="com.liferay.portal.kernel.json.JSONSerializer" %><%@
@@ -29,6 +29,9 @@ page import="com.liferay.portal.kernel.util.PortalUtil" %>
 
 <%
 List<CPMedia> images = (List<CPMedia>)request.getAttribute("liferay-commerce:gallery:images");
+String namespace = (String)request.getAttribute("liferay-commerce:gallery:namespace");
+String viewCPAttachmentURL = (String)request.getAttribute("liferay-commerce:gallery:viewCPAttachmentURL");
+
 JSONSerializer jsonSerializer = JSONFactoryUtil.createJSONSerializer();
 
 String randomNamespace = PortalUtil.generateRandomKey(request, "taglib_gallery") + StringPool.UNDERLINE;

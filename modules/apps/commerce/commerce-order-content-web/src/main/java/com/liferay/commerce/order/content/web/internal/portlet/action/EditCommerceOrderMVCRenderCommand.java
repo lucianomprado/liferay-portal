@@ -39,7 +39,7 @@ import org.osgi.service.component.annotations.Reference;
 	enabled = false,
 	property = {
 		"javax.portlet.name=" + CommercePortletKeys.COMMERCE_OPEN_ORDER_CONTENT,
-		"mvc.command.name=editCommerceOrder"
+		"mvc.command.name=/commerce_open_order_content/edit_commerce_order"
 	},
 	service = MVCRenderCommand.class
 )
@@ -66,7 +66,7 @@ public class EditCommerceOrderMVCRenderCommand implements MVCRenderCommand {
 					commerceOrder);
 			}
 
-			return "/pending_orders/edit_order.jsp";
+			return "/pending_commerce_orders/edit_commerce_order.jsp";
 		}
 		catch (Exception exception) {
 			if (exception instanceof NoSuchOrderException ||

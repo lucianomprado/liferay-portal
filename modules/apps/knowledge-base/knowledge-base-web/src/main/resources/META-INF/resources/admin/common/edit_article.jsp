@@ -73,7 +73,7 @@ if (portletTitleBasedNavigation) {
 	/>
 </c:if>
 
-<div <%= portletTitleBasedNavigation ? "class=\"container-fluid container-fluid-max-xl\"" : StringPool.BLANK %>>
+<div <%= portletTitleBasedNavigation ? "class=\"container-fluid container-fluid-max-xl container-form-lg\"" : StringPool.BLANK %>>
 	<liferay-portlet:actionURL name="updateKBArticle" var="updateKBArticleURL" />
 
 	<aui:form action="<%= updateKBArticleURL %>" method="post" name="fm">
@@ -97,7 +97,12 @@ if (portletTitleBasedNavigation) {
 			<liferay-ui:error exception="<%= KBArticleUrlTitleException.MustNotBeDuplicate.class %>" message="please-enter-a-unique-friendly-url" />
 
 			<liferay-ui:error exception="<%= FileSizeException.class %>">
-				<liferay-ui:message arguments="<%= DLValidatorUtil.getMaxAllowableSize() / 1024 %>" key="please-enter-a-file-with-a-valid-file-size-no-larger-than-x" translateArguments="<%= false %>" />
+
+				<%
+				FileSizeException fileSizeException = (FileSizeException)errorException;
+				%>
+
+				<liferay-ui:message arguments="<%= fileSizeException.getMaxSize() / 1024 %>" key="please-enter-a-file-with-a-valid-file-size-no-larger-than-x" translateArguments="<%= false %>" />
 			</liferay-ui:error>
 
 			<liferay-ui:error exception="<%= KBArticleUrlTitleException.MustNotContainInvalidCharacters.class %>" message="please-enter-a-friendly-url-that-starts-with-a-slash-and-contains-alphanumeric-characters-dashes-and-underscores" />
@@ -248,43 +253,43 @@ if (portletTitleBasedNavigation) {
 				</aui:fieldset>
 
 				<c:if test="<%= kbArticle == null %>">
-					<aui:fieldset collapsed="<%= true %>" collapsible="<%= true %>" cssClass='<%= (parentResourcePrimKey != KBFolderConstants.DEFAULT_PARENT_FOLDER_ID) ? "hide" : StringPool.BLANK %>' label="permissions">
+					<aui:fieldset collapsed="<%= true %>" collapsible="<%= true %>" label="permissions">
 						<liferay-ui:input-permissions
 							modelName="<%= KBArticle.class.getName() %>"
 						/>
 					</aui:fieldset>
 				</c:if>
+
+				<div class="kb-submit-buttons sheet-footer">
+
+					<%
+					boolean pending = false;
+
+					if (kbArticle != null) {
+						pending = kbArticle.isPending();
+					}
+
+					String saveButtonLabel = "save";
+
+					if ((kbArticle == null) || kbArticle.isDraft() || kbArticle.isApproved()) {
+						saveButtonLabel = "save-as-draft";
+					}
+
+					String publishButtonLabel = "publish";
+
+					if (WorkflowDefinitionLinkLocalServiceUtil.hasWorkflowDefinitionLink(themeDisplay.getCompanyId(), scopeGroupId, KBArticle.class.getName())) {
+						publishButtonLabel = "submit-for-publication";
+					}
+					%>
+
+					<aui:button disabled="<%= pending %>" name="publishButton" type="submit" value="<%= publishButtonLabel %>" />
+
+					<aui:button primary="<%= false %>" type="submit" value="<%= saveButtonLabel %>" />
+
+					<aui:button href="<%= redirect %>" type="cancel" />
+				</div>
 			</aui:fieldset-group>
 		</div>
-
-		<aui:button-row cssClass="kb-submit-buttons">
-
-			<%
-			boolean pending = false;
-
-			if (kbArticle != null) {
-				pending = kbArticle.isPending();
-			}
-
-			String saveButtonLabel = "save";
-
-			if ((kbArticle == null) || kbArticle.isDraft() || kbArticle.isApproved()) {
-				saveButtonLabel = "save-as-draft";
-			}
-
-			String publishButtonLabel = "publish";
-
-			if (WorkflowDefinitionLinkLocalServiceUtil.hasWorkflowDefinitionLink(themeDisplay.getCompanyId(), scopeGroupId, KBArticle.class.getName())) {
-				publishButtonLabel = "submit-for-publication";
-			}
-			%>
-
-			<aui:button disabled="<%= pending %>" name="publishButton" type="submit" value="<%= publishButtonLabel %>" />
-
-			<aui:button primary="<%= false %>" type="submit" value="<%= saveButtonLabel %>" />
-
-			<aui:button href="<%= redirect %>" type="cancel" />
-		</aui:button-row>
 	</aui:form>
 </div>
 
@@ -293,7 +298,7 @@ if (portletTitleBasedNavigation) {
 		var titleInput = document.getElementById('<portlet:namespace />title');
 		var urlTitleInput = document.getElementById('<portlet:namespace />urlTitle');
 
-		titleInput.addEventListener('input', function (event) {
+		titleInput.addEventListener('input', (event) => {
 			var customUrl = urlTitleInput.dataset.customUrl;
 
 			if (customUrl === 'false') {
@@ -303,14 +308,14 @@ if (portletTitleBasedNavigation) {
 			}
 		});
 
-		urlTitleInput.addEventListener('input', function (event) {
+		urlTitleInput.addEventListener('input', (event) => {
 			event.currentTarget.dataset.customUrl = urlTitleInput.value !== '';
 		});
 	</c:if>
 
 	document
 		.getElementById('<portlet:namespace />publishButton')
-		.addEventListener('click', function () {
+		.addEventListener('click', () => {
 			var workflowActionInput = document.getElementById(
 				'<portlet:namespace />workflowAction'
 			);
@@ -353,7 +358,7 @@ if (portletTitleBasedNavigation) {
 		selectedFileNameContainer.innerHTML = buffer.join('');
 	};
 
-	form.addEventListener('submit', function () {
+	form.addEventListener('submit', () => {
 		document.getElementById(
 			'<portlet:namespace />content'
 		).value = window.<portlet:namespace />contentEditor.getHTML();

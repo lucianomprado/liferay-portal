@@ -84,7 +84,7 @@ public class NonSerializableObjectRequestWrapper
 			String message = exception.getMessage();
 
 			if ((message == null) || !message.contains("BEA-101362")) {
-				_log.error(exception, exception);
+				_log.error(exception);
 			}
 
 			return null;
@@ -135,7 +135,8 @@ public class NonSerializableObjectRequestWrapper
 		catch (NoSuchFieldException noSuchFieldException) {
 			if (_log.isDebugEnabled()) {
 				_log.debug(
-					"Unable to get fields from a Weblogic servlet request");
+					"Unable to get fields from a Weblogic servlet request",
+					noSuchFieldException);
 			}
 		}
 		catch (Exception exception) {
@@ -144,7 +145,8 @@ public class NonSerializableObjectRequestWrapper
 					StringBundler.concat(
 						"Unable to set WebLogic class loader flag for ",
 						"attribute ", attributeName, " in servlet request ",
-						servletRequest));
+						servletRequest),
+					exception);
 			}
 		}
 	}

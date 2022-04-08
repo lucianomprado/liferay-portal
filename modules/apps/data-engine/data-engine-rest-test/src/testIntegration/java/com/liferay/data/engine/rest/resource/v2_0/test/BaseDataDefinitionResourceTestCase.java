@@ -36,28 +36,25 @@ import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
-import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Group;
+import com.liferay.portal.kernel.model.role.RoleConstants;
 import com.liferay.portal.kernel.service.CompanyLocalServiceUtil;
 import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
+import com.liferay.portal.kernel.test.util.RoleTestUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.DateFormatFactoryUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.odata.entity.EntityField;
 import com.liferay.portal.odata.entity.EntityModel;
-import com.liferay.portal.test.log.CaptureAppender;
-import com.liferay.portal.test.log.Log4JLoggerTestUtil;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.vulcan.resource.EntityModelResource;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 
 import java.text.DateFormat;
 
@@ -79,7 +76,6 @@ import javax.ws.rs.core.MultivaluedHashMap;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.BeanUtilsBean;
 import org.apache.commons.lang.time.DateUtils;
-import org.apache.log4j.Level;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -213,20 +209,20 @@ public abstract class BaseDataDefinitionResourceTestCase {
 	public void testGetDataDefinitionByContentTypeContentTypePage()
 		throws Exception {
 
-		Page<DataDefinition> page =
-			dataDefinitionResource.
-				getDataDefinitionByContentTypeContentTypePage(
-					testGetDataDefinitionByContentTypeContentTypePage_getContentType(),
-					RandomTestUtil.randomString(), Pagination.of(1, 2), null);
-
-		Assert.assertEquals(0, page.getTotalCount());
-
 		String contentType =
 			testGetDataDefinitionByContentTypeContentTypePage_getContentType();
 		String irrelevantContentType =
 			testGetDataDefinitionByContentTypeContentTypePage_getIrrelevantContentType();
 
-		if ((irrelevantContentType != null)) {
+		Page<DataDefinition> page =
+			dataDefinitionResource.
+				getDataDefinitionByContentTypeContentTypePage(
+					contentType, RandomTestUtil.randomString(),
+					Pagination.of(1, 10), null);
+
+		Assert.assertEquals(0, page.getTotalCount());
+
+		if (irrelevantContentType != null) {
 			DataDefinition irrelevantDataDefinition =
 				testGetDataDefinitionByContentTypeContentTypePage_addDataDefinition(
 					irrelevantContentType, randomIrrelevantDataDefinition());
@@ -255,7 +251,7 @@ public abstract class BaseDataDefinitionResourceTestCase {
 		page =
 			dataDefinitionResource.
 				getDataDefinitionByContentTypeContentTypePage(
-					contentType, null, Pagination.of(1, 2), null);
+					contentType, null, Pagination.of(1, 10), null);
 
 		Assert.assertEquals(2, page.getTotalCount());
 
@@ -336,6 +332,20 @@ public abstract class BaseDataDefinitionResourceTestCase {
 	}
 
 	@Test
+	public void testGetDataDefinitionByContentTypeContentTypePageWithSortDouble()
+		throws Exception {
+
+		testGetDataDefinitionByContentTypeContentTypePageWithSort(
+			EntityField.Type.DOUBLE,
+			(entityField, dataDefinition1, dataDefinition2) -> {
+				BeanUtils.setProperty(
+					dataDefinition1, entityField.getName(), 0.1);
+				BeanUtils.setProperty(
+					dataDefinition2, entityField.getName(), 0.5);
+			});
+	}
+
+	@Test
 	public void testGetDataDefinitionByContentTypeContentTypePageWithSortInteger()
 		throws Exception {
 
@@ -360,7 +370,7 @@ public abstract class BaseDataDefinitionResourceTestCase {
 
 				String entityFieldName = entityField.getName();
 
-				Method method = clazz.getMethod(
+				java.lang.reflect.Method method = clazz.getMethod(
 					"get" + StringUtil.upperCaseFirstLetter(entityFieldName));
 
 				Class<?> returnType = method.getReturnType();
@@ -539,7 +549,7 @@ public abstract class BaseDataDefinitionResourceTestCase {
 	@Test
 	public void testGraphQLDeleteDataDefinition() throws Exception {
 		DataDefinition dataDefinition =
-			testGraphQLDataDefinition_addDataDefinition();
+			testGraphQLDeleteDataDefinition_addDataDefinition();
 
 		Assert.assertTrue(
 			JSONUtil.getValueAsBoolean(
@@ -552,26 +562,25 @@ public abstract class BaseDataDefinitionResourceTestCase {
 							}
 						})),
 				"JSONObject/data", "Object/deleteDataDefinition"));
+		JSONArray errorsJSONArray = JSONUtil.getValueAsJSONArray(
+			invokeGraphQLQuery(
+				new GraphQLField(
+					"dataDefinition",
+					new HashMap<String, Object>() {
+						{
+							put("dataDefinitionId", dataDefinition.getId());
+						}
+					},
+					new GraphQLField("id"))),
+			"JSONArray/errors");
 
-		try (CaptureAppender captureAppender =
-				Log4JLoggerTestUtil.configureLog4JLogger(
-					"graphql.execution.SimpleDataFetcherExceptionHandler",
-					Level.WARN)) {
+		Assert.assertTrue(errorsJSONArray.length() > 0);
+	}
 
-			JSONArray errorsJSONArray = JSONUtil.getValueAsJSONArray(
-				invokeGraphQLQuery(
-					new GraphQLField(
-						"dataDefinition",
-						new HashMap<String, Object>() {
-							{
-								put("dataDefinitionId", dataDefinition.getId());
-							}
-						},
-						new GraphQLField("id"))),
-				"JSONArray/errors");
+	protected DataDefinition testGraphQLDeleteDataDefinition_addDataDefinition()
+		throws Exception {
 
-			Assert.assertTrue(errorsJSONArray.length() > 0);
-		}
+		return testGraphQLDataDefinition_addDataDefinition();
 	}
 
 	@Test
@@ -597,7 +606,7 @@ public abstract class BaseDataDefinitionResourceTestCase {
 	@Test
 	public void testGraphQLGetDataDefinition() throws Exception {
 		DataDefinition dataDefinition =
-			testGraphQLDataDefinition_addDataDefinition();
+			testGraphQLGetDataDefinition_addDataDefinition();
 
 		Assert.assertTrue(
 			equals(
@@ -640,6 +649,44 @@ public abstract class BaseDataDefinitionResourceTestCase {
 				"Object/code"));
 	}
 
+	protected DataDefinition testGraphQLGetDataDefinition_addDataDefinition()
+		throws Exception {
+
+		return testGraphQLDataDefinition_addDataDefinition();
+	}
+
+	@Test
+	public void testPatchDataDefinition() throws Exception {
+		DataDefinition postDataDefinition =
+			testPatchDataDefinition_addDataDefinition();
+
+		DataDefinition randomPatchDataDefinition = randomPatchDataDefinition();
+
+		@SuppressWarnings("PMD.UnusedLocalVariable")
+		DataDefinition patchDataDefinition =
+			dataDefinitionResource.patchDataDefinition(
+				postDataDefinition.getId(), randomPatchDataDefinition);
+
+		DataDefinition expectedPatchDataDefinition = postDataDefinition.clone();
+
+		_beanUtilsBean.copyProperties(
+			expectedPatchDataDefinition, randomPatchDataDefinition);
+
+		DataDefinition getDataDefinition =
+			dataDefinitionResource.getDataDefinition(
+				patchDataDefinition.getId());
+
+		assertEquals(expectedPatchDataDefinition, getDataDefinition);
+		assertValid(getDataDefinition);
+	}
+
+	protected DataDefinition testPatchDataDefinition_addDataDefinition()
+		throws Exception {
+
+		throw new UnsupportedOperationException(
+			"This method needs to be implemented");
+	}
+
 	@Test
 	public void testPutDataDefinition() throws Exception {
 		DataDefinition postDataDefinition =
@@ -670,31 +717,50 @@ public abstract class BaseDataDefinitionResourceTestCase {
 
 	@Test
 	public void testGetDataDefinitionPermissionsPage() throws Exception {
-		Assert.assertTrue(false);
+		DataDefinition postDataDefinition =
+			testGetDataDefinitionPermissionsPage_addDataDefinition();
+
+		Page<Permission> page =
+			dataDefinitionResource.getDataDefinitionPermissionsPage(
+				postDataDefinition.getId(), RoleConstants.GUEST);
+
+		Assert.assertNotNull(page);
+	}
+
+	protected DataDefinition
+			testGetDataDefinitionPermissionsPage_addDataDefinition()
+		throws Exception {
+
+		throw new UnsupportedOperationException(
+			"This method needs to be implemented");
 	}
 
 	@Test
-	public void testPutDataDefinitionPermission() throws Exception {
+	public void testPutDataDefinitionPermissionsPage() throws Exception {
 		@SuppressWarnings("PMD.UnusedLocalVariable")
 		DataDefinition dataDefinition =
-			testPutDataDefinitionPermission_addDataDefinition();
+			testPutDataDefinitionPermissionsPage_addDataDefinition();
+
+		@SuppressWarnings("PMD.UnusedLocalVariable")
+		com.liferay.portal.kernel.model.Role role = RoleTestUtil.addRole(
+			RoleConstants.TYPE_REGULAR);
 
 		assertHttpResponseStatusCode(
-			204,
-			dataDefinitionResource.putDataDefinitionPermissionHttpResponse(
+			200,
+			dataDefinitionResource.putDataDefinitionPermissionsPageHttpResponse(
 				dataDefinition.getId(),
 				new Permission[] {
 					new Permission() {
 						{
 							setActionIds(new String[] {"VIEW"});
-							setRoleName("Guest");
+							setRoleName(role.getName());
 						}
 					}
 				}));
 
 		assertHttpResponseStatusCode(
 			404,
-			dataDefinitionResource.putDataDefinitionPermissionHttpResponse(
+			dataDefinitionResource.putDataDefinitionPermissionsPageHttpResponse(
 				0L,
 				new Permission[] {
 					new Permission() {
@@ -706,7 +772,8 @@ public abstract class BaseDataDefinitionResourceTestCase {
 				}));
 	}
 
-	protected DataDefinition testPutDataDefinitionPermission_addDataDefinition()
+	protected DataDefinition
+			testPutDataDefinitionPermissionsPage_addDataDefinition()
 		throws Exception {
 
 		throw new UnsupportedOperationException(
@@ -717,15 +784,6 @@ public abstract class BaseDataDefinitionResourceTestCase {
 	public void testGetSiteDataDefinitionByContentTypeContentTypePage()
 		throws Exception {
 
-		Page<DataDefinition> page =
-			dataDefinitionResource.
-				getSiteDataDefinitionByContentTypeContentTypePage(
-					testGetSiteDataDefinitionByContentTypeContentTypePage_getSiteId(),
-					testGetSiteDataDefinitionByContentTypeContentTypePage_getContentType(),
-					RandomTestUtil.randomString(), Pagination.of(1, 2), null);
-
-		Assert.assertEquals(0, page.getTotalCount());
-
 		Long siteId =
 			testGetSiteDataDefinitionByContentTypeContentTypePage_getSiteId();
 		Long irrelevantSiteId =
@@ -734,6 +792,14 @@ public abstract class BaseDataDefinitionResourceTestCase {
 			testGetSiteDataDefinitionByContentTypeContentTypePage_getContentType();
 		String irrelevantContentType =
 			testGetSiteDataDefinitionByContentTypeContentTypePage_getIrrelevantContentType();
+
+		Page<DataDefinition> page =
+			dataDefinitionResource.
+				getSiteDataDefinitionByContentTypeContentTypePage(
+					siteId, contentType, RandomTestUtil.randomString(),
+					Pagination.of(1, 10), null);
+
+		Assert.assertEquals(0, page.getTotalCount());
 
 		if ((irrelevantSiteId != null) && (irrelevantContentType != null)) {
 			DataDefinition irrelevantDataDefinition =
@@ -766,7 +832,7 @@ public abstract class BaseDataDefinitionResourceTestCase {
 		page =
 			dataDefinitionResource.
 				getSiteDataDefinitionByContentTypeContentTypePage(
-					siteId, contentType, null, Pagination.of(1, 2), null);
+					siteId, contentType, null, Pagination.of(1, 10), null);
 
 		Assert.assertEquals(2, page.getTotalCount());
 
@@ -849,6 +915,20 @@ public abstract class BaseDataDefinitionResourceTestCase {
 	}
 
 	@Test
+	public void testGetSiteDataDefinitionByContentTypeContentTypePageWithSortDouble()
+		throws Exception {
+
+		testGetSiteDataDefinitionByContentTypeContentTypePageWithSort(
+			EntityField.Type.DOUBLE,
+			(entityField, dataDefinition1, dataDefinition2) -> {
+				BeanUtils.setProperty(
+					dataDefinition1, entityField.getName(), 0.1);
+				BeanUtils.setProperty(
+					dataDefinition2, entityField.getName(), 0.5);
+			});
+	}
+
+	@Test
 	public void testGetSiteDataDefinitionByContentTypeContentTypePageWithSortInteger()
 		throws Exception {
 
@@ -873,7 +953,7 @@ public abstract class BaseDataDefinitionResourceTestCase {
 
 				String entityFieldName = entityField.getName();
 
-				Method method = clazz.getMethod(
+				java.lang.reflect.Method method = clazz.getMethod(
 					"get" + StringUtil.upperCaseFirstLetter(entityFieldName));
 
 				Class<?> returnType = method.getReturnType();
@@ -1063,7 +1143,7 @@ public abstract class BaseDataDefinitionResourceTestCase {
 		throws Exception {
 
 		DataDefinition dataDefinition =
-			testGraphQLDataDefinition_addDataDefinition();
+			testGraphQLGetSiteDataDefinitionByContentTypeByDataDefinitionKey_addDataDefinition();
 
 		Assert.assertTrue(
 			equals(
@@ -1128,11 +1208,35 @@ public abstract class BaseDataDefinitionResourceTestCase {
 				"Object/code"));
 	}
 
+	protected DataDefinition
+			testGraphQLGetSiteDataDefinitionByContentTypeByDataDefinitionKey_addDataDefinition()
+		throws Exception {
+
+		return testGraphQLDataDefinition_addDataDefinition();
+	}
+
 	protected DataDefinition testGraphQLDataDefinition_addDataDefinition()
 		throws Exception {
 
 		throw new UnsupportedOperationException(
 			"This method needs to be implemented");
+	}
+
+	protected void assertContains(
+		DataDefinition dataDefinition, List<DataDefinition> dataDefinitions) {
+
+		boolean contains = false;
+
+		for (DataDefinition item : dataDefinitions) {
+			if (equals(dataDefinition, item)) {
+				contains = true;
+
+				break;
+			}
+		}
+
+		Assert.assertTrue(
+			dataDefinitions + " does not contain " + dataDefinition, contains);
 	}
 
 	protected void assertHttpResponseStatusCode(
@@ -1344,8 +1448,8 @@ public abstract class BaseDataDefinitionResourceTestCase {
 
 		graphQLFields.add(new GraphQLField("siteId"));
 
-		for (Field field :
-				ReflectionUtil.getDeclaredFields(
+		for (java.lang.reflect.Field field :
+				getDeclaredFields(
 					com.liferay.data.engine.rest.dto.v2_0.DataDefinition.
 						class)) {
 
@@ -1361,12 +1465,13 @@ public abstract class BaseDataDefinitionResourceTestCase {
 		return graphQLFields;
 	}
 
-	protected List<GraphQLField> getGraphQLFields(Field... fields)
+	protected List<GraphQLField> getGraphQLFields(
+			java.lang.reflect.Field... fields)
 		throws Exception {
 
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
-		for (Field field : fields) {
+		for (java.lang.reflect.Field field : fields) {
 			com.liferay.portal.vulcan.graphql.annotation.GraphQLField
 				vulcanGraphQLField = field.getAnnotation(
 					com.liferay.portal.vulcan.graphql.annotation.GraphQLField.
@@ -1380,7 +1485,7 @@ public abstract class BaseDataDefinitionResourceTestCase {
 				}
 
 				List<GraphQLField> childrenGraphQLFields = getGraphQLFields(
-					ReflectionUtil.getDeclaredFields(clazz));
+					getDeclaredFields(clazz));
 
 				graphQLFields.add(
 					new GraphQLField(field.getName(), childrenGraphQLFields));
@@ -1605,6 +1710,19 @@ public abstract class BaseDataDefinitionResourceTestCase {
 		}
 
 		return false;
+	}
+
+	protected java.lang.reflect.Field[] getDeclaredFields(Class clazz)
+		throws Exception {
+
+		Stream<java.lang.reflect.Field> stream = Stream.of(
+			ReflectionUtil.getDeclaredFields(clazz));
+
+		return stream.filter(
+			field -> !field.isSynthetic()
+		).toArray(
+			java.lang.reflect.Field[]::new
+		);
 	}
 
 	protected java.util.Collection<EntityField> getEntityFields()
@@ -1918,12 +2036,12 @@ public abstract class BaseDataDefinitionResourceTestCase {
 						_parameterMap.entrySet()) {
 
 					sb.append(entry.getKey());
-					sb.append(":");
+					sb.append(": ");
 					sb.append(entry.getValue());
-					sb.append(",");
+					sb.append(", ");
 				}
 
-				sb.setLength(sb.length() - 1);
+				sb.setLength(sb.length() - 2);
 
 				sb.append(")");
 			}
@@ -1933,10 +2051,10 @@ public abstract class BaseDataDefinitionResourceTestCase {
 
 				for (GraphQLField graphQLField : _graphQLFields) {
 					sb.append(graphQLField.toString());
-					sb.append(",");
+					sb.append(", ");
 				}
 
-				sb.setLength(sb.length() - 1);
+				sb.setLength(sb.length() - 2);
 
 				sb.append("}");
 			}
@@ -1950,8 +2068,8 @@ public abstract class BaseDataDefinitionResourceTestCase {
 
 	}
 
-	private static final Log _log = LogFactoryUtil.getLog(
-		BaseDataDefinitionResourceTestCase.class);
+	private static final com.liferay.portal.kernel.log.Log _log =
+		LogFactoryUtil.getLog(BaseDataDefinitionResourceTestCase.class);
 
 	private static BeanUtilsBean _beanUtilsBean = new BeanUtilsBean() {
 

@@ -230,13 +230,13 @@ AUI.add(
 								visibleCalendars[calendarId] = item;
 							}
 
-							if (item.get('defaultCalendar')) {
-								var calendarResourceId = item.get(
-									'calendarResourceId'
-								);
+							var calendarResourceId = item.get(
+								'calendarResourceId'
+							);
 
+							if (item.get('defaultCalendar')) {
 								if (
-									calendarResourceId ==
+									calendarResourceId ===
 										instance.get(
 											'groupCalendarResourceId'
 										) &&
@@ -246,16 +246,14 @@ AUI.add(
 								}
 
 								if (
-									defaultCalendar == null &&
-									calendarResourceId ==
-										instance.get('userCalendarResourceId')
+									calendarResourceId ===
+									instance.get('userCalendarResourceId')
 								) {
 									defaultCalendar = item;
 								}
 
 								if (
-									defaultCalendar == null &&
-									calendarResourceId ==
+									calendarResourceId ===
 										instance.get(
 											'groupCalendarResourceId'
 										) &&
@@ -263,6 +261,16 @@ AUI.add(
 								) {
 									defaultCalendar = item;
 								}
+							}
+
+							if (
+								(defaultCalendar === null ||
+									defaultCalendar === undefined) &&
+								calendarResourceId ===
+									instance.get('groupCalendarResourceId') &&
+								item.get('permissions').VIEW_BOOKING_DETAILS
+							) {
+								defaultCalendar = item;
 							}
 						});
 					});

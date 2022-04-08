@@ -102,7 +102,7 @@ PortalUtil.addPortletBreadcrumbEntry(request, editContactInformationDisplayConte
 						<span hidden id="<portlet:namespace />addressZipRequiredWrapper">
 							<aui:icon cssClass="reference-mark text-warning" image="asterisk" markupView="lexicon" />
 
-							<span class="hide-accessible"><liferay-ui:message key="required" /></span>
+							<span class="hide-accessible sr-only"><liferay-ui:message key="required" /></span>
 						</span>
 					</label>
 
@@ -152,7 +152,7 @@ PortalUtil.addPortletBreadcrumbEntry(request, editContactInformationDisplayConte
 			{
 				countryId: countryId,
 			},
-			function (response, err) {
+			(response, err) => {
 				if (err) {
 					console.error(err);
 				}

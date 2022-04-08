@@ -31,8 +31,6 @@ import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.LocaleThreadLocal;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.MapUtil;
-import com.liferay.registry.BasicRegistryImpl;
-import com.liferay.registry.RegistryUtil;
 
 import java.io.Serializable;
 
@@ -53,8 +51,6 @@ public abstract class BaseBackgroundTaskTestCase {
 
 	@Before
 	public void setUp() throws Exception {
-		RegistryUtil.setRegistry(new BasicRegistryImpl());
-
 		backgroundTaskThreadLocalManagerImpl =
 			new BackgroundTaskThreadLocalManagerImpl();
 
@@ -98,25 +94,21 @@ public abstract class BaseBackgroundTaskTestCase {
 			userLocalService);
 
 		_companyId = 1234L;
-		_clusterInvokeEnabled = true;
-		_defaultLocale = LocaleUtil.US;
 		_groupId = 1234L;
-		_siteDefaultLocale = LocaleUtil.CANADA;
-		_themeDisplayLocale = LocaleUtil.FRANCE;
 
 		_principalName = String.valueOf(1234L);
 	}
 
 	@After
 	public void tearDown() throws Exception {
-		resetThreadLocals();
+		_resetThreadLocals();
 	}
 
 	protected void assertThreadLocalValues() {
 		Assert.assertEquals(
 			Long.valueOf(_companyId), CompanyThreadLocal.getCompanyId());
 		Assert.assertEquals(
-			_clusterInvokeEnabled, ClusterInvokeThreadLocal.isEnabled());
+			_CLUSTER_INVOKE_ENABLED, ClusterInvokeThreadLocal.isEnabled());
 		Assert.assertEquals(
 			_defaultLocale, LocaleThreadLocal.getDefaultLocale());
 		Assert.assertEquals(
@@ -137,7 +129,7 @@ public abstract class BaseBackgroundTaskTestCase {
 			threadLocalValues.toString(), 7, threadLocalValues.size());
 		Assert.assertEquals(_companyId, threadLocalValues.get("companyId"));
 		Assert.assertEquals(
-			_clusterInvokeEnabled, threadLocalValues.get("clusterInvoke"));
+			_CLUSTER_INVOKE_ENABLED, threadLocalValues.get("clusterInvoke"));
 		Assert.assertEquals(
 			_defaultLocale, threadLocalValues.get("defaultLocale"));
 		Assert.assertEquals(_groupId, threadLocalValues.get("groupId"));
@@ -162,7 +154,7 @@ public abstract class BaseBackgroundTaskTestCase {
 
 	protected HashMap<String, Serializable> initializeThreadLocalValues() {
 		return HashMapBuilder.<String, Serializable>put(
-			"clusterInvoke", _clusterInvokeEnabled
+			"clusterInvoke", _CLUSTER_INVOKE_ENABLED
 		).put(
 			"companyId", _companyId
 		).put(
@@ -178,21 +170,22 @@ public abstract class BaseBackgroundTaskTestCase {
 		).build();
 	}
 
-	protected void resetThreadLocals() {
+	protected BackgroundTaskThreadLocalManagerImpl
+		backgroundTaskThreadLocalManagerImpl;
+
+	private void _resetThreadLocals() {
 		ThreadLocalCacheManager.clearAll(Lifecycle.REQUEST);
 
 		CentralizedThreadLocal.clearShortLivedThreadLocals();
 	}
 
-	protected BackgroundTaskThreadLocalManagerImpl
-		backgroundTaskThreadLocalManagerImpl;
+	private static final boolean _CLUSTER_INVOKE_ENABLED = true;
 
-	private boolean _clusterInvokeEnabled;
 	private long _companyId;
-	private Locale _defaultLocale;
+	private final Locale _defaultLocale = LocaleUtil.US;
 	private long _groupId;
 	private String _principalName;
-	private Locale _siteDefaultLocale;
-	private Locale _themeDisplayLocale;
+	private final Locale _siteDefaultLocale = LocaleUtil.CANADA;
+	private final Locale _themeDisplayLocale = LocaleUtil.FRANCE;
 
 }

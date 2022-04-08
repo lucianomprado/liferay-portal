@@ -63,6 +63,9 @@ public class FragmentCollectionResourceVerticalCard implements VerticalCard {
 				getActionDropdownItems();
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception);
+			}
 		}
 
 		return null;
@@ -90,7 +93,7 @@ public class FragmentCollectionResourceVerticalCard implements VerticalCard {
 		}
 		catch (PortalException portalException) {
 			if (_log.isDebugEnabled()) {
-				_log.debug(portalException, portalException);
+				_log.debug(portalException);
 			}
 		}
 
@@ -119,7 +122,7 @@ public class FragmentCollectionResourceVerticalCard implements VerticalCard {
 			System.currentTimeMillis() - modifiedDate.getTime(), true);
 
 		return LanguageUtil.format(
-			httpServletRequest, "x-ago", modifiedDateDescription);
+			httpServletRequest, "modified-x-ago", modifiedDateDescription);
 	}
 
 	@Override

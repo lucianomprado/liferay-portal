@@ -15,11 +15,15 @@
 package com.liferay.asset.publisher.web.internal.portlet.layout.listener;
 
 import com.liferay.asset.kernel.model.AssetEntry;
+import com.liferay.asset.list.model.AssetListEntry;
 import com.liferay.asset.list.model.AssetListEntryUsage;
 import com.liferay.asset.list.service.AssetListEntryUsageLocalService;
 import com.liferay.asset.publisher.constants.AssetPublisherPortletKeys;
 import com.liferay.asset.publisher.util.AssetPublisherHelper;
+import com.liferay.asset.publisher.web.internal.configuration.AssetPublisherSelectionStyleConfigurationUtil;
+import com.liferay.asset.publisher.web.internal.constants.AssetPublisherSelectionStyleConstants;
 import com.liferay.asset.publisher.web.internal.helper.AssetPublisherWebHelper;
+import com.liferay.info.collection.provider.InfoCollectionProvider;
 import com.liferay.journal.service.JournalArticleLocalService;
 import com.liferay.layout.service.LayoutClassedModelUsageLocalService;
 import com.liferay.petra.string.StringPool;
@@ -39,9 +43,11 @@ import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.PortletKeys;
 import com.liferay.portal.kernel.util.UnicodeProperties;
+import com.liferay.portal.kernel.util.Validator;
 import com.liferay.subscription.service.SubscriptionLocalService;
 
 import java.util.List;
@@ -125,17 +131,40 @@ public class AssetPublisherPortletLayoutListener
 				layout, portletId);
 
 		String selectionStyle = portletPreferences.getValue(
-			"selectionStyle", "dynamic");
+			"selectionStyle",
+			AssetPublisherSelectionStyleConfigurationUtil.
+				defaultSelectionStyle());
 
 		long assetListEntryId = GetterUtil.getLong(
 			portletPreferences.getValue("assetListEntryId", null));
 
-		if (Objects.equals(selectionStyle, "asset-list") &&
+		String infoListProviderKey = portletPreferences.getValue(
+			"infoListProviderKey", StringPool.BLANK);
+
+		if (Objects.equals(
+				selectionStyle,
+				AssetPublisherSelectionStyleConstants.TYPE_ASSET_LIST) &&
 			(assetListEntryId > 0)) {
 
-			_addAssetListEntryUsage(assetListEntryId, plid, portletId);
+			_addAssetListEntryUsage(
+				_portal.getClassNameId(AssetListEntry.class),
+				String.valueOf(assetListEntryId), plid, portletId);
 		}
-		else if (Objects.equals(selectionStyle, "manual")) {
+		else if (Objects.equals(
+					selectionStyle,
+					AssetPublisherSelectionStyleConstants.
+						TYPE_ASSET_LIST_PROVIDER) &&
+				 Validator.isNotNull(infoListProviderKey)) {
+
+			_addAssetListEntryUsage(
+				_portal.getClassNameId(InfoCollectionProvider.class),
+				infoListProviderKey, plid, portletId);
+		}
+		else if (Objects.equals(
+					selectionStyle,
+					AssetPublisherSelectionStyleConstants.TYPE_MANUAL)) {
+
+			_deleteAssetListEntryUsage(plid, portletId);
 			_deleteLayoutClassedModelUsages(layout, portletId);
 
 			_addLayoutClassedModelUsages(plid, portletId, portletPreferences);
@@ -144,7 +173,10 @@ public class AssetPublisherPortletLayoutListener
 			_deleteAssetListEntryUsage(plid, portletId);
 		}
 
-		if (!Objects.equals(selectionStyle, "manual")) {
+		if (!Objects.equals(
+				selectionStyle,
+				AssetPublisherSelectionStyleConstants.TYPE_MANUAL)) {
+
 			_deleteLayoutClassedModelUsages(layout, portletId);
 		}
 	}
@@ -166,17 +198,26 @@ public class AssetPublisherPortletLayoutListener
 	}
 
 	private void _addAssetListEntryUsage(
-		long assetListEntryId, long plid, String portletId) {
+		long classNameId, String key, long plid, String portletId) {
 
-		AssetListEntryUsage assetListEntryUsage =
-			_assetListEntryUsageLocalService.fetchAssetListEntryUsage(
-				_portal.getClassNameId(Layout.class), plid, portletId);
+		List<AssetListEntryUsage> assetListEntryUsages =
+			_assetListEntryUsageLocalService.getAssetListEntryUsages(
+				portletId, _portal.getClassNameId(Portlet.class), plid);
 
-		if (assetListEntryUsage != null) {
-			assetListEntryUsage.setAssetListEntryId(assetListEntryId);
+		if (ListUtil.isNotEmpty(assetListEntryUsages)) {
+			for (AssetListEntryUsage assetListEntryUsage :
+					assetListEntryUsages) {
 
-			_assetListEntryUsageLocalService.updateAssetListEntryUsage(
-				assetListEntryUsage);
+				if (Objects.equals(key, assetListEntryUsage.getKey())) {
+					continue;
+				}
+
+				assetListEntryUsage.setKey(key);
+				assetListEntryUsage.setClassNameId(classNameId);
+
+				_assetListEntryUsageLocalService.updateAssetListEntryUsage(
+					assetListEntryUsage);
+			}
 
 			return;
 		}
@@ -187,8 +228,8 @@ public class AssetPublisherPortletLayoutListener
 		try {
 			_assetListEntryUsageLocalService.addAssetListEntryUsage(
 				serviceContext.getUserId(), serviceContext.getScopeGroupId(),
-				assetListEntryId, _portal.getClassNameId(Layout.class), plid,
-				portletId, serviceContext);
+				classNameId, portletId, _portal.getClassNameId(Portlet.class),
+				key, plid, serviceContext);
 		}
 		catch (PortalException portalException) {
 			_log.error("Unable to add asset list entry usage", portalException);
@@ -232,14 +273,8 @@ public class AssetPublisherPortletLayoutListener
 	}
 
 	private void _deleteAssetListEntryUsage(long plid, String portletId) {
-		AssetListEntryUsage assetListEntryUsage =
-			_assetListEntryUsageLocalService.fetchAssetListEntryUsage(
-				_portal.getClassNameId(Layout.class), plid, portletId);
-
-		if (assetListEntryUsage != null) {
-			_assetListEntryUsageLocalService.deleteAssetListEntryUsage(
-				assetListEntryUsage);
-		}
+		_assetListEntryUsageLocalService.deleteAssetListEntryUsages(
+			portletId, _portal.getClassNameId(Portlet.class), plid);
 	}
 
 	private void _deleteLayoutClassedModelUsages(

@@ -16,30 +16,15 @@ package com.liferay.commerce.account.service.base;
 
 import com.liferay.commerce.account.model.CommerceAccountUserRel;
 import com.liferay.commerce.account.service.CommerceAccountUserRelService;
-import com.liferay.commerce.account.service.persistence.CommerceAccountFinder;
-import com.liferay.commerce.account.service.persistence.CommerceAccountGroupCommerceAccountRelPersistence;
-import com.liferay.commerce.account.service.persistence.CommerceAccountGroupFinder;
-import com.liferay.commerce.account.service.persistence.CommerceAccountGroupPersistence;
-import com.liferay.commerce.account.service.persistence.CommerceAccountGroupRelPersistence;
-import com.liferay.commerce.account.service.persistence.CommerceAccountOrganizationRelPersistence;
-import com.liferay.commerce.account.service.persistence.CommerceAccountPersistence;
-import com.liferay.commerce.account.service.persistence.CommerceAccountUserRelPersistence;
+import com.liferay.commerce.account.service.CommerceAccountUserRelServiceUtil;
 import com.liferay.portal.kernel.bean.BeanReference;
-import com.liferay.portal.kernel.dao.db.DB;
-import com.liferay.portal.kernel.dao.db.DBManagerUtil;
-import com.liferay.portal.kernel.dao.jdbc.SqlUpdate;
-import com.liferay.portal.kernel.dao.jdbc.SqlUpdateFactoryUtil;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.module.framework.service.IdentifiableOSGiService;
 import com.liferay.portal.kernel.service.BaseServiceImpl;
 import com.liferay.portal.kernel.service.persistence.ClassNamePersistence;
-import com.liferay.portal.kernel.service.persistence.RolePersistence;
-import com.liferay.portal.kernel.service.persistence.UserGroupRolePersistence;
 import com.liferay.portal.kernel.service.persistence.UserPersistence;
-import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.spring.extender.service.ServiceReference;
 
-import javax.sql.DataSource;
+import java.lang.reflect.Field;
 
 /**
  * Provides the base implementation for the commerce account user rel remote service.
@@ -59,7 +44,7 @@ public abstract class CommerceAccountUserRelServiceBaseImpl
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. Use <code>CommerceAccountUserRelService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>com.liferay.commerce.account.service.CommerceAccountUserRelServiceUtil</code>.
+	 * Never modify or reference this class directly. Use <code>CommerceAccountUserRelService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>CommerceAccountUserRelServiceUtil</code>.
 	 */
 
 	/**
@@ -109,46 +94,6 @@ public abstract class CommerceAccountUserRelServiceBaseImpl
 	}
 
 	/**
-	 * Returns the commerce account persistence.
-	 *
-	 * @return the commerce account persistence
-	 */
-	public CommerceAccountPersistence getCommerceAccountPersistence() {
-		return commerceAccountPersistence;
-	}
-
-	/**
-	 * Sets the commerce account persistence.
-	 *
-	 * @param commerceAccountPersistence the commerce account persistence
-	 */
-	public void setCommerceAccountPersistence(
-		CommerceAccountPersistence commerceAccountPersistence) {
-
-		this.commerceAccountPersistence = commerceAccountPersistence;
-	}
-
-	/**
-	 * Returns the commerce account finder.
-	 *
-	 * @return the commerce account finder
-	 */
-	public CommerceAccountFinder getCommerceAccountFinder() {
-		return commerceAccountFinder;
-	}
-
-	/**
-	 * Sets the commerce account finder.
-	 *
-	 * @param commerceAccountFinder the commerce account finder
-	 */
-	public void setCommerceAccountFinder(
-		CommerceAccountFinder commerceAccountFinder) {
-
-		this.commerceAccountFinder = commerceAccountFinder;
-	}
-
-	/**
 	 * Returns the commerce account group local service.
 	 *
 	 * @return the commerce account group local service
@@ -193,48 +138,6 @@ public abstract class CommerceAccountUserRelServiceBaseImpl
 			commerceAccountGroupService) {
 
 		this.commerceAccountGroupService = commerceAccountGroupService;
-	}
-
-	/**
-	 * Returns the commerce account group persistence.
-	 *
-	 * @return the commerce account group persistence
-	 */
-	public CommerceAccountGroupPersistence
-		getCommerceAccountGroupPersistence() {
-
-		return commerceAccountGroupPersistence;
-	}
-
-	/**
-	 * Sets the commerce account group persistence.
-	 *
-	 * @param commerceAccountGroupPersistence the commerce account group persistence
-	 */
-	public void setCommerceAccountGroupPersistence(
-		CommerceAccountGroupPersistence commerceAccountGroupPersistence) {
-
-		this.commerceAccountGroupPersistence = commerceAccountGroupPersistence;
-	}
-
-	/**
-	 * Returns the commerce account group finder.
-	 *
-	 * @return the commerce account group finder
-	 */
-	public CommerceAccountGroupFinder getCommerceAccountGroupFinder() {
-		return commerceAccountGroupFinder;
-	}
-
-	/**
-	 * Sets the commerce account group finder.
-	 *
-	 * @param commerceAccountGroupFinder the commerce account group finder
-	 */
-	public void setCommerceAccountGroupFinder(
-		CommerceAccountGroupFinder commerceAccountGroupFinder) {
-
-		this.commerceAccountGroupFinder = commerceAccountGroupFinder;
 	}
 
 	/**
@@ -290,30 +193,6 @@ public abstract class CommerceAccountUserRelServiceBaseImpl
 	}
 
 	/**
-	 * Returns the commerce account group commerce account rel persistence.
-	 *
-	 * @return the commerce account group commerce account rel persistence
-	 */
-	public CommerceAccountGroupCommerceAccountRelPersistence
-		getCommerceAccountGroupCommerceAccountRelPersistence() {
-
-		return commerceAccountGroupCommerceAccountRelPersistence;
-	}
-
-	/**
-	 * Sets the commerce account group commerce account rel persistence.
-	 *
-	 * @param commerceAccountGroupCommerceAccountRelPersistence the commerce account group commerce account rel persistence
-	 */
-	public void setCommerceAccountGroupCommerceAccountRelPersistence(
-		CommerceAccountGroupCommerceAccountRelPersistence
-			commerceAccountGroupCommerceAccountRelPersistence) {
-
-		this.commerceAccountGroupCommerceAccountRelPersistence =
-			commerceAccountGroupCommerceAccountRelPersistence;
-	}
-
-	/**
 	 * Returns the commerce account group rel local service.
 	 *
 	 * @return the commerce account group rel local service
@@ -359,29 +238,6 @@ public abstract class CommerceAccountUserRelServiceBaseImpl
 			commerceAccountGroupRelService) {
 
 		this.commerceAccountGroupRelService = commerceAccountGroupRelService;
-	}
-
-	/**
-	 * Returns the commerce account group rel persistence.
-	 *
-	 * @return the commerce account group rel persistence
-	 */
-	public CommerceAccountGroupRelPersistence
-		getCommerceAccountGroupRelPersistence() {
-
-		return commerceAccountGroupRelPersistence;
-	}
-
-	/**
-	 * Sets the commerce account group rel persistence.
-	 *
-	 * @param commerceAccountGroupRelPersistence the commerce account group rel persistence
-	 */
-	public void setCommerceAccountGroupRelPersistence(
-		CommerceAccountGroupRelPersistence commerceAccountGroupRelPersistence) {
-
-		this.commerceAccountGroupRelPersistence =
-			commerceAccountGroupRelPersistence;
 	}
 
 	/**
@@ -438,30 +294,6 @@ public abstract class CommerceAccountUserRelServiceBaseImpl
 	}
 
 	/**
-	 * Returns the commerce account organization rel persistence.
-	 *
-	 * @return the commerce account organization rel persistence
-	 */
-	public CommerceAccountOrganizationRelPersistence
-		getCommerceAccountOrganizationRelPersistence() {
-
-		return commerceAccountOrganizationRelPersistence;
-	}
-
-	/**
-	 * Sets the commerce account organization rel persistence.
-	 *
-	 * @param commerceAccountOrganizationRelPersistence the commerce account organization rel persistence
-	 */
-	public void setCommerceAccountOrganizationRelPersistence(
-		CommerceAccountOrganizationRelPersistence
-			commerceAccountOrganizationRelPersistence) {
-
-		this.commerceAccountOrganizationRelPersistence =
-			commerceAccountOrganizationRelPersistence;
-	}
-
-	/**
 	 * Returns the commerce account user rel local service.
 	 *
 	 * @return the commerce account user rel local service
@@ -504,29 +336,6 @@ public abstract class CommerceAccountUserRelServiceBaseImpl
 		CommerceAccountUserRelService commerceAccountUserRelService) {
 
 		this.commerceAccountUserRelService = commerceAccountUserRelService;
-	}
-
-	/**
-	 * Returns the commerce account user rel persistence.
-	 *
-	 * @return the commerce account user rel persistence
-	 */
-	public CommerceAccountUserRelPersistence
-		getCommerceAccountUserRelPersistence() {
-
-		return commerceAccountUserRelPersistence;
-	}
-
-	/**
-	 * Sets the commerce account user rel persistence.
-	 *
-	 * @param commerceAccountUserRelPersistence the commerce account user rel persistence
-	 */
-	public void setCommerceAccountUserRelPersistence(
-		CommerceAccountUserRelPersistence commerceAccountUserRelPersistence) {
-
-		this.commerceAccountUserRelPersistence =
-			commerceAccountUserRelPersistence;
 	}
 
 	/**
@@ -641,66 +450,6 @@ public abstract class CommerceAccountUserRelServiceBaseImpl
 	}
 
 	/**
-	 * Returns the role local service.
-	 *
-	 * @return the role local service
-	 */
-	public com.liferay.portal.kernel.service.RoleLocalService
-		getRoleLocalService() {
-
-		return roleLocalService;
-	}
-
-	/**
-	 * Sets the role local service.
-	 *
-	 * @param roleLocalService the role local service
-	 */
-	public void setRoleLocalService(
-		com.liferay.portal.kernel.service.RoleLocalService roleLocalService) {
-
-		this.roleLocalService = roleLocalService;
-	}
-
-	/**
-	 * Returns the role remote service.
-	 *
-	 * @return the role remote service
-	 */
-	public com.liferay.portal.kernel.service.RoleService getRoleService() {
-		return roleService;
-	}
-
-	/**
-	 * Sets the role remote service.
-	 *
-	 * @param roleService the role remote service
-	 */
-	public void setRoleService(
-		com.liferay.portal.kernel.service.RoleService roleService) {
-
-		this.roleService = roleService;
-	}
-
-	/**
-	 * Returns the role persistence.
-	 *
-	 * @return the role persistence
-	 */
-	public RolePersistence getRolePersistence() {
-		return rolePersistence;
-	}
-
-	/**
-	 * Sets the role persistence.
-	 *
-	 * @param rolePersistence the role persistence
-	 */
-	public void setRolePersistence(RolePersistence rolePersistence) {
-		this.rolePersistence = rolePersistence;
-	}
-
-	/**
 	 * Returns the user local service.
 	 *
 	 * @return the user local service
@@ -760,76 +509,12 @@ public abstract class CommerceAccountUserRelServiceBaseImpl
 		this.userPersistence = userPersistence;
 	}
 
-	/**
-	 * Returns the user group role local service.
-	 *
-	 * @return the user group role local service
-	 */
-	public com.liferay.portal.kernel.service.UserGroupRoleLocalService
-		getUserGroupRoleLocalService() {
-
-		return userGroupRoleLocalService;
-	}
-
-	/**
-	 * Sets the user group role local service.
-	 *
-	 * @param userGroupRoleLocalService the user group role local service
-	 */
-	public void setUserGroupRoleLocalService(
-		com.liferay.portal.kernel.service.UserGroupRoleLocalService
-			userGroupRoleLocalService) {
-
-		this.userGroupRoleLocalService = userGroupRoleLocalService;
-	}
-
-	/**
-	 * Returns the user group role remote service.
-	 *
-	 * @return the user group role remote service
-	 */
-	public com.liferay.portal.kernel.service.UserGroupRoleService
-		getUserGroupRoleService() {
-
-		return userGroupRoleService;
-	}
-
-	/**
-	 * Sets the user group role remote service.
-	 *
-	 * @param userGroupRoleService the user group role remote service
-	 */
-	public void setUserGroupRoleService(
-		com.liferay.portal.kernel.service.UserGroupRoleService
-			userGroupRoleService) {
-
-		this.userGroupRoleService = userGroupRoleService;
-	}
-
-	/**
-	 * Returns the user group role persistence.
-	 *
-	 * @return the user group role persistence
-	 */
-	public UserGroupRolePersistence getUserGroupRolePersistence() {
-		return userGroupRolePersistence;
-	}
-
-	/**
-	 * Sets the user group role persistence.
-	 *
-	 * @param userGroupRolePersistence the user group role persistence
-	 */
-	public void setUserGroupRolePersistence(
-		UserGroupRolePersistence userGroupRolePersistence) {
-
-		this.userGroupRolePersistence = userGroupRolePersistence;
-	}
-
 	public void afterPropertiesSet() {
+		_setServiceUtilService(commerceAccountUserRelService);
 	}
 
 	public void destroy() {
+		_setServiceUtilService(null);
 	}
 
 	/**
@@ -850,28 +535,20 @@ public abstract class CommerceAccountUserRelServiceBaseImpl
 		return CommerceAccountUserRel.class.getName();
 	}
 
-	/**
-	 * Performs a SQL query.
-	 *
-	 * @param sql the sql query
-	 */
-	protected void runSQL(String sql) {
+	private void _setServiceUtilService(
+		CommerceAccountUserRelService commerceAccountUserRelService) {
+
 		try {
-			DataSource dataSource =
-				commerceAccountUserRelPersistence.getDataSource();
+			Field field =
+				CommerceAccountUserRelServiceUtil.class.getDeclaredField(
+					"_service");
 
-			DB db = DBManagerUtil.getDB();
+			field.setAccessible(true);
 
-			sql = db.buildSQL(sql);
-			sql = PortalUtil.transformSQL(sql);
-
-			SqlUpdate sqlUpdate = SqlUpdateFactoryUtil.getSqlUpdate(
-				dataSource, sql);
-
-			sqlUpdate.update();
+			field.set(null, commerceAccountUserRelService);
 		}
-		catch (Exception exception) {
-			throw new SystemException(exception);
+		catch (ReflectiveOperationException reflectiveOperationException) {
+			throw new RuntimeException(reflectiveOperationException);
 		}
 	}
 
@@ -887,12 +564,6 @@ public abstract class CommerceAccountUserRelServiceBaseImpl
 	protected com.liferay.commerce.account.service.CommerceAccountService
 		commerceAccountService;
 
-	@BeanReference(type = CommerceAccountPersistence.class)
-	protected CommerceAccountPersistence commerceAccountPersistence;
-
-	@BeanReference(type = CommerceAccountFinder.class)
-	protected CommerceAccountFinder commerceAccountFinder;
-
 	@BeanReference(
 		type = com.liferay.commerce.account.service.CommerceAccountGroupLocalService.class
 	)
@@ -905,12 +576,6 @@ public abstract class CommerceAccountUserRelServiceBaseImpl
 	)
 	protected com.liferay.commerce.account.service.CommerceAccountGroupService
 		commerceAccountGroupService;
-
-	@BeanReference(type = CommerceAccountGroupPersistence.class)
-	protected CommerceAccountGroupPersistence commerceAccountGroupPersistence;
-
-	@BeanReference(type = CommerceAccountGroupFinder.class)
-	protected CommerceAccountGroupFinder commerceAccountGroupFinder;
 
 	@BeanReference(
 		type = com.liferay.commerce.account.service.CommerceAccountGroupCommerceAccountRelLocalService.class
@@ -927,12 +592,6 @@ public abstract class CommerceAccountUserRelServiceBaseImpl
 			commerceAccountGroupCommerceAccountRelService;
 
 	@BeanReference(
-		type = CommerceAccountGroupCommerceAccountRelPersistence.class
-	)
-	protected CommerceAccountGroupCommerceAccountRelPersistence
-		commerceAccountGroupCommerceAccountRelPersistence;
-
-	@BeanReference(
 		type = com.liferay.commerce.account.service.CommerceAccountGroupRelLocalService.class
 	)
 	protected
@@ -945,10 +604,6 @@ public abstract class CommerceAccountUserRelServiceBaseImpl
 	protected
 		com.liferay.commerce.account.service.CommerceAccountGroupRelService
 			commerceAccountGroupRelService;
-
-	@BeanReference(type = CommerceAccountGroupRelPersistence.class)
-	protected CommerceAccountGroupRelPersistence
-		commerceAccountGroupRelPersistence;
 
 	@BeanReference(
 		type = com.liferay.commerce.account.service.CommerceAccountOrganizationRelLocalService.class
@@ -965,10 +620,6 @@ public abstract class CommerceAccountUserRelServiceBaseImpl
 			CommerceAccountOrganizationRelService
 				commerceAccountOrganizationRelService;
 
-	@BeanReference(type = CommerceAccountOrganizationRelPersistence.class)
-	protected CommerceAccountOrganizationRelPersistence
-		commerceAccountOrganizationRelPersistence;
-
 	@BeanReference(
 		type = com.liferay.commerce.account.service.CommerceAccountUserRelLocalService.class
 	)
@@ -978,10 +629,6 @@ public abstract class CommerceAccountUserRelServiceBaseImpl
 
 	@BeanReference(type = CommerceAccountUserRelService.class)
 	protected CommerceAccountUserRelService commerceAccountUserRelService;
-
-	@BeanReference(type = CommerceAccountUserRelPersistence.class)
-	protected CommerceAccountUserRelPersistence
-		commerceAccountUserRelPersistence;
 
 	@ServiceReference(
 		type = com.liferay.counter.kernel.service.CounterLocalService.class
@@ -1011,20 +658,6 @@ public abstract class CommerceAccountUserRelServiceBaseImpl
 		resourceLocalService;
 
 	@ServiceReference(
-		type = com.liferay.portal.kernel.service.RoleLocalService.class
-	)
-	protected com.liferay.portal.kernel.service.RoleLocalService
-		roleLocalService;
-
-	@ServiceReference(
-		type = com.liferay.portal.kernel.service.RoleService.class
-	)
-	protected com.liferay.portal.kernel.service.RoleService roleService;
-
-	@ServiceReference(type = RolePersistence.class)
-	protected RolePersistence rolePersistence;
-
-	@ServiceReference(
 		type = com.liferay.portal.kernel.service.UserLocalService.class
 	)
 	protected com.liferay.portal.kernel.service.UserLocalService
@@ -1037,20 +670,5 @@ public abstract class CommerceAccountUserRelServiceBaseImpl
 
 	@ServiceReference(type = UserPersistence.class)
 	protected UserPersistence userPersistence;
-
-	@ServiceReference(
-		type = com.liferay.portal.kernel.service.UserGroupRoleLocalService.class
-	)
-	protected com.liferay.portal.kernel.service.UserGroupRoleLocalService
-		userGroupRoleLocalService;
-
-	@ServiceReference(
-		type = com.liferay.portal.kernel.service.UserGroupRoleService.class
-	)
-	protected com.liferay.portal.kernel.service.UserGroupRoleService
-		userGroupRoleService;
-
-	@ServiceReference(type = UserGroupRolePersistence.class)
-	protected UserGroupRolePersistence userGroupRolePersistence;
 
 }

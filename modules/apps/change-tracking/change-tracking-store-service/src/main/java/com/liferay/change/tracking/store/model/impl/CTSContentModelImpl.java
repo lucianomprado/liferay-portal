@@ -41,6 +41,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
@@ -107,31 +108,31 @@ public class CTSContentModelImpl
 	public static final String TX_MANAGER = "liferayTransactionManager";
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long COMPANYID_COLUMN_BITMASK = 1L;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long PATH_COLUMN_BITMASK = 2L;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long REPOSITORYID_COLUMN_BITMASK = 4L;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long STORETYPE_COLUMN_BITMASK = 8L;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long VERSION_COLUMN_BITMASK = 16L;
@@ -555,7 +556,9 @@ public class CTSContentModelImpl
 		for (Map.Entry<String, Object> entry :
 				_columnOriginalValues.entrySet()) {
 
-			if (entry.getValue() != getColumnValue(entry.getKey())) {
+			if (!Objects.equals(
+					entry.getValue(), getColumnValue(entry.getKey()))) {
+
 				_columnBitmask |= _columnBitmasks.get(entry.getKey());
 			}
 		}
@@ -606,6 +609,30 @@ public class CTSContentModelImpl
 		ctsContentImpl.setStoreType(getStoreType());
 
 		ctsContentImpl.resetOriginalValues();
+
+		return ctsContentImpl;
+	}
+
+	@Override
+	public CTSContent cloneWithOriginalValues() {
+		CTSContentImpl ctsContentImpl = new CTSContentImpl();
+
+		ctsContentImpl.setMvccVersion(
+			this.<Long>getColumnOriginalValue("mvccVersion"));
+		ctsContentImpl.setCtCollectionId(
+			this.<Long>getColumnOriginalValue("ctCollectionId"));
+		ctsContentImpl.setCtsContentId(
+			this.<Long>getColumnOriginalValue("ctsContentId"));
+		ctsContentImpl.setCompanyId(
+			this.<Long>getColumnOriginalValue("companyId"));
+		ctsContentImpl.setRepositoryId(
+			this.<Long>getColumnOriginalValue("repositoryId"));
+		ctsContentImpl.setPath(this.<String>getColumnOriginalValue("path_"));
+		ctsContentImpl.setVersion(
+			this.<String>getColumnOriginalValue("version"));
+		ctsContentImpl.setSize(this.<Long>getColumnOriginalValue("size_"));
+		ctsContentImpl.setStoreType(
+			this.<String>getColumnOriginalValue("storeType"));
 
 		return ctsContentImpl;
 	}
@@ -726,24 +753,42 @@ public class CTSContentModelImpl
 	public String toString() {
 		StringBundler sb = new StringBundler(21);
 
-		sb.append("{mvccVersion=");
+		sb.append("{\"mvccVersion\": ");
+
 		sb.append(getMvccVersion());
-		sb.append(", ctCollectionId=");
+
+		sb.append(", \"ctCollectionId\": ");
+
 		sb.append(getCtCollectionId());
-		sb.append(", ctsContentId=");
+
+		sb.append(", \"ctsContentId\": ");
+
 		sb.append(getCtsContentId());
-		sb.append(", companyId=");
+
+		sb.append(", \"companyId\": ");
+
 		sb.append(getCompanyId());
-		sb.append(", repositoryId=");
+
+		sb.append(", \"repositoryId\": ");
+
 		sb.append(getRepositoryId());
-		sb.append(", path=");
-		sb.append(getPath());
-		sb.append(", version=");
-		sb.append(getVersion());
-		sb.append(", size=");
+
+		sb.append(", \"path\": ");
+
+		sb.append("\"" + getPath() + "\"");
+
+		sb.append(", \"version\": ");
+
+		sb.append("\"" + getVersion() + "\"");
+
+		sb.append(", \"size\": ");
+
 		sb.append(getSize());
-		sb.append(", storeType=");
-		sb.append(getStoreType());
+
+		sb.append(", \"storeType\": ");
+
+		sb.append("\"" + getStoreType() + "\"");
+
 		sb.append("}");
 
 		return sb.toString();
@@ -759,39 +804,57 @@ public class CTSContentModelImpl
 
 		sb.append(
 			"<column><column-name>mvccVersion</column-name><column-value><![CDATA[");
+
 		sb.append(getMvccVersion());
+
 		sb.append("]]></column-value></column>");
 		sb.append(
 			"<column><column-name>ctCollectionId</column-name><column-value><![CDATA[");
+
 		sb.append(getCtCollectionId());
+
 		sb.append("]]></column-value></column>");
 		sb.append(
 			"<column><column-name>ctsContentId</column-name><column-value><![CDATA[");
+
 		sb.append(getCtsContentId());
+
 		sb.append("]]></column-value></column>");
 		sb.append(
 			"<column><column-name>companyId</column-name><column-value><![CDATA[");
+
 		sb.append(getCompanyId());
+
 		sb.append("]]></column-value></column>");
 		sb.append(
 			"<column><column-name>repositoryId</column-name><column-value><![CDATA[");
+
 		sb.append(getRepositoryId());
+
 		sb.append("]]></column-value></column>");
 		sb.append(
 			"<column><column-name>path</column-name><column-value><![CDATA[");
+
 		sb.append(getPath());
+
 		sb.append("]]></column-value></column>");
 		sb.append(
 			"<column><column-name>version</column-name><column-value><![CDATA[");
+
 		sb.append(getVersion());
+
 		sb.append("]]></column-value></column>");
 		sb.append(
 			"<column><column-name>size</column-name><column-value><![CDATA[");
+
 		sb.append(getSize());
+
 		sb.append("]]></column-value></column>");
 		sb.append(
 			"<column><column-name>storeType</column-name><column-value><![CDATA[");
+
 		sb.append(getStoreType());
+
 		sb.append("]]></column-value></column>");
 
 		sb.append("</model>");

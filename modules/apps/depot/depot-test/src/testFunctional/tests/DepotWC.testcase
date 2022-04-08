@@ -22,18 +22,24 @@ definition {
 			PortalInstances.tearDownCP();
 		}
 		else {
+			JSONDepot.deleteDepot(depotName = "Test Depot Name");
+
+			Site.tearDownCP();
+
 			User.logoutPG();
 		}
 	}
 
 	@description = "This ensures that a web content folder can be deleted in a depot."
 	@priority = "4"
-	test DeleteFolder {
-		DepotNavigator.openDepotWebContentAdmin(depotName = "Test Depot Name");
+	@refactordone
+	test CanDeleteFolder {
+		JSONWebcontent.addFolder(
+			folderName = "WC Folder Name",
+			groupName = "Test Depot Name",
+			site = "false");
 
-		WebContentFolder.addCP(
-			folderDescription = "WC Folder Description",
-			folderName = "WC Folder Name");
+		DepotNavigator.openDepotWebContentAdmin(depotName = "Test Depot Name");
 
 		WebContentFolder.moveToRecycleBinCP(
 			assetType = "Web Content Folder",
@@ -42,7 +48,8 @@ definition {
 
 	@description = "This test deletes multiple web content in a depot."
 	@priority = "5"
-	test DeleteMultipleWebContent {
+	@refactordone
+	test CanDeleteMultipleWebContent {
 		for (var i : list "1,2,3") {
 			JSONWebcontent.addWebContent(
 				content = "WC WebContent Content",
@@ -53,13 +60,7 @@ definition {
 
 		DepotNavigator.openDepotWebContentAdmin(depotName = "Test Depot Name");
 
-		LexiconEntry.changeDisplayStyle(displayStyle = "list");
-
-		for (var rowEntry : list "WC WebContent Title 1,WC WebContent Title 2,WC WebContent Title 3") {
-			Check(
-				key_rowEntry = "${rowEntry}",
-				locator1 = "ContentRow#ENTRY_CONTENT_ENTRY_CHECKBOX");
-		}
+		PortletEntry.selectAll();
 
 		ClickNoError(locator1 = "Icon#DELETE");
 
@@ -72,10 +73,9 @@ definition {
 
 	@description = "This test deletes template and structure in a depot."
 	@priority = "5"
-	test DeleteTemplateAndStructure {
-		DepotNavigator.openDepotWebContentAdmin(depotName = "Test Depot Name");
-
-		NavItem.gotoStructures();
+	@refactordone
+	test CanDeleteTemplateAndStructure {
+		DepotNavigator.openDepotWebContentStructuresAdmin(depotName = "Test Depot Name");
 
 		WebContentStructures.addCP(
 			structureDescription = "WC Structure Description",
@@ -87,9 +87,7 @@ definition {
 
 		WebContentStructures.saveCP(structureName = "WC Structure Name");
 
-		DepotNavigator.openDepotWebContentAdmin(depotName = "Test Depot Name");
-
-		NavItem.gotoTemplates();
+		DepotNavigator.openDepotWebContentTemplatesAdmin(depotName = "Test Depot Name");
 
 		WebContentTemplates.addCP(
 			structureName = "WC Structure Name",
@@ -97,9 +95,7 @@ definition {
 			templateFieldNames = "Text",
 			templateName = "WC Template Name");
 
-		DepotNavigator.openDepotWebContentAdmin(depotName = "Test Depot Name");
-
-		NavItem.gotoTemplates();
+		DepotNavigator.openDepotWebContentTemplatesAdmin(depotName = "Test Depot Name");
 
 		WebContentTemplates.deleteCP(templateName = "WC Template Name");
 
@@ -107,9 +103,7 @@ definition {
 			locator1 = "Message#EMPTY_INFO",
 			value1 = "There are no templates.");
 
-		DepotNavigator.openDepotWebContentAdmin(depotName = "Test Depot Name");
-
-		NavItem.gotoStructures();
+		DepotNavigator.openDepotWebContentStructuresAdmin(depotName = "Test Depot Name");
 
 		WebContentStructures.deleteCP(structureName = "WC Structure Name");
 
@@ -120,7 +114,9 @@ definition {
 
 	@description = "This ensures that a web content folder can be edited in a depot."
 	@priority = "3"
-	test EditFolder {
+	@refactordone
+	@uitest
+	test CanEditFolder {
 		DepotNavigator.openDepotWebContentAdmin(depotName = "Test Depot Name");
 
 		WebContentFolder.addCP(
@@ -143,10 +139,9 @@ definition {
 
 	@description = "This test edits template and structure in a depot."
 	@priority = "5"
-	test EditTemplateAndStructure {
-		DepotNavigator.openDepotWebContentAdmin(depotName = "Test Depot Name");
-
-		NavItem.gotoStructures();
+	@refactordone
+	test CanEditTemplateAndStructure {
+		DepotNavigator.openDepotWebContentStructuresAdmin(depotName = "Test Depot Name");
 
 		WebContentStructures.addCP(
 			structureDescription = "WC Structure Description",
@@ -158,9 +153,7 @@ definition {
 
 		WebContentStructures.saveCP(structureName = "WC Structure Name");
 
-		DepotNavigator.openDepotWebContentAdmin(depotName = "Test Depot Name");
-
-		NavItem.gotoTemplates();
+		DepotNavigator.openDepotWebContentTemplatesAdmin(depotName = "Test Depot Name");
 
 		WebContentTemplates.addCP(
 			structureName = "WC Structure Name",
@@ -168,14 +161,14 @@ definition {
 			templateFieldNames = "Text",
 			templateName = "WC Template Name");
 
-		DepotNavigator.openDepotWebContentAdmin(depotName = "Test Depot Name");
-
-		NavItem.gotoTemplates();
+		DepotNavigator.openDepotWebContentTemplatesAdmin(depotName = "Test Depot Name");
 
 		WebContentTemplates.modifyTemplate(
 			templateDescription = "WC Template Description Edited",
 			templateName = "WC Template Name Edited",
 			templatePreviousName = "WC Template Name");
+
+		LexiconCard.viewCardTitle(card = "WC Template Name Edited");
 
 		NavItem.gotoStructures();
 
@@ -185,13 +178,11 @@ definition {
 
 		PortletEntry.save();
 
-		DepotNavigator.openDepotWebContentAdmin(depotName = "Test Depot Name");
-
-		NavItem.gotoStructures();
+		DepotNavigator.openDepotWebContentStructuresAdmin(depotName = "Test Depot Name");
 
 		WebContentStructures.editStructureDefaultValuesCP(structureName = "WC Structure Name");
 
-		AssertTextEquals(
+		AssertTextEquals.assertValue(
 			key_fieldFieldLabel = "Text",
 			locator1 = "WCEditWebContent#TEXT_INPUT",
 			value1 = "Edited Text Field");
@@ -199,7 +190,9 @@ definition {
 
 	@description = "This ensures that a web content can be edited in a depot."
 	@priority = "5"
-	test EditWebContent {
+	@refactordone
+	@uitest
+	test CanEditWebContent {
 		property portal.acceptance = "true";
 
 		DepotNavigator.openDepotAdmin();
@@ -214,13 +207,7 @@ definition {
 			webContentContent = "WC WebContent Content",
 			webContentTitle = "WC WebContent Title");
 
-		AssertElementNotPresent(
-			key_panel = "Display Page Template",
-			locator1 = "Panel#PANEL_COLLAPSED");
-
-		AssertElementNotPresent(
-			key_panel = "Display Page Template",
-			locator1 = "Panel#PANEL_EXPANDED");
+		Depot.viewNoPanel(panelName = "Display Page Template");
 
 		PortletEntry.publish();
 
@@ -241,20 +228,25 @@ definition {
 
 	@description = "This ensures that a web content can be expired in a depot."
 	@priority = "3"
-	test ExpireWebContent {
+	@refactordone
+	test CanExpireWebContent {
+		JSONDepot.addDepot(
+			depotDescription = "This is the description of a depot",
+			depotName = "Test Expire WC Depot");
+
 		JSONWebcontent.addWebContent(
 			content = "WC WebContent Content",
-			groupName = "Test Depot Name",
+			groupName = "Test Expire WC Depot",
 			site = "false",
 			title = "WC WebContent Title");
 
-		DepotNavigator.openDepotWebContentAdmin(depotName = "Test Depot Name");
+		DepotNavigator.openDepotWebContentAdmin(depotName = "Test Expire WC Depot");
 
 		WebContent.expireCP(webContentTitleList = "WC WebContent Title");
 
-		DepotNavigator.openDepotWebContentAdmin(depotName = "Test Depot Name");
-
-		WebContentNavigator.gotoEditCP(webContentTitle = "WC WebContent Title");
+		DepotNavigator.openToEditWCEntry(
+			depotName = "Test Expire WC Depot",
+			webContentTitle = "WC WebContent Title");
 
 		WebContent.viewStatus(
 			webContentContent = "WC WebContent Content",
@@ -262,41 +254,22 @@ definition {
 			webContentTitle = "WC WebContent Title");
 	}
 
-	@description = "This ensures that a LAR file consisting of web content can be imported in a depot."
-	@priority = "4"
-	test ImportWebContent {
-		JSONWebcontent.addWebContent(
-			content = "Web Content Content",
-			groupName = "Guest",
-			title = "Web Content Title");
-
-		WebContentNavigator.openWebContentAdmin(siteURLKey = "guest");
-
-		LAR.exportPortlet(larFileName = "ExportWebContent.lar");
-
-		DepotNavigator.openDepotWebContentAdmin(depotName = "Test Depot Name");
-
-		LAR.importPortlet(larFileName = "ExportWebContent.lar");
-
-		DepotNavigator.openDepotWebContentAdmin(depotName = "Test Depot Name");
-
-		WebContent.viewTitle(webContentTitle = "Web Content Title");
-	}
-
 	@description = "This ensures that web content can be moved to a folder in a depot."
 	@priority = "3"
-	test MoveWebContentToFolder {
+	@refactordone
+	test CanMoveWebContentToFolder {
 		JSONWebcontent.addWebContent(
 			content = "WC WebContent Content",
 			groupName = "Test Depot Name",
 			site = "false",
 			title = "WC WebContent Title");
 
-		DepotNavigator.openDepotWebContentAdmin(depotName = "Test Depot Name");
+		JSONWebcontent.addFolder(
+			folderName = "WC Folder Name",
+			groupName = "Test Depot Name",
+			site = "false");
 
-		WebContentFolder.addCP(
-			folderDescription = "WC Folder Description",
-			folderName = "WC Folder Name");
+		DepotNavigator.openDepotWebContentAdmin(depotName = "Test Depot Name");
 
 		WebContent.moveToFolderCP(
 			folderName = "WC Folder Name",
@@ -311,10 +284,13 @@ definition {
 
 	@description = "This ensures that web content with structure can be restored to a depot."
 	@priority = "5"
-	test RestoreWebContentWithStructure {
-		DepotNavigator.openDepotWebContentAdmin(depotName = "Test Depot Name");
+	@refactordone
+	test CanRestoreWebContentWithStructure {
+		JSONDepot.addDepot(
+			depotDescription = "This is the description of a depot",
+			depotName = "Test Restore WC In Depot");
 
-		NavItem.gotoStructures();
+		DepotNavigator.openDepotWebContentStructuresAdmin(depotName = "Test Restore WC In Depot");
 
 		WebContentStructures.addCP(
 			structureDescription = "WC Structure Description",
@@ -326,9 +302,7 @@ definition {
 
 		WebContentStructures.saveCP(structureName = "WC Structure Name");
 
-		DepotNavigator.openDepotWebContentAdmin(depotName = "Test Depot Name");
-
-		NavItem.gotoTemplates();
+		DepotNavigator.openDepotWebContentTemplatesAdmin(depotName = "Test Restore WC In Depot");
 
 		WebContentTemplates.addCP(
 			structureName = "WC Structure Name",
@@ -336,37 +310,37 @@ definition {
 			templateFieldNames = "Text",
 			templateName = "WC Template Name");
 
-		DepotNavigator.openDepotWebContentAdmin(depotName = "Test Depot Name");
+		DepotNavigator.openDepotWebContentAdmin(depotName = "Test Restore WC In Depot");
 
 		WebContentNavigator.gotoAddWithStructureCP(structureName = "WC Structure Name");
 
 		WebContent.addWithStructureCP(
 			webContentText = "WC WebContent Text",
-			webContentTitle = "WC WebContent Title");
+			webContentTitle = "Remove and Restore WC WebContent Title");
 
 		PortletEntry.publish();
 
 		WebContent.moveToRecycleBinCP(
 			assetType = "Web Content Article",
-			webContentTitle = "WC WebContent Title");
+			webContentTitle = "Remove and Restore WC WebContent Title");
 
-		DepotNavigator.openDepotRecycleBinAdmin(depotName = "Test Depot Name");
+		DepotNavigator.openDepotRecycleBinAdmin(depotName = "Test Restore WC In Depot");
 
 		RecycleBin.viewCP(
-			assetName = "WC WebContent Title",
+			assetName = "Remove and Restore WC WebContent Title",
 			assetType = "Web Content Article",
 			deleteUser = "Test Test");
 
 		RecycleBin.restoreCP(
-			assetName = "WC WebContent Title",
+			assetName = "Remove and Restore WC WebContent Title",
 			assetRestoreLocation = "Home",
 			assetType = "Web Content Article");
 
-		DepotNavigator.openDepotWebContentAdmin(depotName = "Test Depot Name");
+		DepotNavigator.openDepotWebContentAdmin(depotName = "Test Restore WC In Depot");
 
 		WebContent.viewWithStructureCP(
 			webContentText = "WC WebContent Text",
-			webContentTitle = "WC WebContent Title");
+			webContentTitle = "Remove and Restore WC WebContent Title");
 	}
 
 }

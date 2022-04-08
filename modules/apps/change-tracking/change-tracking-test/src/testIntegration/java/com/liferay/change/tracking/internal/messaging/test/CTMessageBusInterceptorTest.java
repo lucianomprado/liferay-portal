@@ -19,8 +19,7 @@ import com.liferay.change.tracking.model.CTCollection;
 import com.liferay.change.tracking.service.CTCollectionLocalService;
 import com.liferay.change.tracking.service.CTMessageLocalService;
 import com.liferay.change.tracking.service.CTProcessLocalService;
-import com.liferay.counter.kernel.service.CounterLocalService;
-import com.liferay.petra.lang.SafeClosable;
+import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.portal.kernel.change.tracking.CTCollectionThreadLocal;
 import com.liferay.portal.kernel.messaging.Destination;
 import com.liferay.portal.kernel.messaging.DestinationNames;
@@ -31,7 +30,6 @@ import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.util.SubscriptionSender;
-import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 
@@ -70,18 +68,9 @@ public class CTMessageBusInterceptorTest {
 
 		destination.register(_testMessageListener);
 
-		long ctCollectionId = _counterLocalService.increment(
-			CTCollection.class.getName());
-
-		_ctCollection = _ctCollectionLocalService.createCTCollection(
-			ctCollectionId);
-
-		_ctCollection.setUserId(TestPropsValues.getUserId());
-		_ctCollection.setName(String.valueOf(ctCollectionId));
-		_ctCollection.setStatus(WorkflowConstants.STATUS_DRAFT);
-
-		_ctCollection = _ctCollectionLocalService.updateCTCollection(
-			_ctCollection);
+		_ctCollection = _ctCollectionLocalService.addCTCollection(
+			TestPropsValues.getCompanyId(), TestPropsValues.getUserId(),
+			CTMessageBusInterceptorTest.class.getSimpleName(), null);
 	}
 
 	@After
@@ -106,8 +95,8 @@ public class CTMessageBusInterceptorTest {
 		subscriptionSender.setMailId(
 			CTMessageBusInterceptorTest.class.getName(), "test");
 
-		try (SafeClosable safeClosable =
-				CTCollectionThreadLocal.setCTCollectionId(
+		try (SafeCloseable safeCloseable =
+				CTCollectionThreadLocal.setCTCollectionIdWithSafeCloseable(
 					_ctCollection.getCtCollectionId())) {
 
 			subscriptionSender.flushNotificationsAsync();
@@ -154,8 +143,8 @@ public class CTMessageBusInterceptorTest {
 
 		Assert.assertNull(_testMessageListener.getReceivedMessage());
 
-		try (SafeClosable safeClosable =
-				CTCollectionThreadLocal.setCTCollectionId(
+		try (SafeCloseable safeCloseable =
+				CTCollectionThreadLocal.setCTCollectionIdWithSafeCloseable(
 					_ctCollection.getCtCollectionId())) {
 
 			_ctProcessLocalService.addCTProcess(
@@ -196,9 +185,6 @@ public class CTMessageBusInterceptorTest {
 
 		_ctCollection = null;
 	}
-
-	@Inject
-	private static CounterLocalService _counterLocalService;
 
 	@Inject
 	private static CTCollectionLocalService _ctCollectionLocalService;

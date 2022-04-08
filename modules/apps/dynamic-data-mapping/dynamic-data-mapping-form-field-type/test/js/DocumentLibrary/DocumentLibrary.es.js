@@ -13,15 +13,17 @@
  */
 
 import {act, cleanup, render} from '@testing-library/react';
-import {PageProvider} from 'dynamic-data-mapping-form-renderer';
+import {PageProvider} from 'data-engine-js-components-web';
 import React from 'react';
 
 import DocumentLibrary from '../../../src/main/resources/META-INF/resources/DocumentLibrary/DocumentLibrary.es';
 
+const globalLanguageDirection = Liferay.Language.direction;
+
 const spritemap = 'icons.svg';
 
 const defaultDocumentLibraryConfig = {
-	name: 'textField',
+	name: 'uploadField',
 	spritemap,
 };
 
@@ -43,11 +45,17 @@ describe('Field DocumentLibrary', () => {
 			}
 			originalWarn.call(console, ...args);
 		};
+
+		Liferay.Language.direction = {
+			en_US: 'rtl',
+		};
 	});
 
 	afterAll(() => {
 		// eslint-disable-next-line no-console
 		console.warn = originalWarn;
+
+		Liferay.Language.direction = globalLanguageDirection;
 	});
 
 	afterEach(cleanup);
@@ -70,6 +78,61 @@ describe('Field DocumentLibrary', () => {
 		});
 
 		expect(container).toMatchSnapshot();
+	});
+
+	it('is readOnly', () => {
+		render(
+			<DocumentLibraryWithProvider
+				{...defaultDocumentLibraryConfig}
+				readOnly={true}
+			/>
+		);
+
+		act(() => {
+			jest.runAllTimers();
+		});
+
+		const uploadFieldInput = document.getElementById(
+			'uploadFieldinputFile'
+		);
+
+		expect(uploadFieldInput.disabled).toBeTruthy();
+
+		const uploadFieldInputSelectButton = document.querySelector(
+			'.select-button'
+		);
+
+		expect(uploadFieldInputSelectButton.disabled).toBeTruthy();
+	});
+
+	it('is readOnly when allowed for guest users', () => {
+		const mockIsSignedIn = jest.fn();
+
+		Liferay.ThemeDisplay.isSignedIn = mockIsSignedIn;
+
+		render(
+			<DocumentLibraryWithProvider
+				{...defaultDocumentLibraryConfig}
+				allowGuestUsers={true}
+				readOnly={true}
+			/>
+		);
+
+		act(() => {
+			jest.runAllTimers();
+		});
+
+		const guestUploadFieldInput = document.getElementById(
+			'uploadFieldinputFileGuestUpload'
+		);
+
+		expect(guestUploadFieldInput.disabled).toBeTruthy();
+
+		const guestUploadFieldInputLabel = document.querySelector(
+			'.select-button'
+		);
+
+		expect(guestUploadFieldInputLabel.classList).toContain('disabled');
 	});
 
 	it('has a helptext', () => {
@@ -207,11 +270,11 @@ describe('Field DocumentLibrary', () => {
 			jest.runAllTimers();
 		});
 
-		const guestUploadFileInput = document.getElementById(
-			'textFieldinputFileGuestUpload'
+		const guestUploadFieldInput = document.getElementById(
+			'uploadFieldinputFileGuestUpload'
 		);
 
-		expect(guestUploadFileInput).not.toBe(null);
+		expect(guestUploadFieldInput).not.toBe(null);
 	});
 
 	it('hide guest upload field if allowGuestUsers property is disabled', () => {
@@ -231,10 +294,40 @@ describe('Field DocumentLibrary', () => {
 			jest.runAllTimers();
 		});
 
-		const guestUploadFileInput = document.getElementById(
-			'textFieldinputFileGuestUpload'
+		const guestUploadFieldInput = document.getElementById(
+			'uploadFieldinputFileGuestUpload'
 		);
 
-		expect(guestUploadFileInput).toBe(null);
+		expect(guestUploadFieldInput).toBe(null);
+	});
+
+	it('disables guest upload field if maximumSubmissionLimitReached property is true', () => {
+		const mockIsSignedIn = jest.fn();
+
+		Liferay.ThemeDisplay.isSignedIn = mockIsSignedIn;
+
+		render(
+			<DocumentLibraryWithProvider
+				{...defaultDocumentLibraryConfig}
+				allowGuestUsers={true}
+				maximumSubmissionLimitReached={true}
+			/>
+		);
+
+		act(() => {
+			jest.runAllTimers();
+		});
+
+		const guestUploadFieldInput = document.getElementById(
+			'uploadFieldinputFileGuestUpload'
+		);
+
+		expect(guestUploadFieldInput.disabled).toBeTruthy();
+
+		const guestUploadFieldInputLabel = document.querySelector(
+			'.select-button'
+		);
+
+		expect(guestUploadFieldInputLabel.classList).toContain('disabled');
 	});
 });

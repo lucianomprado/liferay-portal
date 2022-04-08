@@ -15,10 +15,13 @@
 package com.liferay.dynamic.data.mapping.form.evaluator.internal.function;
 
 import com.liferay.dynamic.data.mapping.expression.UpdateFieldPropertyRequest;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import java.util.Map;
 
 import org.junit.Assert;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -34,16 +37,20 @@ import org.powermock.api.mockito.PowerMockito;
 @RunWith(MockitoJUnitRunner.class)
 public class SetInvalidFunctionTest extends PowerMockito {
 
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
+
 	@Test
 	public void testApply() {
-		DefaultDDMExpressionObserver defaultDDMExpressionObserver =
-			new DefaultDDMExpressionObserver();
-
-		DefaultDDMExpressionObserver spy = spy(defaultDDMExpressionObserver);
+		DefaultDDMExpressionObserver spyDefaultDDMExpressionObserver = spy(
+			new DefaultDDMExpressionObserver());
 
 		SetInvalidFunction setInvalidFunction = new SetInvalidFunction();
 
-		setInvalidFunction.setDDMExpressionObserver(spy);
+		setInvalidFunction.setDDMExpressionObserver(
+			spyDefaultDDMExpressionObserver);
 
 		Boolean result = setInvalidFunction.apply(
 			"contact", "Custom error message");
@@ -52,7 +59,7 @@ public class SetInvalidFunctionTest extends PowerMockito {
 			ArgumentCaptor.forClass(UpdateFieldPropertyRequest.class);
 
 		Mockito.verify(
-			spy, Mockito.times(1)
+			spyDefaultDDMExpressionObserver, Mockito.times(1)
 		).updateFieldProperty(
 			argumentCaptor.capture()
 		);
@@ -71,7 +78,8 @@ public class SetInvalidFunctionTest extends PowerMockito {
 			updateFieldPropertyRequest.getPropertyOptional(
 				"errorMessage"
 			).get());
-		Assert.assertEquals(false, properties.get("valid"));
+
+		Assert.assertFalse((boolean)properties.get("valid"));
 
 		Assert.assertTrue(result);
 	}

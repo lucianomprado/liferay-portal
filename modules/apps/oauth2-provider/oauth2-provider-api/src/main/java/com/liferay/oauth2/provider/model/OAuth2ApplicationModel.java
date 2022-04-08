@@ -390,4 +390,49 @@ public interface OAuth2ApplicationModel
 	 */
 	public void setRedirectURIs(String redirectURIs);
 
+	/**
+	 * Returns the remember device of this o auth2 application.
+	 *
+	 * @return the remember device of this o auth2 application
+	 */
+	public boolean getRememberDevice();
+
+	/**
+	 * Returns <code>true</code> if this o auth2 application is remember device.
+	 *
+	 * @return <code>true</code> if this o auth2 application is remember device; <code>false</code> otherwise
+	 */
+	public boolean isRememberDevice();
+
+	/**
+	 * Sets whether this o auth2 application is remember device.
+	 *
+	 * @param rememberDevice the remember device of this o auth2 application
+	 */
+	public void setRememberDevice(boolean rememberDevice);
+
+	/**
+	 * Returns the trusted application of this o auth2 application.
+	 *
+	 * @return the trusted application of this o auth2 application
+	 */
+	public boolean getTrustedApplication();
+
+	/**
+	 * Returns <code>true</code> if this o auth2 application is trusted application.
+	 *
+	 * @return <code>true</code> if this o auth2 application is trusted application; <code>false</code> otherwise
+	 */
+	public boolean isTrustedApplication();
+
+	/**
+	 * Sets whether this o auth2 application is trusted application.
+	 *
+	 * @param trustedApplication the trusted application of this o auth2 application
+	 */
+	public void setTrustedApplication(boolean trustedApplication);
+
+	@Override
+	public OAuth2Application cloneWithOriginalValues();
+
 }

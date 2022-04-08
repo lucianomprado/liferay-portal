@@ -25,7 +25,7 @@ CPSku cpSku = cpContentHelper.getDefaultCPSku(cpCatalogEntry);
 
 long cpDefinitionId = cpCatalogEntry.getCPDefinitionId();
 
-String productContentAuthToken = AuthTokenUtil.getToken(request, plid, CPPortletKeys.CP_CONTENT_WEB);
+long commerceAccountId = CommerceUtil.getCommerceAccountId((CommerceContext)request.getAttribute(CommerceWebKeys.COMMERCE_CONTEXT));
 %>
 
 <div class="container-fluid product-detail" id="<portlet:namespace /><%= cpCatalogEntry.getCPDefinitionId() %>ProductContent">
@@ -40,8 +40,8 @@ String productContentAuthToken = AuthTokenUtil.getToken(request, plid, CPPortlet
 							for (CPMedia cpMedia : cpContentHelper.getImages(cpDefinitionId, themeDisplay)) {
 							%>
 
-								<div class="card thumb" data-url="<%= cpMedia.getUrl() %>">
-									<img class="center-block img-fluid" src="<%= cpMedia.getUrl() %>" />
+								<div class="card thumb" data-url="<%= HtmlUtil.escapeAttribute(cpMedia.getURL()) %>">
+									<img class="center-block img-fluid" src="<%= HtmlUtil.escapeAttribute(cpMedia.getURL()) %>" />
 								</div>
 
 							<%
@@ -52,8 +52,13 @@ String productContentAuthToken = AuthTokenUtil.getToken(request, plid, CPPortlet
 					</div>
 
 					<div class="col-10 col-lg-10 col-md-9 full-image">
-						<c:if test="<%= Validator.isNotNull(cpCatalogEntry.getDefaultImageFileUrl()) %>">
-							<img class="center-block img-fluid" id="<portlet:namespace />full-image" src="<%= cpCatalogEntry.getDefaultImageFileUrl() %>" />
+
+						<%
+						String defaultImageFileURL = cpContentHelper.getDefaultImageFileURL(commerceAccountId, cpCatalogEntry.getCPDefinitionId());
+						%>
+
+						<c:if test="<%= Validator.isNotNull(defaultImageFileURL) %>">
+							<img class="center-block img-fluid" id="<portlet:namespace />full-image" src="<%= HtmlUtil.escapeAttribute(defaultImageFileURL) %>" />
 						</c:if>
 					</div>
 				</div>
@@ -66,20 +71,20 @@ String productContentAuthToken = AuthTokenUtil.getToken(request, plid, CPPortlet
 					<c:when test="<%= cpSku != null %>">
 						<h4 class="sku"><%= HtmlUtil.escape(cpSku.getSku()) %></h4>
 
-						<div class="price"><liferay-commerce:price CPDefinitionId="<%= cpDefinitionId %>" CPInstanceId="<%= cpSku.getCPInstanceId() %>" /></div>
+						<div class="price-container w-50"><commerce-ui:price CPCatalogEntry="<%= cpCatalogEntry %>" namespace="<%= liferayPortletResponse.getNamespace() %>" /></div>
 
 						<div class="subscription-info"><commerce-ui:product-subscription-info CPInstanceId="<%= cpSku.getCPInstanceId() %>" /></div>
 
-						<div class="availability"><%= cpContentHelper.getAvailabilityLabel(request) %></div>
+						<div class="availability"><%= HtmlUtil.escape(cpContentHelper.getAvailabilityLabel(request)) %></div>
 
-						<div class="availabilityEstimate"><%= cpContentHelper.getAvailabilityEstimateLabel(request) %></div>
+						<div class="availabilityEstimate"><%= HtmlUtil.escape(cpContentHelper.getAvailabilityEstimateLabel(request)) %></div>
 
-						<div class="stockQuantity"><%= cpContentHelper.getStockQuantityLabel(request) %></div>
+						<div class="stockQuantity"><%= HtmlUtil.escape(cpContentHelper.getStockQuantityLabel(request)) %></div>
 					</c:when>
 					<c:otherwise>
 						<h4 class="sku" data-text-cp-instance-sku=""></h4>
 
-						<div class="price" data-text-cp-instance-price=""></div>
+						<div class="price-container w-50" data-text-cp-instance-price=""></div>
 
 						<div class="subscription-info" data-text-cp-instance-subscription-info="" data-text-cp-instance-subscription-info-show></div>
 
@@ -103,7 +108,9 @@ String productContentAuthToken = AuthTokenUtil.getToken(request, plid, CPPortlet
 
 				<div class="row">
 					<div class="col-md-12">
-						<liferay-commerce:compare-product CPDefinitionId="<%= cpDefinitionId %>" />
+						<commerce-ui:compare-checkbox
+							CPCatalogEntry="<%= cpCatalogEntry %>"
+						/>
 					</div>
 				</div>
 
@@ -118,8 +125,8 @@ String productContentAuthToken = AuthTokenUtil.getToken(request, plid, CPPortlet
 
 	<%
 	List<CPDefinitionSpecificationOptionValue> cpDefinitionSpecificationOptionValues = cpContentHelper.getCPDefinitionSpecificationOptionValues(cpDefinitionId);
+	List<CPMedia> cpMedias = cpContentHelper.getCPMedias(cpDefinitionId, themeDisplay);
 	List<CPOptionCategory> cpOptionCategories = cpContentHelper.getCPOptionCategories(company.getCompanyId());
-	List<CPMedia> cpMediaEntries = cpContentHelper.getCPAttachmentFileEntries(cpDefinitionId, themeDisplay);
 	%>
 
 	<div class="row">
@@ -140,7 +147,7 @@ String productContentAuthToken = AuthTokenUtil.getToken(request, plid, CPPortlet
 						</li>
 					</c:if>
 
-					<c:if test="<%= !cpMediaEntries.isEmpty() %>">
+					<c:if test="<%= !cpMedias.isEmpty() %>">
 						<li class="nav-item" role="presentation">
 							<a aria-controls="<portlet:namespace />attachments" aria-expanded="false" class="nav-link" data-toggle="tab" href="#<portlet:namespace />attachments" role="tab">
 								<%= LanguageUtil.get(resourceBundle, "attachments") %>
@@ -151,7 +158,7 @@ String productContentAuthToken = AuthTokenUtil.getToken(request, plid, CPPortlet
 
 				<div class="tab-content">
 					<div class="active tab-pane" id="<portlet:namespace />description">
-						<p><%= cpCatalogEntry.getDescription() %></p>
+						<p><%= HtmlUtil.escape(cpCatalogEntry.getDescription()) %></p>
 					</div>
 
 					<c:if test="<%= cpContentHelper.hasCPDefinitionSpecificationOptionValues(cpDefinitionId) %>">
@@ -187,7 +194,7 @@ String productContentAuthToken = AuthTokenUtil.getToken(request, plid, CPPortlet
 									<div class="table-responsive">
 										<table class="table table-bordered table-striped">
 											<tr>
-												<th><%= cpOptionCategory.getTitle(languageId) %></th>
+												<th><%= HtmlUtil.escape(cpOptionCategory.getTitle(languageId)) %></th>
 												<th></th>
 											</tr>
 
@@ -216,21 +223,21 @@ String productContentAuthToken = AuthTokenUtil.getToken(request, plid, CPPortlet
 						</div>
 					</c:if>
 
-					<c:if test="<%= !cpMediaEntries.isEmpty() %>">
+					<c:if test="<%= !cpMedias.isEmpty() %>">
 						<div class="tab-pane" id="<portlet:namespace />attachments">
 							<div class="table-responsive">
 								<table class="table table-bordered table-striped">
 
 									<%
-									for (CPMedia curCPMedia : cpMediaEntries) {
+									for (CPMedia cpMedia : cpMedias) {
 									%>
 
 										<tr>
 											<td>
-												<span><%= curCPMedia.getTitle() %></span>
+												<span><%= HtmlUtil.escape(cpMedia.getTitle()) %></span>
 
 												<span>
-													<aui:icon cssClass="icon-monospaced" image="download" markupView="lexicon" target="_blank" url="<%= curCPMedia.getDownloadUrl() %>" />
+													<aui:icon cssClass="icon-monospaced" image="download" markupView="lexicon" target="_blank" url="<%= cpMedia.getDownloadURL() %>" />
 												</span>
 											</td>
 										</tr>
@@ -250,11 +257,11 @@ String productContentAuthToken = AuthTokenUtil.getToken(request, plid, CPPortlet
 </div>
 
 <aui:script>
-	window.document.addEventListener('DOMContentLoaded', function () {
+	window.document.addEventListener('DOMContentLoaded', () => {
 		var thumbElements = window.document.querySelectorAll('.thumb');
 
-		Array.from(thumbElements).forEach(function (thumbElement) {
-			thumbElement.addEventListener('click', function (event) {
+		Array.from(thumbElements).forEach((thumbElement) => {
+			thumbElement.addEventListener('click', (event) => {
 				window.document
 					.querySelector('#<portlet:namespace />full-image')
 					.setAttribute(
@@ -266,7 +273,7 @@ String productContentAuthToken = AuthTokenUtil.getToken(request, plid, CPPortlet
 	});
 </aui:script>
 
-<liferay-portlet:actionURL name="checkCPInstance" portletName="com_liferay_commerce_product_content_web_internal_portlet_CPContentPortlet" var="checkCPInstanceURL">
+<liferay-portlet:actionURL name="/cp_content_web/check_cp_instance" portletName="com_liferay_commerce_product_content_web_internal_portlet_CPContentPortlet" var="checkCPInstanceURL">
 	<portlet:param name="cpDefinitionId" value="<%= String.valueOf(cpDefinitionId) %>" />
 	<portlet:param name="groupId" value="<%= String.valueOf(themeDisplay.getScopeGroupId()) %>" />
 </liferay-portlet:actionURL>
@@ -277,7 +284,8 @@ String productContentAuthToken = AuthTokenUtil.getToken(request, plid, CPPortlet
 		cpDefinitionId: <%= cpDefinitionId %>,
 		fullImageSelector: '#<portlet:namespace />full-image',
 		namespace: '<portlet:namespace />',
-		productContentAuthToken: '<%= productContentAuthToken %>',
+		productContentAuthToken:
+			'<%= AuthTokenUtil.getToken(request, plid, CPPortletKeys.CP_CONTENT_WEB) %>',
 		productContentSelector:
 			'#<portlet:namespace /><%= cpDefinitionId %>ProductContent',
 		thumbsContainerSelector: '#<portlet:namespace />thumbs-container',

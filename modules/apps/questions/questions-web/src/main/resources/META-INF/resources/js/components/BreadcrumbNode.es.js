@@ -20,13 +20,13 @@ import React, {useContext, useState} from 'react';
 import {AppContext} from '../AppContext.es';
 import Link from './Link.es';
 
-export default ({
+export default function BreadcrumbNode({
 	hasDropdown = false,
 	isEllipsis = false,
 	isFirstNode = false,
 	section = {},
 	ui,
-}) => {
+}) {
 	const context = useContext(AppContext);
 	const [active, setActive] = useState(false);
 
@@ -61,6 +61,7 @@ export default ({
 										{ui || section.title}
 									</Link>
 								)}
+
 								<ClayIcon symbol="caret-bottom-l" />
 							</ClayButton>
 						}
@@ -91,14 +92,23 @@ export default ({
 				) : context.showCardsForTopicNavigation && isFirstNode ? (
 					<Link
 						className="breadcrumb-item questions-breadcrumb-unstyled"
-						to={'/'}
+						to="/questions"
 					>
 						{ui || section.title}
 					</Link>
 				) : (
-					ui || section.title
+					<Link
+						className="breadcrumb-item questions-breadcrumb-unstyled"
+						to={`/questions/${
+							context.useTopicNamesInURL
+								? section.title
+								: section.id
+						}`}
+					>
+						{ui || section.title}
+					</Link>
 				)}
 			</li>
 		</>
 	);
-};
+}

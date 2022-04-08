@@ -36,6 +36,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author Michael C. Han
@@ -76,6 +77,8 @@ public abstract class BaseAsyncDestination extends BaseDestination {
 			_noticeableThreadPoolExecutor.getCorePoolSize());
 		destinationStatistics.setPendingMessageCount(
 			_noticeableThreadPoolExecutor.getPendingTaskCount());
+		destinationStatistics.setRejectedMessageCount(
+			_rejectedTaskCounter.get());
 		destinationStatistics.setSentMessageCount(
 			_noticeableThreadPoolExecutor.getCompletedTaskCount());
 
@@ -104,6 +107,9 @@ public abstract class BaseAsyncDestination extends BaseDestination {
 
 		if (_rejectedExecutionHandler == null) {
 			_rejectedExecutionHandler = _createRejectionExecutionHandler();
+		}
+		else {
+			_rejectedTaskCounter.set(0);
 		}
 
 		NoticeableThreadPoolExecutor noticeableThreadPoolExecutor =
@@ -184,25 +190,62 @@ public abstract class BaseAsyncDestination extends BaseDestination {
 	public void setRejectedExecutionHandler(
 		RejectedExecutionHandler rejectedExecutionHandler) {
 
-		_rejectedExecutionHandler = rejectedExecutionHandler;
+		_rejectedExecutionHandler = (runnable, threadPoolExecutor) -> {
+			_rejectedTaskCounter.incrementAndGet();
+
+			rejectedExecutionHandler.rejectedExecution(
+				runnable, threadPoolExecutor);
+		};
 	}
 
 	public void setUserLocalService(UserLocalService userLocalService) {
 		this.userLocalService = userLocalService;
 	}
 
+	/**
+	 *   @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 *          #setWorkersSize(int, int)}
+	 */
+	@Deprecated
 	public void setWorkersCoreSize(int workersCoreSize) {
 		_workersCoreSize = workersCoreSize;
 
 		if (_noticeableThreadPoolExecutor != null) {
-			_noticeableThreadPoolExecutor.setCorePoolSize(_workersMaxSize);
+			_noticeableThreadPoolExecutor.setCorePoolSize(workersCoreSize);
 		}
 	}
 
+	/**
+	 *   @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 *          #setWorkersSize(int, int)}
+	 */
+	@Deprecated
 	public void setWorkersMaxSize(int workersMaxSize) {
 		_workersMaxSize = workersMaxSize;
 
 		if (_noticeableThreadPoolExecutor != null) {
+			_noticeableThreadPoolExecutor.setMaximumPoolSize(workersMaxSize);
+		}
+	}
+
+	public void setWorkersSize(int workersCoreSize, int workersMaxSize) {
+		if (workersCoreSize < 1) {
+			throw new IllegalArgumentException(
+				"To ensure FIFO, core pool size must be 1 or greater");
+		}
+		else if ((workersMaxSize <= 0) || (workersMaxSize < workersCoreSize)) {
+			throw new IllegalArgumentException(
+				"Maximum pool size must be greater than 0 and core pool size");
+		}
+
+		_workersCoreSize = workersCoreSize;
+		_workersMaxSize = workersMaxSize;
+
+		if (_noticeableThreadPoolExecutor != null) {
+			_noticeableThreadPoolExecutor.setCorePoolSize(workersCoreSize);
+
+			// Invoke setMaximumPoolSize after setCorePoolSize. See LPS-124209.
+
 			_noticeableThreadPoolExecutor.setMaximumPoolSize(workersMaxSize);
 		}
 	}
@@ -223,6 +266,8 @@ public abstract class BaseAsyncDestination extends BaseDestination {
 			@Override
 			public void rejectedExecution(
 				Runnable runnable, ThreadPoolExecutor threadPoolExecutor) {
+
+				_rejectedTaskCounter.incrementAndGet();
 
 				if (!_log.isWarnEnabled()) {
 					return;
@@ -251,6 +296,7 @@ public abstract class BaseAsyncDestination extends BaseDestination {
 	private NoticeableThreadPoolExecutor _noticeableThreadPoolExecutor;
 	private PortalExecutorManager _portalExecutorManager;
 	private RejectedExecutionHandler _rejectedExecutionHandler;
+	private final AtomicLong _rejectedTaskCounter = new AtomicLong();
 	private int _workersCoreSize = _WORKERS_CORE_SIZE;
 	private int _workersMaxSize = _WORKERS_MAX_SIZE;
 

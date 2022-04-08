@@ -12,14 +12,22 @@
  * details.
  */
 
+import AdminAccountAPI from './commerce-admin-account/index';
 import AdminCatalogAPI from './commerce-admin-catalog/index';
+import AdminChannelAPI from './commerce-admin-channel/index';
+import AdminOrderAPI from './commerce-admin-order/index';
 import AdminPricingAPI from './commerce-admin-pricing/index';
 import DeliveryCartAPI from './commerce-delivery-cart/index';
+import DeliveryCatalogAPI from './commerce-delivery-catalog/index';
 
 const ServiceProvider = {
+	AdminAccountAPI,
 	AdminCatalogAPI,
+	AdminChannelAPI,
+	AdminOrderAPI,
 	AdminPricingAPI,
 	DeliveryCartAPI,
+	DeliveryCatalogAPI,
 };
 
 export default ServiceProvider;

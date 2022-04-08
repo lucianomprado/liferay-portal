@@ -16,33 +16,34 @@
 
 <%@ include file="/init.jsp" %>
 
-<p>
-	<%= collectionFilterFragmentRendererDisplayContext.getAssetCategoryTreeNodeTitle() %>
-</p>
+<%
+FragmentCollectionFilter fragmentCollectionFilter = (FragmentCollectionFilter)request.getAttribute(FragmentCollectionFilter.class.getName());
+FragmentRendererContext fragmentRendererContext = (FragmentRendererContext)request.getAttribute(FragmentRendererContext.class.getName());
+%>
 
 <c:choose>
-	<c:when test="<%= collectionFilterFragmentRendererDisplayContext.isMultipleSelection() %>">
-		<div>
-			<clay:button
-				cssClass="dropdown-toggle form-control-select text-left"
-				disabled="<%= true %>"
-				displayType="secondary"
-				label='<%= LanguageUtil.get(request, "select") %>'
-			/>
+	<c:when test="<%= fragmentCollectionFilter != null %>">
+		<liferay-frontend:component
+			context='<%=
+				HashMapBuilder.<String, Object>put(
+					"filterPrefix", FragmentCollectionFilterConstants.FILTER_PREFIX
+				).build()
+			%>'
+			module="js/CollectionFilterRegister"
+			servletContext="<%= application %>"
+		/>
 
-			<react:component
-				module="js/MultiSelectCategory.es"
-				props="<%= collectionFilterFragmentRendererDisplayContext.getProps() %>"
-			/>
-		</div>
+		<%
+		fragmentCollectionFilter.render(fragmentRendererContext, request, response);
+		%>
+
 	</c:when>
 	<c:otherwise>
-		<clay:dropdown-menu
-			cssClass="form-control form-control-select form-control-sm text-left"
+		<clay:button
+			cssClass="bg-light dropdown-toggle font-weight-bold form-control-select form-control-sm text-left w-100"
 			displayType="secondary"
-			dropdownItems="<%= collectionFilterFragmentRendererDisplayContext.getDropdownItems() %>"
-			label="<%= collectionFilterFragmentRendererDisplayContext.getSelectedAssetCategoryTitle() %>"
-			title="<%= collectionFilterFragmentRendererDisplayContext.getAssetCategoryTreeNodeTitle() %>"
+			label="<%= StringPool.DASH %>"
+			small="<%= true %>"
 		/>
 	</c:otherwise>
 </c:choose>

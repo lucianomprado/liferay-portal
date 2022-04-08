@@ -1,4 +1,5 @@
 create table CPDAvailabilityEstimate (
+	mvccVersion LONG default 0 not null,
 	uuid_ VARCHAR(75) null,
 	CPDAvailabilityEstimateId LONG not null primary key,
 	companyId LONG,
@@ -12,8 +13,10 @@ create table CPDAvailabilityEstimate (
 );
 
 create table CPDefinitionInventory (
+	mvccVersion LONG default 0 not null,
+	ctCollectionId LONG default 0 not null,
 	uuid_ VARCHAR(75) null,
-	CPDefinitionInventoryId LONG not null primary key,
+	CPDefinitionInventoryId LONG not null,
 	groupId LONG,
 	companyId LONG,
 	userId LONG,
@@ -30,38 +33,26 @@ create table CPDefinitionInventory (
 	minOrderQuantity INTEGER,
 	maxOrderQuantity INTEGER,
 	allowedOrderQuantities VARCHAR(75) null,
-	multipleOrderQuantity INTEGER
+	multipleOrderQuantity INTEGER,
+	primary key (CPDefinitionInventoryId, ctCollectionId)
 );
 
-create table CommerceAddress (
-	externalReferenceCode VARCHAR(75) null,
-	commerceAddressId LONG not null primary key,
-	groupId LONG,
+create table CSOptionAccountEntryRel (
+	mvccVersion LONG default 0 not null,
+	CSOptionAccountEntryRelId LONG not null primary key,
 	companyId LONG,
 	userId LONG,
 	userName VARCHAR(75) null,
 	createDate DATE null,
 	modifiedDate DATE null,
-	classNameId LONG,
-	classPK LONG,
-	name VARCHAR(255) null,
-	description STRING null,
-	street1 VARCHAR(255) null,
-	street2 VARCHAR(255) null,
-	street3 VARCHAR(255) null,
-	city VARCHAR(75) null,
-	zip VARCHAR(75) null,
-	commerceRegionId LONG,
-	commerceCountryId LONG,
-	latitude DOUBLE,
-	longitude DOUBLE,
-	phoneNumber VARCHAR(75) null,
-	defaultBilling BOOLEAN,
-	defaultShipping BOOLEAN,
-	type_ INTEGER
+	accountEntryId LONG,
+	commerceChannelId LONG,
+	commerceShippingMethodKey VARCHAR(75) null,
+	commerceShippingOptionKey VARCHAR(75) null
 );
 
 create table CommerceAddressRestriction (
+	mvccVersion LONG default 0 not null,
 	commerceAddressRestrictionId LONG not null primary key,
 	groupId LONG,
 	companyId LONG,
@@ -71,10 +62,11 @@ create table CommerceAddressRestriction (
 	modifiedDate DATE null,
 	classNameId LONG,
 	classPK LONG,
-	commerceCountryId LONG
+	countryId LONG
 );
 
 create table CommerceAvailabilityEstimate (
+	mvccVersion LONG default 0 not null,
 	uuid_ VARCHAR(75) null,
 	commerceAvailabilityEstimateId LONG not null primary key,
 	companyId LONG,
@@ -87,28 +79,8 @@ create table CommerceAvailabilityEstimate (
 	lastPublishDate DATE null
 );
 
-create table CommerceCountry (
-	uuid_ VARCHAR(75) null,
-	commerceCountryId LONG not null primary key,
-	companyId LONG,
-	userId LONG,
-	userName VARCHAR(75) null,
-	createDate DATE null,
-	modifiedDate DATE null,
-	name STRING null,
-	billingAllowed BOOLEAN,
-	shippingAllowed BOOLEAN,
-	twoLettersISOCode VARCHAR(75) null,
-	threeLettersISOCode VARCHAR(75) null,
-	numericISOCode INTEGER,
-	subjectToVAT BOOLEAN,
-	priority DOUBLE,
-	active_ BOOLEAN,
-	lastPublishDate DATE null,
-	channelFilterEnabled BOOLEAN
-);
-
 create table CommerceOrder (
+	mvccVersion LONG default 0 not null,
 	uuid_ VARCHAR(75) null,
 	externalReferenceCode VARCHAR(75) null,
 	commerceOrderId LONG not null primary key,
@@ -120,6 +92,7 @@ create table CommerceOrder (
 	modifiedDate DATE null,
 	commerceAccountId LONG,
 	commerceCurrencyId LONG,
+	commerceOrderTypeId LONG,
 	billingAddressId LONG,
 	shippingAddressId LONG,
 	commercePaymentMethodKey VARCHAR(75) null,
@@ -129,6 +102,12 @@ create table CommerceOrder (
 	purchaseOrderNumber VARCHAR(75) null,
 	couponCode VARCHAR(75) null,
 	lastPriceUpdateDate DATE null,
+	deliveryCommerceTermEntryId LONG,
+	deliveryCTermEntryDescription TEXT null,
+	deliveryCommerceTermEntryName VARCHAR(75) null,
+	paymentCommerceTermEntryId LONG,
+	paymentCTermEntryDescription TEXT null,
+	paymentCommerceTermEntryName VARCHAR(75) null,
 	subtotal DECIMAL(30, 16) null,
 	subtotalDiscountAmount DECIMAL(30, 16) null,
 	subtotalDiscountPercentLevel1 DECIMAL(30, 16) null,
@@ -180,6 +159,7 @@ create table CommerceOrder (
 );
 
 create table CommerceOrderItem (
+	mvccVersion LONG default 0 not null,
 	externalReferenceCode VARCHAR(75) null,
 	commerceOrderItemId LONG not null primary key,
 	groupId LONG,
@@ -188,42 +168,61 @@ create table CommerceOrderItem (
 	userName VARCHAR(75) null,
 	createDate DATE null,
 	modifiedDate DATE null,
+	bookedQuantityId LONG,
 	commerceOrderId LONG,
 	commercePriceListId LONG,
-	CProductId LONG,
 	CPInstanceId LONG,
+	CPMeasurementUnitId LONG,
+	CProductId LONG,
 	parentCommerceOrderItemId LONG,
-	quantity INTEGER,
-	shippedQuantity INTEGER,
-	json TEXT null,
-	name STRING null,
-	sku VARCHAR(75) null,
-	unitPrice DECIMAL(30, 16) null,
-	promoPrice DECIMAL(30, 16) null,
+	decimalQuantity DECIMAL(30, 16) null,
+	deliveryGroup VARCHAR(75) null,
+	deliveryMaxSubscriptionCycles LONG,
+	deliverySubscriptionLength INTEGER,
+	deliverySubscriptionType VARCHAR(75) null,
+	deliverySubTypeSettings VARCHAR(75) null,
+	depth DOUBLE,
 	discountAmount DECIMAL(30, 16) null,
-	finalPrice DECIMAL(30, 16) null,
 	discountPercentageLevel1 DECIMAL(30, 16) null,
 	discountPercentageLevel2 DECIMAL(30, 16) null,
 	discountPercentageLevel3 DECIMAL(30, 16) null,
 	discountPercentageLevel4 DECIMAL(30, 16) null,
-	unitPriceWithTaxAmount DECIMAL(30, 16) null,
-	promoPriceWithTaxAmount DECIMAL(30, 16) null,
-	discountWithTaxAmount DECIMAL(30, 16) null,
-	finalPriceWithTaxAmount DECIMAL(30, 16) null,
 	discountPctLevel1WithTaxAmount DECIMAL(30, 16) null,
 	discountPctLevel2WithTaxAmount DECIMAL(30, 16) null,
 	discountPctLevel3WithTaxAmount DECIMAL(30, 16) null,
 	discountPctLevel4WithTaxAmount DECIMAL(30, 16) null,
-	subscription BOOLEAN,
-	deliveryGroup VARCHAR(75) null,
-	shippingAddressId LONG,
+	discountWithTaxAmount DECIMAL(30, 16) null,
+	finalPrice DECIMAL(30, 16) null,
+	finalPriceWithTaxAmount DECIMAL(30, 16) null,
+	freeShipping BOOLEAN,
+	height DOUBLE,
+	json TEXT null,
+	manuallyAdjusted BOOLEAN,
+	maxSubscriptionCycles LONG,
+	name STRING null,
 	printedNote STRING null,
+	promoPrice DECIMAL(30, 16) null,
+	promoPriceWithTaxAmount DECIMAL(30, 16) null,
+	quantity INTEGER,
 	requestedDeliveryDate DATE null,
-	bookedQuantityId LONG,
-	manuallyAdjusted BOOLEAN
+	shippingAddressId LONG,
+	shipSeparately BOOLEAN,
+	shippable BOOLEAN,
+	shippedQuantity INTEGER,
+	shippingExtraPrice DOUBLE,
+	sku VARCHAR(75) null,
+	subscription BOOLEAN,
+	subscriptionLength INTEGER,
+	subscriptionType VARCHAR(75) null,
+	subscriptionTypeSettings VARCHAR(75) null,
+	unitPrice DECIMAL(30, 16) null,
+	unitPriceWithTaxAmount DECIMAL(30, 16) null,
+	weight DOUBLE,
+	width DOUBLE
 );
 
 create table CommerceOrderNote (
+	mvccVersion LONG default 0 not null,
 	externalReferenceCode VARCHAR(75) null,
 	commerceOrderNoteId LONG not null primary key,
 	groupId LONG,
@@ -238,6 +237,7 @@ create table CommerceOrderNote (
 );
 
 create table CommerceOrderPayment (
+	mvccVersion LONG default 0 not null,
 	commerceOrderPaymentId LONG not null primary key,
 	groupId LONG,
 	companyId LONG,
@@ -251,23 +251,45 @@ create table CommerceOrderPayment (
 	status INTEGER
 );
 
-create table CommerceRegion (
-	uuid_ VARCHAR(75) null,
-	commerceRegionId LONG not null primary key,
+create table CommerceOrderType (
+	mvccVersion LONG default 0 not null,
+	externalReferenceCode VARCHAR(75) null,
+	commerceOrderTypeId LONG not null primary key,
 	companyId LONG,
 	userId LONG,
 	userName VARCHAR(75) null,
 	createDate DATE null,
 	modifiedDate DATE null,
-	commerceCountryId LONG,
-	name VARCHAR(75) null,
-	code_ VARCHAR(75) null,
-	priority DOUBLE,
+	name STRING null,
+	description STRING null,
 	active_ BOOLEAN,
-	lastPublishDate DATE null
+	displayDate DATE null,
+	displayOrder INTEGER,
+	expirationDate DATE null,
+	lastPublishDate DATE null,
+	status INTEGER,
+	statusByUserId LONG,
+	statusByUserName VARCHAR(75) null,
+	statusDate DATE null
+);
+
+create table CommerceOrderTypeRel (
+	mvccVersion LONG default 0 not null,
+	externalReferenceCode VARCHAR(75) null,
+	commerceOrderTypeRelId LONG not null primary key,
+	companyId LONG,
+	userId LONG,
+	userName VARCHAR(75) null,
+	createDate DATE null,
+	modifiedDate DATE null,
+	classNameId LONG,
+	classPK LONG,
+	commerceOrderTypeId LONG
 );
 
 create table CommerceShipment (
+	mvccVersion LONG default 0 not null,
+	externalReferenceCode VARCHAR(75) null,
 	commerceShipmentId LONG not null primary key,
 	groupId LONG,
 	companyId LONG,
@@ -287,6 +309,8 @@ create table CommerceShipment (
 );
 
 create table CommerceShipmentItem (
+	mvccVersion LONG default 0 not null,
+	externalReferenceCode VARCHAR(75) null,
 	commerceShipmentItemId LONG not null primary key,
 	groupId LONG,
 	companyId LONG,
@@ -301,6 +325,7 @@ create table CommerceShipmentItem (
 );
 
 create table CommerceShippingMethod (
+	mvccVersion LONG default 0 not null,
 	commerceShippingMethodId LONG not null primary key,
 	groupId LONG,
 	companyId LONG,
@@ -317,6 +342,7 @@ create table CommerceShippingMethod (
 );
 
 create table CommerceSubscriptionEntry (
+	mvccVersion LONG default 0 not null,
 	uuid_ VARCHAR(75) null,
 	commerceSubscriptionEntryId LONG not null primary key,
 	groupId LONG,

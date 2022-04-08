@@ -21,6 +21,7 @@ import com.liferay.portal.kernel.resource.bundle.AggregateResourceBundleLoader;
 import com.liferay.portal.kernel.resource.bundle.ClassResourceBundleLoader;
 import com.liferay.portal.kernel.resource.bundle.ResourceBundleLoader;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
+import com.liferay.portal.kernel.service.CompanyLocalServiceUtil;
 import com.liferay.portal.kernel.upgrade.util.UpgradeProcessUtil;
 import com.liferay.portal.kernel.util.LocalizationUtil;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
@@ -34,9 +35,49 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * @author Leon Chi
+ * @author     Leon Chi
+ * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+ *             BaseLocalizedColumnUpgradeProcess}
  */
+@Deprecated
 public abstract class BaseUpgradeLocalizedColumn extends UpgradeProcess {
+
+	protected void upgradeLocalizedColumn(
+			ResourceBundleLoader resourceBundleLoader, Class<?> tableClass,
+			String columnName, String originalContent,
+			String localizationMapKey, String localizationXMLKey,
+			long[] companyIds)
+		throws SQLException {
+
+		try {
+			String tableName = getTableName(tableClass);
+
+			if (!hasColumnType(tableName, columnName, "TEXT null") &&
+				!_alteredTableNameColumnNames.contains(
+					tableName + StringPool.POUND + columnName)) {
+
+				alterColumnType(tableName, columnName, "TEXT null");
+
+				_alteredTableNameColumnNames.add(
+					tableName + StringPool.POUND + columnName);
+			}
+
+			Class<?> clazz = getClass();
+
+			CompanyLocalServiceUtil.forEachCompanyId(
+				companyId -> _upgrade(
+					new AggregateResourceBundleLoader(
+						new ClassResourceBundleLoader(
+							"content.Language", clazz.getClassLoader()),
+						resourceBundleLoader),
+					tableClass, columnName, originalContent, localizationMapKey,
+					localizationXMLKey, companyId),
+				companyIds);
+		}
+		catch (Exception exception) {
+			throw new SQLException(exception);
+		}
+	}
 
 	/**
 	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
@@ -51,45 +92,6 @@ public abstract class BaseUpgradeLocalizedColumn extends UpgradeProcess {
 			String localizationMapKey, String localizationXMLKey,
 			long[] companyIds)
 		throws SQLException {
-	}
-
-	protected void upgradeLocalizedColumn(
-			ResourceBundleLoader resourceBundleLoader, Class<?> tableClass,
-			String columnName, String originalContent,
-			String localizationMapKey, String localizationXMLKey,
-			long[] companyIds)
-		throws SQLException {
-
-		Class<?> clazz = getClass();
-
-		resourceBundleLoader = new AggregateResourceBundleLoader(
-			new ClassResourceBundleLoader(
-				"content.Language", clazz.getClassLoader()),
-			resourceBundleLoader);
-
-		try {
-			String tableName = getTableName(tableClass);
-
-			if (!hasColumnType(tableName, columnName, "TEXT null") &&
-				!_alteredTableNameColumnNames.contains(
-					tableName + StringPool.POUND + columnName)) {
-
-				alter(tableClass, new AlterColumnType(columnName, "TEXT null"));
-
-				_alteredTableNameColumnNames.add(
-					tableName + StringPool.POUND + columnName);
-			}
-
-			for (long companyId : companyIds) {
-				_upgrade(
-					resourceBundleLoader, tableClass, columnName,
-					originalContent, localizationMapKey, localizationXMLKey,
-					companyId);
-			}
-		}
-		catch (Exception exception) {
-			throw new SQLException(exception);
-		}
 	}
 
 	private String _getLocalizationXML(
@@ -142,12 +144,14 @@ public abstract class BaseUpgradeLocalizedColumn extends UpgradeProcess {
 			"update ", tableName, " set ", columnName, " = ? where ",
 			columnName, " like ? and companyId = ?");
 
-		try (PreparedStatement ps = connection.prepareStatement(sql)) {
-			ps.setString(1, localizationXML);
-			ps.setString(2, originalContent);
-			ps.setLong(3, companyId);
+		try (PreparedStatement preparedStatement = connection.prepareStatement(
+				sql)) {
 
-			ps.executeUpdate();
+			preparedStatement.setString(1, localizationXML);
+			preparedStatement.setString(2, originalContent);
+			preparedStatement.setLong(3, companyId);
+
+			preparedStatement.executeUpdate();
 		}
 		catch (SQLException sqlException) {
 			throw new SystemException(sqlException);

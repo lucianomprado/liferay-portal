@@ -12,19 +12,21 @@
  * details.
  */
 
+import {StyleErrorsContextProvider} from '@liferay/layout-content-page-editor-web';
 import {fetch, objectToFormData, openToast} from 'frontend-js-web';
 import React, {useEffect, useState} from 'react';
 
 import LayoutPreview from './LayoutPreview';
 import Sidebar from './Sidebar';
 import {StyleBookContextProvider} from './StyleBookContext';
+import Toolbar from './Toolbar';
 import {config, initializeConfig} from './config';
 import {DRAFT_STATUS} from './constants/draftStatusConstants';
+import {LAYOUT_TYPES} from './constants/layoutTypes';
 import {useCloseProductMenu} from './useCloseProductMenu';
 
 const StyleBookEditor = ({
 	frontendTokensValues: initialFrontendTokensValues,
-	initialPreviewLayout,
 }) => {
 	useCloseProductMenu();
 
@@ -32,7 +34,18 @@ const StyleBookEditor = ({
 		initialFrontendTokensValues
 	);
 	const [draftStatus, setDraftStatus] = useState(DRAFT_STATUS.notSaved);
-	const [previewLayout, setPreviewLayout] = useState(initialPreviewLayout);
+	const [previewLayout, setPreviewLayout] = useState(
+		getMostRecentLayout(config.previewOptions)
+	);
+	const [previewLayoutType, setPreviewLayoutType] = useState(
+		() =>
+			config.previewOptions.find((type) =>
+				type.data.recentLayouts.find(
+					(layout) => layout === previewLayout
+				)
+			)?.type
+	);
+	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
 		if (frontendTokensValues === initialFrontendTokensValues) {
@@ -64,47 +77,59 @@ const StyleBookEditor = ({
 			value={{
 				draftStatus,
 				frontendTokensValues,
+				loading,
 				previewLayout,
+				previewLayoutType,
 				setFrontendTokensValues,
+				setLoading,
 				setPreviewLayout,
+				setPreviewLayoutType,
 			}}
 		>
-			<div className="style-book-editor">
-				<LayoutPreview />
-				<Sidebar />
+			<div className="cadmin style-book-editor">
+				<StyleErrorsContextProvider>
+					<Toolbar />
+
+					<div className="d-flex">
+						<LayoutPreview />
+
+						<Sidebar />
+					</div>
+				</StyleErrorsContextProvider>
 			</div>
 		</StyleBookContextProvider>
 	);
 };
 
 export default function ({
+	fragmentCollectionPreviewURL = '',
 	frontendTokenDefinition = [],
-	initialPreviewLayout,
-	namespace,
-	publishURL,
+	frontendTokensValues = {},
+	isPrivateLayoutsEnabled,
 	layoutsTreeURL,
+	namespace,
+	previewOptions,
+	publishURL,
 	redirectURL,
 	saveDraftURL,
 	styleBookEntryId,
-	frontendTokensValues = {},
+	themeName,
 } = {}) {
 	initializeConfig({
+		fragmentCollectionPreviewURL,
 		frontendTokenDefinition,
-		initialPreviewLayout,
+		isPrivateLayoutsEnabled,
 		layoutsTreeURL,
 		namespace,
+		previewOptions,
 		publishURL,
 		redirectURL,
 		saveDraftURL,
 		styleBookEntryId,
+		themeName,
 	});
 
-	return (
-		<StyleBookEditor
-			frontendTokensValues={frontendTokensValues}
-			initialPreviewLayout={initialPreviewLayout}
-		/>
-	);
+	return <StyleBookEditor frontendTokensValues={frontendTokensValues} />;
 }
 
 function saveDraft(frontendTokensValues, styleBookEntryId) {
@@ -136,4 +161,26 @@ function saveDraft(frontendTokensValues, styleBookEntryId) {
 
 			return body;
 		});
+}
+
+function getMostRecentLayout(previewOptions) {
+	const types = [
+		LAYOUT_TYPES.page,
+		LAYOUT_TYPES.master,
+		LAYOUT_TYPES.pageTemplate,
+		LAYOUT_TYPES.displayPageTemplate,
+		LAYOUT_TYPES.fragmentCollection,
+	];
+
+	for (let i = 0; i < types.length; i++) {
+		const layouts = previewOptions.find(
+			(option) => option.type === types[i]
+		).data.recentLayouts;
+
+		if (layouts.length) {
+			return layouts[0];
+		}
+	}
+
+	return null;
 }

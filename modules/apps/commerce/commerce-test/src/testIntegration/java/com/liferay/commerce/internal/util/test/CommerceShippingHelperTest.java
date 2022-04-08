@@ -20,32 +20,23 @@ import com.liferay.commerce.currency.test.util.CommerceCurrencyTestUtil;
 import com.liferay.commerce.inventory.model.CommerceInventoryWarehouse;
 import com.liferay.commerce.model.CommerceOrder;
 import com.liferay.commerce.model.Dimensions;
-import com.liferay.commerce.product.model.CPDefinition;
 import com.liferay.commerce.product.model.CPInstance;
 import com.liferay.commerce.product.model.CommerceChannel;
-import com.liferay.commerce.product.service.CPDefinitionLocalService;
 import com.liferay.commerce.product.service.CPInstanceLocalService;
 import com.liferay.commerce.product.test.util.CPTestUtil;
 import com.liferay.commerce.service.CommerceOrderLocalServiceUtil;
 import com.liferay.commerce.test.util.CommerceInventoryTestUtil;
 import com.liferay.commerce.test.util.CommerceTestUtil;
 import com.liferay.commerce.util.CommerceShippingHelper;
-import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
-import com.liferay.portal.kernel.test.rule.DataGuard;
-import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
 import com.liferay.portal.kernel.test.rule.Sync;
-import com.liferay.portal.kernel.test.util.CompanyTestUtil;
 import com.liferay.portal.kernel.test.util.GroupTestUtil;
-import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.UserTestUtil;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
-
-import java.math.BigDecimal;
 
 import org.frutilla.FrutillaRule;
 
@@ -59,7 +50,6 @@ import org.junit.runner.RunWith;
 /**
  * @author Luca Pellizzon
  */
-@DataGuard(scope = DataGuard.Scope.METHOD)
 @RunWith(Arquillian.class)
 @Sync
 public class CommerceShippingHelperTest {
@@ -73,12 +63,9 @@ public class CommerceShippingHelperTest {
 
 	@Before
 	public void setUp() throws Exception {
-		_company = CompanyTestUtil.addCompany();
+		_group = GroupTestUtil.addGroup();
 
-		_user = UserTestUtil.addUser(_company);
-
-		_group = GroupTestUtil.addGroup(
-			_company.getCompanyId(), _user.getUserId(), 0);
+		_user = UserTestUtil.addUser();
 
 		_commerceCurrency = CommerceCurrencyTestUtil.addCommerceCurrency(
 			_user.getCompanyId());
@@ -111,26 +98,18 @@ public class CommerceShippingHelperTest {
 			_user.getUserId(), _commerceChannel.getGroupId(),
 			_commerceCurrency);
 
-		CPInstance cpInstance1 = CPTestUtil.addCPInstanceWithSku(
+		CPInstance cpInstance1 = CPTestUtil.addCPInstanceWithRandomSku(
 			_group.getGroupId());
-		CPInstance cpInstance2 = CPTestUtil.addCPInstanceWithSku(
+		CPInstance cpInstance2 = CPTestUtil.addCPInstanceWithRandomSku(
 			_group.getGroupId());
-		CPInstance cpInstance3 = CPTestUtil.addCPInstanceWithSku(
+		CPInstance cpInstance3 = CPTestUtil.addCPInstanceWithRandomSku(
 			_group.getGroupId());
-
-		_addCPDefinitionProperties(cpInstance1);
-		_addCPDefinitionProperties(cpInstance2);
-		_addCPDefinitionProperties(cpInstance3);
-
-		_addAvailability(cpInstance1);
-		_addAvailability(cpInstance2);
-		_addAvailability(cpInstance3);
 
 		double dimension = 10.5;
 
-		_addDimensions(cpInstance1, dimension);
-		_addDimensions(cpInstance2, dimension);
-		_addDimensions(cpInstance3, dimension);
+		cpInstance1 = _addDimensions(cpInstance1, dimension);
+		cpInstance2 = _addDimensions(cpInstance2, dimension);
+		cpInstance3 = _addDimensions(cpInstance3, dimension);
 
 		CommerceTestUtil.addCommerceOrderItem(
 			commerceOrder.getCommerceOrderId(), cpInstance1.getCPInstanceId(),
@@ -182,24 +161,12 @@ public class CommerceShippingHelperTest {
 			_user.getUserId(), _commerceChannel.getGroupId(),
 			_commerceCurrency);
 
-		CPInstance cpInstance1 = CPTestUtil.addCPInstanceWithSku(
+		CPInstance cpInstance1 = CPTestUtil.addCPInstanceWithRandomSku(
 			_group.getGroupId());
-		CPInstance cpInstance2 = CPTestUtil.addCPInstanceWithSku(
+		CPInstance cpInstance2 = CPTestUtil.addCPInstanceWithRandomSku(
 			_group.getGroupId());
-		CPInstance cpInstance3 = CPTestUtil.addCPInstanceWithSku(
+		CPInstance cpInstance3 = CPTestUtil.addCPInstanceWithRandomSku(
 			_group.getGroupId());
-
-		_addCPDefinitionProperties(cpInstance1);
-		_addCPDefinitionProperties(cpInstance2);
-		_addCPDefinitionProperties(cpInstance3);
-
-		_addAvailability(cpInstance1);
-		_addAvailability(cpInstance2);
-		_addAvailability(cpInstance3);
-
-		_addWeight(cpInstance1);
-		_addWeight(cpInstance2);
-		_addWeight(cpInstance3);
 
 		CommerceTestUtil.addCommerceOrderItem(
 			commerceOrder.getCommerceOrderId(), cpInstance1.getCPInstanceId(),
@@ -227,48 +194,20 @@ public class CommerceShippingHelperTest {
 	@Rule
 	public FrutillaRule frutillaRule = new FrutillaRule();
 
-	private void _addAvailability(CPInstance cpInstance) throws Exception {
-		BigDecimal price = BigDecimal.valueOf(RandomTestUtil.randomDouble());
-
-		cpInstance.setPrice(price);
-
-		CommerceInventoryTestUtil.addCommerceInventoryWarehouseItem(
-			cpInstance.getUserId(), _commerceInventoryWarehouse,
-			cpInstance.getSku(), 10);
-	}
-
-	private void _addCPDefinitionProperties(CPInstance cpInstance)
-		throws Exception {
-
-		CPDefinition cpDefinition = cpInstance.getCPDefinition();
-
-		cpDefinition.setShippable(true);
-		cpDefinition.setFreeShipping(false);
-
-		_cpDefinitionLocalService.updateCPDefinition(cpDefinition);
-	}
-
-	private void _addDimensions(CPInstance cpInstance, double dimension) {
+	private CPInstance _addDimensions(CPInstance cpInstance, double dimension) {
 		cpInstance.setWidth(dimension);
 		cpInstance.setHeight(dimension);
 		cpInstance.setDepth(dimension);
 
-		_cpInstanceLocalService.updateCPInstance(cpInstance);
-	}
-
-	private void _addWeight(CPInstance cpInstance) {
-		cpInstance.setWeight(RandomTestUtil.randomDouble());
-
-		_cpInstanceLocalService.updateCPInstance(cpInstance);
+		return _cpInstanceLocalService.updateCPInstance(cpInstance);
 	}
 
 	private static CommerceInventoryWarehouse _commerceInventoryWarehouse;
 
 	@Inject
-	private static CPDefinitionLocalService _cpDefinitionLocalService;
-
-	@Inject
 	private static CPInstanceLocalService _cpInstanceLocalService;
+
+	private static User _user;
 
 	private CommerceChannel _commerceChannel;
 	private CommerceCurrency _commerceCurrency;
@@ -276,12 +215,6 @@ public class CommerceShippingHelperTest {
 	@Inject
 	private CommerceShippingHelper _commerceShippingHelper;
 
-	@DeleteAfterTestRun
-	private Company _company;
-
 	private Group _group;
-
-	@DeleteAfterTestRun
-	private User _user;
 
 }

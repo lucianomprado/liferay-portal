@@ -21,6 +21,7 @@ String redirect = ParamUtil.getString(request, "redirect");
 
 WikiEngineRenderer wikiEngineRenderer = (WikiEngineRenderer)request.getAttribute(WikiWebKeys.WIKI_ENGINE_RENDERER);
 WikiNode node = (WikiNode)request.getAttribute(WikiWebKeys.WIKI_NODE);
+
 WikiPage wikiPage = (WikiPage)request.getAttribute(WikiWebKeys.WIKI_PAGE);
 
 long nodeId = BeanParamUtil.getLong(wikiPage, request, "nodeId");
@@ -131,7 +132,7 @@ if (portletTitleBasedNavigation) {
 	<portlet:param name="mvcRenderCommandName" value="/wiki/edit_page" />
 </portlet:renderURL>
 
-<div <%= portletTitleBasedNavigation ? "class=\"container-fluid container-fluid-max-xl\"" : StringPool.BLANK %> id='<%= liferayPortletResponse.getNamespace() + "wikiEditPageContainer" %>'>
+<div <%= portletTitleBasedNavigation ? "class=\"container-fluid container-fluid-max-xl container-form-lg\"" : StringPool.BLANK %> id='<%= liferayPortletResponse.getNamespace() + "wikiEditPageContainer" %>'>
 	<aui:form action="<%= editPageActionURL %>" method="post" name="fm">
 		<aui:input name="<%= Constants.CMD %>" type="hidden" />
 		<aui:input name="redirect" type="hidden" value="<%= redirect %>" />
@@ -204,7 +205,7 @@ if (portletTitleBasedNavigation) {
 							</c:when>
 							<c:otherwise>
 								<div class="entry-title">
-									<h1><%= HtmlUtil.escape(title) %></h1>
+									<h1 class="sheet-title"><%= HtmlUtil.escape(title) %></h1>
 								</div>
 
 								<aui:input name="title" type="hidden" value="<%= title %>" />
@@ -311,16 +312,11 @@ if (portletTitleBasedNavigation) {
 
 									<%
 									}
-
-									if (!formats.contains(selectedFormat)) {
 									%>
 
+									<c:if test="<%= !formats.contains(selectedFormat) %>">
 										<aui:option label="<%= selectedFormat %>" selected="<%= true %>" value="<%= selectedFormat %>" />
-
-									<%
-									}
-									%>
-
+									</c:if>
 								</aui:select>
 							</c:when>
 							<c:otherwise>
@@ -355,43 +351,43 @@ if (portletTitleBasedNavigation) {
 							/>
 						</aui:fieldset>
 					</c:if>
-				</aui:fieldset-group>
 
-				<%
-				boolean pending = false;
+					<%
+					boolean pending = false;
 
-				if (wikiPage != null) {
-					pending = wikiPage.isPending();
-				}
-				%>
+					if (wikiPage != null) {
+						pending = wikiPage.isPending();
+					}
+					%>
 
-				<c:if test="<%= pending %>">
-					<div class="alert alert-info">
-						<liferay-ui:message key="there-is-a-publication-workflow-in-process" />
+					<c:if test="<%= pending %>">
+						<div class="alert alert-info">
+							<liferay-ui:message key="there-is-a-publication-workflow-in-process" />
+						</div>
+					</c:if>
+
+					<%
+					String saveButtonLabel = "save";
+
+					if ((wikiPage == null) || wikiPage.isDraft() || wikiPage.isApproved()) {
+						saveButtonLabel = "save-as-draft";
+					}
+
+					String publishButtonLabel = "publish";
+
+					if (WorkflowDefinitionLinkLocalServiceUtil.hasWorkflowDefinitionLink(themeDisplay.getCompanyId(), scopeGroupId, WikiPage.class.getName())) {
+						publishButtonLabel = "submit-for-publication";
+					}
+					%>
+
+					<div class="sheet-footer">
+						<aui:button disabled="<%= pending %>" name="publishButton" primary="<%= true %>" value="<%= publishButtonLabel %>" />
+
+						<aui:button name="saveButton" primary="<%= false %>" type="submit" value="<%= saveButtonLabel %>" />
+
+						<aui:button href="<%= redirect %>" type="cancel" />
 					</div>
-				</c:if>
-
-				<%
-				String saveButtonLabel = "save";
-
-				if ((wikiPage == null) || wikiPage.isDraft() || wikiPage.isApproved()) {
-					saveButtonLabel = "save-as-draft";
-				}
-
-				String publishButtonLabel = "publish";
-
-				if (WorkflowDefinitionLinkLocalServiceUtil.hasWorkflowDefinitionLink(themeDisplay.getCompanyId(), scopeGroupId, WikiPage.class.getName())) {
-					publishButtonLabel = "submit-for-publication";
-				}
-				%>
-
-				<aui:button-row>
-					<aui:button disabled="<%= pending %>" name="publishButton" primary="<%= true %>" value="<%= publishButtonLabel %>" />
-
-					<aui:button name="saveButton" primary="<%= false %>" type="submit" value="<%= saveButtonLabel %>" />
-
-					<aui:button href="<%= redirect %>" type="cancel" />
-				</aui:button-row>
+				</aui:fieldset-group>
 			</c:otherwise>
 		</c:choose>
 	</aui:form>
@@ -424,6 +420,7 @@ if ((wikiPage != null) && !wikiPage.isNew()) {
 	PortletURL viewPageURL = wikiURLHelper.getViewPageURL(node, title);
 
 	PortalUtil.addPortletBreadcrumbEntry(request, wikiPage.getTitle(), viewPageURL.toString());
+
 	PortalUtil.addPortletBreadcrumbEntry(request, LanguageUtil.get(request, "edit"), currentURL);
 }
 else {

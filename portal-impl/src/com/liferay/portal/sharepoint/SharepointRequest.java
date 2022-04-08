@@ -24,7 +24,6 @@ import com.liferay.portal.kernel.util.HttpUtil;
 import com.liferay.portal.kernel.util.StreamUtil;
 
 import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 
 import java.util.HashMap;
@@ -116,12 +115,12 @@ public class SharepointRequest {
 		}
 
 		try {
-			InputStream inputStream = _httpServletRequest.getInputStream();
-
 			UnsyncByteArrayOutputStream unsyncByteArrayOutputStream =
 				new UnsyncByteArrayOutputStream();
 
-			StreamUtil.transfer(inputStream, unsyncByteArrayOutputStream);
+			StreamUtil.transfer(
+				_httpServletRequest.getInputStream(),
+				unsyncByteArrayOutputStream);
 
 			byte[] bytes = unsyncByteArrayOutputStream.toByteArray();
 
@@ -147,9 +146,7 @@ public class SharepointRequest {
 				addParam(key, value);
 			}
 
-			bytes = ArrayUtil.subset(bytes, url.length() + 1, bytes.length);
-
-			setBytes(bytes);
+			setBytes(ArrayUtil.subset(bytes, url.length() + 1, bytes.length));
 		}
 		catch (Exception exception) {
 			throw new SharepointException(exception);

@@ -2,11 +2,13 @@
 <head>
 <title>AP</title>
 </head>
+
 <body>
-<table cellpadding="1" cellspacing="1" border="1">
+<table border="1" cellpadding="1" cellspacing="1">
 <thead>
 <tr><td rowspan="1" colspan="3">AP</td></tr>
 </thead>
+
 <tbody>
 <tr>
 	<td>ADD_ASSET_PLUS_ICON</td>
@@ -19,8 +21,13 @@
 	<td></td>
 </tr>
 <tr>
+	<td>ASSET_DETAILS_LINK</td>
+	<td>//div[contains(@class,'items')][.//span[contains(@class,'asset-title')][normalize-space(text())='${key_assetTitle}']]//following-sibling::div[contains(@class,'asset-details')]//a</td>
+	<td></td>
+</tr>
+<tr>
 	<td>ASSET_ELLIPSIS_ICON</td>
-	<td>//div[contains(@class,'asset-abstract')]//div[contains(.,'${key_assetTitle}')]//a[contains(@class,'dropdown-toggle')]</td>
+	<td>//div[contains(@class,'asset')]//div[contains(.,'${key_assetTitle}')]//a[contains(@class,'dropdown-toggle')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -48,6 +55,11 @@
 <tr>
 	<td>ASSET_EDIT</td>
 	<td>//span[contains(@class,'visible-interaction')]//a</td>
+	<td></td>
+</tr>
+<tr>
+	<td>SPECIFIC_ASSET_EDIT</td>
+	<td>//p[contains(@class,'component-title')][normalize-space()='${key_assetTitle}']//following-sibling::div//*[name()='svg'][contains(@class,'lexicon-icon-pencil')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -93,6 +105,11 @@
 	<td></td>
 </tr>
 <tr>
+	<td>ASSET_ORDER</td>
+	<td>xpath=(//div[contains(@class,'asset-abstract')])[${key_index}]//*[contains(@class,'asset-title')][normalize-space(text())='${key_assetTitle}']</td>
+	<td></td>
+</tr>
+<tr>
 	<td></td>
 	<td></td>
 	<td></td>
@@ -106,6 +123,11 @@
 <tr>
 	<td>ASSET_ABSTRACT_DETAIL_WEB_CONTENT_FOLDER_CONTENT</td>
 	<td>//div[contains(@class,'asset-details')][${key_position}]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>ASSET_ABSTRACT_DETAIL_EXTERNAL_VIDEO_THUMBNAIL</td>
+	<td>//div[contains(@class,'aspect-ratio') and contains(@style,'${key_thumbnailName}')]</td>
 	<td></td>
 </tr>
 <tr>

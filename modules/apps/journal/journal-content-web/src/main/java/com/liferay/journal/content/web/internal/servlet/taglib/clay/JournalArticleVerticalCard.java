@@ -19,6 +19,8 @@ import com.liferay.frontend.taglib.clay.servlet.taglib.soy.BaseVerticalCard;
 import com.liferay.journal.model.JournalArticle;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.service.GroupLocalServiceUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
@@ -58,6 +60,10 @@ public class JournalArticleVerticalCard extends BaseVerticalCard {
 				_assetRenderer.getThumbnailPath(_renderRequest));
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception);
+			}
+
 			return null;
 		}
 	}
@@ -78,20 +84,17 @@ public class JournalArticleVerticalCard extends BaseVerticalCard {
 		}
 
 		try {
-			StringBundler sb = new StringBundler(5);
-
-			sb.append(title);
-			sb.append(StringPool.SPACE);
-			sb.append(StringPool.OPEN_PARENTHESIS);
-			sb.append(
+			return StringBundler.concat(
+				title, StringPool.SPACE, StringPool.OPEN_PARENTHESIS,
 				HtmlUtil.escape(
-					articleGroup.getDescriptiveName(
-						_themeDisplay.getLocale())));
-			sb.append(StringPool.CLOSE_PARENTHESIS);
-
-			return sb.toString();
+					articleGroup.getDescriptiveName(_themeDisplay.getLocale())),
+				StringPool.CLOSE_PARENTHESIS);
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception);
+			}
+
 			return title;
 		}
 	}
@@ -100,6 +103,9 @@ public class JournalArticleVerticalCard extends BaseVerticalCard {
 	public boolean isSelectable() {
 		return false;
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		JournalArticleVerticalCard.class);
 
 	private final JournalArticle _article;
 	private final AssetRenderer<JournalArticle> _assetRenderer;

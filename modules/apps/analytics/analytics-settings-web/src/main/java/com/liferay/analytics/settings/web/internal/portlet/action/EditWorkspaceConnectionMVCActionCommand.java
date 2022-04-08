@@ -188,7 +188,8 @@ public class EditWorkspaceConnectionMVCActionCommand
 		long companyId = themeDisplay.getCompanyId();
 
 		String dataSourceId = null;
-		String liferayAnalyticsFaroBackendURL = null;
+		String faroBackendURL = null;
+		String projectId = null;
 
 		if (!AnalyticsSettingsUtil.isAnalyticsEnabled(companyId)) {
 			if (Validator.isNotNull(
@@ -197,22 +198,26 @@ public class EditWorkspaceConnectionMVCActionCommand
 
 				dataSourceId = GetterUtil.getString(
 					configurationProperties.get("osbAsahDataSourceId"), null);
-				liferayAnalyticsFaroBackendURL = GetterUtil.getString(
+				faroBackendURL = GetterUtil.getString(
 					configurationProperties.get(
 						"liferayAnalyticsFaroBackendURL"),
+					null);
+				projectId = GetterUtil.getString(
+					configurationProperties.get("liferayAnalyticsProjectId"),
 					null);
 			}
 		}
 		else {
-			dataSourceId = AnalyticsSettingsUtil.getAsahFaroBackendDataSourceId(
-				companyId);
+			dataSourceId = AnalyticsSettingsUtil.getDataSourceId(companyId);
+			projectId = AnalyticsSettingsUtil.getProjectId(companyId);
 		}
 
 		try {
 			HttpResponse httpResponse = AnalyticsSettingsUtil.doPost(
-				liferayAnalyticsFaroBackendURL, null, companyId,
+				null, companyId, faroBackendURL,
 				String.format(
-					"api/1.0/data-sources/%s/disconnect", dataSourceId));
+					"api/1.0/data-sources/%s/disconnect", dataSourceId),
+				projectId);
 
 			StatusLine statusLine = httpResponse.getStatusLine();
 
@@ -222,6 +227,10 @@ public class EditWorkspaceConnectionMVCActionCommand
 			}
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception);
+			}
+
 			SessionErrors.add(actionRequest, "unableToNotifyAnalyticsCloud");
 		}
 

@@ -18,8 +18,11 @@ import com.liferay.portal.instances.service.PortalInstancesLocalService;
 import com.liferay.portal.kernel.model.CompanyConstants;
 import com.liferay.portal.kernel.search.IndexWriterHelper;
 import com.liferay.portal.kernel.search.SearchException;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 import org.mockito.Mock;
@@ -31,6 +34,11 @@ import org.mockito.Spy;
  * @author Adam Brandizzi
  */
 public class DictionaryReindexerTest {
+
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
 
 	@Before
 	public void setUp() {
@@ -51,7 +59,7 @@ public class DictionaryReindexerTest {
 		dictionaryReindexer.reindexDictionaries();
 
 		for (long companyId : _COMPANY_IDS) {
-			assertIndexWriterHelperReindexDictionariesWithCompanyId(companyId);
+			_assertIndexWriterHelperReindexDictionariesWithCompanyId(companyId);
 		}
 	}
 
@@ -62,11 +70,11 @@ public class DictionaryReindexerTest {
 
 		dictionaryReindexer.reindexDictionaries();
 
-		assertIndexWriterHelperReindexDictionariesWithCompanyId(
+		_assertIndexWriterHelperReindexDictionariesWithCompanyId(
 			CompanyConstants.SYSTEM);
 	}
 
-	protected void assertIndexWriterHelperReindexDictionariesWithCompanyId(
+	private void _assertIndexWriterHelperReindexDictionariesWithCompanyId(
 			long companyId)
 		throws SearchException {
 

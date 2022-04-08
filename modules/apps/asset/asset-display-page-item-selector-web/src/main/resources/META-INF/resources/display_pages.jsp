@@ -20,11 +20,11 @@
 AssetDisplayPagesItemSelectorViewDisplayContext assetDisplayPagesItemSelectorViewDisplayContext = (AssetDisplayPagesItemSelectorViewDisplayContext)request.getAttribute(AssetDisplayPageItemSelectorWebKeys.ASSET_DISPLAY_PAGES_ITEM_SELECTOR_VIEW_DISPLAY_CONTEXT);
 %>
 
-<clay:management-toolbar-v2
-	displayContext="<%= new AssetDisplayPagesItemSelectorViewManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, assetDisplayPagesItemSelectorViewDisplayContext) %>"
+<clay:management-toolbar
+	managementToolbarDisplayContext="<%= new AssetDisplayPagesItemSelectorViewManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, assetDisplayPagesItemSelectorViewDisplayContext) %>"
 />
 
-<aui:form cssClass="container-fluid container-fluid-max-xl" name="fm">
+<aui:form cssClass="container-fluid container-fluid-max-xl container-view" name="fm">
 	<liferay-ui:search-container
 		id="displayPages"
 		searchContainer="<%= assetDisplayPagesItemSelectorViewDisplayContext.getAssetDisplayPageSearchContainer() %>"
@@ -34,15 +34,12 @@ AssetDisplayPagesItemSelectorViewDisplayContext assetDisplayPagesItemSelectorVie
 			keyProperty="layoutPageTemplateEntryId"
 			modelVar="layoutPageTemplateEntry"
 		>
-
-			<%
-			row.setCssClass("entry-card form-check-card lfr-asset-item " + row.getCssClass());
-			%>
-
 			<liferay-ui:search-container-column-text>
-				<clay:vertical-card
-					verticalCard="<%= new LayoutPageTemplateEntryVerticalCard(layoutPageTemplateEntry, renderRequest) %>"
-				/>
+				<div class="form-check form-check-card">
+					<clay:vertical-card
+						verticalCard="<%= new LayoutPageTemplateEntryVerticalCard(layoutPageTemplateEntry, renderRequest) %>"
+					/>
+				</div>
 			</liferay-ui:search-container-column-text>
 		</liferay-ui:search-container-row>
 
@@ -60,11 +57,11 @@ AssetDisplayPagesItemSelectorViewDisplayContext assetDisplayPagesItemSelectorVie
 		document.querySelector('#<portlet:namespace />fm'),
 		'click',
 		'.layout-page-template-entry',
-		function (event) {
+		(event) => {
 			var activeCards = document.querySelectorAll('.form-check-card.active');
 
 			if (activeCards.length) {
-				activeCards.forEach(function (card) {
+				activeCards.forEach((card) => {
 					card.classList.remove('active');
 				});
 			}

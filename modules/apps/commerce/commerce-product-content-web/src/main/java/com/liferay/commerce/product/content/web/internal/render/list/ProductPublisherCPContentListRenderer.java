@@ -25,6 +25,7 @@ import com.liferay.portal.kernel.util.ResourceBundleUtil;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
+import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -33,22 +34,27 @@ import org.osgi.service.component.annotations.Reference;
 
 /**
  * @author Alessio Antonio Rendina
+ * @author Gianmarco Brunialti Masera
+ * @author Ivica Cardic
  */
 @Component(
 	enabled = false, immediate = true,
 	property = {
-		"commerce.product.content.list.renderer.key=" + CPPortletKeys.CP_PUBLISHER_WEB,
+		"commerce.product.content.list.renderer.key=" + ProductPublisherCPContentListRenderer.KEY,
 		"commerce.product.content.list.renderer.order=" + Integer.MIN_VALUE,
-		"commerce.product.content.list.renderer.portlet.name=" + CPPortletKeys.CP_PUBLISHER_WEB
+		"commerce.product.content.list.renderer.portlet.name=" + CPPortletKeys.CP_PUBLISHER_WEB,
+		"commerce.product.content.list.renderer.portlet.name=" + CPPortletKeys.CP_SEARCH_RESULTS
 	},
 	service = CPContentListRenderer.class
 )
 public class ProductPublisherCPContentListRenderer
 	implements CPContentListRenderer {
 
+	public static final String KEY = "list-default";
+
 	@Override
 	public String getKey() {
-		return CPPortletKeys.CP_PUBLISHER_WEB;
+		return KEY;
 	}
 
 	@Override
@@ -56,7 +62,7 @@ public class ProductPublisherCPContentListRenderer
 		ResourceBundle resourceBundle = ResourceBundleUtil.getBundle(
 			"content.Language", locale, getClass());
 
-		return LanguageUtil.get(resourceBundle, "product-publisher");
+		return LanguageUtil.get(resourceBundle, "default");
 	}
 
 	@Override
@@ -69,7 +75,7 @@ public class ProductPublisherCPContentListRenderer
 			CPContentWebKeys.CP_CONTENT_HELPER, _cpContentHelper);
 
 		_jspRenderer.renderJSP(
-			httpServletRequest, httpServletResponse,
+			_servletContext, httpServletRequest, httpServletResponse,
 			"/product_publisher/render/list/view.jsp");
 	}
 
@@ -78,5 +84,10 @@ public class ProductPublisherCPContentListRenderer
 
 	@Reference
 	private JSPRenderer _jspRenderer;
+
+	@Reference(
+		target = "(osgi.web.symbolicname=com.liferay.commerce.product.content.web)"
+	)
+	private ServletContext _servletContext;
 
 }

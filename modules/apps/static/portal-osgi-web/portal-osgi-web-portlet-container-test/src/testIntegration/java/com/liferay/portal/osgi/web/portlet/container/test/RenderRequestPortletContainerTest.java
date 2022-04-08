@@ -15,16 +15,19 @@
 package com.liferay.portal.osgi.web.portlet.container.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.portlet.PortletURLFactoryUtil;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.util.HashMapDictionary;
+import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portal.kernel.util.HttpUtil;
 import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.URLCodec;
 import com.liferay.portal.osgi.web.portlet.container.test.util.PortletContainerTestUtil;
-import com.liferay.portal.test.log.CaptureAppender;
-import com.liferay.portal.test.log.Log4JLoggerTestUtil;
+import com.liferay.portal.test.log.LogCapture;
+import com.liferay.portal.test.log.LogEntry;
+import com.liferay.portal.test.log.LoggerTestUtil;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portlet.SecurityPortletContainerWrapper;
 
@@ -48,9 +51,6 @@ import javax.portlet.ResourceResponse;
 import javax.portlet.WindowState;
 
 import javax.servlet.http.HttpServletRequest;
-
-import org.apache.log4j.Level;
-import org.apache.log4j.spi.LoggingEvent;
 
 import org.junit.Assert;
 import org.junit.ClassRule;
@@ -78,29 +78,26 @@ public class RenderRequestPortletContainerTest
 			"?p_p_id=", URLCodec.encodeURL("'\"><script>alert(1)</script>"),
 			"&p_p_lifecycle=0&p_p_state=exclusive");
 
-		try (CaptureAppender captureAppender =
-				Log4JLoggerTestUtil.configureLog4JLogger(
-					SecurityPortletContainerWrapper.class.getName(),
-					Level.WARN)) {
+		try (LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
+				SecurityPortletContainerWrapper.class.getName(),
+				LoggerTestUtil.WARN)) {
 
 			PortletContainerTestUtil.Response response =
 				PortletContainerTestUtil.request(url);
 
-			List<LoggingEvent> loggingEvents =
-				captureAppender.getLoggingEvents();
+			List<LogEntry> logEntries = logCapture.getLogEntries();
 
 			int totalExpectedEvents = 2;
 
 			Assert.assertEquals(
-				loggingEvents.toString(), totalExpectedEvents,
-				loggingEvents.size());
+				logEntries.toString(), totalExpectedEvents, logEntries.size());
 
 			for (int i = 0; i < totalExpectedEvents; i++) {
-				LoggingEvent loggingEvent = loggingEvents.get(i);
+				LogEntry logEntry = logEntries.get(i);
 
 				Assert.assertEquals(
 					"Invalid portlet ID '\"><script>alert(1)</script>",
-					loggingEvent.getMessage());
+					logEntry.getMessage());
 			}
 
 			Assert.assertEquals(200, response.getCode());
@@ -113,11 +110,12 @@ public class RenderRequestPortletContainerTest
 
 		TestPortlet testTargetPortlet = new TestPortlet();
 
-		Dictionary<String, Object> properties = new HashMapDictionary<>();
-
-		properties.put(
-			"com.liferay.portlet.add-default-resource", Boolean.TRUE);
-		properties.put("com.liferay.portlet.system", Boolean.TRUE);
+		Dictionary<String, Object> properties =
+			HashMapDictionaryBuilder.<String, Object>put(
+				"com.liferay.portlet.add-default-resource", Boolean.TRUE
+			).put(
+				"com.liferay.portlet.system", Boolean.TRUE
+			).build();
 
 		final String testTargetPortletId = "testTargetPortletId";
 
@@ -172,13 +170,13 @@ public class RenderRequestPortletContainerTest
 		// Make a render request to the target portlet using the portlet
 		// authentication token
 
-		portletURL = PortletURLFactoryUtil.create(
-			httpServletRequest, testTargetPortletId, layout.getPlid(),
-			PortletRequest.RENDER_PHASE);
-
-		portletURL.setWindowState(WindowState.MAXIMIZED);
-
-		String url = portletURL.toString();
+		String url = PortletURLBuilder.create(
+			PortletURLFactoryUtil.create(
+				httpServletRequest, testTargetPortletId, layout.getPlid(),
+				PortletRequest.RENDER_PHASE)
+		).setWindowState(
+			WindowState.MAXIMIZED
+		).buildString();
 
 		url = HttpUtil.setParameter(url, "p_p_auth", response.getBody());
 
@@ -231,10 +229,6 @@ public class RenderRequestPortletContainerTest
 			testPortlet, new HashMapDictionary<String, Object>(),
 			TEST_PORTLET_ID);
 
-		PortletURL portletURL = PortletURLFactoryUtil.create(
-			PortletContainerTestUtil.getHttpServletRequest(group, layout),
-			TEST_PORTLET_ID, layout.getPlid(), PortletRequest.RENDER_PHASE);
-
 		TestPortlet testRuntimePortlet = new TestPortlet();
 		String testRuntimePortletId = "testRuntimePortletId";
 
@@ -242,10 +236,17 @@ public class RenderRequestPortletContainerTest
 			testRuntimePortlet, new HashMapDictionary<String, Object>(),
 			testRuntimePortletId, false);
 
-		portletURL.setParameter("testRuntimePortletId", testRuntimePortletId);
-
 		PortletContainerTestUtil.Response response =
-			PortletContainerTestUtil.request(portletURL.toString());
+			PortletContainerTestUtil.request(
+				PortletURLBuilder.create(
+					PortletURLFactoryUtil.create(
+						PortletContainerTestUtil.getHttpServletRequest(
+							group, layout),
+						TEST_PORTLET_ID, layout.getPlid(),
+						PortletRequest.RENDER_PHASE)
+				).setParameter(
+					"testRuntimePortletId", testRuntimePortletId
+				).buildString());
 
 		Assert.assertEquals(200, response.getCode());
 

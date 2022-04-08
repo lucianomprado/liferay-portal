@@ -102,7 +102,7 @@ if (PropsValues.PORTAL_JAAS_ENABLE && (jUserName != null)) {
 			session.invalidate();
 		}
 		catch (Exception e) {
-			_log.error(e, e);
+			_log.error(e);
 		}
 		%>
 
@@ -119,11 +119,10 @@ if (PropsValues.PORTAL_JAAS_ENABLE && (jUserName != null)) {
 			<body onLoad="javascript:location.replace('<%= themeDisplay.getPathMain() %>')">
 
 			</body>
-
 		</html>
 	</c:otherwise>
 </c:choose>
 
 <%!
-private static Log _log = LogFactoryUtil.getLog("portal_web.docroot.html.portal.j_login_jsp");
+private static final Log _log = LogFactoryUtil.getLog("portal_web.docroot.html.portal.j_login_jsp");
 %>

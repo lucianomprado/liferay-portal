@@ -14,6 +14,10 @@
 
 package com.liferay.portal.search.elasticsearch7.internal.sidecar;
 
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.OSDetector;
 
 import java.io.BufferedInputStream;
@@ -31,15 +35,13 @@ import java.util.zip.ZipInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 /**
  * @author Wade Cao
  */
 public class UncompressUtil {
 
-	public static void unarchive(
+	public static String unarchive(
 			Path tarGzFilePath, Path destinationDirectoryPath)
 		throws IOException {
 
@@ -53,12 +55,25 @@ public class UncompressUtil {
 			TarArchiveInputStream tarArchiveInputStream =
 				new TarArchiveInputStream(gzipCompressorInputStream)) {
 
+			String rootArchiveName = StringPool.BLANK;
+
 			TarArchiveEntry tarArchiveEntry = null;
 
 			while ((tarArchiveEntry =
 						tarArchiveInputStream.getNextTarEntry()) != null) {
 
 				if (tarArchiveInputStream.canReadEntryData(tarArchiveEntry)) {
+					if (_isZipSlipVulnerable(
+							destinationDirectoryPath,
+							tarArchiveEntry.getName())) {
+
+						continue;
+					}
+
+					if (rootArchiveName.equals(StringPool.BLANK)) {
+						rootArchiveName = tarArchiveEntry.getName();
+					}
+
 					Path path = destinationDirectoryPath.resolve(
 						tarArchiveEntry.getName());
 
@@ -72,13 +87,15 @@ public class UncompressUtil {
 					_setFilePermission(path);
 				}
 				else {
-					if (_logger.isWarnEnabled()) {
-						_logger.warn(
+					if (_log.isWarnEnabled()) {
+						_log.warn(
 							"Unable to read " + tarArchiveEntry.getName() +
 								" from tar archive entry");
 					}
 				}
 			}
+
+			return rootArchiveName;
 		}
 	}
 
@@ -93,6 +110,12 @@ public class UncompressUtil {
 			ZipEntry zipEntry;
 
 			while ((zipEntry = zipInputStream.getNextEntry()) != null) {
+				if (_isZipSlipVulnerable(
+						destinationDirectoryPath, zipEntry.getName())) {
+
+					continue;
+				}
+
 				Path path = destinationDirectoryPath.resolve(
 					zipEntry.getName());
 
@@ -106,6 +129,37 @@ public class UncompressUtil {
 				_setFilePermission(path);
 			}
 		}
+	}
+
+	private static boolean _isZipSlipVulnerable(
+			Path destinationPath, String tarArchiveEntryName)
+		throws IOException {
+
+		File canonicalDirectoryFile = destinationPath.toFile();
+
+		String canonicalDirectoryPath =
+			canonicalDirectoryFile.getCanonicalPath();
+
+		File destinationFile = new File(
+			destinationPath.toFile(), tarArchiveEntryName);
+
+		String canonicalDestinationFile = destinationFile.getCanonicalPath();
+
+		if (!canonicalDestinationFile.startsWith(
+				canonicalDirectoryPath + File.separator)) {
+
+			if (_log.isWarnEnabled()) {
+				_log.warn(
+					StringBundler.concat(
+						"Entry ", tarArchiveEntryName,
+						" is outside of the target directory ",
+						canonicalDirectoryPath));
+			}
+
+			return true;
+		}
+
+		return false;
 	}
 
 	private static void _setFilePermission(Path path) throws IOException {
@@ -124,7 +178,6 @@ public class UncompressUtil {
 
 	private static final int _CHARS_BUFFER_SIZE = 8192;
 
-	private static final Logger _logger = LogManager.getLogger(
-		UncompressUtil.class);
+	private static final Log _log = LogFactoryUtil.getLog(UncompressUtil.class);
 
 }

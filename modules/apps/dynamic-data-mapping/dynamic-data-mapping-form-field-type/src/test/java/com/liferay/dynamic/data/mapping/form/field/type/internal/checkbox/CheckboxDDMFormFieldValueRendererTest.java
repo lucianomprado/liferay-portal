@@ -54,10 +54,10 @@ public class CheckboxDDMFormFieldValueRendererTest extends PowerMockito {
 				"Checkbox", new UnlocalizedValue("true"));
 
 		CheckboxDDMFormFieldValueRenderer checkboxDDMFormFieldValueRenderer =
-			createCheckboxDDMFormFieldValueRenderer();
+			_createCheckboxDDMFormFieldValueRenderer();
 
 		String expectedCheckboxRenderedValue = LanguageUtil.get(
-			LocaleUtil.US, "yes");
+			LocaleUtil.US, "true");
 
 		Assert.assertEquals(
 			expectedCheckboxRenderedValue,
@@ -66,7 +66,8 @@ public class CheckboxDDMFormFieldValueRendererTest extends PowerMockito {
 
 		ddmFormFieldValue.setValue(new UnlocalizedValue("false"));
 
-		expectedCheckboxRenderedValue = LanguageUtil.get(LocaleUtil.US, "no");
+		expectedCheckboxRenderedValue = LanguageUtil.get(
+			LocaleUtil.US, "false");
 
 		Assert.assertEquals(
 			expectedCheckboxRenderedValue,
@@ -74,8 +75,20 @@ public class CheckboxDDMFormFieldValueRendererTest extends PowerMockito {
 				ddmFormFieldValue, LocaleUtil.US));
 	}
 
-	protected CheckboxDDMFormFieldValueRenderer
-			createCheckboxDDMFormFieldValueRenderer()
+	protected void setUpLanguageUtil() {
+		_whenLanguageGet(LocaleUtil.US, "false", "False");
+		_whenLanguageGet(LocaleUtil.US, "true", "True");
+
+		LanguageUtil languageUtil = new LanguageUtil();
+
+		languageUtil.setLanguage(language);
+	}
+
+	@Mock
+	protected Language language;
+
+	private CheckboxDDMFormFieldValueRenderer
+			_createCheckboxDDMFormFieldValueRenderer()
 		throws Exception {
 
 		CheckboxDDMFormFieldValueRenderer checkboxDDMFormFieldValueRenderer =
@@ -87,16 +100,7 @@ public class CheckboxDDMFormFieldValueRendererTest extends PowerMockito {
 		return checkboxDDMFormFieldValueRenderer;
 	}
 
-	protected void setUpLanguageUtil() {
-		whenLanguageGet(LocaleUtil.US, "no", "No");
-		whenLanguageGet(LocaleUtil.US, "yes", "Yes");
-
-		LanguageUtil languageUtil = new LanguageUtil();
-
-		languageUtil.setLanguage(language);
-	}
-
-	protected void whenLanguageGet(
+	private void _whenLanguageGet(
 		Locale locale, String key, String returnValue) {
 
 		when(
@@ -105,8 +109,5 @@ public class CheckboxDDMFormFieldValueRendererTest extends PowerMockito {
 			returnValue
 		);
 	}
-
-	@Mock
-	protected Language language;
 
 }

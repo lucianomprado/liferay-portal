@@ -14,22 +14,25 @@
 
 package com.liferay.analytics.reports.web.internal.portlet;
 
+import com.liferay.analytics.reports.constants.AnalyticsReportsWebKeys;
+import com.liferay.analytics.reports.info.item.ClassNameClassPKInfoItemIdentifier;
 import com.liferay.analytics.reports.web.internal.constants.AnalyticsReportsPortletKeys;
-import com.liferay.analytics.reports.web.internal.constants.AnalyticsReportsWebKeys;
 import com.liferay.analytics.reports.web.internal.display.context.AnalyticsReportsDisplayContext;
-import com.liferay.analytics.reports.web.internal.info.display.contributor.util.LayoutDisplayPageProviderUtil;
-import com.liferay.layout.display.page.LayoutDisplayPageObjectProvider;
-import com.liferay.layout.display.page.LayoutDisplayPageProviderTracker;
+import com.liferay.info.item.InfoItemReference;
 import com.liferay.portal.kernel.language.Language;
+import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCPortlet;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.Constants;
 import com.liferay.portal.kernel.util.Http;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
+import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 
 import java.io.IOException;
+
+import java.util.Optional;
 
 import javax.portlet.Portlet;
 import javax.portlet.PortletException;
@@ -84,10 +87,8 @@ public class AnalyticsReportsPortlet extends MVCPortlet {
 			return;
 		}
 
-		LayoutDisplayPageObjectProvider<?> layoutDisplayPageObjectProvider =
-			LayoutDisplayPageProviderUtil.getLayoutDisplayPageObjectProvider(
-				httpServletRequest, _layoutDisplayPageProviderTracker, _portal);
-
+		InfoItemReference infoItemReference = _getInfoItemReference(
+			httpServletRequest);
 		ThemeDisplay themeDisplay =
 			(ThemeDisplay)httpServletRequest.getAttribute(
 				WebKeys.THEME_DISPLAY);
@@ -95,10 +96,62 @@ public class AnalyticsReportsPortlet extends MVCPortlet {
 		renderRequest.setAttribute(
 			AnalyticsReportsWebKeys.ANALYTICS_REPORTS_DISPLAY_CONTEXT,
 			new AnalyticsReportsDisplayContext(
-				layoutDisplayPageObjectProvider, renderRequest, renderResponse,
+				infoItemReference, renderRequest, renderResponse,
 				themeDisplay));
 
 		super.doDispatch(renderRequest, renderResponse);
+	}
+
+	private String _getClassName(HttpServletRequest httpServletRequest) {
+		String className = ParamUtil.getString(httpServletRequest, "className");
+
+		if (Validator.isNull(className)) {
+			return Layout.class.getName();
+		}
+
+		return className;
+	}
+
+	private long _getClassPK(HttpServletRequest httpServletRequest) {
+		long classPK = ParamUtil.getLong(httpServletRequest, "classPK");
+
+		if (classPK == 0) {
+			ThemeDisplay themeDisplay =
+				(ThemeDisplay)httpServletRequest.getAttribute(
+					WebKeys.THEME_DISPLAY);
+
+			return themeDisplay.getPlid();
+		}
+
+		return classPK;
+	}
+
+	private String _getClassTypeName(HttpServletRequest httpServletRequest) {
+		return ParamUtil.getString(httpServletRequest, "classTypeName");
+	}
+
+	private InfoItemReference _getInfoItemReference(
+		HttpServletRequest httpServletRequest) {
+
+		return Optional.ofNullable(
+			(InfoItemReference)httpServletRequest.getAttribute(
+				AnalyticsReportsWebKeys.INFO_ITEM_REFERENCE)
+		).orElseGet(
+			() -> Optional.ofNullable(
+				_getClassTypeName(httpServletRequest)
+			).filter(
+				Validator::isNotNull
+			).map(
+				classTypeName -> new InfoItemReference(
+					_getClassName(httpServletRequest),
+					new ClassNameClassPKInfoItemIdentifier(
+						classTypeName, _getClassPK(httpServletRequest)))
+			).orElseGet(
+				() -> new InfoItemReference(
+					_getClassName(httpServletRequest),
+					_getClassPK(httpServletRequest))
+			)
+		);
 	}
 
 	@Reference
@@ -106,9 +159,6 @@ public class AnalyticsReportsPortlet extends MVCPortlet {
 
 	@Reference
 	private Language _language;
-
-	@Reference
-	private LayoutDisplayPageProviderTracker _layoutDisplayPageProviderTracker;
 
 	@Reference
 	private Portal _portal;

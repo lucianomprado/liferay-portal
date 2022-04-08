@@ -94,6 +94,7 @@ public class MoreLikeThisQueryImpl
 		_likeTexts.addAll(likeTexts);
 	}
 
+	@Override
 	public void addLikeTexts(String... likeTexts) {
 		Collections.addAll(_likeTexts, likeTexts);
 	}
@@ -108,6 +109,7 @@ public class MoreLikeThisQueryImpl
 		_stopWords.addAll(stopWords);
 	}
 
+	@Override
 	public void addStopWords(String... stopWords) {
 		Collections.addAll(_stopWords, stopWords);
 	}
@@ -302,6 +304,7 @@ public class MoreLikeThisQueryImpl
 		public DocumentIdentifierImpl(String index, String id) {
 			_index = index;
 			_id = id;
+
 			_type = null;
 		}
 

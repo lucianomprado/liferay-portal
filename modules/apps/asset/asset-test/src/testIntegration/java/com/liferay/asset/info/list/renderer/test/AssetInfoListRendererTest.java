@@ -14,8 +14,6 @@
 
 package com.liferay.asset.info.list.renderer.test;
 
-import static org.hamcrest.CoreMatchers.containsString;
-
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.asset.kernel.model.AssetEntry;
 import com.liferay.asset.kernel.service.AssetEntryLocalService;
@@ -35,6 +33,7 @@ import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.model.LayoutSet;
 import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.servlet.HttpMethods;
+import com.liferay.portal.kernel.servlet.PipingServletResponse;
 import com.liferay.portal.kernel.test.portlet.MockLiferayPortletRenderResponse;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
@@ -47,12 +46,13 @@ import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
-import com.liferay.taglib.servlet.PipingServletResponse;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
+
+import org.hamcrest.CoreMatchers;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -100,10 +100,12 @@ public class AssetInfoListRendererTest {
 		_assetEntries.add(assetEntry2);
 
 		_company = _companyLocalService.getCompany(_group.getCompanyId());
-		_infoListRenderer = _infoListRendererTracker.getInfoListRenderer(
-			"com.liferay.asset.info.internal.list.renderer." +
-				"UnstyledAssetEntryBasicListInfoListRenderer");
-		_layout = LayoutTestUtil.addLayout(_group);
+		_infoListRenderer =
+			(InfoListRenderer<AssetEntry>)
+				_infoListRendererTracker.getInfoListRenderer(
+					"com.liferay.asset.info.internal.list.renderer." +
+						"UnstyledAssetEntryBasicInfoListRenderer");
+		_layout = LayoutTestUtil.addTypePortletLayout(_group);
 	}
 
 	@Test
@@ -182,7 +184,8 @@ public class AssetInfoListRendererTest {
 				article.getGroupId(), article.getArticleId(), Constants.VIEW,
 				article.getDefaultLanguageId());
 
-			Assert.assertThat(content, containsString(articleContent));
+			Assert.assertThat(
+				content, CoreMatchers.containsString(articleContent));
 		}
 	}
 
@@ -190,7 +193,7 @@ public class AssetInfoListRendererTest {
 		for (AssetEntry assetEntry : _assetEntries) {
 			Assert.assertThat(
 				content,
-				containsString(
+				CoreMatchers.containsString(
 					assetEntry.getSummary(assetEntry.getDefaultLanguageId())));
 		}
 	}
@@ -199,7 +202,7 @@ public class AssetInfoListRendererTest {
 		for (AssetEntry assetEntry : _assetEntries) {
 			Assert.assertThat(
 				content,
-				containsString(
+				CoreMatchers.containsString(
 					assetEntry.getTitle(assetEntry.getDefaultLanguageId())));
 		}
 	}
@@ -226,8 +229,8 @@ public class AssetInfoListRendererTest {
 		themeDisplay.setRealUser(TestPropsValues.getUser());
 		themeDisplay.setRequest(httpServletRequest);
 		themeDisplay.setResponse(new MockHttpServletResponse());
-		themeDisplay.setUser(TestPropsValues.getUser());
 		themeDisplay.setScopeGroupId(_group.getGroupId());
+		themeDisplay.setUser(TestPropsValues.getUser());
 
 		httpServletRequest.setAttribute(WebKeys.THEME_DISPLAY, themeDisplay);
 
@@ -249,7 +252,7 @@ public class AssetInfoListRendererTest {
 	@DeleteAfterTestRun
 	private Group _group;
 
-	private InfoListRenderer _infoListRenderer;
+	private InfoListRenderer<AssetEntry> _infoListRenderer;
 
 	@Inject
 	private InfoListRendererTracker _infoListRendererTracker;

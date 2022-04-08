@@ -1,8 +1,5 @@
 {
 	"dependencies": {
-		"frontend-js-web": "*",
-		"metal-dom": "2.16.8",
-		"metal-events": "2.16.8"
 	},
 	"name": "account-admin-web",
 	"scripts": {
@@ -10,5 +7,5 @@
 		"checkFormat": "liferay-npm-scripts check",
 		"format": "liferay-npm-scripts fix"
 	},
-	"version": "2.0.0"
+	"version": "2.0.39"
 }

@@ -13,7 +13,7 @@ create table OAuth2Application (
 	createDate DATE null,
 	modifiedDate DATE null,
 	oA2AScopeAliasesId LONG,
-	allowedGrantTypes VARCHAR(75) null,
+	allowedGrantTypes VARCHAR(128) null,
 	clientCredentialUserId LONG,
 	clientCredentialUserName VARCHAR(75) null,
 	clientId VARCHAR(75) null,
@@ -25,7 +25,9 @@ create table OAuth2Application (
 	iconFileEntryId LONG,
 	name VARCHAR(75) null,
 	privacyPolicyURL STRING null,
-	redirectURIs STRING null
+	redirectURIs STRING null,
+	rememberDevice BOOLEAN,
+	trustedApplication BOOLEAN
 );
 
 create table OAuth2ApplicationScopeAliases (
@@ -54,7 +56,8 @@ create table OAuth2Authorization (
 	refreshTokenContent TEXT null,
 	refreshTokenContentHash LONG,
 	refreshTokenCreateDate DATE null,
-	refreshTokenExpirationDate DATE null
+	refreshTokenExpirationDate DATE null,
+	rememberDeviceContent VARCHAR(75) null
 );
 
 create table OAuth2ScopeGrant (

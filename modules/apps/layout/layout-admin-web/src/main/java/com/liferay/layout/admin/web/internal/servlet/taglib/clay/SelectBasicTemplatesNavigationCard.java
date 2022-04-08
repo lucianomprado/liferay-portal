@@ -15,7 +15,10 @@
 package com.liferay.layout.admin.web.internal.servlet.taglib.clay;
 
 import com.liferay.frontend.taglib.clay.servlet.taglib.soy.NavigationCard;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.LayoutTypeController;
 import com.liferay.portal.kernel.portlet.LiferayWindowState;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
@@ -29,7 +32,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.ResourceBundle;
 
-import javax.portlet.PortletURL;
 import javax.portlet.RenderRequest;
 import javax.portlet.RenderResponse;
 
@@ -66,28 +68,29 @@ public class SelectBasicTemplatesNavigationCard implements NavigationCard {
 		String redirect = ParamUtil.getString(_httpServletRequest, "redirect");
 
 		try {
-			PortletURL addLayoutURL = _renderResponse.createRenderURL();
-
-			addLayoutURL.setParameter(
-				"mvcRenderCommandName", "/layout_admin/add_layout");
-			addLayoutURL.setParameter("backURL", redirect);
-
-			long selPlid = ParamUtil.getLong(_httpServletRequest, "selPlid");
-
-			addLayoutURL.setParameter("selPlid", String.valueOf(selPlid));
-
-			boolean privateLayout = ParamUtil.getBoolean(
-				_httpServletRequest, "privateLayout");
-
-			addLayoutURL.setParameter(
-				"privateLayout", String.valueOf(privateLayout));
-
-			addLayoutURL.setParameter("type", _type);
-			addLayoutURL.setWindowState(LiferayWindowState.POP_UP);
-
-			data.put("data-add-layout-url", addLayoutURL.toString());
+			data.put(
+				"data-add-layout-url",
+				PortletURLBuilder.createRenderURL(
+					_renderResponse
+				).setMVCRenderCommandName(
+					"/layout_admin/add_layout"
+				).setBackURL(
+					redirect
+				).setParameter(
+					"privateLayout",
+					ParamUtil.getBoolean(_httpServletRequest, "privateLayout")
+				).setParameter(
+					"selPlid", ParamUtil.getLong(_httpServletRequest, "selPlid")
+				).setParameter(
+					"type", _type
+				).setWindowState(
+					LiferayWindowState.POP_UP
+				).buildString());
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception);
+			}
 		}
 
 		return data;
@@ -113,6 +116,9 @@ public class SelectBasicTemplatesNavigationCard implements NavigationCard {
 	public Boolean isSmall() {
 		return true;
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		SelectBasicTemplatesNavigationCard.class);
 
 	private final HttpServletRequest _httpServletRequest;
 	private final LayoutTypeController _layoutTypeController;

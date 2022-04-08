@@ -15,6 +15,7 @@
 package com.liferay.portal.kernel.exception;
 
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.model.User;
 
 import java.util.Date;
 import java.util.List;
@@ -194,17 +195,20 @@ public class UserPasswordException extends PortalException {
 
 	public static class MustNotBeChangedYet extends UserPasswordException {
 
-		public MustNotBeChangedYet(long userId, Date changeableDate) {
+		public MustNotBeChangedYet(User user, Date changeableDate) {
 			super(
 				String.format(
-					"Password for user %s must not be changed until %s", userId,
-					changeableDate));
+					"Password for user %s must not be changed until %s",
+					user.getUserId(), changeableDate));
 
-			this.userId = userId;
 			this.changeableDate = changeableDate;
+
+			timeZoneId = user.getTimeZoneId();
+			userId = user.getUserId();
 		}
 
 		public final Date changeableDate;
+		public String timeZoneId;
 		public long userId;
 
 	}

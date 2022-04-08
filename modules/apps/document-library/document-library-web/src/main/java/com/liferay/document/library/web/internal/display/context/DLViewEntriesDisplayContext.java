@@ -22,13 +22,14 @@ import com.liferay.document.library.kernel.model.DLFolderConstants;
 import com.liferay.document.library.kernel.util.DLUtil;
 import com.liferay.document.library.util.DLURLHelperUtil;
 import com.liferay.document.library.web.internal.constants.DLWebKeys;
-import com.liferay.document.library.web.internal.display.context.logic.DLPortletInstanceSettingsHelper;
-import com.liferay.document.library.web.internal.display.context.util.DLRequestHelper;
+import com.liferay.document.library.web.internal.display.context.helper.DLPortletInstanceSettingsHelper;
+import com.liferay.document.library.web.internal.display.context.helper.DLRequestHelper;
 import com.liferay.document.library.web.internal.helper.DLTrashHelper;
 import com.liferay.document.library.web.internal.search.EntriesChecker;
 import com.liferay.document.library.web.internal.search.EntriesMover;
 import com.liferay.document.library.web.internal.security.permission.resource.DLFileEntryPermission;
 import com.liferay.document.library.web.internal.security.permission.resource.DLFolderPermission;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.User;
@@ -54,8 +55,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
-
-import javax.portlet.PortletURL;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -100,6 +99,8 @@ public class DLViewEntriesDisplayContext {
 
 		if (DLFileEntryPermission.contains(
 				permissionChecker, fileEntry, ActionKeys.UPDATE)) {
+
+			availableActions.add("collectDigitalSignature");
 
 			availableActions.add("move");
 
@@ -210,14 +211,6 @@ public class DLViewEntriesDisplayContext {
 		return _redirect;
 	}
 
-	public String getRowURL(Folder folder) throws PortalException {
-		FolderActionDisplayContext folderActionDisplayContext =
-			new FolderActionDisplayContext(
-				_dlTrashHelper, _httpServletRequest, _liferayPortletResponse);
-
-		return folderActionDisplayContext.getRowURL(folder);
-	}
-
 	public SearchContainer<RepositoryEntry> getSearchContainer()
 		throws PortalException {
 
@@ -251,19 +244,17 @@ public class DLViewEntriesDisplayContext {
 	}
 
 	public String getViewFileEntryURL(FileEntry fileEntry) {
-		PortletURL portletURL = _liferayPortletResponse.createRenderURL();
-
-		portletURL.setParameter(
-			"mvcRenderCommandName", "/document_library/view_file_entry");
-		portletURL.setParameter(
-			"redirect",
+		return PortletURLBuilder.createRenderURL(
+			_liferayPortletResponse
+		).setMVCRenderCommandName(
+			"/document_library/view_file_entry"
+		).setRedirect(
 			HttpUtil.removeParameter(
 				_dlRequestHelper.getCurrentURL(),
-				_liferayPortletResponse.getNamespace() + "ajax"));
-		portletURL.setParameter(
-			"fileEntryId", String.valueOf(fileEntry.getFileEntryId()));
-
-		return portletURL.toString();
+				_liferayPortletResponse.getNamespace() + "ajax")
+		).setParameter(
+			"fileEntryId", fileEntry.getFileEntryId()
+		).buildString();
 	}
 
 	public boolean isDescriptiveDisplayStyle() {
@@ -318,10 +309,10 @@ public class DLViewEntriesDisplayContext {
 		if ((folderId != DLFolderConstants.DEFAULT_PARENT_FOLDER_ID) &&
 			(folderId != _dlAdminDisplayContext.getRootFolderId())) {
 
-			return true;
+			return false;
 		}
 
-		return false;
+		return true;
 	}
 
 	public boolean isVersioningStrategyOverridable() {

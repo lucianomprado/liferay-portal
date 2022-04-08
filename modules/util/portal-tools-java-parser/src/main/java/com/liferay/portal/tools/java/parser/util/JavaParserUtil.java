@@ -71,10 +71,12 @@ import com.liferay.portal.tools.java.parser.JavaTypeCast;
 import com.liferay.portal.tools.java.parser.JavaVariableDefinition;
 import com.liferay.portal.tools.java.parser.JavaWhileStatement;
 import com.liferay.portal.tools.java.parser.Position;
+import com.liferay.portal.tools.java.parser.util.comparator.ModifierComparator;
 
 import com.puppycrawl.tools.checkstyle.api.DetailAST;
 import com.puppycrawl.tools.checkstyle.api.FullIdent;
 import com.puppycrawl.tools.checkstyle.api.TokenTypes;
+import com.puppycrawl.tools.checkstyle.utils.AnnotationUtil;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -911,7 +913,8 @@ public class JavaParserUtil {
 					extendsClauseDetailAST);
 
 			if ((extendedClassJavaTypes.size() > 1) &&
-				(definitionDetailAST.getParent() == null)) {
+				((definitionDetailAST.getParent() == null) ||
+				 !AnnotationUtil.containsAnnotation(definitionDetailAST))) {
 
 				Collections.sort(extendedClassJavaTypes);
 			}
@@ -929,7 +932,8 @@ public class JavaParserUtil {
 					implementsClauseDetailAST);
 
 			if ((implementedClassJavaTypes.size() > 1) &&
-				(definitionDetailAST.getParent() == null)) {
+				((definitionDetailAST.getParent() == null) ||
+				 !AnnotationUtil.containsAnnotation(definitionDetailAST))) {
 
 				Collections.sort(implementedClassJavaTypes);
 			}
@@ -1556,7 +1560,6 @@ public class JavaParserUtil {
 
 		return new JavaParameter(
 			_getName(parameterDefinitionDetailAST),
-			_parseJavaAnnotations(modifiersDetailAST),
 			_parseModifiers(modifiersDetailAST), javaType);
 	}
 
@@ -1747,7 +1750,28 @@ public class JavaParserUtil {
 			return null;
 		}
 
+		List<JavaAnnotation> javaAnnotations = new ArrayList<>();
+
+		if (detailAST.getType() == TokenTypes.TYPE) {
+			DetailAST parentDetailAST = detailAST.getParent();
+			DetailAST previousSiblingDetailAST = detailAST.getPreviousSibling();
+
+			if ((parentDetailAST.getType() == TokenTypes.PARAMETER_DEF) &&
+				(previousSiblingDetailAST != null) &&
+				(previousSiblingDetailAST.getType() == TokenTypes.MODIFIERS)) {
+
+				javaAnnotations = _parseJavaAnnotations(
+					previousSiblingDetailAST);
+			}
+		}
+
 		DetailAST childDetailAST = detailAST.getFirstChild();
+
+		if (childDetailAST.getType() == TokenTypes.ANNOTATIONS) {
+			javaAnnotations = _parseJavaAnnotations(childDetailAST);
+
+			childDetailAST = childDetailAST.getNextSibling();
+		}
 
 		int arrayDimension = _getArrayDimension(detailAST);
 
@@ -1757,7 +1781,8 @@ public class JavaParserUtil {
 
 		FullIdent typeIdent = FullIdent.createFullIdent(childDetailAST);
 
-		JavaType javaType = new JavaType(typeIdent.getText(), arrayDimension);
+		JavaType javaType = new JavaType(
+			typeIdent.getText(), javaAnnotations, arrayDimension);
 
 		DetailAST typeInfoDetailAST = childDetailAST;
 
@@ -1871,6 +1896,8 @@ public class JavaParserUtil {
 
 		while (true) {
 			if (childDetailAST == null) {
+				Collections.sort(modifiers, new ModifierComparator());
+
 				return modifiers;
 			}
 

@@ -1,6 +1,7 @@
 {
 	"fragmentEntryKey": "dropdown",
-	"icon": "button",
+	"icon": "dropdown",
 	"name": "dropdown",
+	"thumbnail": "dropdown.png",
 	"type": "component"
 }

@@ -14,26 +14,33 @@
 
 package com.liferay.jenkins.results.parser;
 
-import com.liferay.jenkins.results.parser.spira.SpiraProject;
-import com.liferay.jenkins.results.parser.spira.SpiraRelease;
-import com.liferay.jenkins.results.parser.spira.SpiraReleaseBuild;
+import com.liferay.jenkins.results.parser.testray.TestrayBuild;
+import com.liferay.jenkins.results.parser.testray.TestrayRoutine;
 
 import java.io.IOException;
 
 import java.text.DecimalFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
+import java.time.ZonedDateTime;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -47,57 +54,62 @@ public class CISystemStatusReportUtil {
 		throws IOException {
 
 		JenkinsCohort jenkinsCohort = new JenkinsCohort(
-			_buildProperties.getProperty(
+			JenkinsResultsParserUtil.getBuildProperty(
 				"ci.system.status.report.jenkins.cohort"));
 
 		jenkinsCohort.writeDataJavaScriptFile(filePath);
 	}
 
-	public static void writeSpiraDataJavaScriptFile(String filePath)
+	public static void writeTestrayDataJavaScriptFile(
+			String filePath, TestrayRoutine testrayRoutine, String nameFilter)
 		throws IOException {
 
-		SpiraProject spiraProject = SpiraProject.getSpiraProjectByID(
-			SpiraProject.getID("dxp"));
+		List<Callable<String>> callables = new ArrayList<>();
 
-		SpiraRelease spiraRelease = spiraProject.getSpiraReleaseByID(
-			SpiraRelease.getID(
-				"test-portal-acceptance-pullrequest(master)", "relevant"));
+		for (LocalDate localDate : _recentTestrayBuilds.keySet()) {
+			List<TestrayBuild> builds = testrayRoutine.getTestrayBuilds(
+				200, localDate.toString(), nameFilter);
 
-		List<SpiraReleaseBuild> spiraReleaseBuilds =
-			SpiraReleaseBuild.getSpiraReleaseBuilds(spiraProject, spiraRelease);
+			_recentTestrayBuilds.put(localDate, builds);
 
-		for (SpiraReleaseBuild spiraReleaseBuild : spiraReleaseBuilds) {
-			LocalDate localDate = LocalDate.parse(
-				spiraReleaseBuild.getCreationDate(), _dateTimeFormatter);
+			for (final TestrayBuild testrayBuild : builds) {
+				callables.add(
+					new Callable<String>() {
 
-			if (_recentSpiraReleaseBuilds.containsKey(localDate)) {
-				List<SpiraReleaseBuild> builds = _recentSpiraReleaseBuilds.get(
-					localDate);
+						@Override
+						public String call() throws Exception {
+							return testrayBuild.getResult();
+						}
 
-				builds.add(spiraReleaseBuild);
-
-				_recentSpiraReleaseBuilds.put(localDate, builds);
+					});
 			}
 		}
+
+		ParallelExecutor<String> parallelExecutor = new ParallelExecutor<>(
+			callables, _executorService);
+
+		parallelExecutor.execute();
 
 		StringBuilder sb = new StringBuilder();
 
 		sb.append("var relevantSuiteBuildData = ");
+		sb.append(_getRelevantSuiteBuildDataJSONObject());
 
-		JSONObject relevantSuiteBuildDataJSONObject =
-			_getrelevantSuiteBuildDataJSONObject();
+		sb.append("\nvar topLevelTotalBuildDurationData = ");
+		sb.append(_getTopLevelTotalBuildDurationJSONObject());
 
-		sb.append(relevantSuiteBuildDataJSONObject.toString());
+		sb.append("\nvar topLevelActiveBuildDurationData = ");
+		sb.append(_getTopLevelActiveBuildDurationJSONObject());
 
-		sb.append("\nvar spiraDataGeneratedDate = new Date(");
-		sb.append(System.currentTimeMillis());
-		sb.append(");\nvar successRateData = ");
+		sb.append("\nvar downstreamBuildDurationData = ");
+		sb.append(_getDownstreamBuildDurationJSONObject());
 
-		JSONArray successRateTableDataJSONArray =
-			_getSuccessRateDataJSONArray();
+		sb.append("\nvar testrayDataGeneratedDate = new Date(");
+		sb.append(JenkinsResultsParserUtil.getCurrentTimeMillis());
+		sb.append(");");
 
-		sb.append(successRateTableDataJSONArray.toString());
-
+		sb.append("\nvar successRateData = ");
+		sb.append(_getSuccessRateDataJSONArray());
 		sb.append(";");
 
 		JenkinsResultsParserUtil.write(filePath, sb.toString());
@@ -115,7 +127,65 @@ public class CISystemStatusReportUtil {
 		return decimalFormat.format(quotient);
 	}
 
-	private static JSONObject _getrelevantSuiteBuildDataJSONObject() {
+	private static JSONObject _getDownstreamBuildDurationJSONObject() {
+		JSONObject datesDurationsJSONObject = new JSONObject();
+
+		JSONArray datesJSONArray = new JSONArray();
+		JSONArray durationsJSONArray = new JSONArray();
+
+		List<LocalDate> dates = new ArrayList<>(_recentTestrayBuilds.keySet());
+
+		Collections.sort(dates);
+
+		for (LocalDate date : dates) {
+			List<Long> durations = new ArrayList<>();
+
+			for (TestrayBuild testrayBuild : _recentTestrayBuilds.get(date)) {
+				List<Long> downstreamDurations =
+					testrayBuild.getDownstreamBuildDurations();
+
+				if (downstreamDurations == null) {
+					continue;
+				}
+
+				for (Long downstreamDuration : downstreamDurations) {
+					if ((downstreamDuration == null) ||
+						(downstreamDuration < 0)) {
+
+						continue;
+					}
+
+					durations.add(downstreamDuration);
+				}
+			}
+
+			durations.removeAll(Collections.singleton(null));
+
+			if (durations.isEmpty()) {
+				datesJSONArray.put(date.toString());
+			}
+			else {
+				String meanDuration = JenkinsResultsParserUtil.combine(
+					"mean: ",
+					JenkinsResultsParserUtil.toDurationString(
+						JenkinsResultsParserUtil.getAverage(durations)));
+
+				datesJSONArray.put(
+					new String[] {date.toString(), meanDuration});
+			}
+
+			Collections.sort(durations);
+
+			durationsJSONArray.put(durations);
+		}
+
+		datesDurationsJSONObject.put("dates", datesJSONArray);
+		datesDurationsJSONObject.put("durations", durationsJSONArray);
+
+		return datesDurationsJSONObject;
+	}
+
+	private static JSONObject _getRelevantSuiteBuildDataJSONObject() {
 		JSONObject relevantSuiteBuildDataJSONObject = new JSONObject();
 
 		JSONArray datesJSONArray = new JSONArray();
@@ -123,40 +193,36 @@ public class CISystemStatusReportUtil {
 		JSONArray passedBuildsJSONArray = new JSONArray();
 		JSONArray unstableBuildsJSONArray = new JSONArray();
 
-		List<LocalDate> dates = new ArrayList<>(
-			_recentSpiraReleaseBuilds.keySet());
+		List<LocalDate> dates = new ArrayList<>(_recentTestrayBuilds.keySet());
 
 		Collections.sort(dates);
 
 		for (LocalDate date : dates) {
-			datesJSONArray.put(date.toString());
-
 			int failedBuilds = 0;
 			int passedBuilds = 0;
 			int unstableBuilds = 0;
 
-			for (SpiraReleaseBuild spiraReleaseBuild :
-					_recentSpiraReleaseBuilds.get(date)) {
+			for (TestrayBuild testrayBuild : _recentTestrayBuilds.get(date)) {
+				String result = testrayBuild.getResult();
 
-				String buildStatusName = spiraReleaseBuild.getBuildStatusName();
-
-				if (buildStatusName.equals("Failed")) {
+				if (result.equals("FAILURE")) {
 					failedBuilds++;
 
 					continue;
 				}
 
-				if (buildStatusName.equals("Succeeded")) {
+				if (result.equals("SUCCESS")) {
 					passedBuilds++;
 
 					continue;
 				}
 
-				if (buildStatusName.equals("Unstable")) {
+				if (result.equals("APPROVED")) {
 					unstableBuilds++;
 				}
 			}
 
+			datesJSONArray.put(date.toString());
 			passedBuildsJSONArray.put(passedBuilds);
 			failedBuildsJSONArray.put(failedBuilds);
 			unstableBuildsJSONArray.put(unstableBuilds);
@@ -192,12 +258,13 @@ public class CISystemStatusReportUtil {
 				currentLocalDateTime));
 		successRateDataJSONArray.put(
 			_getSuccessRateJSONArray(
-				"Last 7 Days", currentLocalDateTime.minusDays(7),
+				"Last 7 Days", currentLocalDateTime.minusDays(_DAYS_PER_WEEK),
 				currentLocalDateTime));
 		successRateDataJSONArray.put(
 			_getSuccessRateJSONArray(
-				"Previous 7 Days", currentLocalDateTime.minusDays(14),
-				currentLocalDateTime.minusDays(7)));
+				"Previous 7 Days",
+				currentLocalDateTime.minusDays(_DAYS_PER_WEEK * 2),
+				currentLocalDateTime.minusDays(_DAYS_PER_WEEK)));
 
 		return successRateDataJSONArray;
 	}
@@ -210,8 +277,6 @@ public class CISystemStatusReportUtil {
 			throw new IllegalArgumentException(
 				"Start time must preceed end time");
 		}
-
-		JSONArray successRateJSONArray = new JSONArray();
 
 		Set<LocalDate> localDates = new HashSet<>();
 
@@ -229,41 +294,62 @@ public class CISystemStatusReportUtil {
 		int unstableBuilds = 0;
 
 		for (LocalDate localDate : localDates) {
-			for (SpiraReleaseBuild spiraReleaseBuild :
-					_recentSpiraReleaseBuilds.get(localDate)) {
+			for (TestrayBuild testrayBuild :
+					_recentTestrayBuilds.get(localDate)) {
 
-				LocalDateTime localDateTime = LocalDateTime.parse(
-					spiraReleaseBuild.getCreationDate(), _dateTimeFormatter);
+				String testrayBuildName = testrayBuild.getName();
 
-				if (startLocalDateTime.compareTo(localDateTime) >= 0) {
+				Matcher matcher = _dateTimePattern.matcher(testrayBuildName);
+
+				if (!matcher.find()) {
 					continue;
 				}
 
-				if (endLocalDateTime.compareTo(localDateTime) <= 0) {
+				Date date;
+
+				try {
+					date = _simpleDateFormat.parse(matcher.group("date"));
+				}
+				catch (ParseException parseException) {
+					throw new RuntimeException(parseException);
+				}
+
+				Instant instant = Instant.ofEpochMilli(date.getTime());
+
+				ZonedDateTime zonedDateTime = instant.atZone(
+					ZoneId.systemDefault());
+
+				LocalDateTime localDateTime = zonedDateTime.toLocalDateTime();
+
+				if ((startLocalDateTime.compareTo(localDateTime) >= 0) ||
+					(endLocalDateTime.compareTo(localDateTime) <= 0)) {
+
 					continue;
 				}
 
-				String buildStatusName = spiraReleaseBuild.getBuildStatusName();
+				String testrayBuildResult = testrayBuild.getResult();
 
-				if (buildStatusName.equals("Failed")) {
+				if (testrayBuildResult.equals("FAILURE")) {
 					failedBuilds++;
 
 					continue;
 				}
 
-				if (buildStatusName.equals("Succeeded")) {
+				if (testrayBuildResult.equals("SUCCESS")) {
 					passedBuilds++;
 
 					continue;
 				}
 
-				if (buildStatusName.equals("Unstable")) {
+				if (testrayBuildResult.equals("APPROVED")) {
 					unstableBuilds++;
 				}
 			}
 		}
 
 		int totalBuilds = failedBuilds + passedBuilds + unstableBuilds;
+
+		JSONArray successRateJSONArray = new JSONArray();
 
 		successRateJSONArray.put(title);
 		successRateJSONArray.put(
@@ -274,37 +360,125 @@ public class CISystemStatusReportUtil {
 		return successRateJSONArray;
 	}
 
-	private static final Properties _buildProperties;
-	private static final DateTimeFormatter _dateTimeFormatter =
-		DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-	private static final HashMap<LocalDate, List<SpiraReleaseBuild>>
-		_recentSpiraReleaseBuilds;
+	private static JSONObject _getTopLevelActiveBuildDurationJSONObject() {
+		JSONObject jsonObject = new JSONObject();
+
+		JSONArray datesJSONArray = new JSONArray();
+		JSONArray durationsJSONArray = new JSONArray();
+
+		List<LocalDate> dates = new ArrayList<>(_recentTestrayBuilds.keySet());
+
+		Collections.sort(dates);
+
+		for (LocalDate date : dates) {
+			List<Long> durations = new ArrayList<>();
+
+			for (TestrayBuild testrayBuild : _recentTestrayBuilds.get(date)) {
+				Long duration = testrayBuild.getTopLevelActiveBuildDuration();
+
+				if ((duration == null) || (duration < 0)) {
+					continue;
+				}
+
+				durations.add(duration);
+			}
+
+			durations.removeAll(Collections.singleton(null));
+
+			if (durations.isEmpty()) {
+				datesJSONArray.put(date.toString());
+			}
+			else {
+				String meanDuration = JenkinsResultsParserUtil.combine(
+					"mean: ",
+					JenkinsResultsParserUtil.toDurationString(
+						JenkinsResultsParserUtil.getAverage(durations)));
+
+				datesJSONArray.put(
+					new String[] {date.toString(), meanDuration});
+			}
+
+			Collections.sort(durations);
+
+			durationsJSONArray.put(durations);
+		}
+
+		jsonObject.put("dates", datesJSONArray);
+		jsonObject.put("durations", durationsJSONArray);
+
+		return jsonObject;
+	}
+
+	private static JSONObject _getTopLevelTotalBuildDurationJSONObject() {
+		JSONObject jsonObject = new JSONObject();
+
+		JSONArray datesJSONArray = new JSONArray();
+		JSONArray durationsJSONArray = new JSONArray();
+
+		List<LocalDate> dates = new ArrayList<>(_recentTestrayBuilds.keySet());
+
+		Collections.sort(dates);
+
+		for (LocalDate date : dates) {
+			List<Long> durations = new ArrayList<>();
+
+			for (TestrayBuild testrayBuild : _recentTestrayBuilds.get(date)) {
+				Long duration = testrayBuild.getTopLevelBuildDuration();
+
+				if ((duration == null) || (duration < 0)) {
+					continue;
+				}
+
+				durations.add(duration);
+			}
+
+			durations.removeAll(Collections.singleton(null));
+
+			if (durations.isEmpty()) {
+				datesJSONArray.put(date.toString());
+			}
+			else {
+				String meanDuration = JenkinsResultsParserUtil.combine(
+					"mean: ",
+					JenkinsResultsParserUtil.toDurationString(
+						JenkinsResultsParserUtil.getAverage(durations)));
+
+				datesJSONArray.put(
+					new String[] {date.toString(), meanDuration});
+			}
+
+			Collections.sort(durations);
+
+			durationsJSONArray.put(durations);
+		}
+
+		jsonObject.put("dates", datesJSONArray);
+		jsonObject.put("durations", durationsJSONArray);
+
+		return jsonObject;
+	}
+
+	private static final int _DAYS_PER_WEEK = 7;
+
+	private static final Pattern _dateTimePattern = Pattern.compile(
+		".*(?<date>\\d{4}-\\d{2}-\\d{2}\\[\\d{2}:\\d{2}:\\d{2}\\]).*");
+	private static final ExecutorService _executorService =
+		JenkinsResultsParserUtil.getNewThreadPoolExecutor(25, true);
+	private static final HashMap<LocalDate, List<TestrayBuild>>
+		_recentTestrayBuilds;
+	private static final SimpleDateFormat _simpleDateFormat =
+		new SimpleDateFormat("yyyy-MM-dd[HH:mm:ss]");
 
 	static {
-		try {
-			_buildProperties = JenkinsResultsParserUtil.getBuildProperties();
-		}
-		catch (IOException ioException) {
-			throw new RuntimeException(
-				"Unable to get build.properties", ioException);
-		}
+		_recentTestrayBuilds = new HashMap<LocalDate, List<TestrayBuild>>() {
+			{
+				LocalDate localDate = LocalDate.now(ZoneOffset.UTC);
 
-		_recentSpiraReleaseBuilds =
-			new HashMap<LocalDate, List<SpiraReleaseBuild>>() {
-				{
-					LocalDate localDate = LocalDate.now(ZoneOffset.UTC);
-
-					int spiraHistoryLength = Integer.parseInt(
-						_buildProperties.getProperty(
-							"ci.system.status.report.spira.history.length"));
-
-					for (int i = 0; i < spiraHistoryLength; i++) {
-						put(
-							localDate.minusDays(i),
-							new ArrayList<SpiraReleaseBuild>());
-					}
+				for (int i = 0; i <= (_DAYS_PER_WEEK * 2); i++) {
+					put(localDate.minusDays(i), new ArrayList<TestrayBuild>());
 				}
-			};
+			}
+		};
 	}
 
 }

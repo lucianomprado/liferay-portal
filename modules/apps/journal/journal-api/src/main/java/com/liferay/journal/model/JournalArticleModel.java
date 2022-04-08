@@ -265,6 +265,21 @@ public interface JournalArticleModel
 	public void setModifiedDate(Date modifiedDate);
 
 	/**
+	 * Returns the external reference code of this journal article.
+	 *
+	 * @return the external reference code of this journal article
+	 */
+	@AutoEscape
+	public String getExternalReferenceCode();
+
+	/**
+	 * Sets the external reference code of this journal article.
+	 *
+	 * @param externalReferenceCode the external reference code of this journal article
+	 */
+	public void setExternalReferenceCode(String externalReferenceCode);
+
+	/**
 	 * Returns the folder ID of this journal article.
 	 *
 	 * @return the folder ID of this journal article
@@ -378,21 +393,6 @@ public interface JournalArticleModel
 	 * @param urlTitle the url title of this journal article
 	 */
 	public void setUrlTitle(String urlTitle);
-
-	/**
-	 * Returns the content of this journal article.
-	 *
-	 * @return the content of this journal article
-	 */
-	@AutoEscape
-	public String getContent();
-
-	/**
-	 * Sets the content of this journal article.
-	 *
-	 * @param content the content of this journal article
-	 */
-	public void setContent(String content);
 
 	/**
 	 * Returns the ddm structure key of this journal article.
@@ -776,5 +776,8 @@ public interface JournalArticleModel
 	 */
 	@Override
 	public boolean isScheduled();
+
+	@Override
+	public JournalArticle cloneWithOriginalValues();
 
 }

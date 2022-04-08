@@ -32,8 +32,7 @@ import com.liferay.dynamic.data.mapping.model.LocalizedValue;
 		@DDMFormRule(
 			actions = {
 				"setVisible('indexType', false)",
-				"setVisible('predefinedValue', false)",
-				"setVisible('validation', false)"
+				"setVisible('predefinedValue', false)"
 			},
 			condition = "TRUE"
 		)
@@ -63,10 +62,10 @@ import com.liferay.dynamic.data.mapping.model.LocalizedValue;
 							size = 12,
 							value = {
 								"predefinedValue", "placeholder",
-								"visibilityExpression", "validation",
-								"fieldNamespace", "indexType", "localizable",
-								"readOnly", "dataType", "type", "name",
-								"fieldReference", "showLabel", "repeatable"
+								"visibilityExpression", "fieldNamespace",
+								"indexType", "localizable", "readOnly",
+								"dataType", "type", "name", "fieldReference",
+								"showLabel", "repeatable"
 							}
 						)
 					}
@@ -80,7 +79,10 @@ public interface PasswordDDMFormFieldTypeSettings
 
 	@DDMFormField(
 		dataType = "string", label = "%placeholder-text",
-		properties = "tooltip=%enter-text-that-assists-the-user-but-is-not-submitted-as-a-field-value",
+		properties = {
+			"tooltip=%enter-text-that-assists-the-user-but-is-not-submitted-as-a-field-value",
+			"visualProperty=true"
+		},
 		type = "text"
 	)
 	public LocalizedValue placeholder();

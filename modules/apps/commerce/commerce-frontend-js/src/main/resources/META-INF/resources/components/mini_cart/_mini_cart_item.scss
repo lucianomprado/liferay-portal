@@ -8,29 +8,39 @@
 	grid-column-gap: 15px;
 	max-height: 200px;
 	grid-template-areas:
-		'image info quantity price delete'
-		'errors errors errors errors errors';
-	grid-template-columns: min-content 32% auto minmax(min-content, 100px) min-content;
+		'info quantity price delete'
+		'errors errors errors errors';
+	grid-template-columns: auto 90px minmax(min-content, 100px) min-content;
 	overflow: hidden;
 	padding: 10px;
 	position: relative;
 	transition: height 0.2s ease-in, padding 0.1s ease-in;
+
+	&-anchor,
+	&-anchor:hover,
+	&-anchor:active,
+	&-anchor:focus {
+		align-items: center;
+		color: inherit;
+		display: flex;
+		grid-area: info;
+		text-decoration: inherit;
+	}
 
 	&-thumbnail {
 		align-self: flex-start;
 		background-position: center center;
 		background-size: cover;
 		border-radius: 4px;
-		grid-area: image;
 		height: 70px;
 		min-height: 70px;
 		min-width: 70px;
 		overflow: hidden;
+		position: relative;
 		width: 70px;
 	}
 
 	&-info {
-		grid-area: info;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
@@ -86,9 +96,18 @@
 		grid-area: quantity;
 
 		.quantity-selector {
-			.input-group-item {
-				flex-grow: unset;
-				width: unset;
+			font-size: 0.95rem;
+			height: unset;
+			padding: 0.25rem 0.8rem;
+		}
+
+		input[type='number'] {
+			padding: 0.25rem 0.5rem 0.25rem 0.8rem;
+
+			&::-webkit-inner-spin-button,
+			&::-webkit-outer-spin-button {
+				margin: 0;
+				opacity: 1;
 			}
 		}
 	}
@@ -98,21 +117,18 @@
 		text-align: right;
 
 		.price {
-			grid-template-columns: unset;
-
-			&-label {
-				display: none;
-			}
+			grid-template-areas: unset;
 
 			&-value {
 				display: block;
-				font-size: 1.1em;
-				margin: 0;
+				font-size: 0.9rem !important;
+				margin: 0 !important;
 			}
 		}
 	}
 
 	&-delete {
+		font-size: 1rem;
 		grid-area: delete;
 		margin: 10px 0;
 	}

@@ -89,14 +89,14 @@ public class IntegerType implements CompositeUserType, Serializable {
 
 	@Override
 	public Object nullSafeGet(
-		ResultSet rs, String[] names, SessionImplementor session,
+		ResultSet resultSet, String[] names, SessionImplementor session,
 		Object owner) {
 
 		Integer value = null;
 
 		try {
 			value = StandardBasicTypes.INTEGER.nullSafeGet(
-				rs, names[0], session);
+				resultSet, names[0], session);
 		}
 		catch (SQLException sqlException) {
 		}
@@ -110,7 +110,7 @@ public class IntegerType implements CompositeUserType, Serializable {
 
 	@Override
 	public void nullSafeSet(
-			PreparedStatement ps, Object target, int index,
+			PreparedStatement preparedStatement, Object target, int index,
 			SessionImplementor session)
 		throws SQLException {
 
@@ -118,7 +118,7 @@ public class IntegerType implements CompositeUserType, Serializable {
 			target = DEFAULT_VALUE;
 		}
 
-		ps.setInt(index, (Integer)target);
+		preparedStatement.setInt(index, (Integer)target);
 	}
 
 	@Override

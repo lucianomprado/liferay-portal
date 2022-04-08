@@ -147,7 +147,9 @@ public class PortletDescriptorParser {
 				}
 			}
 			catch (ClassNotFoundException classNotFoundException) {
-				_log.error("Unable to load filter-class " + filterClassName);
+				_log.error(
+					"Unable to load filter-class " + filterClassName,
+					classNotFoundException);
 
 				continue;
 			}
@@ -183,7 +185,9 @@ public class PortletDescriptorParser {
 				portletClass = bundle.loadClass(portletClassName);
 			}
 			catch (ClassNotFoundException classNotFoundException) {
-				_log.error("Unable to load portlet-class " + portletClassName);
+				_log.error(
+					"Unable to load portlet-class " + portletClassName,
+					classNotFoundException);
 
 				continue;
 			}
@@ -518,10 +522,9 @@ public class PortletDescriptorParser {
 			Element nameElement = supportedProcessingEventElement.element(
 				"name");
 
-			QName qName = PortletQNameUtil.getQName(
-				beanApp.getDefaultNamespace(), qNameElement, nameElement);
-
-			supportedProcessingEvents.add(qName);
+			supportedProcessingEvents.add(
+				PortletQNameUtil.getQName(
+					beanApp.getDefaultNamespace(), qNameElement, nameElement));
 		}
 
 		Set<QName> supportedPublishingEvents = new HashSet<>();
@@ -534,10 +537,9 @@ public class PortletDescriptorParser {
 			Element nameElement = supportedPublishingEventElement.element(
 				"name");
 
-			QName qName = PortletQNameUtil.getQName(
-				beanApp.getDefaultNamespace(), qNameElement, nameElement);
-
-			supportedPublishingEvents.add(qName);
+			supportedPublishingEvents.add(
+				PortletQNameUtil.getQName(
+					beanApp.getDefaultNamespace(), qNameElement, nameElement));
 		}
 
 		BeanMethodIndexUtil.scanSupportedEvents(

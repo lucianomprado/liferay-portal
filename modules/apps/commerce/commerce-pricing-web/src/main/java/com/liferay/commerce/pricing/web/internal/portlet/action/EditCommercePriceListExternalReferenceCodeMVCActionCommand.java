@@ -41,7 +41,7 @@ import org.osgi.service.component.annotations.Reference;
 	property = {
 		"javax.portlet.name=" + CommercePricingPortletKeys.COMMERCE_PRICE_LIST,
 		"javax.portlet.name=" + CommercePricingPortletKeys.COMMERCE_PROMOTION,
-		"mvc.command.name=editCommercePriceListExternalReferenceCode"
+		"mvc.command.name=/commerce_price_list/edit_commerce_price_list_external_reference_code"
 	},
 	service = MVCActionCommand.class
 )
@@ -54,7 +54,7 @@ public class EditCommercePriceListExternalReferenceCodeMVCActionCommand
 		throws Exception {
 
 		try {
-			updateCommercePriceListExternalReferenceCode(actionRequest);
+			_updateCommercePriceListExternalReferenceCode(actionRequest);
 		}
 		catch (Exception exception) {
 			if (exception instanceof NoSuchPriceListException ||
@@ -65,7 +65,7 @@ public class EditCommercePriceListExternalReferenceCodeMVCActionCommand
 				actionResponse.setRenderParameter("mvcPath", "/error.jsp");
 			}
 			else {
-				_log.error(exception, exception);
+				_log.error(exception);
 
 				String redirect = ParamUtil.getString(
 					actionRequest, "redirect");
@@ -75,7 +75,7 @@ public class EditCommercePriceListExternalReferenceCodeMVCActionCommand
 		}
 	}
 
-	protected void updateCommercePriceListExternalReferenceCode(
+	private void _updateCommercePriceListExternalReferenceCode(
 			ActionRequest actionRequest)
 		throws Exception {
 
@@ -89,8 +89,8 @@ public class EditCommercePriceListExternalReferenceCodeMVCActionCommand
 			actionRequest, "externalReferenceCode");
 
 		_commercePriceListService.updateExternalReferenceCode(
-			commercePriceList, _portal.getCompanyId(actionRequest),
-			externalReferenceCode);
+			commercePriceList, externalReferenceCode,
+			_portal.getCompanyId(actionRequest));
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(

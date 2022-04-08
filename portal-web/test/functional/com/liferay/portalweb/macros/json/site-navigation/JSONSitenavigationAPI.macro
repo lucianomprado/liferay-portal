@@ -2,7 +2,7 @@ definition {
 
 	@summary = "Helper function to add a site navigation menu via JSON"
 	macro _addSiteNavigationMenu {
-		Variables.assertDefined(parameterList = "${groupId},${siteNavigationMenuName}");
+		Variables.assertDefined(parameterList = "${auto},${groupId},${siteNavigationMenuName}");
 
 		var portalURL = JSONCompany.getPortalURL();
 
@@ -10,10 +10,31 @@ definition {
 			${portalURL}/api/jsonws/sitenavigation.sitenavigationmenu/add-site-navigation-menu \
 			  -u test@liferay.com:test \
 			  -d groupId=${groupId} \
-			  -d name=${siteNavigationMenuName}
+			  -d name=${siteNavigationMenuName} \
+			  -d type=0 \
+			  -d auto=${auto}
 			''';
 
 		com.liferay.poshi.runner.util.JSONCurlUtil.post("${curl}");
+	}
+
+	@summary = "Helper function to add a site navigation menu item via JSON"
+	macro _addSiteNavigationMenuItem {
+		Variables.assertDefined(parameterList = "${groupId},${parentSiteNavigationMenuItemId},${siteNavigationMenuId},${type},${typeSettings}");
+
+		var portalURL = JSONCompany.getPortalURL();
+
+		var curl = '''
+			${portalURL}/api/jsonws/sitenavigation.sitenavigationmenuitem/add-site-navigation-menu-item \
+				-u test@liferay.com:test \
+				-d groupId=${groupId} \
+				-d siteNavigationMenuId=${siteNavigationMenuId} \
+				-d parentSiteNavigationMenuItemId=${parentSiteNavigationMenuItemId} \
+				-d type=${type} \
+				-d typeSettings=${typeSettings}
+			''';
+
+		JSONCurlUtil.post("${curl}");
 	}
 
 	@summary = "Helper function to delete a site navigation menu via JSON"
@@ -42,10 +63,7 @@ definition {
 				-u test@liferay.com:test \
 				-d groupId=${groupId}
 		''';
-
 		var siteNavigationMenuId = JSONCurlUtil.post("${curl}", "$.[?(@['name'] == '${siteNavigationMenuName}')]['siteNavigationMenuId']");
-		var siteNavigationMenuId = StringUtil.replace("${siteNavigationMenuId}", "[&quot;", "");
-		var siteNavigationMenuId = StringUtil.replace("${siteNavigationMenuId}", "&quot;]", "");
 
 		return "${siteNavigationMenuId}";
 	}
@@ -61,10 +79,7 @@ definition {
 				-u test@liferay.com:test \
 				-d siteNavigationMenuId=${siteNavigationMenuId}
 		''';
-
 		var siteNavigationMenuItemId = JSONCurlUtil.post("${curl}", "$.[?(@['typeSettings'] contains '${siteNavigationMenuItemName}')]['siteNavigationMenuItemId']");
-		var siteNavigationMenuItemId = StringUtil.replace("${siteNavigationMenuItemId}", "[&quot;", "");
-		var siteNavigationMenuItemId = StringUtil.replace("${siteNavigationMenuItemId}", "&quot;]", "");
 
 		return "${siteNavigationMenuItemId}";
 	}

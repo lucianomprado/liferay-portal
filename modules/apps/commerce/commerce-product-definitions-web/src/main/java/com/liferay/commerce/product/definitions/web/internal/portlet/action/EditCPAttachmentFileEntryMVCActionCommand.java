@@ -35,6 +35,7 @@ import com.liferay.portal.kernel.util.LocalizationUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.kernel.util.Validator;
 
 import java.util.Calendar;
 import java.util.Locale;
@@ -54,40 +55,12 @@ import org.osgi.service.component.annotations.Reference;
 	enabled = false, immediate = true,
 	property = {
 		"javax.portlet.name=" + CPPortletKeys.CP_DEFINITIONS,
-		"mvc.command.name=editCPAttachmentFileEntry"
+		"mvc.command.name=/cp_definitions/edit_cp_attachment_file_entry"
 	},
 	service = MVCActionCommand.class
 )
 public class EditCPAttachmentFileEntryMVCActionCommand
 	extends BaseMVCActionCommand {
-
-	protected void deleteCPAttachmentFileEntry(ActionRequest actionRequest)
-		throws Exception {
-
-		long[] deleteCPAttachmentFileEntryIds = null;
-
-		long cpAttachmentFileEntryId = ParamUtil.getLong(
-			actionRequest, "cpAttachmentFileEntryId");
-
-		if (cpAttachmentFileEntryId > 0) {
-			deleteCPAttachmentFileEntryIds = new long[] {
-				cpAttachmentFileEntryId
-			};
-		}
-		else {
-			deleteCPAttachmentFileEntryIds = StringUtil.split(
-				ParamUtil.getString(
-					actionRequest, "deleteCPAttachmentFileEntryIds"),
-				0L);
-		}
-
-		for (long deleteCPAttachmentFileEntryId :
-				deleteCPAttachmentFileEntryIds) {
-
-			_cpAttachmentFileEntryService.deleteCPAttachmentFileEntry(
-				deleteCPAttachmentFileEntryId);
-		}
-	}
 
 	@Override
 	protected void doProcessAction(
@@ -100,10 +73,10 @@ public class EditCPAttachmentFileEntryMVCActionCommand
 
 		try {
 			if (cmd.equals(Constants.ADD) || cmd.equals(Constants.UPDATE)) {
-				updateCPAttachmentFileEntry(actionRequest);
+				_updateCPAttachmentFileEntry(actionRequest);
 			}
 			else if (cmd.equals(Constants.DELETE)) {
-				deleteCPAttachmentFileEntry(actionRequest);
+				_deleteCPAttachmentFileEntry(actionRequest);
 			}
 
 			sendRedirect(actionRequest, actionResponse, redirect);
@@ -135,7 +108,35 @@ public class EditCPAttachmentFileEntryMVCActionCommand
 		}
 	}
 
-	protected void updateCPAttachmentFileEntry(ActionRequest actionRequest)
+	private void _deleteCPAttachmentFileEntry(ActionRequest actionRequest)
+		throws Exception {
+
+		long[] deleteCPAttachmentFileEntryIds = null;
+
+		long cpAttachmentFileEntryId = ParamUtil.getLong(
+			actionRequest, "cpAttachmentFileEntryId");
+
+		if (cpAttachmentFileEntryId > 0) {
+			deleteCPAttachmentFileEntryIds = new long[] {
+				cpAttachmentFileEntryId
+			};
+		}
+		else {
+			deleteCPAttachmentFileEntryIds = StringUtil.split(
+				ParamUtil.getString(
+					actionRequest, "deleteCPAttachmentFileEntryIds"),
+				0L);
+		}
+
+		for (long deleteCPAttachmentFileEntryId :
+				deleteCPAttachmentFileEntryIds) {
+
+			_cpAttachmentFileEntryService.deleteCPAttachmentFileEntry(
+				deleteCPAttachmentFileEntryId);
+		}
+	}
+
+	private void _updateCPAttachmentFileEntry(ActionRequest actionRequest)
 		throws Exception {
 
 		long cpAttachmentFileEntryId = ParamUtil.getLong(
@@ -144,6 +145,10 @@ public class EditCPAttachmentFileEntryMVCActionCommand
 		long cpDefinitionId = ParamUtil.getLong(
 			actionRequest, "cpDefinitionId");
 		long fileEntryId = ParamUtil.getLong(actionRequest, "fileEntryId");
+
+		String cdnURL = ParamUtil.getString(actionRequest, "cdnURL");
+
+		boolean cdnEnabled = Validator.isNotNull(cdnURL);
 
 		int displayDateMonth = ParamUtil.getInteger(
 			actionRequest, "displayDateMonth");
@@ -198,19 +203,18 @@ public class EditCPAttachmentFileEntryMVCActionCommand
 
 		if (cpAttachmentFileEntryId > 0) {
 			_cpAttachmentFileEntryService.updateCPAttachmentFileEntry(
-				cpAttachmentFileEntryId, fileEntryId, displayDateMonth,
-				displayDateDay, displayDateYear, displayDateHour,
-				displayDateMinute, expirationDateMonth, expirationDateDay,
-				expirationDateYear, expirationDateHour, expirationDateMinute,
-				neverExpire, titleMap, ddmFormValues, priority, type,
-				serviceContext);
+				cpAttachmentFileEntryId, fileEntryId, cdnEnabled, cdnURL,
+				displayDateMonth, displayDateDay, displayDateYear,
+				displayDateHour, displayDateMinute, expirationDateMonth,
+				expirationDateDay, expirationDateYear, expirationDateHour,
+				expirationDateMinute, neverExpire, titleMap, ddmFormValues,
+				priority, type, serviceContext);
 		}
 		else {
-			long classNameId = _portal.getClassNameId(CPDefinition.class);
-
 			_cpAttachmentFileEntryService.addCPAttachmentFileEntry(
-				serviceContext.getUserId(), serviceContext.getScopeGroupId(),
-				classNameId, cpDefinitionId, fileEntryId, displayDateMonth,
+				serviceContext.getScopeGroupId(),
+				_portal.getClassNameId(CPDefinition.class), cpDefinitionId,
+				fileEntryId, cdnEnabled, cdnURL, displayDateMonth,
 				displayDateDay, displayDateYear, displayDateHour,
 				displayDateMinute, expirationDateMonth, expirationDateDay,
 				expirationDateYear, expirationDateHour, expirationDateMinute,

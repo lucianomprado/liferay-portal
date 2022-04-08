@@ -15,7 +15,10 @@
 package com.liferay.frontend.taglib.servlet.taglib;
 
 import com.liferay.frontend.taglib.internal.servlet.ServletContextUtil;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
 import com.liferay.portal.kernel.portlet.PortletURLUtil;
 import com.liferay.portal.kernel.util.JavaConstants;
@@ -89,7 +92,7 @@ public class ManagementBarSortTag extends IncludeTag implements BodyTag {
 	public void setPageContext(PageContext pageContext) {
 		super.setPageContext(pageContext);
 
-		servletContext = ServletContextUtil.getServletContext();
+		setServletContext(ServletContextUtil.getServletContext());
 	}
 
 	public void setPortletURL(PortletURL portletURL) {
@@ -108,8 +111,11 @@ public class ManagementBarSortTag extends IncludeTag implements BodyTag {
 	}
 
 	protected List<ManagementBarFilterItem> getManagementBarFilterItems() {
-		PortletResponse portletResponse = (PortletResponse)request.getAttribute(
-			JavaConstants.JAVAX_PORTLET_RESPONSE);
+		HttpServletRequest httpServletRequest = getRequest();
+
+		PortletResponse portletResponse =
+			(PortletResponse)httpServletRequest.getAttribute(
+				JavaConstants.JAVAX_PORTLET_RESPONSE);
 
 		LiferayPortletResponse liferayPortletResponse =
 			PortalUtil.getLiferayPortletResponse(portletResponse);
@@ -118,10 +124,11 @@ public class ManagementBarSortTag extends IncludeTag implements BodyTag {
 			new ArrayList<>();
 
 		try {
-			PortletURL orderByColURL = PortletURLUtil.clone(
-				_portletURL, liferayPortletResponse);
-
-			orderByColURL.setParameter("orderByType", _orderByType);
+			PortletURL orderByColURL = PortletURLBuilder.create(
+				PortletURLUtil.clone(_portletURL, liferayPortletResponse)
+			).setParameter(
+				"orderByType", _orderByType
+			).buildPortletURL();
 
 			for (Map.Entry<String, String> entry : _orderColumns.entrySet()) {
 				String orderColumn = entry.getKey();
@@ -135,6 +142,9 @@ public class ManagementBarSortTag extends IncludeTag implements BodyTag {
 			}
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception);
+			}
 		}
 
 		return managementBarFilterItems;
@@ -196,6 +206,9 @@ public class ManagementBarSortTag extends IncludeTag implements BodyTag {
 	private static final boolean _CLEAN_UP_SET_ATTRIBUTES = true;
 
 	private static final String _PAGE = "/management_bar_sort/page.jsp";
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		ManagementBarSortTag.class);
 
 	private Boolean _disabled;
 	private String _orderByCol = StringPool.BLANK;

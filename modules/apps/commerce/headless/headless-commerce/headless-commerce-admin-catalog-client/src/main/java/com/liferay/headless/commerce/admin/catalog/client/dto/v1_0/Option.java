@@ -35,6 +35,28 @@ public class Option implements Cloneable, Serializable {
 		return OptionSerDes.toDTO(json);
 	}
 
+	public Map<String, Map<String, String>> getActions() {
+		return actions;
+	}
+
+	public void setActions(Map<String, Map<String, String>> actions) {
+		this.actions = actions;
+	}
+
+	public void setActions(
+		UnsafeSupplier<Map<String, Map<String, String>>, Exception>
+			actionsUnsafeSupplier) {
+
+		try {
+			actions = actionsUnsafeSupplier.get();
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	protected Map<String, Map<String, String>> actions;
+
 	public Long getCatalogId() {
 		return catalogId;
 	}
@@ -326,11 +348,14 @@ public class Option implements Cloneable, Serializable {
 	public static enum FieldType {
 
 		CHECKBOX("checkbox"), CHECKBOX_MULTIPLE("checkbox_multiple"),
-		DATE("date"), NUMERIC("numeric"), RADIO("radio"), SELECT("select");
+		DATE("date"), NUMERIC("numeric"), RADIO("radio"), SELECT("select"),
+		TEXT("text");
 
 		public static FieldType create(String value) {
 			for (FieldType fieldType : values()) {
-				if (Objects.equals(fieldType.getValue(), value)) {
+				if (Objects.equals(fieldType.getValue(), value) ||
+					Objects.equals(fieldType.name(), value)) {
+
 					return fieldType;
 				}
 			}

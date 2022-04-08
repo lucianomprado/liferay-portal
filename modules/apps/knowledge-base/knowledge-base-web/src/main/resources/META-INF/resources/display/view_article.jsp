@@ -41,17 +41,26 @@ String[] searchKeywords = (String[])renderRequest.getAttribute(KBWebKeys.KNOWLED
 
 			<%
 			String searchPortletId = PortletProviderUtil.getPortletId(PortalSearchApplicationType.Search.CLASS_NAME, PortletProvider.Action.VIEW);
-
-			PortletURL portletURL = liferayPortletResponse.createLiferayPortletURL(searchPortletId, PortletRequest.RENDER_PHASE);
-
-			portletURL.setParameter("struts_action", "/search/search");
-			portletURL.setParameter("redirect", currentURL);
-			portletURL.setParameter("keywords", StringUtil.merge(searchKeywords, StringPool.SPACE));
-			portletURL.setPortletMode(PortletMode.VIEW);
-			portletURL.setWindowState(WindowState.MAXIMIZED);
 			%>
 
-			<aui:a href="<%= portletURL.toString() %>" label='<%= LanguageUtil.get(request, "search-for-a-similar-article") %>' />
+			<aui:a
+				href='<%=
+					PortletURLBuilder.createLiferayPortletURL(
+						liferayPortletResponse, searchPortletId, PortletRequest.RENDER_PHASE
+					).setRedirect(
+						currentURL
+					).setKeywords(
+						StringUtil.merge(searchKeywords, StringPool.SPACE)
+					).setParameter(
+						"struts_action", "/search/search"
+					).setPortletMode(
+						PortletMode.VIEW
+					).setWindowState(
+						WindowState.MAXIMIZED
+					).buildString()
+				%>'
+				label='<%= LanguageUtil.get(request, "search-for-a-similar-article") %>'
+			/>
 		</div>
 	</c:otherwise>
 </c:choose>

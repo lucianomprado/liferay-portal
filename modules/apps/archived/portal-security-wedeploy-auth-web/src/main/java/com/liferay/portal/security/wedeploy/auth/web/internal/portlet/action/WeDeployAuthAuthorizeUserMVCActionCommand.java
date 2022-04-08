@@ -70,7 +70,7 @@ public class WeDeployAuthAuthorizeUserMVCActionCommand
 			if (cmd.equals("allow")) {
 				redirectURI = _http.addParameter(
 					redirectURI, "code",
-					getWeDeployAuthToken(actionRequest, themeDisplay));
+					_getWeDeployAuthToken(actionRequest, themeDisplay));
 			}
 			else if (cmd.equals("deny")) {
 				JSONObject jsonObject = JSONUtil.put("error", "access_denied");
@@ -80,7 +80,7 @@ public class WeDeployAuthAuthorizeUserMVCActionCommand
 			}
 		}
 		catch (Exception exception) {
-			_log.error(exception, exception);
+			_log.error(exception);
 
 			JSONObject jsonObject = JSONUtil.put(
 				"error_message",
@@ -96,7 +96,7 @@ public class WeDeployAuthAuthorizeUserMVCActionCommand
 		sendRedirect(actionRequest, actionResponse, redirectURI);
 	}
 
-	protected String getWeDeployAuthToken(
+	private String _getWeDeployAuthToken(
 			ActionRequest actionRequest, ThemeDisplay themeDisplay)
 		throws PortalException {
 

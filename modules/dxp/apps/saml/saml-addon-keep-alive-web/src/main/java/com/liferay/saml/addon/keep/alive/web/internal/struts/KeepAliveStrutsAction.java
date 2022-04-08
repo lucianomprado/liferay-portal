@@ -30,9 +30,11 @@ import com.liferay.saml.constants.SamlWebKeys;
 import com.liferay.saml.persistence.model.SamlIdpSpConnection;
 import com.liferay.saml.persistence.model.SamlIdpSpSession;
 import com.liferay.saml.persistence.model.SamlIdpSsoSession;
+import com.liferay.saml.persistence.model.SamlPeerBinding;
 import com.liferay.saml.persistence.service.SamlIdpSpConnectionLocalService;
 import com.liferay.saml.persistence.service.SamlIdpSpSessionLocalService;
 import com.liferay.saml.persistence.service.SamlIdpSsoSessionLocalService;
+import com.liferay.saml.persistence.service.SamlPeerBindingLocalService;
 import com.liferay.saml.runtime.configuration.SamlProviderConfigurationHelper;
 
 import java.io.OutputStream;
@@ -68,16 +70,16 @@ public class KeepAliveStrutsAction implements StrutsAction {
 		}
 
 		if (_samlProviderConfigurationHelper.isRoleIdp()) {
-			executeIdpKeepAlive(httpServletRequest, httpServletResponse);
+			_executeIdpKeepAlive(httpServletRequest, httpServletResponse);
 		}
 		else if (_samlProviderConfigurationHelper.isRoleSp()) {
-			executeSpKeepAlive(httpServletRequest, httpServletResponse);
+			_executeSpKeepAlive(httpServletResponse);
 		}
 
 		return null;
 	}
 
-	protected void executeIdpKeepAlive(
+	private void _executeIdpKeepAlive(
 			HttpServletRequest httpServletRequest,
 			HttpServletResponse httpServletResponse)
 		throws Exception {
@@ -93,7 +95,7 @@ public class KeepAliveStrutsAction implements StrutsAction {
 		String randomString = StringUtil.randomString();
 		PrintWriter printWriter = httpServletResponse.getWriter();
 
-		List<String> keepAliveURLs = getSPsKeepAliveURLs(httpServletRequest);
+		List<String> keepAliveURLs = _getSPsKeepAliveURLs(httpServletRequest);
 
 		for (String keepAliveURL : keepAliveURLs) {
 			keepAliveURL = _http.addParameter(keepAliveURL, "r", randomString);
@@ -105,9 +107,7 @@ public class KeepAliveStrutsAction implements StrutsAction {
 		}
 	}
 
-	protected void executeSpKeepAlive(
-			HttpServletRequest httpServletRequest,
-			HttpServletResponse httpServletResponse)
+	private void _executeSpKeepAlive(HttpServletResponse httpServletResponse)
 		throws Exception {
 
 		httpServletResponse.setHeader(
@@ -123,7 +123,7 @@ public class KeepAliveStrutsAction implements StrutsAction {
 		outputStream.write(Base64.decode(_BASE64_1X1_GIF));
 	}
 
-	protected List<String> getSPsKeepAliveURLs(
+	private List<String> _getSPsKeepAliveURLs(
 			HttpServletRequest httpServletRequest)
 		throws Exception {
 
@@ -146,14 +146,18 @@ public class KeepAliveStrutsAction implements StrutsAction {
 				samlIdpSsoSession.getSamlIdpSsoSessionId());
 
 		for (SamlIdpSpSession samlIdpSpSession : samlIdpSpSessions) {
-			if (entityId.equals(samlIdpSpSession.getSamlSpEntityId())) {
+			SamlPeerBinding samlPeerBinding =
+				_samlPeerBindingLocalService.getSamlPeerBinding(
+					samlIdpSpSession.getSamlPeerBindingId());
+
+			if (entityId.equals(samlPeerBinding.getSamlPeerEntityId())) {
 				continue;
 			}
 
 			SamlIdpSpConnection samlIdpSpConnection =
 				_samlIdpSpConnectionLocalService.getSamlIdpSpConnection(
 					samlIdpSpSession.getCompanyId(),
-					samlIdpSpSession.getSamlSpEntityId());
+					samlPeerBinding.getSamlPeerEntityId());
 
 			ExpandoBridge expandoBridge =
 				samlIdpSpConnection.getExpandoBridge();
@@ -187,6 +191,9 @@ public class KeepAliveStrutsAction implements StrutsAction {
 
 	@Reference
 	private SamlIdpSsoSessionLocalService _samlIdpSsoSessionLocalService;
+
+	@Reference
+	private SamlPeerBindingLocalService _samlPeerBindingLocalService;
 
 	@Reference
 	private SamlProviderConfigurationHelper _samlProviderConfigurationHelper;

@@ -14,6 +14,7 @@
 
 package com.liferay.trash.internal;
 
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
@@ -146,16 +147,21 @@ public class TrashHelperImpl implements TrashHelper {
 			return null;
 		}
 
-		ThemeDisplay themeDisplay =
-			(ThemeDisplay)httpServletRequest.getAttribute(
-				WebKeys.THEME_DISPLAY);
+		PortletURL portletURL = PortletURLBuilder.create(
+			PortletProviderUtil.getPortletURL(
+				httpServletRequest, TrashEntry.class.getName(),
+				PortletProvider.Action.VIEW)
+		).setMVCPath(
+			"/view_content.jsp"
+		).setRedirect(
+			() -> {
+				ThemeDisplay themeDisplay =
+					(ThemeDisplay)httpServletRequest.getAttribute(
+						WebKeys.THEME_DISPLAY);
 
-		PortletURL portletURL = PortletProviderUtil.getPortletURL(
-			httpServletRequest, TrashEntry.class.getName(),
-			PortletProvider.Action.VIEW);
-
-		portletURL.setParameter("mvcPath", "/view_content.jsp");
-		portletURL.setParameter("redirect", themeDisplay.getURLCurrent());
+				return themeDisplay.getURLCurrent();
+			}
+		).buildPortletURL();
 
 		TrashEntry trashEntry = _trashEntryLocalService.getEntry(
 			className, classPK);
@@ -196,13 +202,7 @@ public class TrashHelperImpl implements TrashHelper {
 	}
 
 	private String _getNewName(String oldName, String token) {
-		StringBundler sb = new StringBundler(3);
-
-		sb.append(oldName);
-		sb.append(StringPool.SPACE);
-		sb.append(token);
-
-		return sb.toString();
+		return StringBundler.concat(oldName, StringPool.SPACE, token);
 	}
 
 	private String _getOriginalTitle(
@@ -238,7 +238,8 @@ public class TrashHelperImpl implements TrashHelper {
 			if (_log.isDebugEnabled()) {
 				_log.debug(
 					"No trash entry or trash version exists with ID " +
-						trashEntryId);
+						trashEntryId,
+					exception);
 			}
 		}
 

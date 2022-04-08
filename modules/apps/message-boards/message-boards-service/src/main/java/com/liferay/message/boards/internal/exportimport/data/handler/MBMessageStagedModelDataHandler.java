@@ -306,7 +306,8 @@ public class MBMessageStagedModelDataHandler
 					}
 					else {
 						importedMessage = _mbMessageLocalService.addMessage(
-							userId, message.getUserName(),
+							message.getExternalReferenceCode(), userId,
+							message.getUserName(),
 							portletDataContext.getScopeGroupId(),
 							parentCategoryId, threadId, parentMessageId,
 							message.getSubject(), message.getBody(),
@@ -355,7 +356,8 @@ public class MBMessageStagedModelDataHandler
 				}
 				else {
 					importedMessage = _mbMessageLocalService.addMessage(
-						userId, message.getUserName(),
+						message.getExternalReferenceCode(), userId,
+						message.getUserName(),
 						portletDataContext.getScopeGroupId(), parentCategoryId,
 						threadId, parentMessageId, message.getSubject(),
 						message.getBody(), message.getFormat(), inputStreamOVPs,
@@ -408,7 +410,7 @@ public class MBMessageStagedModelDataHandler
 				}
 				catch (IOException ioException) {
 					if (_log.isWarnEnabled()) {
-						_log.warn(ioException, ioException);
+						_log.warn(ioException);
 					}
 				}
 			}
@@ -512,6 +514,9 @@ public class MBMessageStagedModelDataHandler
 					inputStream = FileEntryUtil.getContentStream(fileEntry);
 				}
 				catch (Exception exception) {
+					if (_log.isDebugEnabled()) {
+						_log.debug(exception);
+					}
 				}
 			}
 			else {

@@ -20,6 +20,7 @@ import com.liferay.commerce.currency.model.CommerceMoney;
 import com.liferay.commerce.currency.util.CommercePriceFormatter;
 import com.liferay.commerce.discount.CommerceDiscountValue;
 import com.liferay.commerce.inventory.CPDefinitionInventoryEngine;
+import com.liferay.commerce.inventory.constants.CommerceInventoryAvailabilityConstants;
 import com.liferay.commerce.inventory.engine.CommerceInventoryEngine;
 import com.liferay.commerce.price.CommerceProductPrice;
 import com.liferay.commerce.price.CommerceProductPriceCalculation;
@@ -36,7 +37,6 @@ import com.liferay.headless.commerce.delivery.catalog.dto.v1_0.Product;
 import com.liferay.headless.commerce.delivery.catalog.dto.v1_0.Sku;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.language.LanguageUtil;
-import com.liferay.portal.language.LanguageResources;
 import com.liferay.portal.vulcan.dto.converter.DTOConverter;
 import com.liferay.portal.vulcan.dto.converter.DTOConverterContext;
 
@@ -47,7 +47,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.ResourceBundle;
+import java.util.Objects;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -56,7 +56,7 @@ import org.osgi.service.component.annotations.Reference;
  * @author Andrea Sbarra
  */
 @Component(
-	enabled = false, property = "model.class.name=CPSku",
+	enabled = false, property = "dto.class.name=CPSku",
 	service = {DTOConverter.class, SkuDTOConverter.class}
 )
 public class SkuDTOConverter implements DTOConverter<CPInstance, Sku> {
@@ -80,8 +80,8 @@ public class SkuDTOConverter implements DTOConverter<CPInstance, Sku> {
 		return new Sku() {
 			{
 				availability = _getAvailability(
-					cpSkuDTOConverterConvertContext.getCompanyId(),
 					commerceContext.getCommerceChannelGroupId(),
+					cpSkuDTOConverterConvertContext.getCompanyId(),
 					cpInstance.getSku(), cpInstance,
 					cpSkuDTOConverterConvertContext.getLocale());
 				depth = cpInstance.getDepth();
@@ -106,27 +106,36 @@ public class SkuDTOConverter implements DTOConverter<CPInstance, Sku> {
 	}
 
 	private Availability _getAvailability(
-			long companyId, long channelGroupId, String sku,
+			long commerceChannelGroupId, long companyId, String sku,
 			CPInstance cpInstance, Locale locale)
 		throws Exception {
 
 		Availability availability = new Availability();
-		int stockQuantity = _commerceInventoryEngine.getStockQuantity(
-			companyId, channelGroupId, sku);
 
 		if (_cpDefinitionInventoryEngine.isDisplayAvailability(cpInstance)) {
-			if (stockQuantity > 0) {
-				availability.setLabel(
-					_getLocalizedMessage(locale, "available"));
+			if (Objects.equals(
+					_commerceInventoryEngine.getAvailabilityStatus(
+						cpInstance.getCompanyId(), commerceChannelGroupId,
+						_cpDefinitionInventoryEngine.getMinStockQuantity(
+							cpInstance),
+						cpInstance.getSku()),
+					CommerceInventoryAvailabilityConstants.AVAILABLE)) {
+
+				availability.setLabel_i18n(
+					LanguageUtil.get(locale, "available"));
+				availability.setLabel("available");
 			}
 			else {
-				availability.setLabel(
-					_getLocalizedMessage(locale, "unavailable"));
+				availability.setLabel_i18n(
+					LanguageUtil.get(locale, "unavailable"));
+				availability.setLabel("unavailable");
 			}
 		}
 
 		if (_cpDefinitionInventoryEngine.isDisplayStockQuantity(cpInstance)) {
-			availability.setStockQuantity(stockQuantity);
+			availability.setStockQuantity(
+				_commerceInventoryEngine.getStockQuantity(
+					companyId, commerceChannelGroupId, sku));
 		}
 
 		return availability;
@@ -146,26 +155,15 @@ public class SkuDTOConverter implements DTOConverter<CPInstance, Sku> {
 		return formattedDiscountPercentages.toArray(new String[0]);
 	}
 
-	private String _getLocalizedMessage(Locale locale, String key) {
-		ResourceBundle resourceBundle = LanguageResources.getResourceBundle(
-			locale);
-
-		return LanguageUtil.get(resourceBundle, key);
-	}
-
 	private Map<String, String> _getOptions(CPInstance cpInstance)
 		throws Exception {
 
 		Map<String, String> options = new HashMap<>();
 
-		Map<String, List<String>>
-			cpDefinitionOptionRelKeysCPDefinitionOptionValueRelKeys =
-				_cpDefinitionOptionRelLocalService.
-					getCPDefinitionOptionRelKeysCPDefinitionOptionValueRelKeys(
-						cpInstance.getCPInstanceId());
-
 		JSONArray keyValuesJSONArray = _jsonHelper.toJSONArray(
-			cpDefinitionOptionRelKeysCPDefinitionOptionValueRelKeys);
+			_cpDefinitionOptionRelLocalService.
+				getCPDefinitionOptionRelKeysCPDefinitionOptionValueRelKeys(
+					cpInstance.getCPInstanceId()));
 
 		Map<CPDefinitionOptionRel, List<CPDefinitionOptionValueRel>>
 			cpDefinitionOptionRelsMap =

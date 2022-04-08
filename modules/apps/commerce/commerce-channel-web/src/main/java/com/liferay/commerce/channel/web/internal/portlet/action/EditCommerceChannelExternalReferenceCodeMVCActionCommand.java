@@ -36,7 +36,7 @@ import org.osgi.service.component.annotations.Reference;
 	enabled = false, immediate = true,
 	property = {
 		"javax.portlet.name=" + CPPortletKeys.COMMERCE_CHANNELS,
-		"mvc.command.name=editCommerceChannelExternalReferenceCode"
+		"mvc.command.name=/commerce_channels/edit_commerce_channel_external_reference_code"
 	},
 	service = MVCActionCommand.class
 )
@@ -49,7 +49,7 @@ public class EditCommerceChannelExternalReferenceCodeMVCActionCommand
 		throws Exception {
 
 		try {
-			updateCommerceOrderExternalReferenceCode(actionRequest);
+			_updateCommerceOrderExternalReferenceCode(actionRequest);
 		}
 		catch (Exception exception) {
 			if (exception instanceof NoSuchChannelException ||
@@ -65,7 +65,7 @@ public class EditCommerceChannelExternalReferenceCodeMVCActionCommand
 		}
 	}
 
-	protected void updateCommerceOrderExternalReferenceCode(
+	private void _updateCommerceOrderExternalReferenceCode(
 			ActionRequest actionRequest)
 		throws Exception {
 
@@ -76,7 +76,7 @@ public class EditCommerceChannelExternalReferenceCodeMVCActionCommand
 			actionRequest, "externalReferenceCode");
 
 		_commerceChannelService.updateCommerceChannelExternalReferenceCode(
-			commerceChannelId, externalReferenceCode);
+			externalReferenceCode, commerceChannelId);
 	}
 
 	@Reference

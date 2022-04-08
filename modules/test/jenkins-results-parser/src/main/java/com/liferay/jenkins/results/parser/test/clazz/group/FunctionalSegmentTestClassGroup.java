@@ -15,10 +15,15 @@
 package com.liferay.jenkins.results.parser.test.clazz.group;
 
 import com.liferay.jenkins.results.parser.JenkinsResultsParserUtil;
+import com.liferay.jenkins.results.parser.job.property.JobProperty;
 
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
+
+import org.json.JSONObject;
 
 /**
  * @author Michael Hashimoto
@@ -79,8 +84,23 @@ public class FunctionalSegmentTestClassGroup extends SegmentTestClassGroup {
 	}
 
 	@Override
+	public String getSlaveLabel() {
+		Properties poshiProperties = getPoshiProperties();
+
+		String slaveLabel = poshiProperties.getProperty("slave.label");
+
+		if (!JenkinsResultsParserUtil.isNullOrEmpty(slaveLabel)) {
+			return slaveLabel;
+		}
+
+		return super.getSlaveLabel();
+	}
+
+	@Override
 	public String getTestCasePropertiesContent() {
 		StringBuilder sb = new StringBuilder();
+
+		sb.append(super.getTestCasePropertiesContent());
 
 		List<String> axisGroupNames = new ArrayList<>();
 
@@ -116,9 +136,41 @@ public class FunctionalSegmentTestClassGroup extends SegmentTestClassGroup {
 	}
 
 	protected FunctionalSegmentTestClassGroup(
-		FunctionalBatchTestClassGroup parentFunctionalBatchTestClassGroup) {
+		BatchTestClassGroup batchTestClassGroup) {
 
-		super(parentFunctionalBatchTestClassGroup);
+		super(batchTestClassGroup);
+
+		_batchTestClassGroup = batchTestClassGroup;
 	}
+
+	protected FunctionalSegmentTestClassGroup(
+		BatchTestClassGroup batchTestClassGroup, JSONObject jsonObject) {
+
+		super(batchTestClassGroup, jsonObject);
+
+		_batchTestClassGroup = batchTestClassGroup;
+	}
+
+	protected Map.Entry<String, String> getEnvironmentVariableEntry(
+		String key, String name) {
+
+		if (JenkinsResultsParserUtil.isNullOrEmpty(key) ||
+			JenkinsResultsParserUtil.isNullOrEmpty(name)) {
+
+			return null;
+		}
+
+		JobProperty jobProperty = _batchTestClassGroup.getJobProperty(name);
+
+		String value = jobProperty.getValue();
+
+		if (JenkinsResultsParserUtil.isNullOrEmpty(value)) {
+			return null;
+		}
+
+		return new AbstractMap.SimpleEntry<>(key, value);
+	}
+
+	private final BatchTestClassGroup _batchTestClassGroup;
 
 }

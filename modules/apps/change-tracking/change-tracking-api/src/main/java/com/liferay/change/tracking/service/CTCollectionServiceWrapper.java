@@ -26,6 +26,10 @@ import com.liferay.portal.kernel.service.ServiceWrapper;
 public class CTCollectionServiceWrapper
 	implements CTCollectionService, ServiceWrapper<CTCollectionService> {
 
+	public CTCollectionServiceWrapper() {
+		this(null);
+	}
+
 	public CTCollectionServiceWrapper(CTCollectionService ctCollectionService) {
 		_ctCollectionService = ctCollectionService;
 	}
@@ -75,33 +79,33 @@ public class CTCollectionServiceWrapper
 	@Override
 	public java.util.List<com.liferay.change.tracking.model.CTCollection>
 		getCTCollections(
-			long companyId, int status, int start, int end,
+			long companyId, int[] statuses, int start, int end,
 			com.liferay.portal.kernel.util.OrderByComparator
 				<com.liferay.change.tracking.model.CTCollection>
 					orderByComparator) {
 
 		return _ctCollectionService.getCTCollections(
-			companyId, status, start, end, orderByComparator);
+			companyId, statuses, start, end, orderByComparator);
 	}
 
 	@Override
 	public java.util.List<com.liferay.change.tracking.model.CTCollection>
 		getCTCollections(
-			long companyId, int status, String keywords, int start, int end,
+			long companyId, int[] statuses, String keywords, int start, int end,
 			com.liferay.portal.kernel.util.OrderByComparator
 				<com.liferay.change.tracking.model.CTCollection>
 					orderByComparator) {
 
 		return _ctCollectionService.getCTCollections(
-			companyId, status, keywords, start, end, orderByComparator);
+			companyId, statuses, keywords, start, end, orderByComparator);
 	}
 
 	@Override
 	public int getCTCollectionsCount(
-		long companyId, int status, String keywords) {
+		long companyId, int[] statuses, String keywords) {
 
 		return _ctCollectionService.getCTCollectionsCount(
-			companyId, status, keywords);
+			companyId, statuses, keywords);
 	}
 
 	/**

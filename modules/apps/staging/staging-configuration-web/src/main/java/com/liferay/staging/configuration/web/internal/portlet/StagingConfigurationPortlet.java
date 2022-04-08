@@ -19,6 +19,7 @@ import com.liferay.change.tracking.service.CTPreferencesLocalService;
 import com.liferay.exportimport.kernel.service.StagingLocalService;
 import com.liferay.exportimport.kernel.staging.Staging;
 import com.liferay.exportimport.kernel.staging.constants.StagingConstants;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.backgroundtask.BackgroundTaskManager;
 import com.liferay.portal.kernel.backgroundtask.constants.BackgroundTaskConstants;
 import com.liferay.portal.kernel.exception.LocaleException;
@@ -100,7 +101,7 @@ public class StagingConfigurationPortlet extends MVCPortlet {
 				SessionErrors.add(actionRequest, exception.getClass());
 
 				if (_log.isDebugEnabled()) {
-					_log.debug(exception, exception);
+					_log.debug(exception);
 				}
 			}
 			else {
@@ -198,7 +199,7 @@ public class StagingConfigurationPortlet extends MVCPortlet {
 					actionRequest, exception.getClass(), exception);
 
 				if (_log.isDebugEnabled()) {
-					_log.debug(exception, exception);
+					_log.debug(exception);
 				}
 
 				return;
@@ -217,22 +218,24 @@ public class StagingConfigurationPortlet extends MVCPortlet {
 			PortletURL portletURL = null;
 
 			if (stagingType == StagingConstants.TYPE_LOCAL_STAGING) {
-				portletURL = _portal.getControlPanelPortletURL(
-					actionRequest, liveGroup.getStagingGroup(),
-					StagingProcessesPortletKeys.STAGING_PROCESSES, 0, 0,
-					PortletRequest.RENDER_PHASE);
-
-				portletURL.setParameter(
-					"localStagingEnabled", Boolean.TRUE.toString());
+				portletURL = PortletURLBuilder.create(
+					_portal.getControlPanelPortletURL(
+						actionRequest, liveGroup.getStagingGroup(),
+						StagingProcessesPortletKeys.STAGING_PROCESSES, 0, 0,
+						PortletRequest.RENDER_PHASE)
+				).setParameter(
+					"localStagingEnabled", true
+				).buildPortletURL();
 			}
 			else if (stagingType == StagingConstants.TYPE_REMOTE_STAGING) {
-				portletURL = _portal.getControlPanelPortletURL(
-					actionRequest, liveGroup,
-					StagingProcessesPortletKeys.STAGING_PROCESSES, 0, 0,
-					PortletRequest.RENDER_PHASE);
-
-				portletURL.setParameter(
-					"remoteStagingEnabled", Boolean.TRUE.toString());
+				portletURL = PortletURLBuilder.create(
+					_portal.getControlPanelPortletURL(
+						actionRequest, liveGroup,
+						StagingProcessesPortletKeys.STAGING_PROCESSES, 0, 0,
+						PortletRequest.RENDER_PHASE)
+				).setParameter(
+					"remoteStagingEnabled", true
+				).buildPortletURL();
 			}
 
 			if (portletURL != null) {
@@ -245,13 +248,14 @@ public class StagingConfigurationPortlet extends MVCPortlet {
 			// Staging was turned off or remote staging configuration was
 			// modified
 
-			PortletURL portletURL = _portal.getControlPanelPortletURL(
-				actionRequest, liveGroup,
-				StagingProcessesPortletKeys.STAGING_PROCESSES, 0, 0,
-				PortletRequest.RENDER_PHASE);
-
-			portletURL.setParameter(
-				"showStagingConfiguration", Boolean.TRUE.toString());
+			PortletURL portletURL = PortletURLBuilder.create(
+				_portal.getControlPanelPortletURL(
+					actionRequest, liveGroup,
+					StagingProcessesPortletKeys.STAGING_PROCESSES, 0, 0,
+					PortletRequest.RENDER_PHASE)
+			).setParameter(
+				"showStagingConfiguration", true
+			).buildPortletURL();
 
 			if (portletURL != null) {
 				redirect = portletURL.toString();
@@ -268,13 +272,14 @@ public class StagingConfigurationPortlet extends MVCPortlet {
 
 			// Local staging configuration was modified
 
-			PortletURL portletURL = _portal.getControlPanelPortletURL(
-				actionRequest, liveGroup.getStagingGroup(),
-				StagingProcessesPortletKeys.STAGING_PROCESSES, 0, 0,
-				PortletRequest.RENDER_PHASE);
-
-			portletURL.setParameter(
-				"showStagingConfiguration", Boolean.TRUE.toString());
+			PortletURL portletURL = PortletURLBuilder.create(
+				_portal.getControlPanelPortletURL(
+					actionRequest, liveGroup.getStagingGroup(),
+					StagingProcessesPortletKeys.STAGING_PROCESSES, 0, 0,
+					PortletRequest.RENDER_PHASE)
+			).setParameter(
+				"showStagingConfiguration", true
+			).buildPortletURL();
 
 			if (portletURL != null) {
 				redirect = portletURL.toString();

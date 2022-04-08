@@ -27,12 +27,15 @@ import com.liferay.portal.aop.AopService;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.GroupConstants;
 import com.liferay.portal.kernel.model.ResourceConstants;
 import com.liferay.portal.kernel.model.SystemEventConstants;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.scheduler.SchedulerException;
+import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.systemevent.SystemEvent;
 import com.liferay.portal.kernel.util.Portal;
+import com.liferay.portal.kernel.util.PortalRunMode;
 import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.Validator;
 
@@ -55,8 +58,10 @@ public class DispatchTriggerLocalServiceImpl
 
 	@Override
 	public DispatchTrigger addDispatchTrigger(
-			long userId, String name, boolean system, String taskExecutorType,
-			UnicodeProperties taskSettingsUnicodeProperties)
+			String externalReferenceCode, long userId,
+			String dispatchTaskExecutorType,
+			UnicodeProperties dispatchTaskSettingsUnicodeProperties,
+			String name, boolean system)
 		throws PortalException {
 
 		User user = userLocalService.getUser(userId);
@@ -66,20 +71,21 @@ public class DispatchTriggerLocalServiceImpl
 		DispatchTrigger dispatchTrigger = dispatchTriggerPersistence.create(
 			counterLocalService.increment());
 
+		dispatchTrigger.setExternalReferenceCode(externalReferenceCode);
 		dispatchTrigger.setCompanyId(user.getCompanyId());
 		dispatchTrigger.setUserId(user.getUserId());
 		dispatchTrigger.setUserName(user.getFullName());
+		dispatchTrigger.setDispatchTaskExecutorType(dispatchTaskExecutorType);
+		dispatchTrigger.setDispatchTaskSettingsUnicodeProperties(
+			dispatchTaskSettingsUnicodeProperties);
 		dispatchTrigger.setName(name);
 		dispatchTrigger.setSystem(system);
-		dispatchTrigger.setTaskExecutorType(taskExecutorType);
-		dispatchTrigger.setTaskSettingsUnicodeProperties(
-			taskSettingsUnicodeProperties);
 
 		dispatchTrigger = dispatchTriggerPersistence.update(dispatchTrigger);
 
 		resourceLocalService.addResources(
-			user.getCompanyId(), 0, user.getUserId(),
-			DispatchTrigger.class.getName(),
+			user.getCompanyId(), GroupConstants.DEFAULT_LIVE_GROUP_ID,
+			user.getUserId(), DispatchTrigger.class.getName(),
 			dispatchTrigger.getDispatchTriggerId(), false, true, true);
 
 		return dispatchTrigger;
@@ -91,7 +97,10 @@ public class DispatchTriggerLocalServiceImpl
 			DispatchTrigger dispatchTrigger)
 		throws PortalException {
 
-		if (dispatchTrigger.isSystem()) {
+		if (dispatchTrigger.isSystem() &&
+			!CompanyThreadLocal.isDeleteInProcess() &&
+			!PortalRunMode.isTestMode()) {
+
 			return dispatchTrigger;
 		}
 
@@ -105,7 +114,7 @@ public class DispatchTriggerLocalServiceImpl
 
 		DispatchTaskClusterMode dispatchTaskClusterMode =
 			DispatchTaskClusterMode.valueOf(
-				dispatchTrigger.getTaskClusterMode());
+				dispatchTrigger.getDispatchTaskClusterMode());
 
 		_dispatchTriggerHelper.deleteSchedulerJob(
 			dispatchTrigger.getDispatchTriggerId(),
@@ -128,6 +137,21 @@ public class DispatchTriggerLocalServiceImpl
 	}
 
 	@Override
+	public Date fetchNextFireDate(long dispatchTriggerId) {
+		try {
+			return getNextFireDate(dispatchTriggerId);
+		}
+		catch (PortalException portalException) {
+			_log.error(
+				"Unable to resolve next fire date for dispatch trigger ID " +
+					dispatchTriggerId,
+				portalException);
+		}
+
+		return null;
+	}
+
+	@Override
 	public Date fetchPreviousFireDate(long dispatchTriggerId) {
 		DispatchTrigger dispatchTrigger =
 			dispatchTriggerPersistence.fetchByPrimaryKey(dispatchTriggerId);
@@ -143,7 +167,7 @@ public class DispatchTriggerLocalServiceImpl
 
 		DispatchTaskClusterMode dispatchTaskClusterMode =
 			DispatchTaskClusterMode.valueOf(
-				dispatchTrigger.getTaskClusterMode());
+				dispatchTrigger.getDispatchTaskClusterMode());
 
 		try {
 			return _dispatchTriggerHelper.getPreviousFireDate(
@@ -151,13 +175,11 @@ public class DispatchTriggerLocalServiceImpl
 		}
 		catch (SchedulerException schedulerException) {
 			if (_log.isWarnEnabled()) {
-				StringBundler sb = new StringBundler(3);
-
-				sb.append("Unable to fetch previous fire date for dispatch ");
-				sb.append("trigger ID ");
-				sb.append(dispatchTriggerId);
-
-				_log.warn(sb.toString(), schedulerException);
+				_log.warn(
+					StringBundler.concat(
+						"Unable to fetch previous fire date for dispatch ",
+						"trigger ID ", dispatchTriggerId),
+					schedulerException);
 			}
 		}
 
@@ -175,7 +197,7 @@ public class DispatchTriggerLocalServiceImpl
 	public List<DispatchTrigger> getDispatchTriggers(
 		boolean active, DispatchTaskClusterMode dispatchTaskClusterMode) {
 
-		return dispatchTriggerPersistence.findByA_TCM(
+		return dispatchTriggerPersistence.findByA_DTCM(
 			active, dispatchTaskClusterMode.getMode());
 	}
 
@@ -199,17 +221,10 @@ public class DispatchTriggerLocalServiceImpl
 
 		DispatchTaskClusterMode dispatchTaskClusterMode =
 			DispatchTaskClusterMode.valueOf(
-				dispatchTrigger.getTaskClusterMode());
+				dispatchTrigger.getDispatchTaskClusterMode());
 
-		try {
-			return _dispatchTriggerHelper.getNextFireDate(
-				dispatchTriggerId, dispatchTaskClusterMode.getStorageType());
-		}
-		catch (SchedulerException schedulerException) {
-			_log.error(schedulerException, schedulerException);
-		}
-
-		return null;
+		return _dispatchTriggerHelper.getNextFireDate(
+			dispatchTriggerId, dispatchTaskClusterMode.getStorageType());
 	}
 
 	@Override
@@ -221,7 +236,7 @@ public class DispatchTriggerLocalServiceImpl
 
 		DispatchTaskClusterMode dispatchTaskClusterMode =
 			DispatchTaskClusterMode.valueOf(
-				dispatchTrigger.getTaskClusterMode());
+				dispatchTrigger.getDispatchTaskClusterMode());
 
 		return _dispatchTriggerHelper.getPreviousFireDate(
 			dispatchTriggerId, dispatchTaskClusterMode.getStorageType());
@@ -243,11 +258,11 @@ public class DispatchTriggerLocalServiceImpl
 	@Override
 	public DispatchTrigger updateDispatchTrigger(
 			long dispatchTriggerId, boolean active, String cronExpression,
-			int endDateMonth, int endDateDay, int endDateYear, int endDateHour,
-			int endDateMinute, boolean neverEnd, boolean overlapAllowed,
-			int startDateMonth, int startDateDay, int startDateYear,
-			int startDateHour, int startDateMinute,
-			DispatchTaskClusterMode dispatchTaskClusterMode)
+			DispatchTaskClusterMode dispatchTaskClusterMode, int endDateMonth,
+			int endDateDay, int endDateYear, int endDateHour, int endDateMinute,
+			boolean neverEnd, boolean overlapAllowed, int startDateMonth,
+			int startDateDay, int startDateYear, int startDateHour,
+			int startDateMinute)
 		throws PortalException {
 
 		DispatchTrigger dispatchTrigger =
@@ -273,7 +288,8 @@ public class DispatchTriggerLocalServiceImpl
 				startDateMonth, startDateDay, startDateYear, startDateHour,
 				startDateMinute, DispatchTriggerStartDateException.class));
 
-		dispatchTrigger.setTaskClusterMode(dispatchTaskClusterMode.getMode());
+		dispatchTrigger.setDispatchTaskClusterMode(
+			dispatchTaskClusterMode.getMode());
 
 		dispatchTrigger = dispatchTriggerPersistence.update(dispatchTrigger);
 
@@ -292,8 +308,8 @@ public class DispatchTriggerLocalServiceImpl
 
 	@Override
 	public DispatchTrigger updateDispatchTrigger(
-			long dispatchTriggerId, String name,
-			UnicodeProperties taskSettingsUnicodeProperties)
+			long dispatchTriggerId,
+			UnicodeProperties taskSettingsUnicodeProperties, String name)
 		throws PortalException {
 
 		DispatchTrigger dispatchTrigger =
@@ -302,7 +318,7 @@ public class DispatchTriggerLocalServiceImpl
 		validate(dispatchTriggerId, dispatchTrigger.getCompanyId(), name);
 
 		dispatchTrigger.setName(name);
-		dispatchTrigger.setTaskSettingsUnicodeProperties(
+		dispatchTrigger.setDispatchTaskSettingsUnicodeProperties(
 			taskSettingsUnicodeProperties);
 
 		return dispatchTriggerPersistence.update(dispatchTrigger);
@@ -313,18 +329,15 @@ public class DispatchTriggerLocalServiceImpl
 
 		if (Validator.isNull(name)) {
 			throw new DispatchTriggerNameException(
-				"Dispatch trigger name is null for company ID " + companyId);
+				"Dispatch trigger name is null for company " + companyId);
 		}
 
 		DispatchTrigger dispatchTrigger = dispatchTriggerPersistence.fetchByC_N(
 			companyId, name);
 
-		if (dispatchTrigger == null) {
-			return;
-		}
-
-		if ((dispatchTriggerId > 0) &&
-			(dispatchTrigger.getDispatchTriggerId() == dispatchTriggerId)) {
+		if ((dispatchTrigger == null) ||
+			((dispatchTriggerId > 0) &&
+			 (dispatchTrigger.getDispatchTriggerId() == dispatchTriggerId))) {
 
 			return;
 		}
@@ -332,7 +345,7 @@ public class DispatchTriggerLocalServiceImpl
 		throw new DuplicateDispatchTriggerException(
 			StringBundler.concat(
 				"Dispatch trigger name \"", name,
-				"\" already exists for company ID ", companyId));
+				"\" already exists for company ", companyId));
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(

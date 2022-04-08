@@ -42,7 +42,7 @@
 					<h4 class="sku">${HtmlUtil.escape(cpInstance.getSku())}</h4>
 
 					<div class="price">
-						<@liferay_commerce["price"]
+						<@commerce_ui["price"]
 							CPDefinitionId=cpDefinition.getCPDefinitionId()
 							CPInstanceId=cpInstance.getCPInstanceId()
 						/>
@@ -56,13 +56,13 @@
 				<#else>
 					<h4 class="sku" data-text-cp-instance-sku=""></h4>
 
-					<div class="price" data-text-cp-instance-price="" ></div>
+					<div class="price" data-text-cp-instance-price=""></div>
 
-					<div class="availability" data-text-cp-instance-availability="" ></div>
+					<div class="availability" data-text-cp-instance-availability=""></div>
 
-					<div class="availabilityEstimate" data-text-cp-instance-availability-estimate="" ></div>
+					<div class="availabilityEstimate" data-text-cp-instance-availability-estimate=""></div>
 
-					<div class="stockQuantity" data-text-cp-instance-stock-quantity="" ></div>
+					<div class="stockQuantity" data-text-cp-instance-stock-quantity=""></div>
 				</#if>
 
 				<div class="row">
@@ -122,23 +122,23 @@
 		<div class="product-detail-body">
 			<div class="nav-tabs-centered">
 				<ul class="nav nav-tabs" role="tablist">
-					<li class="active" role="presentation">
-						<a aria-controls="<@portlet.namespace />description" aria-expanded="true" data-toggle="tab" href="#<@portlet.namespace />description" role="tab">
+					<li class="nav-item" role="presentation">
+						<a aria-controls="<@portlet.namespace />description" aria-expanded="true" class="active nav-link" data-toggle="tab" href="#<@portlet.namespace />description" role="tab">
 							${languageUtil.get(resourceBundle, "description")}
 						</a>
 					</li>
 
 					<#if groupedCPTypeDisplayContext.hasCPDefinitionSpecificationOptionValues()>
-						<li role="presentation">
-							<a aria-controls="<@portlet.namespace />specification" aria-expanded="false" data-toggle="tab" href="#<@portlet.namespace />specification" role="tab">
+						<li class="nav-item" role="presentation">
+							<a aria-controls="<@portlet.namespace />specification" aria-expanded="false" class="nav-link" data-toggle="tab" href="#<@portlet.namespace />specification" role="tab">
 								${languageUtil.get(resourceBundle, "specification-options")}
 							</a>
 						</li>
 					</#if>
 
 					<#if cpAttachmentFileEntries?has_content>
-						<li role="presentation">
-							<a aria-controls="<@portlet.namespace />attachments" aria-expanded="false" data-toggle="tab" href="#<@portlet.namespace />attachments" role="tab">
+						<li class="nav-item" role="presentation">
+							<a aria-controls="<@portlet.namespace />attachments" aria-expanded="false" class="nav-link" data-toggle="tab" href="#<@portlet.namespace />attachments" role="tab">
 								${languageUtil.get(resourceBundle, "attachments")}
 							</a>
 						</li>

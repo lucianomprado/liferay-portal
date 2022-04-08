@@ -16,6 +16,7 @@ package com.liferay.commerce.product.options.web.internal.portlet.action;
 
 import com.liferay.commerce.product.constants.CPPortletKeys;
 import com.liferay.commerce.product.constants.CPWebKeys;
+import com.liferay.commerce.product.options.web.internal.portlet.action.helper.ActionHelper;
 import com.liferay.portal.kernel.portlet.bridges.mvc.BaseMVCResourceCommand;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCResourceCommand;
 
@@ -32,7 +33,7 @@ import org.osgi.service.component.annotations.Reference;
 	enabled = false, immediate = true,
 	property = {
 		"javax.portlet.name=" + CPPortletKeys.CP_SPECIFICATION_OPTIONS,
-		"mvc.command.name=cpOptionCategoryInfoPanel"
+		"mvc.command.name=/cp_specification_options/cp_option_category_info_panel"
 	},
 	service = MVCResourceCommand.class
 )
@@ -50,7 +51,7 @@ public class CPOptionCategoryInfoPanelMVCResourceCommand
 
 		include(
 			resourceRequest, resourceResponse,
-			"/option_category_info_panel.jsp");
+			"/cp_option_category_info_panel.jsp");
 	}
 
 	@Reference

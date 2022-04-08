@@ -227,17 +227,33 @@ public abstract class BaseSegmentsEntryProvider
 
 		Criteria.Conjunction contextConjunction = getConjunction(
 			segmentsEntry, Criteria.Type.CONTEXT);
+		String modelFilterString = getFilterString(
+			segmentsEntry, Criteria.Type.MODEL);
 
 		if (context != null) {
-			if (Validator.isNotNull(contextFilterString)) {
-				boolean matchesContext = false;
+			boolean defaultUser = !GetterUtil.getBoolean(
+				context.get(Context.SIGNED_IN), true);
 
+			if (contextConjunction.equals(Criteria.Conjunction.AND) &&
+				defaultUser && Validator.isNotNull(modelFilterString)) {
+
+				return false;
+			}
+
+			boolean matchesContext = false;
+
+			if (Validator.isNotNull(contextFilterString)) {
 				try {
 					matchesContext = oDataMatcher.matches(
 						contextFilterString, context);
 				}
 				catch (PortalException portalException) {
-					_log.error(portalException, portalException);
+					if (_log.isDebugEnabled()) {
+						_log.debug(portalException);
+					}
+					else if (_log.isWarnEnabled()) {
+						_log.warn(portalException);
+					}
 				}
 
 				if (matchesContext &&
@@ -253,34 +269,25 @@ public abstract class BaseSegmentsEntryProvider
 				}
 			}
 
-			if (!GetterUtil.getBoolean(context.get(Context.SIGNED_IN))) {
-				return false;
+			if (defaultUser) {
+				return matchesContext;
 			}
 		}
 
-		Criteria.Conjunction modelConjunction = getConjunction(
-			segmentsEntry, Criteria.Type.MODEL);
 		ODataRetriever<BaseModel<?>> oDataRetriever =
 			serviceTrackerMap.getService(className);
-		String modelFilterString = getFilterString(
-			segmentsEntry, Criteria.Type.MODEL);
 
 		if (Validator.isNotNull(modelFilterString) &&
 			(oDataRetriever != null)) {
-
-			StringBundler sb = new StringBundler(5);
-
-			sb.append("(");
-			sb.append(modelFilterString);
-			sb.append(") and (classPK eq '");
-			sb.append(classPK);
-			sb.append("')");
 
 			boolean matchesModel = false;
 
 			try {
 				int count = oDataRetriever.getResultsCount(
-					segmentsEntry.getCompanyId(), sb.toString(),
+					segmentsEntry.getCompanyId(),
+					StringBundler.concat(
+						"(", modelFilterString, ") and (classPK eq '", classPK,
+						"')"),
 					LocaleUtil.getDefault());
 
 				if (count > 0) {
@@ -288,8 +295,11 @@ public abstract class BaseSegmentsEntryProvider
 				}
 			}
 			catch (PortalException portalException) {
-				_log.error(portalException, portalException);
+				_log.error(portalException);
 			}
+
+			Criteria.Conjunction modelConjunction = getConjunction(
+				segmentsEntry, Criteria.Type.MODEL);
 
 			if (matchesModel &&
 				modelConjunction.equals(Criteria.Conjunction.OR)) {

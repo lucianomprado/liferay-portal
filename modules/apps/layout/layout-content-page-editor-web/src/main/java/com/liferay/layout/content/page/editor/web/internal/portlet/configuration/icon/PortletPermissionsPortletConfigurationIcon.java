@@ -14,6 +14,7 @@
 
 package com.liferay.layout.content.page.editor.web.internal.portlet.configuration.icon;
 
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -34,6 +35,7 @@ import com.liferay.portal.kernel.theme.PortletDisplay;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.Constants;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.PropsKeys;
@@ -46,7 +48,6 @@ import java.util.Objects;
 
 import javax.portlet.PortletRequest;
 import javax.portlet.PortletResponse;
-import javax.portlet.PortletURL;
 import javax.portlet.WindowStateException;
 
 import javax.servlet.http.HttpServletRequest;
@@ -72,17 +73,15 @@ public class PortletPermissionsPortletConfigurationIcon
 		PortletRequest portletRequest, PortletResponse portletResponse) {
 
 		try {
-			StringBundler sb = new StringBundler(5);
-
-			sb.append("Liferay.Util.openModal({title: '");
-			sb.append(getMessage(portletRequest));
-			sb.append("', url: '");
-			sb.append(_generatePermissionURL(portletRequest));
-			sb.append("'});");
-
-			return sb.toString();
+			return StringBundler.concat(
+				"Liferay.Util.openModal({title: '",
+				HtmlUtil.escapeJS(getMessage(portletRequest)), "', url: '",
+				_generatePermissionURL(portletRequest), "'});");
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception);
+			}
 		}
 
 		return StringPool.BLANK;
@@ -144,22 +143,17 @@ public class PortletPermissionsPortletConfigurationIcon
 				// LPS-52675
 
 				if (_log.isDebugEnabled()) {
-					_log.debug(portalException, portalException);
+					_log.debug(portalException);
 				}
 
 				showPermissionsIcon = false;
 			}
 		}
 
-		if (layout.isLayoutPrototypeLinkActive()) {
-			showPermissionsIcon = false;
-		}
+		if (layout.isLayoutPrototypeLinkActive() ||
+			layout.isTypeControlPanel() ||
+			isEmbeddedPersonalApplicationLayout(layout)) {
 
-		if (layout.isTypeControlPanel()) {
-			showPermissionsIcon = false;
-		}
-
-		if (isEmbeddedPersonalApplicationLayout(layout)) {
 			showPermissionsIcon = false;
 		}
 
@@ -186,33 +180,33 @@ public class PortletPermissionsPortletConfigurationIcon
 	private String _generatePermissionURL(PortletRequest portletRequest)
 		throws PortalException, WindowStateException {
 
-		String returnToFullPageURL = ParamUtil.getString(
-			portletRequest, "returnToFullPageURL");
-
-		PortletURL portletURL = PortletProviderUtil.getPortletURL(
-			portletRequest,
-			PortletConfigurationApplicationType.PortletConfiguration.CLASS_NAME,
-			PortletProvider.Action.VIEW);
-
-		portletURL.setParameter("mvcPath", "/edit_permissions.jsp");
-		portletURL.setParameter("returnToFullPageURL", returnToFullPageURL);
-		portletURL.setParameter(
-			"portletConfiguration", Boolean.TRUE.toString());
-
 		ThemeDisplay themeDisplay = (ThemeDisplay)portletRequest.getAttribute(
 			WebKeys.THEME_DISPLAY);
 
 		PortletDisplay portletDisplay = themeDisplay.getPortletDisplay();
 
-		portletURL.setParameter("portletResource", portletDisplay.getId());
-		portletURL.setParameter(
+		return PortletURLBuilder.create(
+			PortletProviderUtil.getPortletURL(
+				portletRequest,
+				PortletConfigurationApplicationType.PortletConfiguration.
+					CLASS_NAME,
+				PortletProvider.Action.VIEW)
+		).setMVCPath(
+			"/edit_permissions.jsp"
+		).setPortletResource(
+			portletDisplay.getId()
+		).setParameter(
+			"portletConfiguration", true
+		).setParameter(
 			"resourcePrimKey",
 			PortletPermissionUtil.getPrimaryKey(
-				themeDisplay.getPlid(), portletDisplay.getId()));
-
-		portletURL.setWindowState(LiferayWindowState.POP_UP);
-
-		return portletURL.toString();
+				themeDisplay.getPlid(), portletDisplay.getId())
+		).setParameter(
+			"returnToFullPageURL",
+			ParamUtil.getString(portletRequest, "returnToFullPageURL")
+		).setWindowState(
+			LiferayWindowState.POP_UP
+		).buildString();
 	}
 
 	private static final boolean _STAGING_LIVE_GROUP_LOCKING_ENABLED =

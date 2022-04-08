@@ -2,11 +2,13 @@
 <head>
 <title>ExportPersonalData</title>
 </head>
+
 <body>
-<table cellpadding="1" cellspacing="1" border="1">
+<table border="1" cellpadding="1" cellspacing="1">
 <thead>
 <tr><td rowspan="1" colspan="3">ExportPersonalData</td></tr>
 </thead>
+
 <tbody>
 <tr>
 	<td>HEADER</td>
@@ -26,6 +28,11 @@
 <tr>
 	<td>EXPORT_PROCESS_APPLICATION_IN_PROGRESS</td>
 	<td>//div[contains(.,'${key_application}')]/span[contains(.,'IN PROGRESS')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>EXPORT_PROCESS_FAILED</td>
+	<td>//table//td[contains(.,'Failed')]</td>
 	<td></td>
 </tr>
 <tr>

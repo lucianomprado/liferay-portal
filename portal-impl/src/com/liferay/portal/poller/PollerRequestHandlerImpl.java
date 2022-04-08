@@ -214,7 +214,7 @@ public class PollerRequestHandlerImpl
 				}
 			}
 			catch (Exception exception) {
-				_log.error(exception, exception);
+				_log.error(exception);
 			}
 		}
 
@@ -233,7 +233,7 @@ public class PollerRequestHandlerImpl
 					pollerRequests.add(pollerRequest);
 				}
 				catch (Exception exception) {
-					_log.error(exception, exception);
+					_log.error(exception);
 				}
 			}
 		}
@@ -340,7 +340,8 @@ public class PollerRequestHandlerImpl
 			_log.error(
 				StringBundler.concat(
 					"Invalid credentials for company id ", companyId,
-					" and user id ", userIdString));
+					" and user id ", userIdString),
+				exception);
 		}
 
 		return userId;

@@ -41,6 +41,7 @@ import com.liferay.portal.kernel.trash.TrashHandlerRegistryUtil;
 import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.HttpUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
+import com.liferay.portal.kernel.util.ResourceBundleUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.social.kernel.service.SocialActivityLocalServiceUtil;
 import com.liferay.social.kernel.service.SocialActivitySetLocalServiceUtil;
@@ -123,7 +124,9 @@ public abstract class BaseSocialActivityInterpreter
 		}
 	}
 
-	protected abstract ResourceBundleLoader acquireResourceBundleLoader();
+	protected ResourceBundleLoader acquireResourceBundleLoader() {
+		return locale -> ResourceBundleUtil.getBundle(locale, getClass());
+	}
 
 	protected String addNoSuchEntryRedirect(
 			String url, String className, long classPK,
@@ -141,15 +144,7 @@ public abstract class BaseSocialActivityInterpreter
 	}
 
 	protected String buildLink(String link, String text) {
-		StringBundler sb = new StringBundler(5);
-
-		sb.append("<a href=\"");
-		sb.append(link);
-		sb.append("\">");
-		sb.append(text);
-		sb.append("</a>");
-
-		return sb.toString();
+		return StringBundler.concat("<a href=\"", link, "\">", text, "</a>");
 	}
 
 	protected SocialActivityFeedEntry doInterpret(
@@ -245,6 +240,10 @@ public abstract class BaseSocialActivityInterpreter
 				HtmlUtil.escape(groupName), "</a>");
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception);
+			}
+
 			return StringPool.BLANK;
 		}
 	}
@@ -323,7 +322,7 @@ public abstract class BaseSocialActivityInterpreter
 			return sb.toString();
 		}
 		catch (PortalException portalException) {
-			_log.error(portalException, portalException);
+			_log.error(portalException);
 
 			return null;
 		}
@@ -429,6 +428,10 @@ public abstract class BaseSocialActivityInterpreter
 				HtmlUtil.escape(userName), "</a>");
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception);
+			}
+
 			return StringPool.BLANK;
 		}
 	}

@@ -48,9 +48,14 @@ else {
 }
 
 editDDMStructureURL.setParameter("mvcPath", "/edit_data_definition.jsp");
+editDDMStructureURL.setParameter("ddmStructureId", String.valueOf(ddmStructureId));
 %>
 
-<aui:form action="<%= editDDMStructureURL.toString() %>" cssClass="edit-article-form" enctype="multipart/form-data" method="post" name="fm" onSubmit='<%= "event.preventDefault(); " + liferayPortletResponse.getNamespace() + "saveDDMStructure();" %>'>
+<liferay-util:html-top>
+	<link href="<%= PortalUtil.getStaticResourceURL(request, PortalUtil.getPathModule() + "/journal-web/css/ddm_form.css") %>" rel="stylesheet" />
+</liferay-util:html-top>
+
+<aui:form action="<%= editDDMStructureURL %>" cssClass="edit-article-form" enctype="multipart/form-data" method="post" name="fm" onSubmit="event.preventDefault();">
 	<aui:input name="redirect" type="hidden" value="<%= redirect %>" />
 	<aui:input name="groupId" type="hidden" value="<%= groupId %>" />
 	<aui:input name="dataDefinition" type="hidden" />
@@ -64,13 +69,13 @@ editDDMStructureURL.setParameter("mvcPath", "/edit_data_definition.jsp");
 		<clay:container-fluid>
 			<ul class="tbar-nav">
 				<li class="tbar-item tbar-item-expand">
-					<aui:input cssClass="form-control-inline" defaultLanguageId="<%= (ddmForm == null) ? LocaleUtil.toLanguageId(LocaleUtil.getSiteDefault()): LocaleUtil.toLanguageId(ddmForm.getDefaultLocale()) %>" label="" name="name" placeholder='<%= LanguageUtil.format(request, "untitled-x", "structure") %>' wrapperCssClass="article-content-title mb-0" />
+					<aui:input activeLanguageIds="<%= journalEditDDMStructuresDisplayContext.getAvailableLanguageIds() %>" adminMode="<%= true %>" cssClass="form-control-inline" defaultLanguageId="<%= (ddmForm == null) ? LocaleUtil.toLanguageId(LocaleUtil.getSiteDefault()): LocaleUtil.toLanguageId(ddmForm.getDefaultLocale()) %>" label="" languagesDropdownDirection="down" localized="<%= true %>" name="name" placeholder='<%= LanguageUtil.format(request, "untitled-x", "structure") %>' required="<%= true %>" type="text" wrapperCssClass="article-content-title mb-0" />
 				</li>
 				<li class="tbar-item">
 					<div class="journal-article-button-row tbar-section text-right">
 						<aui:button cssClass="btn-secondary btn-sm mr-3" href="<%= redirect %>" type="cancel" />
 
-						<aui:button cssClass="btn-sm mr-3" type="submit" value="<%= journalEditDDMStructuresDisplayContext.getSaveButtonLabel() %>" />
+						<aui:button cssClass="btn-sm mr-3" id="submitButton" type="submit" value="save" />
 					</div>
 				</li>
 			</ul>
@@ -81,89 +86,54 @@ editDDMStructureURL.setParameter("mvcPath", "/edit_data_definition.jsp");
 		<clay:container-fluid
 			cssClass="container-view"
 		>
-			<c:if test="<%= (ddmStructure != null) && (DDMStorageLinkLocalServiceUtil.getStructureStorageLinksCount(journalEditDDMStructuresDisplayContext.getDDMStructureId()) > 0) %>">
-				<div class="alert alert-warning">
-					<liferay-ui:message key="there-are-content-references-to-this-structure.-you-may-lose-data-if-a-field-name-is-renamed-or-removed" />
-				</div>
-			</c:if>
+			<div class="contextual-sidebar-mr">
+				<c:if test="<%= (ddmStructure != null) && (DDMStorageLinkLocalServiceUtil.getStructureStorageLinksCount(journalEditDDMStructuresDisplayContext.getDDMStructureId()) > 0) %>">
+					<div class="alert alert-warning">
+						<liferay-ui:message key="there-are-content-references-to-this-structure.-you-may-lose-data-if-a-field-name-is-renamed-or-removed" />
+					</div>
+				</c:if>
 
-			<c:if test="<%= (journalEditDDMStructuresDisplayContext.getDDMStructureId() > 0) && (DDMTemplateLocalServiceUtil.getTemplatesCount(null, PortalUtil.getClassNameId(DDMStructure.class), journalEditDDMStructuresDisplayContext.getDDMStructureId()) > 0) %>">
-				<div class="alert alert-info">
-					<liferay-ui:message key="there-are-template-references-to-this-structure.-please-update-them-if-a-field-name-is-renamed-or-removed" />
-				</div>
-			</c:if>
+				<c:if test="<%= (journalEditDDMStructuresDisplayContext.getDDMStructureId() > 0) && (DDMTemplateLocalServiceUtil.getTemplatesCount(null, PortalUtil.getClassNameId(DDMStructure.class), journalEditDDMStructuresDisplayContext.getDDMStructureId()) > 0) %>">
+					<div class="alert alert-info">
+						<liferay-ui:message key="there-are-template-references-to-this-structure.-please-update-them-if-a-field-name-is-renamed-or-removed" />
+					</div>
+				</c:if>
 
-			<c:if test="<%= (ddmStructure != null) && (groupId != scopeGroupId) %>">
-				<div class="alert alert-warning">
-					<liferay-ui:message key="this-structure-does-not-belong-to-this-site.-you-may-affect-other-sites-if-you-edit-this-structure" />
-				</div>
-			</c:if>
+				<c:if test="<%= (ddmStructure != null) && (groupId != scopeGroupId) %>">
+					<div class="alert alert-warning">
+						<liferay-ui:message key="this-structure-does-not-belong-to-this-site.-you-may-affect-other-sites-if-you-edit-this-structure" />
+					</div>
+				</c:if>
 
-			<liferay-data-engine:data-layout-builder
-				additionalPanels="<%= journalEditDDMStructuresDisplayContext.getAdditionalPanels(npmResolvedPackageName) %>"
-				componentId='<%= liferayPortletResponse.getNamespace() + "dataLayoutBuilder" %>'
-				contentType="journal"
-				dataDefinitionId="<%= ddmStructureId %>"
-				groupId="<%= groupId %>"
-				namespace="<%= liferayPortletResponse.getNamespace() %>"
-				singlePage="<%= true %>"
-			/>
+				<div class="contextual-sidebar-mr-n">
+					<liferay-data-engine:data-layout-builder
+						additionalPanels="<%= journalEditDDMStructuresDisplayContext.getAdditionalPanels(npmResolvedPackageName) %>"
+						componentId='<%= liferayPortletResponse.getNamespace() + "dataLayoutBuilder" %>'
+						contentType="journal"
+						dataDefinitionId="<%= ddmStructureId %>"
+						groupId="<%= groupId %>"
+						namespace="<%= liferayPortletResponse.getNamespace() %>"
+						scopes='<%= SetUtil.fromCollection(Arrays.asList("journal")) %>'
+						searchableFieldsDisabled="<%= !journalEditDDMStructuresDisplayContext.isStructureFieldIndexableEnable() %>"
+						singlePage="<%= true %>"
+						submitButtonId='<%= liferayPortletResponse.getNamespace() + "submitButton" %>'
+					/>
+				</div>
+			</div>
 		</clay:container-fluid>
 	</div>
 </aui:form>
 
 <liferay-frontend:component
-	componentId='<%= liferayPortletResponse.getNamespace() + "LocaleChangedHandlerComponent" %>'
-	context="<%= journalEditDDMStructuresDisplayContext.getComponentContext() %>"
-	module="js/LocaleChangedHandler.es"
+	componentId='<%= liferayPortletResponse.getNamespace() + "DataEngineLayoutBuilderHandler" %>'
+	context="<%= journalEditDDMStructuresDisplayContext.getDataEngineLayoutBuilderHandlerContext() %>"
+	module="js/DataEngineLayoutBuilderHandler.es"
 	servletContext="<%= application %>"
 />
 
-<aui:script>
-	function <portlet:namespace />getInputLocalizedValues(field) {
-		var inputLocalized = Liferay.component('<portlet:namespace />' + field);
-		var localizedValues = {};
-
-		if (inputLocalized) {
-			var translatedLanguages = inputLocalized
-				.get('translatedLanguages')
-				.values();
-
-			translatedLanguages.forEach(function (languageId) {
-				localizedValues[languageId] = inputLocalized.getValue(languageId);
-			});
-		}
-
-		return localizedValues;
-	}
-
-	function <portlet:namespace />saveDDMStructure() {
-		Liferay.componentReady('<portlet:namespace />dataLayoutBuilder').then(
-			function (dataLayoutBuilder) {
-				var description = <portlet:namespace />getInputLocalizedValues(
-					'description'
-				);
-				var name = <portlet:namespace />getInputLocalizedValues('name');
-
-				var formData = dataLayoutBuilder.getFormData();
-
-				var dataDefinition = formData.definition;
-
-				dataDefinition.description = description;
-				dataDefinition.name = name;
-
-				var dataLayout = formData.layout;
-
-				dataLayout.description = description;
-				dataLayout.name = name;
-
-				Liferay.Util.postForm(document.<portlet:namespace />fm, {
-					data: {
-						dataDefinition: JSON.stringify(dataDefinition),
-						dataLayout: JSON.stringify(dataLayout),
-					},
-				});
-			}
-		);
-	}
-</aui:script>
+<liferay-frontend:component
+	componentId='<%= liferayPortletResponse.getNamespace() + "LocaleChangedHandlerComponent" %>'
+	context="<%= journalEditDDMStructuresDisplayContext.getLocaleChangedHandlerContext() %>"
+	module="js/LocaleChangedHandler.es"
+	servletContext="<%= application %>"
+/>

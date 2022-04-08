@@ -12,175 +12,63 @@
  * details.
  */
 
-import {ClaySelect} from '@clayui/form';
-import ClayIcon, {ClayIconSpriteContext} from '@clayui/icon';
 import classnames from 'classnames';
 import PropTypes from 'prop-types';
-import React, {useCallback, useEffect, useState} from 'react';
+import React from 'react';
 
-import Datalist from '../datalist/Datalist';
-import {generateOptions, getInputStyle} from './utils/index';
+import InputQuantitySelector from './InputQuantitySelector';
+import ListQuantitySelector from './ListQuantitySelector';
 
-function QuantitySelector(props) {
-	const [selectedQuantity, setSelectedQuantity] = useState(props.quantity);
+function QuantitySelector({
+	allowedQuantities,
+	disabled,
+	maxQuantity,
+	minQuantity,
+	multipleQuantity,
+	name,
+	onUpdate,
+	quantity,
+	size,
+}) {
+	const Selector =
+		allowedQuantities?.length > 0
+			? ListQuantitySelector
+			: InputQuantitySelector;
 
-	const quantitiesList = generateOptions(props.settings);
-
-	const updateQuantity = useCallback(
-		(q) => {
-			if (q !== null) {
-				setSelectedQuantity(q);
-				try {
-					props.updateQuantity(q);
-				}
-				catch (event) {
-					// eslint-disable-next-line no-console
-					console.log('stand alone component');
-				}
-			}
-		},
-		[props]
-	);
-
-	const inputStyle = getInputStyle(props.inputSize);
-
-	useEffect(() => {
-		if (props.quantity) {
-			updateQuantity(props.quantity);
-		}
-		else {
-			updateQuantity(selectedQuantity);
-		}
-	}, [selectedQuantity, props.quantity, updateQuantity]);
-
-	const content = (
-		<div
-			className="input-group input-group-sm quantity-selector simple"
-			data-testid="quantity-selector"
-			style={inputStyle}
-		>
-			{(props.prependedIcon || props.prependedText) && (
-				<div className="input-group-item input-group-item-shrink input-group-prepend">
-					<span className="input-group-text">
-						{props.prependedIcon ? (
-							<ClayIcon
-								spritemap={props.spritemap}
-								symbol={props.prependedIcon}
-							/>
-						) : (
-							props.prependedText
-						)}
-					</span>
-				</div>
-			)}
-			<div
-				className={classnames(
-					'input-group-item input-group-item-shrink',
-					(props.appendedIcon || props.appendedText) &&
-						'input-group-prepend'
-				)}
-			>
-				{props.style === 'datalist' && (
-					<Datalist
-						className="quantity-selector-input"
-						disabled={props.disabled}
-						id="quantitySelect"
-						size={props.size}
-						updateQuantity={updateQuantity}
-					>
-						{quantitiesList.map((item) => (
-							<option key={item} label={item} value={item} />
-						))}
-					</Datalist>
-				)}
-
-				{props.style === 'select' && (
-					<ClaySelect
-						aria-label="Select Label"
-						classnames={classnames(
-							'quantity-selector-input',
-							props.size === 'small' && 'form-control-sm',
-							props.size === 'large' && 'form-control-lg'
-						)}
-						data-testid="select"
-						disabled={props.disabled}
-						id="quantitySelect"
-						onChange={(event) => {
-							updateQuantity(event.target.value);
-						}}
-					>
-						{quantitiesList.map((item) => (
-							<ClaySelect.Option
-								key={item}
-								label={item}
-								value={item}
-							/>
-						))}
-					</ClaySelect>
-				)}
-			</div>
-
-			{(props.appendedIcon || props.appendedText) && (
-				<div className="input-group-append input-group-item input-group-item-shrink">
-					<span className="input-group-text">
-						{props.appendedIcon ? (
-							<ClayIcon
-								spritemap={props.spritemap}
-								symbol={props.appendedIcon}
-							/>
-						) : (
-							props.appendedText
-						)}
-					</span>
-				</div>
-			)}
-		</div>
-	);
-
-	return props.spritemap ? (
-		<ClayIconSpriteContext.Provider value={props.spritemap}>
-			{content}
-		</ClayIconSpriteContext.Provider>
-	) : (
-		content
+	return (
+		<Selector
+			allowedQuantities={allowedQuantities}
+			className={classnames({
+				[`form-control-${size}`]: size,
+				'quantity-selector': true,
+			})}
+			disabled={disabled}
+			maxQuantity={maxQuantity}
+			minQuantity={minQuantity}
+			multipleQuantity={multipleQuantity}
+			name={name}
+			onUpdate={onUpdate}
+			quantity={quantity}
+		/>
 	);
 }
 
 QuantitySelector.defaultProps = {
 	disabled: false,
-	inputSize: '1555',
+	minQuantity: 1,
+	multipleQuantity: 1,
 	quantity: 1,
-	settings: {
-		allowedQuantity: [],
-		maxQuantity: 99,
-		minQuantity: 1,
-		multipleQuantity: 1,
-	},
-	style: 'select',
 };
 
 QuantitySelector.propTypes = {
-	appendedIcon: PropTypes.string,
-	appendedText: PropTypes.string,
-	disableAddToCartButton: PropTypes.bool,
-	disableQuantitySelector: PropTypes.bool,
 	disabled: PropTypes.bool,
-	inputName: PropTypes.string,
-	inputSize: PropTypes.string,
-	prependedIcon: PropTypes.string,
-	prependedText: PropTypes.string,
+	maxQuantity: PropTypes.number,
+	minQuantity: PropTypes.number,
+	multipleQuantity: PropTypes.number,
+	name: PropTypes.string,
+	onUpdate: PropTypes.func.isRequired,
 	quantity: PropTypes.number,
-	rtl: PropTypes.bool,
-	settings: PropTypes.shape({
-		allowedQuantity: PropTypes.arrayOf(PropTypes.number),
-		maxQuantity: PropTypes.number,
-		minQuantity: PropTypes.number,
-		multipleQuantity: PropTypes.number,
-	}).isRequired,
-	size: PropTypes.oneOf(['large', 'medium', 'small']),
-	spritemap: PropTypes.string.isRequired,
-	style: PropTypes.oneOf(['select', 'datalist']),
-	updateQuantity: PropTypes.func,
+	size: PropTypes.oneOf(['lg', 'md', 'sm']),
 };
 
 export default QuantitySelector;

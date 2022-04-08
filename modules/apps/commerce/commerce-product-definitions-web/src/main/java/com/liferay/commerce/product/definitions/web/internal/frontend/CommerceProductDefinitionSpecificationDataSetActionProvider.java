@@ -15,6 +15,7 @@
 package com.liferay.commerce.product.definitions.web.internal.frontend;
 
 import com.liferay.commerce.product.constants.CPPortletKeys;
+import com.liferay.commerce.product.definitions.web.internal.frontend.constants.CommerceProductDataSetConstants;
 import com.liferay.commerce.product.definitions.web.internal.model.ProductSpecification;
 import com.liferay.commerce.product.definitions.web.internal.security.permission.resource.CommerceCatalogPermission;
 import com.liferay.commerce.product.model.CPDefinition;
@@ -23,6 +24,7 @@ import com.liferay.commerce.product.service.CPDefinitionSpecificationOptionValue
 import com.liferay.frontend.taglib.clay.data.set.ClayDataSetActionProvider;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemListBuilder;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
@@ -39,7 +41,6 @@ import com.liferay.portal.kernel.util.Portal;
 
 import java.util.List;
 
-import javax.portlet.ActionRequest;
 import javax.portlet.PortletRequest;
 import javax.portlet.PortletURL;
 import javax.portlet.WindowStateException;
@@ -113,24 +114,22 @@ public class CommerceProductDefinitionSpecificationDataSetActionProvider
 			HttpServletRequest httpServletRequest)
 		throws PortalException {
 
-		PortletURL portletURL = _portal.getControlPanelPortletURL(
-			_portal.getOriginalServletRequest(httpServletRequest),
-			CPPortletKeys.CP_DEFINITIONS, PortletRequest.ACTION_PHASE);
-
-		String redirect = ParamUtil.getString(
-			httpServletRequest, "currentUrl",
-			_portal.getCurrentURL(httpServletRequest));
-
-		portletURL.setParameter(
-			ActionRequest.ACTION_NAME,
-			"editProductDefinitionSpecificationOptionValue");
-		portletURL.setParameter(Constants.CMD, Constants.DELETE);
-		portletURL.setParameter("redirect", redirect);
-		portletURL.setParameter(
+		return PortletURLBuilder.create(
+			_portal.getControlPanelPortletURL(
+				_portal.getOriginalServletRequest(httpServletRequest),
+				CPPortletKeys.CP_DEFINITIONS, PortletRequest.ACTION_PHASE)
+		).setActionName(
+			"/cp_definitions/edit_cp_definition_specification_option_value"
+		).setCMD(
+			Constants.DELETE
+		).setRedirect(
+			ParamUtil.getString(
+				httpServletRequest, "currentUrl",
+				_portal.getCurrentURL(httpServletRequest))
+		).setParameter(
 			"cpDefinitionSpecificationOptionValueId",
-			String.valueOf(cpDefinitionSpecificationOptionValueId));
-
-		return portletURL;
+			cpDefinitionSpecificationOptionValueId
+		).buildPortletURL();
 	}
 
 	private PortletURL _getProductSpecificationEditURL(
@@ -139,28 +138,26 @@ public class CommerceProductDefinitionSpecificationDataSetActionProvider
 			HttpServletRequest httpServletRequest)
 		throws PortalException {
 
-		PortletURL portletURL = PortletProviderUtil.getPortletURL(
-			httpServletRequest, CPDefinition.class.getName(),
-			PortletProvider.Action.MANAGE);
-
-		portletURL.setParameter(
-			"mvcRenderCommandName",
-			"editProductDefinitionSpecificationOptionValue");
-		portletURL.setParameter(
+		PortletURL portletURL = PortletURLBuilder.create(
+			PortletProviderUtil.getPortletURL(
+				httpServletRequest, CPDefinition.class.getName(),
+				PortletProvider.Action.MANAGE)
+		).setMVCRenderCommandName(
+			"/cp_definitions/edit_cp_definition_specification_option_value"
+		).setParameter(
 			"cpDefinitionId",
-			String.valueOf(
-				cpDefinitionSpecificationOptionValue.getCPDefinitionId()));
-		portletURL.setParameter(
+			cpDefinitionSpecificationOptionValue.getCPDefinitionId()
+		).setParameter(
 			"cpDefinitionSpecificationOptionValueId",
-			String.valueOf(
-				cpDefinitionSpecificationOptionValue.
-					getCPDefinitionSpecificationOptionValueId()));
+			cpDefinitionSpecificationOptionValue.
+				getCPDefinitionSpecificationOptionValueId()
+		).buildPortletURL();
 
 		try {
 			portletURL.setWindowState(LiferayWindowState.POP_UP);
 		}
 		catch (WindowStateException windowStateException) {
-			_log.error(windowStateException, windowStateException);
+			_log.error(windowStateException);
 		}
 
 		return portletURL;

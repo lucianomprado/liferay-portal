@@ -17,15 +17,13 @@ package com.liferay.analytics.message.sender.internal;
 import com.liferay.analytics.message.storage.service.AnalyticsMessageLocalService;
 import com.liferay.analytics.settings.configuration.AnalyticsConfiguration;
 import com.liferay.analytics.settings.configuration.AnalyticsConfigurationTracker;
-import com.liferay.analytics.settings.security.constants.AnalyticsSecurityConstants;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.module.configuration.ConfigurationProvider;
-import com.liferay.portal.kernel.service.CompanyService;
+import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.service.UserLocalService;
-import com.liferay.portal.kernel.util.UnicodeProperties;
-import com.liferay.portal.security.permission.PermissionCheckerUtil;
+import com.liferay.portal.kernel.util.UnicodePropertiesBuilder;
 
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -95,7 +93,7 @@ public abstract class BaseAnalyticsClientImpl {
 	protected AnalyticsMessageLocalService analyticsMessageLocalService;
 
 	@Reference
-	protected CompanyService companyService;
+	protected CompanyLocalService companyLocalService;
 
 	@Reference
 	protected ConfigurationProvider configurationProvider;
@@ -104,24 +102,28 @@ public abstract class BaseAnalyticsClientImpl {
 	protected UserLocalService userLocalService;
 
 	private void _disconnectDataSource(long companyId) {
-		PermissionCheckerUtil.setThreadValues(
-			userLocalService.fetchUserByScreenName(
-				companyId,
-				AnalyticsSecurityConstants.SCREEN_NAME_ANALYTICS_ADMIN));
-
-		UnicodeProperties unicodeProperties = new UnicodeProperties(true);
-
-		unicodeProperties.setProperty("liferayAnalyticsConnectionType", "");
-		unicodeProperties.setProperty("liferayAnalyticsDataSourceId", "");
-		unicodeProperties.setProperty("liferayAnalyticsEndpointURL", "");
-		unicodeProperties.setProperty(
-			"liferayAnalyticsFaroBackendSecuritySignature", "");
-		unicodeProperties.setProperty("liferayAnalyticsFaroBackendURL", "");
-		unicodeProperties.setProperty("liferayAnalyticsGroupIds", "");
-		unicodeProperties.setProperty("liferayAnalyticsURL", "");
-
 		try {
-			companyService.updatePreferences(companyId, unicodeProperties);
+			companyLocalService.updatePreferences(
+				companyId,
+				UnicodePropertiesBuilder.create(
+					true
+				).put(
+					"liferayAnalyticsConnectionType", ""
+				).put(
+					"liferayAnalyticsDataSourceId", ""
+				).put(
+					"liferayAnalyticsEndpointURL", ""
+				).put(
+					"liferayAnalyticsFaroBackendSecuritySignature", ""
+				).put(
+					"liferayAnalyticsFaroBackendURL", ""
+				).put(
+					"liferayAnalyticsGroupIds", ""
+				).put(
+					"liferayAnalyticsProjectId", ""
+				).put(
+					"liferayAnalyticsURL", ""
+				).build());
 		}
 		catch (Exception exception) {
 			if (_log.isWarnEnabled()) {

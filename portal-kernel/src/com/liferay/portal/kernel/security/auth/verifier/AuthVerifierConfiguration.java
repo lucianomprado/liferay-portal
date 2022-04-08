@@ -21,10 +21,6 @@ import java.util.Properties;
  */
 public class AuthVerifierConfiguration {
 
-	public AuthVerifier getAuthVerifier() {
-		return _authVerifier;
-	}
-
 	public String getAuthVerifierClassName() {
 		return _authVerifierClassName;
 	}
@@ -33,19 +29,25 @@ public class AuthVerifierConfiguration {
 		return _properties;
 	}
 
-	public void setAuthVerifier(AuthVerifier authVerifier) {
-		_authVerifier = authVerifier;
-	}
-
 	public void setAuthVerifierClassName(String authVerifierClassName) {
-		_authVerifierClassName = authVerifierClassName;
+		int lastDotIndex = authVerifierClassName.lastIndexOf('.');
+
+		int simpleClassNameIndex = lastDotIndex + 1;
+
+		int lastDollarIndex = authVerifierClassName.lastIndexOf('$');
+
+		if (lastDotIndex < lastDollarIndex) {
+			simpleClassNameIndex = lastDollarIndex + 1;
+		}
+
+		_authVerifierClassName = authVerifierClassName.substring(
+			simpleClassNameIndex);
 	}
 
 	public void setProperties(Properties properties) {
 		_properties = properties;
 	}
 
-	private AuthVerifier _authVerifier;
 	private String _authVerifierClassName;
 	private Properties _properties;
 

@@ -15,8 +15,11 @@
 package com.liferay.dynamic.data.mapping.form.evaluator.internal.function;
 
 import com.liferay.dynamic.data.mapping.expression.ExecuteActionRequest;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import org.junit.Assert;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -33,17 +36,20 @@ import org.powermock.api.mockito.PowerMockito;
 @RunWith(MockitoJUnitRunner.class)
 public class JumpPageFunctionTest extends PowerMockito {
 
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
+
 	@Test
 	public void testExecuteAction() {
-		DefaultDDMExpressionActionHandler defaultDDMExpressionActionHandler =
-			new DefaultDDMExpressionActionHandler();
-
-		DefaultDDMExpressionActionHandler spy = spy(
-			defaultDDMExpressionActionHandler);
+		DefaultDDMExpressionActionHandler spyDefaultDDMExpressionActionHandler =
+			spy(new DefaultDDMExpressionActionHandler());
 
 		JumpPageFunction jumpPageFunction = new JumpPageFunction();
 
-		jumpPageFunction.setDDMExpressionActionHandler(spy);
+		jumpPageFunction.setDDMExpressionActionHandler(
+			spyDefaultDDMExpressionActionHandler);
 
 		Boolean result = jumpPageFunction.apply(1, 3);
 
@@ -51,7 +57,7 @@ public class JumpPageFunctionTest extends PowerMockito {
 			ArgumentCaptor.forClass(ExecuteActionRequest.class);
 
 		Mockito.verify(
-			spy, Mockito.times(1)
+			spyDefaultDDMExpressionActionHandler, Mockito.times(1)
 		).executeAction(
 			argumentCaptor.capture()
 		);

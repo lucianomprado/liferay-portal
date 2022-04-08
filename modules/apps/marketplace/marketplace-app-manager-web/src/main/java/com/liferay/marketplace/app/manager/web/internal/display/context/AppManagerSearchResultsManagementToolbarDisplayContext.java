@@ -17,6 +17,7 @@ package com.liferay.marketplace.app.manager.web.internal.display.context;
 import com.liferay.marketplace.app.manager.web.internal.util.BundleManagerUtil;
 import com.liferay.marketplace.app.manager.web.internal.util.MarketplaceAppManagerSearchUtil;
 import com.liferay.marketplace.app.manager.web.internal.util.comparator.MarketplaceAppManagerComparator;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
@@ -51,22 +52,29 @@ public class AppManagerSearchResultsManagementToolbarDisplayContext
 
 	@Override
 	public PortletURL getPortletURL() {
-		PortletURL portletURL = liferayPortletResponse.createRenderURL();
+		PortletURL portletURL = PortletURLBuilder.createRenderURL(
+			liferayPortletResponse
+		).setMVCPath(
+			"/view_search_results.jsp"
+		).setRedirect(
+			ParamUtil.getString(
+				httpServletRequest, "redirect",
+				String.valueOf(liferayPortletResponse.createRenderURL()))
+		).setKeywords(
+			() -> {
+				if (Validator.isNotNull(getKeywords())) {
+					return getKeywords();
+				}
 
-		portletURL.setParameter("mvcPath", "/view_search_results.jsp");
-		portletURL.setParameter("category", getCategory());
-		portletURL.setParameter("state", getState());
-		portletURL.setParameter("orderByType", getOrderByType());
-
-		if (Validator.isNotNull(getKeywords())) {
-			portletURL.setParameter("keywords", getKeywords());
-		}
-
-		String redirect = ParamUtil.getString(
-			httpServletRequest, "redirect",
-			String.valueOf(liferayPortletResponse.createRenderURL()));
-
-		portletURL.setParameter("redirect", redirect);
+				return null;
+			}
+		).setParameter(
+			"category", getCategory()
+		).setParameter(
+			"orderByType", getOrderByType()
+		).setParameter(
+			"state", getState()
+		).buildPortletURL();
 
 		if (_searchContainer != null) {
 			portletURL.setParameter(
@@ -93,23 +101,16 @@ public class AppManagerSearchResultsManagementToolbarDisplayContext
 		searchContainer.setOrderByCol(getOrderByCol());
 		searchContainer.setOrderByType(getOrderByType());
 
-		List<Object> results = MarketplaceAppManagerSearchUtil.getResults(
-			BundleManagerUtil.getBundles(), getKeywords(),
-			httpServletRequest.getLocale());
+		List<Object> results = ListUtil.sort(
+			MarketplaceAppManagerSearchUtil.getResults(
+				BundleManagerUtil.getBundles(), getKeywords(),
+				httpServletRequest.getLocale()),
+			new MarketplaceAppManagerComparator(getOrderByType()));
 
-		results = ListUtil.sort(
-			results, new MarketplaceAppManagerComparator(getOrderByType()));
-
-		int end = searchContainer.getEnd();
-
-		if (end > results.size()) {
-			end = results.size();
-		}
-
-		searchContainer.setResults(
-			results.subList(searchContainer.getStart(), end));
-
-		searchContainer.setTotal(results.size());
+		searchContainer.setResultsAndTotal(
+			() -> results.subList(
+				searchContainer.getStart(), searchContainer.getResultEnd()),
+			results.size());
 
 		_searchContainer = searchContainer;
 

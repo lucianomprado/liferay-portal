@@ -14,10 +14,13 @@
 
 package com.liferay.document.library.google.docs.internal.upgrade;
 
-import com.liferay.document.library.google.docs.internal.upgrade.v1_0_0.UpgradeFileEntryTypeName;
-import com.liferay.document.library.google.docs.internal.upgrade.v1_0_0.UpgradePortletPreferences;
+import com.liferay.document.library.google.docs.internal.upgrade.v1_0_0.DLFileEntryTypeNameUpgradeProcess;
+import com.liferay.document.library.google.docs.internal.upgrade.v1_0_0.PortletPreferencesUpgradeProcess;
+import com.liferay.document.library.google.docs.internal.upgrade.v2_0_0.DLFileEntryTypeUpgradeProcess;
 import com.liferay.document.library.kernel.service.DLFileEntryTypeLocalService;
+import com.liferay.dynamic.data.mapping.service.DDMStructureLocalService;
 import com.liferay.portal.kernel.module.configuration.ConfigurationProvider;
+import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.util.PrefsProps;
 import com.liferay.portal.upgrade.registry.UpgradeStepRegistrator;
 
@@ -34,15 +37,29 @@ public class GoogleDocsUpgrade implements UpgradeStepRegistrator {
 	public void register(Registry registry) {
 		registry.register(
 			"0.0.0", "1.0.0",
-			new UpgradeFileEntryTypeName(_dlFileEntryTypeLocalService));
+			new DLFileEntryTypeNameUpgradeProcess(
+				_dlFileEntryTypeLocalService));
 
 		registry.register(
 			"1.0.0", "1.0.1",
-			new UpgradePortletPreferences(_configurationProvider, _prefsProps));
+			new PortletPreferencesUpgradeProcess(
+				_configurationProvider, _prefsProps));
+
+		registry.register(
+			"1.0.1", "2.0.0",
+			new DLFileEntryTypeUpgradeProcess(
+				_classNameLocalService, _ddmStructureLocalService,
+				_dlFileEntryTypeLocalService));
 	}
 
 	@Reference
+	private ClassNameLocalService _classNameLocalService;
+
+	@Reference
 	private ConfigurationProvider _configurationProvider;
+
+	@Reference
+	private DDMStructureLocalService _ddmStructureLocalService;
 
 	@Reference
 	private DLFileEntryTypeLocalService _dlFileEntryTypeLocalService;

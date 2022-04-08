@@ -5,19 +5,23 @@ definition {
 
 		AssertVisible(locator1 = "Sidebar#FORM_BUILDER");
 
-		WebContentStructures.addName(structureName = "${structureName}");
+		if (isSet(structureName)) {
+			WebContentStructures.addName(structureName = "${structureName}");
+		}
 
 		if (isSet(structureKey)) {
-			if (IsElementNotPresent(locator1 = "Sidebar#ACTIVE_TAB", key_tabName = "Properties")) {
+			if (IsElementNotPresent(key_tabName = "Properties", locator1 = "Sidebar#ACTIVE_TAB")) {
 				Navigator.gotoSidebarTab(tabName = "Properties");
 			}
+
 			PortletEntry.inputStructureKeyTextInput(structureKey = "${structureKey}");
 		}
 
 		if (isSet(structureDescription)) {
-			if (IsElementNotPresent(locator1 = "Sidebar#ACTIVE_TAB", key_tabName = "Properties")) {
+			if (IsElementNotPresent(key_tabName = "Properties", locator1 = "Sidebar#ACTIVE_TAB")) {
 				Navigator.gotoSidebarTab(tabName = "Properties");
 			}
+
 			PortletEntry.inputDescriptionTextInput(description = "${structureDescription}");
 		}
 	}
@@ -35,11 +39,35 @@ definition {
 	}
 
 	macro addLocalization {
+		Click(locator1 = "Button#LOCALIZATION_GENERIC");
+
+		if (IsElementNotPresent(key_locale = "${locale}", locator1 = "Translation#LOCALIZATION_NAME")) {
+			WebContentStructures.addTranslations(
+				localeList = "${locale}",
+				localizedDone = "${localizedDone}",
+				localizedManageTranslations = "${localizedManageTranslations}");
+		}
+		else {
+			Click(locator1 = "Button#LOCALIZATION_GENERIC");
+		}
+
 		PortletEntry.changeLocale(locale = "${locale}");
 
 		WebContentStructures.addName(structureName = "${localization1Name}");
 
 		if (isSet(locale2)) {
+			Click(locator1 = "Button#LOCALIZATION_GENERIC");
+
+			if (IsElementNotPresent(key_locale = "${locale2}", locator1 = "Translation#LOCALIZATION_NAME")) {
+				WebContentStructures.addTranslations(
+					localeList = "${locale2}",
+					localizedDone = "${localizedDone}",
+					localizedManageTranslations = "${localizedManageTranslations}");
+			}
+			else {
+				Click(locator1 = "Button#LOCALIZATION_GENERIC");
+			}
+
 			PortletEntry.changeLocale(locale = "${locale2}");
 
 			WebContentStructures.addName(structureName = "${localization2Name}");
@@ -64,22 +92,44 @@ definition {
 		SelectFrame(value1 = "relative=top");
 	}
 
-	macro addSubstructure {
-		AssertClick(
-			locator1 = "Button#SELECT",
-			value1 = "Select");
+	macro addTranslations {
+		if (isSet(localizedManageTranslations)) {
+			var manageTranslations = "${localizedManageTranslations}";
+		}
+		else {
+			var manageTranslations = "Manage Translations";
+		}
 
-		SelectFrame(value1 = "relative=top");
+		if (IsElementNotPresent(key_menuItem = "${manageTranslations}", locator1 = "MenuItem#ANY_MENU_ITEM")) {
+			Click(locator1 = "Button#LOCALIZATION_GENERIC");
+		}
 
-		SelectFrame(locator1 = "IFrame#MODAL_BODY");
+		MenuItem.click(menuItem = "${manageTranslations}");
 
-		var key_ddlDataDefinitionName = "${parentStructureName}";
+		WaitForElementPresent(locator1 = "Modal#BODY");
 
-		AssertClickNoError(
-			locator1 = "DDMSelectStructure#DDM_STRUCTURE_TABLE_NAME_LINK",
-			value1 = "${parentStructureName}");
+		for (var locale : list "${localeList}") {
+			Click(locator1 = "Modal#PLUS");
 
-		SelectFrame(value1 = "relative=top");
+			MenuItem.click(menuItem = "${locale}");
+
+			AssertElementPresent(
+				key_tableEntry = "${locale}",
+				locator1 = "LexiconTable#TABLE_ENTRY");
+		}
+
+		Click(locator1 = "Modal#PLUS");
+
+		if (isSet(localizedDone)) {
+			Click(
+				key_text = "${localizedDone}",
+				locator1 = "Modal#MODAL_FOOTER_BUTTON");
+		}
+		else {
+			Click(
+				key_text = "Done",
+				locator1 = "Modal#MODAL_FOOTER_BUTTON");
+		}
 	}
 
 	macro copyCP {
@@ -91,6 +141,12 @@ definition {
 
 		if (isSet(structureCopyName)) {
 			PortletEntry.inputName(name = "${structureCopyName}");
+		}
+
+		if (isSet(structureCopyLocalName)) {
+			PortletEntry.changeLocale(locale = "${locale}");
+
+			PortletEntry.inputName(name = "${structureCopyLocalName}");
 		}
 
 		if ("${copyTemplates}" == "true") {
@@ -142,28 +198,52 @@ definition {
 	macro resetStructureDefaultValuesCP {
 		ClickNoError(locator1 = "Button#RESET_VALUES");
 
-		AssertConfirm(value1 = "Are you sure you want to reset the default values?");
+		if (isSet(cancel)) {
+			Confirm.dismissAlert();
 
-		if (isSet(templateName)) {
-			Panel.expandPanel(panel = "Default Template");
+			if (isSet(templateName)) {
+				Panel.expandPanel(panel = "Default Template");
 
-			AssertTextEquals(
-				locator1 = "WCEditWebContent#SELECTED_TEMPLATE",
-				value1 = "${templateName}");
+				AssertTextEquals(
+					inputFieldId = "ddmTemplateName",
+					locator1 = "TextInput#INPUT_ID",
+					value1 = "${templateName}");
+			}
+
+			if (isSet(assetTitle)) {
+				var key_assetTitle = "${assetTitle}";
+
+				AssertTextEquals.assertPartialText(
+					locator1 = "AssetRelatedAssets#RELATED_ASSETS_TABLE_TITLE",
+					value1 = "${assetTitle}");
+			}
 		}
+		else {
+			AssertConfirm(value1 = "Are you sure you want to reset the default values?");
 
-		if (isSet(assetTitle)) {
-			var key_assetTitle = "${assetTitle}";
+			Alert.viewSuccessMessage();
 
-			AssertElementNotPresent(locator1 = "AssetRelatedAssets#RELATED_ASSETS_TABLE_TYPE");
-			AssertElementNotPresent(locator1 = "AssetRelatedAssets#RELATED_ASSETS_TABLE_TITLE");
-			AssertElementNotPresent(locator1 = "AssetRelatedAssets#RELATED_ASSETS_TABLE_SCOPE");
-			AssertElementNotPresent(locator1 = "AssetRelatedAssets#RELATED_ASSETS_TABLE_REMOVE_LINK");
+			if (isSet(templateName)) {
+				Panel.expandPanel(panel = "Default Template");
+
+				AssertTextEquals(
+					inputFieldId = "ddmTemplateName",
+					locator1 = "TextInput#INPUT_ID",
+					value1 = "${templateName}");
+			}
+
+			if (isSet(assetTitle)) {
+				var key_assetTitle = "${assetTitle}";
+
+				AssertElementNotPresent(locator1 = "AssetRelatedAssets#RELATED_ASSETS_TABLE_TYPE");
+
+				AssertElementNotPresent(locator1 = "AssetRelatedAssets#RELATED_ASSETS_TABLE_TITLE");
+
+				AssertElementNotPresent(locator1 = "AssetRelatedAssets#RELATED_ASSETS_TABLE_SCOPE");
+
+				AssertElementNotPresent(locator1 = "AssetRelatedAssets#RELATED_ASSETS_TABLE_REMOVE_LINK");
+			}
 		}
-
-		Button.clickSave();
-
-		SelectFrameTop();
 	}
 
 	macro saveCP {
@@ -188,7 +268,7 @@ definition {
 		Navigator.openURL();
 
 		ProductMenu.gotoPortlet(
-			category = "Content &amp; Data",
+			category = "Content & Data",
 			portlet = "Web Content");
 
 		Navigator.gotoNavItem(navItem = "Structures");

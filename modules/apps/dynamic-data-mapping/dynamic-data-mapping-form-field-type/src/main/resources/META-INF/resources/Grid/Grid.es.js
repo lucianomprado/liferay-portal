@@ -12,16 +12,18 @@
  * details.
  */
 
-import {ClayInput, ClayRadio} from '@clayui/form';
+import {ClayRadio} from '@clayui/form';
 import ClayTable from '@clayui/table';
-import React, {useState} from 'react';
+import React from 'react';
 
 import {FieldBase} from '../FieldBase/ReactFieldBase.es';
+import {useSyncValue} from '../hooks/useSyncValue.es';
 
 const TableHead = ({columns}) => (
 	<ClayTable.Head>
 		<ClayTable.Row>
 			<ClayTable.Cell headingCell />
+
 			{columns.map((column, colIndex) => {
 				return (
 					<ClayTable.Cell
@@ -39,6 +41,7 @@ const TableHead = ({columns}) => (
 const TableBodyColumns = ({
 	columns,
 	disabled,
+	name,
 	onBlur,
 	onChange,
 	onFocus,
@@ -55,8 +58,9 @@ const TableBodyColumns = ({
 					aria-label={`${rowLabel}: ${row.label}, ${columnLabel}: ${column.label}`}
 					checked={column.value === value[row.value]}
 					className="form-builder-grid-field"
+					data-name={row.value}
 					disabled={disabled}
-					name={row.value}
+					name={name}
 					onBlur={onBlur}
 					onChange={onChange}
 					onFocus={onFocus}
@@ -86,8 +90,7 @@ const Grid = ({
 					: '';
 
 				return (
-					<ClayInput
-						aria-hidden="true"
+					<input
 						key={`row-${row.value}-${rowIndex}`}
 						name={name}
 						type="hidden"
@@ -111,6 +114,7 @@ const Grid = ({
 							<TableBodyColumns
 								columns={columns}
 								disabled={disabled}
+								name={`${name}_${row.value}`}
 								onBlur={onBlur}
 								onChange={onChange}
 								onFocus={onFocus}
@@ -136,7 +140,7 @@ const Main = ({
 	value = {},
 	...otherProps
 }) => {
-	const [state, setState] = useState(value);
+	const [state, setState] = useSyncValue(value, false);
 
 	return (
 		<FieldBase name={name} readOnly={readOnly} {...otherProps}>
@@ -148,7 +152,7 @@ const Main = ({
 				onChange={(event) => {
 					const {target} = event;
 					const value = {
-						[target.name]: target.value,
+						[target.dataset.name]: target.value,
 					};
 
 					const newState = {...state, ...value};

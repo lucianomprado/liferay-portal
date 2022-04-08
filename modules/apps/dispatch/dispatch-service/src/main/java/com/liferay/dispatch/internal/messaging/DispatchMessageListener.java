@@ -16,25 +16,23 @@ package com.liferay.dispatch.internal.messaging;
 
 import com.liferay.dispatch.constants.DispatchConstants;
 import com.liferay.dispatch.executor.DispatchTaskExecutor;
+import com.liferay.dispatch.executor.DispatchTaskExecutorRegistry;
 import com.liferay.dispatch.executor.DispatchTaskStatus;
 import com.liferay.dispatch.model.DispatchLog;
 import com.liferay.dispatch.model.DispatchTrigger;
 import com.liferay.dispatch.service.DispatchLogLocalService;
 import com.liferay.dispatch.service.DispatchTriggerLocalService;
-import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMap;
-import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMapFactory;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.messaging.BaseMessageListener;
 import com.liferay.portal.kernel.messaging.Message;
 import com.liferay.portal.kernel.messaging.MessageListener;
 
 import java.util.Date;
 
-import org.osgi.framework.BundleContext;
-import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
-import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 
 /**
@@ -60,46 +58,59 @@ public class DispatchMessageListener extends BaseMessageListener {
 		if (!dispatchTrigger.isOverlapAllowed()) {
 			DispatchLog dispatchLog =
 				_dispatchLogLocalService.fetchLatestDispatchLog(
-					dispatchTriggerId);
+					dispatchTriggerId, DispatchTaskStatus.IN_PROGRESS);
 
-			if ((dispatchLog != null) &&
-				(DispatchTaskStatus.valueOf(dispatchLog.getStatus()) ==
-					DispatchTaskStatus.IN_PROGRESS)) {
+			if (dispatchLog != null) {
+				Date date = new Date();
 
 				_dispatchLogLocalService.addDispatchLog(
 					dispatchTrigger.getUserId(),
-					dispatchTrigger.getDispatchTriggerId(), null, null, null,
-					new Date(), DispatchTaskStatus.CANCELED);
+					dispatchTrigger.getDispatchTriggerId(), date,
+					"Only one instance in progress is allowed", null, date,
+					DispatchTaskStatus.CANCELED);
 
 				return;
 			}
 		}
 
+		_execute(dispatchTrigger);
+	}
+
+	private void _execute(DispatchTrigger dispatchTrigger) throws Exception {
 		DispatchTaskExecutor dispatchTaskExecutor =
-			_dispatchTaskExecutorServiceTrackerMap.getService(
-				dispatchTrigger.getTaskExecutorType());
+			_dispatchTaskExecutorRegistry.fetchDispatchTaskExecutor(
+				dispatchTrigger.getDispatchTaskExecutorType());
 
-		dispatchTaskExecutor.execute(dispatchTriggerId);
+		if (dispatchTaskExecutor != null) {
+			dispatchTaskExecutor.execute(
+				dispatchTrigger.getDispatchTriggerId());
+
+			return;
+		}
+
+		String message =
+			"Unable to find dispatch task executor of type " +
+				dispatchTrigger.getDispatchTaskExecutorType();
+
+		if (_log.isWarnEnabled()) {
+			_log.warn(message);
+		}
+
+		Date date = new Date();
+
+		_dispatchLogLocalService.addDispatchLog(
+			dispatchTrigger.getUserId(), dispatchTrigger.getDispatchTriggerId(),
+			date, message, null, date, DispatchTaskStatus.CANCELED);
 	}
 
-	@Activate
-	protected void activate(BundleContext bundleContext) {
-		_dispatchTaskExecutorServiceTrackerMap =
-			ServiceTrackerMapFactory.openSingleValueMap(
-				bundleContext, DispatchTaskExecutor.class,
-				"dispatch.task.executor.type");
-	}
-
-	@Deactivate
-	protected void deactivate() {
-		_dispatchTaskExecutorServiceTrackerMap.close();
-	}
+	private static final Log _log = LogFactoryUtil.getLog(
+		DispatchMessageListener.class);
 
 	@Reference
 	private DispatchLogLocalService _dispatchLogLocalService;
 
-	private ServiceTrackerMap<String, DispatchTaskExecutor>
-		_dispatchTaskExecutorServiceTrackerMap;
+	@Reference
+	private DispatchTaskExecutorRegistry _dispatchTaskExecutorRegistry;
 
 	@Reference
 	private DispatchTriggerLocalService _dispatchTriggerLocalService;

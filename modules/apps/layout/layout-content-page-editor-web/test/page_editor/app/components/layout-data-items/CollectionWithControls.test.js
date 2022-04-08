@@ -18,24 +18,25 @@ import React from 'react';
 import {DndProvider} from 'react-dnd';
 import {HTML5Backend} from 'react-dnd-html5-backend';
 
-import {
-	ControlsProvider,
-	useSelectItem,
-} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/components/Controls';
 import {CollectionWithControls} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/components/layout-data-items';
 import {LAYOUT_DATA_ITEM_TYPES} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/config/constants/layoutDataItemTypes';
 import {VIEWPORT_SIZES} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/config/constants/viewportSizes';
-import {StoreAPIContextProvider} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/store';
+import {
+	ControlsProvider,
+	useSelectItem,
+} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/contexts/ControlsContext';
+import {StoreAPIContextProvider} from '../../../../../src/main/resources/META-INF/resources/page_editor/app/contexts/StoreContext';
 
 const renderCollection = ({
 	isActive = true,
+	collectionConfig = {styles: {}},
 	viewportSize = VIEWPORT_SIZES.desktop,
 	lockedSegment = false,
 	hasUpdatePermission = true,
 } = {}) => {
 	const collection = {
 		children: [],
-		config: {},
+		config: collectionConfig,
 		itemId: 'collection',
 		parentId: null,
 		type: LAYOUT_DATA_ITEM_TYPES.collection,
@@ -65,6 +66,7 @@ const renderCollection = ({
 					})}
 				>
 					<AutoSelector />
+
 					<CollectionWithControls
 						item={collection}
 						layoutData={layoutData}
@@ -103,5 +105,37 @@ describe('CollectionWithControls', () => {
 
 		expect(queryByText('delete')).not.toBeInTheDocument();
 		expect(queryByText('duplicate')).not.toBeInTheDocument();
+	});
+
+	it('does not show the collection if it has been hidden by the user', async () => {
+		const {baseElement} = renderCollection({
+			collectionConfig: {
+				styles: {
+					display: 'none',
+				},
+			},
+		});
+
+		const collection = baseElement.querySelector(
+			'.page-editor__collection'
+		);
+
+		expect(collection).not.toBeVisible();
+	});
+
+	it('shows the collection if it has not been hidden by the user', async () => {
+		const {baseElement} = renderCollection({
+			collectionConfig: {
+				styles: {
+					display: 'block',
+				},
+			},
+		});
+
+		const collection = baseElement.querySelector(
+			'.page-editor__collection'
+		);
+
+		expect(collection).toBeVisible();
 	});
 });

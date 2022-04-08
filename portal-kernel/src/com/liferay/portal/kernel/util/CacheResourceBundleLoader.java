@@ -28,8 +28,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * @author Carlos Sierra Andrés
- *
+ * @author     Carlos Sierra Andrés
  * @deprecated As of Athanasius (7.3.x), replaced by {@link
  *             com.liferay.portal.kernel.resource.bundle.CacheResourceBundleLoader}
  */
@@ -72,7 +71,7 @@ public class CacheResourceBundleLoader implements ResourceBundleLoader {
 			}
 			catch (Exception exception) {
 				if (_log.isDebugEnabled()) {
-					_log.debug(exception, exception);
+					_log.debug(exception);
 				}
 			}
 

@@ -14,8 +14,6 @@
 
 package com.liferay.portal.search.internal.searcher;
 
-import com.liferay.portal.kernel.log.Log;
-import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.search.QueryConfig;
 import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.kernel.util.ArrayUtil;
@@ -25,6 +23,7 @@ import com.liferay.portal.search.aggregation.pipeline.PipelineAggregation;
 import com.liferay.portal.search.constants.SearchContextAttributes;
 import com.liferay.portal.search.filter.ComplexQueryPart;
 import com.liferay.portal.search.groupby.GroupByRequest;
+import com.liferay.portal.search.highlight.Highlight;
 import com.liferay.portal.search.query.Query;
 import com.liferay.portal.search.rescore.Rescore;
 import com.liferay.portal.search.searcher.SearchRequest;
@@ -40,8 +39,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * @author André de Oliveira
@@ -61,8 +58,8 @@ public class SearchRequestImpl implements SearchRequest, Serializable {
 	public SearchRequestImpl(SearchRequestImpl searchRequestImpl) {
 		_aggregationsMap.putAll(searchRequestImpl._aggregationsMap);
 		_basicFacetSelection = searchRequestImpl._basicFacetSelection;
-		_connectionId = searchRequestImpl._connectionId;
 		_complexQueryParts.addAll(searchRequestImpl._complexQueryParts);
+		_connectionId = searchRequestImpl._connectionId;
 		_emptySearchEnabled = searchRequestImpl._emptySearchEnabled;
 		_excludeContributors.addAll(searchRequestImpl._excludeContributors);
 		_explain = searchRequestImpl._explain;
@@ -71,14 +68,16 @@ public class SearchRequestImpl implements SearchRequest, Serializable {
 			searchRequestImpl._federatedSearchRequestsMap);
 		_from = searchRequestImpl._from;
 		_groupByRequests.addAll(searchRequestImpl._groupByRequests);
+		_highlight = searchRequestImpl._highlight;
 		_includeContributors.addAll(searchRequestImpl._includeContributors);
 		_includeResponseString = searchRequestImpl._includeResponseString;
-		_modelIndexerClasses.addAll(searchRequestImpl._modelIndexerClasses);
+		_modelIndexerClassNames.addAll(
+			searchRequestImpl._modelIndexerClassNames);
 		_pipelineAggregationsMap.putAll(
 			searchRequestImpl._pipelineAggregationsMap);
-		_postFilterQuery = searchRequestImpl._postFilterQuery;
 		_postFilterComplexQueryParts.addAll(
 			searchRequestImpl._postFilterComplexQueryParts);
+		_postFilterQuery = searchRequestImpl._postFilterQuery;
 		_query = searchRequestImpl._query;
 		_rescoreQuery = searchRequestImpl._rescoreQuery;
 		_rescores.addAll(searchRequestImpl._rescores);
@@ -207,6 +206,11 @@ public class SearchRequestImpl implements SearchRequest, Serializable {
 	}
 
 	@Override
+	public Highlight getHighlight() {
+		return _highlight;
+	}
+
+	@Override
 	public List<String> getIncludeContributors() {
 		return Collections.unmodifiableList(_includeContributors);
 	}
@@ -219,20 +223,19 @@ public class SearchRequestImpl implements SearchRequest, Serializable {
 			Arrays.asList(queryConfig.getSelectedIndexNames()));
 	}
 
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *             #getModelIndexerClassNames()}
+	 */
+	@Deprecated
 	@Override
 	public List<Class<?>> getModelIndexerClasses() {
-		return Collections.unmodifiableList(_modelIndexerClasses);
+		return Collections.emptyList();
 	}
 
 	@Override
 	public List<String> getModelIndexerClassNames() {
-		Stream<Class<?>> stream = _modelIndexerClasses.stream();
-
-		return stream.map(
-			modelIndexerClass -> modelIndexerClass.getCanonicalName()
-		).collect(
-			Collectors.toList()
-		);
+		return _modelIndexerClassNames;
 	}
 
 	@Override
@@ -376,6 +379,10 @@ public class SearchRequestImpl implements SearchRequest, Serializable {
 		_searchContext.setGroupIds(groupIds);
 	}
 
+	public void setHighlight(Highlight highlight) {
+		_highlight = highlight;
+	}
+
 	public void setHighlightEnabled(boolean highlightEnabled) {
 		QueryConfig queryConfig = _searchContext.getQueryConfig();
 
@@ -402,33 +409,10 @@ public class SearchRequestImpl implements SearchRequest, Serializable {
 		_searchContext.setLocale(locale);
 	}
 
-	public void setModelIndexerClasses(Class<?>... classes) {
-		_modelIndexerClasses.clear();
-
-		Collections.addAll(_modelIndexerClasses, classes);
-	}
-
 	public void setModelIndexerClassNames(String... classNames) {
-		Stream<String> classStream = Arrays.stream(classNames);
+		_modelIndexerClassNames.clear();
 
-		Class<?>[] classes = classStream.map(
-			className -> {
-				try {
-					return Class.forName(className);
-				}
-				catch (Exception exception) {
-					_log.error(exception, exception);
-				}
-
-				return null;
-			}
-		).toArray(
-			Class[]::new
-		);
-
-		_modelIndexerClasses.clear();
-
-		Collections.addAll(_modelIndexerClasses, classes);
+		Collections.addAll(_modelIndexerClassNames, classNames);
 	}
 
 	public void setOwnerUserId(Long userId) {
@@ -479,9 +463,6 @@ public class SearchRequestImpl implements SearchRequest, Serializable {
 		Collections.addAll(_statsRequests, statsRequests);
 	}
 
-	private static final Log _log = LogFactoryUtil.getLog(
-		SearchRequestImpl.class);
-
 	private final Map<String, Aggregation> _aggregationsMap =
 		new LinkedHashMap<>();
 	private boolean _basicFacetSelection;
@@ -498,13 +479,14 @@ public class SearchRequestImpl implements SearchRequest, Serializable {
 	private String[] _fetchSourceIncludes;
 	private Integer _from;
 	private final List<GroupByRequest> _groupByRequests = new ArrayList<>();
+	private Highlight _highlight;
 	private final List<String> _includeContributors = new ArrayList<>();
 	private boolean _includeResponseString;
-	private final List<Class<?>> _modelIndexerClasses = new ArrayList<>();
+	private final List<String> _modelIndexerClassNames = new ArrayList<>();
 	private String _paginationStartParameterName;
 	private final Map<String, PipelineAggregation> _pipelineAggregationsMap =
 		new LinkedHashMap<>();
-	private List<ComplexQueryPart> _postFilterComplexQueryParts =
+	private final List<ComplexQueryPart> _postFilterComplexQueryParts =
 		new ArrayList<>();
 	private Query _postFilterQuery;
 	private Query _query;

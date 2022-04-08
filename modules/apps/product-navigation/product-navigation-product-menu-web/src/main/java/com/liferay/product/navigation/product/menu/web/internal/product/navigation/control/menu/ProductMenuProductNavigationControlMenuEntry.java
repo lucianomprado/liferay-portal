@@ -14,6 +14,7 @@
 
 package com.liferay.product.navigation.product.menu.web.internal.product.navigation.control.menu;
 
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.reflect.ReflectionUtil;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -33,6 +34,7 @@ import com.liferay.product.navigation.control.menu.ProductNavigationControlMenuE
 import com.liferay.product.navigation.control.menu.constants.ProductNavigationControlMenuCategoryKeys;
 import com.liferay.product.navigation.product.menu.constants.ProductNavigationProductMenuPortletKeys;
 import com.liferay.product.navigation.product.menu.helper.ProductNavigationProductMenuHelper;
+import com.liferay.taglib.aui.IconTag;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -43,10 +45,10 @@ import java.util.Objects;
 
 import javax.portlet.PortletURL;
 import javax.portlet.RenderRequest;
-import javax.portlet.WindowStateException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.jsp.JspException;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -82,6 +84,50 @@ public class ProductMenuProductNavigationControlMenuEntry
 		throws IOException {
 
 		Map<String, String> values = HashMapBuilder.put(
+			"cssClass",
+			() -> {
+				String productMenuState = SessionClicks.get(
+					httpServletRequest,
+					"com.liferay.product.navigation.product.menu." +
+						"web_productMenuState",
+					"closed");
+
+				if (Objects.equals(productMenuState, "open")) {
+					return "active";
+				}
+
+				return StringPool.BLANK;
+			}
+		).put(
+			"dataURL",
+			() -> {
+				PortletURL portletURL = PortletURLBuilder.create(
+					PortletURLFactoryUtil.create(
+						httpServletRequest,
+						ProductNavigationProductMenuPortletKeys.
+							PRODUCT_NAVIGATION_PRODUCT_MENU,
+						RenderRequest.RENDER_PHASE)
+				).setMVCPath(
+					"/portlet/product_menu.jsp"
+				).setParameter(
+					"selPpid",
+					() -> {
+						ThemeDisplay themeDisplay =
+							(ThemeDisplay)httpServletRequest.getAttribute(
+								WebKeys.THEME_DISPLAY);
+
+						PortletDisplay portletDisplay =
+							themeDisplay.getPortletDisplay();
+
+						return portletDisplay.getId();
+					}
+				).setWindowState(
+					LiferayWindowState.EXCLUSIVE
+				).buildPortletURL();
+
+				return "data-url='" + portletURL + "'";
+			}
+		).put(
 			"portletNamespace",
 			_portal.getPortletNamespace(
 				ProductNavigationProductMenuPortletKeys.
@@ -91,41 +137,27 @@ public class ProductMenuProductNavigationControlMenuEntry
 			HtmlUtil.escape(LanguageUtil.get(httpServletRequest, "menu"))
 		).build();
 
-		String productMenuState = SessionClicks.get(
-			httpServletRequest,
-			"com.liferay.product.navigation.product.menu.web_productMenuState",
-			"closed");
+		try {
+			IconTag iconTag = new IconTag();
 
-		if (Objects.equals(productMenuState, "open")) {
-			values.put("cssClass", "active");
-			values.put("dataURL", StringPool.BLANK);
+			iconTag.setCssClass("icon-monospaced icon-product-menu-closed");
+			iconTag.setImage("product-menu-closed");
+			iconTag.setMarkupView("lexicon");
+
+			values.put(
+				"closedIcon",
+				iconTag.doTagAsString(httpServletRequest, httpServletResponse));
+
+			iconTag.setCssClass("icon-monospaced icon-product-menu-open");
+			iconTag.setImage("product-menu-open");
+			iconTag.setMarkupView("lexicon");
+
+			values.put(
+				"openIcon",
+				iconTag.doTagAsString(httpServletRequest, httpServletResponse));
 		}
-		else {
-			values.put("cssClass", StringPool.BLANK);
-
-			ThemeDisplay themeDisplay =
-				(ThemeDisplay)httpServletRequest.getAttribute(
-					WebKeys.THEME_DISPLAY);
-
-			PortletDisplay portletDisplay = themeDisplay.getPortletDisplay();
-
-			PortletURL portletURL = PortletURLFactoryUtil.create(
-				httpServletRequest,
-				ProductNavigationProductMenuPortletKeys.
-					PRODUCT_NAVIGATION_PRODUCT_MENU,
-				RenderRequest.RENDER_PHASE);
-
-			portletURL.setParameter("mvcPath", "/portlet/product_menu.jsp");
-			portletURL.setParameter("selPpid", portletDisplay.getId());
-
-			try {
-				portletURL.setWindowState(LiferayWindowState.EXCLUSIVE);
-			}
-			catch (WindowStateException windowStateException) {
-				ReflectionUtil.throwException(windowStateException);
-			}
-
-			values.put("dataURL", "data-url='" + portletURL.toString() + "'");
+		catch (JspException jspException) {
+			ReflectionUtil.throwException(jspException);
 		}
 
 		Writer writer = httpServletResponse.getWriter();

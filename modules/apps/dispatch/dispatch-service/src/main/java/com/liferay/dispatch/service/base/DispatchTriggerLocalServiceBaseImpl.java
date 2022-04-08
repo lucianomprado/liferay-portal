@@ -16,6 +16,7 @@ package com.liferay.dispatch.service.base;
 
 import com.liferay.dispatch.model.DispatchTrigger;
 import com.liferay.dispatch.service.DispatchTriggerLocalService;
+import com.liferay.dispatch.service.DispatchTriggerLocalServiceUtil;
 import com.liferay.dispatch.service.persistence.DispatchLogPersistence;
 import com.liferay.dispatch.service.persistence.DispatchTriggerPersistence;
 import com.liferay.petra.sql.dsl.query.DSLQuery;
@@ -45,10 +46,13 @@ import com.liferay.portal.kernel.util.PortalUtil;
 
 import java.io.Serializable;
 
+import java.lang.reflect.Field;
+
 import java.util.List;
 
 import javax.sql.DataSource;
 
+import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 
 /**
@@ -70,7 +74,7 @@ public abstract class DispatchTriggerLocalServiceBaseImpl
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. Use <code>DispatchTriggerLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>com.liferay.dispatch.service.DispatchTriggerLocalServiceUtil</code>.
+	 * Never modify or reference this class directly. Use <code>DispatchTriggerLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>DispatchTriggerLocalServiceUtil</code>.
 	 */
 
 	/**
@@ -145,6 +149,13 @@ public abstract class DispatchTriggerLocalServiceBaseImpl
 	@Override
 	public <T> T dslQuery(DSLQuery dslQuery) {
 		return dispatchTriggerPersistence.dslQuery(dslQuery);
+	}
+
+	@Override
+	public int dslQueryCount(DSLQuery dslQuery) {
+		Long count = dslQuery(dslQuery);
+
+		return count.intValue();
 	}
 
 	@Override
@@ -237,6 +248,50 @@ public abstract class DispatchTriggerLocalServiceBaseImpl
 	@Override
 	public DispatchTrigger fetchDispatchTrigger(long dispatchTriggerId) {
 		return dispatchTriggerPersistence.fetchByPrimaryKey(dispatchTriggerId);
+	}
+
+	/**
+	 * Returns the dispatch trigger with the matching external reference code and company.
+	 *
+	 * @param companyId the primary key of the company
+	 * @param externalReferenceCode the dispatch trigger's external reference code
+	 * @return the matching dispatch trigger, or <code>null</code> if a matching dispatch trigger could not be found
+	 */
+	@Override
+	public DispatchTrigger fetchDispatchTriggerByExternalReferenceCode(
+		long companyId, String externalReferenceCode) {
+
+		return dispatchTriggerPersistence.fetchByC_ERC(
+			companyId, externalReferenceCode);
+	}
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link #fetchDispatchTriggerByExternalReferenceCode(long, String)}
+	 */
+	@Deprecated
+	@Override
+	public DispatchTrigger fetchDispatchTriggerByReferenceCode(
+		long companyId, String externalReferenceCode) {
+
+		return fetchDispatchTriggerByExternalReferenceCode(
+			companyId, externalReferenceCode);
+	}
+
+	/**
+	 * Returns the dispatch trigger with the matching external reference code and company.
+	 *
+	 * @param companyId the primary key of the company
+	 * @param externalReferenceCode the dispatch trigger's external reference code
+	 * @return the matching dispatch trigger
+	 * @throws PortalException if a matching dispatch trigger could not be found
+	 */
+	@Override
+	public DispatchTrigger getDispatchTriggerByExternalReferenceCode(
+			long companyId, String externalReferenceCode)
+		throws PortalException {
+
+		return dispatchTriggerPersistence.findByC_ERC(
+			companyId, externalReferenceCode);
 	}
 
 	/**
@@ -376,6 +431,11 @@ public abstract class DispatchTriggerLocalServiceBaseImpl
 		return dispatchTriggerPersistence.update(dispatchTrigger);
 	}
 
+	@Deactivate
+	protected void deactivate() {
+		_setLocalServiceUtilService(null);
+	}
+
 	@Override
 	public Class<?>[] getAopInterfaces() {
 		return new Class<?>[] {
@@ -387,6 +447,8 @@ public abstract class DispatchTriggerLocalServiceBaseImpl
 	@Override
 	public void setAopProxy(Object aopProxy) {
 		dispatchTriggerLocalService = (DispatchTriggerLocalService)aopProxy;
+
+		_setLocalServiceUtilService(dispatchTriggerLocalService);
 	}
 
 	/**
@@ -428,6 +490,23 @@ public abstract class DispatchTriggerLocalServiceBaseImpl
 		}
 		catch (Exception exception) {
 			throw new SystemException(exception);
+		}
+	}
+
+	private void _setLocalServiceUtilService(
+		DispatchTriggerLocalService dispatchTriggerLocalService) {
+
+		try {
+			Field field =
+				DispatchTriggerLocalServiceUtil.class.getDeclaredField(
+					"_service");
+
+			field.setAccessible(true);
+
+			field.set(null, dispatchTriggerLocalService);
+		}
+		catch (ReflectiveOperationException reflectiveOperationException) {
+			throw new RuntimeException(reflectiveOperationException);
 		}
 	}
 

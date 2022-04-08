@@ -88,69 +88,7 @@ public abstract class BaseWorkflowHandler<T> implements WorkflowHandler<T> {
 	}
 
 	@Override
-	public String getSummary(
-		long classPK, PortletRequest portletRequest,
-		PortletResponse portletResponse) {
-
-		try {
-			AssetRenderer<?> assetRenderer = getAssetRenderer(classPK);
-
-			if (assetRenderer != null) {
-				return assetRenderer.getSummary(
-					portletRequest, portletResponse);
-			}
-		}
-		catch (Exception exception) {
-			if (_log.isWarnEnabled()) {
-				_log.warn(exception, exception);
-			}
-		}
-
-		return null;
-	}
-
-	@Override
-	public String getTitle(long classPK, Locale locale) {
-		try {
-			AssetRenderer<?> assetRenderer = getAssetRenderer(classPK);
-
-			if (assetRenderer != null) {
-				return assetRenderer.getTitle(locale);
-			}
-		}
-		catch (Exception exception) {
-			if (_log.isWarnEnabled()) {
-				_log.warn(exception, exception);
-			}
-		}
-
-		return null;
-	}
-
-	@Override
-	public PortletURL getURLEdit(
-		long classPK, LiferayPortletRequest liferayPortletRequest,
-		LiferayPortletResponse liferayPortletResponse) {
-
-		try {
-			AssetRenderer<?> assetRenderer = getAssetRenderer(classPK);
-
-			if (assetRenderer != null) {
-				return assetRenderer.getURLEdit(
-					liferayPortletRequest, liferayPortletResponse);
-			}
-		}
-		catch (Exception exception) {
-			if (_log.isWarnEnabled()) {
-				_log.warn(exception, exception);
-			}
-		}
-
-		return null;
-	}
-
-	@Override
-	public String getURLEditWorkflowTask(
+	public String getNotificationLink(
 			long workflowTaskId, ServiceContext serviceContext)
 		throws PortalException {
 
@@ -172,6 +110,81 @@ public abstract class BaseWorkflowHandler<T> implements WorkflowHandler<T> {
 	}
 
 	@Override
+	public String getSummary(
+		long classPK, PortletRequest portletRequest,
+		PortletResponse portletResponse) {
+
+		try {
+			AssetRenderer<?> assetRenderer = getAssetRenderer(classPK);
+
+			if (assetRenderer != null) {
+				return assetRenderer.getSummary(
+					portletRequest, portletResponse);
+			}
+		}
+		catch (Exception exception) {
+			if (_log.isWarnEnabled()) {
+				_log.warn(exception);
+			}
+		}
+
+		return null;
+	}
+
+	@Override
+	public String getTitle(long classPK, Locale locale) {
+		try {
+			AssetRenderer<?> assetRenderer = getAssetRenderer(classPK);
+
+			if (assetRenderer != null) {
+				return assetRenderer.getTitle(locale);
+			}
+		}
+		catch (Exception exception) {
+			if (_log.isWarnEnabled()) {
+				_log.warn(exception);
+			}
+		}
+
+		return null;
+	}
+
+	@Override
+	public PortletURL getURLEdit(
+		long classPK, LiferayPortletRequest liferayPortletRequest,
+		LiferayPortletResponse liferayPortletResponse) {
+
+		try {
+			AssetRenderer<?> assetRenderer = getAssetRenderer(classPK);
+
+			if (assetRenderer != null) {
+				return assetRenderer.getURLEdit(
+					liferayPortletRequest, liferayPortletResponse);
+			}
+		}
+		catch (Exception exception) {
+			if (_log.isWarnEnabled()) {
+				_log.warn(exception);
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 *             #getNotificationLink(long, ServiceContext)}}
+	 */
+	@Deprecated
+	@Override
+	public String getURLEditWorkflowTask(
+			long workflowTaskId, ServiceContext serviceContext)
+		throws PortalException {
+
+		return getNotificationLink(workflowTaskId, serviceContext);
+	}
+
+	@Override
 	public PortletURL getURLViewDiffs(
 		long classPK, LiferayPortletRequest liferayPortletRequest,
 		LiferayPortletResponse liferayPortletResponse) {
@@ -186,7 +199,7 @@ public abstract class BaseWorkflowHandler<T> implements WorkflowHandler<T> {
 		}
 		catch (Exception exception) {
 			if (_log.isWarnEnabled()) {
-				_log.warn(exception, exception);
+				_log.warn(exception);
 			}
 		}
 
@@ -210,7 +223,7 @@ public abstract class BaseWorkflowHandler<T> implements WorkflowHandler<T> {
 		}
 		catch (Exception exception) {
 			if (_log.isWarnEnabled()) {
-				_log.warn(exception, exception);
+				_log.warn(exception);
 			}
 		}
 
@@ -245,7 +258,7 @@ public abstract class BaseWorkflowHandler<T> implements WorkflowHandler<T> {
 		}
 		catch (Exception exception) {
 			if (_log.isWarnEnabled()) {
-				_log.warn(exception, exception);
+				_log.warn(exception);
 			}
 		}
 

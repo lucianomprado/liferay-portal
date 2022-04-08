@@ -25,6 +25,7 @@ import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.ratings.kernel.model.RatingsStats;
 import com.liferay.ratings.kernel.model.RatingsStatsModel;
@@ -34,6 +35,7 @@ import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
 
+import java.sql.Blob;
 import java.sql.Types;
 
 import java.util.Collections;
@@ -41,6 +43,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
@@ -127,20 +130,20 @@ public class RatingsStatsModelImpl
 	public static final boolean COLUMN_BITMASK_ENABLED = true;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long CLASSNAMEID_COLUMN_BITMASK = 1L;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long CLASSPK_COLUMN_BITMASK = 2L;
 
 	/**
 	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-	 *		#getColumnBitmask(String)
+	 *		#getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long STATSID_COLUMN_BITMASK = 4L;
@@ -543,7 +546,9 @@ public class RatingsStatsModelImpl
 		for (Map.Entry<String, Object> entry :
 				_columnOriginalValues.entrySet()) {
 
-			if (entry.getValue() != getColumnValue(entry.getKey())) {
+			if (!Objects.equals(
+					entry.getValue(), getColumnValue(entry.getKey()))) {
+
 				_columnBitmask |= _columnBitmasks.get(entry.getKey());
 			}
 		}
@@ -596,6 +601,36 @@ public class RatingsStatsModelImpl
 		ratingsStatsImpl.setAverageScore(getAverageScore());
 
 		ratingsStatsImpl.resetOriginalValues();
+
+		return ratingsStatsImpl;
+	}
+
+	@Override
+	public RatingsStats cloneWithOriginalValues() {
+		RatingsStatsImpl ratingsStatsImpl = new RatingsStatsImpl();
+
+		ratingsStatsImpl.setMvccVersion(
+			this.<Long>getColumnOriginalValue("mvccVersion"));
+		ratingsStatsImpl.setCtCollectionId(
+			this.<Long>getColumnOriginalValue("ctCollectionId"));
+		ratingsStatsImpl.setStatsId(
+			this.<Long>getColumnOriginalValue("statsId"));
+		ratingsStatsImpl.setCompanyId(
+			this.<Long>getColumnOriginalValue("companyId"));
+		ratingsStatsImpl.setCreateDate(
+			this.<Date>getColumnOriginalValue("createDate"));
+		ratingsStatsImpl.setModifiedDate(
+			this.<Date>getColumnOriginalValue("modifiedDate"));
+		ratingsStatsImpl.setClassNameId(
+			this.<Long>getColumnOriginalValue("classNameId"));
+		ratingsStatsImpl.setClassPK(
+			this.<Long>getColumnOriginalValue("classPK"));
+		ratingsStatsImpl.setTotalEntries(
+			this.<Integer>getColumnOriginalValue("totalEntries"));
+		ratingsStatsImpl.setTotalScore(
+			this.<Double>getColumnOriginalValue("totalScore"));
+		ratingsStatsImpl.setAverageScore(
+			this.<Double>getColumnOriginalValue("averageScore"));
 
 		return ratingsStatsImpl;
 	}
@@ -719,7 +754,7 @@ public class RatingsStatsModelImpl
 			getAttributeGetterFunctions();
 
 		StringBundler sb = new StringBundler(
-			(4 * attributeGetterFunctions.size()) + 2);
+			(5 * attributeGetterFunctions.size()) + 2);
 
 		sb.append("{");
 
@@ -730,9 +765,26 @@ public class RatingsStatsModelImpl
 			Function<RatingsStats, Object> attributeGetterFunction =
 				entry.getValue();
 
+			sb.append("\"");
 			sb.append(attributeName);
-			sb.append("=");
-			sb.append(attributeGetterFunction.apply((RatingsStats)this));
+			sb.append("\": ");
+
+			Object value = attributeGetterFunction.apply((RatingsStats)this);
+
+			if (value == null) {
+				sb.append("null");
+			}
+			else if (value instanceof Blob || value instanceof Date ||
+					 value instanceof Map || value instanceof String) {
+
+				sb.append(
+					"\"" + StringUtil.replace(value.toString(), "\"", "'") +
+						"\"");
+			}
+			else {
+				sb.append(value);
+			}
+
 			sb.append(", ");
 		}
 

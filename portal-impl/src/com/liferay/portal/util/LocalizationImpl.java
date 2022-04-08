@@ -94,6 +94,10 @@ public class LocalizationImpl implements Localization {
 
 	@Override
 	public String[] getAvailableLanguageIds(Document document) {
+		if (document == null) {
+			return new String[0];
+		}
+
 		String attributeValue = _getRootAttributeValue(
 			document, _AVAILABLE_LOCALES, StringPool.BLANK);
 
@@ -140,19 +144,12 @@ public class LocalizationImpl implements Localization {
 		}
 
 		if (_log.isWarnEnabled()) {
-			StringBundler sb = new StringBundler(9);
-
-			sb.append("Language ");
-			sb.append(LocaleUtil.toLanguageId(contentDefaultLocale));
-			sb.append(" is missing for ");
-			sb.append(className);
-			sb.append(" with primary key ");
-			sb.append(primaryKey);
-			sb.append(". Setting default language to ");
-			sb.append(LocaleUtil.toLanguageId(defaultLocale));
-			sb.append(".");
-
-			_log.warn(sb.toString());
+			_log.warn(
+				StringBundler.concat(
+					"Language ", LocaleUtil.toLanguageId(contentDefaultLocale),
+					" is missing for ", className, " with primary key ",
+					primaryKey, ". Setting default language to ",
+					LocaleUtil.toLanguageId(defaultLocale), "."));
 		}
 
 		return defaultLocale;
@@ -222,11 +219,8 @@ public class LocalizationImpl implements Localization {
 		String defaultValue) {
 
 		if (!Validator.isXml(xml)) {
-			if (useDefault) {
-				return xml;
-			}
-
-			if (requestedLanguageId.equals(
+			if (useDefault ||
+				requestedLanguageId.equals(
 					LocaleUtil.toLanguageId(LocaleUtil.getSiteDefault()))) {
 
 				return xml;
@@ -351,7 +345,7 @@ public class LocalizationImpl implements Localization {
 		}
 		catch (Exception exception) {
 			if (_log.isWarnEnabled()) {
-				_log.warn(exception, exception);
+				_log.warn(exception);
 			}
 		}
 		finally {
@@ -364,6 +358,9 @@ public class LocalizationImpl implements Localization {
 					xmlStreamReader.close();
 				}
 				catch (Exception exception) {
+					if (_log.isDebugEnabled()) {
+						_log.debug(exception);
+					}
 				}
 			}
 		}
@@ -872,13 +869,12 @@ public class LocalizationImpl implements Localization {
 
 			for (Map.Entry<String, String> entry : map.entrySet()) {
 				String languageId = entry.getKey();
-				String value = entry.getValue();
 
 				xmlStreamWriter.writeStartElement(key);
 
 				xmlStreamWriter.writeAttribute(_LANGUAGE_ID, languageId);
 				xmlStreamWriter.writeCharacters(
-					XMLUtil.stripInvalidChars(value));
+					XMLUtil.stripInvalidChars(entry.getValue()));
 
 				xmlStreamWriter.writeEndElement();
 			}
@@ -890,7 +886,7 @@ public class LocalizationImpl implements Localization {
 			return unsyncStringWriter.toString();
 		}
 		catch (Exception exception) {
-			_log.error(exception, exception);
+			_log.error(exception);
 		}
 		finally {
 			if (contextClassLoader != portalClassLoader) {
@@ -902,7 +898,7 @@ public class LocalizationImpl implements Localization {
 					xmlStreamWriter.close();
 				}
 				catch (XMLStreamException xmlStreamException) {
-					_log.error(xmlStreamException, xmlStreamException);
+					_log.error(xmlStreamException);
 				}
 			}
 		}
@@ -1003,9 +999,6 @@ public class LocalizationImpl implements Localization {
 			if ((availableLocales != null) &&
 				availableLocales.contains(requestedLanguageId)) {
 
-				availableLocales = StringUtil.removeFromList(
-					availableLocales, requestedLanguageId);
-
 				UnsyncStringWriter unsyncStringWriter =
 					new UnsyncStringWriter();
 
@@ -1019,8 +1012,12 @@ public class LocalizationImpl implements Localization {
 				xmlStreamWriter.writeStartElement(_ROOT);
 
 				if (localized) {
+					availableLocales = StringUtil.removeFromList(
+						availableLocales, requestedLanguageId);
+
 					xmlStreamWriter.writeAttribute(
 						_AVAILABLE_LOCALES, availableLocales);
+
 					xmlStreamWriter.writeAttribute(
 						_DEFAULT_LOCALE, defaultLanguageId);
 				}
@@ -1041,7 +1038,7 @@ public class LocalizationImpl implements Localization {
 		}
 		catch (Exception exception) {
 			if (_log.isWarnEnabled()) {
-				_log.warn(exception, exception);
+				_log.warn(exception);
 			}
 		}
 		finally {
@@ -1054,6 +1051,9 @@ public class LocalizationImpl implements Localization {
 					xmlStreamReader.close();
 				}
 				catch (Exception exception) {
+					if (_log.isDebugEnabled()) {
+						_log.debug(exception);
+					}
 				}
 			}
 
@@ -1062,6 +1062,9 @@ public class LocalizationImpl implements Localization {
 					xmlStreamWriter.close();
 				}
 				catch (Exception exception) {
+					if (_log.isDebugEnabled()) {
+						_log.debug(exception);
+					}
 				}
 			}
 		}
@@ -1284,7 +1287,7 @@ public class LocalizationImpl implements Localization {
 		}
 		catch (Exception exception) {
 			if (_log.isWarnEnabled()) {
-				_log.warn(exception, exception);
+				_log.warn(exception);
 			}
 		}
 		finally {
@@ -1297,6 +1300,9 @@ public class LocalizationImpl implements Localization {
 					xmlStreamReader.close();
 				}
 				catch (Exception exception) {
+					if (_log.isDebugEnabled()) {
+						_log.debug(exception);
+					}
 				}
 			}
 
@@ -1305,6 +1311,9 @@ public class LocalizationImpl implements Localization {
 					xmlStreamWriter.close();
 				}
 				catch (Exception exception) {
+					if (_log.isDebugEnabled()) {
+						_log.debug(exception);
+					}
 				}
 			}
 		}
@@ -1318,6 +1327,9 @@ public class LocalizationImpl implements Localization {
 				xmlStreamWriter.close();
 			}
 			catch (XMLStreamException xmlStreamException) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(xmlStreamException);
+				}
 			}
 		}
 	}
@@ -1401,6 +1413,9 @@ public class LocalizationImpl implements Localization {
 					value.getBytes(StringPool.ISO_8859_1), StringPool.UTF8);
 			}
 			catch (Exception exception) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(exception);
+				}
 			}
 		}
 
@@ -1455,7 +1470,7 @@ public class LocalizationImpl implements Localization {
 		}
 		catch (Exception exception) {
 			if (_log.isWarnEnabled()) {
-				_log.warn(exception, exception);
+				_log.warn(exception);
 			}
 		}
 		finally {
@@ -1468,6 +1483,9 @@ public class LocalizationImpl implements Localization {
 					xmlStreamReader.close();
 				}
 				catch (Exception exception) {
+					if (_log.isDebugEnabled()) {
+						_log.debug(exception);
+					}
 				}
 			}
 		}

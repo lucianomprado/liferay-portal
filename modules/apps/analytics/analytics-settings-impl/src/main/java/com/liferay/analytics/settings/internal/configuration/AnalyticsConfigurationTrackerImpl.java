@@ -16,12 +16,12 @@ package com.liferay.analytics.settings.internal.configuration;
 
 import com.liferay.analytics.message.sender.constants.AnalyticsMessagesDestinationNames;
 import com.liferay.analytics.message.sender.constants.AnalyticsMessagesProcessorCommand;
+import com.liferay.analytics.message.sender.model.AnalyticsMessage;
 import com.liferay.analytics.message.sender.model.listener.EntityModelListener;
 import com.liferay.analytics.message.storage.service.AnalyticsMessageLocalService;
 import com.liferay.analytics.settings.configuration.AnalyticsConfiguration;
 import com.liferay.analytics.settings.configuration.AnalyticsConfigurationTracker;
 import com.liferay.analytics.settings.internal.model.AnalyticsUserImpl;
-import com.liferay.analytics.settings.internal.security.auth.verifier.AnalyticsSecurityAuthVerifier;
 import com.liferay.analytics.settings.internal.util.EntityModelListenerTracker;
 import com.liferay.analytics.settings.security.constants.AnalyticsSecurityConstants;
 import com.liferay.expando.kernel.model.ExpandoColumn;
@@ -29,6 +29,8 @@ import com.liferay.expando.kernel.service.ExpandoColumnLocalService;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.configuration.metatype.bnd.util.ConfigurableUtil;
+import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.messaging.Message;
@@ -47,10 +49,13 @@ import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.transaction.TransactionCommitCallbackUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.security.service.access.policy.model.SAPEntry;
 import com.liferay.portal.security.service.access.policy.service.SAPEntryLocalService;
+
+import java.nio.charset.Charset;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -70,7 +75,6 @@ import org.osgi.framework.Constants;
 import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
 import org.osgi.service.cm.ManagedServiceFactory;
-import org.osgi.service.component.ComponentContext;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Modified;
@@ -105,7 +109,7 @@ public class AnalyticsConfigurationTrackerImpl
 
 	@Override
 	public AnalyticsConfiguration getAnalyticsConfiguration(String pid) {
-		Long companyId = _pidCompanyIdMapping.get(pid);
+		Long companyId = _companyIds.get(pid);
 
 		if (companyId == null) {
 			return _systemAnalyticsConfiguration;
@@ -122,7 +126,7 @@ public class AnalyticsConfigurationTrackerImpl
 			return null;
 		}
 
-		Set<Map.Entry<String, Long>> entries = _pidCompanyIdMapping.entrySet();
+		Set<Map.Entry<String, Long>> entries = _companyIds.entrySet();
 
 		Stream<Map.Entry<String, Long>> stream = entries.stream();
 
@@ -163,7 +167,7 @@ public class AnalyticsConfigurationTrackerImpl
 
 	@Override
 	public long getCompanyId(String pid) {
-		return _pidCompanyIdMapping.getOrDefault(pid, CompanyConstants.SYSTEM);
+		return _companyIds.getOrDefault(pid, CompanyConstants.SYSTEM);
 	}
 
 	@Override
@@ -192,12 +196,11 @@ public class AnalyticsConfigurationTrackerImpl
 			dictionary.get("companyId"), CompanyConstants.SYSTEM);
 
 		if (companyId != CompanyConstants.SYSTEM) {
-			_pidCompanyIdMapping.put(pid, companyId);
-
 			_analyticsConfigurations.put(
 				companyId,
 				ConfigurableUtil.createConfigurable(
 					AnalyticsConfiguration.class, dictionary));
+			_companyIds.put(pid, companyId);
 		}
 
 		if (!_initializedCompanyIds.contains(companyId)) {
@@ -224,26 +227,9 @@ public class AnalyticsConfigurationTrackerImpl
 
 	@Activate
 	@Modified
-	protected void activate(
-		ComponentContext componentContext, Map<String, Object> properties) {
-
-		_componentContext = componentContext;
-
+	protected void activate(Map<String, Object> properties) {
 		_systemAnalyticsConfiguration = ConfigurableUtil.createConfigurable(
 			AnalyticsConfiguration.class, properties);
-	}
-
-	private void _activate() {
-		if (!_active) {
-			_active = true;
-		}
-
-		if (!_authVerifierEnabled) {
-			_componentContext.enableComponent(
-				AnalyticsSecurityAuthVerifier.class.getName());
-
-			_authVerifierEnabled = true;
-		}
 	}
 
 	private void _addAnalyticsAdmin(long companyId) throws Exception {
@@ -346,7 +332,7 @@ public class AnalyticsConfigurationTrackerImpl
 						entityModelListener.getModelClassName(), membershipIds);
 				}
 				catch (Exception exception) {
-					_log.error(exception, exception);
+					_log.error(exception);
 				}
 			}
 
@@ -362,19 +348,6 @@ public class AnalyticsConfigurationTrackerImpl
 		_addAnalyticsMessages("update", analyticsUsers);
 
 		_addAnalyticsMessages("update", contacts);
-	}
-
-	private void _deactivate() {
-		if (_active && !_hasConfiguration()) {
-			_active = false;
-		}
-
-		if (_authVerifierEnabled && !_hasConfiguration()) {
-			_componentContext.disableComponent(
-				AnalyticsSecurityAuthVerifier.class.getName());
-
-			_authVerifierEnabled = false;
-		}
 	}
 
 	private void _deleteAnalyticsAdmin(long companyId) throws Exception {
@@ -405,21 +378,24 @@ public class AnalyticsConfigurationTrackerImpl
 				_deleteSAPEntry(companyId);
 			}
 
-			_deactivate();
+			if (_active && !_hasConfiguration()) {
+				_active = false;
+			}
 		}
 		catch (Exception exception) {
-			_log.error(exception, exception);
+			_log.error(exception);
 		}
 	}
 
 	private void _enable(long companyId) {
 		try {
-			_activate();
+			_active = true;
+
 			_addAnalyticsAdmin(companyId);
 			_addSAPEntry(companyId);
 		}
 		catch (Exception exception) {
-			_log.error(exception, exception);
+			_log.error(exception);
 		}
 	}
 
@@ -468,17 +444,23 @@ public class AnalyticsConfigurationTrackerImpl
 						(Long)dictionary.get("companyId"));
 				}
 				catch (Exception exception) {
-					_log.error(exception, exception);
+					_log.error(exception);
 				}
 			}
 		}
 
+		String[] previousSyncedContactFieldNames = GetterUtil.getStringValues(
+			dictionary.get("previousSyncedContactFieldNames"));
 		String[] previousSyncedUserFieldNames = GetterUtil.getStringValues(
 			dictionary.get("previousSyncedUserFieldNames"));
+		String[] syncedContactFieldNames = GetterUtil.getStringValues(
+			dictionary.get("syncedContactFieldNames"));
 		String[] syncedUserFieldNames = GetterUtil.getStringValues(
 			dictionary.get("syncedUserFieldNames"));
 
+		Arrays.sort(previousSyncedContactFieldNames);
 		Arrays.sort(previousSyncedUserFieldNames);
+		Arrays.sort(syncedContactFieldNames);
 		Arrays.sort(syncedUserFieldNames);
 
 		if (!Arrays.equals(
@@ -486,6 +468,16 @@ public class AnalyticsConfigurationTrackerImpl
 
 			_syncUserCustomFields(
 				(Long)dictionary.get("companyId"), syncedUserFieldNames);
+		}
+
+		if (!Arrays.equals(
+				previousSyncedContactFieldNames, syncedContactFieldNames) ||
+			!Arrays.equals(
+				previousSyncedUserFieldNames, syncedUserFieldNames)) {
+
+			_syncDefaultFields(
+				(Long)dictionary.get("companyId"), syncedContactFieldNames,
+				syncedUserFieldNames);
 		}
 
 		if (GetterUtil.getBoolean(dictionary.get("syncAllContacts"))) {
@@ -539,6 +531,54 @@ public class AnalyticsConfigurationTrackerImpl
 				companyId, start, end);
 
 			_addUsersAnalyticsMessages(users);
+		}
+	}
+
+	private void _syncDefaultFields(
+		long companyId, String[] syncedContactFieldNames,
+		String[] syncedUserFieldNames) {
+
+		for (Map.Entry<String, String> entry : _defaultFieldNames.entrySet()) {
+			String fieldName = entry.getKey();
+
+			if (!ArrayUtil.contains(syncedContactFieldNames, fieldName) &&
+				!ArrayUtil.contains(syncedUserFieldNames, fieldName)) {
+
+				continue;
+			}
+
+			JSONObject jsonObject = JSONUtil.put(
+				"className", User.class.getName()
+			).put(
+				"companyId", companyId
+			).put(
+				"dataType", entry.getValue()
+			).put(
+				"name", fieldName
+			);
+
+			try {
+				AnalyticsMessage.Builder analyticsMessageBuilder =
+					AnalyticsMessage.builder(User.class.getName() + ".field");
+
+				analyticsMessageBuilder.action("add");
+				analyticsMessageBuilder.object(jsonObject);
+
+				String analyticsMessageJSON =
+					analyticsMessageBuilder.buildJSONString();
+
+				_analyticsMessageLocalService.addAnalyticsMessage(
+					companyId, _userLocalService.getDefaultUserId(companyId),
+					analyticsMessageJSON.getBytes(Charset.defaultCharset()));
+			}
+			catch (Exception exception) {
+				if (_log.isWarnEnabled()) {
+					_log.warn(
+						"Unable to add analytics message " +
+							jsonObject.toString(),
+						exception);
+				}
+			}
 		}
 	}
 
@@ -623,7 +663,7 @@ public class AnalyticsConfigurationTrackerImpl
 	}
 
 	private void _unmapPid(String pid) {
-		Long companyId = _pidCompanyIdMapping.remove(pid);
+		Long companyId = _companyIds.remove(pid);
 
 		if (companyId != null) {
 			_analyticsConfigurations.remove(companyId);
@@ -646,6 +686,97 @@ public class AnalyticsConfigurationTrackerImpl
 	private static final Log _log = LogFactoryUtil.getLog(
 		AnalyticsConfigurationTrackerImpl.class);
 
+	private static final Map<String, String> _defaultFieldNames =
+		HashMapBuilder.put(
+			"accountId", "Integer"
+		).put(
+			"agreedToTermsOfUse", "boolean"
+		).put(
+			"birthday", "date"
+		).put(
+			"classNameId", "Integer"
+		).put(
+			"classPK", "Integer"
+		).put(
+			"comments", "Text"
+		).put(
+			"companyId", "Integer"
+		).put(
+			"contactId", "Integer"
+		).put(
+			"createDate", "date"
+		).put(
+			"defaultUser", "boolean"
+		).put(
+			"emailAddress", "Text"
+		).put(
+			"emailAddressVerified", "boolean"
+		).put(
+			"employeeNumber", "Text"
+		).put(
+			"employeeStatusId", "Text"
+		).put(
+			"externalReferenceCode", "Text"
+		).put(
+			"facebookId", "Integer"
+		).put(
+			"facebookSn", "Text"
+		).put(
+			"firstName", "Text"
+		).put(
+			"googleUserId", "Text"
+		).put(
+			"greeting", "Text"
+		).put(
+			"hoursOfOperation", "Text"
+		).put(
+			"jabberSn", "Text"
+		).put(
+			"jobClass", "Text"
+		).put(
+			"jobTitle", "Text"
+		).put(
+			"languageId", "Text"
+		).put(
+			"lastName", "Text"
+		).put(
+			"ldapServerId", "Integer"
+		).put(
+			"male", "boolean"
+		).put(
+			"middleName", "Text"
+		).put(
+			"modifiedDate", "date"
+		).put(
+			"openId", "Text"
+		).put(
+			"parentContactId", "Integer"
+		).put(
+			"portraitId", "Integer"
+		).put(
+			"prefixId", "Integer"
+		).put(
+			"screenName", "Text"
+		).put(
+			"skypeSn", "Text"
+		).put(
+			"smsSn", "Text"
+		).put(
+			"status", "Integer"
+		).put(
+			"suffixId", "Integer"
+		).put(
+			"timeZoneId", "Text"
+		).put(
+			"twitterSn", "Text"
+		).put(
+			"userId", "Integer"
+		).put(
+			"userName", "Text"
+		).put(
+			"uuid", "Text"
+		).build();
+
 	private boolean _active;
 	private final Map<Long, AnalyticsConfiguration> _analyticsConfigurations =
 		new ConcurrentHashMap<>();
@@ -653,15 +784,13 @@ public class AnalyticsConfigurationTrackerImpl
 	@Reference
 	private AnalyticsMessageLocalService _analyticsMessageLocalService;
 
-	private boolean _authVerifierEnabled;
-
 	@Reference
 	private ClassNameLocalService _classNameLocalService;
 
+	private final Map<String, Long> _companyIds = new ConcurrentHashMap<>();
+
 	@Reference
 	private CompanyLocalService _companyLocalService;
-
-	private ComponentContext _componentContext;
 
 	@Reference
 	private ConfigurationAdmin _configurationAdmin;
@@ -676,9 +805,6 @@ public class AnalyticsConfigurationTrackerImpl
 
 	@Reference
 	private MessageBus _messageBus;
-
-	private final Map<String, Long> _pidCompanyIdMapping =
-		new ConcurrentHashMap<>();
 
 	@Reference
 	private RoleLocalService _roleLocalService;

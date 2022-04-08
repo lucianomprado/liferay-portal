@@ -15,6 +15,7 @@
 package com.liferay.document.library.internal.util;
 
 import com.liferay.document.library.configuration.DLConfiguration;
+import com.liferay.document.library.internal.configuration.admin.service.DLSizeLimitManagedServiceFactory;
 import com.liferay.document.library.kernel.exception.FileExtensionException;
 import com.liferay.document.library.kernel.exception.FileNameException;
 import com.liferay.document.library.kernel.exception.FileSizeException;
@@ -27,6 +28,7 @@ import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.configuration.metatype.bnd.util.ConfigurableUtil;
+import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.upload.UploadServletRequestConfigurationHelper;
 import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.StringUtil;
@@ -50,7 +52,10 @@ import org.osgi.service.component.annotations.Reference;
  * @author Adolfo Pérez
  */
 @Component(
-	configurationPid = "com.liferay.document.library.configuration.DLConfiguration",
+	configurationPid = {
+		"com.liferay.document.library.configuration.DLConfiguration",
+		"com.liferay.document.library.internal.configuration.DLSizeLimitConfiguration"
+	},
 	service = DLValidator.class
 )
 public final class DLValidatorImpl implements DLValidator {
@@ -74,20 +79,23 @@ public final class DLValidatorImpl implements DLValidator {
 	}
 
 	@Override
-	public long getMaxAllowableSize() {
-		long dlFileMaxSize = _dlConfiguration.fileMaxSize();
-		long uploadServletRequestFileMaxSize =
-			_uploadServletRequestConfigurationHelper.getMaxSize();
+	public long getMaxAllowableSize(String mimeType) {
+		long globalMaxAllowableSize = _getGlobalMaxAllowableSize(
+			CompanyThreadLocal.getCompanyId());
 
-		if (dlFileMaxSize == 0) {
-			return uploadServletRequestFileMaxSize;
+		long mimeTypeFileMaxSize =
+			_dlSizeLimitManagedServiceFactory.getCompanyMimeTypeSizeLimit(
+				CompanyThreadLocal.getCompanyId(), mimeType);
+
+		if (mimeTypeFileMaxSize == 0) {
+			return globalMaxAllowableSize;
 		}
 
-		if (uploadServletRequestFileMaxSize == 0) {
-			return dlFileMaxSize;
+		if (globalMaxAllowableSize == 0) {
+			return mimeTypeFileMaxSize;
 		}
 
-		return Math.min(dlFileMaxSize, uploadServletRequestFileMaxSize);
+		return Math.min(mimeTypeFileMaxSize, globalMaxAllowableSize);
 	}
 
 	@Override
@@ -140,6 +148,10 @@ public final class DLValidatorImpl implements DLValidator {
 	public void validateFileExtension(String fileName)
 		throws FileExtensionException {
 
+		if (CompanyThreadLocal.isInitializingPortalInstance()) {
+			return;
+		}
+
 		boolean validFileExtension = false;
 
 		for (String fileExtension : _dlConfiguration.fileExtensions()) {
@@ -179,38 +191,43 @@ public final class DLValidatorImpl implements DLValidator {
 	}
 
 	@Override
-	public void validateFileSize(String fileName, byte[] bytes)
+	public void validateFileSize(String fileName, String mimeType, byte[] bytes)
 		throws FileSizeException {
 
 		if (bytes == null) {
-			throw new FileSizeException("File size is zero for " + fileName);
+			throw new FileSizeException(
+				"File size is zero for " + fileName,
+				getMaxAllowableSize(mimeType));
 		}
 
-		validateFileSize(fileName, bytes.length);
+		validateFileSize(fileName, mimeType, bytes.length);
 	}
 
 	@Override
-	public void validateFileSize(String fileName, File file)
+	public void validateFileSize(String fileName, String mimeType, File file)
 		throws FileSizeException {
 
 		if (file == null) {
-			throw new FileSizeException("File is null for " + fileName);
+			throw new FileSizeException(
+				"File is null for " + fileName, getMaxAllowableSize(mimeType));
 		}
 
-		validateFileSize(fileName, file.length());
+		validateFileSize(fileName, mimeType, file.length());
 	}
 
 	@Override
-	public void validateFileSize(String fileName, InputStream inputStream)
+	public void validateFileSize(
+			String fileName, String mimeType, InputStream inputStream)
 		throws FileSizeException {
 
 		try {
 			if (inputStream == null) {
 				throw new FileSizeException(
-					"Input stream is null for " + fileName);
+					"Input stream is null for " + fileName,
+					getMaxAllowableSize(mimeType));
 			}
 
-			validateFileSize(fileName, inputStream.available());
+			validateFileSize(fileName, mimeType, inputStream.available());
 		}
 		catch (IOException ioException) {
 			throw new FileSizeException(ioException);
@@ -218,16 +235,17 @@ public final class DLValidatorImpl implements DLValidator {
 	}
 
 	@Override
-	public void validateFileSize(String fileName, long size)
+	public void validateFileSize(String fileName, String mimeType, long size)
 		throws FileSizeException {
 
-		long maxSize = getMaxAllowableSize();
+		long maxSize = getMaxAllowableSize(mimeType);
 
 		if ((maxSize > 0) && (size > maxSize)) {
 			throw new FileSizeException(
 				StringBundler.concat(
 					size, " exceeds the maximum permitted size of ", maxSize,
-					" for file ", fileName));
+					" for file ", fileName),
+				maxSize);
 		}
 	}
 
@@ -272,6 +290,37 @@ public final class DLValidatorImpl implements DLValidator {
 
 	protected void setDLConfiguration(DLConfiguration dlConfiguration) {
 		_dlConfiguration = dlConfiguration;
+	}
+
+	protected void setDLSizeLimitManagedServiceFactory(
+		DLSizeLimitManagedServiceFactory dlSizeLimitManagedServiceFactory) {
+
+		_dlSizeLimitManagedServiceFactory = dlSizeLimitManagedServiceFactory;
+	}
+
+	protected void setUploadServletRequestConfigurationHelper(
+		UploadServletRequestConfigurationHelper
+			uploadServletRequestConfigurationHelper) {
+
+		_uploadServletRequestConfigurationHelper =
+			uploadServletRequestConfigurationHelper;
+	}
+
+	private long _getGlobalMaxAllowableSize(long companyId) {
+		long dlFileMaxSize =
+			_dlSizeLimitManagedServiceFactory.getCompanyFileMaxSize(companyId);
+		long uploadServletRequestFileMaxSize =
+			_uploadServletRequestConfigurationHelper.getMaxSize();
+
+		if (dlFileMaxSize == 0) {
+			return uploadServletRequestFileMaxSize;
+		}
+
+		if (uploadServletRequestFileMaxSize == 0) {
+			return dlFileMaxSize;
+		}
+
+		return Math.min(dlFileMaxSize, uploadServletRequestFileMaxSize);
 	}
 
 	private String _replaceDLCharLastBlacklist(String title) {
@@ -328,6 +377,9 @@ public final class DLValidatorImpl implements DLValidator {
 	}
 
 	private volatile DLConfiguration _dlConfiguration;
+
+	@Reference
+	private DLSizeLimitManagedServiceFactory _dlSizeLimitManagedServiceFactory;
 
 	@Reference
 	private UploadServletRequestConfigurationHelper

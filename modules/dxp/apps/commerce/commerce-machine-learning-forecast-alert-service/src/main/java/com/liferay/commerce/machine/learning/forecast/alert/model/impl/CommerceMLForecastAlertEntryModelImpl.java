@@ -16,7 +16,6 @@ package com.liferay.commerce.machine.learning.forecast.alert.model.impl;
 
 import com.liferay.commerce.machine.learning.forecast.alert.model.CommerceMLForecastAlertEntry;
 import com.liferay.commerce.machine.learning.forecast.alert.model.CommerceMLForecastAlertEntryModel;
-import com.liferay.commerce.machine.learning.forecast.alert.model.CommerceMLForecastAlertEntrySoap;
 import com.liferay.expando.kernel.model.ExpandoBridge;
 import com.liferay.expando.kernel.util.ExpandoBridgeFactoryUtil;
 import com.liferay.exportimport.kernel.lar.StagedModelType;
@@ -34,21 +33,22 @@ import com.liferay.portal.kernel.util.DateUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
+import com.liferay.portal.kernel.util.StringUtil;
 
 import java.io.Serializable;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
 
+import java.sql.Blob;
 import java.sql.Types;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
@@ -142,101 +142,40 @@ public class CommerceMLForecastAlertEntryModelImpl
 	public static final boolean COLUMN_BITMASK_ENABLED = true;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long COMMERCEACCOUNTID_COLUMN_BITMASK = 1L;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long COMPANYID_COLUMN_BITMASK = 2L;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long RELATIVECHANGE_COLUMN_BITMASK = 4L;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long STATUS_COLUMN_BITMASK = 8L;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long TIMESTAMP_COLUMN_BITMASK = 16L;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long UUID_COLUMN_BITMASK = 32L;
-
-	/**
-	 * Converts the soap model instance into a normal model instance.
-	 *
-	 * @param soapModel the soap model instance to convert
-	 * @return the normal model instance
-	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
-	 */
-	@Deprecated
-	public static CommerceMLForecastAlertEntry toModel(
-		CommerceMLForecastAlertEntrySoap soapModel) {
-
-		if (soapModel == null) {
-			return null;
-		}
-
-		CommerceMLForecastAlertEntry model =
-			new CommerceMLForecastAlertEntryImpl();
-
-		model.setUuid(soapModel.getUuid());
-		model.setCommerceMLForecastAlertEntryId(
-			soapModel.getCommerceMLForecastAlertEntryId());
-		model.setCompanyId(soapModel.getCompanyId());
-		model.setUserId(soapModel.getUserId());
-		model.setUserName(soapModel.getUserName());
-		model.setCreateDate(soapModel.getCreateDate());
-		model.setModifiedDate(soapModel.getModifiedDate());
-		model.setCommerceAccountId(soapModel.getCommerceAccountId());
-		model.setActual(soapModel.getActual());
-		model.setForecast(soapModel.getForecast());
-		model.setTimestamp(soapModel.getTimestamp());
-		model.setRelativeChange(soapModel.getRelativeChange());
-		model.setStatus(soapModel.getStatus());
-
-		return model;
-	}
-
-	/**
-	 * Converts the soap model instances into normal model instances.
-	 *
-	 * @param soapModels the soap model instances to convert
-	 * @return the normal model instances
-	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
-	 */
-	@Deprecated
-	public static List<CommerceMLForecastAlertEntry> toModels(
-		CommerceMLForecastAlertEntrySoap[] soapModels) {
-
-		if (soapModels == null) {
-			return null;
-		}
-
-		List<CommerceMLForecastAlertEntry> models =
-			new ArrayList<CommerceMLForecastAlertEntry>(soapModels.length);
-
-		for (CommerceMLForecastAlertEntrySoap soapModel : soapModels) {
-			models.add(toModel(soapModel));
-		}
-
-		return models;
-	}
 
 	public static final long LOCK_EXPIRATION_TIME = GetterUtil.getLong(
 		com.liferay.commerce.machine.learning.forecast.alert.service.util.
@@ -771,7 +710,9 @@ public class CommerceMLForecastAlertEntryModelImpl
 		for (Map.Entry<String, Object> entry :
 				_columnOriginalValues.entrySet()) {
 
-			if (entry.getValue() != getColumnValue(entry.getKey())) {
+			if (!Objects.equals(
+					entry.getValue(), getColumnValue(entry.getKey()))) {
+
 				_columnBitmask |= _columnBitmasks.get(entry.getKey());
 			}
 		}
@@ -830,6 +771,42 @@ public class CommerceMLForecastAlertEntryModelImpl
 		commerceMLForecastAlertEntryImpl.setStatus(getStatus());
 
 		commerceMLForecastAlertEntryImpl.resetOriginalValues();
+
+		return commerceMLForecastAlertEntryImpl;
+	}
+
+	@Override
+	public CommerceMLForecastAlertEntry cloneWithOriginalValues() {
+		CommerceMLForecastAlertEntryImpl commerceMLForecastAlertEntryImpl =
+			new CommerceMLForecastAlertEntryImpl();
+
+		commerceMLForecastAlertEntryImpl.setUuid(
+			this.<String>getColumnOriginalValue("uuid_"));
+		commerceMLForecastAlertEntryImpl.setCommerceMLForecastAlertEntryId(
+			this.<Long>getColumnOriginalValue(
+				"commerceMLForecastAlertEntryId"));
+		commerceMLForecastAlertEntryImpl.setCompanyId(
+			this.<Long>getColumnOriginalValue("companyId"));
+		commerceMLForecastAlertEntryImpl.setUserId(
+			this.<Long>getColumnOriginalValue("userId"));
+		commerceMLForecastAlertEntryImpl.setUserName(
+			this.<String>getColumnOriginalValue("userName"));
+		commerceMLForecastAlertEntryImpl.setCreateDate(
+			this.<Date>getColumnOriginalValue("createDate"));
+		commerceMLForecastAlertEntryImpl.setModifiedDate(
+			this.<Date>getColumnOriginalValue("modifiedDate"));
+		commerceMLForecastAlertEntryImpl.setCommerceAccountId(
+			this.<Long>getColumnOriginalValue("commerceAccountId"));
+		commerceMLForecastAlertEntryImpl.setActual(
+			this.<Double>getColumnOriginalValue("actual"));
+		commerceMLForecastAlertEntryImpl.setForecast(
+			this.<Double>getColumnOriginalValue("forecast"));
+		commerceMLForecastAlertEntryImpl.setTimestamp(
+			this.<Date>getColumnOriginalValue("timestamp"));
+		commerceMLForecastAlertEntryImpl.setRelativeChange(
+			this.<Double>getColumnOriginalValue("relativeChange"));
+		commerceMLForecastAlertEntryImpl.setStatus(
+			this.<Integer>getColumnOriginalValue("status"));
 
 		return commerceMLForecastAlertEntryImpl;
 	}
@@ -986,7 +963,7 @@ public class CommerceMLForecastAlertEntryModelImpl
 			attributeGetterFunctions = getAttributeGetterFunctions();
 
 		StringBundler sb = new StringBundler(
-			(4 * attributeGetterFunctions.size()) + 2);
+			(5 * attributeGetterFunctions.size()) + 2);
 
 		sb.append("{");
 
@@ -997,11 +974,27 @@ public class CommerceMLForecastAlertEntryModelImpl
 			Function<CommerceMLForecastAlertEntry, Object>
 				attributeGetterFunction = entry.getValue();
 
+			sb.append("\"");
 			sb.append(attributeName);
-			sb.append("=");
-			sb.append(
-				attributeGetterFunction.apply(
-					(CommerceMLForecastAlertEntry)this));
+			sb.append("\": ");
+
+			Object value = attributeGetterFunction.apply(
+				(CommerceMLForecastAlertEntry)this);
+
+			if (value == null) {
+				sb.append("null");
+			}
+			else if (value instanceof Blob || value instanceof Date ||
+					 value instanceof Map || value instanceof String) {
+
+				sb.append(
+					"\"" + StringUtil.replace(value.toString(), "\"", "'") +
+						"\"");
+			}
+			else {
+				sb.append(value);
+			}
+
 			sb.append(", ");
 		}
 

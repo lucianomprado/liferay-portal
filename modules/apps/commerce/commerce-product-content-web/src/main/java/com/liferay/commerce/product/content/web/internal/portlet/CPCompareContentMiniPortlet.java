@@ -21,6 +21,7 @@ import com.liferay.commerce.product.content.render.list.entry.CPContentListEntry
 import com.liferay.commerce.product.content.util.CPCompareContentHelper;
 import com.liferay.commerce.product.content.web.internal.display.context.CPCompareContentMiniDisplayContext;
 import com.liferay.commerce.product.type.CPTypeServicesTracker;
+import com.liferay.commerce.product.util.CPCompareHelper;
 import com.liferay.commerce.product.util.CPDefinitionHelper;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
@@ -59,7 +60,8 @@ import org.osgi.service.component.annotations.Reference;
 		"javax.portlet.init-param.view-template=/compare_products_mini/view.jsp",
 		"javax.portlet.name=" + CPPortletKeys.CP_COMPARE_CONTENT_MINI_WEB,
 		"javax.portlet.resource-bundle=content.Language",
-		"javax.portlet.security-role-ref=power-user,user"
+		"javax.portlet.security-role-ref=power-user,user",
+		"javax.portlet.version=3.0"
 	},
 	service = {CPCompareContentMiniPortlet.class, Portlet.class}
 )
@@ -78,7 +80,7 @@ public class CPCompareContentMiniPortlet extends MVCPortlet {
 			CPCompareContentMiniDisplayContext
 				cpCompareContentMiniDisplayContext =
 					new CPCompareContentMiniDisplayContext(
-						_cpContentListEntryRendererRegistry,
+						_cpCompareHelper, _cpContentListEntryRendererRegistry,
 						_cpContentListRendererRegistry, _cpDefinitionHelper,
 						_cpTypeServicesTracker,
 						_portal.getHttpServletRequest(renderRequest));
@@ -88,7 +90,7 @@ public class CPCompareContentMiniPortlet extends MVCPortlet {
 				cpCompareContentMiniDisplayContext);
 		}
 		catch (PortalException portalException) {
-			_log.error(portalException, portalException);
+			_log.error(portalException);
 		}
 
 		super.render(renderRequest, renderResponse);
@@ -99,6 +101,9 @@ public class CPCompareContentMiniPortlet extends MVCPortlet {
 
 	@Reference
 	private CPCompareContentHelper _cpCompareContentHelper;
+
+	@Reference
+	private CPCompareHelper _cpCompareHelper;
 
 	@Reference
 	private CPContentListEntryRendererRegistry

@@ -19,6 +19,7 @@ import com.liferay.exportimport.kernel.lar.ManifestSummary;
 import com.liferay.exportimport.kernel.lar.PortletDataContext;
 import com.liferay.exportimport.kernel.lar.StagedModelDataHandlerUtil;
 import com.liferay.exportimport.kernel.lar.StagedModelType;
+import com.liferay.petra.function.UnsafeFunction;
 import com.liferay.petra.sql.dsl.query.DSLQuery;
 import com.liferay.portal.aop.AopService;
 import com.liferay.portal.kernel.dao.db.DB;
@@ -40,20 +41,26 @@ import com.liferay.portal.kernel.search.Indexable;
 import com.liferay.portal.kernel.search.IndexableType;
 import com.liferay.portal.kernel.service.BaseLocalServiceImpl;
 import com.liferay.portal.kernel.service.PersistedModelLocalService;
+import com.liferay.portal.kernel.service.change.tracking.CTService;
 import com.liferay.portal.kernel.service.persistence.BasePersistence;
+import com.liferay.portal.kernel.service.persistence.change.tracking.CTPersistence;
 import com.liferay.portal.kernel.transaction.Transactional;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.site.navigation.model.SiteNavigationMenu;
 import com.liferay.site.navigation.service.SiteNavigationMenuLocalService;
+import com.liferay.site.navigation.service.SiteNavigationMenuLocalServiceUtil;
 import com.liferay.site.navigation.service.persistence.SiteNavigationMenuPersistence;
 
 import java.io.Serializable;
+
+import java.lang.reflect.Field;
 
 import java.util.List;
 
 import javax.sql.DataSource;
 
+import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 
 /**
@@ -75,7 +82,7 @@ public abstract class SiteNavigationMenuLocalServiceBaseImpl
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. Use <code>SiteNavigationMenuLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>com.liferay.site.navigation.service.SiteNavigationMenuLocalServiceUtil</code>.
+	 * Never modify or reference this class directly. Use <code>SiteNavigationMenuLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>SiteNavigationMenuLocalServiceUtil</code>.
 	 */
 
 	/**
@@ -155,6 +162,13 @@ public abstract class SiteNavigationMenuLocalServiceBaseImpl
 	@Override
 	public <T> T dslQuery(DSLQuery dslQuery) {
 		return siteNavigationMenuPersistence.dslQuery(dslQuery);
+	}
+
+	@Override
+	public int dslQueryCount(DSLQuery dslQuery) {
+		Long count = dslQuery(dslQuery);
+
+		return count.intValue();
 	}
 
 	@Override
@@ -528,11 +542,16 @@ public abstract class SiteNavigationMenuLocalServiceBaseImpl
 		return siteNavigationMenuPersistence.update(siteNavigationMenu);
 	}
 
+	@Deactivate
+	protected void deactivate() {
+		_setLocalServiceUtilService(null);
+	}
+
 	@Override
 	public Class<?>[] getAopInterfaces() {
 		return new Class<?>[] {
 			SiteNavigationMenuLocalService.class, IdentifiableOSGiService.class,
-			PersistedModelLocalService.class
+			CTService.class, PersistedModelLocalService.class
 		};
 	}
 
@@ -540,6 +559,8 @@ public abstract class SiteNavigationMenuLocalServiceBaseImpl
 	public void setAopProxy(Object aopProxy) {
 		siteNavigationMenuLocalService =
 			(SiteNavigationMenuLocalService)aopProxy;
+
+		_setLocalServiceUtilService(siteNavigationMenuLocalService);
 	}
 
 	/**
@@ -552,8 +573,23 @@ public abstract class SiteNavigationMenuLocalServiceBaseImpl
 		return SiteNavigationMenuLocalService.class.getName();
 	}
 
-	protected Class<?> getModelClass() {
+	@Override
+	public CTPersistence<SiteNavigationMenu> getCTPersistence() {
+		return siteNavigationMenuPersistence;
+	}
+
+	@Override
+	public Class<SiteNavigationMenu> getModelClass() {
 		return SiteNavigationMenu.class;
+	}
+
+	@Override
+	public <R, E extends Throwable> R updateWithUnsafeFunction(
+			UnsafeFunction<CTPersistence<SiteNavigationMenu>, R, E>
+				updateUnsafeFunction)
+		throws E {
+
+		return updateUnsafeFunction.apply(siteNavigationMenuPersistence);
 	}
 
 	protected String getModelClassName() {
@@ -585,6 +621,23 @@ public abstract class SiteNavigationMenuLocalServiceBaseImpl
 		}
 	}
 
+	private void _setLocalServiceUtilService(
+		SiteNavigationMenuLocalService siteNavigationMenuLocalService) {
+
+		try {
+			Field field =
+				SiteNavigationMenuLocalServiceUtil.class.getDeclaredField(
+					"_service");
+
+			field.setAccessible(true);
+
+			field.set(null, siteNavigationMenuLocalService);
+		}
+		catch (ReflectiveOperationException reflectiveOperationException) {
+			throw new RuntimeException(reflectiveOperationException);
+		}
+	}
+
 	protected SiteNavigationMenuLocalService siteNavigationMenuLocalService;
 
 	@Reference
@@ -593,13 +646,5 @@ public abstract class SiteNavigationMenuLocalServiceBaseImpl
 	@Reference
 	protected com.liferay.counter.kernel.service.CounterLocalService
 		counterLocalService;
-
-	@Reference
-	protected com.liferay.portal.kernel.service.ResourceLocalService
-		resourceLocalService;
-
-	@Reference
-	protected com.liferay.portal.kernel.service.UserLocalService
-		userLocalService;
 
 }

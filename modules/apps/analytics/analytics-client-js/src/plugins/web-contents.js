@@ -13,7 +13,9 @@
  */
 
 import {getNumberOfWords} from '../utils/assets';
-import {clickEvent, onReady} from '../utils/events';
+import {debounce} from '../utils/debounce';
+import {clickEvent, onEvents, onReady} from '../utils/events';
+import {isPartiallyInViewport} from '../utils/scroll';
 
 const applicationId = 'WebContent';
 
@@ -25,15 +27,12 @@ const applicationId = 'WebContent';
 function getWebContentPayload(webContent) {
 	const {dataset} = webContent;
 
-	let payload = {
+	const payload = {
 		articleId: dataset.analyticsAssetId,
 	};
 
 	if (dataset.analyticsAssetTitle) {
-		payload = {
-			...payload,
-			title: dataset.analyticsAssetTitle,
-		};
+		Object.assign(payload, {title: dataset.analyticsAssetTitle});
 	}
 
 	return payload;
@@ -64,33 +63,44 @@ function trackWebContentClicked(analytics) {
 }
 
 /**
- * Sends information when user scrolls on a WebContent.
+ * Sends information the first time a WebContent enters into the viewport.
  * @param {Object} The Analytics client instance
  */
 function trackWebContentViewed(analytics) {
-	const stopTrackingOnReady = onReady(() => {
-		Array.prototype.slice
+	const markViewedElements = debounce(() => {
+		const elements = Array.prototype.slice
 			.call(
 				document.querySelectorAll(
-					'[data-analytics-asset-type="web-content"]'
+					'[data-analytics-asset-type="web-content"]:not([data-analytics-asset-viewed="true"]'
 				)
 			)
-			.filter((element) => isTrackableWebContent(element))
-			.forEach((element) => {
-				const numberOfWords = getNumberOfWords(element);
+			.filter((element) => isTrackableWebContent(element));
 
-				let payload = getWebContentPayload(element);
+		elements.forEach((element) => {
+			if (isPartiallyInViewport(element)) {
+				const payload = getWebContentPayload(element);
 
-				payload = {
-					...payload,
-					numberOfWords,
-				};
+				Object.assign(payload, {
+					numberOfWords: getNumberOfWords(element),
+				});
+
+				element.dataset.analyticsAssetViewed = true;
 
 				analytics.send('webContentViewed', applicationId, payload);
-			});
-	});
+			}
+		});
+	}, 250);
 
-	return () => stopTrackingOnReady();
+	const stopTrackingOnReady = onReady(markViewedElements);
+	const stopTrackingEvents = onEvents(
+		['scroll', 'resize', 'orientationchange'],
+		markViewedElements
+	);
+
+	return () => {
+		stopTrackingEvents();
+		stopTrackingOnReady();
+	};
 }
 
 /**

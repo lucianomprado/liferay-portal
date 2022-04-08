@@ -38,7 +38,7 @@ import org.osgi.service.component.annotations.Reference;
 	enabled = false, immediate = true,
 	property = {
 		"javax.portlet.name=" + CPPortletKeys.COMMERCE_CATALOGS,
-		"mvc.command.name=editCommerceCatalogExternalReferenceCode"
+		"mvc.command.name=/commerce_catalogs/edit_commerce_catalog_external_reference_code"
 	},
 	service = MVCActionCommand.class
 )
@@ -51,7 +51,7 @@ public class EditCommerceCatalogExternalReferenceCodeMVCActionCommand
 		throws Exception {
 
 		try {
-			updateCommerceCatalogExternalReferenceCode(actionRequest);
+			_updateCommerceCatalogExternalReferenceCode(actionRequest);
 		}
 		catch (Exception exception) {
 			if (exception instanceof NoSuchCatalogException ||
@@ -62,7 +62,7 @@ public class EditCommerceCatalogExternalReferenceCodeMVCActionCommand
 				actionResponse.setRenderParameter("mvcPath", "/error.jsp");
 			}
 			else {
-				_log.error(exception, exception);
+				_log.error(exception);
 
 				String redirect = ParamUtil.getString(
 					actionRequest, "redirect");
@@ -72,7 +72,7 @@ public class EditCommerceCatalogExternalReferenceCodeMVCActionCommand
 		}
 	}
 
-	protected void updateCommerceCatalogExternalReferenceCode(
+	private void _updateCommerceCatalogExternalReferenceCode(
 			ActionRequest actionRequest)
 		throws Exception {
 
@@ -83,7 +83,7 @@ public class EditCommerceCatalogExternalReferenceCodeMVCActionCommand
 			actionRequest, "externalReferenceCode");
 
 		_commerceCatalogService.updateCommerceCatalogExternalReferenceCode(
-			commerceCatalogId, externalReferenceCode);
+			externalReferenceCode, commerceCatalogId);
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(

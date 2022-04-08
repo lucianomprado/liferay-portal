@@ -16,18 +16,27 @@ package com.liferay.portal.file.install.internal.properties;
 
 import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.file.install.properties.ConfigurationHandler;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import java.io.IOException;
 
 import java.util.ArrayList;
 
 import org.junit.Assert;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 /**
  * @author Matthew Tambara
  */
 public class ConfigurationHandlerTest {
+
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
 
 	@Test
 	public void testReadArray() throws IOException {
@@ -46,8 +55,8 @@ public class ConfigurationHandlerTest {
 
 	@Test
 	public void testReadBoolean() throws IOException {
-		Assert.assertEquals(true, ConfigurationHandler.read("B\"true\""));
-		Assert.assertEquals(true, ConfigurationHandler.read("b\"true\""));
+		Assert.assertTrue((boolean)ConfigurationHandler.read("B\"true\""));
+		Assert.assertTrue((boolean)ConfigurationHandler.read("b\"true\""));
 	}
 
 	@Test

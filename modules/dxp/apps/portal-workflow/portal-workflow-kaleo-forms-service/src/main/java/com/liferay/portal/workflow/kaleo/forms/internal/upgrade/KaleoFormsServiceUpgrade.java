@@ -26,10 +26,10 @@ import com.liferay.portal.kernel.security.permission.ResourceActions;
 import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.service.ResourceActionLocalService;
 import com.liferay.portal.kernel.service.ResourcePermissionLocalService;
-import com.liferay.portal.kernel.upgrade.BaseUpgradeSQLServerDatetime;
+import com.liferay.portal.kernel.upgrade.BaseSQLServerDatetimeUpgradeProcess;
 import com.liferay.portal.upgrade.registry.UpgradeStepRegistrator;
-import com.liferay.portal.workflow.kaleo.forms.internal.upgrade.v1_0_2.UpgradeKaleoProcessTemplateLink;
-import com.liferay.portal.workflow.kaleo.forms.internal.upgrade.v1_1_0.UpgradeKaleoProcess;
+import com.liferay.portal.workflow.kaleo.forms.internal.upgrade.v1_0_2.KaleoProcessTemplateLinkUpgradeProcess;
+import com.liferay.portal.workflow.kaleo.forms.internal.upgrade.v1_1_0.KaleoProcessUpgradeProcess;
 import com.liferay.portal.workflow.kaleo.forms.internal.upgrade.v2_0_0.util.KaleoProcessTable;
 import com.liferay.portal.workflow.kaleo.forms.internal.upgrade.v3_0_0.UpgradeCompanyId;
 
@@ -50,27 +50,27 @@ public class KaleoFormsServiceUpgrade implements UpgradeStepRegistrator {
 		registry.register(
 			"0.0.1", "1.0.0",
 			new com.liferay.portal.workflow.kaleo.forms.internal.upgrade.v1_0_0.
-				UpgradeSchema());
+				SchemaUpgradeProcess());
 
 		registry.register(
 			"1.0.0", "1.0.1",
 			new com.liferay.portal.workflow.kaleo.forms.internal.upgrade.v1_0_1.
-				UpgradeKaleoProcess(),
+				KaleoProcessUpgradeProcess(),
 			new com.liferay.portal.workflow.kaleo.forms.internal.upgrade.v1_0_1.
-				UpgradeSchema());
+				SchemaUpgradeProcess());
 
 		registry.register(
 			"1.0.1", "1.0.2",
 			new com.liferay.portal.workflow.kaleo.forms.internal.upgrade.v1_0_2.
-				UpgradeKaleoProcess(
+				KaleoProcessUpgradeProcess(
 					_assetEntryLocalService, _ddlRecordLocalService,
 					_ddlRecordSetLocalService),
-			new UpgradeKaleoProcessTemplateLink(
+			new KaleoProcessTemplateLinkUpgradeProcess(
 				_classNameLocalService, _ddmTemplateLinkLocalService));
 
 		registry.register(
 			"1.0.2", "1.1.0",
-			new UpgradeKaleoProcess(
+			new KaleoProcessUpgradeProcess(
 				_ddlRecordSetLocalService, _ddmStructureLocalService,
 				_ddmStructureVersionLocalService, _ddmTemplateLocalService,
 				_ddmTemplateVersionLocalService, _resourceActionLocalService,
@@ -78,7 +78,7 @@ public class KaleoFormsServiceUpgrade implements UpgradeStepRegistrator {
 
 		registry.register(
 			"1.1.0", "2.0.0",
-			new BaseUpgradeSQLServerDatetime(
+			new BaseSQLServerDatetimeUpgradeProcess(
 				new Class<?>[] {KaleoProcessTable.class}));
 
 		registry.register("2.0.0", "3.0.0", new UpgradeCompanyId());

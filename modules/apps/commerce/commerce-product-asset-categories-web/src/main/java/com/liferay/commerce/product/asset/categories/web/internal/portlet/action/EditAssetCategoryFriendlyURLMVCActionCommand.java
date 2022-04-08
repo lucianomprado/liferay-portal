@@ -18,7 +18,10 @@ import com.liferay.asset.kernel.model.AssetCategory;
 import com.liferay.asset.kernel.service.AssetCategoryService;
 import com.liferay.friendly.url.model.FriendlyURLEntry;
 import com.liferay.friendly.url.service.FriendlyURLEntryLocalService;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.portlet.bridges.mvc.BaseMVCActionCommand;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCActionCommand;
@@ -48,7 +51,7 @@ import org.osgi.service.component.annotations.Reference;
 	enabled = false, immediate = true,
 	property = {
 		"javax.portlet.name=com_liferay_asset_categories_admin_web_portlet_AssetCategoriesAdminPortlet",
-		"mvc.command.name=editAssetCategoryFriendlyURL"
+		"mvc.command.name=/commerce_product_asset_categories/edit_asset_category_friendly_url"
 	},
 	service = MVCActionCommand.class
 )
@@ -86,6 +89,10 @@ public class EditAssetCategoryFriendlyURLMVCActionCommand
 				_getUniqueUrlTitles(assetCategory, urlTitleMap));
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception);
+			}
+
 			Group companyGroup = _groupLocalService.getCompanyGroup(
 				assetCategory.getCompanyId());
 
@@ -113,7 +120,9 @@ public class EditAssetCategoryFriendlyURLMVCActionCommand
 
 			String urlTitle = urlTitleMap.get(locale);
 
-			if (Validator.isNotNull(urlTitle)) {
+			if (Validator.isNotNull(urlTitle) ||
+				((urlTitle != null) && urlTitle.equals(StringPool.BLANK))) {
+
 				urlTitle = _friendlyURLEntryLocalService.getUniqueUrlTitle(
 					companyGroup.getGroupId(), classNameId,
 					assetCategory.getCategoryId(), urlTitle);
@@ -124,6 +133,9 @@ public class EditAssetCategoryFriendlyURLMVCActionCommand
 
 		return newUrlTitleMap;
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		EditAssetCategoryFriendlyURLMVCActionCommand.class);
 
 	@Reference
 	private AssetCategoryService _assetCategoryService;

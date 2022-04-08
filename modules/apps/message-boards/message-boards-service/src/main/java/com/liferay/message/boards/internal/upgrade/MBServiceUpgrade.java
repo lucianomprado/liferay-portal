@@ -16,7 +16,7 @@ package com.liferay.message.boards.internal.upgrade;
 
 import com.liferay.message.boards.internal.upgrade.v1_0_0.UpgradeClassNames;
 import com.liferay.message.boards.internal.upgrade.v1_0_1.UpgradeUnsupportedGuestPermissions;
-import com.liferay.message.boards.internal.upgrade.v1_1_0.UpgradeMBThread;
+import com.liferay.message.boards.internal.upgrade.v1_1_0.MBThreadUpgradeProcess;
 import com.liferay.message.boards.internal.upgrade.v2_0_0.util.MBBanTable;
 import com.liferay.message.boards.internal.upgrade.v2_0_0.util.MBCategoryTable;
 import com.liferay.message.boards.internal.upgrade.v2_0_0.util.MBDiscussionTable;
@@ -25,20 +25,24 @@ import com.liferay.message.boards.internal.upgrade.v2_0_0.util.MBMessageTable;
 import com.liferay.message.boards.internal.upgrade.v2_0_0.util.MBStatsUserTable;
 import com.liferay.message.boards.internal.upgrade.v2_0_0.util.MBThreadFlagTable;
 import com.liferay.message.boards.internal.upgrade.v2_0_0.util.MBThreadTable;
-import com.liferay.message.boards.internal.upgrade.v3_0_0.UpgradeMBMessageTreePath;
-import com.liferay.message.boards.internal.upgrade.v3_1_0.UpgradeUrlSubject;
-import com.liferay.message.boards.internal.upgrade.v4_0_0.UpgradeMBCategoryLastPostDate;
-import com.liferay.message.boards.internal.upgrade.v4_0_0.UpgradeMBCategoryMessageCount;
-import com.liferay.message.boards.internal.upgrade.v4_0_0.UpgradeMBCategoryThreadCount;
-import com.liferay.message.boards.internal.upgrade.v5_0_0.UpgradeMBThreadMessageCount;
+import com.liferay.message.boards.internal.upgrade.v3_0_0.MBMessageTreePathUpgradeProcess;
+import com.liferay.message.boards.internal.upgrade.v3_1_0.UrlSubjectUpgradeProcess;
+import com.liferay.message.boards.internal.upgrade.v4_0_0.MBCategoryLastPostDateUpgradeProcess;
+import com.liferay.message.boards.internal.upgrade.v4_0_0.MBCategoryMessageCountUpgradeProcess;
+import com.liferay.message.boards.internal.upgrade.v4_0_0.MBCategoryThreadCountUpgradeProcess;
+import com.liferay.message.boards.internal.upgrade.v5_0_0.MBThreadMessageCountUpgradeProcess;
+import com.liferay.message.boards.internal.upgrade.v5_2_0.MBMessageExternalReferenceCodeUpgradeProcess;
+import com.liferay.message.boards.internal.upgrade.v6_0_0.MBStatsUserUpgradeProcess;
+import com.liferay.message.boards.internal.upgrade.v6_1_0.MBThreadTableUpgradeProcess;
+import com.liferay.message.boards.internal.upgrade.v6_1_1.MBMessageTableUpgradeProcess;
 import com.liferay.message.boards.model.MBThread;
 import com.liferay.portal.kernel.service.ResourceActionLocalService;
 import com.liferay.portal.kernel.service.ResourcePermissionLocalService;
 import com.liferay.portal.kernel.service.RoleLocalService;
-import com.liferay.portal.kernel.upgrade.BaseUpgradeSQLServerDatetime;
-import com.liferay.portal.kernel.upgrade.UpgradeCTModel;
-import com.liferay.portal.kernel.upgrade.UpgradeMVCCVersion;
-import com.liferay.portal.kernel.upgrade.UpgradeViewCount;
+import com.liferay.portal.kernel.upgrade.BaseSQLServerDatetimeUpgradeProcess;
+import com.liferay.portal.kernel.upgrade.CTModelUpgradeProcess;
+import com.liferay.portal.kernel.upgrade.MVCCVersionUpgradeProcess;
+import com.liferay.portal.kernel.upgrade.ViewCountUpgradeProcess;
 import com.liferay.portal.upgrade.registry.UpgradeStepRegistrator;
 import com.liferay.view.count.service.ViewCountEntryLocalService;
 
@@ -61,11 +65,11 @@ public class MBServiceUpgrade implements UpgradeStepRegistrator {
 				_resourceActionLocalService, _resourcePermissionLocalService,
 				_roleLocalService));
 
-		registry.register("1.0.1", "1.1.0", new UpgradeMBThread());
+		registry.register("1.0.1", "1.1.0", new MBThreadUpgradeProcess());
 
 		registry.register(
 			"1.1.0", "2.0.0",
-			new BaseUpgradeSQLServerDatetime(
+			new BaseSQLServerDatetimeUpgradeProcess(
 				new Class<?>[] {
 					MBBanTable.class, MBCategoryTable.class,
 					MBDiscussionTable.class, MBMailingListTable.class,
@@ -75,20 +79,20 @@ public class MBServiceUpgrade implements UpgradeStepRegistrator {
 
 		registry.register(
 			"2.0.0", "3.0.0",
-			new UpgradeViewCount(
+			new ViewCountUpgradeProcess(
 				"MBThread", MBThread.class, "threadId", "viewCount"),
-			new UpgradeMBMessageTreePath());
+			new MBMessageTreePathUpgradeProcess());
 
-		registry.register("3.0.0", "3.1.0", new UpgradeUrlSubject());
-
-		registry.register(
-			"3.1.0", "4.0.0", new UpgradeMBCategoryLastPostDate(),
-			new UpgradeMBCategoryMessageCount(),
-			new UpgradeMBCategoryThreadCount());
+		registry.register("3.0.0", "3.1.0", new UrlSubjectUpgradeProcess());
 
 		registry.register(
-			"4.0.0", "5.0.0", new UpgradeMBThreadMessageCount(),
-			new UpgradeMVCCVersion() {
+			"3.1.0", "4.0.0", new MBCategoryLastPostDateUpgradeProcess(),
+			new MBCategoryMessageCountUpgradeProcess(),
+			new MBCategoryThreadCountUpgradeProcess());
+
+		registry.register(
+			"4.0.0", "5.0.0", new MBThreadMessageCountUpgradeProcess(),
+			new MVCCVersionUpgradeProcess() {
 
 				@Override
 				protected String[] getModuleTableNames() {
@@ -102,9 +106,22 @@ public class MBServiceUpgrade implements UpgradeStepRegistrator {
 
 		registry.register(
 			"5.0.0", "5.1.0",
-			new UpgradeCTModel(
+			new CTModelUpgradeProcess(
 				"MBBan", "MBCategory", "MBDiscussion", "MBMailingList",
 				"MBMessage", "MBStatsUser", "MBThread", "MBThreadFlag"));
+
+		registry.register(
+			"5.1.0", "5.2.0",
+			new MBMessageExternalReferenceCodeUpgradeProcess());
+
+		registry.register("5.2.0", "6.0.0", new MBStatsUserUpgradeProcess());
+
+		registry.register("6.0.0", "6.1.0", new MBThreadTableUpgradeProcess());
+
+		registry.register(
+			"6.1.0", "6.1.1", new MBMessageTableUpgradeProcess(),
+			new com.liferay.message.boards.internal.upgrade.v6_1_1.
+				MBThreadTableUpgradeProcess());
 	}
 
 	@Reference

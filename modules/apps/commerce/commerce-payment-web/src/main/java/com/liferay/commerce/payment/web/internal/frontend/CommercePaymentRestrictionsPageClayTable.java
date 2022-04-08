@@ -15,23 +15,26 @@
 package com.liferay.commerce.payment.web.internal.frontend;
 
 import com.liferay.commerce.frontend.model.RestrictionField;
-import com.liferay.commerce.model.CommerceCountry;
 import com.liferay.commerce.payment.model.CommercePaymentMethodGroupRel;
 import com.liferay.commerce.payment.service.CommercePaymentMethodGroupRelService;
 import com.liferay.commerce.payment.web.internal.model.PaymentRestriction;
 import com.liferay.commerce.product.model.CommerceChannel;
 import com.liferay.commerce.product.service.CommerceChannelService;
 import com.liferay.commerce.service.CommerceAddressRestrictionLocalService;
-import com.liferay.commerce.service.CommerceCountryService;
+import com.liferay.commerce.util.CommerceUtil;
 import com.liferay.frontend.taglib.clay.data.Filter;
 import com.liferay.frontend.taglib.clay.data.Pagination;
 import com.liferay.frontend.taglib.clay.data.set.ClayDataSetDisplayView;
 import com.liferay.frontend.taglib.clay.data.set.provider.ClayDataSetDataProvider;
 import com.liferay.frontend.taglib.clay.data.set.view.table.selectable.BaseSelectableTableClayDataSetDisplayView;
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.bean.BeanProperties;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.model.Country;
 import com.liferay.portal.kernel.search.BaseModelSearchResult;
 import com.liferay.portal.kernel.search.Sort;
+import com.liferay.portal.kernel.service.CountryService;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
@@ -75,7 +78,7 @@ public class CommercePaymentRestrictionsPageClayTable
 
 	@Override
 	public String getFirstColumnName() {
-		return "country";
+		return "countryName";
 	}
 
 	@Override
@@ -101,23 +104,33 @@ public class CommercePaymentRestrictionsPageClayTable
 				getCommercePaymentMethodGroupRels(
 					commerceChannel.getGroupId(), true);
 
-		BaseModelSearchResult<CommerceCountry>
-			commerceCountryBaseModelSearchResult =
-				_commerceCountryService.searchCommerceCountries(
-					_portal.getCompanyId(httpServletRequest), true,
-					filter.getKeywords(), pagination.getStartPosition(),
-					pagination.getEndPosition(), sort);
+		String orderByFieldName = _beanProperties.getString(
+			sort, "fieldName", StringPool.BLANK);
 
-		for (CommerceCountry commerceCountry :
-				commerceCountryBaseModelSearchResult.getBaseModels()) {
+		String orderByType = "asc";
 
+		boolean reverse = _beanProperties.getBooleanSilent(
+			sort, "reverse", false);
+
+		if (reverse) {
+			orderByType = "desc";
+		}
+
+		BaseModelSearchResult<Country> baseModelSearchResult =
+			_countryService.searchCountries(
+				_portal.getCompanyId(httpServletRequest), true,
+				filter.getKeywords(), pagination.getStartPosition(),
+				pagination.getEndPosition(),
+				CommerceUtil.getCountryOrderByComparator(
+					orderByFieldName, orderByType));
+
+		for (Country country : baseModelSearchResult.getBaseModels()) {
 			paymentRestrictions.add(
 				new PaymentRestriction(
-					commerceCountry.getCommerceCountryId(),
-					commerceCountry.getName(themeDisplay.getLanguageId()),
+					country.getCountryId(),
+					country.getTitle(themeDisplay.getLocale()),
 					_getFields(
-						commerceCountry.getCommerceCountryId(),
-						commercePaymentMethodGroupRels,
+						commercePaymentMethodGroupRels, country.getCountryId(),
 						themeDisplay.getLanguageId())));
 		}
 
@@ -129,19 +142,17 @@ public class CommercePaymentRestrictionsPageClayTable
 			HttpServletRequest httpServletRequest, Filter filter)
 		throws PortalException {
 
-		BaseModelSearchResult<CommerceCountry>
-			commerceCountryBaseModelSearchResult =
-				_commerceCountryService.searchCommerceCountries(
-					_portal.getCompanyId(httpServletRequest), true,
-					filter.getKeywords(), 0, 0, null);
+		BaseModelSearchResult<Country> commerceCountryBaseModelSearchResult =
+			_countryService.searchCountries(
+				_portal.getCompanyId(httpServletRequest), true,
+				filter.getKeywords(), 0, 0, null);
 
 		return commerceCountryBaseModelSearchResult.getLength();
 	}
 
 	private List<RestrictionField> _getFields(
-		long commerceCountryId,
 		List<CommercePaymentMethodGroupRel> commercePaymentMethodGroupRels,
-		String languageId) {
+		long countryId, String languageId) {
 
 		List<RestrictionField> restrictionFields = new ArrayList<>();
 
@@ -159,11 +170,14 @@ public class CommercePaymentRestrictionsPageClayTable
 							CommercePaymentMethodGroupRel.class.getName(),
 							commercePaymentMethodGroupRel.
 								getCommercePaymentMethodGroupRelId(),
-							commerceCountryId)));
+							countryId)));
 		}
 
 		return restrictionFields;
 	}
+
+	@Reference
+	private BeanProperties _beanProperties;
 
 	@Reference
 	private CommerceAddressRestrictionLocalService
@@ -173,11 +187,11 @@ public class CommercePaymentRestrictionsPageClayTable
 	private CommerceChannelService _commerceChannelService;
 
 	@Reference
-	private CommerceCountryService _commerceCountryService;
-
-	@Reference
 	private CommercePaymentMethodGroupRelService
 		_commercePaymentMethodGroupRelService;
+
+	@Reference
+	private CountryService _countryService;
 
 	@Reference
 	private Portal _portal;

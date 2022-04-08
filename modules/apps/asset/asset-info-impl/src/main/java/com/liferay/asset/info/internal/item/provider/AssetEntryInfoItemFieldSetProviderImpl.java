@@ -130,10 +130,8 @@ public class AssetEntryInfoItemFieldSetProviderImpl
 				itemClassName);
 
 		try {
-			AssetEntry assetEntry = assetRendererFactory.getAssetEntry(
-				itemClassName, itemClassPK);
-
-			return getInfoFieldValues(assetEntry);
+			return getInfoFieldValues(
+				assetRendererFactory.getAssetEntry(itemClassName, itemClassPK));
 		}
 		catch (NoSuchEntryException noSuchEntryException) {
 			throw new NoSuchInfoItemException(
@@ -170,40 +168,6 @@ public class AssetEntryInfoItemFieldSetProviderImpl
 			assetCategory -> assetCategory.getVocabularyId() == vocabularyId);
 	}
 
-	private Set<AssetVocabulary> _getAssetVocabularies(AssetEntry assetEntry) {
-		Set<AssetVocabulary> assetVocabularies = new HashSet<>(
-			_getAssetVocabularies(
-				assetEntry.getClassName(), assetEntry.getClassTypeId(),
-				assetEntry.getGroupId()));
-
-		for (AssetCategory assetCategory : assetEntry.getCategories()) {
-			assetVocabularies.add(
-				_assetVocabularyLocalService.fetchAssetVocabulary(
-					assetCategory.getVocabularyId()));
-		}
-
-		return assetVocabularies;
-	}
-
-	private List<AssetVocabulary> _getAssetVocabularies(
-		String itemClassName, long itemClassTypeId, long scopeGroupId) {
-
-		try {
-			if (itemClassTypeId > 0) {
-				return _assetVocabularyLocalService.getGroupsVocabularies(
-					_portal.getCurrentAndAncestorSiteGroupIds(scopeGroupId),
-					itemClassName, itemClassTypeId);
-			}
-
-			return _assetVocabularyLocalService.getGroupsVocabularies(
-				_portal.getCurrentAndAncestorSiteGroupIds(scopeGroupId),
-				itemClassName);
-		}
-		catch (PortalException portalException) {
-			throw new RuntimeException(portalException);
-		}
-	}
-
 	private List<Category> _getCategories(List<AssetCategory> assetCategories) {
 		List<Category> categories = new SortedArrayList<>(
 			Comparator.comparing(Category::getKey));
@@ -229,8 +193,8 @@ public class AssetEntryInfoItemFieldSetProviderImpl
 		).infoFieldSetEntry(
 			_categoriesInfoField
 		).infoFieldSetEntry(
-			consumer -> assetVocabularies.forEach(
-				assetVocabulary -> consumer.accept(
+			unsafeConsumer -> assetVocabularies.forEach(
+				assetVocabulary -> unsafeConsumer.accept(
 					InfoField.builder(
 					).infoFieldType(
 						CategoriesInfoFieldType.INSTANCE
@@ -289,8 +253,9 @@ public class AssetEntryInfoItemFieldSetProviderImpl
 
 				return ListUtil.filter(
 					groupsAssetVocabularies,
-					assetVocabulary -> !(assetVocabulary.getVisibilityType() ==
-						AssetVocabularyConstants.VISIBILITY_TYPE_INTERNAL));
+					assetVocabulary ->
+						!(assetVocabulary.getVisibilityType() ==
+							AssetVocabularyConstants.VISIBILITY_TYPE_INTERNAL));
 			}
 
 			List<AssetVocabulary> groupsAssetVocabularies =
@@ -300,8 +265,9 @@ public class AssetEntryInfoItemFieldSetProviderImpl
 
 			return ListUtil.filter(
 				groupsAssetVocabularies,
-				assetVocabulary -> !(assetVocabulary.getVisibilityType() ==
-					AssetVocabularyConstants.VISIBILITY_TYPE_INTERNAL));
+				assetVocabulary ->
+					!(assetVocabulary.getVisibilityType() ==
+						AssetVocabularyConstants.VISIBILITY_TYPE_INTERNAL));
 		}
 		catch (PortalException portalException) {
 			throw new RuntimeException(portalException);

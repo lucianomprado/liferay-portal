@@ -17,15 +17,25 @@ package com.liferay.layout.page.template.admin.web.internal.headless.delivery.dt
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.liferay.headless.delivery.dto.v1_0.ContextReference;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.Group;
+import com.liferay.portal.kernel.model.Layout;
+import com.liferay.portal.kernel.service.GroupLocalService;
+import com.liferay.portal.kernel.service.LayoutLocalService;
+import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.Validator;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -73,17 +83,15 @@ public abstract class BaseLayoutStructureItemImporter {
 	}
 
 	protected void processMapping(
-		JSONObject jsonObject, Map<String, Object> map) {
+		JSONObject jsonObject,
+		LayoutStructureItemImporterContext layoutStructureItemImporterContext,
+		Map<String, Object> map) {
 
 		if (map == null) {
 			return;
 		}
 
 		String fieldKey = (String)map.get("fieldKey");
-
-		if (Validator.isNull(fieldKey)) {
-			return;
-		}
 
 		Map<String, Object> itemReferenceMap = (Map<String, Object>)map.get(
 			"itemReference");
@@ -112,11 +120,83 @@ public abstract class BaseLayoutStructureItemImporter {
 			return;
 		}
 
-		jsonObject.put("fieldId", fieldKey);
-
-		String classNameId = null;
+		if (Validator.isNotNull(fieldKey)) {
+			jsonObject.put("fieldId", fieldKey);
+		}
 
 		String className = (String)itemReferenceMap.get("className");
+
+		if (Objects.equals(className, Layout.class.getName()) &&
+			Objects.equals(itemReferenceMap.get("fieldName"), "plid")) {
+
+			String fieldValue = (String)itemReferenceMap.get("fieldValue");
+
+			Layout layout = layoutLocalService.fetchLayout(
+				GetterUtil.getLong(fieldValue));
+
+			_processLayout("PLID", fieldValue, jsonObject, layout);
+
+			return;
+		}
+
+		if (Objects.equals(className, Layout.class.getName()) &&
+			itemReferenceMap.containsKey("fields")) {
+
+			String friendlyURL = null;
+			Boolean privatePage = null;
+			String siteKey = null;
+
+			List<Map<String, String>> fields =
+				(List<Map<String, String>>)itemReferenceMap.get("fields");
+
+			for (Map<String, String> field : fields) {
+				String key = field.get("fieldName");
+
+				if (Objects.equals(key, "friendlyURL")) {
+					friendlyURL = field.get("fieldValue");
+				}
+				else if (Objects.equals(key, "privatePage")) {
+					privatePage = Boolean.valueOf(field.get("fieldValue"));
+				}
+				else if (Objects.equals(key, "siteKey")) {
+					siteKey = field.get("fieldValue");
+				}
+			}
+
+			if ((friendlyURL == null) || (privatePage == null)) {
+				return;
+			}
+
+			Layout currentLayout =
+				layoutStructureItemImporterContext.getLayout();
+
+			long groupId = currentLayout.getGroupId();
+
+			if (Validator.isNotNull(siteKey)) {
+				Group group = groupLocalService.fetchGroup(
+					currentLayout.getCompanyId(), siteKey);
+
+				if (group == null) {
+					if (_log.isWarnEnabled()) {
+						_log.warn(
+							StringBundler.concat(
+								"Unable to process mapping because group ",
+								siteKey, " does not exist"));
+					}
+
+					return;
+				}
+
+				groupId = group.getGroupId();
+			}
+
+			Layout layout = layoutLocalService.fetchLayoutByFriendlyURL(
+				groupId, privatePage, friendlyURL);
+
+			_processLayout("friendlyURL", friendlyURL, jsonObject, layout);
+		}
+
+		String classNameId = null;
 
 		try {
 			classNameId = String.valueOf(portal.getClassNameId(className));
@@ -125,7 +205,8 @@ public abstract class BaseLayoutStructureItemImporter {
 			if (_log.isWarnEnabled()) {
 				_log.warn(
 					"Unable to process mapping because class name ID could " +
-						"not be obtained for class name " + className);
+						"not be obtained for class name " + className,
+					exception);
 			}
 
 			return;
@@ -158,6 +239,17 @@ public abstract class BaseLayoutStructureItemImporter {
 			return jsonObject;
 		}
 
+		Object hidden = fragmentViewportStyle.get("hidden");
+
+		if (hidden != null) {
+			if (GetterUtil.getBoolean(hidden)) {
+				jsonObject.put("display", "none");
+			}
+			else {
+				jsonObject.put("display", "block");
+			}
+		}
+
 		return JSONUtil.put(
 			"styles",
 			jsonObject.put(
@@ -178,10 +270,15 @@ public abstract class BaseLayoutStructureItemImporter {
 				"paddingRight", fragmentViewportStyle.get("paddingRight")
 			).put(
 				"paddingTop", fragmentViewportStyle.get("paddingTop")
+			).put(
+				"textAlign", fragmentViewportStyle.get("textAlign")
 			));
 	}
 
-	protected JSONObject toStylesJSONObject(Map<String, Object> styles) {
+	protected JSONObject toStylesJSONObject(
+		LayoutStructureItemImporterContext layoutStructureItemImporterContext,
+		Map<String, Object> styles) {
+
 		JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
 
 		if (MapUtil.isEmpty(styles)) {
@@ -222,6 +319,7 @@ public abstract class BaseLayoutStructureItemImporter {
 
 					processMapping(
 						backgroundImageJSONObject,
+						layoutStructureItemImporterContext,
 						(Map<String, Object>)urlMap.get("mapping"));
 				}
 
@@ -229,10 +327,46 @@ public abstract class BaseLayoutStructureItemImporter {
 			}
 		}
 
+		Object borderColor = styles.get("borderColor");
+
+		if (borderColor instanceof String) {
+			borderColor = _colors.getOrDefault(
+				borderColor, (String)borderColor);
+		}
+
+		String borderRadius = GetterUtil.getString(styles.get("borderRadius"));
+
+		boolean hidden = GetterUtil.getBoolean(styles.get("hidden"));
+
+		if (hidden) {
+			jsonObject.put("display", "none");
+		}
+
+		Object shadow = styles.getOrDefault("boxShadow", styles.get("shadow"));
+
+		String textAlign = GetterUtil.getString(styles.get("textAlign"));
+
+		if (Validator.isNull(textAlign)) {
+			for (String alignKey : _ALIGN_KEYS) {
+				if (styles.containsKey(alignKey)) {
+					textAlign = GetterUtil.getString(styles.get(alignKey));
+
+					break;
+				}
+			}
+		}
+
+		Object textColor = styles.get("textColor");
+
+		if (textColor instanceof String) {
+			textColor = _colors.getOrDefault(textColor, (String)textColor);
+		}
+
 		return jsonObject.put(
-			"borderColor", styles.get("borderColor")
+			"borderColor", borderColor
 		).put(
-			"borderRadius", styles.get("borderRadius")
+			"borderRadius",
+			_borderRadiuses.getOrDefault(borderRadius, borderRadius)
 		).put(
 			"borderWidth", styles.get("borderWidth")
 		).put(
@@ -272,22 +406,103 @@ public abstract class BaseLayoutStructureItemImporter {
 		).put(
 			"paddingTop", styles.get("paddingTop")
 		).put(
-			"shadow", styles.get("shadow")
+			"shadow",
+			_shadows.getOrDefault(shadow, GetterUtil.getString(shadow))
 		).put(
-			"textAlign", styles.get("textAlign")
+			"textAlign", textAlign
 		).put(
-			"textColor", styles.get("textColor")
+			"textColor", textColor
 		).put(
 			"width", styles.get("width")
 		);
 	}
 
 	@Reference
+	protected GroupLocalService groupLocalService;
+
+	@Reference
+	protected LayoutLocalService layoutLocalService;
+
+	@Reference
 	protected Portal portal;
+
+	private void _processLayout(
+		String fieldKey, String fieldValue, JSONObject jsonObject,
+		Layout layout) {
+
+		if (layout == null) {
+			if (_log.isWarnEnabled()) {
+				_log.warn(
+					StringBundler.concat(
+						"Unable to process mapping because layout could not ",
+						"be obtained for ", fieldKey, " ", fieldValue));
+			}
+
+			return;
+		}
+
+		jsonObject.put(
+			"layout",
+			JSONUtil.put(
+				"groupId", String.valueOf(layout.getGroupId())
+			).put(
+				"id", layout.getUuid()
+			).put(
+				"layoutId", String.valueOf(layout.getLayoutId())
+			).put(
+				"layoutUuid", layout.getUuid()
+			).put(
+				"privateLayout", layout.isPrivateLayout()
+			).put(
+				"title", layout.getName(LocaleUtil.getMostRelevantLocale())
+			).put(
+				"value", layout.getFriendlyURL()
+			));
+	}
+
+	private static final String[] _ALIGN_KEYS = {
+		"buttonAlign", "contentAlign", "imageAlign", "textAlign"
+	};
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		BaseLayoutStructureItemImporter.class);
 
+	private static final Map<String, String> _borderRadiuses =
+		HashMapBuilder.put(
+			"lg", "0.375rem"
+		).put(
+			"none", StringPool.BLANK
+		).put(
+			"sm", "0.1875rem"
+		).build();
+	private static final Map<String, String> _colors = HashMapBuilder.put(
+		"danger", "#DA1414"
+	).put(
+		"dark", "#272833"
+	).put(
+		"gray-dark", "#393A4A"
+	).put(
+		"info", "#2E5AAC"
+	).put(
+		"light", "#F1F2F5"
+	).put(
+		"lighter", "#F7F8F9"
+	).put(
+		"primary", "#0B5FFF"
+	).put(
+		"secondary", "#6B6C7E"
+	).put(
+		"success", "#287D3C"
+	).put(
+		"warning", "#B95000"
+	).put(
+		"white", "#FFFFFF"
+	).build();
 	private static final ObjectMapper _objectMapper = new ObjectMapper();
+	private static final Map<String, String> _shadows = HashMapBuilder.put(
+		"lg", "0 1rem 3rem rgba(0, 0, 0, .175)"
+	).put(
+		"sm", "0 .125rem .25rem rgba(0, 0, 0, .075)"
+	).build();
 
 }

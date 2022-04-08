@@ -14,94 +14,116 @@
 
 import ClayButton from '@clayui/button';
 import ClayIcon from '@clayui/icon';
+import {useIsMounted} from '@liferay/frontend-js-react-web';
 import classnames from 'classnames';
 import PropTypes from 'prop-types';
-import React, {useCallback, useContext, useState} from 'react';
+import React, {useCallback, useContext, useEffect, useState} from 'react';
 
-import {PRODUCT_REMOVED} from '../../utilities/eventsDefinitions';
+import ServiceProvider from '../../ServiceProvider/index';
+import {debouncePromise} from '../../utilities/debounce';
+import {PRODUCT_REMOVED_FROM_CART} from '../../utilities/eventsDefinitions';
+import Price from '../price/Price';
 import QuantitySelector from '../quantity_selector/QuantitySelector';
 import ItemInfoView from './CartItemViews/ItemInfoView';
-import ItemPriceView from './CartItemViews/ItemPriceView';
 import MiniCartContext from './MiniCartContext';
-import {parseOptions} from './util/index';
+import {
+	INITIAL_ITEM_STATE,
+	REMOVAL_CANCELING_TIMEOUT,
+	REMOVAL_ERRORS_TIMEOUT,
+	REMOVAL_TIMEOUT,
+} from './util/constants';
+import {generateProductPageURL, parseOptions} from './util/index';
 
-const REMOVAL_TIMEOUT = 2000,
-	REMOVAL_CANCELING_TIMEOUT = 700,
-	REMOVAL_ERRORS_TIMEOUT = 4000,
-	INITIAL_ITEM_STATE = {
-		isGettingRemoved: false,
-		isRemovalCanceled: false,
-		isRemoved: false,
-		isShowingErrors: false,
-		previousQuantity: null,
-		removalTimeoutRef: null,
-	};
+const CartResource = ServiceProvider.DeliveryCartAPI('v1');
 
-function CartItem({item: cartItem}) {
+const deboncedUpdateItemQuantity = debouncePromise(
+	(cartItemId, quantity) =>
+		CartResource.updateItemById(cartItemId, {
+			quantity,
+		}),
+	300
+);
+
+function CartItem({
+	adaptiveMediaImageHTMLTag,
+	cartItems: childItems,
+	errorMessages,
+	id: cartItemId,
+	name,
+	options: rawOptions,
+	price,
+	productURLs,
+	quantity: cartItemQuantity,
+	settings,
+	sku,
+	skuId,
+}) {
+	const [itemState, setItemState] = useState(INITIAL_ITEM_STATE);
+	const [selectorQuantity, setSelectorQuantity] = useState(cartItemQuantity);
+	const isMounted = useIsMounted();
+	const options = parseOptions(rawOptions);
+
+	useEffect(() => {
+		setSelectorQuantity(cartItemQuantity);
+	}, [cartItemQuantity]);
+
 	const {
-		cartItems: childItems,
-		errorMessages,
-		id: cartItemId,
-		name,
-		options: rawOptions,
-		price,
-		quantity,
-		settings,
-		sku,
-		skuId,
-		thumbnail,
-	} = cartItem;
-
-	const {
-		CartResource,
+		actionURLs,
 		cartState,
 		displayDiscountLevels,
 		setIsUpdating,
-		spritemap,
 		updateCartModel,
 	} = useContext(MiniCartContext);
 
-	const {id: orderId} = cartState;
-	const [itemState, setItemState] = useState(INITIAL_ITEM_STATE);
-	const [itemQuantity, setItemQuantity] = useState(quantity);
-	const [itemPrice, updateItemPrice] = useState(price);
+	const productPageUrl = generateProductPageURL(
+		actionURLs.siteDefaultURL,
+		productURLs,
+		actionURLs.productURLSeparator
+	);
 
-	const options = parseOptions(rawOptions);
+	const showErrors = useCallback(() => {
+		if (isMounted()) {
+			setItemState({
+				...INITIAL_ITEM_STATE,
+				isShowingErrors: true,
+				removalTimeoutRef: setTimeout(() => {
+					if (isMounted()) {
+						setItemState(INITIAL_ITEM_STATE);
+					}
+				}, REMOVAL_ERRORS_TIMEOUT),
+			});
+		}
+	}, [isMounted]);
 
-	// eslint-disable-next-line react-hooks/exhaustive-deps
-	const showErrors = () => {
-		setIsUpdating(false);
+	const cancelRemoveItem = (event) => {
+		event.stopPropagation();
 
-		setItemState({
-			...INITIAL_ITEM_STATE,
-			isShowingErrors: true,
-			removalTimeoutRef: setTimeout(() => {
-				setItemState(INITIAL_ITEM_STATE);
-			}, REMOVAL_ERRORS_TIMEOUT),
-		});
-
-		return Promise.resolve();
-	};
-
-	const cancelRemoveItem = () => {
 		clearTimeout(itemState.removalTimeoutRef);
 
 		setItemState({
 			...INITIAL_ITEM_STATE,
 			isRemovalCanceled: true,
 			removalTimeoutRef: setTimeout(() => {
-				setIsUpdating(false);
+				if (isMounted()) {
+					setIsUpdating(false);
 
-				setItemState(INITIAL_ITEM_STATE);
+					setItemState(INITIAL_ITEM_STATE);
+				}
 			}, REMOVAL_CANCELING_TIMEOUT),
 		});
 	};
 
-	const removeItem = () => {
+	const removeItem = (event) => {
+		event.stopPropagation();
+
 		setItemState({
 			...INITIAL_ITEM_STATE,
 			isGettingRemoved: true,
 			removalTimeoutRef: setTimeout(() => {
+				if (!isMounted()) {
+					return;
+				}
+
 				setIsUpdating(true);
 
 				setItemState({
@@ -110,63 +132,28 @@ function CartItem({item: cartItem}) {
 					isRemoved: true,
 					removalTimeoutRef: setTimeout(() => {
 						CartResource.deleteItemById(cartItemId)
-							.then(() => updateCartModel({orderId}))
 							.then(() => {
-								setIsUpdating(false);
-								Liferay.fire(PRODUCT_REMOVED, {
+								if (!isMounted()) {
+									return;
+								}
+
+								updateCartModel({order: {id: cartState.id}});
+
+								Liferay.fire(PRODUCT_REMOVED_FROM_CART, {
 									skuId,
 								});
 							})
-							.catch(showErrors);
+							.catch(showErrors)
+							.finally(() => {
+								if (isMounted()) {
+									setIsUpdating(false);
+								}
+							});
 					}, REMOVAL_CANCELING_TIMEOUT),
 				});
 			}, REMOVAL_TIMEOUT),
 		});
 	};
-
-	const updateItemQuantity = useCallback(
-		(quantity) => {
-			if (quantity !== itemQuantity) {
-				setIsUpdating(true);
-
-				CartResource.updateItemById(cartItemId, {
-					...cartItem,
-					quantity,
-				})
-					.catch(showErrors)
-					.then(({quantity: updatedQuantity, ...updatedItem}) => {
-						setItemQuantity(updatedQuantity);
-
-						return Promise.resolve(updatedItem);
-					})
-					.then(({price: updatedPrice}) => {
-						const {price: currentPriceValue} = itemPrice;
-						const {price: updatedPriceValue} = updatedPrice;
-
-						/**
-						 * The unit price of an item may change based
-						 * on the change of its quantity
-						 * @type {boolean}
-						 */
-
-						const priceValueChanged =
-							!currentPriceValue ||
-							currentPriceValue !== updatedPriceValue;
-
-						if (priceValueChanged) {
-							return updateItemPrice(updatedPrice);
-						}
-
-						return Promise.resolve();
-					})
-					.then(() => updateCartModel({orderId}))
-					.then(() => setIsUpdating(false));
-			}
-
-			return Promise.resolve();
-		}, // eslint-disable-next-line react-hooks/exhaustive-deps
-		[CartResource, cartItem, cartItemId, orderId]
-	);
 
 	const {
 		isGettingRemoved,
@@ -177,73 +164,80 @@ function CartItem({item: cartItem}) {
 
 	return (
 		<div
-			className={classnames('mini-cart-item', isRemoved && 'is-removed')}
+			className={classnames('mini-cart-item', {
+				'is-removed': isRemoved,
+			})}
 		>
-			{!!thumbnail && (
-				<div
-					className={'mini-cart-item-thumbnail'}
-					style={{backgroundImage: `url(${thumbnail})`}}
-				/>
-			)}
-
-			<div
-				className={classnames(
-					'mini-cart-item-info',
-					!!options && 'has-options'
+			<a className="mini-cart-item-anchor" href={productPageUrl}>
+				{!!adaptiveMediaImageHTMLTag && (
+					<div
+						className="mini-cart-item-thumbnail"
+						dangerouslySetInnerHTML={{
+							__html: adaptiveMediaImageHTMLTag,
+						}}
+					/>
 				)}
-			>
-				<ItemInfoView
-					childItems={childItems}
-					name={name}
-					options={options}
-					sku={sku}
-				/>
-			</div>
 
-			<div className={'mini-cart-item-quantity'}>
+				<div
+					className={classnames('mini-cart-item-info ml-3', {
+						options: !!options,
+					})}
+				>
+					<ItemInfoView
+						childItems={childItems}
+						name={name}
+						options={options}
+						sku={sku}
+					/>
+				</div>
+			</a>
+
+			<div className="mini-cart-item-quantity">
 				<QuantitySelector
-					quantity={quantity}
-					size={'small'}
-					spritemap={spritemap}
-					updateQuantity={updateItemQuantity}
+					onUpdate={(newQuantity) => {
+						setSelectorQuantity(newQuantity);
+						setIsUpdating(true);
+
+						deboncedUpdateItemQuantity(cartItemId, newQuantity)
+							.then(() => {
+								if (isMounted()) {
+									setIsUpdating(false);
+									updateCartModel({
+										order: {id: cartState.id},
+									});
+								}
+							})
+							.catch((...errors) => {
+								setIsUpdating(false);
+								showErrors(...errors);
+							});
+					}}
+					quantity={selectorQuantity}
 					{...settings}
 				/>
 			</div>
 
-			<div className={'mini-cart-item-price'}>
-				<ItemPriceView
+			<div className="mini-cart-item-price">
+				<Price
+					compact={true}
 					displayDiscountLevels={displayDiscountLevels}
-					price={itemPrice}
+					price={price}
 				/>
 			</div>
 
-			<div className={'mini-cart-item-delete'}>
+			<div className="mini-cart-item-delete">
 				<button
-					className={'btn btn-unstyled'}
+					className="btn btn-unstyled"
 					onClick={removeItem}
-					type={'button'}
+					type="button"
 				>
-					<ClayIcon spritemap={spritemap} symbol={'times'} />
+					<ClayIcon symbol="times-circle-full" />
 				</button>
 			</div>
 
-			{errorMessages && (
-				<div className={'mini-cart-item-errors'}>
-					<ClayIcon
-						spritemap={spritemap}
-						symbol={'exclamation-circle'}
-					/>
-
-					<span>{errorMessages}</span>
-				</div>
-			)}
-
-			{isShowingErrors && (
-				<div className={'mini-cart-item-errors'}>
-					<ClayIcon
-						spritemap={spritemap}
-						symbol={'exclamation-circle'}
-					/>
+			{(errorMessages || isShowingErrors) && (
+				<div className="mini-cart-item-errors">
+					<ClayIcon symbol="exclamation-circle" />
 
 					<span>
 						{Liferay.Language.get('an-unexpected-error-occurred')}
@@ -252,20 +246,20 @@ function CartItem({item: cartItem}) {
 			)}
 
 			<div
-				className={classnames(
-					'mini-cart-item-removing',
-					isGettingRemoved && 'active',
-					isRemovalCanceled && 'canceled'
-				)}
+				className={classnames({
+					'active': isGettingRemoved,
+					'canceled': isRemovalCanceled,
+					'mini-cart-item-removing': true,
+				})}
 			>
 				<span>{Liferay.Language.get('the-item-has-been-removed')}</span>
+
 				<span>
 					<ClayButton
-						displayType={'link'}
-						href={'#'}
+						displayType="link"
 						onClick={cancelRemoveItem}
 						small
-						type={'button'}
+						type="button"
 					>
 						{Liferay.Language.get('undo')}
 					</ClayButton>

@@ -44,7 +44,7 @@ import org.osgi.service.component.annotations.Reference;
  * @author Bryan Engler
  */
 @Component(
-	immediate = true,
+	enabled = false, immediate = true,
 	property = "model.class.name=com.liferay.portal.search.elasticsearch.cross.cluster.replication.internal.configuration.CrossClusterReplicationConfiguration",
 	service = ConfigurationModelListener.class
 )
@@ -55,18 +55,24 @@ public class CrossClusterReplicationConfigurationModelListener
 	public void onAfterSave(String pid, Dictionary<String, Object> properties)
 		throws ConfigurationModelListenerException {
 
-		String remoteClusterAlias = (String)properties.get(
-			"remoteClusterAlias");
+		if (GetterUtil.getBoolean(properties.get("ccrEnabled"))) {
+			if (GetterUtil.getBoolean(
+					properties.get("automaticReplicationEnabled"))) {
 
-		if ((Boolean)properties.get("ccrEnabled")) {
-			String[] ccrLocalClusterConnectionConfigurations =
-				GetterUtil.getStringValues(
-					properties.get("ccrLocalClusterConnectionConfigurations"));
+				String remoteClusterAlias = (String)properties.get(
+					"remoteClusterAlias");
 
-			_validateCCRLocalClusterConnectionConfigurations(
-				ccrLocalClusterConnectionConfigurations, properties);
+				_addRemoteAndFollowIndexes(remoteClusterAlias, properties);
+			}
 
-			addRemoteAndFollowIndexes(remoteClusterAlias, properties);
+			if (_log.isInfoEnabled()) {
+				_log.info("Read operations from local clusters are enabled");
+			}
+		}
+		else {
+			if (_log.isInfoEnabled()) {
+				_log.info("Read operations from local clusters are disabled");
+			}
 		}
 	}
 
@@ -74,14 +80,11 @@ public class CrossClusterReplicationConfigurationModelListener
 	public void onBeforeSave(String pid, Dictionary<String, Object> properties)
 		throws ConfigurationModelListenerException {
 
-		String[] excludedIndexes = GetterUtil.getStringValues(
-			properties.get("excludedIndexes"));
-		boolean ccrEnabled = (Boolean)properties.get("ccrEnabled");
+		boolean ccrEnabled = GetterUtil.getBoolean(
+			properties.get("ccrEnabled"));
 		String[] ccrLocalClusterConnectionConfigurations =
 			GetterUtil.getStringValues(
 				properties.get("ccrLocalClusterConnectionConfigurations"));
-		String remoteClusterAlias = (String)properties.get(
-			"remoteClusterAlias");
 
 		if (ccrEnabled) {
 			_validateCCRLocalClusterConnectionConfigurations(
@@ -112,37 +115,60 @@ public class CrossClusterReplicationConfigurationModelListener
 		Dictionary<String, Object> previousProperties =
 			configuration.getProperties();
 
+		boolean automaticReplicationEnabled = GetterUtil.getBoolean(
+			properties.get("automaticReplicationEnabled"));
+		String[] excludedIndexes = GetterUtil.getStringValues(
+			properties.get("excludedIndexes"));
+		boolean previousAutomaticReplicationEnabled = GetterUtil.getBoolean(
+			previousProperties.get("automaticReplicationEnabled"), true);
 		String[] previousExcludedIndexes = GetterUtil.getStringValues(
 			previousProperties.get("excludedIndexes"));
-		boolean previousCcrEnabled = (Boolean)previousProperties.get(
-			"ccrEnabled");
+		boolean previousCcrEnabled = GetterUtil.getBoolean(
+			previousProperties.get("ccrEnabled"));
 		String[] previousCcrLocalClusterConnectionConfigurations =
 			GetterUtil.getStringValues(
 				previousProperties.get(
 					"ccrLocalClusterConnectionConfigurations"));
 		String previousRemoteClusterAlias = (String)previousProperties.get(
 			"remoteClusterAlias");
+		String previousRemoteClusterSeedNodeTransportAddress =
+			(String)previousProperties.get(
+				"remoteClusterSeedNodeTransportAddress");
+		String remoteClusterAlias = (String)properties.get(
+			"remoteClusterAlias");
+		String remoteClusterSeedNodeTransportAddress = (String)properties.get(
+			"remoteClusterSeedNodeTransportAddress");
 
-		if (previousCcrEnabled &&
-			(!ccrEnabled ||
-			 (ccrEnabled &&
-			  (!equals(
-				  previousCcrLocalClusterConnectionConfigurations,
-				  ccrLocalClusterConnectionConfigurations) ||
-			   !previousRemoteClusterAlias.equals(remoteClusterAlias) ||
-			   !equals(previousExcludedIndexes, excludedIndexes))))) {
+		if (previousCcrEnabled && previousAutomaticReplicationEnabled &&
+			(!ccrEnabled || !automaticReplicationEnabled ||
+			 !_equals(
+				 previousCcrLocalClusterConnectionConfigurations,
+				 ccrLocalClusterConnectionConfigurations) ||
+			 !previousRemoteClusterAlias.equals(remoteClusterAlias) ||
+			 !previousRemoteClusterSeedNodeTransportAddress.equals(
+				 remoteClusterSeedNodeTransportAddress) ||
+			 !_equals(previousExcludedIndexes, excludedIndexes))) {
 
-			unfollowIndexesAndDeleteRemoteCluster(
+			_unfollowIndexesAndDeleteRemoteCluster(
 				previousCcrLocalClusterConnectionConfigurations,
 				previousRemoteClusterAlias, previousExcludedIndexes);
 		}
 	}
 
-	protected void addRemoteAndFollowIndexes(
+	@Reference
+	protected ConfigurationAdmin configurationAdmin;
+
+	@Reference
+	protected CrossClusterReplicationHelper crossClusterReplicationHelper;
+
+	@Reference
+	protected SearchEngineAdapter searchEngineAdapter;
+
+	private void _addRemoteAndFollowIndexes(
 		String remoteClusterAlias, Dictionary<String, Object> properties) {
 
 		if (_log.isInfoEnabled()) {
-			_log.info("Enabling Cross-Cluster Replication");
+			_log.info("Creating follower indexes");
 		}
 
 		Log log = LogFactoryUtil.getLog(
@@ -166,7 +192,7 @@ public class CrossClusterReplicationConfigurationModelListener
 			GetterUtil.getStringValues(
 				properties.get("ccrLocalClusterConnectionConfigurations"));
 
-		String[] indexNames = getIndexNames(null);
+		String[] indexNames = _getIndexNames(null);
 
 		for (String ccrLocalClusterConnectionConfiguration :
 				ccrLocalClusterConnectionConfigurations) {
@@ -183,7 +209,7 @@ public class CrossClusterReplicationConfigurationModelListener
 
 			for (String indexName : indexNames) {
 				if (indexName.startsWith(StringPool.PERIOD) ||
-					isExcludedIndex(indexName, excludedIndexes)) {
+					_isExcludedIndex(indexName, excludedIndexes)) {
 
 					continue;
 				}
@@ -194,7 +220,7 @@ public class CrossClusterReplicationConfigurationModelListener
 		}
 	}
 
-	protected boolean equals(String[] array1, String[] array2) {
+	private boolean _equals(String[] array1, String[] array2) {
 		if (ArrayUtil.isEmpty(array1) && ArrayUtil.isEmpty(array2)) {
 			return true;
 		}
@@ -208,7 +234,7 @@ public class CrossClusterReplicationConfigurationModelListener
 		return true;
 	}
 
-	protected String[] getIndexNames(String connectionId) {
+	private String[] _getIndexNames(String connectionId) {
 		GetIndexIndexRequest getIndexIndexRequest = new GetIndexIndexRequest(
 			StringPool.STAR);
 
@@ -221,18 +247,38 @@ public class CrossClusterReplicationConfigurationModelListener
 		return getIndexIndexResponse.getIndexNames();
 	}
 
-	protected boolean isExcludedIndex(
+	private String _getMessage(String key, Object... arguments) {
+		try {
+			return ResourceBundleUtil.getString(
+				_getResourceBundle(), key, arguments);
+		}
+		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception);
+			}
+
+			return null;
+		}
+	}
+
+	private ResourceBundle _getResourceBundle() {
+		return ResourceBundleUtil.getBundle(
+			"content.Language", LocaleThreadLocal.getThemeDisplayLocale(),
+			getClass());
+	}
+
+	private boolean _isExcludedIndex(
 		String indexName, String[] excludedIndexes) {
 
 		return ArrayUtil.contains(excludedIndexes, indexName);
 	}
 
-	protected void unfollowIndexesAndDeleteRemoteCluster(
+	private void _unfollowIndexesAndDeleteRemoteCluster(
 		String[] ccrLocalClusterConnectionConfigurations,
 		String remoteClusterAlias, String[] excludedIndexes) {
 
 		if (_log.isInfoEnabled()) {
-			_log.info("Disabling Cross-Cluster Replication");
+			_log.info("Deleting follower indexes");
 		}
 
 		for (String ccrLocalClusterConnectionConfiguration :
@@ -246,10 +292,10 @@ public class CrossClusterReplicationConfigurationModelListener
 
 			try {
 				for (String indexName :
-						getIndexNames(localClusterConnectionId)) {
+						_getIndexNames(localClusterConnectionId)) {
 
 					if (indexName.startsWith(StringPool.PERIOD) ||
-						isExcludedIndex(indexName, excludedIndexes)) {
+						_isExcludedIndex(indexName, excludedIndexes)) {
 
 						continue;
 					}
@@ -271,32 +317,6 @@ public class CrossClusterReplicationConfigurationModelListener
 				}
 			}
 		}
-	}
-
-	@Reference
-	protected ConfigurationAdmin configurationAdmin;
-
-	@Reference
-	protected CrossClusterReplicationHelper crossClusterReplicationHelper;
-
-	@Reference
-	protected SearchEngineAdapter searchEngineAdapter;
-
-	private String _getMessage(String key, Object... arguments) {
-		try {
-			ResourceBundle resourceBundle = _getResourceBundle();
-
-			return ResourceBundleUtil.getString(resourceBundle, key, arguments);
-		}
-		catch (Exception exception) {
-			return null;
-		}
-	}
-
-	private ResourceBundle _getResourceBundle() {
-		return ResourceBundleUtil.getBundle(
-			"content.Language", LocaleThreadLocal.getThemeDisplayLocale(),
-			getClass());
 	}
 
 	private void _validateCCRLocalClusterConnectionConfigurations(

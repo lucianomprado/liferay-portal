@@ -59,7 +59,7 @@ public class WorkflowLogSerDes {
 		sb.append("{");
 
 		DateFormat liferayToJSONDateFormat = new SimpleDateFormat(
-			"yyyy-MM-dd'T'HH:mm:ss'Z'");
+			"yyyy-MM-dd'T'HH:mm:ssXX");
 
 		if (workflowLog.getAuditPerson() != null) {
 			if (sb.length() > 1) {
@@ -96,6 +96,20 @@ public class WorkflowLogSerDes {
 
 			sb.append(
 				liferayToJSONDateFormat.format(workflowLog.getDateCreated()));
+
+			sb.append("\"");
+		}
+
+		if (workflowLog.getDescription() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"description\": ");
+
+			sb.append("\"");
+
+			sb.append(_escape(workflowLog.getDescription()));
 
 			sb.append("\"");
 		}
@@ -222,7 +236,7 @@ public class WorkflowLogSerDes {
 		Map<String, String> map = new TreeMap<>();
 
 		DateFormat liferayToJSONDateFormat = new SimpleDateFormat(
-			"yyyy-MM-dd'T'HH:mm:ss'Z'");
+			"yyyy-MM-dd'T'HH:mm:ssXX");
 
 		if (workflowLog.getAuditPerson() == null) {
 			map.put("auditPerson", null);
@@ -246,6 +260,14 @@ public class WorkflowLogSerDes {
 			map.put(
 				"dateCreated",
 				liferayToJSONDateFormat.format(workflowLog.getDateCreated()));
+		}
+
+		if (workflowLog.getDescription() == null) {
+			map.put("description", null);
+		}
+		else {
+			map.put(
+				"description", String.valueOf(workflowLog.getDescription()));
 		}
 
 		if (workflowLog.getId() == null) {
@@ -356,6 +378,11 @@ public class WorkflowLogSerDes {
 						toDate((String)jsonParserFieldValue));
 				}
 			}
+			else if (Objects.equals(jsonParserFieldName, "description")) {
+				if (jsonParserFieldValue != null) {
+					workflowLog.setDescription((String)jsonParserFieldValue);
+				}
+			}
 			else if (Objects.equals(jsonParserFieldName, "id")) {
 				if (jsonParserFieldValue != null) {
 					workflowLog.setId(
@@ -408,9 +435,6 @@ public class WorkflowLogSerDes {
 						Long.valueOf((String)jsonParserFieldValue));
 				}
 			}
-			else if (jsonParserFieldName.equals("status")) {
-				throw new IllegalArgumentException();
-			}
 		}
 
 	}
@@ -439,7 +463,7 @@ public class WorkflowLogSerDes {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -475,7 +499,7 @@ public class WorkflowLogSerDes {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

@@ -25,6 +25,7 @@ import com.liferay.headless.commerce.admin.catalog.internal.helper.v1_0.ProductS
 import com.liferay.headless.commerce.admin.catalog.internal.util.v1_0.ProductSpecificationUtil;
 import com.liferay.headless.commerce.admin.catalog.resource.v1_0.ProductSpecificationResource;
 import com.liferay.headless.commerce.core.util.ServiceContextHelper;
+import com.liferay.portal.kernel.change.tracking.CTAware;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -48,6 +49,7 @@ import org.osgi.service.component.annotations.ServiceScope;
 	scope = ServiceScope.PROTOTYPE,
 	service = {NestedFieldSupport.class, ProductSpecificationResource.class}
 )
+@CTAware
 public class ProductSpecificationResourceImpl
 	extends BaseProductSpecificationResourceImpl implements NestedFieldSupport {
 
@@ -66,7 +68,49 @@ public class ProductSpecificationResourceImpl
 			Long id, ProductSpecification productSpecification)
 		throws Exception {
 
-		return _upsertProductSpecification(id, productSpecification);
+		return _addOrUpdateProductSpecification(id, productSpecification);
+	}
+
+	private ProductSpecification _addOrUpdateProductSpecification(
+			Long id, ProductSpecification productSpecification)
+		throws Exception {
+
+		Long productSpecificationId = productSpecification.getId();
+
+		if (productSpecificationId != null) {
+			try {
+				CPDefinitionSpecificationOptionValue
+					cpDefinitionSpecificationOptionValue =
+						_updateProductSpecification(
+							productSpecificationId, productSpecification);
+
+				return _toProductSpecification(
+					cpDefinitionSpecificationOptionValue.
+						getCPDefinitionSpecificationOptionValueId());
+			}
+			catch (NoSuchCPDefinitionSpecificationOptionValueException
+						noSuchCPDefinitionSpecificationOptionValueException) {
+
+				if (_log.isDebugEnabled()) {
+					_log.debug(
+						"Unable to find productSpecification with ID: " +
+							productSpecificationId,
+						noSuchCPDefinitionSpecificationOptionValueException);
+				}
+			}
+		}
+
+		CPDefinitionSpecificationOptionValue
+			cpDefinitionSpecificationOptionValue =
+				ProductSpecificationUtil.
+					addCPDefinitionSpecificationOptionValue(
+						_cpDefinitionSpecificationOptionValueService,
+						_cpSpecificationOptionService, id, productSpecification,
+						_serviceContextHelper.getServiceContext());
+
+		return _toProductSpecification(
+			cpDefinitionSpecificationOptionValue.
+				getCPDefinitionSpecificationOptionValueId());
 	}
 
 	private ProductSpecification _toProductSpecification(
@@ -91,49 +135,9 @@ public class ProductSpecificationResourceImpl
 		return ProductSpecificationUtil.
 			updateCPDefinitionSpecificationOptionValue(
 				_cpDefinitionSpecificationOptionValueService,
-				cpDefinitionSpecificationOptionValue, productSpecification,
+				cpDefinitionSpecificationOptionValue,
+				_cpSpecificationOptionService, productSpecification,
 				_serviceContextHelper.getServiceContext());
-	}
-
-	private ProductSpecification _upsertProductSpecification(
-			Long id, ProductSpecification productSpecification)
-		throws Exception {
-
-		Long productSpecificationId = productSpecification.getId();
-
-		if (productSpecificationId != null) {
-			try {
-				CPDefinitionSpecificationOptionValue
-					cpDefinitionSpecificationOptionValue =
-						_updateProductSpecification(
-							productSpecificationId, productSpecification);
-
-				return _toProductSpecification(
-					cpDefinitionSpecificationOptionValue.
-						getCPDefinitionSpecificationOptionValueId());
-			}
-			catch (NoSuchCPDefinitionSpecificationOptionValueException
-						noSuchCPDefinitionSpecificationOptionValueException) {
-
-				if (_log.isDebugEnabled()) {
-					_log.debug(
-						"Unable to find productSpecification with ID: " +
-							productSpecificationId);
-				}
-			}
-		}
-
-		CPDefinitionSpecificationOptionValue
-			cpDefinitionSpecificationOptionValue =
-				ProductSpecificationUtil.
-					addCPDefinitionSpecificationOptionValue(
-						_cpDefinitionSpecificationOptionValueService,
-						_cpSpecificationOptionService, id, productSpecification,
-						_serviceContextHelper.getServiceContext());
-
-		return _toProductSpecification(
-			cpDefinitionSpecificationOptionValue.
-				getCPDefinitionSpecificationOptionValueId());
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(

@@ -16,19 +16,13 @@ import ClayForm, {ClayInput} from '@clayui/form';
 import PropTypes from 'prop-types';
 import React, {useState} from 'react';
 
+import useControlledState from '../../../core/hooks/useControlledState';
 import {ConfigurationFieldPropTypes} from '../../../prop-types/index';
 
-export const TextField = ({field, onValueSelect, value}) => {
+export function TextField({field, onValueSelect, value}) {
 	const [errorMessage, setErrorMessage] = useState('');
 
-	const initialValue =
-		value === undefined
-			? field.defaultValue === undefined
-				? ''
-				: field.defaultValue
-			: value;
-
-	const [nextValue, setNextValue] = useState(initialValue);
+	const [nextValue, setNextValue] = useControlledState(value);
 
 	const {additionalProps = {}, type = 'text'} = parseTypeOptions(
 		field.typeOptions
@@ -44,7 +38,7 @@ export const TextField = ({field, onValueSelect, value}) => {
 					if (event.target.checkValidity()) {
 						setErrorMessage('');
 
-						if (nextValue !== initialValue) {
+						if (nextValue !== value) {
 							onValueSelect(field.name, nextValue);
 						}
 					}
@@ -72,7 +66,7 @@ export const TextField = ({field, onValueSelect, value}) => {
 				}
 				sizing="sm"
 				type={type}
-				value={nextValue}
+				value={nextValue || ''}
 				{...additionalProps}
 			/>
 
@@ -80,13 +74,14 @@ export const TextField = ({field, onValueSelect, value}) => {
 				<ClayForm.FeedbackGroup>
 					<ClayForm.FeedbackItem>
 						<ClayForm.FeedbackIndicator symbol="exclamation-full" />
+
 						{errorMessage}
 					</ClayForm.FeedbackItem>
 				</ClayForm.FeedbackGroup>
 			)}
 		</ClayForm.Group>
 	);
-};
+}
 
 function parseTypeOptions(typeOptions = {}) {
 	if (!typeOptions.validation) {

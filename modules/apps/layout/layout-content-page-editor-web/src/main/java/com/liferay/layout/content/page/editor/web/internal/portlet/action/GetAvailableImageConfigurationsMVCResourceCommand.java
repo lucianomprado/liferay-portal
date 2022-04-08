@@ -14,12 +14,23 @@
 
 package com.liferay.layout.content.page.editor.web.internal.portlet.action;
 
+import com.liferay.adaptive.media.image.configuration.AMImageConfigurationEntry;
+import com.liferay.adaptive.media.image.configuration.AMImageConfigurationHelper;
+import com.liferay.adaptive.media.image.media.query.Condition;
+import com.liferay.adaptive.media.image.media.query.MediaQuery;
+import com.liferay.adaptive.media.image.media.query.MediaQueryProvider;
 import com.liferay.adaptive.media.image.model.AMImageEntry;
 import com.liferay.adaptive.media.image.service.AMImageEntryLocalService;
+import com.liferay.adaptive.media.image.url.AMImageURLFactory;
 import com.liferay.document.library.kernel.service.DLAppService;
 import com.liferay.layout.content.page.editor.constants.ContentPageEditorPortletKeys;
-import com.liferay.portal.kernel.image.ImageToolUtil;
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
+import com.liferay.petra.string.StringUtil;
+import com.liferay.portal.kernel.image.ImageTool;
 import com.liferay.portal.kernel.json.JSONArray;
+import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.model.Image;
@@ -31,12 +42,15 @@ import com.liferay.portal.kernel.repository.model.FileVersion;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
 
+import java.net.URI;
+
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 import javax.portlet.ResourceRequest;
 import javax.portlet.ResourceResponse;
-
-import javax.servlet.http.HttpServletRequest;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -64,20 +78,54 @@ public class GetAvailableImageConfigurationsMVCResourceCommand
 
 		FileEntry fileEntry = _dlAppService.getFileEntry(fileEntryId);
 
-		HttpServletRequest httpServletRequest = _portal.getHttpServletRequest(
-			resourceRequest);
-		Image image = ImageToolUtil.getImage(fileEntry.getContentStream());
-
 		JSONArray jsonArray = JSONUtil.put(
 			JSONUtil.put(
-				"label", LanguageUtil.get(httpServletRequest, "auto")
+				"label",
+				LanguageUtil.get(
+					_portal.getHttpServletRequest(resourceRequest), "auto")
 			).put(
 				"size", fileEntry.getSize() / 1000
 			).put(
 				"value", "auto"
 			).put(
-				"width", image.getWidth()
+				"width",
+				() -> {
+					Image image = _imageTool.getImage(
+						fileEntry.getContentStream());
+
+					return image.getWidth();
+				}
 			));
+
+		Map<String, String> mediaQueriesMap = new HashMap<>();
+
+		List<MediaQuery> mediaQueries = _mediaQueryProvider.getMediaQueries(
+			fileEntry);
+
+		for (MediaQuery mediaQuery : mediaQueries) {
+			List<Condition> conditions = mediaQuery.getConditions();
+
+			StringBundler sb = new StringBundler();
+
+			for (Condition condition : conditions) {
+				sb.append(StringPool.OPEN_PARENTHESIS);
+				sb.append(condition.getAttribute());
+				sb.append(StringPool.COLON);
+				sb.append(condition.getValue());
+				sb.append(StringPool.CLOSE_PARENTHESIS);
+
+				if (conditions.indexOf(condition) != (conditions.size() - 1)) {
+					sb.append(" and ");
+				}
+			}
+
+			List<String> mediaQuerySources = StringUtil.split(
+				mediaQuery.getSrc(), CharPool.COMMA);
+
+			for (String mediaQuerySource : mediaQuerySources) {
+				mediaQueriesMap.put(mediaQuerySource.trim(), sb.toString());
+			}
+		}
 
 		FileVersion fileVersion = fileEntry.getFileVersion();
 
@@ -86,16 +134,37 @@ public class GetAvailableImageConfigurationsMVCResourceCommand
 				fileVersion.getFileVersionId());
 
 		for (AMImageEntry amImageEntry : amImageEntries) {
-			jsonArray.put(
-				JSONUtil.put(
-					"label", amImageEntry.getConfigurationUuid()
+			JSONObject jsonObject = JSONUtil.put(
+				"label", amImageEntry.getConfigurationUuid()
+			).put(
+				"size", amImageEntry.getSize() / 1000
+			).put(
+				"value", amImageEntry.getConfigurationUuid()
+			).put(
+				"width", amImageEntry.getWidth()
+			);
+
+			Optional<AMImageConfigurationEntry>
+				amImageConfigurationEntryOptional =
+					_amImageConfigurationHelper.getAMImageConfigurationEntry(
+						fileEntry.getCompanyId(),
+						amImageEntry.getConfigurationUuid());
+
+			if (amImageConfigurationEntryOptional.isPresent()) {
+				AMImageConfigurationEntry amImageConfigurationEntry =
+					amImageConfigurationEntryOptional.get();
+
+				URI uri = _amImageURLFactory.createFileEntryURL(
+					fileEntry.getFileVersion(), amImageConfigurationEntry);
+
+				jsonObject.put(
+					"mediaQuery", mediaQueriesMap.get(uri.toString())
 				).put(
-					"size", amImageEntry.getSize() / 1000
-				).put(
-					"value", amImageEntry.getConfigurationUuid()
-				).put(
-					"width", amImageEntry.getWidth()
-				));
+					"url", uri.toString()
+				);
+			}
+
+			jsonArray.put(jsonObject);
 		}
 
 		JSONPortletResponseUtil.writeJSON(
@@ -103,10 +172,22 @@ public class GetAvailableImageConfigurationsMVCResourceCommand
 	}
 
 	@Reference
+	private AMImageConfigurationHelper _amImageConfigurationHelper;
+
+	@Reference
 	private AMImageEntryLocalService _amImageEntryLocalService;
 
 	@Reference
+	private AMImageURLFactory _amImageURLFactory;
+
+	@Reference
 	private DLAppService _dlAppService;
+
+	@Reference
+	private ImageTool _imageTool;
+
+	@Reference
+	private MediaQueryProvider _mediaQueryProvider;
 
 	@Reference
 	private Portal _portal;

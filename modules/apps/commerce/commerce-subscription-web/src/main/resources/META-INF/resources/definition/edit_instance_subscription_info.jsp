@@ -32,11 +32,15 @@ if (!cpSubscriptionTypes.isEmpty()) {
 	defaultCPSubscriptionType = firstCPSubscriptionType.getName();
 }
 
-PortletURL productSkusURL = renderResponse.createRenderURL();
-
-productSkusURL.setParameter("mvcRenderCommandName", "editProductDefinition");
-productSkusURL.setParameter("cpDefinitionId", String.valueOf(cpDefinition.getCPDefinitionId()));
-productSkusURL.setParameter("screenNavigationCategoryKey", cpInstanceSubscriptionInfoDisplayContext.getScreenNavigationCategoryKey());
+PortletURL productSkusURL = PortletURLBuilder.createRenderURL(
+	renderResponse
+).setMVCRenderCommandName(
+	"/cp_definitions/edit_cp_definition"
+).setParameter(
+	"cpDefinitionId", cpDefinition.getCPDefinitionId()
+).setParameter(
+	"screenNavigationCategoryKey", cpInstanceSubscriptionInfoDisplayContext.getScreenNavigationCategoryKey()
+).buildPortletURL();
 
 boolean overrideSubscriptionInfo = BeanParamUtil.getBoolean(cpInstance, request, "overrideSubscriptionInfo", false);
 boolean subscriptionEnabled = BeanParamUtil.getBoolean(cpInstance, request, "subscriptionEnabled", false);
@@ -82,7 +86,7 @@ if (deliveryMaxSubscriptionCycles > 0) {
 	<liferay-ui:message key="all-channels-associated-with-this-product-must-have-at-least-one-payment-method-active-that-supports-recurring-payments" />
 </aui:alert>
 
-<portlet:actionURL name="editProductInstance" var="editProductInstanceShippingInfoActionURL" />
+<portlet:actionURL name="/cp_definitions/edit_cp_instance" var="editProductInstanceShippingInfoActionURL" />
 
 <aui:form action="<%= editProductInstanceShippingInfoActionURL %>" method="post" name="fm">
 	<aui:input name="<%= Constants.CMD %>" type="hidden" value="updateSubscriptionInfo" />
@@ -119,7 +123,7 @@ if (deliveryMaxSubscriptionCycles > 0) {
 
 				<%
 				if (cpSubscriptionTypeJSPContributor != null) {
-					cpSubscriptionTypeJSPContributor.render(cpInstance, request, PipingServletResponse.createPipingServletResponse(pageContext));
+					cpSubscriptionTypeJSPContributor.render(cpInstance, request, PipingServletResponseFactory.createPipingServletResponse(pageContext));
 				}
 				%>
 
@@ -181,7 +185,7 @@ if (deliveryMaxSubscriptionCycles > 0) {
 
 				<%
 				if (deliveryCPSubscriptionTypeJSPContributor != null) {
-					deliveryCPSubscriptionTypeJSPContributor.render(cpDefinition, request, PipingServletResponse.createPipingServletResponse(pageContext), false);
+					deliveryCPSubscriptionTypeJSPContributor.render(cpDefinition, request, PipingServletResponseFactory.createPipingServletResponse(pageContext), false);
 				}
 				%>
 
@@ -239,7 +243,7 @@ if (deliveryMaxSubscriptionCycles > 0) {
 	Liferay.provide(
 		window,
 		'<portlet:namespace />selectSubscriptionType',
-		function () {
+		() => {
 			var A = AUI();
 
 			var overrideSubscriptionInfo = A.one(
@@ -286,7 +290,7 @@ if (deliveryMaxSubscriptionCycles > 0) {
 	Liferay.provide(
 		window,
 		'<portlet:namespace />selectDeliverySubscriptionType',
-		function () {
+		() => {
 			var A = AUI();
 
 			var overrideSubscriptionInfo = A.one(
@@ -341,14 +345,14 @@ if (deliveryMaxSubscriptionCycles > 0) {
 </aui:script>
 
 <aui:script use="liferay-form">
-	A.one('#<portlet:namespace />neverEnds').on('change', function (event) {
+	A.one('#<portlet:namespace />neverEnds').on('change', (event) => {
 		var formValidator = Liferay.Form.get('<portlet:namespace />fm')
 			.formValidator;
 
 		formValidator.validateField('<portlet:namespace />maxSubscriptionCycles');
 	});
 
-	A.one('#<portlet:namespace />deliveryNeverEnds').on('change', function (event) {
+	A.one('#<portlet:namespace />deliveryNeverEnds').on('change', (event) => {
 		var formValidator = Liferay.Form.get('<portlet:namespace />fm')
 			.formValidator;
 

@@ -27,8 +27,8 @@ CPCompareContentDisplayContext cpCompareContentDisplayContext = (CPCompareConten
 		for (CPType cpType : cpCompareContentDisplayContext.getCPTypes()) {
 		%>
 
-			<li>
-				<a href="#<%= HtmlUtil.escape(cpType.getName()) %>"><%= HtmlUtil.escape(cpType.getLabel(locale)) %></a>
+			<li class="nav-item">
+				<a class="nav-link" href="#<%= HtmlUtil.escape(cpType.getName()) %>"><%= HtmlUtil.escape(cpType.getLabel(locale)) %></a>
 			</li>
 
 		<%
@@ -48,9 +48,7 @@ CPCompareContentDisplayContext cpCompareContentDisplayContext = (CPCompareConten
 					<aui:select label='<%= HtmlUtil.escape(cpType.getLabel(locale) + StringPool.SPACE + LanguageUtil.get(request, "cp-type-list-entry-renderer-key")) %>' name='<%= "preferences--" + cpType.getName() + "--cpTypeListEntryRendererKey--" %>'>
 
 						<%
-						List<CPContentListEntryRenderer> cpContentListEntryRenderers = cpCompareContentDisplayContext.getCPContentListEntryRenderers(cpType.getName());
-
-						for (CPContentListEntryRenderer cpContentListEntryRenderer : cpContentListEntryRenderers) {
+						for (CPContentListEntryRenderer cpContentListEntryRenderer : cpCompareContentDisplayContext.getCPContentListEntryRenderers(cpType.getName())) {
 							String key = cpContentListEntryRenderer.getKey();
 						%>
 

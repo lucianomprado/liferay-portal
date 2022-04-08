@@ -16,6 +16,7 @@ package com.liferay.segments.web.internal.portlet.action;
 
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCRenderCommand;
 import com.liferay.portal.kernel.util.Portal;
+import com.liferay.portal.odata.filter.FilterParserProvider;
 import com.liferay.segments.constants.SegmentsPortletKeys;
 import com.liferay.segments.criteria.contributor.SegmentsCriteriaContributorRegistry;
 import com.liferay.segments.provider.SegmentsEntryProviderRegistry;
@@ -24,6 +25,7 @@ import com.liferay.segments.web.internal.constants.SegmentsWebKeys;
 import com.liferay.segments.web.internal.display.context.EditSegmentsEntryDisplayContext;
 
 import javax.portlet.PortletException;
+import javax.portlet.PortletSession;
 import javax.portlet.RenderRequest;
 import javax.portlet.RenderResponse;
 
@@ -48,8 +50,14 @@ public class EditSegmentsEntryMVCRenderCommand implements MVCRenderCommand {
 			RenderRequest renderRequest, RenderResponse renderResponse)
 		throws PortletException {
 
+		PortletSession portletSession = renderRequest.getPortletSession();
+
+		portletSession.removeAttribute(
+			SegmentsWebKeys.PREVIEW_SEGMENTS_ENTRY_CRITERIA);
+
 		EditSegmentsEntryDisplayContext editSegmentsEntryDisplayContext =
 			new EditSegmentsEntryDisplayContext(
+				_filterParserProvider,
 				_portal.getHttpServletRequest(renderRequest), renderRequest,
 				renderResponse, _segmentsCriteriaContributorRegistry,
 				_segmentsEntryProviderRegistry, _segmentsEntryService);
@@ -60,6 +68,9 @@ public class EditSegmentsEntryMVCRenderCommand implements MVCRenderCommand {
 
 		return "/edit_segments_entry.jsp";
 	}
+
+	@Reference
+	private FilterParserProvider _filterParserProvider;
 
 	@Reference
 	private Portal _portal;

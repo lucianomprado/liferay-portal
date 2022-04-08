@@ -25,10 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.osgi.framework.Bundle;
-import org.osgi.framework.FrameworkUtil;
-import org.osgi.util.tracker.ServiceTracker;
-
 /**
  * The persistence utility for the segments experience service. This utility wraps <code>com.liferay.segments.service.persistence.impl.SegmentsExperiencePersistenceImpl</code> and provides direct access to the database for CRUD operations. This utility should only be used by the service layer, as it must operate within a transaction. Never access this utility in a JSP, controller, model, or other front-end class.
  *
@@ -962,74 +958,6 @@ public class SegmentsExperienceUtil {
 	}
 
 	/**
-	 * Returns the segments experience where groupId = &#63; and segmentsExperienceKey = &#63; or throws a <code>NoSuchExperienceException</code> if it could not be found.
-	 *
-	 * @param groupId the group ID
-	 * @param segmentsExperienceKey the segments experience key
-	 * @return the matching segments experience
-	 * @throws NoSuchExperienceException if a matching segments experience could not be found
-	 */
-	public static SegmentsExperience findByG_S(
-			long groupId, String segmentsExperienceKey)
-		throws com.liferay.segments.exception.NoSuchExperienceException {
-
-		return getPersistence().findByG_S(groupId, segmentsExperienceKey);
-	}
-
-	/**
-	 * Returns the segments experience where groupId = &#63; and segmentsExperienceKey = &#63; or returns <code>null</code> if it could not be found. Uses the finder cache.
-	 *
-	 * @param groupId the group ID
-	 * @param segmentsExperienceKey the segments experience key
-	 * @return the matching segments experience, or <code>null</code> if a matching segments experience could not be found
-	 */
-	public static SegmentsExperience fetchByG_S(
-		long groupId, String segmentsExperienceKey) {
-
-		return getPersistence().fetchByG_S(groupId, segmentsExperienceKey);
-	}
-
-	/**
-	 * Returns the segments experience where groupId = &#63; and segmentsExperienceKey = &#63; or returns <code>null</code> if it could not be found, optionally using the finder cache.
-	 *
-	 * @param groupId the group ID
-	 * @param segmentsExperienceKey the segments experience key
-	 * @param useFinderCache whether to use the finder cache
-	 * @return the matching segments experience, or <code>null</code> if a matching segments experience could not be found
-	 */
-	public static SegmentsExperience fetchByG_S(
-		long groupId, String segmentsExperienceKey, boolean useFinderCache) {
-
-		return getPersistence().fetchByG_S(
-			groupId, segmentsExperienceKey, useFinderCache);
-	}
-
-	/**
-	 * Removes the segments experience where groupId = &#63; and segmentsExperienceKey = &#63; from the database.
-	 *
-	 * @param groupId the group ID
-	 * @param segmentsExperienceKey the segments experience key
-	 * @return the segments experience that was removed
-	 */
-	public static SegmentsExperience removeByG_S(
-			long groupId, String segmentsExperienceKey)
-		throws com.liferay.segments.exception.NoSuchExperienceException {
-
-		return getPersistence().removeByG_S(groupId, segmentsExperienceKey);
-	}
-
-	/**
-	 * Returns the number of segments experiences where groupId = &#63; and segmentsExperienceKey = &#63;.
-	 *
-	 * @param groupId the group ID
-	 * @param segmentsExperienceKey the segments experience key
-	 * @return the number of matching segments experiences
-	 */
-	public static int countByG_S(long groupId, String segmentsExperienceKey) {
-		return getPersistence().countByG_S(groupId, segmentsExperienceKey);
-	}
-
-	/**
 	 * Returns all the segments experiences where groupId = &#63; and classNameId = &#63; and classPK = &#63;.
 	 *
 	 * @param groupId the group ID
@@ -1658,6 +1586,96 @@ public class SegmentsExperienceUtil {
 	}
 
 	/**
+	 * Returns the segments experience where groupId = &#63; and segmentsExperienceKey = &#63; and classNameId = &#63; and classPK = &#63; or throws a <code>NoSuchExperienceException</code> if it could not be found.
+	 *
+	 * @param groupId the group ID
+	 * @param segmentsExperienceKey the segments experience key
+	 * @param classNameId the class name ID
+	 * @param classPK the class pk
+	 * @return the matching segments experience
+	 * @throws NoSuchExperienceException if a matching segments experience could not be found
+	 */
+	public static SegmentsExperience findByG_SEK_C_C(
+			long groupId, String segmentsExperienceKey, long classNameId,
+			long classPK)
+		throws com.liferay.segments.exception.NoSuchExperienceException {
+
+		return getPersistence().findByG_SEK_C_C(
+			groupId, segmentsExperienceKey, classNameId, classPK);
+	}
+
+	/**
+	 * Returns the segments experience where groupId = &#63; and segmentsExperienceKey = &#63; and classNameId = &#63; and classPK = &#63; or returns <code>null</code> if it could not be found. Uses the finder cache.
+	 *
+	 * @param groupId the group ID
+	 * @param segmentsExperienceKey the segments experience key
+	 * @param classNameId the class name ID
+	 * @param classPK the class pk
+	 * @return the matching segments experience, or <code>null</code> if a matching segments experience could not be found
+	 */
+	public static SegmentsExperience fetchByG_SEK_C_C(
+		long groupId, String segmentsExperienceKey, long classNameId,
+		long classPK) {
+
+		return getPersistence().fetchByG_SEK_C_C(
+			groupId, segmentsExperienceKey, classNameId, classPK);
+	}
+
+	/**
+	 * Returns the segments experience where groupId = &#63; and segmentsExperienceKey = &#63; and classNameId = &#63; and classPK = &#63; or returns <code>null</code> if it could not be found, optionally using the finder cache.
+	 *
+	 * @param groupId the group ID
+	 * @param segmentsExperienceKey the segments experience key
+	 * @param classNameId the class name ID
+	 * @param classPK the class pk
+	 * @param useFinderCache whether to use the finder cache
+	 * @return the matching segments experience, or <code>null</code> if a matching segments experience could not be found
+	 */
+	public static SegmentsExperience fetchByG_SEK_C_C(
+		long groupId, String segmentsExperienceKey, long classNameId,
+		long classPK, boolean useFinderCache) {
+
+		return getPersistence().fetchByG_SEK_C_C(
+			groupId, segmentsExperienceKey, classNameId, classPK,
+			useFinderCache);
+	}
+
+	/**
+	 * Removes the segments experience where groupId = &#63; and segmentsExperienceKey = &#63; and classNameId = &#63; and classPK = &#63; from the database.
+	 *
+	 * @param groupId the group ID
+	 * @param segmentsExperienceKey the segments experience key
+	 * @param classNameId the class name ID
+	 * @param classPK the class pk
+	 * @return the segments experience that was removed
+	 */
+	public static SegmentsExperience removeByG_SEK_C_C(
+			long groupId, String segmentsExperienceKey, long classNameId,
+			long classPK)
+		throws com.liferay.segments.exception.NoSuchExperienceException {
+
+		return getPersistence().removeByG_SEK_C_C(
+			groupId, segmentsExperienceKey, classNameId, classPK);
+	}
+
+	/**
+	 * Returns the number of segments experiences where groupId = &#63; and segmentsExperienceKey = &#63; and classNameId = &#63; and classPK = &#63;.
+	 *
+	 * @param groupId the group ID
+	 * @param segmentsExperienceKey the segments experience key
+	 * @param classNameId the class name ID
+	 * @param classPK the class pk
+	 * @return the number of matching segments experiences
+	 */
+	public static int countByG_SEK_C_C(
+		long groupId, String segmentsExperienceKey, long classNameId,
+		long classPK) {
+
+		return getPersistence().countByG_SEK_C_C(
+			groupId, segmentsExperienceKey, classNameId, classPK);
+	}
+
+	/**
 	 * Returns the segments experience where groupId = &#63; and classNameId = &#63; and classPK = &#63; and priority = &#63; or throws a <code>NoSuchExperienceException</code> if it could not be found.
 	 *
 	 * @param groupId the group ID
@@ -2063,6 +2081,330 @@ public class SegmentsExperienceUtil {
 		long groupId, long classNameId, long classPK, int priority) {
 
 		return getPersistence().filterCountByG_C_C_GtP(
+			groupId, classNameId, classPK, priority);
+	}
+
+	/**
+	 * Returns all the segments experiences where groupId = &#63; and classNameId = &#63; and classPK = &#63; and priority &lt; &#63;.
+	 *
+	 * @param groupId the group ID
+	 * @param classNameId the class name ID
+	 * @param classPK the class pk
+	 * @param priority the priority
+	 * @return the matching segments experiences
+	 */
+	public static List<SegmentsExperience> findByG_C_C_LtP(
+		long groupId, long classNameId, long classPK, int priority) {
+
+		return getPersistence().findByG_C_C_LtP(
+			groupId, classNameId, classPK, priority);
+	}
+
+	/**
+	 * Returns a range of all the segments experiences where groupId = &#63; and classNameId = &#63; and classPK = &#63; and priority &lt; &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>SegmentsExperienceModelImpl</code>.
+	 * </p>
+	 *
+	 * @param groupId the group ID
+	 * @param classNameId the class name ID
+	 * @param classPK the class pk
+	 * @param priority the priority
+	 * @param start the lower bound of the range of segments experiences
+	 * @param end the upper bound of the range of segments experiences (not inclusive)
+	 * @return the range of matching segments experiences
+	 */
+	public static List<SegmentsExperience> findByG_C_C_LtP(
+		long groupId, long classNameId, long classPK, int priority, int start,
+		int end) {
+
+		return getPersistence().findByG_C_C_LtP(
+			groupId, classNameId, classPK, priority, start, end);
+	}
+
+	/**
+	 * Returns an ordered range of all the segments experiences where groupId = &#63; and classNameId = &#63; and classPK = &#63; and priority &lt; &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>SegmentsExperienceModelImpl</code>.
+	 * </p>
+	 *
+	 * @param groupId the group ID
+	 * @param classNameId the class name ID
+	 * @param classPK the class pk
+	 * @param priority the priority
+	 * @param start the lower bound of the range of segments experiences
+	 * @param end the upper bound of the range of segments experiences (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @return the ordered range of matching segments experiences
+	 */
+	public static List<SegmentsExperience> findByG_C_C_LtP(
+		long groupId, long classNameId, long classPK, int priority, int start,
+		int end, OrderByComparator<SegmentsExperience> orderByComparator) {
+
+		return getPersistence().findByG_C_C_LtP(
+			groupId, classNameId, classPK, priority, start, end,
+			orderByComparator);
+	}
+
+	/**
+	 * Returns an ordered range of all the segments experiences where groupId = &#63; and classNameId = &#63; and classPK = &#63; and priority &lt; &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>SegmentsExperienceModelImpl</code>.
+	 * </p>
+	 *
+	 * @param groupId the group ID
+	 * @param classNameId the class name ID
+	 * @param classPK the class pk
+	 * @param priority the priority
+	 * @param start the lower bound of the range of segments experiences
+	 * @param end the upper bound of the range of segments experiences (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @param useFinderCache whether to use the finder cache
+	 * @return the ordered range of matching segments experiences
+	 */
+	public static List<SegmentsExperience> findByG_C_C_LtP(
+		long groupId, long classNameId, long classPK, int priority, int start,
+		int end, OrderByComparator<SegmentsExperience> orderByComparator,
+		boolean useFinderCache) {
+
+		return getPersistence().findByG_C_C_LtP(
+			groupId, classNameId, classPK, priority, start, end,
+			orderByComparator, useFinderCache);
+	}
+
+	/**
+	 * Returns the first segments experience in the ordered set where groupId = &#63; and classNameId = &#63; and classPK = &#63; and priority &lt; &#63;.
+	 *
+	 * @param groupId the group ID
+	 * @param classNameId the class name ID
+	 * @param classPK the class pk
+	 * @param priority the priority
+	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
+	 * @return the first matching segments experience
+	 * @throws NoSuchExperienceException if a matching segments experience could not be found
+	 */
+	public static SegmentsExperience findByG_C_C_LtP_First(
+			long groupId, long classNameId, long classPK, int priority,
+			OrderByComparator<SegmentsExperience> orderByComparator)
+		throws com.liferay.segments.exception.NoSuchExperienceException {
+
+		return getPersistence().findByG_C_C_LtP_First(
+			groupId, classNameId, classPK, priority, orderByComparator);
+	}
+
+	/**
+	 * Returns the first segments experience in the ordered set where groupId = &#63; and classNameId = &#63; and classPK = &#63; and priority &lt; &#63;.
+	 *
+	 * @param groupId the group ID
+	 * @param classNameId the class name ID
+	 * @param classPK the class pk
+	 * @param priority the priority
+	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
+	 * @return the first matching segments experience, or <code>null</code> if a matching segments experience could not be found
+	 */
+	public static SegmentsExperience fetchByG_C_C_LtP_First(
+		long groupId, long classNameId, long classPK, int priority,
+		OrderByComparator<SegmentsExperience> orderByComparator) {
+
+		return getPersistence().fetchByG_C_C_LtP_First(
+			groupId, classNameId, classPK, priority, orderByComparator);
+	}
+
+	/**
+	 * Returns the last segments experience in the ordered set where groupId = &#63; and classNameId = &#63; and classPK = &#63; and priority &lt; &#63;.
+	 *
+	 * @param groupId the group ID
+	 * @param classNameId the class name ID
+	 * @param classPK the class pk
+	 * @param priority the priority
+	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
+	 * @return the last matching segments experience
+	 * @throws NoSuchExperienceException if a matching segments experience could not be found
+	 */
+	public static SegmentsExperience findByG_C_C_LtP_Last(
+			long groupId, long classNameId, long classPK, int priority,
+			OrderByComparator<SegmentsExperience> orderByComparator)
+		throws com.liferay.segments.exception.NoSuchExperienceException {
+
+		return getPersistence().findByG_C_C_LtP_Last(
+			groupId, classNameId, classPK, priority, orderByComparator);
+	}
+
+	/**
+	 * Returns the last segments experience in the ordered set where groupId = &#63; and classNameId = &#63; and classPK = &#63; and priority &lt; &#63;.
+	 *
+	 * @param groupId the group ID
+	 * @param classNameId the class name ID
+	 * @param classPK the class pk
+	 * @param priority the priority
+	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
+	 * @return the last matching segments experience, or <code>null</code> if a matching segments experience could not be found
+	 */
+	public static SegmentsExperience fetchByG_C_C_LtP_Last(
+		long groupId, long classNameId, long classPK, int priority,
+		OrderByComparator<SegmentsExperience> orderByComparator) {
+
+		return getPersistence().fetchByG_C_C_LtP_Last(
+			groupId, classNameId, classPK, priority, orderByComparator);
+	}
+
+	/**
+	 * Returns the segments experiences before and after the current segments experience in the ordered set where groupId = &#63; and classNameId = &#63; and classPK = &#63; and priority &lt; &#63;.
+	 *
+	 * @param segmentsExperienceId the primary key of the current segments experience
+	 * @param groupId the group ID
+	 * @param classNameId the class name ID
+	 * @param classPK the class pk
+	 * @param priority the priority
+	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
+	 * @return the previous, current, and next segments experience
+	 * @throws NoSuchExperienceException if a segments experience with the primary key could not be found
+	 */
+	public static SegmentsExperience[] findByG_C_C_LtP_PrevAndNext(
+			long segmentsExperienceId, long groupId, long classNameId,
+			long classPK, int priority,
+			OrderByComparator<SegmentsExperience> orderByComparator)
+		throws com.liferay.segments.exception.NoSuchExperienceException {
+
+		return getPersistence().findByG_C_C_LtP_PrevAndNext(
+			segmentsExperienceId, groupId, classNameId, classPK, priority,
+			orderByComparator);
+	}
+
+	/**
+	 * Returns all the segments experiences that the user has permission to view where groupId = &#63; and classNameId = &#63; and classPK = &#63; and priority &lt; &#63;.
+	 *
+	 * @param groupId the group ID
+	 * @param classNameId the class name ID
+	 * @param classPK the class pk
+	 * @param priority the priority
+	 * @return the matching segments experiences that the user has permission to view
+	 */
+	public static List<SegmentsExperience> filterFindByG_C_C_LtP(
+		long groupId, long classNameId, long classPK, int priority) {
+
+		return getPersistence().filterFindByG_C_C_LtP(
+			groupId, classNameId, classPK, priority);
+	}
+
+	/**
+	 * Returns a range of all the segments experiences that the user has permission to view where groupId = &#63; and classNameId = &#63; and classPK = &#63; and priority &lt; &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>SegmentsExperienceModelImpl</code>.
+	 * </p>
+	 *
+	 * @param groupId the group ID
+	 * @param classNameId the class name ID
+	 * @param classPK the class pk
+	 * @param priority the priority
+	 * @param start the lower bound of the range of segments experiences
+	 * @param end the upper bound of the range of segments experiences (not inclusive)
+	 * @return the range of matching segments experiences that the user has permission to view
+	 */
+	public static List<SegmentsExperience> filterFindByG_C_C_LtP(
+		long groupId, long classNameId, long classPK, int priority, int start,
+		int end) {
+
+		return getPersistence().filterFindByG_C_C_LtP(
+			groupId, classNameId, classPK, priority, start, end);
+	}
+
+	/**
+	 * Returns an ordered range of all the segments experiences that the user has permissions to view where groupId = &#63; and classNameId = &#63; and classPK = &#63; and priority &lt; &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>SegmentsExperienceModelImpl</code>.
+	 * </p>
+	 *
+	 * @param groupId the group ID
+	 * @param classNameId the class name ID
+	 * @param classPK the class pk
+	 * @param priority the priority
+	 * @param start the lower bound of the range of segments experiences
+	 * @param end the upper bound of the range of segments experiences (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @return the ordered range of matching segments experiences that the user has permission to view
+	 */
+	public static List<SegmentsExperience> filterFindByG_C_C_LtP(
+		long groupId, long classNameId, long classPK, int priority, int start,
+		int end, OrderByComparator<SegmentsExperience> orderByComparator) {
+
+		return getPersistence().filterFindByG_C_C_LtP(
+			groupId, classNameId, classPK, priority, start, end,
+			orderByComparator);
+	}
+
+	/**
+	 * Returns the segments experiences before and after the current segments experience in the ordered set of segments experiences that the user has permission to view where groupId = &#63; and classNameId = &#63; and classPK = &#63; and priority &lt; &#63;.
+	 *
+	 * @param segmentsExperienceId the primary key of the current segments experience
+	 * @param groupId the group ID
+	 * @param classNameId the class name ID
+	 * @param classPK the class pk
+	 * @param priority the priority
+	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
+	 * @return the previous, current, and next segments experience
+	 * @throws NoSuchExperienceException if a segments experience with the primary key could not be found
+	 */
+	public static SegmentsExperience[] filterFindByG_C_C_LtP_PrevAndNext(
+			long segmentsExperienceId, long groupId, long classNameId,
+			long classPK, int priority,
+			OrderByComparator<SegmentsExperience> orderByComparator)
+		throws com.liferay.segments.exception.NoSuchExperienceException {
+
+		return getPersistence().filterFindByG_C_C_LtP_PrevAndNext(
+			segmentsExperienceId, groupId, classNameId, classPK, priority,
+			orderByComparator);
+	}
+
+	/**
+	 * Removes all the segments experiences where groupId = &#63; and classNameId = &#63; and classPK = &#63; and priority &lt; &#63; from the database.
+	 *
+	 * @param groupId the group ID
+	 * @param classNameId the class name ID
+	 * @param classPK the class pk
+	 * @param priority the priority
+	 */
+	public static void removeByG_C_C_LtP(
+		long groupId, long classNameId, long classPK, int priority) {
+
+		getPersistence().removeByG_C_C_LtP(
+			groupId, classNameId, classPK, priority);
+	}
+
+	/**
+	 * Returns the number of segments experiences where groupId = &#63; and classNameId = &#63; and classPK = &#63; and priority &lt; &#63;.
+	 *
+	 * @param groupId the group ID
+	 * @param classNameId the class name ID
+	 * @param classPK the class pk
+	 * @param priority the priority
+	 * @return the number of matching segments experiences
+	 */
+	public static int countByG_C_C_LtP(
+		long groupId, long classNameId, long classPK, int priority) {
+
+		return getPersistence().countByG_C_C_LtP(
+			groupId, classNameId, classPK, priority);
+	}
+
+	/**
+	 * Returns the number of segments experiences that the user has permission to view where groupId = &#63; and classNameId = &#63; and classPK = &#63; and priority &lt; &#63;.
+	 *
+	 * @param groupId the group ID
+	 * @param classNameId the class name ID
+	 * @param classPK the class pk
+	 * @param priority the priority
+	 * @return the number of matching segments experiences that the user has permission to view
+	 */
+	public static int filterCountByG_C_C_LtP(
+		long groupId, long classNameId, long classPK, int priority) {
+
+		return getPersistence().filterCountByG_C_C_LtP(
 			groupId, classNameId, classPK, priority);
 	}
 
@@ -3110,29 +3452,9 @@ public class SegmentsExperienceUtil {
 	}
 
 	public static SegmentsExperiencePersistence getPersistence() {
-		return _serviceTracker.getService();
+		return _persistence;
 	}
 
-	private static ServiceTracker
-		<SegmentsExperiencePersistence, SegmentsExperiencePersistence>
-			_serviceTracker;
-
-	static {
-		Bundle bundle = FrameworkUtil.getBundle(
-			SegmentsExperiencePersistence.class);
-
-		ServiceTracker
-			<SegmentsExperiencePersistence, SegmentsExperiencePersistence>
-				serviceTracker =
-					new ServiceTracker
-						<SegmentsExperiencePersistence,
-						 SegmentsExperiencePersistence>(
-							 bundle.getBundleContext(),
-							 SegmentsExperiencePersistence.class, null);
-
-		serviceTracker.open();
-
-		_serviceTracker = serviceTracker;
-	}
+	private static volatile SegmentsExperiencePersistence _persistence;
 
 }

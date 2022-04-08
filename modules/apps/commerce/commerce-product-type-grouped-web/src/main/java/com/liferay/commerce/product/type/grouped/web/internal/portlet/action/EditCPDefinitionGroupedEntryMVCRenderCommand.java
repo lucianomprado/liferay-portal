@@ -43,7 +43,7 @@ import org.osgi.service.component.annotations.Reference;
 	enabled = false, immediate = true,
 	property = {
 		"javax.portlet.name=" + CPPortletKeys.CP_DEFINITIONS,
-		"mvc.command.name=editCPDefinitionGroupedEntry"
+		"mvc.command.name=/cp_definitions/edit_cp_definition_grouped_entry"
 	},
 	service = MVCRenderCommand.class
 )
@@ -57,7 +57,7 @@ public class EditCPDefinitionGroupedEntryMVCRenderCommand
 
 		RequestDispatcher requestDispatcher =
 			_servletContext.getRequestDispatcher(
-				"/edit_definition_grouped_entry.jsp");
+				"/edit_cp_definition_grouped_entry.jsp");
 
 		try {
 			HttpServletRequest httpServletRequest =
@@ -78,9 +78,7 @@ public class EditCPDefinitionGroupedEntryMVCRenderCommand
 			requestDispatcher.include(httpServletRequest, httpServletResponse);
 		}
 		catch (Exception exception) {
-			throw new PortletException(
-				"Unable to include edit_definition_grouped_entry.jsp",
-				exception);
+			throw new PortletException(exception);
 		}
 
 		return MVCRenderConstants.MVC_PATH_VALUE_SKIP_DISPATCH;

@@ -44,7 +44,17 @@ public interface JournalArticleInfoItemFields {
 			"authorProfileImage"
 		).labelInfoLocalizedValue(
 			InfoLocalizedValue.localize(
-				"com.liferay.journal.lang", "author-profile-image")
+				JournalArticleInfoItemFields.class, "author-profile-image")
+		).build();
+	public static final InfoField<DateInfoFieldType> createDateInfoField =
+		InfoField.builder(
+		).infoFieldType(
+			DateInfoFieldType.INSTANCE
+		).name(
+			"createDate"
+		).labelInfoLocalizedValue(
+			InfoLocalizedValue.localize(
+				JournalArticleInfoItemFields.class, "create-date")
 		).build();
 	public static final InfoField<TextInfoFieldType> descriptionInfoField =
 		InfoField.builder(
@@ -98,7 +108,7 @@ public interface JournalArticleInfoItemFields {
 			"lastEditorName"
 		).labelInfoLocalizedValue(
 			InfoLocalizedValue.localize(
-				"com.liferay.journal.lang", "last-editor-name")
+				JournalArticleInfoItemFields.class, "last-editor-name")
 		).build();
 	public static final InfoField<ImageInfoFieldType>
 		lastEditorProfileImageInfoField = InfoField.builder(
@@ -109,6 +119,16 @@ public interface JournalArticleInfoItemFields {
 		).labelInfoLocalizedValue(
 			InfoLocalizedValue.localize(
 				JournalArticleInfoItemFields.class, "last-editor-profile-image")
+		).build();
+	public static final InfoField<DateInfoFieldType> modifiedDateInfoField =
+		InfoField.builder(
+		).infoFieldType(
+			DateInfoFieldType.INSTANCE
+		).name(
+			"modifiedDate"
+		).labelInfoLocalizedValue(
+			InfoLocalizedValue.localize(
+				JournalArticleInfoItemFields.class, "modified-date")
 		).build();
 	public static final InfoField<DateInfoFieldType> publishDateInfoField =
 		InfoField.builder(
@@ -128,7 +148,7 @@ public interface JournalArticleInfoItemFields {
 			"smallImage"
 		).labelInfoLocalizedValue(
 			InfoLocalizedValue.localize(
-				"com.liferay.journal.lang", "small-image")
+				JournalArticleInfoItemFields.class, "small-image")
 		).build();
 	public static final InfoField<TextInfoFieldType> titleInfoField =
 		InfoField.builder(

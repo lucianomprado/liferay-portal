@@ -26,6 +26,7 @@ import com.liferay.knowledge.base.service.KBTemplateServiceUtil;
 import com.liferay.knowledge.base.web.internal.search.KBTemplateSearch;
 import com.liferay.knowledge.base.web.internal.security.permission.resource.AdminPermission;
 import com.liferay.knowledge.base.web.internal.security.permission.resource.KBTemplatePermission;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.LanguageUtil;
@@ -114,15 +115,14 @@ public class KBTemplatesManagementToolbarDisplayContext {
 
 		return CreationMenuBuilder.addDropdownItem(
 			dropdownItem -> {
-				PortletURL addKBTemplateURL =
-					_liferayPortletResponse.createRenderURL();
-
-				addKBTemplateURL.setParameter(
-					"mvcPath", _templatePath + "edit_template.jsp");
-				addKBTemplateURL.setParameter(
-					"redirect", PortalUtil.getCurrentURL(_httpServletRequest));
-
-				dropdownItem.setHref(addKBTemplateURL);
+				dropdownItem.setHref(
+					PortletURLBuilder.createRenderURL(
+						_liferayPortletResponse
+					).setMVCPath(
+						_templatePath + "edit_template.jsp"
+					).setRedirect(
+						PortalUtil.getCurrentURL(_httpServletRequest)
+					).buildPortletURL());
 
 				dropdownItem.setLabel(
 					LanguageUtil.get(_httpServletRequest, "add-template"));
@@ -149,21 +149,20 @@ public class KBTemplatesManagementToolbarDisplayContext {
 	}
 
 	public PortletURL getSearchURL() {
-		PortletURL searchURL = _liferayPortletResponse.createRenderURL();
-
-		searchURL.setParameter("mvcPath", "/admin/view_templates.jsp");
-
-		return searchURL;
+		return PortletURLBuilder.createRenderURL(
+			_liferayPortletResponse
+		).setMVCPath(
+			"/admin/view_templates.jsp"
+		).buildPortletURL();
 	}
 
 	public PortletURL getSortingURL() throws PortletException {
-		PortletURL sortingURL = _getCurrentSortingURL();
-
-		sortingURL.setParameter(
+		return PortletURLBuilder.create(
+			_getCurrentSortingURL()
+		).setParameter(
 			"orderByType",
-			Objects.equals(getOrderByType(), "asc") ? "desc" : "asc");
-
-		return sortingURL;
+			Objects.equals(getOrderByType(), "asc") ? "desc" : "asc"
+		).buildPortletURL();
 	}
 
 	public int getTotal() {
@@ -175,9 +174,11 @@ public class KBTemplatesManagementToolbarDisplayContext {
 	}
 
 	private void _createSearchContainer() throws PortalException {
-		PortletURL iteratorURL = _liferayPortletResponse.createRenderURL();
-
-		iteratorURL.setParameter("mvcPath", "/admin/view_templates.jsp");
+		PortletURL iteratorURL = PortletURLBuilder.createRenderURL(
+			_liferayPortletResponse
+		).setMVCPath(
+			"/admin/view_templates.jsp"
+		).buildPortletURL();
 
 		_searchContainer = new KBTemplateSearch(
 			_liferayPortletRequest, iteratorURL);
@@ -185,14 +186,13 @@ public class KBTemplatesManagementToolbarDisplayContext {
 		String keywords = _getKeywords();
 
 		if (Validator.isNull(keywords)) {
-			_searchContainer.setTotal(
-				KBTemplateServiceUtil.getGroupKBTemplatesCount(
-					_themeDisplay.getScopeGroupId()));
-			_searchContainer.setResults(
-				KBTemplateServiceUtil.getGroupKBTemplates(
+			_searchContainer.setResultsAndTotal(
+				() -> KBTemplateServiceUtil.getGroupKBTemplates(
 					_themeDisplay.getScopeGroupId(),
 					_searchContainer.getStart(), _searchContainer.getEnd(),
-					_searchContainer.getOrderByComparator()));
+					_searchContainer.getOrderByComparator()),
+				KBTemplateServiceUtil.getGroupKBTemplatesCount(
+					_themeDisplay.getScopeGroupId()));
 		}
 		else {
 			KBTemplateSearchDisplay kbTemplateSearchDisplay =
@@ -202,18 +202,18 @@ public class KBTemplatesManagementToolbarDisplayContext {
 					_searchContainer.getDelta(),
 					_searchContainer.getOrderByComparator());
 
-			_searchContainer.setResults(kbTemplateSearchDisplay.getResults());
-			_searchContainer.setTotal(kbTemplateSearchDisplay.getTotal());
+			_searchContainer.setResultsAndTotal(
+				kbTemplateSearchDisplay::getResults,
+				kbTemplateSearchDisplay.getTotal());
 		}
 	}
 
 	private PortletURL _getCurrentSortingURL() throws PortletException {
-		PortletURL sortingURL = PortletURLUtil.clone(
-			_currentURLObj, _liferayPortletResponse);
-
-		sortingURL.setParameter("mvcPath", "/admin/view_templates.jsp");
-
-		return sortingURL;
+		return PortletURLBuilder.create(
+			PortletURLUtil.clone(_currentURLObj, _liferayPortletResponse)
+		).setMVCPath(
+			"/admin/view_templates.jsp"
+		).buildPortletURL();
 	}
 
 	private String _getKeywords() {

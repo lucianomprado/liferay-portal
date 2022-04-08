@@ -19,11 +19,10 @@ import com.liferay.document.library.kernel.exception.NoSuchFolderException;
 import com.liferay.document.library.kernel.model.DLFileEntry;
 import com.liferay.document.library.kernel.model.DLFolderConstants;
 import com.liferay.document.library.kernel.service.DLTrashLocalService;
+import com.liferay.document.library.kernel.util.DLAppHelperThreadLocal;
 import com.liferay.petra.function.UnsafeSupplier;
-import com.liferay.petra.lang.SafeClosable;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
-import com.liferay.portal.kernel.change.tracking.CTCollectionThreadLocal;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
@@ -157,13 +156,23 @@ public class PortletFileRepositoryImpl implements PortletFileRepository {
 			mimeType = MimeTypesUtil.getContentType(file, fileName);
 		}
 
-		LocalRepository localRepository =
-			_repositoryProvider.getLocalRepository(
-				repository.getRepositoryId());
+		boolean dlAppHelperEnabled = DLAppHelperThreadLocal.isEnabled();
 
-		return localRepository.addFileEntry(
-			userId, folderId, fileName, mimeType, fileName, StringPool.BLANK,
-			StringPool.BLANK, file, serviceContext);
+		try {
+			DLAppHelperThreadLocal.setEnabled(false);
+
+			LocalRepository localRepository =
+				_repositoryProvider.getLocalRepository(
+					repository.getRepositoryId());
+
+			return localRepository.addFileEntry(
+				null, userId, folderId, fileName, mimeType, fileName, fileName,
+				StringPool.BLANK, StringPool.BLANK, file, null, null,
+				serviceContext);
+		}
+		finally {
+			DLAppHelperThreadLocal.setEnabled(dlAppHelperEnabled);
+		}
 	}
 
 	@Override
@@ -207,6 +216,8 @@ public class PortletFileRepositoryImpl implements PortletFileRepository {
 					_repositoryProvider.getLocalRepository(repositoryId);
 
 				try {
+					DLAppHelperThreadLocal.setEnabled(false);
+
 					return localRepository.getFolder(
 						parentFolderId, folderName);
 				}
@@ -215,8 +226,7 @@ public class PortletFileRepositoryImpl implements PortletFileRepository {
 					// LPS-52675
 
 					if (_log.isDebugEnabled()) {
-						_log.debug(
-							noSuchFolderException, noSuchFolderException);
+						_log.debug(noSuchFolderException);
 					}
 
 					return localRepository.addFolder(
@@ -262,16 +272,12 @@ public class PortletFileRepositoryImpl implements PortletFileRepository {
 		UnicodeProperties typeSettingsUnicodeProperties =
 			new UnicodeProperties();
 
-		try (SafeClosable safeClosable =
-				CTCollectionThreadLocal.setCTCollectionId(0)) {
-
-			return _run(
-				() -> _repositoryLocalService.addRepository(
-					user.getUserId(), groupId, classNameId,
-					DLFolderConstants.DEFAULT_PARENT_FOLDER_ID, portletId,
-					StringPool.BLANK, portletId, typeSettingsUnicodeProperties,
-					true, serviceContext));
-		}
+		return _run(
+			() -> _repositoryLocalService.addRepository(
+				user.getUserId(), groupId, classNameId,
+				DLFolderConstants.DEFAULT_PARENT_FOLDER_ID, portletId,
+				StringPool.BLANK, portletId, typeSettingsUnicodeProperties,
+				true, serviceContext));
 	}
 
 	@Override
@@ -314,26 +320,22 @@ public class PortletFileRepositoryImpl implements PortletFileRepository {
 				_repositoryProvider.getFileEntryLocalRepository(fileEntryId);
 
 			if (_isAttachment(localRepository.getFileEntry(fileEntryId))) {
-				_run(
-					FileEntry.class,
-					() -> {
-						localRepository.deleteFileEntry(fileEntryId);
+				try {
+					SystemEventHierarchyEntryThreadLocal.push(FileEntry.class);
 
-						return null;
-					});
+					localRepository.deleteFileEntry(fileEntryId);
+				}
+				finally {
+					SystemEventHierarchyEntryThreadLocal.pop(FileEntry.class);
+				}
 			}
 			else {
-				_run(
-					() -> {
-						localRepository.deleteFileEntry(fileEntryId);
-
-						return null;
-					});
+				localRepository.deleteFileEntry(fileEntryId);
 			}
 		}
 		catch (NoSuchFileEntryException noSuchFileEntryException) {
 			if (_log.isWarnEnabled()) {
-				_log.warn(noSuchFileEntryException, noSuchFileEntryException);
+				_log.warn(noSuchFileEntryException);
 			}
 		}
 	}
@@ -364,7 +366,7 @@ public class PortletFileRepositoryImpl implements PortletFileRepository {
 				}
 				catch (NoSuchFolderException noSuchFolderException) {
 					if (_log.isWarnEnabled()) {
-						_log.warn(noSuchFolderException, noSuchFolderException);
+						_log.warn(noSuchFolderException);
 					}
 				}
 
@@ -394,7 +396,7 @@ public class PortletFileRepositoryImpl implements PortletFileRepository {
 		}
 		catch (PortalException portalException) {
 			if (_log.isDebugEnabled()) {
-				_log.debug(portalException, portalException);
+				_log.debug(portalException);
 			}
 		}
 
@@ -419,10 +421,10 @@ public class PortletFileRepositoryImpl implements PortletFileRepository {
 		ThemeDisplay themeDisplay, FileEntry fileEntry, String queryString,
 		boolean absoluteURL) {
 
-		String portletFileEntryURL = getPortletFileEntryURL(
-			themeDisplay, fileEntry, queryString, absoluteURL);
-
-		return _http.addParameter(portletFileEntryURL, "download", true);
+		return _http.addParameter(
+			getPortletFileEntryURL(
+				themeDisplay, fileEntry, queryString, absoluteURL),
+			"download", true);
 	}
 
 	@Override
@@ -646,6 +648,10 @@ public class PortletFileRepositoryImpl implements PortletFileRepository {
 					fileName, String.valueOf(i));
 			}
 			catch (Exception exception) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(exception);
+				}
+
 				break;
 			}
 		}
@@ -756,7 +762,11 @@ public class PortletFileRepositoryImpl implements PortletFileRepository {
 			Class<?> clazz, UnsafeSupplier<T, E> unsafeSupplier)
 		throws E {
 
+		boolean dlAppHelperEnabled = DLAppHelperThreadLocal.isEnabled();
+
 		try {
+			DLAppHelperThreadLocal.setEnabled(false);
+
 			if (clazz != null) {
 				SystemEventHierarchyEntryThreadLocal.push(clazz);
 			}
@@ -767,6 +777,8 @@ public class PortletFileRepositoryImpl implements PortletFileRepository {
 			if (clazz != null) {
 				SystemEventHierarchyEntryThreadLocal.pop(clazz);
 			}
+
+			DLAppHelperThreadLocal.setEnabled(dlAppHelperEnabled);
 		}
 	}
 
@@ -788,13 +800,18 @@ public class PortletFileRepositoryImpl implements PortletFileRepository {
 	@Reference
 	private Http _http;
 
+	@Reference(
+		target = "(class.name=com.liferay.portal.repository.liferayrepository.LiferayRepository)"
+	)
+	private RepositoryFactory _liferayRepositoryFactory;
+
 	@Reference
 	private Portal _portal;
 
 	@Reference(
-		target = "(repository.target.class.name=com.liferay.portal.repository.portletrepository.PortletRepository)"
+		target = "(class.name=com.liferay.portal.repository.portletrepository.PortletRepository)"
 	)
-	private RepositoryFactory _repositoryFactory;
+	private RepositoryFactory _portletRepositoryFactory;
 
 	@Reference
 	private RepositoryLocalService _repositoryLocalService;

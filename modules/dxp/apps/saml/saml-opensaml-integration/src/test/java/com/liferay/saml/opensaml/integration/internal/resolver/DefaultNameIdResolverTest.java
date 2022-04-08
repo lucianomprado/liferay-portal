@@ -16,14 +16,17 @@ package com.liferay.saml.opensaml.integration.internal.resolver;
 
 import com.liferay.expando.kernel.model.ExpandoBridge;
 import com.liferay.portal.kernel.bean.BeanProperties;
-import com.liferay.portal.kernel.bean.BeanPropertiesUtil;
 import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.test.ReflectionTestUtil;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 import com.liferay.saml.opensaml.integration.internal.BaseSamlTestCase;
 import com.liferay.saml.opensaml.integration.internal.metadata.MetadataManager;
 import com.liferay.saml.opensaml.integration.internal.util.OpenSamlUtil;
 
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 import org.mockito.Mockito;
@@ -36,16 +39,20 @@ import org.opensaml.saml.saml2.core.NameIDPolicy;
  */
 public class DefaultNameIdResolverTest extends BaseSamlTestCase {
 
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
+
 	@Before
 	@Override
 	public void setUp() throws Exception {
 		super.setUp();
 
-		BeanPropertiesUtil beanPropertiesUtil = new BeanPropertiesUtil();
-
 		_beanProperties = mock(BeanProperties.class);
 
-		beanPropertiesUtil.setBeanProperties(_beanProperties);
+		ReflectionTestUtil.setFieldValue(
+			_defaultNameIdResolver, "_beanProperties", _beanProperties);
 
 		_metadataManager = mock(MetadataManager.class);
 

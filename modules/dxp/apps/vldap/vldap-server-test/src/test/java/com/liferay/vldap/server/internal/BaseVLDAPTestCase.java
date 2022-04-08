@@ -15,8 +15,6 @@
 package com.liferay.vldap.server.internal;
 
 import com.liferay.petra.lang.ClassLoaderPool;
-import com.liferay.portal.kernel.bean.BeanLocator;
-import com.liferay.portal.kernel.bean.PortalBeanLocatorUtil;
 import com.liferay.portal.kernel.configuration.Configuration;
 import com.liferay.portal.kernel.configuration.ConfigurationFactory;
 import com.liferay.portal.kernel.configuration.ConfigurationFactoryUtil;
@@ -43,14 +41,13 @@ import com.liferay.portal.kernel.service.UserGroupLocalService;
 import com.liferay.portal.kernel.service.UserGroupLocalServiceUtil;
 import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.service.UserLocalServiceUtil;
+import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.Props;
 import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.vldap.server.internal.directory.SearchBase;
 import com.liferay.vldap.server.internal.util.PortletPropsKeys;
-
-import java.lang.reflect.Field;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -72,23 +69,20 @@ public abstract class BaseVLDAPTestCase extends PowerMockito {
 
 	@Before
 	public void setUp() throws Exception {
-		setUpPortal();
+		_setUpPortal();
 
-		setUpConfiguration();
-		setUpCompany();
-		setUpORM();
-		setUpProps();
-		setUpSearchBase();
+		_setUpConfiguration();
+		_setUpCompany();
+		_setUpORM();
+		setUpPropsUtil();
+		_setUpSearchBase();
 	}
 
 	@After
-	public void tearDown() throws Exception {
+	public void tearDown() {
 		for (Class<?> serviceUtilClass : serviceUtilClasses) {
-			Field field = serviceUtilClass.getDeclaredField("_service");
-
-			field.setAccessible(true);
-
-			field.set(serviceUtilClass, null);
+			ReflectionTestUtil.setFieldValue(
+				serviceUtilClass, "_service", null);
 		}
 	}
 
@@ -99,137 +93,10 @@ public abstract class BaseVLDAPTestCase extends PowerMockito {
 
 		T serviceMock = mock(serviceClass);
 
-		when(
-			portalBeanLocator.locate(Mockito.eq(serviceClass.getName()))
-		).thenReturn(
-			serviceMock
-		);
+		ReflectionTestUtil.setFieldValue(
+			serviceUtilClass, "_service", serviceMock);
 
 		return serviceMock;
-	}
-
-	protected void setUpCompany() throws Exception {
-		company = mock(Company.class);
-
-		when(
-			company.getCompanyId()
-		).thenReturn(
-			PRIMARY_KEY
-		);
-
-		when(
-			company.getWebId()
-		).thenReturn(
-			"liferay.com"
-		);
-
-		companies.add(company);
-
-		CompanyLocalService companyLocalService = getMockPortalService(
-			CompanyLocalServiceUtil.class, CompanyLocalService.class);
-
-		when(
-			companyLocalService.getCompanies()
-		).thenReturn(
-			companies
-		);
-
-		when(
-			companyLocalService.getCompanies(Mockito.anyBoolean())
-		).thenReturn(
-			companies
-		);
-
-		when(
-			companyLocalService.getCompanyByWebId(Mockito.eq("liferay.com"))
-		).thenReturn(
-			company
-		);
-	}
-
-	protected void setUpConfiguration() {
-		PortletClassLoaderUtil.setServletContextName("vldap-server");
-
-		Thread currentThread = Thread.currentThread();
-
-		ClassLoaderPool.register(
-			"vldap-server", currentThread.getContextClassLoader());
-
-		Configuration configuration = mock(Configuration.class);
-
-		when(
-			configuration.getArray(PortletPropsKeys.SAMBA_DOMAIN_NAMES)
-		).thenReturn(
-			new String[] {"testDomainName"}
-		);
-
-		when(
-			configuration.getArray(PortletPropsKeys.SAMBA_HOSTS_ALLOWED)
-		).thenReturn(
-			new String[0]
-		);
-
-		ConfigurationFactory configurationFactory = mock(
-			ConfigurationFactory.class);
-
-		when(
-			configurationFactory.getConfiguration(
-				Mockito.any(ClassLoader.class), Mockito.eq("portlet"))
-		).thenReturn(
-			configuration
-		);
-
-		when(
-			configurationFactory.getConfiguration(
-				Mockito.any(ClassLoader.class), Mockito.eq("service"))
-		).thenReturn(
-			configuration
-		);
-
-		ConfigurationFactoryUtil.setConfigurationFactory(configurationFactory);
-	}
-
-	protected void setUpORM() {
-		Criterion criterion = mock(Criterion.class);
-
-		DynamicQuery dynamicQuery = mock(DynamicQuery.class);
-
-		DynamicQueryFactory dynamicQueryFactory = mock(
-			DynamicQueryFactory.class);
-
-		when(
-			dynamicQueryFactory.forClass(
-				Mockito.any(Class.class), Mockito.any(ClassLoader.class))
-		).thenReturn(
-			dynamicQuery
-		);
-
-		DynamicQueryFactoryUtil dynamicQueryFactoryUtil =
-			new DynamicQueryFactoryUtil();
-
-		dynamicQueryFactoryUtil.setDynamicQueryFactory(dynamicQueryFactory);
-
-		RestrictionsFactory restrictionsFactory = mock(
-			RestrictionsFactory.class);
-
-		when(
-			restrictionsFactory.eq(
-				Mockito.anyString(), Mockito.any(Object.class))
-		).thenReturn(
-			criterion
-		);
-
-		when(
-			restrictionsFactory.ilike(
-				Mockito.anyString(), Mockito.any(Object.class))
-		).thenReturn(
-			criterion
-		);
-
-		RestrictionsFactoryUtil restrictionsFactoryUtil =
-			new RestrictionsFactoryUtil();
-
-		restrictionsFactoryUtil.setRestrictionsFactory(restrictionsFactory);
 	}
 
 	protected void setUpPasswordPolicy(PasswordPolicy passwordPolicy) {
@@ -288,25 +155,6 @@ public abstract class BaseVLDAPTestCase extends PowerMockito {
 		);
 	}
 
-	protected void setUpPortal() {
-		portalBeanLocator = mock(BeanLocator.class);
-
-		PortalBeanLocatorUtil.setBeanLocator(portalBeanLocator);
-
-		groupLocalService = getMockPortalService(
-			GroupLocalServiceUtil.class, GroupLocalService.class);
-		imageService = getMockPortalService(
-			ImageServiceUtil.class, ImageService.class);
-		organizationLocalService = getMockPortalService(
-			OrganizationLocalServiceUtil.class, OrganizationLocalService.class);
-		roleLocalService = getMockPortalService(
-			RoleLocalServiceUtil.class, RoleLocalService.class);
-		userGroupLocalService = getMockPortalService(
-			UserGroupLocalServiceUtil.class, UserGroupLocalService.class);
-		userLocalService = getMockPortalService(
-			UserLocalServiceUtil.class, UserLocalService.class);
-	}
-
 	protected void setUpPortalUtil() {
 		Portal portal = mock(Portal.class);
 
@@ -321,7 +169,7 @@ public abstract class BaseVLDAPTestCase extends PowerMockito {
 		portalUtil.setPortal(portal);
 	}
 
-	protected void setUpProps() {
+	protected void setUpPropsUtil() {
 		props = mock(Props.class);
 
 		PropsUtil.setProps(props);
@@ -330,28 +178,6 @@ public abstract class BaseVLDAPTestCase extends PowerMockito {
 			props.get(PortletPropsKeys.SEARCH_MAX_SIZE)
 		).thenReturn(
 			"42"
-		);
-	}
-
-	protected void setUpSearchBase() {
-		searchBase = mock(SearchBase.class);
-
-		when(
-			searchBase.getCompanies()
-		).thenReturn(
-			companies
-		);
-
-		when(
-			searchBase.getSizeLimit()
-		).thenReturn(
-			PRIMARY_KEY
-		);
-
-		when(
-			searchBase.getTop()
-		).thenReturn(
-			"Liferay"
 		);
 	}
 
@@ -374,12 +200,172 @@ public abstract class BaseVLDAPTestCase extends PowerMockito {
 	protected GroupLocalService groupLocalService;
 	protected ImageService imageService;
 	protected OrganizationLocalService organizationLocalService;
-	protected BeanLocator portalBeanLocator;
 	protected Props props;
 	protected RoleLocalService roleLocalService;
 	protected SearchBase searchBase;
 	protected final List<Class<?>> serviceUtilClasses = new ArrayList<>();
 	protected UserGroupLocalService userGroupLocalService;
 	protected UserLocalService userLocalService;
+
+	private void _setUpCompany() throws Exception {
+		company = mock(Company.class);
+
+		when(
+			company.getCompanyId()
+		).thenReturn(
+			PRIMARY_KEY
+		);
+
+		when(
+			company.getWebId()
+		).thenReturn(
+			"liferay.com"
+		);
+
+		companies.add(company);
+
+		CompanyLocalService companyLocalService = getMockPortalService(
+			CompanyLocalServiceUtil.class, CompanyLocalService.class);
+
+		when(
+			companyLocalService.getCompanies()
+		).thenReturn(
+			companies
+		);
+
+		when(
+			companyLocalService.getCompanies(Mockito.anyBoolean())
+		).thenReturn(
+			companies
+		);
+
+		when(
+			companyLocalService.getCompanyByWebId(Mockito.eq("liferay.com"))
+		).thenReturn(
+			company
+		);
+	}
+
+	private void _setUpConfiguration() {
+		PortletClassLoaderUtil.setServletContextName("vldap-server");
+
+		Thread currentThread = Thread.currentThread();
+
+		ClassLoaderPool.register(
+			"vldap-server", currentThread.getContextClassLoader());
+
+		Configuration configuration = mock(Configuration.class);
+
+		when(
+			configuration.getArray(PortletPropsKeys.SAMBA_DOMAIN_NAMES)
+		).thenReturn(
+			new String[] {"testDomainName"}
+		);
+
+		when(
+			configuration.getArray(PortletPropsKeys.SAMBA_HOSTS_ALLOWED)
+		).thenReturn(
+			new String[0]
+		);
+
+		ConfigurationFactory configurationFactory = mock(
+			ConfigurationFactory.class);
+
+		when(
+			configurationFactory.getConfiguration(
+				Mockito.any(ClassLoader.class), Mockito.eq("portlet"))
+		).thenReturn(
+			configuration
+		);
+
+		when(
+			configurationFactory.getConfiguration(
+				Mockito.any(ClassLoader.class), Mockito.eq("service"))
+		).thenReturn(
+			configuration
+		);
+
+		ConfigurationFactoryUtil.setConfigurationFactory(configurationFactory);
+	}
+
+	private void _setUpORM() {
+		Criterion criterion = mock(Criterion.class);
+
+		DynamicQuery dynamicQuery = mock(DynamicQuery.class);
+
+		DynamicQueryFactory dynamicQueryFactory = mock(
+			DynamicQueryFactory.class);
+
+		when(
+			dynamicQueryFactory.forClass(
+				Mockito.any(Class.class), Mockito.any(ClassLoader.class))
+		).thenReturn(
+			dynamicQuery
+		);
+
+		DynamicQueryFactoryUtil dynamicQueryFactoryUtil =
+			new DynamicQueryFactoryUtil();
+
+		dynamicQueryFactoryUtil.setDynamicQueryFactory(dynamicQueryFactory);
+
+		RestrictionsFactory restrictionsFactory = mock(
+			RestrictionsFactory.class);
+
+		when(
+			restrictionsFactory.eq(
+				Mockito.anyString(), Mockito.any(Object.class))
+		).thenReturn(
+			criterion
+		);
+
+		when(
+			restrictionsFactory.ilike(
+				Mockito.anyString(), Mockito.any(Object.class))
+		).thenReturn(
+			criterion
+		);
+
+		RestrictionsFactoryUtil restrictionsFactoryUtil =
+			new RestrictionsFactoryUtil();
+
+		restrictionsFactoryUtil.setRestrictionsFactory(restrictionsFactory);
+	}
+
+	private void _setUpPortal() {
+		groupLocalService = getMockPortalService(
+			GroupLocalServiceUtil.class, GroupLocalService.class);
+		imageService = getMockPortalService(
+			ImageServiceUtil.class, ImageService.class);
+		organizationLocalService = getMockPortalService(
+			OrganizationLocalServiceUtil.class, OrganizationLocalService.class);
+		roleLocalService = getMockPortalService(
+			RoleLocalServiceUtil.class, RoleLocalService.class);
+		userGroupLocalService = getMockPortalService(
+			UserGroupLocalServiceUtil.class, UserGroupLocalService.class);
+		userLocalService = getMockPortalService(
+			UserLocalServiceUtil.class, UserLocalService.class);
+	}
+
+	private void _setUpSearchBase() {
+		searchBase = mock(SearchBase.class);
+
+		when(
+			searchBase.getCompanies()
+		).thenReturn(
+			companies
+		);
+
+		when(
+			searchBase.getSizeLimit()
+		).thenReturn(
+			PRIMARY_KEY
+		);
+
+		when(
+			searchBase.getTop()
+		).thenReturn(
+			"Liferay"
+		);
+	}
 
 }

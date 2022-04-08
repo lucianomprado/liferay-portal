@@ -42,16 +42,6 @@ public class InfoItemFieldValues {
 	 * @deprecated As of Athanasius (7.3.x)
 	 */
 	@Deprecated
-	public InfoItemFieldValues(
-		InfoItemClassPKReference infoItemClassPKReference) {
-
-		this(builder().infoItemClassPKReference(infoItemClassPKReference));
-	}
-
-	/**
-	 * @deprecated As of Athanasius (7.3.x)
-	 */
-	@Deprecated
 	public InfoItemFieldValues add(InfoFieldValue<Object> infoFieldValue) {
 		_builder.infoFieldValue(infoFieldValue);
 
@@ -97,15 +87,6 @@ public class InfoItemFieldValues {
 			infoFieldName, Collections.emptyList());
 	}
 
-	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-	 *             #getInfoItemReference()}
-	 */
-	@Deprecated
-	public InfoItemClassPKReference getInfoItemClassPKReference() {
-		return _builder._infoItemClassPKReference;
-	}
-
 	public InfoItemReference getInfoItemReference() {
 		return _builder._infoItemReference;
 	}
@@ -125,25 +106,10 @@ public class InfoItemFieldValues {
 		return map;
 	}
 
-	/**
-	 * @deprecated As of Athanasius (7.3.x)
-	 */
-	@Deprecated
-	public void setInfoItemClassPKReference(
-		InfoItemClassPKReference infoItemClassPKReference) {
-
-		_builder.infoItemClassPKReference(infoItemClassPKReference);
-	}
-
 	@Override
 	public String toString() {
-		StringBundler sb = new StringBundler(3);
-
-		sb.append("{infoFieldValues: ");
-		sb.append(_builder._infoFieldValues);
-		sb.append("}");
-
-		return sb.toString();
+		return StringBundler.concat(
+			"{infoFieldValues: ", _builder._infoFieldValues, "}");
 	}
 
 	public static class Builder {
@@ -168,10 +134,10 @@ public class InfoItemFieldValues {
 
 		public <T extends Throwable> Builder infoFieldValue(
 				UnsafeConsumer<UnsafeConsumer<InfoFieldValue<Object>, T>, T>
-					consumer)
+					unsafeConsumer)
 			throws T {
 
-			consumer.accept(this::infoFieldValue);
+			unsafeConsumer.accept(this::infoFieldValue);
 
 			return this;
 		}
@@ -186,19 +152,6 @@ public class InfoItemFieldValues {
 			return this;
 		}
 
-		/**
-		 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-		 *             #infoItemReference(InfoItemReference)}
-		 */
-		@Deprecated
-		public Builder infoItemClassPKReference(
-			InfoItemClassPKReference infoItemClassPKReference) {
-
-			_infoItemClassPKReference = infoItemClassPKReference;
-
-			return this;
-		}
-
 		public Builder infoItemReference(InfoItemReference infoItemReference) {
 			_infoItemReference = infoItemReference;
 
@@ -209,7 +162,6 @@ public class InfoItemFieldValues {
 			new LinkedHashSet<>();
 		private final Map<String, Collection<InfoFieldValue<Object>>>
 			_infoFieldValuesMap = new HashMap<>();
-		private InfoItemClassPKReference _infoItemClassPKReference;
 		private InfoItemReference _infoItemReference;
 
 	}

@@ -55,12 +55,13 @@ public class UserModelListener extends BaseModelListener<User> {
 		catch (Exception exception) {
 			_log.error(
 				"Unable to remove chat entries and status for user " +
-					user.getUserId());
+					user.getUserId(),
+				exception);
 		}
 	}
 
 	@Override
-	public void onAfterUpdate(User user) {
+	public void onAfterUpdate(User originalUser, User user) {
 		JabberUtil.updatePassword(
 			user.getUserId(), user.getPasswordUnencrypted());
 	}

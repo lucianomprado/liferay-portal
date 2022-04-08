@@ -15,8 +15,12 @@
 package com.liferay.portal.search.tuning.synonyms.web.internal.index.name;
 
 import com.liferay.portal.search.index.IndexNameBuilder;
+import com.liferay.portal.search.tuning.synonyms.index.name.SynonymSetIndexName;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import org.junit.Assert;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 /**
@@ -24,14 +28,19 @@ import org.junit.Test;
  */
 public class SynonymSetIndexNameBuilderImplTest {
 
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
+
 	@Test
 	public void testMultiTenancy() {
-		assertIndexName(
+		_assertIndexName(
 			2021, companyId -> "liferay-" + companyId,
 			"liferay-2021-search-tuning-synonyms");
 	}
 
-	protected void assertIndexName(
+	private void _assertIndexName(
 		int companyId, IndexNameBuilder indexNameBuilder, String expected) {
 
 		SynonymSetIndexNameBuilderImpl synonymSetIndexNameBuilderImpl =

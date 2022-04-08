@@ -18,13 +18,19 @@ import com.liferay.asset.kernel.service.AssetCategoryLocalService;
 import com.liferay.asset.kernel.service.AssetEntryLocalService;
 import com.liferay.asset.kernel.service.AssetTagLocalService;
 import com.liferay.asset.service.AssetEntryUsageLocalService;
-import com.liferay.layout.internal.upgrade.v1_0_0.UpgradeLayout;
-import com.liferay.layout.internal.upgrade.v1_0_0.UpgradeLayoutClassedModelUsage;
-import com.liferay.layout.internal.upgrade.v1_0_0.UpgradeLayoutPermissions;
+import com.liferay.layout.internal.upgrade.v1_0_0.LayoutClassedModelUsageUpgradeProcess;
+import com.liferay.layout.internal.upgrade.v1_0_0.LayoutPermissionsUpgradeProcess;
+import com.liferay.layout.internal.upgrade.v1_0_0.LayoutUpgradeProcess;
 import com.liferay.layout.internal.upgrade.v1_1_0.UpgradeCompanyId;
-import com.liferay.layout.internal.upgrade.v1_2_1.UpgradeLayoutAsset;
+import com.liferay.layout.internal.upgrade.v1_2_1.LayoutAssetUpgradeProcess;
+import com.liferay.layout.internal.upgrade.v1_2_2.LayoutSEOUpgradeProcess;
+import com.liferay.layout.internal.upgrade.v1_2_3.LayoutRevisionUpgradeProcess;
+import com.liferay.portal.kernel.service.GroupLocalService;
+import com.liferay.portal.kernel.service.LayoutBranchLocalService;
 import com.liferay.portal.kernel.service.LayoutLocalService;
-import com.liferay.portal.kernel.upgrade.UpgradeCTModel;
+import com.liferay.portal.kernel.service.LayoutRevisionLocalService;
+import com.liferay.portal.kernel.service.LayoutSetBranchLocalService;
+import com.liferay.portal.kernel.upgrade.CTModelUpgradeProcess;
 import com.liferay.portal.upgrade.registry.UpgradeStepRegistrator;
 
 import org.osgi.service.component.annotations.Component;
@@ -40,22 +46,33 @@ public class LayoutServiceUpgrade implements UpgradeStepRegistrator {
 	public void register(Registry registry) {
 		registry.register(
 			"0.0.1", "1.0.0",
-			new UpgradeLayoutClassedModelUsage(
+			new LayoutClassedModelUsageUpgradeProcess(
 				_assetEntryLocalService, _assetEntryUsageLocalService),
-			new UpgradeLayoutPermissions());
+			new LayoutPermissionsUpgradeProcess());
 
-		registry.register("1.0.0", "1.0.1", new UpgradeLayout());
+		registry.register("1.0.0", "1.0.1", new LayoutUpgradeProcess());
 
 		registry.register("1.0.1", "1.1.0", new UpgradeCompanyId());
 
 		registry.register(
-			"1.1.0", "1.2.0", new UpgradeCTModel("LayoutClassedModelUsage"));
+			"1.1.0", "1.2.0",
+			new CTModelUpgradeProcess("LayoutClassedModelUsage"));
 
 		registry.register(
 			"1.2.0", "1.2.1",
-			new UpgradeLayoutAsset(
+			new LayoutAssetUpgradeProcess(
 				_assetCategoryLocalService, _assetEntryLocalService,
-				_assetTagLocalService, _layoutLocalService));
+				_assetTagLocalService, _groupLocalService,
+				_layoutLocalService));
+
+		registry.register(
+			"1.2.1", "1.2.2", new LayoutSEOUpgradeProcess(_layoutLocalService));
+
+		registry.register(
+			"1.2.2", "1.2.3",
+			new LayoutRevisionUpgradeProcess(
+				_layoutBranchLocalService, _layoutLocalService,
+				_layoutRevisionLocalService, _layoutSetBranchLocalService));
 	}
 
 	@Reference
@@ -71,6 +88,18 @@ public class LayoutServiceUpgrade implements UpgradeStepRegistrator {
 	private AssetTagLocalService _assetTagLocalService;
 
 	@Reference
+	private GroupLocalService _groupLocalService;
+
+	@Reference
+	private LayoutBranchLocalService _layoutBranchLocalService;
+
+	@Reference
 	private LayoutLocalService _layoutLocalService;
+
+	@Reference
+	private LayoutRevisionLocalService _layoutRevisionLocalService;
+
+	@Reference
+	private LayoutSetBranchLocalService _layoutSetBranchLocalService;
 
 }

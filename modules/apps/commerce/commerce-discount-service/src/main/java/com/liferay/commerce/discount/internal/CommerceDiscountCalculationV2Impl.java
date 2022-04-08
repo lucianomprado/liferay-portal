@@ -14,7 +14,6 @@
 
 package com.liferay.commerce.discount.internal;
 
-import com.liferay.commerce.account.model.CommerceAccount;
 import com.liferay.commerce.context.CommerceContext;
 import com.liferay.commerce.currency.model.CommerceCurrency;
 import com.liferay.commerce.currency.model.CommerceMoney;
@@ -24,11 +23,8 @@ import com.liferay.commerce.discount.CommerceDiscountValue;
 import com.liferay.commerce.discount.application.strategy.CommerceDiscountApplicationStrategy;
 import com.liferay.commerce.discount.constants.CommerceDiscountConstants;
 import com.liferay.commerce.discount.model.CommerceDiscount;
-import com.liferay.commerce.discount.model.CommerceDiscountRule;
-import com.liferay.commerce.discount.rule.type.CommerceDiscountRuleType;
-import com.liferay.commerce.discount.rule.type.CommerceDiscountRuleTypeRegistry;
-import com.liferay.commerce.discount.service.CommerceDiscountRuleLocalService;
 import com.liferay.commerce.discount.service.CommerceDiscountUsageEntryLocalService;
+import com.liferay.commerce.discount.validator.helper.CommerceDiscountValidatorHelper;
 import com.liferay.commerce.model.CommerceOrder;
 import com.liferay.commerce.price.list.model.CommercePriceListDiscountRel;
 import com.liferay.commerce.price.list.service.CommercePriceListDiscountRelLocalService;
@@ -36,8 +32,8 @@ import com.liferay.commerce.pricing.configuration.CommercePricingConfiguration;
 import com.liferay.commerce.product.model.CPInstance;
 import com.liferay.commerce.product.service.CPInstanceLocalService;
 import com.liferay.commerce.util.CommerceBigDecimalUtil;
+import com.liferay.commerce.util.CommerceUtil;
 import com.liferay.petra.string.StringPool;
-import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -162,11 +158,18 @@ public class CommerceDiscountCalculationV2Impl
 				productUnitPrice, quantity, commerceContext, commerceDiscounts);
 		}
 
+		long commerceOrderTypeId = 0;
+
+		CommerceOrder commerceOrder = commerceContext.getCommerceOrder();
+
+		if (commerceOrder != null) {
+			commerceOrderTypeId = commerceOrder.getCommerceOrderTypeId();
+		}
+
 		List<CommerceDiscount> commerceDiscounts =
 			getProductCommerceDiscountByHierarchy(
-				cpInstance.getCompanyId(), commerceContext.getCommerceAccount(),
-				commerceContext.getCommerceChannelId(),
-				cpInstance.getCPDefinitionId());
+				cpInstance.getCompanyId(), commerceContext, commerceOrderTypeId,
+				cpInstance.getCPDefinitionId(), cpInstanceId);
 
 		if (commerceDiscounts.isEmpty()) {
 			return null;
@@ -243,15 +246,15 @@ public class CommerceDiscountCalculationV2Impl
 			return null;
 		}
 
-		CommerceDiscount commerceDiscount =
-			commerceDiscountLocalService.getCommerceDiscount(
-				commerceDiscountId);
-
 		BigDecimal discountAmount = BigDecimal.ZERO;
 
 		if (usePercentage) {
 			discountAmount = commercePrice.multiply(commerceDiscountValue);
 			discountAmount = discountAmount.divide(_ONE_HUNDRED);
+
+			CommerceDiscount commerceDiscount =
+				commerceDiscountLocalService.getCommerceDiscount(
+					commerceDiscountId);
 
 			BigDecimal maximumDiscountAmount =
 				commerceDiscount.getMaximumDiscountAmount();
@@ -285,10 +288,6 @@ public class CommerceDiscountCalculationV2Impl
 		if ((currentDiscountLevel == null) ||
 			CommerceBigDecimalUtil.gt(
 				discountPercentage, currentDiscountLevel)) {
-
-			if (usePercentage) {
-				return commerceDiscountValue;
-			}
 
 			return discountPercentage;
 		}
@@ -382,7 +381,7 @@ public class CommerceDiscountCalculationV2Impl
 
 	private CommerceDiscountValue _getCommerceDiscountValue(
 			CommerceOrder commerceOrder, BigDecimal amount,
-			CommerceContext commerceContext, String discountType)
+			CommerceContext commerceContext, String target)
 		throws PortalException {
 
 		if ((amount == null) ||
@@ -393,9 +392,8 @@ public class CommerceDiscountCalculationV2Impl
 
 		List<CommerceDiscount> commerceDiscounts =
 			getOrderCommerceDiscountByHierarchy(
-				commerceOrder.getCompanyId(),
-				commerceContext.getCommerceAccount(),
-				commerceContext.getCommerceChannelId(), discountType);
+				commerceOrder.getCompanyId(), commerceContext,
+				commerceOrder.getCommerceOrderTypeId(), target);
 
 		if (commerceDiscounts.isEmpty()) {
 			return null;
@@ -504,19 +502,12 @@ public class CommerceDiscountCalculationV2Impl
 			String discountCouponCode, CommerceContext commerceContext)
 		throws PortalException {
 
-		long commerceAccountId = 0;
-
-		CommerceAccount commerceAccount = commerceContext.getCommerceAccount();
-
-		if (commerceAccount != null) {
-			commerceAccountId = commerceAccount.getCommerceAccountId();
-		}
-
 		if ((Validator.isBlank(discountCouponCode) ||
 			 Objects.equals(couponCode, discountCouponCode)) &&
 			_commerceDiscountUsageEntryLocalService.
 				validateDiscountLimitationUsage(
-					commerceAccountId, commerceDiscountId)) {
+					CommerceUtil.getCommerceAccountId(commerceContext),
+					commerceDiscountId)) {
 
 			return true;
 		}
@@ -528,39 +519,9 @@ public class CommerceDiscountCalculationV2Impl
 			CommerceContext commerceContext, CommerceDiscount commerceDiscount)
 		throws PortalException {
 
-		List<CommerceDiscountRule> commerceDiscountRules =
-			_commerceDiscountRuleLocalService.getCommerceDiscountRules(
-				commerceDiscount.getCommerceDiscountId(), QueryUtil.ALL_POS,
-				QueryUtil.ALL_POS, null);
-
-		if (commerceDiscountRules.isEmpty()) {
-			return true;
-		}
-
-		for (CommerceDiscountRule commerceDiscountRule :
-				commerceDiscountRules) {
-
-			CommerceDiscountRuleType commerceDiscountRuleType =
-				_commerceDiscountRuleTypeRegistry.getCommerceDiscountRuleType(
-					commerceDiscountRule.getType());
-
-			boolean commerceDiscountRuleTypeEvaluation =
-				commerceDiscountRuleType.evaluate(
-					commerceDiscountRule, commerceContext);
-
-			if (!commerceDiscountRuleTypeEvaluation &&
-				commerceDiscount.isRulesConjunction()) {
-
-				return false;
-			}
-			else if (commerceDiscountRuleTypeEvaluation &&
-					 !commerceDiscount.isRulesConjunction()) {
-
-				return true;
-			}
-		}
-
-		return commerceDiscount.isRulesConjunction();
+		return _commerceDiscountValidatorHelper.isValid(
+			commerceContext, commerceDiscount,
+			CommerceDiscountConstants.VALIDATOR_TYPE_POST_QUALIFICATION);
 	}
 
 	private static final BigDecimal _ONE_HUNDRED = BigDecimal.valueOf(100);
@@ -574,14 +535,11 @@ public class CommerceDiscountCalculationV2Impl
 		_commerceDiscountApplicationStrategyMap = new ConcurrentHashMap<>();
 
 	@Reference
-	private CommerceDiscountRuleLocalService _commerceDiscountRuleLocalService;
-
-	@Reference
-	private CommerceDiscountRuleTypeRegistry _commerceDiscountRuleTypeRegistry;
-
-	@Reference
 	private CommerceDiscountUsageEntryLocalService
 		_commerceDiscountUsageEntryLocalService;
+
+	@Reference
+	private CommerceDiscountValidatorHelper _commerceDiscountValidatorHelper;
 
 	@Reference
 	private CommerceMoneyFactory _commerceMoneyFactory;

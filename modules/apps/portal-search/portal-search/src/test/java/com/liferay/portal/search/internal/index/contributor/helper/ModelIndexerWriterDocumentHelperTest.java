@@ -20,8 +20,11 @@ import com.liferay.portal.kernel.model.BaseModel;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.search.indexer.IndexerDocumentBuilder;
 import com.liferay.portal.search.spi.model.index.contributor.helper.ModelIndexerWriterDocumentHelper;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 import org.mockito.Matchers;
@@ -34,6 +37,11 @@ import org.mockito.MockitoAnnotations;
  */
 public class ModelIndexerWriterDocumentHelperTest {
 
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
+
 	@Before
 	public void setUp() throws Exception {
 		MockitoAnnotations.initMocks(this);
@@ -41,7 +49,7 @@ public class ModelIndexerWriterDocumentHelperTest {
 
 	@Test
 	public void testException() throws PortalException {
-		throwIndexNameBuilderException(new SystemException());
+		_throwIndexNameBuilderException(new SystemException());
 
 		ModelIndexerWriterDocumentHelper modelIndexerWriterDocumentHelper =
 			new ModelIndexerWriterDocumentHelperImpl(
@@ -50,18 +58,18 @@ public class ModelIndexerWriterDocumentHelperTest {
 		modelIndexerWriterDocumentHelper.getDocument(baseModel);
 	}
 
-	protected void throwIndexNameBuilderException(Exception exception) {
+	@Mock
+	protected BaseModel<?> baseModel;
+
+	@Mock
+	protected IndexerDocumentBuilder indexDocumentBuilder;
+
+	private void _throwIndexNameBuilderException(Exception exception) {
 		Mockito.when(
 			indexDocumentBuilder.getDocument(Matchers.any())
 		).thenThrow(
 			exception
 		);
 	}
-
-	@Mock
-	protected BaseModel<?> baseModel;
-
-	@Mock
-	protected IndexerDocumentBuilder indexDocumentBuilder;
 
 }

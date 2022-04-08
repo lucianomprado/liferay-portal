@@ -19,7 +19,7 @@ package com.liferay.document.library.constants;
  */
 public class DLContentTypes {
 
-	public static final String EXTERNAL_VIDEO =
-		"application/vnd+liferay.external.video+html";
+	public static final String VIDEO_EXTERNAL_SHORTCUT =
+		"application/vnd+liferay.video.external.shortcut+html";
 
 }

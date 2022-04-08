@@ -49,7 +49,7 @@ import org.osgi.service.component.annotations.Reference;
 	enabled = false, immediate = true,
 	property = {
 		"javax.portlet.name=" + CommercePortletKeys.COMMERCE_TAX_METHODS,
-		"mvc.command.name=editCommerceTaxFixedRate"
+		"mvc.command.name=/commerce_tax_methods/edit_commerce_tax_fixed_rate"
 	},
 	service = MVCRenderCommand.class
 )
@@ -62,7 +62,8 @@ public class EditCommerceTaxFixedRateMVCRenderCommand
 		throws PortletException {
 
 		RequestDispatcher requestDispatcher =
-			_servletContext.getRequestDispatcher("/edit_tax_rate.jsp");
+			_servletContext.getRequestDispatcher(
+				"/edit_commerce_tax_fixed_rate.jsp");
 
 		try {
 			CommerceTaxFixedRatesDisplayContext
@@ -92,8 +93,7 @@ public class EditCommerceTaxFixedRateMVCRenderCommand
 				return "/error.jsp";
 			}
 
-			throw new PortletException(
-				"Unable to include edit_tax_rate.jsp", exception);
+			throw new PortletException(exception);
 		}
 
 		return MVCRenderConstants.MVC_PATH_VALUE_SKIP_DISPATCH;

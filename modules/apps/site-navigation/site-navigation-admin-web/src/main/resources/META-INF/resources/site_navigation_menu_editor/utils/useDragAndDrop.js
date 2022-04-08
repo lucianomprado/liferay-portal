@@ -34,7 +34,7 @@ const DIRECTIONS = {
 
 const DragDropContext = React.createContext({});
 
-export const DragDropProvider = ({children}) => {
+export function DragDropProvider({children}) {
 	const [parentId, setParentId] = useState(null);
 	const [horizontalOffset, setHorizontalOffset] = useState(0);
 	const [verticalOffset, setVerticalOffset] = useState(0);
@@ -53,7 +53,7 @@ export const DragDropProvider = ({children}) => {
 			{children}
 		</DragDropContext.Provider>
 	);
-};
+}
 
 export function useDragItem(item, onDragEnd) {
 	const {parentSiteNavigationMenuItemId, siteNavigationMenuItemId} = item;
@@ -108,8 +108,8 @@ export function useDropTarget(item) {
 	const itemPath = getItemPath(siteNavigationMenuItemId, items);
 	const setItems = useSetItems();
 
-	const {languageDirection, languageId} = useConstants();
-	const rtl = languageDirection[languageId] === 'rtl';
+	const {languageId} = useConstants();
+	const rtl = Liferay.Language.direction[languageId] === 'rtl';
 
 	const {
 		horizontalOffset,

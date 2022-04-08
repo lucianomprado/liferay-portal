@@ -47,14 +47,56 @@ import org.osgi.service.component.annotations.Reference;
 	enabled = false, immediate = true,
 	property = {
 		"javax.portlet.name=" + CPPortletKeys.CP_MEASUREMENT_UNIT,
-		"mvc.command.name=editCPMeasurementUnit"
+		"mvc.command.name=/cp_measurement_unit/edit_cp_measurement_unit"
 	},
 	service = MVCActionCommand.class
 )
 public class EditCPMeasurementUnitMVCActionCommand
 	extends BaseMVCActionCommand {
 
-	protected void deleteCPMeasurementUnits(ActionRequest actionRequest)
+	@Override
+	protected void doProcessAction(
+			ActionRequest actionRequest, ActionResponse actionResponse)
+		throws Exception {
+
+		String cmd = ParamUtil.getString(actionRequest, Constants.CMD);
+
+		try {
+			if (cmd.equals(Constants.ADD) || cmd.equals(Constants.UPDATE)) {
+				_updateCPMeasurementUnit(actionRequest);
+			}
+			else if (cmd.equals(Constants.DELETE)) {
+				_deleteCPMeasurementUnits(actionRequest);
+			}
+			else if (cmd.equals("setPrimary")) {
+				_setPrimary(actionRequest);
+			}
+		}
+		catch (Exception exception) {
+			if (exception instanceof NoSuchCPMeasurementUnitException ||
+				exception instanceof PrincipalException) {
+
+				SessionErrors.add(actionRequest, exception.getClass());
+
+				actionResponse.setRenderParameter("mvcPath", "/error.jsp");
+			}
+			else if (exception instanceof CPMeasurementUnitKeyException) {
+				hideDefaultErrorMessage(actionRequest);
+				hideDefaultSuccessMessage(actionRequest);
+
+				SessionErrors.add(actionRequest, exception.getClass());
+
+				actionResponse.setRenderParameter(
+					"mvcRenderCommandName",
+					"/cp_measurement_unit/edit_cp_measurement_unit");
+			}
+			else {
+				throw exception;
+			}
+		}
+	}
+
+	private void _deleteCPMeasurementUnits(ActionRequest actionRequest)
 		throws PortalException {
 
 		long[] deleteCPMeasurementUnitIds = null;
@@ -78,48 +120,7 @@ public class EditCPMeasurementUnitMVCActionCommand
 		}
 	}
 
-	@Override
-	protected void doProcessAction(
-			ActionRequest actionRequest, ActionResponse actionResponse)
-		throws Exception {
-
-		String cmd = ParamUtil.getString(actionRequest, Constants.CMD);
-
-		try {
-			if (cmd.equals(Constants.ADD) || cmd.equals(Constants.UPDATE)) {
-				updateCPMeasurementUnit(actionRequest);
-			}
-			else if (cmd.equals(Constants.DELETE)) {
-				deleteCPMeasurementUnits(actionRequest);
-			}
-			else if (cmd.equals("setPrimary")) {
-				setPrimary(actionRequest);
-			}
-		}
-		catch (Exception exception) {
-			if (exception instanceof NoSuchCPMeasurementUnitException ||
-				exception instanceof PrincipalException) {
-
-				SessionErrors.add(actionRequest, exception.getClass());
-
-				actionResponse.setRenderParameter("mvcPath", "/error.jsp");
-			}
-			else if (exception instanceof CPMeasurementUnitKeyException) {
-				hideDefaultErrorMessage(actionRequest);
-				hideDefaultSuccessMessage(actionRequest);
-
-				SessionErrors.add(actionRequest, exception.getClass());
-
-				actionResponse.setRenderParameter(
-					"mvcRenderCommandName", "editCPMeasurementUnit");
-			}
-			else {
-				throw exception;
-			}
-		}
-	}
-
-	protected void setPrimary(ActionRequest actionRequest)
+	private void _setPrimary(ActionRequest actionRequest)
 		throws PortalException {
 
 		long cpMeasurementUnitId = ParamUtil.getLong(
@@ -130,7 +131,7 @@ public class EditCPMeasurementUnitMVCActionCommand
 		_cpMeasurementUnitService.setPrimary(cpMeasurementUnitId, primary);
 	}
 
-	protected CPMeasurementUnit updateCPMeasurementUnit(
+	private CPMeasurementUnit _updateCPMeasurementUnit(
 			ActionRequest actionRequest)
 		throws PortalException {
 

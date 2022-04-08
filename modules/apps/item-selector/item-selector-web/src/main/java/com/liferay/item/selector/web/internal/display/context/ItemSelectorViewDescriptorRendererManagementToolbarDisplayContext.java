@@ -16,12 +16,11 @@ package com.liferay.item.selector.web.internal.display.context;
 
 import com.liferay.frontend.taglib.clay.servlet.taglib.display.context.SearchContainerManagementToolbarDisplayContext;
 import com.liferay.item.selector.ItemSelectorViewDescriptor;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
-
-import javax.portlet.PortletURL;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -32,7 +31,8 @@ public class ItemSelectorViewDescriptorRendererManagementToolbarDisplayContext
 	extends SearchContainerManagementToolbarDisplayContext {
 
 	public ItemSelectorViewDescriptorRendererManagementToolbarDisplayContext(
-		ItemSelectorViewDescriptor<Object> itemSelectorViewDescriptor,
+		ItemSelectorViewDescriptorRendererDisplayContext
+			itemSelectorViewDescriptorRendererDisplayContext,
 		HttpServletRequest httpServletRequest,
 		LiferayPortletRequest liferayPortletRequest,
 		LiferayPortletResponse liferayPortletResponse,
@@ -42,16 +42,21 @@ public class ItemSelectorViewDescriptorRendererManagementToolbarDisplayContext
 			httpServletRequest, liferayPortletRequest, liferayPortletResponse,
 			searchContainer);
 
-		_itemSelectorViewDescriptor = itemSelectorViewDescriptor;
+		_itemSelectorViewDescriptorRendererDisplayContext =
+			itemSelectorViewDescriptorRendererDisplayContext;
+
+		_itemSelectorViewDescriptor =
+			itemSelectorViewDescriptorRendererDisplayContext.
+				getItemSelectorViewDescriptor();
 	}
 
 	@Override
 	public String getClearResultsURL() {
-		PortletURL clearResultsURL = getPortletURL();
-
-		clearResultsURL.setParameter("keywords", StringPool.BLANK);
-
-		return clearResultsURL.toString();
+		return PortletURLBuilder.create(
+			getPortletURL()
+		).setKeywords(
+			StringPool.BLANK
+		).buildString();
 	}
 
 	@Override
@@ -80,11 +85,19 @@ public class ItemSelectorViewDescriptorRendererManagementToolbarDisplayContext
 	}
 
 	@Override
+	protected String getDisplayStyle() {
+		return _itemSelectorViewDescriptorRendererDisplayContext.
+			getDisplayStyle();
+	}
+
+	@Override
 	protected String[] getDisplayViews() {
 		return new String[] {"descriptive", "icon", "list"};
 	}
 
 	private final ItemSelectorViewDescriptor<Object>
 		_itemSelectorViewDescriptor;
+	private final ItemSelectorViewDescriptorRendererDisplayContext
+		_itemSelectorViewDescriptorRendererDisplayContext;
 
 }

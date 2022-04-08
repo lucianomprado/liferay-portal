@@ -36,24 +36,29 @@ import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.model.PersistedModel;
 import com.liferay.portal.kernel.model.Region;
+import com.liferay.portal.kernel.model.RegionLocalization;
 import com.liferay.portal.kernel.module.framework.service.IdentifiableOSGiService;
 import com.liferay.portal.kernel.search.Indexable;
 import com.liferay.portal.kernel.search.IndexableType;
 import com.liferay.portal.kernel.service.BaseLocalServiceImpl;
 import com.liferay.portal.kernel.service.PersistedModelLocalServiceRegistry;
 import com.liferay.portal.kernel.service.RegionLocalService;
+import com.liferay.portal.kernel.service.RegionLocalServiceUtil;
 import com.liferay.portal.kernel.service.persistence.BasePersistence;
-import com.liferay.portal.kernel.service.persistence.CountryPersistence;
+import com.liferay.portal.kernel.service.persistence.RegionLocalizationPersistence;
 import com.liferay.portal.kernel.service.persistence.RegionPersistence;
-import com.liferay.portal.kernel.service.persistence.UserFinder;
-import com.liferay.portal.kernel.service.persistence.UserPersistence;
 import com.liferay.portal.kernel.transaction.Transactional;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.PortalUtil;
 
 import java.io.Serializable;
 
+import java.lang.reflect.Field;
+
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.sql.DataSource;
 
@@ -75,7 +80,7 @@ public abstract class RegionLocalServiceBaseImpl
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. Use <code>RegionLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>com.liferay.portal.kernel.service.RegionLocalServiceUtil</code>.
+	 * Never modify or reference this class directly. Use <code>RegionLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>RegionLocalServiceUtil</code>.
 	 */
 
 	/**
@@ -144,6 +149,13 @@ public abstract class RegionLocalServiceBaseImpl
 	@Override
 	public <T> T dslQuery(DSLQuery dslQuery) {
 		return regionPersistence.dslQuery(dslQuery);
+	}
+
+	@Override
+	public int dslQueryCount(DSLQuery dslQuery) {
+		Long count = dslQuery(dslQuery);
+
+		return count.intValue();
 	}
 
 	@Override
@@ -459,6 +471,141 @@ public abstract class RegionLocalServiceBaseImpl
 		return regionPersistence.update(region);
 	}
 
+	@Override
+	public RegionLocalization fetchRegionLocalization(
+		long regionId, String languageId) {
+
+		return regionLocalizationPersistence.fetchByRegionId_LanguageId(
+			regionId, languageId);
+	}
+
+	@Override
+	public RegionLocalization getRegionLocalization(
+			long regionId, String languageId)
+		throws PortalException {
+
+		return regionLocalizationPersistence.findByRegionId_LanguageId(
+			regionId, languageId);
+	}
+
+	@Override
+	public List<RegionLocalization> getRegionLocalizations(long regionId) {
+		return regionLocalizationPersistence.findByRegionId(regionId);
+	}
+
+	@Override
+	public RegionLocalization updateRegionLocalization(
+			Region region, String languageId, String title)
+		throws PortalException {
+
+		region = regionPersistence.findByPrimaryKey(region.getPrimaryKey());
+
+		RegionLocalization regionLocalization =
+			regionLocalizationPersistence.fetchByRegionId_LanguageId(
+				region.getRegionId(), languageId);
+
+		return _updateRegionLocalization(
+			region, regionLocalization, languageId, title);
+	}
+
+	@Override
+	public List<RegionLocalization> updateRegionLocalizations(
+			Region region, Map<String, String> titleMap)
+		throws PortalException {
+
+		region = regionPersistence.findByPrimaryKey(region.getPrimaryKey());
+
+		Map<String, String[]> localizedValuesMap =
+			new HashMap<String, String[]>();
+
+		for (Map.Entry<String, String> entry : titleMap.entrySet()) {
+			String languageId = entry.getKey();
+
+			String[] localizedValues = localizedValuesMap.get(languageId);
+
+			if (localizedValues == null) {
+				localizedValues = new String[1];
+
+				localizedValuesMap.put(languageId, localizedValues);
+			}
+
+			localizedValues[0] = entry.getValue();
+		}
+
+		List<RegionLocalization> regionLocalizations =
+			new ArrayList<RegionLocalization>(localizedValuesMap.size());
+
+		for (RegionLocalization regionLocalization :
+				regionLocalizationPersistence.findByRegionId(
+					region.getRegionId())) {
+
+			String[] localizedValues = localizedValuesMap.remove(
+				regionLocalization.getLanguageId());
+
+			if (localizedValues == null) {
+				regionLocalizationPersistence.remove(regionLocalization);
+			}
+			else {
+				regionLocalization.setCompanyId(region.getCompanyId());
+
+				regionLocalization.setTitle(localizedValues[0]);
+
+				regionLocalizations.add(
+					regionLocalizationPersistence.update(regionLocalization));
+			}
+		}
+
+		long batchCounter =
+			counterLocalService.increment(
+				RegionLocalization.class.getName(), localizedValuesMap.size()) -
+					localizedValuesMap.size();
+
+		for (Map.Entry<String, String[]> entry :
+				localizedValuesMap.entrySet()) {
+
+			String languageId = entry.getKey();
+			String[] localizedValues = entry.getValue();
+
+			RegionLocalization regionLocalization =
+				regionLocalizationPersistence.create(++batchCounter);
+
+			regionLocalization.setRegionId(region.getRegionId());
+			regionLocalization.setCompanyId(region.getCompanyId());
+
+			regionLocalization.setLanguageId(languageId);
+
+			regionLocalization.setTitle(localizedValues[0]);
+
+			regionLocalizations.add(
+				regionLocalizationPersistence.update(regionLocalization));
+		}
+
+		return regionLocalizations;
+	}
+
+	private RegionLocalization _updateRegionLocalization(
+			Region region, RegionLocalization regionLocalization,
+			String languageId, String title)
+		throws PortalException {
+
+		if (regionLocalization == null) {
+			long regionLocalizationId = counterLocalService.increment(
+				RegionLocalization.class.getName());
+
+			regionLocalization = regionLocalizationPersistence.create(
+				regionLocalizationId);
+
+			regionLocalization.setRegionId(region.getRegionId());
+			regionLocalization.setLanguageId(languageId);
+		}
+
+		regionLocalization.setCompanyId(region.getCompanyId());
+
+		regionLocalization.setTitle(title);
+
+		return regionLocalizationPersistence.update(regionLocalization);
+	}
+
 	/**
 	 * Returns the region local service.
 	 *
@@ -519,112 +666,37 @@ public abstract class RegionLocalServiceBaseImpl
 	}
 
 	/**
-	 * Returns the country local service.
+	 * Returns the region localization persistence.
 	 *
-	 * @return the country local service
+	 * @return the region localization persistence
 	 */
-	public com.liferay.portal.kernel.service.CountryLocalService
-		getCountryLocalService() {
-
-		return countryLocalService;
+	public RegionLocalizationPersistence getRegionLocalizationPersistence() {
+		return regionLocalizationPersistence;
 	}
 
 	/**
-	 * Sets the country local service.
+	 * Sets the region localization persistence.
 	 *
-	 * @param countryLocalService the country local service
+	 * @param regionLocalizationPersistence the region localization persistence
 	 */
-	public void setCountryLocalService(
-		com.liferay.portal.kernel.service.CountryLocalService
-			countryLocalService) {
+	public void setRegionLocalizationPersistence(
+		RegionLocalizationPersistence regionLocalizationPersistence) {
 
-		this.countryLocalService = countryLocalService;
-	}
-
-	/**
-	 * Returns the country persistence.
-	 *
-	 * @return the country persistence
-	 */
-	public CountryPersistence getCountryPersistence() {
-		return countryPersistence;
-	}
-
-	/**
-	 * Sets the country persistence.
-	 *
-	 * @param countryPersistence the country persistence
-	 */
-	public void setCountryPersistence(CountryPersistence countryPersistence) {
-		this.countryPersistence = countryPersistence;
-	}
-
-	/**
-	 * Returns the user local service.
-	 *
-	 * @return the user local service
-	 */
-	public com.liferay.portal.kernel.service.UserLocalService
-		getUserLocalService() {
-
-		return userLocalService;
-	}
-
-	/**
-	 * Sets the user local service.
-	 *
-	 * @param userLocalService the user local service
-	 */
-	public void setUserLocalService(
-		com.liferay.portal.kernel.service.UserLocalService userLocalService) {
-
-		this.userLocalService = userLocalService;
-	}
-
-	/**
-	 * Returns the user persistence.
-	 *
-	 * @return the user persistence
-	 */
-	public UserPersistence getUserPersistence() {
-		return userPersistence;
-	}
-
-	/**
-	 * Sets the user persistence.
-	 *
-	 * @param userPersistence the user persistence
-	 */
-	public void setUserPersistence(UserPersistence userPersistence) {
-		this.userPersistence = userPersistence;
-	}
-
-	/**
-	 * Returns the user finder.
-	 *
-	 * @return the user finder
-	 */
-	public UserFinder getUserFinder() {
-		return userFinder;
-	}
-
-	/**
-	 * Sets the user finder.
-	 *
-	 * @param userFinder the user finder
-	 */
-	public void setUserFinder(UserFinder userFinder) {
-		this.userFinder = userFinder;
+		this.regionLocalizationPersistence = regionLocalizationPersistence;
 	}
 
 	public void afterPropertiesSet() {
 		persistedModelLocalServiceRegistry.register(
 			"com.liferay.portal.kernel.model.Region", regionLocalService);
+
+		_setLocalServiceUtilService(regionLocalService);
 	}
 
 	public void destroy() {
 		persistedModelLocalServiceRegistry.unregister(
 			"com.liferay.portal.kernel.model.Region");
+
+		_setLocalServiceUtilService(null);
 	}
 
 	/**
@@ -669,6 +741,22 @@ public abstract class RegionLocalServiceBaseImpl
 		}
 	}
 
+	private void _setLocalServiceUtilService(
+		RegionLocalService regionLocalService) {
+
+		try {
+			Field field = RegionLocalServiceUtil.class.getDeclaredField(
+				"_service");
+
+			field.setAccessible(true);
+
+			field.set(null, regionLocalService);
+		}
+		catch (ReflectiveOperationException reflectiveOperationException) {
+			throw new RuntimeException(reflectiveOperationException);
+		}
+	}
+
 	@BeanReference(type = RegionLocalService.class)
 	protected RegionLocalService regionLocalService;
 
@@ -681,26 +769,8 @@ public abstract class RegionLocalServiceBaseImpl
 	protected com.liferay.counter.kernel.service.CounterLocalService
 		counterLocalService;
 
-	@BeanReference(
-		type = com.liferay.portal.kernel.service.CountryLocalService.class
-	)
-	protected com.liferay.portal.kernel.service.CountryLocalService
-		countryLocalService;
-
-	@BeanReference(type = CountryPersistence.class)
-	protected CountryPersistence countryPersistence;
-
-	@BeanReference(
-		type = com.liferay.portal.kernel.service.UserLocalService.class
-	)
-	protected com.liferay.portal.kernel.service.UserLocalService
-		userLocalService;
-
-	@BeanReference(type = UserPersistence.class)
-	protected UserPersistence userPersistence;
-
-	@BeanReference(type = UserFinder.class)
-	protected UserFinder userFinder;
+	@BeanReference(type = RegionLocalizationPersistence.class)
+	protected RegionLocalizationPersistence regionLocalizationPersistence;
 
 	@BeanReference(type = PersistedModelLocalServiceRegistry.class)
 	protected PersistedModelLocalServiceRegistry

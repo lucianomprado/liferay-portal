@@ -62,9 +62,8 @@ public interface CommerceTaxFixedRateAddressRelService extends BaseService {
 	 * Never modify this interface directly. Add custom service methods to <code>com.liferay.commerce.tax.engine.fixed.service.impl.CommerceTaxFixedRateAddressRelServiceImpl</code> and rerun ServiceBuilder to automatically copy the method declarations to this interface. Consume the commerce tax fixed rate address rel remote service via injection or a <code>org.osgi.util.tracker.ServiceTracker</code>. Use {@link CommerceTaxFixedRateAddressRelServiceUtil} if injection and service tracking are not available.
 	 */
 	public CommerceTaxFixedRateAddressRel addCommerceTaxFixedRateAddressRel(
-			long userId, long groupId, long commerceTaxMethodId,
-			long cpTaxCategoryId, long commerceCountryId, long commerceRegionId,
-			String zip, double rate)
+			long groupId, long commerceTaxMethodId, long cpTaxCategoryId,
+			long countryId, long regionId, String zip, double rate)
 		throws PortalException;
 
 	/**
@@ -72,9 +71,9 @@ public interface CommerceTaxFixedRateAddressRelService extends BaseService {
 	 */
 	@Deprecated
 	public CommerceTaxFixedRateAddressRel addCommerceTaxFixedRateAddressRel(
-			long commerceTaxMethodId, long cpTaxCategoryId,
-			long commerceCountryId, long commerceRegionId, String zip,
-			double rate, ServiceContext serviceContext)
+			long commerceTaxMethodId, long cpTaxCategoryId, long countryId,
+			long regionId, String zip, double rate,
+			ServiceContext serviceContext)
 		throws PortalException;
 
 	public void deleteCommerceTaxFixedRateAddressRel(
@@ -107,8 +106,8 @@ public interface CommerceTaxFixedRateAddressRelService extends BaseService {
 	public String getOSGiServiceIdentifier();
 
 	public CommerceTaxFixedRateAddressRel updateCommerceTaxFixedRateAddressRel(
-			long commerceTaxFixedRateAddressRelId, long commerceCountryId,
-			long commerceRegionId, String zip, double rate)
+			long commerceTaxFixedRateAddressRelId, long countryId,
+			long regionId, String zip, double rate)
 		throws PortalException;
 
 }

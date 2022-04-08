@@ -14,28 +14,40 @@
 
 package com.liferay.portal.security.auth;
 
+import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMap;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.module.util.SystemBundleUtil;
 import com.liferay.portal.kernel.security.auth.AccessControlContext;
 import com.liferay.portal.kernel.security.auth.verifier.AuthVerifier;
+import com.liferay.portal.kernel.security.auth.verifier.AuthVerifierConfiguration;
 import com.liferay.portal.kernel.security.auth.verifier.AuthVerifierResult;
 import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
+import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.model.impl.UserImpl;
+import com.liferay.portal.security.auth.registry.AuthVerifierRegistry;
 import com.liferay.portal.service.impl.UserLocalServiceImpl;
-import com.liferay.registry.BasicRegistryImpl;
-import com.liferay.registry.Registry;
-import com.liferay.registry.RegistryUtil;
-import com.liferay.registry.ServiceRegistration;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.Objects;
+import java.util.Properties;
+import java.util.Set;
 
 import org.junit.Assert;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
+
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceRegistration;
 
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockServletContext;
@@ -45,12 +57,13 @@ import org.springframework.mock.web.MockServletContext;
  */
 public class AuthVerifierPipelineTest {
 
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
+
 	@Test
 	public void testVerifyRequest() throws PortalException {
-		RegistryUtil.setRegistry(new BasicRegistryImpl());
-
-		Registry registry = RegistryUtil.getRegistry();
-
 		ReflectionTestUtil.setFieldValue(
 			UserLocalServiceUtil.class, "_service",
 			new UserLocalServiceImpl() {
@@ -71,34 +84,106 @@ public class AuthVerifierPipelineTest {
 		authVerifierResult.setSettings(new HashMap<>());
 		authVerifierResult.setState(AuthVerifierResult.State.SUCCESS);
 
-		ServiceRegistration<AuthVerifier> serviceRegistration =
-			registry.registerService(
-				AuthVerifier.class,
-				(AuthVerifier)ProxyUtil.newProxyInstance(
-					AuthVerifier.class.getClassLoader(),
-					new Class<?>[] {AuthVerifier.class},
-					(proxy, method, args) -> {
-						if (Objects.equals(method.getName(), "verify")) {
-							return authVerifierResult;
-						}
+		AuthVerifierConfiguration authVerifierConfiguration =
+			new AuthVerifierConfiguration();
 
-						return null;
-					}),
-				Collections.singletonMap("urls.includes", _BASE_URL + "/*"));
+		AuthVerifier authVerifier = (AuthVerifier)ProxyUtil.newProxyInstance(
+			AuthVerifier.class.getClassLoader(),
+			new Class<?>[] {AuthVerifier.class},
+			(proxy, method, args) -> {
+				if (Objects.equals(method.getName(), "verify")) {
+					return authVerifierResult;
+				}
+
+				return null;
+			});
+
+		Class<? extends AuthVerifier> authVerifierClass =
+			authVerifier.getClass();
+
+		Dictionary<String, Object> propertyMap = MapUtil.singletonDictionary(
+			"urls.includes",
+			StringBundler.concat(
+				_BASE_URL, "/regular/*,", _BASE_URL, "/legacy*"));
+
+		Properties properties = new Properties();
+
+		properties.put(
+			"urls.includes",
+			StringBundler.concat(
+				_BASE_URL, "/regular/*,", _BASE_URL, "/legacy*"));
+
+		authVerifierConfiguration.setAuthVerifierClassName(
+			authVerifierClass.getName());
+		authVerifierConfiguration.setProperties(properties);
+
+		AuthVerifierPipeline authVerifierPipeline = new AuthVerifierPipeline(
+			Collections.singletonList(authVerifierConfiguration), "");
+
+		ReflectionTestUtil.setFieldValue(
+			AuthVerifierRegistry.class, "_serviceTrackerMap",
+			new ServiceTrackerMap<String, AuthVerifier>() {
+
+				@Override
+				public void close() {
+				}
+
+				@Override
+				public boolean containsKey(String key) {
+					return false;
+				}
+
+				@Override
+				public AuthVerifier getService(String key) {
+					if (key.equals(
+							authVerifierConfiguration.
+								getAuthVerifierClassName())) {
+
+						return authVerifier;
+					}
+
+					return null;
+				}
+
+				@Override
+				public Set<String> keySet() {
+					return null;
+				}
+
+				@Override
+				public Collection<AuthVerifier> values() {
+					return null;
+				}
+
+			});
+
+		BundleContext bundleContext = SystemBundleUtil.getBundleContext();
+
+		ServiceRegistration<AuthVerifier> serviceRegistration =
+			bundleContext.registerService(
+				AuthVerifier.class, authVerifier, propertyMap);
+
+		AccessControlContext accessControlContext = new AccessControlContext();
 
 		MockHttpServletRequest mockHttpServletRequest =
 			new MockHttpServletRequest(new MockServletContext());
 
-		mockHttpServletRequest.setRequestURI(_BASE_URL + "/Hello");
-
-		AccessControlContext accessControlContext = new AccessControlContext();
-
-		accessControlContext.setRequest(mockHttpServletRequest);
-
 		try {
+			mockHttpServletRequest.setRequestURI(_BASE_URL + "/legacy/Hello");
+
+			accessControlContext.setRequest(mockHttpServletRequest);
+
 			Assert.assertSame(
 				authVerifierResult,
-				AuthVerifierPipeline.verifyRequest(accessControlContext));
+				authVerifierPipeline.verifyRequest(accessControlContext));
+
+			mockHttpServletRequest.setRequestURI(_BASE_URL + "/regular/Hello");
+
+			accessControlContext.setRequest(mockHttpServletRequest);
+
+			Assert.assertSame(
+				authVerifierResult,
+				authVerifierPipeline.verifyRequest(accessControlContext));
 		}
 		finally {
 			serviceRegistration.unregister();

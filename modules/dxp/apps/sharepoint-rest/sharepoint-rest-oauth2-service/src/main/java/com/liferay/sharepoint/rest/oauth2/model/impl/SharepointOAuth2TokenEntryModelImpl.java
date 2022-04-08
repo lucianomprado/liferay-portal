@@ -27,6 +27,7 @@ import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.sharepoint.rest.oauth2.model.SharepointOAuth2TokenEntry;
 import com.liferay.sharepoint.rest.oauth2.model.SharepointOAuth2TokenEntryModel;
 
@@ -35,6 +36,7 @@ import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
 
+import java.sql.Blob;
 import java.sql.Types;
 
 import java.util.Collections;
@@ -42,6 +44,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
@@ -109,20 +112,20 @@ public class SharepointOAuth2TokenEntryModelImpl
 	public static final String TX_MANAGER = "liferayTransactionManager";
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long CONFIGURATIONPID_COLUMN_BITMASK = 1L;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long USERID_COLUMN_BITMASK = 2L;
 
 	/**
 	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-	 *		#getColumnBitmask(String)
+	 *		#getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long SHAREPOINTOAUTH2TOKENENTRYID_COLUMN_BITMASK = 4L;
@@ -532,7 +535,9 @@ public class SharepointOAuth2TokenEntryModelImpl
 		for (Map.Entry<String, Object> entry :
 				_columnOriginalValues.entrySet()) {
 
-			if (entry.getValue() != getColumnValue(entry.getKey())) {
+			if (!Objects.equals(
+					entry.getValue(), getColumnValue(entry.getKey()))) {
+
 				_columnBitmask |= _columnBitmasks.get(entry.getKey());
 			}
 		}
@@ -587,6 +592,33 @@ public class SharepointOAuth2TokenEntryModelImpl
 		sharepointOAuth2TokenEntryImpl.setRefreshToken(getRefreshToken());
 
 		sharepointOAuth2TokenEntryImpl.resetOriginalValues();
+
+		return sharepointOAuth2TokenEntryImpl;
+	}
+
+	@Override
+	public SharepointOAuth2TokenEntry cloneWithOriginalValues() {
+		SharepointOAuth2TokenEntryImpl sharepointOAuth2TokenEntryImpl =
+			new SharepointOAuth2TokenEntryImpl();
+
+		sharepointOAuth2TokenEntryImpl.setSharepointOAuth2TokenEntryId(
+			this.<Long>getColumnOriginalValue("sharepointOAuth2TokenEntryId"));
+		sharepointOAuth2TokenEntryImpl.setCompanyId(
+			this.<Long>getColumnOriginalValue("companyId"));
+		sharepointOAuth2TokenEntryImpl.setUserId(
+			this.<Long>getColumnOriginalValue("userId"));
+		sharepointOAuth2TokenEntryImpl.setUserName(
+			this.<String>getColumnOriginalValue("userName"));
+		sharepointOAuth2TokenEntryImpl.setCreateDate(
+			this.<Date>getColumnOriginalValue("createDate"));
+		sharepointOAuth2TokenEntryImpl.setAccessToken(
+			this.<String>getColumnOriginalValue("accessToken"));
+		sharepointOAuth2TokenEntryImpl.setConfigurationPid(
+			this.<String>getColumnOriginalValue("configurationPid"));
+		sharepointOAuth2TokenEntryImpl.setExpirationDate(
+			this.<Date>getColumnOriginalValue("expirationDate"));
+		sharepointOAuth2TokenEntryImpl.setRefreshToken(
+			this.<String>getColumnOriginalValue("refreshToken"));
 
 		return sharepointOAuth2TokenEntryImpl;
 	}
@@ -738,7 +770,7 @@ public class SharepointOAuth2TokenEntryModelImpl
 			attributeGetterFunctions = getAttributeGetterFunctions();
 
 		StringBundler sb = new StringBundler(
-			(4 * attributeGetterFunctions.size()) + 2);
+			(5 * attributeGetterFunctions.size()) + 2);
 
 		sb.append("{");
 
@@ -749,11 +781,27 @@ public class SharepointOAuth2TokenEntryModelImpl
 			Function<SharepointOAuth2TokenEntry, Object>
 				attributeGetterFunction = entry.getValue();
 
+			sb.append("\"");
 			sb.append(attributeName);
-			sb.append("=");
-			sb.append(
-				attributeGetterFunction.apply(
-					(SharepointOAuth2TokenEntry)this));
+			sb.append("\": ");
+
+			Object value = attributeGetterFunction.apply(
+				(SharepointOAuth2TokenEntry)this);
+
+			if (value == null) {
+				sb.append("null");
+			}
+			else if (value instanceof Blob || value instanceof Date ||
+					 value instanceof Map || value instanceof String) {
+
+				sb.append(
+					"\"" + StringUtil.replace(value.toString(), "\"", "'") +
+						"\"");
+			}
+			else {
+				sb.append(value);
+			}
+
 			sb.append(", ");
 		}
 

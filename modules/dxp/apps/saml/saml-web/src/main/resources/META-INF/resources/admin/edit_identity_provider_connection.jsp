@@ -19,19 +19,20 @@
 <%
 String redirect = ParamUtil.getString(request, "redirect");
 
+AttributeMappingDisplayContext attributeMappingDisplayContext = (AttributeMappingDisplayContext)request.getAttribute(AttributeMappingDisplayContext.class.getName());
+long clockSkew = GetterUtil.getLong(request.getAttribute(SamlWebKeys.SAML_CLOCK_SKEW));
 SamlSpIdpConnection samlSpIdpConnection = (SamlSpIdpConnection)request.getAttribute(SamlWebKeys.SAML_SP_IDP_CONNECTION);
+UserFieldExpressionResolverRegistry userFieldExpressionResolverRegistry = (UserFieldExpressionResolverRegistry)request.getAttribute(UserFieldExpressionResolverRegistry.class.getName());
 
-long clockSkew = GetterUtil.getLong(request.getAttribute(SamlWebKeys.SAML_CLOCK_SKEW), samlProviderConfiguration.clockSkew());
+String userIdentifierExpression;
+
+if (samlSpIdpConnection != null) {
+	userIdentifierExpression = samlSpIdpConnection.getUserIdentifierExpression();
+}
+else {
+	userIdentifierExpression = userFieldExpressionResolverRegistry.getDefaultUserFieldExpressionResolverKey();
+}
 %>
-
-<clay:container-fluid
-	cssClass="container-fluid container-fluid-max-xl sheet"
->
-	<liferay-ui:header
-		backURL="<%= redirect %>"
-		title='<%= (samlSpIdpConnection != null) ? samlSpIdpConnection.getName() : "new-identity-provider" %>'
-	/>
-</clay:container-fluid>
 
 <portlet:actionURL name="/admin/update_identity_provider_connection" var="updateIdentityProviderConnectionURL">
 	<portlet:param name="mvcRenderCommandName" value="/admin/edit_identity_provider_connection" />
@@ -39,12 +40,27 @@ long clockSkew = GetterUtil.getLong(request.getAttribute(SamlWebKeys.SAML_CLOCK_
 </portlet:actionURL>
 
 <aui:form action="<%= updateIdentityProviderConnectionURL %>" cssClass="container-fluid container-fluid-max-xl sheet" enctype="multipart/form-data">
+	<clay:container-fluid>
+		<liferay-ui:header
+			backURL="<%= redirect %>"
+			title='<%= (samlSpIdpConnection != null) ? samlSpIdpConnection.getName() : "new-identity-provider" %>'
+		/>
+	</clay:container-fluid>
+
 	<aui:input name="redirect" type="hidden" value="<%= redirect %>" />
 
 	<liferay-ui:error exception="<%= DuplicateSamlSpIdpConnectionSamlIdpEntityIdException.class %>" message="please-enter-a-unique-identity-provider-entity-id" />
 	<liferay-ui:error exception="<%= SamlSpIdpConnectionMetadataUrlException.class %>" message="please-enter-a-valid-metadata-endpoint-url" />
 	<liferay-ui:error exception="<%= SamlSpIdpConnectionMetadataXmlException.class %>" message="please-enter-a-valid-metadata-xml" />
 	<liferay-ui:error exception="<%= SamlSpIdpConnectionSamlIdpEntityIdException.class %>" message="please-enter-a-valid-identity-provider-entity-id" />
+
+	<liferay-ui:error exception="<%= UserAttributeMappingException.class %>">
+		<liferay-ui:message arguments="<%= attributeMappingDisplayContext.getMessageArguments((UserAttributeMappingException)errorException) %>" key="<%= attributeMappingDisplayContext.getMessageKey((UserAttributeMappingException)errorException) %>" translateArguments="<%= false %>" />
+	</liferay-ui:error>
+
+	<liferay-ui:error exception="<%= UserIdentifierExpressionException.class %>">
+		<liferay-ui:message key="<%= attributeMappingDisplayContext.getMessageKey((UserIdentifierExpressionException)errorException) %>" translateArguments="<%= false %>" />
+	</liferay-ui:error>
 
 	<aui:model-context bean="<%= samlSpIdpConnection %>" model="<%= SamlSpIdpConnection.class %>" />
 
@@ -67,7 +83,7 @@ long clockSkew = GetterUtil.getLong(request.getAttribute(SamlWebKeys.SAML_CLOCK_
 	<aui:fieldset helpMessage="identity-provider-metadata-help" label="metadata">
 		<aui:input name="metadataUrl" />
 
-		<aui:button-row>
+		<aui:button-row cssClass="sheet-footer">
 			<aui:button onClick='<%= liferayPortletResponse.getNamespace() + "uploadMetadataXml();" %>' value="upload-metadata-xml" />
 		</aui:button-row>
 
@@ -92,9 +108,25 @@ long clockSkew = GetterUtil.getLong(request.getAttribute(SamlWebKeys.SAML_CLOCK_
 		</aui:select>
 	</aui:fieldset>
 
-	<aui:fieldset label="attributes">
-		<aui:input helpMessage="attribute-mapping-help" label="attribute-mapping" name="userAttributeMappings" />
+	<aui:fieldset helpMessage="user-resolution-help" label="user-resolution">
+
+		<%
+		for (Map.Entry<String, UserFieldExpressionResolver> entry : userFieldExpressionResolverRegistry.getOrderedUserFieldExpressionResolvers()) {
+			String key = entry.getKey();
+			UserFieldExpressionResolver userFieldExpressionResolver = entry.getValue();
+		%>
+
+			<aui:input checked="<%= Objects.equals(userIdentifierExpression, key) %>" cssClass="primary-ctrl" inlineField="<%= true %>" label="<%= userFieldExpressionResolver.getDescription(locale) %>" name="userIdentifierExpression" type="radio" value="<%= key %>" />
+
+		<%
+		}
+		%>
+
 	</aui:fieldset>
+
+	<br />
+
+	<liferay-util:include page="/admin/user_attribute_mapping.jsp" servletContext="<%= application %>" />
 
 	<liferay-util:dynamic-include key="com.liferay.saml.web#/admin/edit_identity_provider_connection.jsp#post" />
 

@@ -23,7 +23,6 @@ import com.liferay.change.tracking.conflict.ConflictInfo;
 import com.liferay.change.tracking.model.CTCollection;
 import com.liferay.change.tracking.service.CTCollectionLocalService;
 import com.liferay.change.tracking.service.CTProcessLocalService;
-import com.liferay.counter.kernel.service.CounterLocalService;
 import com.liferay.journal.constants.JournalArticleConstants;
 import com.liferay.journal.constants.JournalFolderConstants;
 import com.liferay.journal.model.JournalArticle;
@@ -32,7 +31,7 @@ import com.liferay.journal.service.JournalArticleLocalService;
 import com.liferay.journal.service.JournalFolderLocalService;
 import com.liferay.journal.test.util.JournalTestUtil;
 import com.liferay.layout.test.util.LayoutTestUtil;
-import com.liferay.petra.lang.SafeClosable;
+import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.change.tracking.CTCollectionThreadLocal;
 import com.liferay.portal.kernel.model.Group;
@@ -50,7 +49,6 @@ import com.liferay.portal.kernel.util.Constants;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
-import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 
@@ -78,27 +76,16 @@ public class CTCollectionLocalServiceTest {
 
 	@Before
 	public void setUp() throws Exception {
-		long ctCollectionId = _counterLocalService.increment(
-			CTCollection.class.getName());
-
-		_ctCollection1 = _ctCollectionLocalService.createCTCollection(
-			ctCollectionId);
-
-		_ctCollection1.setUserId(TestPropsValues.getUserId());
-		_ctCollection1.setName(String.valueOf(ctCollectionId));
-		_ctCollection1.setStatus(WorkflowConstants.STATUS_DRAFT);
-
-		_ctCollection1 = _ctCollectionLocalService.updateCTCollection(
-			_ctCollection1);
-
+		_ctCollection1 = _ctCollectionLocalService.addCTCollection(
+			TestPropsValues.getCompanyId(), TestPropsValues.getUserId(),
+			CTCollectionLocalServiceTest.class.getSimpleName(), null);
+		_group = GroupTestUtil.addGroup();
 		_journalArticleClassNameId = _classNameLocalService.getClassNameId(
 			JournalArticle.class);
 		_journalFolderClassNameId = _classNameLocalService.getClassNameId(
 			JournalFolder.class);
 		_layoutClassNameId = _classNameLocalService.getClassNameId(
 			Layout.class);
-
-		_group = GroupTestUtil.addGroup();
 	}
 
 	@Test
@@ -137,8 +124,8 @@ public class CTCollectionLocalServiceTest {
 
 		serviceContext.setScopeGroupId(_group.getGroupId());
 
-		try (SafeClosable safeClosable =
-				CTCollectionThreadLocal.setCTCollectionId(
+		try (SafeCloseable safeCloseable =
+				CTCollectionThreadLocal.setCTCollectionIdWithSafeCloseable(
 					_ctCollection1.getCtCollectionId())) {
 
 			ctJournalArticle1 = _journalArticleLocalService.updateArticle(
@@ -183,8 +170,8 @@ public class CTCollectionLocalServiceTest {
 		Assert.assertEquals(1.1, ctJournalArticle1.getVersion(), 0.01);
 		Assert.assertEquals(1.2, ctJournalArticle2.getVersion(), 0.01);
 
-		try (SafeClosable safeClosable =
-				CTCollectionThreadLocal.setCTCollectionId(
+		try (SafeCloseable safeCloseable =
+				CTCollectionThreadLocal.setCTCollectionIdWithSafeCloseable(
 					_ctCollection1.getCtCollectionId())) {
 
 			List<JournalArticle> journalArticles =
@@ -264,8 +251,8 @@ public class CTCollectionLocalServiceTest {
 
 		JournalFolder ctJournalFolder = null;
 
-		try (SafeClosable safeClosable =
-				CTCollectionThreadLocal.setCTCollectionId(
+		try (SafeCloseable safeCloseable =
+				CTCollectionThreadLocal.setCTCollectionIdWithSafeCloseable(
 					_ctCollection1.getCtCollectionId())) {
 
 			ctJournalFolder = JournalTestUtil.addFolder(
@@ -275,8 +262,8 @@ public class CTCollectionLocalServiceTest {
 		JournalFolder productionJournalFolder = JournalTestUtil.addFolder(
 			_group.getGroupId(), conflictingFolderName);
 
-		try (SafeClosable safeClosable =
-				CTCollectionThreadLocal.setCTCollectionId(
+		try (SafeCloseable safeCloseable =
+				CTCollectionThreadLocal.setCTCollectionIdWithSafeCloseable(
 					_ctCollection1.getCtCollectionId())) {
 
 			List<JournalFolder> journalFolders =
@@ -327,10 +314,10 @@ public class CTCollectionLocalServiceTest {
 
 	@Test
 	public void testDeletePreDeletedLayout() throws Exception {
-		Layout layout = LayoutTestUtil.addLayout(_group);
+		Layout layout = LayoutTestUtil.addTypePortletLayout(_group);
 
-		try (SafeClosable safeClosable =
-				CTCollectionThreadLocal.setCTCollectionId(
+		try (SafeCloseable safeCloseable =
+				CTCollectionThreadLocal.setCTCollectionIdWithSafeCloseable(
 					_ctCollection1.getCtCollectionId())) {
 
 			_layoutLocalService.deleteLayout(layout);
@@ -360,10 +347,10 @@ public class CTCollectionLocalServiceTest {
 	public void testDeletePreDeletedLayoutWithTwoCollections()
 		throws Exception {
 
-		Layout layout = LayoutTestUtil.addLayout(_group);
+		Layout layout = LayoutTestUtil.addTypePortletLayout(_group);
 
-		try (SafeClosable safeClosable =
-				CTCollectionThreadLocal.setCTCollectionId(
+		try (SafeCloseable safeCloseable =
+				CTCollectionThreadLocal.setCTCollectionIdWithSafeCloseable(
 					_ctCollection1.getCtCollectionId())) {
 
 			_layoutLocalService.deleteLayout(layout);
@@ -379,8 +366,8 @@ public class CTCollectionLocalServiceTest {
 			TestPropsValues.getCompanyId(), TestPropsValues.getUserId(),
 			StringUtil.randomString(), StringUtil.randomString());
 
-		try (SafeClosable safeClosable =
-				CTCollectionThreadLocal.setCTCollectionId(
+		try (SafeCloseable safeCloseable =
+				CTCollectionThreadLocal.setCTCollectionIdWithSafeCloseable(
 					_ctCollection2.getCtCollectionId())) {
 
 			_layoutLocalService.deleteLayout(layout);
@@ -404,8 +391,8 @@ public class CTCollectionLocalServiceTest {
 			_ctCollection1.getCtCollectionId(), _ctCollection1.getUserId(),
 			_ctCollection1.getName() + " (undo)", StringPool.BLANK);
 
-		try (SafeClosable safeClosable =
-				CTCollectionThreadLocal.setCTCollectionId(
+		try (SafeCloseable safeCloseable =
+				CTCollectionThreadLocal.setCTCollectionIdWithSafeCloseable(
 					_ctCollection3.getCtCollectionId())) {
 
 			Assert.assertEquals(
@@ -416,8 +403,8 @@ public class CTCollectionLocalServiceTest {
 			_ctCollection2.getCtCollectionId(), _ctCollection2.getUserId(),
 			_ctCollection2.getName() + " (undo)", StringPool.BLANK);
 
-		try (SafeClosable safeClosable =
-				CTCollectionThreadLocal.setCTCollectionId(
+		try (SafeCloseable safeCloseable =
+				CTCollectionThreadLocal.setCTCollectionIdWithSafeCloseable(
 					_ctCollection4.getCtCollectionId())) {
 
 			Assert.assertNull(
@@ -440,9 +427,9 @@ public class CTCollectionLocalServiceTest {
 	public void testUndoCTCollection() throws Exception {
 		Layout addedLayout = null;
 
-		Layout deletedLayout = LayoutTestUtil.addLayout(_group);
+		Layout deletedLayout = LayoutTestUtil.addTypePortletLayout(_group);
 
-		Layout modifiedLayout = LayoutTestUtil.addLayout(_group);
+		Layout modifiedLayout = LayoutTestUtil.addTypePortletLayout(_group);
 
 		String tagName1 = "layoutcttesttag1";
 		String tagName2 = "layoutcttesttag2";
@@ -455,11 +442,11 @@ public class CTCollectionLocalServiceTest {
 
 		String newFriendlyURL = "/testModifyLayout";
 
-		try (SafeClosable safeClosable =
-				CTCollectionThreadLocal.setCTCollectionId(
+		try (SafeCloseable safeCloseable =
+				CTCollectionThreadLocal.setCTCollectionIdWithSafeCloseable(
 					_ctCollection1.getCtCollectionId())) {
 
-			addedLayout = LayoutTestUtil.addLayout(_group);
+			addedLayout = LayoutTestUtil.addTypePortletLayout(_group);
 
 			_layoutLocalService.deleteLayout(deletedLayout);
 
@@ -504,8 +491,8 @@ public class CTCollectionLocalServiceTest {
 			_ctCollection1.getCtCollectionId(), _ctCollection1.getUserId(),
 			_ctCollection1.getName() + " (undo)", StringPool.BLANK);
 
-		try (SafeClosable safeClosable =
-				CTCollectionThreadLocal.setCTCollectionId(
+		try (SafeCloseable safeCloseable =
+				CTCollectionThreadLocal.setCTCollectionIdWithSafeCloseable(
 					_ctCollection2.getCtCollectionId())) {
 
 			Assert.assertNull(
@@ -557,9 +544,6 @@ public class CTCollectionLocalServiceTest {
 
 	@Inject
 	private static ClassNameLocalService _classNameLocalService;
-
-	@Inject
-	private static CounterLocalService _counterLocalService;
 
 	@Inject
 	private static CTCollectionLocalService _ctCollectionLocalService;

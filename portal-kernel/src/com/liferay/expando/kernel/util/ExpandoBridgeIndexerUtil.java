@@ -19,17 +19,19 @@ import com.liferay.portal.kernel.search.Document;
 
 /**
  * @author Raymond Augé
+ * @deprecated As of Cavanaugh (7.4.x)
  */
+@Deprecated
 public class ExpandoBridgeIndexerUtil {
 
 	public static void addAttributes(
 		Document doc, ExpandoBridge expandoBridge) {
 
-		getExpandoBridgeIndexer().addAttributes(doc, expandoBridge);
+		_expandoBridgeIndexer.addAttributes(doc, expandoBridge);
 	}
 
 	public static String encodeFieldName(String columnName, int indexType) {
-		return getExpandoBridgeIndexer().encodeFieldName(columnName, indexType);
+		return _expandoBridgeIndexer.encodeFieldName(columnName, indexType);
 	}
 
 	public static ExpandoBridgeIndexer getExpandoBridgeIndexer() {

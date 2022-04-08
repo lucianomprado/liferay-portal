@@ -21,6 +21,7 @@ import com.liferay.commerce.product.content.render.list.entry.CPContentListEntry
 import com.liferay.commerce.product.content.util.CPCompareContentHelper;
 import com.liferay.commerce.product.content.web.internal.display.context.CPCompareContentDisplayContext;
 import com.liferay.commerce.product.type.CPTypeServicesTracker;
+import com.liferay.commerce.product.util.CPCompareHelper;
 import com.liferay.commerce.product.util.CPDefinitionHelper;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
@@ -61,7 +62,8 @@ import org.osgi.service.component.annotations.Reference;
 		"javax.portlet.init-param.view-template=/compare_products/view.jsp",
 		"javax.portlet.name=" + CPPortletKeys.CP_COMPARE_CONTENT_WEB,
 		"javax.portlet.resource-bundle=content.Language",
-		"javax.portlet.security-role-ref=power-user,user"
+		"javax.portlet.security-role-ref=power-user,user",
+		"javax.portlet.version=3.0"
 	},
 	service = {CPCompareContentPortlet.class, Portlet.class}
 )
@@ -82,7 +84,7 @@ public class CPCompareContentPortlet extends MVCPortlet {
 
 			CPCompareContentDisplayContext cpCompareContentDisplayContext =
 				new CPCompareContentDisplayContext(
-					_cpContentListEntryRendererRegistry,
+					_cpCompareHelper, _cpContentListEntryRendererRegistry,
 					_cpContentListRendererRegistry, _cpDefinitionHelper,
 					_cpTypeServicesTracker, httpServletRequest);
 
@@ -91,7 +93,7 @@ public class CPCompareContentPortlet extends MVCPortlet {
 				cpCompareContentDisplayContext);
 		}
 		catch (PortalException portalException) {
-			_log.error(portalException, portalException);
+			_log.error(portalException);
 		}
 
 		super.render(renderRequest, renderResponse);
@@ -102,6 +104,9 @@ public class CPCompareContentPortlet extends MVCPortlet {
 
 	@Reference
 	private CPCompareContentHelper _cpCompareContentHelper;
+
+	@Reference
+	private CPCompareHelper _cpCompareHelper;
 
 	@Reference
 	private CPContentListEntryRendererRegistry

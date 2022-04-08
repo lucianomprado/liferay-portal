@@ -85,11 +85,9 @@ public class LiferayPortlet extends GenericPortlet {
 		throws IOException, PortletException {
 
 		try {
-			if (!callActionMethod(actionRequest, actionResponse)) {
-				return;
-			}
+			if (!callActionMethod(actionRequest, actionResponse) ||
+				!SessionErrors.isEmpty(actionRequest)) {
 
-			if (!SessionErrors.isEmpty(actionRequest)) {
 				return;
 			}
 
@@ -120,10 +118,18 @@ public class LiferayPortlet extends GenericPortlet {
 					throwable.getClass(), throwable);
 			}
 			else if (isSessionErrorException(throwable)) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(throwable, throwable);
+				}
+
 				SessionErrors.add(
 					actionRequest, throwable.getClass(), throwable);
 			}
 			else {
+				if (_log.isDebugEnabled()) {
+					_log.debug(portletException);
+				}
+
 				throw portletException;
 			}
 		}
@@ -134,15 +140,10 @@ public class LiferayPortlet extends GenericPortlet {
 			ResourceRequest resourceRequest, ResourceResponse resourceResponse)
 		throws IOException, PortletException {
 
-		if (!callResourceMethod(resourceRequest, resourceResponse)) {
-			return;
-		}
+		if (!callResourceMethod(resourceRequest, resourceResponse) ||
+			!SessionErrors.isEmpty(resourceRequest) ||
+			!SessionMessages.isEmpty(resourceRequest)) {
 
-		if (!SessionErrors.isEmpty(resourceRequest)) {
-			return;
-		}
-
-		if (!SessionMessages.isEmpty(resourceRequest)) {
 			return;
 		}
 
@@ -184,6 +185,10 @@ public class LiferayPortlet extends GenericPortlet {
 			return true;
 		}
 		catch (NoSuchMethodException noSuchMethodException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(noSuchMethodException);
+			}
+
 			try {
 				super.processAction(actionRequest, actionResponse);
 
@@ -229,6 +234,10 @@ public class LiferayPortlet extends GenericPortlet {
 			return true;
 		}
 		catch (NoSuchMethodException noSuchMethodException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(noSuchMethodException);
+			}
+
 			try {
 				super.serveResource(resourceRequest, resourceResponse);
 
@@ -454,6 +463,10 @@ public class LiferayPortlet extends GenericPortlet {
 			return PortalUtil.getPortletTitle(renderRequest);
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception);
+			}
+
 			return super.getTitle(renderRequest);
 		}
 	}
@@ -564,10 +577,6 @@ public class LiferayPortlet extends GenericPortlet {
 	}
 
 	protected boolean isSessionErrorException(Throwable throwable) {
-		if (_log.isDebugEnabled()) {
-			_log.debug(throwable, throwable);
-		}
-
 		if (throwable instanceof PortalException) {
 			return true;
 		}

@@ -13,7 +13,7 @@
  */
 
 import ClayLoadingIndicator from '@clayui/loading-indicator';
-import {useIsMounted} from 'frontend-js-react-web';
+import {useIsMounted} from '@liferay/frontend-js-react-web';
 import {fetch, runScriptsInElement} from 'frontend-js-web';
 import PropTypes from 'prop-types';
 import React, {useContext, useEffect, useState} from 'react';
@@ -89,8 +89,8 @@ class LayoutsTreeContent extends React.Component {
 
 					if (target?.dataset?.label && target?.dataset?.url) {
 						this.props.onPageClick({
-							layoutName: target.dataset.label,
-							layoutURL: target.dataset.url,
+							name: target.dataset.label,
+							url: target.dataset.url,
 						});
 					}
 				}}

@@ -33,7 +33,6 @@ import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
-import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Group;
@@ -46,13 +45,10 @@ import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.odata.entity.EntityField;
 import com.liferay.portal.odata.entity.EntityModel;
-import com.liferay.portal.test.log.CaptureAppender;
-import com.liferay.portal.test.log.Log4JLoggerTestUtil;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.vulcan.resource.EntityModelResource;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 
 import java.text.DateFormat;
@@ -71,7 +67,6 @@ import javax.annotation.Generated;
 import javax.ws.rs.core.MultivaluedHashMap;
 
 import org.apache.commons.beanutils.BeanUtilsBean;
-import org.apache.log4j.Level;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -230,7 +225,8 @@ public abstract class BaseFormDocumentResourceTestCase {
 
 	@Test
 	public void testGraphQLDeleteFormDocument() throws Exception {
-		FormDocument formDocument = testGraphQLFormDocument_addFormDocument();
+		FormDocument formDocument =
+			testGraphQLDeleteFormDocument_addFormDocument();
 
 		Assert.assertTrue(
 			JSONUtil.getValueAsBoolean(
@@ -243,26 +239,25 @@ public abstract class BaseFormDocumentResourceTestCase {
 							}
 						})),
 				"JSONObject/data", "Object/deleteFormDocument"));
+		JSONArray errorsJSONArray = JSONUtil.getValueAsJSONArray(
+			invokeGraphQLQuery(
+				new GraphQLField(
+					"formDocument",
+					new HashMap<String, Object>() {
+						{
+							put("formDocumentId", formDocument.getId());
+						}
+					},
+					new GraphQLField("id"))),
+			"JSONArray/errors");
 
-		try (CaptureAppender captureAppender =
-				Log4JLoggerTestUtil.configureLog4JLogger(
-					"graphql.execution.SimpleDataFetcherExceptionHandler",
-					Level.WARN)) {
+		Assert.assertTrue(errorsJSONArray.length() > 0);
+	}
 
-			JSONArray errorsJSONArray = JSONUtil.getValueAsJSONArray(
-				invokeGraphQLQuery(
-					new GraphQLField(
-						"formDocument",
-						new HashMap<String, Object>() {
-							{
-								put("formDocumentId", formDocument.getId());
-							}
-						},
-						new GraphQLField("id"))),
-				"JSONArray/errors");
+	protected FormDocument testGraphQLDeleteFormDocument_addFormDocument()
+		throws Exception {
 
-			Assert.assertTrue(errorsJSONArray.length() > 0);
-		}
+		return testGraphQLFormDocument_addFormDocument();
 	}
 
 	@Test
@@ -285,7 +280,8 @@ public abstract class BaseFormDocumentResourceTestCase {
 
 	@Test
 	public void testGraphQLGetFormDocument() throws Exception {
-		FormDocument formDocument = testGraphQLFormDocument_addFormDocument();
+		FormDocument formDocument =
+			testGraphQLGetFormDocument_addFormDocument();
 
 		Assert.assertTrue(
 			equals(
@@ -326,11 +322,34 @@ public abstract class BaseFormDocumentResourceTestCase {
 				"Object/code"));
 	}
 
+	protected FormDocument testGraphQLGetFormDocument_addFormDocument()
+		throws Exception {
+
+		return testGraphQLFormDocument_addFormDocument();
+	}
+
 	protected FormDocument testGraphQLFormDocument_addFormDocument()
 		throws Exception {
 
 		throw new UnsupportedOperationException(
 			"This method needs to be implemented");
+	}
+
+	protected void assertContains(
+		FormDocument formDocument, List<FormDocument> formDocuments) {
+
+		boolean contains = false;
+
+		for (FormDocument item : formDocuments) {
+			if (equals(formDocument, item)) {
+				contains = true;
+
+				break;
+			}
+		}
+
+		Assert.assertTrue(
+			formDocuments + " does not contain " + formDocument, contains);
 	}
 
 	protected void assertHttpResponseStatusCode(
@@ -488,8 +507,8 @@ public abstract class BaseFormDocumentResourceTestCase {
 
 		graphQLFields.add(new GraphQLField("siteId"));
 
-		for (Field field :
-				ReflectionUtil.getDeclaredFields(
+		for (java.lang.reflect.Field field :
+				getDeclaredFields(
 					com.liferay.headless.form.dto.v1_0.FormDocument.class)) {
 
 			if (!ArrayUtil.contains(
@@ -504,12 +523,13 @@ public abstract class BaseFormDocumentResourceTestCase {
 		return graphQLFields;
 	}
 
-	protected List<GraphQLField> getGraphQLFields(Field... fields)
+	protected List<GraphQLField> getGraphQLFields(
+			java.lang.reflect.Field... fields)
 		throws Exception {
 
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
-		for (Field field : fields) {
+		for (java.lang.reflect.Field field : fields) {
 			com.liferay.portal.vulcan.graphql.annotation.GraphQLField
 				vulcanGraphQLField = field.getAnnotation(
 					com.liferay.portal.vulcan.graphql.annotation.GraphQLField.
@@ -523,7 +543,7 @@ public abstract class BaseFormDocumentResourceTestCase {
 				}
 
 				List<GraphQLField> childrenGraphQLFields = getGraphQLFields(
-					ReflectionUtil.getDeclaredFields(clazz));
+					getDeclaredFields(clazz));
 
 				graphQLFields.add(
 					new GraphQLField(field.getName(), childrenGraphQLFields));
@@ -671,6 +691,19 @@ public abstract class BaseFormDocumentResourceTestCase {
 		}
 
 		return false;
+	}
+
+	protected java.lang.reflect.Field[] getDeclaredFields(Class clazz)
+		throws Exception {
+
+		Stream<java.lang.reflect.Field> stream = Stream.of(
+			ReflectionUtil.getDeclaredFields(clazz));
+
+		return stream.filter(
+			field -> !field.isSynthetic()
+		).toArray(
+			java.lang.reflect.Field[]::new
+		);
 	}
 
 	protected java.util.Collection<EntityField> getEntityFields()
@@ -900,12 +933,12 @@ public abstract class BaseFormDocumentResourceTestCase {
 						_parameterMap.entrySet()) {
 
 					sb.append(entry.getKey());
-					sb.append(":");
+					sb.append(": ");
 					sb.append(entry.getValue());
-					sb.append(",");
+					sb.append(", ");
 				}
 
-				sb.setLength(sb.length() - 1);
+				sb.setLength(sb.length() - 2);
 
 				sb.append(")");
 			}
@@ -915,10 +948,10 @@ public abstract class BaseFormDocumentResourceTestCase {
 
 				for (GraphQLField graphQLField : _graphQLFields) {
 					sb.append(graphQLField.toString());
-					sb.append(",");
+					sb.append(", ");
 				}
 
-				sb.setLength(sb.length() - 1);
+				sb.setLength(sb.length() - 2);
 
 				sb.append("}");
 			}
@@ -932,8 +965,8 @@ public abstract class BaseFormDocumentResourceTestCase {
 
 	}
 
-	private static final Log _log = LogFactoryUtil.getLog(
-		BaseFormDocumentResourceTestCase.class);
+	private static final com.liferay.portal.kernel.log.Log _log =
+		LogFactoryUtil.getLog(BaseFormDocumentResourceTestCase.class);
 
 	private static BeanUtilsBean _beanUtilsBean = new BeanUtilsBean() {
 

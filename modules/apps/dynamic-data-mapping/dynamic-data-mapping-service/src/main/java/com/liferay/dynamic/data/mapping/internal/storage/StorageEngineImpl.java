@@ -24,6 +24,8 @@ import com.liferay.dynamic.data.mapping.storage.DDMFormValues;
 import com.liferay.dynamic.data.mapping.storage.StorageAdapter;
 import com.liferay.dynamic.data.mapping.storage.StorageAdapterRegistry;
 import com.liferay.dynamic.data.mapping.storage.StorageEngine;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.service.ServiceContext;
 
 import org.osgi.service.component.annotations.Component;
@@ -41,7 +43,7 @@ public class StorageEngineImpl implements StorageEngine {
 			ServiceContext serviceContext)
 		throws StorageException {
 
-		StorageAdapter storageAdapter = getStructureStorageAdapter(
+		StorageAdapter storageAdapter = _getStructureStorageAdapter(
 			ddmStructureId);
 
 		return storageAdapter.create(
@@ -50,7 +52,7 @@ public class StorageEngineImpl implements StorageEngine {
 
 	@Override
 	public void deleteByClass(long classPK) throws StorageException {
-		StorageAdapter storageAdapter = getClassStorageAdapter(classPK);
+		StorageAdapter storageAdapter = _getClassStorageAdapter(classPK);
 
 		if (storageAdapter != null) {
 			storageAdapter.deleteByClass(classPK);
@@ -61,7 +63,7 @@ public class StorageEngineImpl implements StorageEngine {
 	public void deleteByDDMStructure(long ddmStructureId)
 		throws StorageException {
 
-		StorageAdapter storageAdapter = getStructureStorageAdapter(
+		StorageAdapter storageAdapter = _getStructureStorageAdapter(
 			ddmStructureId);
 
 		storageAdapter.deleteByDDMStructure(ddmStructureId);
@@ -71,7 +73,7 @@ public class StorageEngineImpl implements StorageEngine {
 	public DDMFormValues getDDMFormValues(long classPK)
 		throws StorageException {
 
-		StorageAdapter storageAdapter = getClassStorageAdapter(classPK);
+		StorageAdapter storageAdapter = _getClassStorageAdapter(classPK);
 
 		if (storageAdapter == null) {
 			return null;
@@ -91,34 +93,10 @@ public class StorageEngineImpl implements StorageEngine {
 			ServiceContext serviceContext)
 		throws StorageException {
 
-		StorageAdapter storageAdapter = getClassStorageAdapter(classPK);
+		StorageAdapter storageAdapter = _getClassStorageAdapter(classPK);
 
 		if (storageAdapter != null) {
 			storageAdapter.update(classPK, ddmFormValues, serviceContext);
-		}
-	}
-
-	protected StorageAdapter getClassStorageAdapter(long classPK)
-		throws StorageException {
-
-		try {
-			DDMStorageLink ddmStorageLink =
-				_ddmStorageLinkLocalService.fetchClassStorageLink(classPK);
-
-			if (ddmStorageLink == null) {
-				return null;
-			}
-
-			return getStorageAdapter(ddmStorageLink.getStorageType());
-		}
-		catch (NoSuchStructureException noSuchStructureException) {
-			return _storageAdapterRegistry.getDefaultStorageAdapter();
-		}
-		catch (StorageException storageException) {
-			throw storageException;
-		}
-		catch (Exception exception) {
-			throw new StorageException(exception);
 		}
 	}
 
@@ -131,26 +109,6 @@ public class StorageEngineImpl implements StorageEngine {
 		}
 
 		return _storageAdapterRegistry.getDefaultStorageAdapter();
-	}
-
-	protected StorageAdapter getStructureStorageAdapter(long ddmStructureId)
-		throws StorageException {
-
-		try {
-			DDMStructure ddmStructure =
-				_ddmStructureLocalService.getDDMStructure(ddmStructureId);
-
-			return getStorageAdapter(ddmStructure.getStorageType());
-		}
-		catch (NoSuchStructureException noSuchStructureException) {
-			return _storageAdapterRegistry.getDefaultStorageAdapter();
-		}
-		catch (StorageException storageException) {
-			throw storageException;
-		}
-		catch (Exception exception) {
-			throw new StorageException(exception);
-		}
 	}
 
 	@Reference(unbind = "-")
@@ -173,6 +131,61 @@ public class StorageEngineImpl implements StorageEngine {
 
 		_storageAdapterRegistry = storageAdapterRegistry;
 	}
+
+	private StorageAdapter _getClassStorageAdapter(long classPK)
+		throws StorageException {
+
+		try {
+			DDMStorageLink ddmStorageLink =
+				_ddmStorageLinkLocalService.fetchClassStorageLink(classPK);
+
+			if (ddmStorageLink == null) {
+				return null;
+			}
+
+			return getStorageAdapter(ddmStorageLink.getStorageType());
+		}
+		catch (NoSuchStructureException noSuchStructureException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(noSuchStructureException);
+			}
+
+			return _storageAdapterRegistry.getDefaultStorageAdapter();
+		}
+		catch (StorageException storageException) {
+			throw storageException;
+		}
+		catch (Exception exception) {
+			throw new StorageException(exception);
+		}
+	}
+
+	private StorageAdapter _getStructureStorageAdapter(long ddmStructureId)
+		throws StorageException {
+
+		try {
+			DDMStructure ddmStructure =
+				_ddmStructureLocalService.getDDMStructure(ddmStructureId);
+
+			return getStorageAdapter(ddmStructure.getStorageType());
+		}
+		catch (NoSuchStructureException noSuchStructureException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(noSuchStructureException);
+			}
+
+			return _storageAdapterRegistry.getDefaultStorageAdapter();
+		}
+		catch (StorageException storageException) {
+			throw storageException;
+		}
+		catch (Exception exception) {
+			throw new StorageException(exception);
+		}
+	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		StorageEngineImpl.class);
 
 	private DDMStorageLinkLocalService _ddmStorageLinkLocalService;
 	private DDMStructureLocalService _ddmStructureLocalService;

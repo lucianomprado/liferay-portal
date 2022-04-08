@@ -45,6 +45,7 @@ public class MBFixture {
 
 	public MBFixture(Group group) throws PortalException {
 		_group = group;
+
 		_user = TestPropsValues.getUser();
 	}
 
@@ -115,10 +116,10 @@ public class MBFixture {
 			ServiceContextTestUtil.getServiceContext(
 				_group.getGroupId(), getUserId());
 
-		Date now = new Date();
+		Date date = new Date();
 
-		serviceContext.setCreateDate(now);
-		serviceContext.setModifiedDate(now);
+		serviceContext.setCreateDate(date);
+		serviceContext.setModifiedDate(date);
 
 		return serviceContext;
 	}

@@ -1,43 +1,15 @@
-.minium-frame .quantity-selector {
-	align-items: center;
-	display: flex;
-	justify-content: center;
+.minium-frame,
+.diagram-tooltip {
+	.quantity-selector {
+		border-radius: $border-radius;
 
-	.btn {
-		background: none;
-		border: none;
-		border-radius: 4px !important;
-		color: $color-fg !important;
-		font-size: 24px;
-		font-weight: normal;
-		height: auto;
-		line-height: 1;
-		padding: 4px;
-		width: auto;
-
-		&::before {
-			background-color: transparent !important;
+		&.form-control-lg {
+			height: 3.75rem;
+			margin: 0;
 		}
 
-		&:focus {
-			box-shadow: none;
+		&.form-control-sm {
+			padding: 0.25rem 0.5rem;
 		}
-
-		&[disabled] {
-			background: none;
-			cursor: not-allowed;
-			opacity: 0.5;
-		}
-	}
-
-	.form-control {
-		appearance: none;
-		border: 2px solid $color-border;
-		border-radius: 8px !important;
-		margin: 0 4px;
-	}
-
-	.input-group-item {
-		align-content: center;
 	}
 }

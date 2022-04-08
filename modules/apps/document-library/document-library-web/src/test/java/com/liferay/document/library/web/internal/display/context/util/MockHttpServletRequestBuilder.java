@@ -25,9 +25,6 @@ import org.springframework.mock.web.MockHttpServletRequest;
  */
 public class MockHttpServletRequestBuilder {
 
-	public MockHttpServletRequestBuilder() {
-	}
-
 	public MockHttpServletRequest build() {
 		MockHttpServletRequest mockHttpServletRequest =
 			new MockHttpServletRequest();
@@ -59,7 +56,7 @@ public class MockHttpServletRequestBuilder {
 		return this;
 	}
 
-	private Map<String, Object> _attributes = new HashMap<>();
-	private Map<String, String> _parameters = new HashMap<>();
+	private final Map<String, Object> _attributes = new HashMap<>();
+	private final Map<String, String> _parameters = new HashMap<>();
 
 }

@@ -22,7 +22,6 @@
 >
 	<liferay-ui:search-container-row
 		className="com.liferay.message.boards.model.MBMessage"
-		cssClass="entry-display-style selectable"
 		modelVar="mbMessage"
 	>
 
@@ -45,7 +44,7 @@
 					colspan="<%= 2 %>"
 				>
 					<h6 class="text-default">
-						<%= HtmlUtil.extractText(content) %>
+						<%= HtmlParserUtil.extractText(content) %>
 					</h6>
 
 					<h6 class="text-default">
@@ -56,11 +55,6 @@
 				</liferay-ui:search-container-column-text>
 			</c:when>
 			<c:when test='<%= Objects.equals(journalDisplayContext.getDisplayStyle(), "icon") %>'>
-
-				<%
-				row.setCssClass("entry-card lfr-asset-item");
-				%>
-
 				<liferay-ui:search-container-column-text>
 					<clay:vertical-card
 						verticalCard="<%= new JournalArticleCommentsVerticalCard(mbMessage, renderRequest) %>"
@@ -77,7 +71,7 @@
 				<liferay-ui:search-container-column-text
 					name="message"
 					truncate="<%= true %>"
-					value="<%= HtmlUtil.extractText(content) %>"
+					value="<%= HtmlParserUtil.extractText(content) %>"
 				/>
 
 				<liferay-ui:search-container-column-date

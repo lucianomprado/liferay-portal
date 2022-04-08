@@ -55,41 +55,50 @@ public interface AccountEntryService extends BaseService {
 	 *
 	 * Never modify this interface directly. Add custom service methods to <code>com.liferay.account.service.impl.AccountEntryServiceImpl</code> and rerun ServiceBuilder to automatically copy the method declarations to this interface. Consume the account entry remote service via injection or a <code>org.osgi.util.tracker.ServiceTracker</code>. Use {@link AccountEntryServiceUtil} if injection and service tracking are not available.
 	 */
-
-	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-	 #addAccountEntry(long, long, String, String, String[],
-	 byte[], String, int, ServiceContext)}
-	 */
-	@Deprecated
-	public AccountEntry addAccountEntry(
-			long userId, long parentAccountEntryId, String name,
-			String description, String[] domains, byte[] logoBytes, int status)
+	public void activateAccountEntries(long[] accountEntryIds)
 		throws PortalException;
 
-	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-	 #addAccountEntry(long, long, String, String, String[],
-	 byte[], String, int, ServiceContext)}
-	 */
-	@Deprecated
+	public AccountEntry activateAccountEntry(long accountEntryId)
+		throws PortalException;
+
 	public AccountEntry addAccountEntry(
 			long userId, long parentAccountEntryId, String name,
-			String description, String[] domains, byte[] logoBytes, int status,
+			String description, String[] domains, String email,
+			byte[] logoBytes, String taxIdNumber, String type, int status,
 			ServiceContext serviceContext)
 		throws PortalException;
 
-	public AccountEntry addAccountEntry(
-			long userId, long parentAccountEntryId, String name,
-			String description, String[] domains, byte[] logoBytes,
+	public AccountEntry addOrUpdateAccountEntry(
+			String externalReferenceCode, long userId,
+			long parentAccountEntryId, String name, String description,
+			String[] domains, String emailAddress, byte[] logoBytes,
 			String taxIdNumber, String type, int status,
 			ServiceContext serviceContext)
+		throws PortalException;
+
+	public void deactivateAccountEntries(long[] accountEntryIds)
+		throws PortalException;
+
+	public AccountEntry deactivateAccountEntry(long accountEntryId)
+		throws PortalException;
+
+	public void deleteAccountEntries(long[] accountEntryIds)
+		throws PortalException;
+
+	public void deleteAccountEntry(long accountEntryId) throws PortalException;
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public AccountEntry fetchAccountEntry(long accountEntryId)
 		throws PortalException;
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public List<AccountEntry> getAccountEntries(
 			long companyId, int status, int start, int end,
 			OrderByComparator<AccountEntry> orderByComparator)
+		throws PortalException;
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public AccountEntry getAccountEntry(long accountEntryId)
 		throws PortalException;
 
 	/**
@@ -100,8 +109,23 @@ public interface AccountEntryService extends BaseService {
 	public String getOSGiServiceIdentifier();
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
-	public BaseModelSearchResult<AccountEntry> search(
-		String keywords, LinkedHashMap<String, Object> params, int cur,
-		int delta, String orderByField, boolean reverse);
+	public BaseModelSearchResult<AccountEntry> searchAccountEntries(
+			String keywords, LinkedHashMap<String, Object> params, int cur,
+			int delta, String orderByField, boolean reverse)
+		throws PortalException;
+
+	public AccountEntry updateAccountEntry(AccountEntry accountEntry)
+		throws PortalException;
+
+	public AccountEntry updateAccountEntry(
+			long accountEntryId, long parentAccountEntryId, String name,
+			String description, boolean deleteLogo, String[] domains,
+			String emailAddress, byte[] logoBytes, String taxIdNumber,
+			int status, ServiceContext serviceContext)
+		throws PortalException;
+
+	public AccountEntry updateExternalReferenceCode(
+			long accountEntryId, String externalReferenceCode)
+		throws PortalException;
 
 }

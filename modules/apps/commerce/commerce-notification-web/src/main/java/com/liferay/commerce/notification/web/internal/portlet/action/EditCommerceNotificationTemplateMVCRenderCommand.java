@@ -47,7 +47,7 @@ import org.osgi.service.component.annotations.Reference;
 	enabled = false,
 	property = {
 		"javax.portlet.name=" + CPPortletKeys.COMMERCE_CHANNELS,
-		"mvc.command.name=editCommerceNotificationTemplate"
+		"mvc.command.name=/commerce_channels/edit_commerce_notification_template"
 	},
 	service = MVCRenderCommand.class
 )
@@ -61,7 +61,7 @@ public class EditCommerceNotificationTemplateMVCRenderCommand
 
 		RequestDispatcher requestDispatcher =
 			_servletContext.getRequestDispatcher(
-				"/edit_notification_template.jsp");
+				"/edit_commerce_notification_template.jsp");
 
 		try {
 			HttpServletRequest httpServletRequest =
@@ -92,8 +92,7 @@ public class EditCommerceNotificationTemplateMVCRenderCommand
 				return "/error.jsp";
 			}
 
-			throw new PortletException(
-				"Unable to include edit_notification_template.jsp", exception);
+			throw new PortletException(exception);
 		}
 
 		return MVCRenderConstants.MVC_PATH_VALUE_SKIP_DISPATCH;

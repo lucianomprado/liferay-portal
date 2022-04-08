@@ -31,20 +31,20 @@ page import="com.liferay.commerce.inventory.model.CommerceInventoryReplenishment
 page import="com.liferay.commerce.inventory.model.CommerceInventoryWarehouse" %><%@
 page import="com.liferay.commerce.inventory.model.CommerceInventoryWarehouseItem" %><%@
 page import="com.liferay.commerce.inventory.web.internal.display.context.CommerceInventoryDisplayContext" %><%@
-page import="com.liferay.commerce.inventory.web.internal.frontend.CommerceInventoryDataSetConstants" %><%@
-page import="com.liferay.commerce.inventory.web.internal.servlet.taglib.ui.CommerceInventoryScreenNavigationConstants" %><%@
+page import="com.liferay.commerce.inventory.web.internal.frontend.constants.CommerceInventoryDataSetConstants" %><%@
+page import="com.liferay.commerce.inventory.web.internal.servlet.taglib.ui.constants.CommerceInventoryScreenNavigationConstants" %><%@
 page import="com.liferay.portal.kernel.language.LanguageUtil" %><%@
 page import="com.liferay.portal.kernel.util.CalendarFactoryUtil" %><%@
 page import="com.liferay.portal.kernel.util.Constants" %><%@
 page import="com.liferay.portal.kernel.util.HashMapBuilder" %><%@
+page import="com.liferay.portal.kernel.util.HtmlUtil" %><%@
 page import="com.liferay.portal.kernel.util.ParamUtil" %><%@
 page import="com.liferay.portal.kernel.util.PortalUtil" %><%@
 page import="com.liferay.portal.kernel.util.Validator" %><%@
 page import="com.liferay.portal.kernel.util.WebKeys" %>
 
 <%@ page import="java.util.Calendar" %><%@
-page import="java.util.Date" %><%@
-page import="java.util.List" %>
+page import="java.util.Date" %>
 
 <liferay-frontend:defineObjects />
 

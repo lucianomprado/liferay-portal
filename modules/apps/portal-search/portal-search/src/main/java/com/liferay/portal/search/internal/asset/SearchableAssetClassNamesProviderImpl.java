@@ -14,15 +14,17 @@
 
 package com.liferay.portal.search.internal.asset;
 
-import com.liferay.asset.kernel.AssetRendererFactoryRegistryUtil;
 import com.liferay.asset.kernel.model.AssetRendererFactory;
+import com.liferay.portal.kernel.search.SearchEngineHelper;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.search.asset.SearchableAssetClassNamesProvider;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
 
 /**
  * @author Bryan Engler
@@ -33,23 +35,47 @@ public class SearchableAssetClassNamesProviderImpl
 
 	@Override
 	public String[] getClassNames(long companyId) {
-		List<String> classNames = new ArrayList<>();
-
 		List<AssetRendererFactory<?>> assetRendererFactories =
-			AssetRendererFactoryRegistryUtil.getAssetRendererFactories(
-				companyId);
+			assetRendererFactoryRegistry.getAssetRendererFactories(companyId);
 
-		for (AssetRendererFactory<?> assetRendererFactory :
-				assetRendererFactories) {
+		Stream<AssetRendererFactory<?>> stream1 =
+			assetRendererFactories.stream();
 
-			if (!assetRendererFactory.isSearchable()) {
-				continue;
-			}
+		String[] searchEngineHelperEntryClassNames =
+			searchEngineHelper.getEntryClassNames();
 
-			classNames.add(assetRendererFactory.getClassName());
-		}
+		String[] array1 = stream1.filter(
+			AssetRendererFactory::isSearchable
+		).map(
+			AssetRendererFactory::getClassName
+		).filter(
+			className -> ArrayUtil.contains(
+				searchEngineHelperEntryClassNames, className, false)
+		).toArray(
+			String[]::new
+		);
 
-		return ArrayUtil.toStringArray(classNames);
+		Stream<String> stream2 = Arrays.stream(
+			searchEngineHelperEntryClassNames);
+
+		String[] array2 = stream2.filter(
+			className -> className.startsWith(
+				"com.liferay.object.model.ObjectDefinition#")
+		).toArray(
+			String[]::new
+		);
+
+		String[] classNames = new String[array1.length + array2.length];
+
+		ArrayUtil.combine(array1, array2, classNames);
+
+		return classNames;
 	}
+
+	@Reference
+	protected AssetRendererFactoryRegistry assetRendererFactoryRegistry;
+
+	@Reference
+	protected SearchEngineHelper searchEngineHelper;
 
 }

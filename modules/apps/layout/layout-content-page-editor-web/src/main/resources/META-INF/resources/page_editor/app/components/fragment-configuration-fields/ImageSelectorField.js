@@ -14,16 +14,18 @@
 
 import ClayForm, {ClaySelectWithOption} from '@clayui/form';
 import PropTypes from 'prop-types';
-import React, {useEffect, useState} from 'react';
+import React, {useState} from 'react';
 
 import {ImageSelector} from '../../../common/components/ImageSelector';
+import {ImageSelectorSize} from '../../../common/components/ImageSelectorSize';
 import MappingSelector from '../../../common/components/MappingSelector';
 import {ConfigurationFieldPropTypes} from '../../../prop-types/index';
 import {EDITABLE_TYPES} from '../../config/constants/editableTypes';
 import {VIEWPORT_SIZES} from '../../config/constants/viewportSizes';
-import {config} from '../../config/index';
-import ImageService from '../../services/ImageService';
-import {useDispatch, useSelector} from '../../store/index';
+import {useSelector} from '../../contexts/StoreContext';
+import isMapped from '../../utils/editable-value/isMapped';
+import isMappedToCollection from '../../utils/editable-value/isMappedToCollection';
+import isMappedToInfoItem from '../../utils/editable-value/isMappedToInfoItem';
 import {useId} from '../../utils/useId';
 
 const IMAGE_SOURCES = {
@@ -38,29 +40,18 @@ const IMAGE_SOURCES = {
 	},
 };
 
-export const ImageSelectorField = ({field, onValueSelect, value = {}}) => {
-	const dispatch = useDispatch();
+export function ImageSelectorField({field, onValueSelect, value = {}}) {
 	const imageSourceInputId = useId();
-
-	const [imageConfigurations, setImageConfigurations] = useState([]);
-
-	const [imageFileSize, setImageFileSize] = useState('');
-
-	const [imageSource, setImageSource] = useState(() =>
-		value.fieldId || value.mappedField
-			? IMAGE_SOURCES.mapping.value
-			: IMAGE_SOURCES.direct.value
-	);
-
-	const [imageWidth, setImageWidth] = useState('');
 
 	const selectedViewportSize = useSelector(
 		(state) => state.selectedViewportSize
 	);
 
-	const {maxWidth, minWidth} = config.availableViewportSizes[
-		selectedViewportSize
-	];
+	const [imageSource, setImageSource] = useState(() =>
+		isMapped(value)
+			? IMAGE_SOURCES.mapping.value
+			: IMAGE_SOURCES.direct.value
+	);
 
 	const handleImageChanged = (image) => {
 		onValueSelect(field.name, image);
@@ -74,85 +65,63 @@ export const ImageSelectorField = ({field, onValueSelect, value = {}}) => {
 		}
 	};
 
-	useEffect(() => {
-		const fileEntryId = value?.fileEntryId;
-
-		if (config.adaptiveMediaEnabled && fileEntryId > 0) {
-			ImageService.getAvailableImageConfigurations({
-				fileEntryId,
-				onNetworkStatus: dispatch,
-			}).then((availableImageConfigurations) =>
-				setImageConfigurations(availableImageConfigurations)
-			);
-		}
-	}, [dispatch, value.fileEntryId]);
-
-	useEffect(() => {
-		if (config.adaptiveMediaEnabled) {
-			imageConfigurations.forEach((imageConfiguration) => {
-				if (
-					(selectedViewportSize === VIEWPORT_SIZES.desktop &&
-						imageConfiguration.value === 'auto') ||
-					(imageConfiguration.width > minWidth &&
-						imageConfiguration.width <= maxWidth)
-				) {
-					setImageFileSize(imageConfiguration.size);
-					setImageWidth(imageConfiguration.width);
-				}
-			});
-		}
-	}, [imageConfigurations, maxWidth, minWidth, selectedViewportSize]);
-
 	return (
 		<>
-			<ClayForm.Group small>
-				<label htmlFor={imageSourceInputId}>
-					{Liferay.Language.get('image-source')}
-				</label>
+			{selectedViewportSize === VIEWPORT_SIZES.desktop && (
+				<ClayForm.Group small>
+					<label htmlFor={imageSourceInputId}>
+						{Liferay.Language.get('image-source')}
+					</label>
 
-				<ClaySelectWithOption
-					id={imageSourceInputId}
-					onChange={handleSourceChanged}
-					options={Object.values(IMAGE_SOURCES)}
-					value={imageSource}
-				/>
-			</ClayForm.Group>
+					<ClaySelectWithOption
+						id={imageSourceInputId}
+						onChange={handleSourceChanged}
+						options={Object.values(IMAGE_SOURCES)}
+						value={imageSource}
+					/>
+				</ClayForm.Group>
+			)}
 
 			{imageSource === IMAGE_SOURCES.direct.value ? (
-				<ImageSelector
-					imageTitle={value.title}
-					label={field.label}
-					onClearButtonPressed={() => handleImageChanged({})}
-					onImageSelected={handleImageChanged}
-				/>
+				<>
+					<ImageSelector
+						fileEntryId={value.fileEntryId}
+						imageTitle={value.title}
+						label={field.label}
+						onClearButtonPressed={() => handleImageChanged({})}
+						onImageSelected={handleImageChanged}
+					/>
+
+					{value?.fileEntryId && (
+						<ImageSelectorSize
+							fieldValue={{fileEntryId: value.fileEntryId}}
+							imageSizeId="auto"
+						/>
+					)}
+				</>
 			) : (
-				<MappingSelector
-					fieldType={EDITABLE_TYPES.backgroundImage}
-					mappedItem={value}
-					onMappingSelect={handleImageChanged}
-				/>
-			)}
+				<>
+					{selectedViewportSize === VIEWPORT_SIZES.desktop ? (
+						<MappingSelector
+							fieldType={EDITABLE_TYPES.backgroundImage}
+							mappedItem={value}
+							onMappingSelect={handleImageChanged}
+						/>
+					) : null}
 
-			{config.adaptiveMediaEnabled && value?.fileEntryId && imageWidth && (
-				<div className="page-editor__image-properties-panel__resolution-label">
-					<b>{Liferay.Language.get('width')}:</b>
-					<span className="ml-1">{imageWidth}px</span>
-				</div>
+					{(value?.fileEntryId ||
+						isMappedToInfoItem(value) ||
+						isMappedToCollection(value)) && (
+						<ImageSelectorSize
+							fieldValue={value}
+							imageSizeId="auto"
+						/>
+					)}
+				</>
 			)}
-
-			{config.adaptiveMediaEnabled &&
-				value?.fileEntryId &&
-				imageFileSize && (
-					<div className="mb-3 page-editor__image-properties-panel__resolution-label">
-						<b>{Liferay.Language.get('file-size')}:</b>
-						<span className="ml-1">
-							{Number(imageFileSize).toFixed(2)}kB
-						</span>
-					</div>
-				)}
 		</>
 	);
-};
+}
 
 ImageSelectorField.propTypes = {
 	field: PropTypes.shape(ConfigurationFieldPropTypes),

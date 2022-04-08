@@ -74,9 +74,7 @@ public class DepotAdminMembershipsDisplayContext {
 	public List<Group> getDepotGroups(int start, int end)
 		throws PortalException {
 
-		List<Group> depotGroups = _getDepotGroups();
-
-		return ListUtil.subList(depotGroups, start, end);
+		return ListUtil.subList(_getDepotGroups(), start, end);
 	}
 
 	public int getDepotGroupsCount() throws PortalException {
@@ -119,13 +117,11 @@ public class DepotAdminMembershipsDisplayContext {
 				_user.getUserId(), group.getGroupId(), 0,
 				PropsValues.USERS_ADMIN_ROLE_COLUMN_LIMIT);
 
-		int userGroupRolesCount =
-			UserGroupRoleLocalServiceUtil.getUserGroupRolesCount(
-				_user.getUserId(), group.getGroupId());
-
 		return UsersAdminUtil.getUserColumnText(
 			_themeDisplay.getLocale(), userGroupRoles,
-			UsersAdmin.USER_GROUP_ROLE_TITLE_ACCESSOR, userGroupRolesCount);
+			UsersAdmin.USER_GROUP_ROLE_TITLE_ACCESSOR,
+			UserGroupRoleLocalServiceUtil.getUserGroupRolesCount(
+				_user.getUserId(), group.getGroupId()));
 	}
 
 	public User getUser() {

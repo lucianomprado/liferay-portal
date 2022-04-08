@@ -20,8 +20,8 @@
 JournalArticleItemSelectorViewDisplayContext journalArticleItemSelectorViewDisplayContext = (JournalArticleItemSelectorViewDisplayContext)request.getAttribute(JournalWebConstants.JOURNAL_ARTICLE_ITEM_SELECTOR_VIEW_DISPLAY_CONTEXT);
 %>
 
-<clay:management-toolbar-v2
-	displayContext="<%= new JournalArticleItemSelectorViewManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, journalArticleItemSelectorViewDisplayContext) %>"
+<clay:management-toolbar
+	managementToolbarDisplayContext="<%= new JournalArticleItemSelectorViewManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, journalArticleItemSelectorViewDisplayContext) %>"
 />
 
 <clay:container-fluid
@@ -39,7 +39,6 @@ JournalArticleItemSelectorViewDisplayContext journalArticleItemSelectorViewDispl
 	>
 		<liferay-ui:search-container-row
 			className="Object"
-			cssClass="entry-display-style"
 			modelVar="object"
 		>
 
@@ -61,34 +60,9 @@ JournalArticleItemSelectorViewDisplayContext journalArticleItemSelectorViewDispl
 				<c:when test="<%= curArticle != null %>">
 
 					<%
-					row.setCssClass("articles " + row.getCssClass());
+					row.setCssClass("articles selector-button" + row.getCssClass());
 
-					JSONObject articleJSONObject = JSONUtil.put(
-						"className", JournalArticle.class.getName()
-					).put(
-						"classNameId", PortalUtil.getClassNameId(JournalArticle.class.getName())
-					).put(
-						"classPK", curArticle.getResourcePrimKey()
-					);
-
-					String title = curArticle.getTitle(locale);
-
-					String defaultTitle = curArticle.getTitle(LocaleUtil.fromLanguageId(curArticle.getDefaultLanguageId()));
-
-					if (Validator.isNull(title)) {
-						title = defaultTitle;
-					}
-
-					articleJSONObject.put(
-						"title", defaultTitle
-					).put(
-						"titleMap", curArticle.getTitleMap()
-					);
-
-					row.setData(
-						HashMapBuilder.<String, Object>put(
-							"value", articleJSONObject.toString()
-						).build());
+					row.setData(journalArticleItemSelectorViewDisplayContext.getJournalArticleContext(curArticle));
 					%>
 
 					<c:choose>
@@ -119,7 +93,7 @@ JournalArticleItemSelectorViewDisplayContext journalArticleItemSelectorViewDispl
 								</span>
 
 								<p class="font-weight-bold h5">
-									<%= HtmlUtil.escape(title) %>
+									<%= HtmlUtil.escape(curArticle.getTitle(locale, true)) %>
 								</p>
 
 								<c:if test="<%= journalArticleItemSelectorViewDisplayContext.isSearchEverywhere() %>">
@@ -139,7 +113,7 @@ JournalArticleItemSelectorViewDisplayContext journalArticleItemSelectorViewDispl
 						<c:when test='<%= Objects.equals(journalArticleItemSelectorViewDisplayContext.getDisplayStyle(), "icon") %>'>
 
 							<%
-							row.setCssClass("entry-card lfr-asset-item " + row.getCssClass());
+							row.setCssClass("card-page-item card-page-item-directory entry " + row.getCssClass());
 							%>
 
 							<liferay-ui:search-container-column-text>
@@ -164,7 +138,7 @@ JournalArticleItemSelectorViewDisplayContext journalArticleItemSelectorViewDispl
 							<liferay-ui:search-container-column-text
 								cssClass="table-cell-expand table-cell-minw-200 table-title"
 								name="title"
-								value="<%= title %>"
+								value="<%= curArticle.getTitle(locale, true) %>"
 							/>
 
 							<liferay-ui:search-container-column-text
@@ -220,10 +194,13 @@ JournalArticleItemSelectorViewDisplayContext journalArticleItemSelectorViewDispl
 				<c:when test="<%= curFolder != null %>">
 
 					<%
-					PortletURL rowURL = journalArticleItemSelectorViewDisplayContext.getPortletURL();
-
-					rowURL.setParameter("groupId", String.valueOf(curFolder.getGroupId()));
-					rowURL.setParameter("folderId", String.valueOf(curFolder.getFolderId()));
+					PortletURL rowURL = PortletURLBuilder.create(
+						journalArticleItemSelectorViewDisplayContext.getPortletURL()
+					).setParameter(
+						"folderId", curFolder.getFolderId()
+					).setParameter(
+						"groupId", curFolder.getGroupId()
+					).buildPortletURL();
 					%>
 
 					<c:choose>
@@ -270,7 +247,7 @@ JournalArticleItemSelectorViewDisplayContext journalArticleItemSelectorViewDispl
 						<c:when test='<%= Objects.equals(journalArticleItemSelectorViewDisplayContext.getDisplayStyle(), "icon") %>'>
 
 							<%
-							row.setCssClass("entry-card lfr-asset-folder " + row.getCssClass());
+							row.setCssClass("card-page-item card-page-item-directory " + row.getCssClass());
 							%>
 
 							<liferay-ui:search-container-column-text
@@ -372,65 +349,3 @@ JournalArticleItemSelectorViewDisplayContext journalArticleItemSelectorViewDispl
 		/>
 	</liferay-ui:search-container>
 </clay:container-fluid>
-
-<aui:script require="frontend-js-web/liferay/delegate/delegate.es as delegateModule" sandbox="<%= true %>">
-	var delegate = delegateModule.default;
-
-	var selectArticleHandler = delegate(
-		document.querySelector('#<portlet:namespace />articlesContainer'),
-		'click',
-		'.articles',
-		function (event) {
-			<c:choose>
-				<c:when test='<%= Objects.equals(journalArticleItemSelectorViewDisplayContext.getDisplayStyle(), "icon") %>'>
-					var activeFormCheckCards = document.querySelectorAll(
-						'.form-check-card.active'
-					);
-
-					var formCheckCard = event.delegateTarget.closest('.form-check-card');
-
-					if (activeFormCheckCards.length) {
-						activeFormCheckCards.forEach(function (card) {
-							card.classList.remove('active');
-						});
-					}
-
-					if (formCheckCard) {
-						formCheckCard.classList.add('active');
-					}
-				</c:when>
-				<c:otherwise>
-					var activeArticles = document.querySelectorAll('.articles.active');
-					var articles = event.delegateTarget.closest('.articles');
-
-					if (activeArticles.length) {
-						activeArticles.forEach(function (article) {
-							article.classList.remove('active');
-						});
-					}
-
-					if (articles) {
-						articles.classList.add('active');
-					}
-				</c:otherwise>
-			</c:choose>
-
-			Liferay.Util.getOpener().Liferay.fire(
-				'<%= journalArticleItemSelectorViewDisplayContext.getItemSelectedEventName() %>',
-				{
-					data: {
-						returnType:
-							'<%= InfoItemItemSelectorReturnType.class.getName() %>',
-						value: event.delegateTarget.dataset.value,
-					},
-				}
-			);
-		}
-	);
-
-	Liferay.on('destroyPortlet', function removeListener() {
-		selectArticleHandler.dispose();
-
-		Liferay.detach('destroyPortlet', removeListener);
-	});
-</aui:script>

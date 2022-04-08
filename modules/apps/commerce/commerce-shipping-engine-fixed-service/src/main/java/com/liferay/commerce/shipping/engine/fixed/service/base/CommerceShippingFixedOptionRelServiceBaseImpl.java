@@ -16,7 +16,9 @@ package com.liferay.commerce.shipping.engine.fixed.service.base;
 
 import com.liferay.commerce.shipping.engine.fixed.model.CommerceShippingFixedOptionRel;
 import com.liferay.commerce.shipping.engine.fixed.service.CommerceShippingFixedOptionRelService;
+import com.liferay.commerce.shipping.engine.fixed.service.CommerceShippingFixedOptionRelServiceUtil;
 import com.liferay.commerce.shipping.engine.fixed.service.persistence.CommerceShippingFixedOptionPersistence;
+import com.liferay.commerce.shipping.engine.fixed.service.persistence.CommerceShippingFixedOptionQualifierPersistence;
 import com.liferay.commerce.shipping.engine.fixed.service.persistence.CommerceShippingFixedOptionRelFinder;
 import com.liferay.commerce.shipping.engine.fixed.service.persistence.CommerceShippingFixedOptionRelPersistence;
 import com.liferay.portal.kernel.bean.BeanReference;
@@ -31,6 +33,8 @@ import com.liferay.portal.kernel.service.persistence.ClassNamePersistence;
 import com.liferay.portal.kernel.service.persistence.UserPersistence;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.spring.extender.service.ServiceReference;
+
+import java.lang.reflect.Field;
 
 import javax.sql.DataSource;
 
@@ -52,7 +56,7 @@ public abstract class CommerceShippingFixedOptionRelServiceBaseImpl
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. Use <code>CommerceShippingFixedOptionRelService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>com.liferay.commerce.shipping.engine.fixed.service.CommerceShippingFixedOptionRelServiceUtil</code>.
+	 * Never modify or reference this class directly. Use <code>CommerceShippingFixedOptionRelService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>CommerceShippingFixedOptionRelServiceUtil</code>.
 	 */
 
 	/**
@@ -129,6 +133,82 @@ public abstract class CommerceShippingFixedOptionRelServiceBaseImpl
 
 		this.commerceShippingFixedOptionPersistence =
 			commerceShippingFixedOptionPersistence;
+	}
+
+	/**
+	 * Returns the commerce shipping fixed option qualifier local service.
+	 *
+	 * @return the commerce shipping fixed option qualifier local service
+	 */
+	public com.liferay.commerce.shipping.engine.fixed.service.
+		CommerceShippingFixedOptionQualifierLocalService
+			getCommerceShippingFixedOptionQualifierLocalService() {
+
+		return commerceShippingFixedOptionQualifierLocalService;
+	}
+
+	/**
+	 * Sets the commerce shipping fixed option qualifier local service.
+	 *
+	 * @param commerceShippingFixedOptionQualifierLocalService the commerce shipping fixed option qualifier local service
+	 */
+	public void setCommerceShippingFixedOptionQualifierLocalService(
+		com.liferay.commerce.shipping.engine.fixed.service.
+			CommerceShippingFixedOptionQualifierLocalService
+				commerceShippingFixedOptionQualifierLocalService) {
+
+		this.commerceShippingFixedOptionQualifierLocalService =
+			commerceShippingFixedOptionQualifierLocalService;
+	}
+
+	/**
+	 * Returns the commerce shipping fixed option qualifier remote service.
+	 *
+	 * @return the commerce shipping fixed option qualifier remote service
+	 */
+	public com.liferay.commerce.shipping.engine.fixed.service.
+		CommerceShippingFixedOptionQualifierService
+			getCommerceShippingFixedOptionQualifierService() {
+
+		return commerceShippingFixedOptionQualifierService;
+	}
+
+	/**
+	 * Sets the commerce shipping fixed option qualifier remote service.
+	 *
+	 * @param commerceShippingFixedOptionQualifierService the commerce shipping fixed option qualifier remote service
+	 */
+	public void setCommerceShippingFixedOptionQualifierService(
+		com.liferay.commerce.shipping.engine.fixed.service.
+			CommerceShippingFixedOptionQualifierService
+				commerceShippingFixedOptionQualifierService) {
+
+		this.commerceShippingFixedOptionQualifierService =
+			commerceShippingFixedOptionQualifierService;
+	}
+
+	/**
+	 * Returns the commerce shipping fixed option qualifier persistence.
+	 *
+	 * @return the commerce shipping fixed option qualifier persistence
+	 */
+	public CommerceShippingFixedOptionQualifierPersistence
+		getCommerceShippingFixedOptionQualifierPersistence() {
+
+		return commerceShippingFixedOptionQualifierPersistence;
+	}
+
+	/**
+	 * Sets the commerce shipping fixed option qualifier persistence.
+	 *
+	 * @param commerceShippingFixedOptionQualifierPersistence the commerce shipping fixed option qualifier persistence
+	 */
+	public void setCommerceShippingFixedOptionQualifierPersistence(
+		CommerceShippingFixedOptionQualifierPersistence
+			commerceShippingFixedOptionQualifierPersistence) {
+
+		this.commerceShippingFixedOptionQualifierPersistence =
+			commerceShippingFixedOptionQualifierPersistence;
 	}
 
 	/**
@@ -401,9 +481,11 @@ public abstract class CommerceShippingFixedOptionRelServiceBaseImpl
 	}
 
 	public void afterPropertiesSet() {
+		_setServiceUtilService(commerceShippingFixedOptionRelService);
 	}
 
 	public void destroy() {
+		_setServiceUtilService(null);
 	}
 
 	/**
@@ -449,6 +531,24 @@ public abstract class CommerceShippingFixedOptionRelServiceBaseImpl
 		}
 	}
 
+	private void _setServiceUtilService(
+		CommerceShippingFixedOptionRelService
+			commerceShippingFixedOptionRelService) {
+
+		try {
+			Field field =
+				CommerceShippingFixedOptionRelServiceUtil.class.
+					getDeclaredField("_service");
+
+			field.setAccessible(true);
+
+			field.set(null, commerceShippingFixedOptionRelService);
+		}
+		catch (ReflectiveOperationException reflectiveOperationException) {
+			throw new RuntimeException(reflectiveOperationException);
+		}
+	}
+
 	@BeanReference(
 		type = com.liferay.commerce.shipping.engine.fixed.service.CommerceShippingFixedOptionLocalService.class
 	)
@@ -465,6 +565,24 @@ public abstract class CommerceShippingFixedOptionRelServiceBaseImpl
 	@BeanReference(type = CommerceShippingFixedOptionPersistence.class)
 	protected CommerceShippingFixedOptionPersistence
 		commerceShippingFixedOptionPersistence;
+
+	@BeanReference(
+		type = com.liferay.commerce.shipping.engine.fixed.service.CommerceShippingFixedOptionQualifierLocalService.class
+	)
+	protected com.liferay.commerce.shipping.engine.fixed.service.
+		CommerceShippingFixedOptionQualifierLocalService
+			commerceShippingFixedOptionQualifierLocalService;
+
+	@BeanReference(
+		type = com.liferay.commerce.shipping.engine.fixed.service.CommerceShippingFixedOptionQualifierService.class
+	)
+	protected com.liferay.commerce.shipping.engine.fixed.service.
+		CommerceShippingFixedOptionQualifierService
+			commerceShippingFixedOptionQualifierService;
+
+	@BeanReference(type = CommerceShippingFixedOptionQualifierPersistence.class)
+	protected CommerceShippingFixedOptionQualifierPersistence
+		commerceShippingFixedOptionQualifierPersistence;
 
 	@BeanReference(
 		type = com.liferay.commerce.shipping.engine.fixed.service.CommerceShippingFixedOptionRelLocalService.class

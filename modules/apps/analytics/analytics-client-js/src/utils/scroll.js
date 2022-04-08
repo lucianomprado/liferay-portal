@@ -31,7 +31,7 @@ function getDocumentHeight() {
 		document.documentElement.scrollHeight,
 	];
 
-	return Math.max(...heights);
+	return Math.max.apply(null, heights);
 }
 
 function getDimensions(element) {
@@ -55,6 +55,20 @@ function getDimensions(element) {
 	}
 
 	return positions;
+}
+
+function isPartiallyInViewport(element) {
+	const {bottom, left, right, top} = element.getBoundingClientRect();
+
+	const innerHeight =
+		window.innerHeight || document.documentElement.clientHeight;
+	const innerWidth =
+		window.innerWidth || document.documentElement.clientWidth;
+
+	const verticallyInViewport = top <= innerHeight && bottom >= 0;
+	const horizontallyInViewport = left <= innerWidth && right >= 0;
+
+	return verticallyInViewport && horizontallyInViewport;
 }
 
 class ScrollTracker {
@@ -121,4 +135,4 @@ class ScrollTracker {
 	}
 }
 
-export {ScrollTracker};
+export {isPartiallyInViewport, ScrollTracker};

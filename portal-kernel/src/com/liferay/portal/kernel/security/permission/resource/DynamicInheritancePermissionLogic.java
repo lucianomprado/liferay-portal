@@ -37,11 +37,12 @@ public class DynamicInheritancePermissionLogic
 
 		_parentModelResourcePermission = Objects.requireNonNull(
 			parentModelResourcePermission);
-		_portletResourcePermission = Objects.requireNonNull(
-			parentModelResourcePermission.getPortletResourcePermission());
 		_fetchParentUnsafeFunction = Objects.requireNonNull(
 			fetchParentUnsafeFunction);
 		_checkParentAccess = checkParentAccess;
+
+		_portletResourcePermission = Objects.requireNonNull(
+			parentModelResourcePermission.getPortletResourcePermission());
 	}
 
 	@Override
@@ -66,14 +67,10 @@ public class DynamicInheritancePermissionLogic
 			return false;
 		}
 
-		if (_checkParentAccess &&
+		if ((_checkParentAccess &&
+			 _parentModelResourcePermission.contains(
+				 permissionChecker, parent, ActionKeys.ACCESS)) ||
 			_parentModelResourcePermission.contains(
-				permissionChecker, parent, ActionKeys.ACCESS)) {
-
-			return null;
-		}
-
-		if (_parentModelResourcePermission.contains(
 				permissionChecker, parent, ActionKeys.VIEW)) {
 
 			return null;

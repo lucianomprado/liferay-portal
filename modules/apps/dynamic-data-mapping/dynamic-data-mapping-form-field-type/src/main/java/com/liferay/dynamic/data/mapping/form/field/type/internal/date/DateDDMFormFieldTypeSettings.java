@@ -20,6 +20,7 @@ import com.liferay.dynamic.data.mapping.annotations.DDMFormLayout;
 import com.liferay.dynamic.data.mapping.annotations.DDMFormLayoutColumn;
 import com.liferay.dynamic.data.mapping.annotations.DDMFormLayoutPage;
 import com.liferay.dynamic.data.mapping.annotations.DDMFormLayoutRow;
+import com.liferay.dynamic.data.mapping.annotations.DDMFormRule;
 import com.liferay.dynamic.data.mapping.form.field.type.DefaultDDMFormFieldTypeSettings;
 import com.liferay.dynamic.data.mapping.model.DDMFormFieldValidation;
 import com.liferay.dynamic.data.mapping.model.LocalizedValue;
@@ -27,7 +28,22 @@ import com.liferay.dynamic.data.mapping.model.LocalizedValue;
 /**
  * @author Bruno Basto
  */
-@DDMForm
+@DDMForm(
+	rules = {
+		@DDMFormRule(
+			actions = "setValue('required', isRequiredObjectField(getValue('objectFieldName')))",
+			condition = "hasObjectField(getValue('objectFieldName'))"
+		),
+		@DDMFormRule(
+			actions = {
+				"setEnabled('required', not(hasObjectField(getValue('objectFieldName'))))",
+				"setVisible('dataType', false)",
+				"setVisible('requiredErrorMessage', getValue('required'))"
+			},
+			condition = "TRUE"
+		)
+	}
+)
 @DDMFormLayout(
 	paginationMode = com.liferay.dynamic.data.mapping.model.DDMFormLayout.TABBED_MODE,
 	value = {
@@ -37,7 +53,11 @@ import com.liferay.dynamic.data.mapping.model.LocalizedValue;
 				@DDMFormLayoutRow(
 					{
 						@DDMFormLayoutColumn(
-							size = 12, value = {"label", "tip", "required"}
+							size = 12,
+							value = {
+								"label", "tip", "required",
+								"requiredErrorMessage"
+							}
 						)
 					}
 				)
@@ -52,10 +72,11 @@ import com.liferay.dynamic.data.mapping.model.LocalizedValue;
 							size = 12,
 							value = {
 								"name", "fieldReference", "predefinedValue",
-								"visibilityExpression", "validation",
-								"fieldNamespace", "indexType", "localizable",
+								"objectFieldName", "visibilityExpression",
+								"fieldNamespace", "indexType",
+								"labelAtStructureLevel", "localizable",
 								"nativeField", "readOnly", "dataType", "type",
-								"showLabel", "repeatable"
+								"showLabel", "repeatable", "validation"
 							}
 						)
 					}
@@ -67,15 +88,22 @@ import com.liferay.dynamic.data.mapping.model.LocalizedValue;
 public interface DateDDMFormFieldTypeSettings
 	extends DefaultDDMFormFieldTypeSettings {
 
+	@DDMFormField(predefinedValue = "date", required = true)
+	@Override
+	public String dataType();
+
 	@DDMFormField(
-		dataType = "string", label = "%predefined-value", type = "date"
+		dataType = "string", label = "%predefined-value",
+		properties = {
+			"tooltip=%enter-a-default-value-that-is-submitted-if-no-other-value-is-entered",
+			"visualProperty=true"
+		},
+		type = "date"
 	)
 	@Override
 	public LocalizedValue predefinedValue();
 
-	@DDMFormField(
-		dataType = "date", type = "validation", visibilityExpression = "FALSE"
-	)
+	@DDMFormField(dataType = "date", label = "%validation", type = "validation")
 	@Override
 	public DDMFormFieldValidation validation();
 

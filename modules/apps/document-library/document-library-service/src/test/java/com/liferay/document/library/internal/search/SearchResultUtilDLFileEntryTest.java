@@ -31,8 +31,6 @@ import com.liferay.portal.kernel.search.Summary;
 import com.liferay.portal.kernel.search.SummaryFactory;
 import com.liferay.portal.kernel.search.result.SearchResultContributor;
 import com.liferay.portal.kernel.search.result.SearchResultTranslator;
-import com.liferay.portal.kernel.test.CaptureHandler;
-import com.liferay.portal.kernel.test.JDKLoggerTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.search.internal.result.SearchResultManagerImpl;
@@ -40,6 +38,9 @@ import com.liferay.portal.search.internal.result.SearchResultTranslatorImpl;
 import com.liferay.portal.search.internal.result.SummaryFactoryImpl;
 import com.liferay.portal.search.test.util.BaseSearchResultUtilTestCase;
 import com.liferay.portal.search.test.util.SearchTestUtil;
+import com.liferay.portal.test.log.LogCapture;
+import com.liferay.portal.test.log.LogEntry;
+import com.liferay.portal.test.log.LoggerTestUtil;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -47,7 +48,6 @@ import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Locale;
 import java.util.logging.Level;
-import java.util.logging.LogRecord;
 
 import javax.portlet.PortletRequest;
 import javax.portlet.PortletResponse;
@@ -303,18 +303,16 @@ public class SearchResultUtilDLFileEntryTest
 
 		document.add(new Field(Field.SNIPPET, snippet));
 
-		try (CaptureHandler captureHandler =
-				JDKLoggerTestUtil.configureJDKLogger(
-					SearchResultTranslatorImpl.class.getName(),
-					Level.WARNING)) {
+		try (LogCapture logCapture = LoggerTestUtil.configureJDKLogger(
+				SearchResultTranslatorImpl.class.getName(), Level.WARNING)) {
 
 			SearchResult searchResult = assertOneSearchResult(document);
 
-			List<LogRecord> logRecords = captureHandler.getLogRecords();
+			List<LogEntry> logEntries = logCapture.getLogEntries();
 
-			Assert.assertEquals(logRecords.toString(), 1, logRecords.size());
+			Assert.assertEquals(logEntries.toString(), 1, logEntries.size());
 
-			LogRecord logRecord = logRecords.get(0);
+			LogEntry logEntry = logEntries.get(0);
 
 			long entryClassPK = GetterUtil.getLong(
 				document.get(Field.ENTRY_CLASS_PK));
@@ -322,7 +320,7 @@ public class SearchResultUtilDLFileEntryTest
 			Assert.assertEquals(
 				"Search index is stale and contains entry {" + entryClassPK +
 					"}",
-				logRecord.getMessage());
+				logEntry.getMessage());
 
 			Assert.assertEquals(
 				SearchTestUtil.ATTACHMENT_OWNER_CLASS_NAME,
@@ -357,7 +355,18 @@ public class SearchResultUtilDLFileEntryTest
 		}
 	}
 
-	protected SearchResultContributor createSearchResultContributor() {
+	@Override
+	protected SearchResultTranslator createSearchResultTranslator() {
+		SearchResultTranslatorImpl searchResultTranslatorImpl =
+			new SearchResultTranslatorImpl();
+
+		searchResultTranslatorImpl.setSearchResultManager(
+			_createSearchResultManager());
+
+		return searchResultTranslatorImpl;
+	}
+
+	private SearchResultContributor _createSearchResultContributor() {
 		DLFileEntrySearchResultContributor dlFileEntrySearchResultContributor =
 			new DLFileEntrySearchResultContributor();
 
@@ -366,35 +375,24 @@ public class SearchResultUtilDLFileEntryTest
 		dlFileEntrySearchResultContributor.setDLAppLocalService(
 			_dlAppLocalService);
 		dlFileEntrySearchResultContributor.setSummaryFactory(
-			createSummaryFactory());
+			_createSummaryFactory());
 
 		return dlFileEntrySearchResultContributor;
 	}
 
-	protected SearchResultManager createSearchResultManager() {
+	private SearchResultManager _createSearchResultManager() {
 		SearchResultManagerImpl searchResultManagerImpl =
 			new SearchResultManagerImpl();
 
 		searchResultManagerImpl.addSearchResultContributor(
-			createSearchResultContributor());
+			_createSearchResultContributor());
 		searchResultManagerImpl.setClassNameLocalService(classNameLocalService);
-		searchResultManagerImpl.setSummaryFactory(createSummaryFactory());
+		searchResultManagerImpl.setSummaryFactory(_createSummaryFactory());
 
 		return searchResultManagerImpl;
 	}
 
-	@Override
-	protected SearchResultTranslator createSearchResultTranslator() {
-		SearchResultTranslatorImpl searchResultTranslatorImpl =
-			new SearchResultTranslatorImpl();
-
-		searchResultTranslatorImpl.setSearchResultManager(
-			createSearchResultManager());
-
-		return searchResultTranslatorImpl;
-	}
-
-	protected SummaryFactory createSummaryFactory() {
+	private SummaryFactory _createSummaryFactory() {
 		SummaryFactoryImpl summaryFactoryImpl = new SummaryFactoryImpl();
 
 		summaryFactoryImpl.setIndexerRegistry(_indexerRegistry);

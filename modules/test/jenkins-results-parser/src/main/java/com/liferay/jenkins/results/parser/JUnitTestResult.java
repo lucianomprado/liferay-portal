@@ -19,7 +19,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 
-import java.util.Map;
+import java.util.Date;
 import java.util.Properties;
 
 import org.apache.commons.lang.StringUtils;
@@ -42,7 +42,7 @@ public class JUnitTestResult extends BaseTestResult {
 	@Override
 	public String getDisplayName() {
 		return JenkinsResultsParserUtil.combine(
-			getSimpleClassName(), ".", getTestName());
+			getClassName(), ".", getTestName());
 	}
 
 	@Override
@@ -138,16 +138,24 @@ public class JUnitTestResult extends BaseTestResult {
 
 		Build build = getBuild();
 
-		Map<String, String> startPropertiesTempMap =
-			build.getStartPropertiesTempMap();
+		TopLevelBuild topLevelBuild = build.getTopLevelBuild();
 
-		return JenkinsResultsParserUtil.combine(
-			logBaseURL, "/",
-			startPropertiesTempMap.get("TOP_LEVEL_MASTER_HOSTNAME"), "/",
-			startPropertiesTempMap.get("TOP_LEVEL_START_TIME"), "/",
-			startPropertiesTempMap.get("TOP_LEVEL_JOB_NAME"), "/",
-			startPropertiesTempMap.get("TOP_LEVEL_BUILD_NUMBER"), "/",
-			build.getJobVariant(), "/", getAxisNumber());
+		if (topLevelBuild != null) {
+			String topLevelStartDateString =
+				JenkinsResultsParserUtil.toDateString(
+					new Date(topLevelBuild.getStartTime()), "yyyy-MM",
+					"America/Los_Angeles");
+
+			JenkinsMaster jenkinsMaster = topLevelBuild.getJenkinsMaster();
+
+			return JenkinsResultsParserUtil.combine(
+				logBaseURL, "/", topLevelStartDateString, "/",
+				jenkinsMaster.getName(), "/", topLevelBuild.getJobName(), "/",
+				String.valueOf(topLevelBuild.getBuildNumber()), "/",
+				build.getJobVariant(), "/", getAxisNumber());
+		}
+
+		return build.getBuildURL();
 	}
 
 	@Override

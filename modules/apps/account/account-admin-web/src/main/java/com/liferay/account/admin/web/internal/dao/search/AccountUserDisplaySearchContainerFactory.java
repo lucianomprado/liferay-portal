@@ -184,13 +184,8 @@ public class AccountUserDisplaySearchContainerFactory {
 
 		accountUserDisplaySearchContainer.setOrderByType(orderByType);
 
-		accountUserDisplaySearchContainer.setRowChecker(
-			new EmptyOnClickRowChecker(liferayPortletResponse));
-
 		String keywords = ParamUtil.getString(
 			liferayPortletRequest, "keywords", null);
-		String navigation = ParamUtil.getString(
-			liferayPortletRequest, "navigation", "active");
 
 		BaseModelSearchResult<User> baseModelSearchResult;
 
@@ -205,6 +200,9 @@ public class AccountUserDisplaySearchContainerFactory {
 				orderByType);
 		}
 		else {
+			String navigation = ParamUtil.getString(
+				liferayPortletRequest, "navigation", "active");
+
 			baseModelSearchResult = _getBaseModelSearchResult(
 				accountEntryIds, keywords, _getStatus(navigation),
 				accountUserDisplaySearchContainer.getStart(),
@@ -212,11 +210,12 @@ public class AccountUserDisplaySearchContainerFactory {
 				orderByType);
 		}
 
-		accountUserDisplaySearchContainer.setResults(
-			TransformUtil.transform(
-				baseModelSearchResult.getBaseModels(), AccountUserDisplay::of));
-		accountUserDisplaySearchContainer.setTotal(
+		accountUserDisplaySearchContainer.setResultsAndTotal(
+			() -> TransformUtil.transform(
+				baseModelSearchResult.getBaseModels(), AccountUserDisplay::of),
 			baseModelSearchResult.getLength());
+		accountUserDisplaySearchContainer.setRowChecker(
+			new EmptyOnClickRowChecker(liferayPortletResponse));
 
 		return accountUserDisplaySearchContainer;
 	}

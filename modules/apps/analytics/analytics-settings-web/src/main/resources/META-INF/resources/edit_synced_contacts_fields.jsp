@@ -19,14 +19,16 @@
 <%
 String cmd = ParamUtil.getString(request, Constants.CMD);
 
-PortletURL portletURL = renderResponse.createRenderURL();
-
-portletURL.setParameter("mvcRenderCommandName", "/configuration_admin/view_configuration_screen");
-portletURL.setParameter("configurationScreenKey", "2-synced-contact-data");
+PortletURL portletURL = PortletURLBuilder.createRenderURL(
+	renderResponse
+).setMVCRenderCommandName(
+	"/configuration_admin/view_configuration_screen"
+).setParameter(
+	"configurationScreenKey", "2-synced-contact-data"
+).buildPortletURL();
 
 String redirect = ParamUtil.getString(request, "redirect", portletURL.toString());
 
-boolean includeSyncContactsFields = ParamUtil.getBoolean(request, "includeSyncContactsFields");
 boolean syncAllContacts = ParamUtil.getBoolean(request, "syncAllContacts");
 String[] syncedOrganizationIds = ParamUtil.getStringValues(request, "syncedOrganizationIds");
 String[] syncedUserGroupIds = ParamUtil.getStringValues(request, "syncedUserGroupIds");
@@ -85,7 +87,6 @@ PortalUtil.addPortletBreadcrumbEntry(request, LanguageUtil.get(resourceBundle, "
 		<aui:input name="<%= Constants.CMD %>" type="hidden" value="update_synced_contacts_fields" />
 		<aui:input name="redirect" type="hidden" value="<%= portletURL.toString() %>" />
 		<aui:input name="exit" type="hidden" value="<%= false %>" />
-		<aui:input name="includeSyncContactsFields" type="hidden" value="<%= String.valueOf(includeSyncContactsFields) %>" />
 		<aui:input name="referrer" type="hidden" value="<%= cmd %>" />
 		<aui:input name="syncAllContacts" type="hidden" value="<%= String.valueOf(syncAllContacts) %>" />
 		<aui:input name="syncedOrganizationIds" type="hidden" value="<%= StringUtil.merge(syncedOrganizationIds) %>" />
@@ -101,8 +102,8 @@ PortalUtil.addPortletBreadcrumbEntry(request, LanguageUtil.get(resourceBundle, "
 				FieldDisplayContext fieldDisplayContext = new FieldDisplayContext("/analytics_settings/edit_synced_contacts_fields", renderRequest, renderResponse);
 				%>
 
-				<clay:management-toolbar-v2
-					displayContext="<%= new FieldManagementToolbarDisplayContext(fieldDisplayContext, request, liferayPortletRequest, liferayPortletResponse) %>"
+				<clay:management-toolbar
+					managementToolbarDisplayContext="<%= new FieldManagementToolbarDisplayContext(fieldDisplayContext, request, liferayPortletRequest, liferayPortletResponse) %>"
 				/>
 
 				<liferay-ui:search-container
@@ -149,8 +150,8 @@ PortalUtil.addPortletBreadcrumbEntry(request, LanguageUtil.get(resourceBundle, "
 				FieldDisplayContext fieldDisplayContext = new FieldDisplayContext("/analytics_settings/edit_synced_users_fields", renderRequest, renderResponse);
 				%>
 
-				<clay:management-toolbar-v2
-					displayContext="<%= new FieldManagementToolbarDisplayContext(fieldDisplayContext, request, liferayPortletRequest, liferayPortletResponse) %>"
+				<clay:management-toolbar
+					managementToolbarDisplayContext="<%= new FieldManagementToolbarDisplayContext(fieldDisplayContext, request, liferayPortletRequest, liferayPortletResponse) %>"
 				/>
 
 				<liferay-ui:search-container
@@ -194,14 +195,7 @@ PortalUtil.addPortletBreadcrumbEntry(request, LanguageUtil.get(resourceBundle, "
 
 		<div class="text-right">
 			<aui:button-row>
-				<c:choose>
-					<c:when test="<%= includeSyncContactsFields %>">
-						<aui:button href="" onClick='<%= liferayPortletResponse.getNamespace() + "showConfirmationModal(this);" %>' value="cancel" />
-					</c:when>
-					<c:otherwise>
-						<aui:button href="<%= redirect %>" type="cancel" value="cancel" />
-					</c:otherwise>
-				</c:choose>
+				<aui:button href="" onClick='<%= liferayPortletResponse.getNamespace() + "showConfirmationModal(this);" %>' value="cancel" />
 
 				<aui:button type="submit" value="save" />
 			</aui:button-row>
@@ -213,7 +207,7 @@ PortalUtil.addPortletBreadcrumbEntry(request, LanguageUtil.get(resourceBundle, "
 	Liferay.provide(
 		window,
 		'<portlet:namespace />showConfirmationModal',
-		function (event) {
+		(event) => {
 			var dialog = Liferay.Util.Window.getWindow({
 				dialog: {
 					bodyContent:

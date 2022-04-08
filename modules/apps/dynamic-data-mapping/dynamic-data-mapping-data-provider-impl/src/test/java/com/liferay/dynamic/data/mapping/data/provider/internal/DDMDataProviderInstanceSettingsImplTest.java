@@ -24,9 +24,12 @@ import com.liferay.dynamic.data.mapping.model.DDMForm;
 import com.liferay.dynamic.data.mapping.storage.DDMFormValues;
 import com.liferay.dynamic.data.mapping.test.util.DDMFormValuesTestUtil;
 import com.liferay.dynamic.data.mapping.util.DDMFormFactory;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -42,6 +45,11 @@ import org.powermock.api.mockito.PowerMockito;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class DDMDataProviderInstanceSettingsImplTest extends PowerMockito {
+
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
 
 	@Before
 	public void setUp() throws Exception {
@@ -91,7 +99,7 @@ public class DDMDataProviderInstanceSettingsImplTest extends PowerMockito {
 			"string value", testDataProviderInstanceSettings.prop1());
 		Assert.assertEquals(
 			Integer.valueOf(1), testDataProviderInstanceSettings.prop2());
-		Assert.assertEquals(true, testDataProviderInstanceSettings.prop3());
+		Assert.assertTrue(testDataProviderInstanceSettings.prop3());
 	}
 
 	@Test(expected = IllegalStateException.class)

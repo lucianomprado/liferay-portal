@@ -83,8 +83,14 @@ public interface CommerceOrderNoteLocalService
 		throws PortalException;
 
 	public CommerceOrderNote addCommerceOrderNote(
+			String externalReferenceCode, long commerceOrderId, String content,
+			boolean restricted, ServiceContext serviceContext)
+		throws PortalException;
+
+	public CommerceOrderNote addOrUpdateCommerceOrderNote(
+			String externalReferenceCode, long commerceOrderNoteId,
 			long commerceOrderId, String content, boolean restricted,
-			String externalReferenceCode, ServiceContext serviceContext)
+			ServiceContext serviceContext)
 		throws PortalException;
 
 	/**
@@ -142,6 +148,9 @@ public interface CommerceOrderNoteLocalService
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public <T> T dslQuery(DSLQuery dslQuery);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public int dslQueryCount(DSLQuery dslQuery);
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public DynamicQuery dynamicQuery();
@@ -211,7 +220,7 @@ public interface CommerceOrderNoteLocalService
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public CommerceOrderNote fetchByExternalReferenceCode(
-		long companyId, String externalReferenceCode);
+		String externalReferenceCode, long companyId);
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public CommerceOrderNote fetchCommerceOrderNote(long commerceOrderNoteId);
@@ -223,6 +232,14 @@ public interface CommerceOrderNoteLocalService
 	 * @param externalReferenceCode the commerce order note's external reference code
 	 * @return the matching commerce order note, or <code>null</code> if a matching commerce order note could not be found
 	 */
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public CommerceOrderNote fetchCommerceOrderNoteByExternalReferenceCode(
+		long companyId, String externalReferenceCode);
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link #fetchCommerceOrderNoteByExternalReferenceCode(long, String)}
+	 */
+	@Deprecated
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public CommerceOrderNote fetchCommerceOrderNoteByReferenceCode(
 		long companyId, String externalReferenceCode);
@@ -239,6 +256,19 @@ public interface CommerceOrderNoteLocalService
 	 */
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public CommerceOrderNote getCommerceOrderNote(long commerceOrderNoteId)
+		throws PortalException;
+
+	/**
+	 * Returns the commerce order note with the matching external reference code and company.
+	 *
+	 * @param companyId the primary key of the company
+	 * @param externalReferenceCode the commerce order note's external reference code
+	 * @return the matching commerce order note
+	 * @throws PortalException if a matching commerce order note could not be found
+	 */
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public CommerceOrderNote getCommerceOrderNoteByExternalReferenceCode(
+			long companyId, String externalReferenceCode)
 		throws PortalException;
 
 	/**
@@ -315,14 +345,8 @@ public interface CommerceOrderNoteLocalService
 		throws PortalException;
 
 	public CommerceOrderNote updateCommerceOrderNote(
-			long commerceOrderNoteId, String content, boolean restricted,
-			String externalReferenceCode)
-		throws PortalException;
-
-	public CommerceOrderNote upsertCommerceOrderNote(
-			long commerceOrderNoteId, long commerceOrderId, String content,
-			boolean restricted, String externalReferenceCode,
-			ServiceContext serviceContext)
+			String externalReferenceCode, long commerceOrderNoteId,
+			String content, boolean restricted)
 		throws PortalException;
 
 }

@@ -195,13 +195,13 @@ public class CommerceSubscriptionEntryIndexer
 	protected void doReindex(String[] ids) throws Exception {
 		long companyId = GetterUtil.getLong(ids[0]);
 
-		reindexCommerceSubscriptionEntries(companyId);
+		_reindexCommerceSubscriptionEntries(companyId);
 	}
 
-	protected void reindexCommerceSubscriptionEntries(long companyId)
-		throws PortalException {
+	private void _reindexCommerceSubscriptionEntries(long companyId)
+		throws Exception {
 
-		final IndexableActionableDynamicQuery indexableActionableDynamicQuery =
+		IndexableActionableDynamicQuery indexableActionableDynamicQuery =
 			_commerceSubscriptionEntryLocalService.
 				getIndexableActionableDynamicQuery();
 
@@ -214,10 +214,13 @@ public class CommerceSubscriptionEntryIndexer
 				}
 				catch (PortalException portalException) {
 					if (_log.isWarnEnabled()) {
+						long commerceSubscriptionEntryId =
+							commerceSubscriptionEntry.
+								getCommerceSubscriptionEntryId();
+
 						_log.warn(
 							"Unable to index subscription entry " +
-								commerceSubscriptionEntry.
-									getCommerceSubscriptionEntryId(),
+								commerceSubscriptionEntryId,
 							portalException);
 					}
 				}

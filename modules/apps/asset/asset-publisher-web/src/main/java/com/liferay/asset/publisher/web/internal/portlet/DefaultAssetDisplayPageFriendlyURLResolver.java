@@ -50,9 +50,11 @@ import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
 import com.liferay.portal.kernel.service.ClassNameLocalService;
+import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.service.LayoutLocalService;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
-import com.liferay.portal.kernel.util.FriendlyURLNormalizerUtil;
+import com.liferay.portal.kernel.util.ArrayUtil;
+import com.liferay.portal.kernel.util.FriendlyURLNormalizer;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.Http;
@@ -68,6 +70,7 @@ import com.liferay.portal.kernel.workflow.permission.WorkflowPermissionUtil;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import javax.portlet.WindowState;
@@ -109,6 +112,13 @@ public class DefaultAssetDisplayPageFriendlyURLResolver
 				layoutDisplayPageObjectProvider.getClassTypeId())) {
 
 			ThemeDisplay themeDisplay = new ThemeDisplay();
+
+			themeDisplay.setCompany(_companyLocalService.getCompany(companyId));
+
+			String portalURL = _portal.getPortalURL(httpServletRequest);
+
+			themeDisplay.setPortalDomain(_http.getDomain(portalURL));
+			themeDisplay.setPortalURL(portalURL);
 
 			themeDisplay.setScopeGroupId(groupId);
 			themeDisplay.setSiteGroupId(groupId);
@@ -297,12 +307,28 @@ public class DefaultAssetDisplayPageFriendlyURLResolver
 				urlTitle);
 
 		if (friendlyURLEntryLocalization != null) {
-			locale = LocaleUtil.fromLanguageId(
-				friendlyURLEntryLocalization.getLanguageId());
+			String languageId = LocaleUtil.toLanguageId(locale);
 
-			actualParams.put(
-				namespace + "languageId",
-				new String[] {friendlyURLEntryLocalization.getLanguageId()});
+			if (!Objects.equals(
+					friendlyURLEntryLocalization.getLanguageId(), languageId) &&
+				ArrayUtil.contains(
+					journalArticle.getAvailableLanguageIds(), languageId)) {
+
+				actualParams.put(
+					namespace + "languageId", new String[] {languageId});
+
+				locale = LocaleUtil.fromLanguageId(languageId);
+			}
+			else {
+				actualParams.put(
+					namespace + "languageId",
+					new String[] {
+						friendlyURLEntryLocalization.getLanguageId()
+					});
+
+				locale = LocaleUtil.fromLanguageId(
+					friendlyURLEntryLocalization.getLanguageId());
+			}
 		}
 
 		String queryString = _http.parameterMapToString(actualParams, false);
@@ -382,7 +408,7 @@ public class DefaultAssetDisplayPageFriendlyURLResolver
 		throws PortalException {
 
 		String normalizedUrlTitle =
-			FriendlyURLNormalizerUtil.normalizeWithEncoding(
+			_friendlyURLNormalizer.normalizeWithEncoding(
 				_getFullURLTitle(friendlyURL));
 
 		JournalArticle journalArticle =
@@ -409,9 +435,8 @@ public class DefaultAssetDisplayPageFriendlyURLResolver
 		}
 
 		if (journalArticle == null) {
-			normalizedUrlTitle =
-				FriendlyURLNormalizerUtil.normalizeWithEncoding(
-					_getURLTitle(friendlyURL));
+			normalizedUrlTitle = _friendlyURLNormalizer.normalizeWithEncoding(
+				_getURLTitle(friendlyURL));
 
 			double version = _getVersion(friendlyURL);
 
@@ -429,9 +454,8 @@ public class DefaultAssetDisplayPageFriendlyURLResolver
 		}
 
 		if (journalArticle == null) {
-			normalizedUrlTitle =
-				FriendlyURLNormalizerUtil.normalizeWithEncoding(
-					_getURLTitle(friendlyURL));
+			normalizedUrlTitle = _friendlyURLNormalizer.normalizeWithEncoding(
+				_getURLTitle(friendlyURL));
 
 			long id = _getId(friendlyURL);
 
@@ -533,10 +557,16 @@ public class DefaultAssetDisplayPageFriendlyURLResolver
 	private ClassNameLocalService _classNameLocalService;
 
 	@Reference
+	private CompanyLocalService _companyLocalService;
+
+	@Reference
 	private DDMTemplateLocalService _ddmTemplateLocalService;
 
 	@Reference
 	private FriendlyURLEntryLocalService _friendlyURLEntryLocalService;
+
+	@Reference
+	private FriendlyURLNormalizer _friendlyURLNormalizer;
 
 	@Reference
 	private Http _http;

@@ -18,10 +18,12 @@
 
 <%
 AssetCategoriesManagementToolbarDisplayContext assetCategoriesManagementToolbarDisplayContext = new AssetCategoriesManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, assetCategoriesDisplayContext);
+AssetCategoryActionDropdownItemsProvider assetCategoryActionDropdownItemsProvider = new AssetCategoryActionDropdownItemsProvider(assetCategoriesDisplayContext, request, renderResponse);
 %>
 
-<clay:management-toolbar-v2
-	displayContext="<%= assetCategoriesManagementToolbarDisplayContext %>"
+<clay:management-toolbar
+	managementToolbarDisplayContext="<%= assetCategoriesManagementToolbarDisplayContext %>"
+	propsTransformer="js/AssetCategoriesManagementToolbarPropsTransformer"
 />
 
 <portlet:actionURL name="deleteCategory" var="deleteCategoryURL">
@@ -90,9 +92,12 @@ AssetCategoriesManagementToolbarDisplayContext assetCategoriesManagementToolbarD
 						</span>
 					</liferay-ui:search-container-column-text>
 
-					<liferay-ui:search-container-column-jsp
-						path="/category_action.jsp"
-					/>
+					<liferay-ui:search-container-column-text>
+						<clay:dropdown-actions
+							dropdownItems="<%= assetCategoryActionDropdownItemsProvider.getActionDropdownItems(curCategory) %>"
+							propsTransformer="js/CategoryActionDropdownPropsTransformer"
+						/>
+					</liferay-ui:search-container-column-text>
 				</c:when>
 				<c:when test='<%= Objects.equals(assetCategoriesDisplayContext.getDisplayStyle(), "list") %>'>
 					<c:choose>
@@ -138,9 +143,12 @@ AssetCategoriesManagementToolbarDisplayContext assetCategoriesManagementToolbarD
 						property="createDate"
 					/>
 
-					<liferay-ui:search-container-column-jsp
-						path="/category_action.jsp"
-					/>
+					<liferay-ui:search-container-column-text>
+						<clay:dropdown-actions
+							dropdownItems="<%= assetCategoryActionDropdownItemsProvider.getActionDropdownItems(curCategory) %>"
+							propsTransformer="js/CategoryActionDropdownPropsTransformer"
+						/>
+					</liferay-ui:search-container-column-text>
 				</c:when>
 			</c:choose>
 		</liferay-ui:search-container-row>
@@ -162,8 +170,3 @@ AssetCategoriesManagementToolbarDisplayContext assetCategoriesManagementToolbarD
 	<aui:input name="parentCategoryId" type="hidden" />
 	<aui:input name="vocabularyId" type="hidden" />
 </aui:form>
-
-<liferay-frontend:component
-	componentId="<%= assetCategoriesManagementToolbarDisplayContext.getDefaultEventHandler() %>"
-	module="js/AssetCategoriesManagementToolbarDefaultEventHandler.es"
-/>

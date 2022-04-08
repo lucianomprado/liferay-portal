@@ -19,14 +19,14 @@
 <%
 CommerceInventoryWarehouseItemSelectorViewDisplayContext commerceInventoryWarehouseItemSelectorViewDisplayContext = (CommerceInventoryWarehouseItemSelectorViewDisplayContext)request.getAttribute(WebKeys.PORTLET_DISPLAY_CONTEXT);
 
-long commerceCountryId = commerceInventoryWarehouseItemSelectorViewDisplayContext.getCommerceCountryId();
+long countryId = commerceInventoryWarehouseItemSelectorViewDisplayContext.getCountryId();
 String itemSelectedEventName = commerceInventoryWarehouseItemSelectorViewDisplayContext.getItemSelectedEventName();
 List<ManagementBarFilterItem> managementBarFilterItems = commerceInventoryWarehouseItemSelectorViewDisplayContext.getManagementBarFilterItems();
 
 String managementBarFilterValue = null;
 
 for (ManagementBarFilterItem managementBarFilterItem : managementBarFilterItems) {
-	if (commerceCountryId == Long.valueOf(managementBarFilterItem.getId())) {
+	if (countryId == Long.valueOf(managementBarFilterItem.getId())) {
 		managementBarFilterValue = managementBarFilterItem.getLabel();
 
 		break;
@@ -98,7 +98,7 @@ for (ManagementBarFilterItem managementBarFilterItem : managementBarFilterItems)
 		'<portlet:namespace />commerceInventoryWarehouses'
 	);
 
-	searchContainer.on('rowToggled', function (event) {
+	searchContainer.on('rowToggled', (event) => {
 		Liferay.Util.getOpener().Liferay.fire(
 			'<%= HtmlUtil.escapeJS(itemSelectedEventName) %>',
 			{

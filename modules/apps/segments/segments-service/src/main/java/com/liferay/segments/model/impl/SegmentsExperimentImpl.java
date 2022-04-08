@@ -50,16 +50,6 @@ import java.util.Locale;
  */
 public class SegmentsExperimentImpl extends SegmentsExperimentBaseImpl {
 
-	/**
-	 * NOTE FOR DEVELOPERS:
-	 *
-	 * Never reference this class directly. All methods that expect a segments
-	 * experiment model instance should use the {@link
-	 * com.liferay.segments.model.SegmentsExperiment} interface instead.
-	 */
-	public SegmentsExperimentImpl() {
-	}
-
 	@Override
 	public double getConfidenceLevel() {
 		UnicodeProperties typeSettingsUnicodeProperties =
@@ -99,6 +89,12 @@ public class SegmentsExperimentImpl extends SegmentsExperimentBaseImpl {
 			SegmentsExperienceLocalServiceUtil.getSegmentsExperience(
 				getSegmentsExperienceId());
 
+		if (segmentsExperience.getSegmentsEntryId() ==
+				SegmentsEntryConstants.ID_DEFAULT) {
+
+			return SegmentsEntryConstants.getDefaultSegmentsEntryName(locale);
+		}
+
 		SegmentsEntry segmentsEntry =
 			SegmentsEntryLocalServiceUtil.getSegmentsEntry(
 				segmentsExperience.getSegmentsEntryId());
@@ -134,7 +130,7 @@ public class SegmentsExperimentImpl extends SegmentsExperimentBaseImpl {
 				_typeSettingsUnicodeProperties.load(super.getTypeSettings());
 			}
 			catch (IOException ioException) {
-				_log.error(ioException, ioException);
+				_log.error(ioException);
 			}
 		}
 

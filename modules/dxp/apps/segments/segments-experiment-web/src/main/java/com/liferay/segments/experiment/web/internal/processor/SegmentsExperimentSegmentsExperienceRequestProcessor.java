@@ -17,6 +17,7 @@ package com.liferay.segments.experiment.web.internal.processor;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.CookieKeys;
@@ -57,16 +58,32 @@ import org.osgi.service.component.annotations.Reference;
 @Component(
 	immediate = true,
 	property = "segments.experience.request.processor.priority:Integer=50",
-	service = SegmentsExperienceRequestProcessor.class
+	service = {
+		SegmentsExperienceRequestProcessor.class,
+		SegmentsExperimentSegmentsExperienceRequestProcessor.class
+	}
 )
 public class SegmentsExperimentSegmentsExperienceRequestProcessor
 	implements SegmentsExperienceRequestProcessor {
+
+	public void cleanCookieLogoutAction(
+		HttpServletRequest httpServletRequest,
+		HttpServletResponse httpServletResponse) {
+
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)httpServletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
+
+		_unsetCookie(
+			httpServletRequest, httpServletResponse,
+			themeDisplay.getURLCurrent());
+	}
 
 	@Override
 	public long[] getSegmentsExperienceIds(
 		HttpServletRequest httpServletRequest,
 		HttpServletResponse httpServletResponse, long groupId, long classNameId,
-		long classPK, long[] segmentsEntryIds, long[] segmentsExperienceIds) {
+		long classPK, long[] segmentsExperienceIds) {
 
 		ThemeDisplay themeDisplay =
 			(ThemeDisplay)httpServletRequest.getAttribute(
@@ -101,7 +118,7 @@ public class SegmentsExperimentSegmentsExperienceRequestProcessor
 		}
 
 		segmentsExperienceId = _getCurrentSegmentsExperienceId(
-			httpServletRequest, groupId);
+			groupId, classNameId, classPK, httpServletRequest);
 
 		if (segmentsExperienceId != -1) {
 			SegmentsExperiment segmentsExperiment =
@@ -135,7 +152,8 @@ public class SegmentsExperimentSegmentsExperienceRequestProcessor
 
 		segmentsExperienceId = longStream.findFirst(
 		).orElse(
-			SegmentsExperienceConstants.ID_DEFAULT
+			_segmentsExperienceLocalService.fetchDefaultSegmentsExperienceId(
+				classPK)
 		);
 
 		List<SegmentsExperiment> segmentsExperiments =
@@ -165,7 +183,7 @@ public class SegmentsExperimentSegmentsExperienceRequestProcessor
 			return segmentsExperienceIds;
 		}
 
-		segmentsExperienceId = getSegmentsExperimentSegmentsExperienceId(
+		segmentsExperienceId = _getSegmentsExperimentSegmentsExperienceId(
 			segmentsExperiment.getSegmentsExperienceId(),
 			segmentsExperimentRels);
 
@@ -187,23 +205,15 @@ public class SegmentsExperimentSegmentsExperienceRequestProcessor
 		return new long[] {segmentsExperienceId};
 	}
 
-	protected long getSegmentsExperimentSegmentsExperienceId(
-		long controlSegmentsExperienceId,
-		List<SegmentsExperimentRel> segmentsExperimentRels) {
+	@Override
+	public long[] getSegmentsExperienceIds(
+		HttpServletRequest httpServletRequest,
+		HttpServletResponse httpServletResponse, long groupId, long classNameId,
+		long classPK, long[] segmentsEntryIds, long[] segmentsExperienceIds) {
 
-		double random = Math.random();
-
-		for (SegmentsExperimentRel segmentsExperimentRel :
-				segmentsExperimentRels) {
-
-			random -= segmentsExperimentRel.getSplit();
-
-			if (random <= 0.0D) {
-				return segmentsExperimentRel.getSegmentsExperienceId();
-			}
-		}
-
-		return controlSegmentsExperienceId;
+		return getSegmentsExperienceIds(
+			httpServletRequest, httpServletResponse, groupId, classNameId,
+			classPK, segmentsExperienceIds);
 	}
 
 	private Optional<Cookie> _getCookieOptional(
@@ -224,22 +234,25 @@ public class SegmentsExperimentSegmentsExperienceRequestProcessor
 	}
 
 	private long _getCurrentSegmentsExperienceId(
-		HttpServletRequest httpServletRequest, long groupId) {
+		long groupId, long classNameId, long classPK,
+		HttpServletRequest httpServletRequest) {
 
-		Optional<Cookie> optionalCookie = _getCookieOptional(
+		Optional<Cookie> cookieOptional = _getCookieOptional(
 			httpServletRequest);
 
-		if (!optionalCookie.isPresent()) {
+		if (!cookieOptional.isPresent()) {
 			return -1;
 		}
 
-		Cookie cookie = optionalCookie.get();
+		Cookie cookie = cookieOptional.get();
 
-		return _getSegmentsExperienceId(groupId, cookie.getValue());
+		return _getSegmentsExperienceId(
+			groupId, cookie.getValue(), classNameId, classPK);
 	}
 
 	private long _getSegmentsExperienceId(
-		long groupId, String segmentsExperienceKey) {
+		long groupId, String segmentsExperienceKey, long classNameId,
+		long classPK) {
 
 		if (Objects.equals(
 				segmentsExperienceKey,
@@ -251,7 +264,7 @@ public class SegmentsExperimentSegmentsExperienceRequestProcessor
 		if (Validator.isNotNull(segmentsExperienceKey)) {
 			SegmentsExperience segmentsExperience =
 				_segmentsExperienceLocalService.fetchSegmentsExperience(
-					groupId, segmentsExperienceKey);
+					groupId, segmentsExperienceKey, classNameId, classPK);
 
 			if (segmentsExperience != null) {
 				return segmentsExperience.getSegmentsExperienceId();
@@ -273,6 +286,25 @@ public class SegmentsExperimentSegmentsExperienceRequestProcessor
 		}
 
 		return SegmentsExperienceConstants.KEY_DEFAULT;
+	}
+
+	private long _getSegmentsExperimentSegmentsExperienceId(
+		long controlSegmentsExperienceId,
+		List<SegmentsExperimentRel> segmentsExperimentRels) {
+
+		double random = Math.random();
+
+		for (SegmentsExperimentRel segmentsExperimentRel :
+				segmentsExperimentRels) {
+
+			random -= segmentsExperimentRel.getSplit();
+
+			if (random <= 0.0D) {
+				return segmentsExperimentRel.getSegmentsExperienceId();
+			}
+		}
+
+		return controlSegmentsExperienceId;
 	}
 
 	private long _getSelectedSegmentsExperienceId(
@@ -305,7 +337,8 @@ public class SegmentsExperimentSegmentsExperienceRequestProcessor
 			httpServletRequest, "segmentsExperienceKey");
 
 		return _getSegmentsExperienceId(
-			themeDisplay.getScopeGroupId(), selectedSegmentsExperienceKey);
+			themeDisplay.getScopeGroupId(), selectedSegmentsExperienceKey,
+			_portal.getClassNameId(Layout.class), themeDisplay.getPlid());
 	}
 
 	private String _getSelectedSegmentsExperimentKey(

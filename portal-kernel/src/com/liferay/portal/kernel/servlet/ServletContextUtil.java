@@ -18,6 +18,8 @@ import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.internal.util.ContextResourcePathsUtil;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.URLUtil;
 
@@ -111,9 +113,7 @@ public class ServletContextUtil {
 	public static String getRootPath(ServletContext servletContext)
 		throws MalformedURLException {
 
-		URI rootURI = getRootURI(servletContext);
-
-		return rootURI.toString();
+		return String.valueOf(getRootURI(servletContext));
 	}
 
 	public static URI getRootURI(ServletContext servletContext)
@@ -186,16 +186,14 @@ public class ServletContextUtil {
 
 		for (String path : paths) {
 			if (path.endsWith(_EXT_CLASS)) {
-				String className = _getClassName(rootPath, path);
-
-				classNames.add(className);
+				classNames.add(_getClassName(rootPath, path));
 			}
 			else if (path.endsWith(_EXT_JAR)) {
-				try (JarInputStream jarFile = new JarInputStream(
+				try (JarInputStream jarInputStream = new JarInputStream(
 						servletContext.getResourceAsStream(path))) {
 
 					while (true) {
-						JarEntry jarEntry = jarFile.getNextJarEntry();
+						JarEntry jarEntry = jarInputStream.getNextJarEntry();
 
 						if (jarEntry == null) {
 							break;
@@ -264,6 +262,9 @@ public class ServletContextUtil {
 						}
 					}
 					catch (IOException ioException) {
+						if (_log.isDebugEnabled()) {
+							_log.debug(ioException);
+						}
 					}
 				}
 
@@ -315,5 +316,8 @@ public class ServletContextUtil {
 
 	private static final String _LIFERAY_WAB_BUNDLE_RESOURCES_LAST_MODIFIED =
 		"LIFERAY_WAB_BUNDLE_RESOURCES_LAST_MODIFIED";
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		ServletContextUtil.class);
 
 }

@@ -14,13 +14,15 @@
 
 package com.liferay.portal.kernel.util;
 
+import com.liferay.petra.concurrent.ConcurrentReferenceKeyHashMap;
+import com.liferay.petra.memory.FinalizeManager;
 import com.liferay.portal.kernel.language.LanguageBuilderUtil;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.language.UTF8Control;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.resource.bundle.ResourceBundleLoader;
 import com.liferay.portal.kernel.resource.bundle.ResourceBundleLoaderUtil;
-import com.liferay.registry.Registry;
-import com.liferay.registry.RegistryUtil;
 
 import java.text.MessageFormat;
 
@@ -31,6 +33,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
+import java.util.Set;
+
+import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleReference;
 
 /**
  * @author Shuyang Zhou
@@ -63,6 +69,10 @@ public class ResourceBundleUtil {
 		return getBundle("content.Language", locale, classLoader);
 	}
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no replacement
+	 */
+	@Deprecated
 	public static ResourceBundle getBundle(Locale locale, String symbolicName) {
 		return _getBundle(
 			"content.Language", locale,
@@ -88,11 +98,32 @@ public class ResourceBundleUtil {
 	public static ResourceBundle getBundle(
 		String baseName, Locale locale, ClassLoader classLoader) {
 
-		Registry registry = RegistryUtil.getRegistry();
+		String symbolicName = null;
 
-		return _getBundle(
-			baseName, locale, classLoader,
-			registry.getSymbolicName(classLoader));
+		if (classLoader instanceof BundleReference) {
+			BundleReference bundleReference = (BundleReference)classLoader;
+
+			Bundle bundle = bundleReference.getBundle();
+
+			symbolicName = bundle.getSymbolicName();
+		}
+
+		return _getBundle(baseName, locale, classLoader, symbolicName);
+	}
+
+	public static Map<Locale, String> getLocalizationMap(
+		ResourceBundleLoader resourceBundleLoader, String key) {
+
+		Map<Locale, String> map = new HashMap<>();
+
+		for (Locale locale : LanguageUtil.getAvailableLocales()) {
+			ResourceBundle resourceBundle =
+				resourceBundleLoader.loadResourceBundle(locale);
+
+			map.put(locale, getString(resourceBundle, key));
+		}
+
+		return map;
 	}
 
 	/**
@@ -117,21 +148,6 @@ public class ResourceBundleUtil {
 			key);
 	}
 
-	public static Map<Locale, String> getLocalizationMap(
-		ResourceBundleLoader resourceBundleLoader, String key) {
-
-		Map<Locale, String> map = new HashMap<>();
-
-		for (Locale locale : LanguageUtil.getAvailableLocales()) {
-			ResourceBundle resourceBundle =
-				resourceBundleLoader.loadResourceBundle(locale);
-
-			map.put(locale, getString(resourceBundle, key));
-		}
-
-		return map;
-	}
-
 	public static ResourceBundle getModuleAndPortalResourceBundle(
 		Locale locale, Class<?> clazz) {
 
@@ -144,8 +160,7 @@ public class ResourceBundleUtil {
 	 */
 	@Deprecated
 	public static com.liferay.portal.kernel.util.ResourceBundleLoader
-		getResourceBundleLoader(
-			final String baseName, final ClassLoader classLoader) {
+		getResourceBundleLoader(String baseName, ClassLoader classLoader) {
 
 		return new ClassResourceBundleLoader(baseName, classLoader);
 	}
@@ -159,6 +174,10 @@ public class ResourceBundleUtil {
 			return LanguageBuilderUtil.fixValue(resourceBundle.getString(key));
 		}
 		catch (MissingResourceException missingResourceException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(missingResourceException);
+			}
+
 			return null;
 		}
 	}
@@ -208,11 +227,33 @@ public class ResourceBundleUtil {
 		}
 
 		if (resourceBundleLoader == null) {
-			return ResourceBundle.getBundle(
-				baseName, locale, classLoader, UTF8Control.INSTANCE);
+			if (!_portalResourceBundleClassLoaders.contains(classLoader)) {
+				try {
+					return ResourceBundle.getBundle(
+						baseName, locale, classLoader, UTF8Control.INSTANCE);
+				}
+				catch (MissingResourceException missingResourceException) {
+					if (_log.isDebugEnabled()) {
+						_log.debug(missingResourceException);
+					}
+
+					_portalResourceBundleClassLoaders.add(classLoader);
+				}
+			}
+
+			resourceBundleLoader =
+				ResourceBundleLoaderUtil.getPortalResourceBundleLoader();
 		}
 
 		return resourceBundleLoader.loadResourceBundle(locale);
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		ResourceBundleUtil.class);
+
+	private static final Set<ClassLoader> _portalResourceBundleClassLoaders =
+		Collections.newSetFromMap(
+			new ConcurrentReferenceKeyHashMap<>(
+				FinalizeManager.WEAK_REFERENCE_FACTORY));
 
 }

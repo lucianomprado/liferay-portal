@@ -14,14 +14,14 @@
 
 package com.liferay.portal.upgrade.v7_4_x;
 
-import com.liferay.petra.string.StringPool;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.portal.dao.orm.common.SQLTransformer;
 import com.liferay.portal.kernel.dao.jdbc.AutoBatchPreparedStatementUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
+import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.LoggingTimer;
-import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.uuid.PortalUUIDUtil;
-import com.liferay.portal.upgrade.v7_4_x.util.RegionTable;
 import com.liferay.portal.util.PropsValues;
 
 import java.sql.PreparedStatement;
@@ -34,102 +34,64 @@ public class UpgradeRegion extends UpgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		long defaultCompanyId = 0;
-		long defaultUserId = 0;
+		runSQLTemplate("update-7.3.0-7.4.0-region.sql", false);
+
+		long companyId = 0;
+		long userId = 0;
+		String languageId = LocaleUtil.toLanguageId(LocaleUtil.US);
 
 		String sql = StringBundler.concat(
-			"select User_.companyId, User_.userId from User_ join Company on ",
-			"User_.companyId = Company.companyId where User_.defaultUser = ",
-			"true and Company.webId = ",
-			StringUtil.quote(
-				PropsValues.COMPANY_DEFAULT_WEB_ID, StringPool.QUOTE));
+			"select User_.companyId, User_.userId, User_.languageId from ",
+			"User_ join Company on User_.companyId = Company.companyId where ",
+			"User_.defaultUser = [$TRUE$] and Company.webId = ",
+			StringUtil.quote(PropsValues.COMPANY_DEFAULT_WEB_ID));
 
-		try (PreparedStatement ps = connection.prepareStatement(sql);
-			ResultSet rs = ps.executeQuery()) {
+		try (PreparedStatement preparedStatement = connection.prepareStatement(
+				SQLTransformer.transform(sql));
+			ResultSet resultSet = preparedStatement.executeQuery()) {
 
-			while (rs.next()) {
-				defaultCompanyId = rs.getLong(1);
-				defaultUserId = rs.getLong(2);
-
-				break;
+			if (resultSet.next()) {
+				companyId = resultSet.getLong(1);
+				userId = resultSet.getLong(2);
+				languageId = resultSet.getString(3);
 			}
 		}
 
-		if (!hasColumn("Region", "companyId")) {
-			alter(
-				RegionTable.class,
-				new AlterTableAddColumn("companyId", "LONG"));
-		}
+		runSQL(
+			"update Region set defaultLanguageId = " +
+				StringUtil.quote(languageId) +
+					" where defaultLanguageId is null");
 
-		if (defaultCompanyId > 0) {
+		if (companyId > 0) {
 			runSQL(
-				"update Region set companyId = " + defaultCompanyId +
+				"update Region set companyId = " + companyId +
 					" where companyId is null");
 		}
 
-		if (!hasColumn("Region", "userId")) {
-			alter(RegionTable.class, new AlterTableAddColumn("userId", "LONG"));
-		}
-
-		if (defaultUserId > 0) {
+		if (userId > 0) {
 			runSQL(
-				"update Region set userId = " + defaultUserId +
+				"update Region set userId = " + userId +
 					" where userId is null");
 		}
 
-		if (!hasColumn("Region", "userName")) {
-			alter(
-				RegionTable.class,
-				new AlterTableAddColumn("userName", "VARCHAR(75) null"));
-		}
-
-		if (!hasColumn("Region", "createDate")) {
-			alter(
-				RegionTable.class,
-				new AlterTableAddColumn("createDate", "DATE null"));
-		}
-
-		if (!hasColumn("Region", "modifiedDate")) {
-			alter(
-				RegionTable.class,
-				new AlterTableAddColumn("modifiedDate", "DATE null"));
-		}
-
-		if (!hasColumn("Region", "position")) {
-			alter(
-				RegionTable.class,
-				new AlterTableAddColumn("position", "DOUBLE"));
-		}
-
-		if (!hasColumn("Region", "lastPublishDate")) {
-			alter(
-				RegionTable.class,
-				new AlterTableAddColumn("lastPublishDate", "DATE null"));
-		}
-
-		if (!hasColumn("Region", "uuid_")) {
-			alter(
-				RegionTable.class,
-				new AlterTableAddColumn("uuid_", "VARCHAR(75) null"));
-		}
-
 		try (LoggingTimer loggingTimer = new LoggingTimer()) {
-			try (PreparedStatement ps1 = connection.prepareStatement(
-					"select regionId from Region where uuid_ is null");
-				PreparedStatement ps2 =
+			try (PreparedStatement preparedStatement1 =
+					connection.prepareStatement(
+						"select regionId from Region where uuid_ is null");
+				PreparedStatement preparedStatement2 =
 					AutoBatchPreparedStatementUtil.autoBatch(
 						connection.prepareStatement(
 							"update Region set uuid_ = ? where regionId = ?"));
-				ResultSet rs = ps1.executeQuery()) {
+				ResultSet resultSet = preparedStatement1.executeQuery()) {
 
-				while (rs.next()) {
-					ps2.setString(1, PortalUUIDUtil.generate());
-					ps2.setLong(2, rs.getLong(1));
+				while (resultSet.next()) {
+					preparedStatement2.setString(1, PortalUUIDUtil.generate());
+					preparedStatement2.setLong(2, resultSet.getLong(1));
 
-					ps2.addBatch();
+					preparedStatement2.addBatch();
 				}
 
-				ps2.executeBatch();
+				preparedStatement2.executeBatch();
 			}
 		}
 	}

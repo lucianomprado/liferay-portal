@@ -82,7 +82,7 @@ public class AssetEntryServiceImpl extends AssetEntryServiceBaseImpl {
 			}
 			catch (PortalException portalException) {
 				if (_log.isWarnEnabled()) {
-					_log.warn(portalException, portalException);
+					_log.warn(portalException);
 				}
 			}
 		}
@@ -279,6 +279,9 @@ public class AssetEntryServiceImpl extends AssetEntryServiceBaseImpl {
 					}
 				}
 				catch (Exception exception) {
+					if (_log.isDebugEnabled()) {
+						_log.debug(exception);
+					}
 				}
 			}
 

@@ -14,9 +14,11 @@
 
 package com.liferay.data.engine.internal.upgrade;
 
-import com.liferay.data.engine.internal.upgrade.v1_0_0.UpgradeSchema;
+import com.liferay.data.engine.internal.upgrade.v1_0_0.SchemaUpgradeProcess;
 import com.liferay.data.engine.internal.upgrade.v2_0_0.UpgradeCompanyId;
-import com.liferay.data.engine.internal.upgrade.v2_1_0.UpgradeDEDataDefinitionFieldLink;
+import com.liferay.portal.kernel.upgrade.DummyUpgradeStep;
+import com.liferay.portal.kernel.upgrade.UpgradeCTModel;
+import com.liferay.portal.kernel.upgrade.UpgradeMVCCVersion;
 import com.liferay.portal.upgrade.registry.UpgradeStepRegistrator;
 
 import org.osgi.service.component.annotations.Component;
@@ -32,12 +34,40 @@ public class DEServiceUpgrade implements UpgradeStepRegistrator {
 
 	@Override
 	public void register(Registry registry) {
-		registry.register("1.0.0", "1.1.0", new UpgradeSchema());
+		registry.register("1.0.0", "1.1.0", new SchemaUpgradeProcess());
 
-		registry.register("1.1.0", "2.0.0", new UpgradeCompanyId());
+		registry.register("1.1.0", "1.1.1", new DummyUpgradeStep());
+
+		registry.register("1.1.1", "2.0.0", new UpgradeCompanyId());
 
 		registry.register(
-			"2.0.0", "2.1.0", new UpgradeDEDataDefinitionFieldLink());
+			"2.0.0", "2.1.0",
+			new com.liferay.data.engine.internal.upgrade.v2_1_0.
+				DEDataDefinitionFieldLinkUpgradeProcess());
+
+		registry.register(
+			"2.1.0", "2.1.1",
+			new com.liferay.data.engine.internal.upgrade.v2_1_1.
+				DEDataDefinitionFieldLinkUpgradeProcess());
+
+		registry.register(
+			"2.1.1", "2.2.0",
+			new UpgradeMVCCVersion() {
+
+				@Override
+				protected String[] getModuleTableNames() {
+					return new String[] {
+						"DEDataDefinitionFieldLink", "DEDataListView"
+					};
+				}
+
+			},
+			new UpgradeCTModel("DEDataDefinitionFieldLink", "DEDataListView"));
+
+		registry.register(
+			"2.2.0", "2.2.1",
+			new com.liferay.data.engine.internal.upgrade.v2_2_1.
+				DEDataDefinitionFieldLinkUpgradeProcess());
 	}
 
 }

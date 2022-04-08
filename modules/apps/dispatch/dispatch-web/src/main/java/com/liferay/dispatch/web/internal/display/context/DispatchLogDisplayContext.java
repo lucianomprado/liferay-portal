@@ -15,24 +15,17 @@
 package com.liferay.dispatch.web.internal.display.context;
 
 import com.liferay.dispatch.constants.DispatchConstants;
+import com.liferay.dispatch.executor.DispatchTaskStatus;
 import com.liferay.dispatch.model.DispatchLog;
 import com.liferay.dispatch.model.DispatchTrigger;
 import com.liferay.dispatch.service.DispatchLogService;
-import com.liferay.dispatch.web.internal.display.context.util.DispatchRequestHelper;
-import com.liferay.petra.string.StringPool;
-import com.liferay.portal.kernel.dao.search.EmptyOnClickRowChecker;
-import com.liferay.portal.kernel.dao.search.RowChecker;
-import com.liferay.portal.kernel.dao.search.SearchContainer;
+import com.liferay.dispatch.web.internal.display.context.helper.DispatchRequestHelper;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Validator;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-
 import java.util.Date;
-import java.util.List;
 
 import javax.portlet.PortletURL;
 import javax.portlet.RenderRequest;
@@ -49,45 +42,33 @@ public class DispatchLogDisplayContext {
 		_dispatchLogService = dispatchLogService;
 
 		_dispatchRequestHelper = new DispatchRequestHelper(renderRequest);
-
-		_dateFormat = DateFormat.getDateTimeInstance(
-			SimpleDateFormat.SHORT, SimpleDateFormat.LONG,
-			_dispatchRequestHelper.getLocale());
-	}
-
-	public String getDateString(Date date) {
-		if (date != null) {
-			return _dateFormat.format(date);
-		}
-
-		return StringPool.BLANK;
 	}
 
 	public DispatchLog getDispatchLog() throws PortalException {
-		long dispatchLogId = ParamUtil.getLong(
-			_dispatchRequestHelper.getRequest(), "dispatchLogId");
-
-		if (dispatchLogId == 0) {
-			return null;
-		}
-
-		return _dispatchLogService.getDispatchLog(dispatchLogId);
+		return _dispatchLogService.getDispatchLog(
+			ParamUtil.getLong(
+				_dispatchRequestHelper.getRequest(), "dispatchLogId"));
 	}
 
 	public DispatchTrigger getDispatchTrigger() {
 		return _dispatchRequestHelper.getDispatchTrigger();
 	}
 
-	public String getOrderByCol() {
-		return ParamUtil.getString(
-			_dispatchRequestHelper.getRequest(),
-			SearchContainer.DEFAULT_ORDER_BY_COL_PARAM, "modified-date");
-	}
+	public long getExecutionTimeMills() throws PortalException {
+		DispatchLog dispatchLog = getDispatchLog();
 
-	public String getOrderByType() {
-		return ParamUtil.getString(
-			_dispatchRequestHelper.getRequest(),
-			SearchContainer.DEFAULT_ORDER_BY_TYPE_PARAM, "desc");
+		DispatchTaskStatus dispatchTaskStatus = DispatchTaskStatus.valueOf(
+			dispatchLog.getStatus());
+
+		Date startDate = dispatchLog.getStartDate();
+
+		if (dispatchTaskStatus == DispatchTaskStatus.IN_PROGRESS) {
+			return System.currentTimeMillis() - startDate.getTime();
+		}
+
+		Date endDate = dispatchLog.getEndDate();
+
+		return endDate.getTime() - startDate.getTime();
 	}
 
 	public PortletURL getPortletURL() {
@@ -134,52 +115,7 @@ public class DispatchLogDisplayContext {
 		return portletURL;
 	}
 
-	public RowChecker getRowChecker() {
-		if (_rowChecker == null) {
-			_rowChecker = new EmptyOnClickRowChecker(
-				_dispatchRequestHelper.getLiferayPortletResponse());
-		}
-
-		return _rowChecker;
-	}
-
-	public SearchContainer<DispatchLog> getSearchContainer()
-		throws PortalException {
-
-		if (_searchContainer != null) {
-			return _searchContainer;
-		}
-
-		DispatchTrigger dispatchTrigger = getDispatchTrigger();
-
-		_searchContainer = new SearchContainer<>(
-			_dispatchRequestHelper.getLiferayPortletRequest(), getPortletURL(),
-			null, null);
-
-		_searchContainer.setEmptyResultsMessage("no-items-were-found");
-		_searchContainer.setOrderByCol(getOrderByCol());
-		_searchContainer.setOrderByComparator(null);
-		_searchContainer.setOrderByType(getOrderByType());
-		_searchContainer.setRowChecker(getRowChecker());
-
-		int total = _dispatchLogService.getDispatchLogsCount(
-			dispatchTrigger.getDispatchTriggerId());
-
-		_searchContainer.setTotal(total);
-
-		List<DispatchLog> results = _dispatchLogService.getDispatchLogs(
-			dispatchTrigger.getDispatchTriggerId(), _searchContainer.getStart(),
-			_searchContainer.getEnd());
-
-		_searchContainer.setResults(results);
-
-		return _searchContainer;
-	}
-
-	private final DateFormat _dateFormat;
 	private final DispatchLogService _dispatchLogService;
 	private final DispatchRequestHelper _dispatchRequestHelper;
-	private RowChecker _rowChecker;
-	private SearchContainer<DispatchLog> _searchContainer;
 
 }

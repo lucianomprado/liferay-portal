@@ -22,6 +22,7 @@
 taglib uri="http://liferay.com/tld/clay" prefix="clay" %><%@
 taglib uri="http://liferay.com/tld/document-library" prefix="liferay-document-library" %><%@
 taglib uri="http://liferay.com/tld/frontend" prefix="liferay-frontend" %><%@
+taglib uri="http://liferay.com/tld/react" prefix="react" %><%@
 taglib uri="http://liferay.com/tld/theme" prefix="liferay-theme" %><%@
 taglib uri="http://liferay.com/tld/ui" prefix="liferay-ui" %><%@
 taglib uri="http://liferay.com/tld/util" prefix="liferay-util" %>
@@ -31,11 +32,13 @@ page import="com.liferay.document.library.kernel.service.DLAppLocalServiceUtil" 
 page import="com.liferay.document.library.kernel.service.DLAppServiceUtil" %><%@
 page import="com.liferay.document.library.kernel.util.DLUtil" %><%@
 page import="com.liferay.item.selector.ItemSelectorReturnTypeResolver" %><%@
+page import="com.liferay.item.selector.taglib.internal.configuration.util.FFItemSelectorSingleFileUploaderConfigurationUtil" %><%@
 page import="com.liferay.item.selector.taglib.internal.dao.search.RepositoryEntryResultRowSplitter" %><%@
 page import="com.liferay.item.selector.taglib.internal.display.context.GroupSelectorDisplayContext" %><%@
 page import="com.liferay.item.selector.taglib.internal.security.permission.resource.DLFolderPermission" %><%@
 page import="com.liferay.item.selector.taglib.internal.servlet.ServletContextUtil" %><%@
 page import="com.liferay.item.selector.taglib.internal.util.ItemSelectorRepositoryEntryBrowserUtil" %><%@
+page import="com.liferay.petra.portlet.url.builder.PortletURLBuilder" %><%@
 page import="com.liferay.petra.string.StringPool" %><%@
 page import="com.liferay.portal.kernel.dao.search.SearchContainer" %><%@
 page import="com.liferay.portal.kernel.json.JSONObject" %><%@

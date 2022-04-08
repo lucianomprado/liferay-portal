@@ -43,6 +43,10 @@ public class Changeset implements Serializable {
 		return new RawBuilder(new Changeset());
 	}
 
+	public static RawBuilder createRaw(String uuid) {
+		return new RawBuilder(new Changeset(uuid));
+	}
+
 	public String getUuid() {
 		return _uuid;
 	}
@@ -97,12 +101,8 @@ public class Changeset implements Serializable {
 
 			StagedModel stagedModel = supplier.get();
 
-			String stagedModelClassName =
-				ExportImportClassedModelUtil.getClassName(stagedModel);
-
 			_collectChildrenStagedModels(
-				_changeset._stagedModels, stagedModel, stagedModelClassName,
-				function);
+				_changeset._stagedModels, stagedModel, function);
 
 			return this;
 		}
@@ -150,8 +150,10 @@ public class Changeset implements Serializable {
 
 	private static void _collectChildrenStagedModels(
 		List<StagedModel> childrenStagedModels, StagedModel parentStagedModel,
-		String parentClassName,
 		Function<StagedModel, Collection<?>> hierarchyFunction) {
+
+		String parentClassName = ExportImportClassedModelUtil.getClassName(
+			parentStagedModel);
 
 		Queue<StagedModel> queue = new LinkedList<>();
 
@@ -163,9 +165,7 @@ public class Changeset implements Serializable {
 			String stagedModelClassName = stagedModel.getModelClassName();
 
 			if (stagedModelClassName.equals(parentClassName)) {
-				for (Object object :
-						hierarchyFunction.apply(parentStagedModel)) {
-
+				for (Object object : hierarchyFunction.apply(stagedModel)) {
 					StagedModel childStagedModel = (StagedModel)object;
 
 					childrenStagedModels.add(childStagedModel);
@@ -177,7 +177,11 @@ public class Changeset implements Serializable {
 	}
 
 	private Changeset() {
-		_uuid = PortalUUIDUtil.generate();
+		this(PortalUUIDUtil.generate());
+	}
+
+	private Changeset(String uuid) {
+		_uuid = uuid;
 	}
 
 	private final List<StagedModel> _stagedModels = new ArrayList<>();

@@ -65,7 +65,7 @@ import org.osgi.service.component.annotations.Reference;
 	configurationPid = "com.liferay.oauth2.provider.configuration.OAuth2ProviderConfiguration",
 	property = {
 		"javax.portlet.name=" + OAuth2ProviderPortletKeys.OAUTH2_ADMIN,
-		"mvc.command.name=/oauth2_provider/update_o_auth2_application"
+		"mvc.command.name=/oauth2_provider/update_oauth2_application"
 	},
 	service = MVCActionCommand.class
 )
@@ -84,7 +84,7 @@ public class UpdateOAuth2ApplicationMVCActionCommand
 
 		int clientProfileId = ParamUtil.getInteger(request, "clientProfile");
 
-		ClientProfile clientProfile = getClientProfile(clientProfileId);
+		ClientProfile clientProfile = _getClientProfile(clientProfileId);
 
 		PortletPreferences portletPreferences = request.getPreferences();
 
@@ -92,7 +92,7 @@ public class UpdateOAuth2ApplicationMVCActionCommand
 			new OAuth2AdminPortletDisplayContext(
 				_dlurlHelper, _oAuth2ApplicationScopeAliasesLocalService,
 				_oAuth2ApplicationService, _oAuth2ProviderConfiguration,
-				request, null);
+				request, themeDisplay);
 
 		String[] oAuth2Features =
 			oAuth2AdminPortletDisplayContext.getOAuth2Features(
@@ -120,6 +120,8 @@ public class UpdateOAuth2ApplicationMVCActionCommand
 			}
 		}
 
+		long clientCredentialUserId = ParamUtil.get(
+			request, "clientCredentialUserId", themeDisplay.getUserId());
 		String clientId = ParamUtil.get(request, "clientId", StringPool.BLANK);
 		String clientSecret = ParamUtil.get(
 			request, "clientSecret", StringPool.BLANK);
@@ -134,13 +136,23 @@ public class UpdateOAuth2ApplicationMVCActionCommand
 			StringUtil.splitLines(
 				ParamUtil.get(request, "redirectURIs", StringPool.BLANK)));
 		List<String> scopeAliasesList = Collections.emptyList();
-		long clientCredentialUserId = ParamUtil.get(
-			request, "clientCredentialUserId", themeDisplay.getUserId());
+
+		boolean rememberDevice = false;
+		boolean trustedApplication = false;
+
+		if (allowedGrantTypesList.contains(GrantType.AUTHORIZATION_CODE) ||
+			allowedGrantTypesList.contains(GrantType.AUTHORIZATION_CODE_PKCE)) {
+
+			trustedApplication = ParamUtil.getBoolean(
+				request, "trustedApplication");
+
+			if (!trustedApplication) {
+				rememberDevice = ParamUtil.getBoolean(
+					request, "rememberDevice");
+			}
+		}
 
 		try {
-			ServiceContext serviceContext = ServiceContextFactory.getInstance(
-				OAuth2Application.class.getName(), request);
-
 			if (oAuth2ApplicationId == 0) {
 				if (Validator.isBlank(clientId)) {
 					clientId = OAuth2SecureRandomGenerator.generateClientId();
@@ -153,12 +165,17 @@ public class UpdateOAuth2ApplicationMVCActionCommand
 					}
 				}
 
+				ServiceContext serviceContext =
+					ServiceContextFactory.getInstance(
+						OAuth2Application.class.getName(), request);
+
 				OAuth2Application oAuth2Application =
 					_oAuth2ApplicationService.addOAuth2Application(
 						allowedGrantTypesList, clientCredentialUserId, clientId,
 						clientProfile.id(), clientSecret, description,
 						featuresList, homePageURL, 0, name, privacyPolicyURL,
-						redirectURIsList, scopeAliasesList, serviceContext);
+						redirectURIsList, rememberDevice, scopeAliasesList,
+						trustedApplication, serviceContext);
 
 				response.setRenderParameter(
 					"oAuth2ApplicationId",
@@ -170,13 +187,13 @@ public class UpdateOAuth2ApplicationMVCActionCommand
 						oAuth2ApplicationId);
 
 				_oAuth2ApplicationService.updateOAuth2Application(
-					oAuth2ApplicationId, allowedGrantTypesList,
-					clientCredentialUserId, clientId, clientProfile.id(),
-					clientSecret, description, featuresList, homePageURL,
-					oAuth2Application.getIconFileEntryId(), name,
-					privacyPolicyURL, redirectURIsList,
+					oAuth2ApplicationId,
 					oAuth2Application.getOAuth2ApplicationScopeAliasesId(),
-					serviceContext);
+					allowedGrantTypesList, clientCredentialUserId, clientId,
+					clientProfile.id(), clientSecret, description, featuresList,
+					homePageURL, oAuth2Application.getIconFileEntryId(), name,
+					privacyPolicyURL, redirectURIsList, rememberDevice,
+					trustedApplication);
 
 				long fileEntryId = ParamUtil.getLong(request, "fileEntryId");
 
@@ -199,7 +216,7 @@ public class UpdateOAuth2ApplicationMVCActionCommand
 		}
 		catch (PortalException portalException) {
 			if (_log.isDebugEnabled()) {
-				_log.debug(portalException, portalException);
+				_log.debug(portalException);
 			}
 
 			Class<?> peClass = portalException.getClass();
@@ -220,7 +237,7 @@ public class UpdateOAuth2ApplicationMVCActionCommand
 			OAuth2ProviderConfiguration.class, properties);
 	}
 
-	protected ClientProfile getClientProfile(int clientProfileId) {
+	private ClientProfile _getClientProfile(int clientProfileId) {
 		for (ClientProfile clientProfile : ClientProfile.values()) {
 			if (clientProfile.id() == clientProfileId) {
 				return clientProfile;

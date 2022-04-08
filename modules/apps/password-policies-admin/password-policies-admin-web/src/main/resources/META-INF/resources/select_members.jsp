@@ -46,7 +46,7 @@ SearchContainer<?> searchContainer = editPasswordPolicyAssignmentsManagementTool
 	navigationItems="<%= passwordPolicyDisplayContext.getSelectMembersNavigationItems() %>"
 />
 
-<clay:management-toolbar-v2
+<clay:management-toolbar
 	clearResultsURL="<%= editPasswordPolicyAssignmentsManagementToolbarDisplayContext.getClearResultsURL() %>"
 	filterDropdownItems="<%= editPasswordPolicyAssignmentsManagementToolbarDisplayContext.getFilterDropdownItems() %>"
 	itemsTotal="<%= searchContainer.getTotal() %>"
@@ -87,7 +87,7 @@ SearchContainer<?> searchContainer = editPasswordPolicyAssignmentsManagementTool
 		'<portlet:namespace />' + 'passwordPolicyMembers'
 	);
 
-	searchContainer.on('rowToggled', function (event) {
+	searchContainer.on('rowToggled', (event) => {
 		var selectedItems = event.elements.allSelectedElements;
 
 		var result = {};

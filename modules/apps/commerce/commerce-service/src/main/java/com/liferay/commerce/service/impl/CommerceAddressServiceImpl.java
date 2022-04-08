@@ -14,6 +14,7 @@
 
 package com.liferay.commerce.service.impl;
 
+import com.liferay.account.model.AccountEntry;
 import com.liferay.commerce.account.model.CommerceAccount;
 import com.liferay.commerce.account.service.CommerceAccountService;
 import com.liferay.commerce.model.CommerceAddress;
@@ -42,8 +43,8 @@ public class CommerceAddressServiceImpl extends CommerceAddressServiceBaseImpl {
 	public CommerceAddress addCommerceAddress(
 			String className, long classPK, String name, String description,
 			String street1, String street2, String street3, String city,
-			String zip, long commerceRegionId, long commerceCountryId,
-			String phoneNumber, boolean defaultBilling, boolean defaultShipping,
+			String zip, long regionId, long countryId, String phoneNumber,
+			boolean defaultBilling, boolean defaultShipping,
 			ServiceContext serviceContext)
 		throws PortalException {
 
@@ -51,39 +52,39 @@ public class CommerceAddressServiceImpl extends CommerceAddressServiceBaseImpl {
 
 		return commerceAddressLocalService.addCommerceAddress(
 			className, classPK, name, description, street1, street2, street3,
-			city, zip, commerceRegionId, commerceCountryId, phoneNumber,
-			defaultBilling, defaultShipping, serviceContext);
+			city, zip, regionId, countryId, phoneNumber, defaultBilling,
+			defaultShipping, serviceContext);
 	}
 
 	@Override
 	public CommerceAddress addCommerceAddress(
 			String className, long classPK, String name, String description,
 			String street1, String street2, String street3, String city,
-			String zip, long commerceRegionId, long commerceCountryId,
-			String phoneNumber, int type, ServiceContext serviceContext)
+			String zip, long regionId, long countryId, String phoneNumber,
+			int type, ServiceContext serviceContext)
 		throws PortalException {
 
 		return commerceAddressService.addCommerceAddress(
-			className, classPK, name, description, street1, street2, street3,
-			city, zip, commerceRegionId, commerceCountryId, phoneNumber, type,
-			null, serviceContext);
+			null, className, classPK, name, description, street1, street2,
+			street3, city, zip, regionId, countryId, phoneNumber, type,
+			serviceContext);
 	}
 
 	@Override
 	public CommerceAddress addCommerceAddress(
-			String className, long classPK, String name, String description,
-			String street1, String street2, String street3, String city,
-			String zip, long commerceRegionId, long commerceCountryId,
-			String phoneNumber, int type, String externalReferenceCode,
+			String externalReferenceCode, String className, long classPK,
+			String name, String description, String street1, String street2,
+			String street3, String city, String zip, long regionId,
+			long countryId, String phoneNumber, int type,
 			ServiceContext serviceContext)
 		throws PortalException {
 
 		checkPermission(className, classPK);
 
 		return commerceAddressLocalService.addCommerceAddress(
-			className, classPK, name, description, street1, street2, street3,
-			city, zip, commerceRegionId, commerceCountryId, phoneNumber, type,
-			externalReferenceCode, serviceContext);
+			externalReferenceCode, className, classPK, name, description,
+			street1, street2, street3, city, zip, regionId, countryId,
+			phoneNumber, type, serviceContext);
 	}
 
 	@Override
@@ -100,12 +101,12 @@ public class CommerceAddressServiceImpl extends CommerceAddressServiceBaseImpl {
 
 	@Override
 	public CommerceAddress fetchByExternalReferenceCode(
-			long companyId, String externalReferenceCode)
+			String externalReferenceCode, long companyId)
 		throws PortalException {
 
 		CommerceAddress commerceAddress =
 			commerceAddressLocalService.fetchByExternalReferenceCode(
-				companyId, externalReferenceCode);
+				externalReferenceCode, companyId);
 
 		if (commerceAddress != null) {
 			checkPermission(commerceAddress);
@@ -346,8 +347,8 @@ public class CommerceAddressServiceImpl extends CommerceAddressServiceBaseImpl {
 	public CommerceAddress updateCommerceAddress(
 			long commerceAddressId, String name, String description,
 			String street1, String street2, String street3, String city,
-			String zip, long commerceRegionId, long commerceCountryId,
-			String phoneNumber, boolean defaultBilling, boolean defaultShipping,
+			String zip, long regionId, long countryId, String phoneNumber,
+			boolean defaultBilling, boolean defaultShipping,
 			ServiceContext serviceContext)
 		throws PortalException {
 
@@ -358,16 +359,16 @@ public class CommerceAddressServiceImpl extends CommerceAddressServiceBaseImpl {
 
 		return commerceAddressLocalService.updateCommerceAddress(
 			commerceAddress.getCommerceAddressId(), name, description, street1,
-			street2, street3, city, zip, commerceRegionId, commerceCountryId,
-			phoneNumber, defaultBilling, defaultShipping, serviceContext);
+			street2, street3, city, zip, regionId, countryId, phoneNumber,
+			defaultBilling, defaultShipping, serviceContext);
 	}
 
 	@Override
 	public CommerceAddress updateCommerceAddress(
 			long commerceAddressId, String name, String description,
 			String street1, String street2, String street3, String city,
-			String zip, long commerceRegionId, long commerceCountryId,
-			String phoneNumber, int type, ServiceContext serviceContext)
+			String zip, long regionId, long countryId, String phoneNumber,
+			int type, ServiceContext serviceContext)
 		throws PortalException {
 
 		CommerceAddress commerceAddress =
@@ -377,8 +378,8 @@ public class CommerceAddressServiceImpl extends CommerceAddressServiceBaseImpl {
 
 		return commerceAddressLocalService.updateCommerceAddress(
 			commerceAddress.getCommerceAddressId(), name, description, street1,
-			street2, street3, city, zip, commerceRegionId, commerceCountryId,
-			phoneNumber, type, serviceContext);
+			street2, street3, city, zip, regionId, countryId, phoneNumber, type,
+			serviceContext);
 	}
 
 	protected void checkPermission(CommerceAddress commerceAddress)
@@ -394,7 +395,9 @@ public class CommerceAddressServiceImpl extends CommerceAddressServiceBaseImpl {
 		if (className.equals(CommerceOrder.class.getName())) {
 			commerceOrderService.getCommerceOrder(classPK);
 		}
-		else if (className.equals(CommerceAccount.class.getName())) {
+		else if (className.equals(AccountEntry.class.getName()) ||
+				 className.equals(CommerceAccount.class.getName())) {
+
 			_commerceAccountService.getCommerceAccount(classPK);
 		}
 	}

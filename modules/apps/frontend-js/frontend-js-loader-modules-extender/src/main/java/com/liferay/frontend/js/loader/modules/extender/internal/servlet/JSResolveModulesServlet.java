@@ -69,7 +69,7 @@ public class JSResolveModulesServlet
 	@Override
 	public void onAfterUpdate() {
 		_etag = StringBundler.concat(
-			"W/", StringPool.QUOTE, UUID.randomUUID(), StringPool.QUOTE);
+			"W/\"", UUID.randomUUID(), StringPool.QUOTE);
 	}
 
 	@Override
@@ -94,10 +94,9 @@ public class JSResolveModulesServlet
 		PrintWriter printWriter = new PrintWriter(
 			httpServletResponse.getOutputStream(), true);
 
-		List<String> moduleNames = _getModuleNames(httpServletRequest);
-
 		BrowserModulesResolution browserModulesResolution =
-			_browserModulesResolver.resolve(moduleNames, httpServletRequest);
+			_browserModulesResolver.resolve(
+				_getModuleNames(httpServletRequest), httpServletRequest);
 
 		printWriter.write(browserModulesResolution.toJSON());
 
@@ -121,9 +120,11 @@ public class JSResolveModulesServlet
 			body = URLDecoder.decode(
 				body, httpServletRequest.getCharacterEncoding());
 
-			body = body.substring(8);
+			if (!body.isEmpty()) {
+				body = body.substring(8);
 
-			moduleNames = body.split(StringPool.COMMA);
+				moduleNames = body.split(StringPool.COMMA);
+			}
 		}
 
 		if (moduleNames != null) {

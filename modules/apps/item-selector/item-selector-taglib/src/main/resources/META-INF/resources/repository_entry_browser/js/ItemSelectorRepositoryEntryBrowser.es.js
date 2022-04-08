@@ -12,10 +12,9 @@
  * details.
  */
 
+import {render} from '@liferay/frontend-js-react-web';
 import {ClayAlert} from 'clay-alert';
-import {render} from 'frontend-js-react-web';
-import {PortletBase, delegate} from 'frontend-js-web';
-import {EventHandler} from 'metal-events';
+import {EventHandler, PortletBase, delegate} from 'frontend-js-web';
 import {Config} from 'metal-state';
 import ReactDOM from 'react-dom';
 
@@ -57,7 +56,7 @@ class ItemSelectorRepositoryEntryBrowser extends PortletBase {
 	}
 
 	attachItemSelectorPreviewComponent() {
-		const itemsNodes = Array.from(this.all('.item-preview'));
+		const itemsNodes = Array.from(this.all('.item-preview-editable'));
 
 		const items = itemsNodes.map((node) => node.dataset);
 
@@ -65,9 +64,9 @@ class ItemSelectorRepositoryEntryBrowser extends PortletBase {
 
 		if (items.length === clicableItems.length) {
 			clicableItems.forEach((clicableItem, index) => {
-				clicableItem.addEventListener('click', (e) => {
-					e.preventDefault();
-					e.stopPropagation();
+				clicableItem.addEventListener('click', (event) => {
+					event.preventDefault();
+					event.stopPropagation();
 
 					this.openItemSelectorPreview(items, index);
 				});
@@ -85,8 +84,10 @@ class ItemSelectorRepositoryEntryBrowser extends PortletBase {
 		const data = {
 			container,
 			currentIndex: index,
+			editImageURL: this.editImageURL,
 			handleSelectedItem: this._onItemSelected.bind(this),
 			headerTitle: this.closeCaption,
+			itemReturnType: this.uploadItemReturnType,
 			items,
 		};
 
@@ -120,62 +121,70 @@ class ItemSelectorRepositoryEntryBrowser extends PortletBase {
 			)
 		);
 
-		const inputFileNode = this.one('input[type="file"]');
+		if (!this.ffItemSelectorSingleFileUploaderEnabled) {
+			const inputFileNode = this.one('input[type="file"]');
 
-		if (inputFileNode) {
-			this._eventHandler.add(
-				inputFileNode.addEventListener('change', (event) => {
-					this._validateFile(event.target.files[0]);
-				})
-			);
-		}
+			if (inputFileNode) {
+				this._eventHandler.add(
+					inputFileNode.addEventListener('change', (event) => {
+						this._validateFile(event.target.files[0]);
+					})
+				);
+			}
 
-		if (this.uploadItemURL) {
-			const itemSelectorUploader = this._itemSelectorUploader;
-			const rootNode = this.rootNode;
+			if (this.uploadItemURL) {
+				const itemSelectorUploader = this._itemSelectorUploader;
 
-			this._eventHandler.add(
-				itemSelectorUploader.after('itemUploadCancel', () => {
-					this.closeItemSelectorPreview();
-				}),
-				itemSelectorUploader.after('itemUploadComplete', (itemData) => {
-					const itemFile = itemData.file;
-					const itemFileUrl = itemFile.url;
-					let itemFileValue = itemFile.resolvedValue;
+				const rootNode = this.rootNode;
 
-					if (!itemFileValue) {
-						const imageValue = {
-							fileEntryId: itemFile.fileEntryId,
-							groupId: itemFile.groupId,
-							title: itemFile.title,
-							type: itemFile.type,
-							url: itemFileUrl,
-							uuid: itemFile.uuid,
-						};
+				this._eventHandler.add(
+					itemSelectorUploader.after('itemUploadCancel', () => {
+						this.closeItemSelectorPreview();
+					}),
+					itemSelectorUploader.after(
+						'itemUploadComplete',
+						(itemData) => {
+							const itemFile = itemData.file;
+							const itemFileUrl = itemFile.url;
+							let itemFileValue = itemFile.resolvedValue;
 
-						itemFileValue = JSON.stringify(imageValue);
-					}
+							if (!itemFileValue) {
+								const imageValue = {
+									fileEntryId: itemFile.fileEntryId,
+									groupId: itemFile.groupId,
+									title: itemFile.title,
+									type: itemFile.type,
+									url: itemFileUrl,
+									uuid: itemFile.uuid,
+								};
 
-					Liferay.componentReady('ItemSelectorPreview').then(() => {
-						Liferay.fire('updateCurrentItem', {
-							url: itemFileUrl,
-							value: itemFileValue,
-						});
-					});
-				}),
-				itemSelectorUploader.after('itemUploadError', (event) => {
-					this._onItemUploadError(event);
-				}),
-				rootNode.addEventListener(STR_DRAG_OVER, (event) =>
-					this._ddEventHandler(event)
-				),
-				rootNode.addEventListener(STR_DRAG_LEAVE, (event) =>
-					this._ddEventHandler(event)
-				),
-				rootNode.addEventListener(STR_DROP, (event) =>
-					this._ddEventHandler(event)
-				)
-			);
+								itemFileValue = JSON.stringify(imageValue);
+							}
+
+							Liferay.componentReady('ItemSelectorPreview').then(
+								() => {
+									Liferay.fire('updateCurrentItem', {
+										...itemFile,
+										value: itemFileValue,
+									});
+								}
+							);
+						}
+					),
+					itemSelectorUploader.after('itemUploadError', (event) => {
+						this._onItemUploadError(event);
+					}),
+					rootNode.addEventListener(STR_DRAG_OVER, (event) =>
+						this._ddEventHandler(event)
+					),
+					rootNode.addEventListener(STR_DRAG_LEAVE, (event) =>
+						this._ddEventHandler(event)
+					),
+					rootNode.addEventListener(STR_DROP, (event) =>
+						this._ddEventHandler(event)
+					)
+				);
+			}
 		}
 	}
 
@@ -441,6 +450,7 @@ class ItemSelectorRepositoryEntryBrowser extends PortletBase {
 		const item = {
 			base64: preview,
 			metadata: JSON.stringify(this._getUploadFileMetadata(file)),
+			mimeType: file.type,
 			returntype: this.uploadItemReturnType,
 			title: file.name,
 			value: preview,
@@ -466,11 +476,11 @@ class ItemSelectorRepositoryEntryBrowser extends PortletBase {
 
 		if (
 			validExtensions === '*' ||
-			validExtensions.indexOf(fileExtension) != -1
+			validExtensions.indexOf(fileExtension) !== -1
 		) {
 			const maxFileSize = this.maxFileSize;
 
-			if (file.size <= maxFileSize) {
+			if (maxFileSize === 0 || file.size <= maxFileSize) {
 				this._previewFile(file);
 			}
 			else {
@@ -519,6 +529,25 @@ ItemSelectorRepositoryEntryBrowser.STATE = {
 	 * @type {String}
 	 */
 	closeCaption: Config.string(),
+
+	/**
+	 * Endpoint to send the image edited in the Image Editor
+	 *
+	 * @instance
+	 * @memberof ItemSelectorRepositoryEntryBrowser
+	 * @type {String}
+	 */
+	editImageURL: Config.string(),
+
+	/**
+	 * The SingleFileUploader is enabled outside of ItemSelectorRepository entry browser
+	 *
+	 * @instance
+	 * @memberof ItemSelectorRepositoryEntryBrowser
+	 * @type {boolean}
+	 * @default false
+	 */
+	ffItemSelectorSingleFileUploaderEnabled: Config.bool().value(false),
 
 	/**
 	 * Time to hide the alert messages.

@@ -91,11 +91,7 @@ public class LayoutStagingImpl implements LayoutStaging {
 
 	@Override
 	public LayoutStagingHandler getLayoutStagingHandler(Layout layout) {
-		if (layout == null) {
-			return null;
-		}
-
-		if (!ProxyUtil.isProxyClass(layout.getClass())) {
+		if ((layout == null) || !ProxyUtil.isProxyClass(layout.getClass())) {
 			return null;
 		}
 
@@ -111,7 +107,7 @@ public class LayoutStagingImpl implements LayoutStaging {
 
 	@Override
 	public boolean isBranchingLayout(Layout layout) {
-		if ((layout == null) || layout.isSystem() || layout.isTypeContent()) {
+		if ((layout == null) || layout.isSystem()) {
 			return false;
 		}
 
@@ -170,7 +166,7 @@ public class LayoutStagingImpl implements LayoutStaging {
 			// LPS-52675
 
 			if (_log.isDebugEnabled()) {
-				_log.debug(portalException, portalException);
+				_log.debug(portalException);
 			}
 
 			return false;

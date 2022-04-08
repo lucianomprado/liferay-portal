@@ -23,8 +23,9 @@ import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.theme.PortletDisplay;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.WebKeys;
-import com.liferay.portal.search.web.internal.facet.display.builder.AssetTagsSearchFacetDisplayBuilder;
+import com.liferay.portal.search.web.internal.facet.display.context.builder.AssetTagsSearchFacetDisplayContextBuilder;
 import com.liferay.portal.search.web.internal.tag.facet.configuration.TagFacetPortletInstanceConfiguration;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import java.util.Collections;
 import java.util.List;
@@ -33,6 +34,8 @@ import javax.portlet.RenderRequest;
 
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 import org.mockito.Matchers;
@@ -44,6 +47,11 @@ import org.mockito.MockitoAnnotations;
  * @author André de Oliveira
  */
 public class AssetTagsSearchFacetDisplayContextTest {
+
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
 
 	@Before
 	public void setUp() {
@@ -205,19 +213,21 @@ public class AssetTagsSearchFacetDisplayContextTest {
 			String facetParam)
 		throws ConfigurationException {
 
-		AssetTagsSearchFacetDisplayBuilder assetTagsSearchFacetDisplayBuilder =
-			new AssetTagsSearchFacetDisplayBuilder(getRenderRequest());
+		AssetTagsSearchFacetDisplayContextBuilder
+			assetTagsSearchFacetDisplayContextBuilder =
+				new AssetTagsSearchFacetDisplayContextBuilder(
+					getRenderRequest());
 
-		assetTagsSearchFacetDisplayBuilder.setDisplayStyle("cloud");
-		assetTagsSearchFacetDisplayBuilder.setFacet(_facet);
-		assetTagsSearchFacetDisplayBuilder.setFrequenciesVisible(true);
-		assetTagsSearchFacetDisplayBuilder.setFrequencyThreshold(0);
-		assetTagsSearchFacetDisplayBuilder.setMaxTerms(0);
-		assetTagsSearchFacetDisplayBuilder.setParameterName(
+		assetTagsSearchFacetDisplayContextBuilder.setDisplayStyle("cloud");
+		assetTagsSearchFacetDisplayContextBuilder.setFacet(_facet);
+		assetTagsSearchFacetDisplayContextBuilder.setFrequenciesVisible(true);
+		assetTagsSearchFacetDisplayContextBuilder.setFrequencyThreshold(0);
+		assetTagsSearchFacetDisplayContextBuilder.setMaxTerms(0);
+		assetTagsSearchFacetDisplayContextBuilder.setParameterName(
 			_facet.getFieldId());
-		assetTagsSearchFacetDisplayBuilder.setParameterValue(facetParam);
+		assetTagsSearchFacetDisplayContextBuilder.setParameterValue(facetParam);
 
-		return assetTagsSearchFacetDisplayBuilder.build();
+		return assetTagsSearchFacetDisplayContextBuilder.build();
 	}
 
 	protected TermCollector createTermCollector(String term, int frequency) {

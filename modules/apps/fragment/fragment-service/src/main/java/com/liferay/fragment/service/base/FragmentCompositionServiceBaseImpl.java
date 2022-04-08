@@ -16,6 +16,7 @@ package com.liferay.fragment.service.base;
 
 import com.liferay.fragment.model.FragmentComposition;
 import com.liferay.fragment.service.FragmentCompositionService;
+import com.liferay.fragment.service.FragmentCompositionServiceUtil;
 import com.liferay.fragment.service.persistence.FragmentCompositionPersistence;
 import com.liferay.portal.aop.AopService;
 import com.liferay.portal.kernel.dao.db.DB;
@@ -27,8 +28,11 @@ import com.liferay.portal.kernel.module.framework.service.IdentifiableOSGiServic
 import com.liferay.portal.kernel.service.BaseServiceImpl;
 import com.liferay.portal.kernel.util.PortalUtil;
 
+import java.lang.reflect.Field;
+
 import javax.sql.DataSource;
 
+import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 
 /**
@@ -49,8 +53,13 @@ public abstract class FragmentCompositionServiceBaseImpl
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. Use <code>FragmentCompositionService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>com.liferay.fragment.service.FragmentCompositionServiceUtil</code>.
+	 * Never modify or reference this class directly. Use <code>FragmentCompositionService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>FragmentCompositionServiceUtil</code>.
 	 */
+	@Deactivate
+	protected void deactivate() {
+		_setServiceUtilService(null);
+	}
+
 	@Override
 	public Class<?>[] getAopInterfaces() {
 		return new Class<?>[] {
@@ -61,6 +70,8 @@ public abstract class FragmentCompositionServiceBaseImpl
 	@Override
 	public void setAopProxy(Object aopProxy) {
 		fragmentCompositionService = (FragmentCompositionService)aopProxy;
+
+		_setServiceUtilService(fragmentCompositionService);
 	}
 
 	/**
@@ -106,6 +117,22 @@ public abstract class FragmentCompositionServiceBaseImpl
 		}
 	}
 
+	private void _setServiceUtilService(
+		FragmentCompositionService fragmentCompositionService) {
+
+		try {
+			Field field = FragmentCompositionServiceUtil.class.getDeclaredField(
+				"_service");
+
+			field.setAccessible(true);
+
+			field.set(null, fragmentCompositionService);
+		}
+		catch (ReflectiveOperationException reflectiveOperationException) {
+			throw new RuntimeException(reflectiveOperationException);
+		}
+	}
+
 	@Reference
 	protected com.liferay.fragment.service.FragmentCompositionLocalService
 		fragmentCompositionLocalService;
@@ -118,16 +145,5 @@ public abstract class FragmentCompositionServiceBaseImpl
 	@Reference
 	protected com.liferay.counter.kernel.service.CounterLocalService
 		counterLocalService;
-
-	@Reference
-	protected com.liferay.portal.kernel.service.ResourceLocalService
-		resourceLocalService;
-
-	@Reference
-	protected com.liferay.portal.kernel.service.UserLocalService
-		userLocalService;
-
-	@Reference
-	protected com.liferay.portal.kernel.service.UserService userService;
 
 }

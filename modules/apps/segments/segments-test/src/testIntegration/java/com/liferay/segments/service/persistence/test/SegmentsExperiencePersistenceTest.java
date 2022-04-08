@@ -158,6 +158,8 @@ public class SegmentsExperiencePersistenceTest {
 
 		newSegmentsExperience.setActive(RandomTestUtil.randomBoolean());
 
+		newSegmentsExperience.setTypeSettings(RandomTestUtil.randomString());
+
 		newSegmentsExperience.setLastPublishDate(RandomTestUtil.nextDate());
 
 		_segmentsExperiences.add(_persistence.update(newSegmentsExperience));
@@ -219,6 +221,9 @@ public class SegmentsExperiencePersistenceTest {
 			existingSegmentsExperience.isActive(),
 			newSegmentsExperience.isActive());
 		Assert.assertEquals(
+			existingSegmentsExperience.getTypeSettings(),
+			newSegmentsExperience.getTypeSettings());
+		Assert.assertEquals(
 			Time.getShortTimestamp(
 				existingSegmentsExperience.getLastPublishDate()),
 			Time.getShortTimestamp(newSegmentsExperience.getLastPublishDate()));
@@ -266,15 +271,6 @@ public class SegmentsExperiencePersistenceTest {
 	}
 
 	@Test
-	public void testCountByG_S() throws Exception {
-		_persistence.countByG_S(RandomTestUtil.nextLong(), "");
-
-		_persistence.countByG_S(0L, "null");
-
-		_persistence.countByG_S(0L, (String)null);
-	}
-
-	@Test
 	public void testCountByG_C_C() throws Exception {
 		_persistence.countByG_C_C(
 			RandomTestUtil.nextLong(), RandomTestUtil.nextLong(),
@@ -293,6 +289,17 @@ public class SegmentsExperiencePersistenceTest {
 	}
 
 	@Test
+	public void testCountByG_SEK_C_C() throws Exception {
+		_persistence.countByG_SEK_C_C(
+			RandomTestUtil.nextLong(), "", RandomTestUtil.nextLong(),
+			RandomTestUtil.nextLong());
+
+		_persistence.countByG_SEK_C_C(0L, "null", 0L, 0L);
+
+		_persistence.countByG_SEK_C_C(0L, (String)null, 0L, 0L);
+	}
+
+	@Test
 	public void testCountByG_C_C_P() throws Exception {
 		_persistence.countByG_C_C_P(
 			RandomTestUtil.nextLong(), RandomTestUtil.nextLong(),
@@ -308,6 +315,15 @@ public class SegmentsExperiencePersistenceTest {
 			RandomTestUtil.nextLong(), RandomTestUtil.nextInt());
 
 		_persistence.countByG_C_C_GtP(0L, 0L, 0L, 0);
+	}
+
+	@Test
+	public void testCountByG_C_C_LtP() throws Exception {
+		_persistence.countByG_C_C_LtP(
+			RandomTestUtil.nextLong(), RandomTestUtil.nextLong(),
+			RandomTestUtil.nextLong(), RandomTestUtil.nextInt());
+
+		_persistence.countByG_C_C_LtP(0L, 0L, 0L, 0);
 	}
 
 	@Test
@@ -376,8 +392,8 @@ public class SegmentsExperiencePersistenceTest {
 			"companyId", true, "userId", true, "userName", true, "createDate",
 			true, "modifiedDate", true, "segmentsEntryId", true,
 			"segmentsExperienceKey", true, "classNameId", true, "classPK", true,
-			"name", true, "priority", true, "active", true, "lastPublishDate",
-			true);
+			"name", true, "priority", true, "active", true, "typeSettings",
+			true, "lastPublishDate", true);
 	}
 
 	@Test
@@ -677,6 +693,16 @@ public class SegmentsExperiencePersistenceTest {
 			ReflectionTestUtil.invoke(
 				segmentsExperience, "getColumnOriginalValue",
 				new Class<?>[] {String.class}, "segmentsExperienceKey"));
+		Assert.assertEquals(
+			Long.valueOf(segmentsExperience.getClassNameId()),
+			ReflectionTestUtil.<Long>invoke(
+				segmentsExperience, "getColumnOriginalValue",
+				new Class<?>[] {String.class}, "classNameId"));
+		Assert.assertEquals(
+			Long.valueOf(segmentsExperience.getClassPK()),
+			ReflectionTestUtil.<Long>invoke(
+				segmentsExperience, "getColumnOriginalValue",
+				new Class<?>[] {String.class}, "classPK"));
 
 		Assert.assertEquals(
 			Long.valueOf(segmentsExperience.getGroupId()),
@@ -737,6 +763,8 @@ public class SegmentsExperiencePersistenceTest {
 		segmentsExperience.setPriority(RandomTestUtil.nextInt());
 
 		segmentsExperience.setActive(RandomTestUtil.randomBoolean());
+
+		segmentsExperience.setTypeSettings(RandomTestUtil.randomString());
 
 		segmentsExperience.setLastPublishDate(RandomTestUtil.nextDate());
 

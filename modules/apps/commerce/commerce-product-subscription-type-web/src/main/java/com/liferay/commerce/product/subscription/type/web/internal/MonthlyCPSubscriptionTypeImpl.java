@@ -69,9 +69,6 @@ public class MonthlyCPSubscriptionTypeImpl implements CPSubscriptionType {
 
 		calendar.add(Calendar.MONTH, subscriptionLength);
 
-		int dayOfMonthActualMaximum = calendar.getActualMaximum(
-			Calendar.DAY_OF_MONTH);
-
 		int monthlyMode = GetterUtil.getInteger(
 			subscriptionTypeSettingsUnicodeProperties.get("monthlyMode"));
 
@@ -80,6 +77,9 @@ public class MonthlyCPSubscriptionTypeImpl implements CPSubscriptionType {
 
 			int monthDay = GetterUtil.getInteger(
 				subscriptionTypeSettingsUnicodeProperties.get("monthDay"));
+
+			int dayOfMonthActualMaximum = calendar.getActualMaximum(
+				Calendar.DAY_OF_MONTH);
 
 			if (monthDay > dayOfMonthActualMaximum) {
 				monthDay = dayOfMonthActualMaximum;
@@ -98,16 +98,16 @@ public class MonthlyCPSubscriptionTypeImpl implements CPSubscriptionType {
 		TimeZone timeZone,
 		UnicodeProperties subscriptionTypeSettingsUnicodeProperties) {
 
-		Date now = new Date();
+		Date date = new Date();
 
 		if ((subscriptionTypeSettingsUnicodeProperties == null) ||
 			subscriptionTypeSettingsUnicodeProperties.isEmpty()) {
 
-			return now;
+			return date;
 		}
 
 		Calendar calendar = CalendarFactoryUtil.getCalendar(
-			now.getTime(), timeZone);
+			date.getTime(), timeZone);
 
 		int dayOfMonthActualMaximum = calendar.getActualMaximum(
 			Calendar.DAY_OF_MONTH);
@@ -128,7 +128,7 @@ public class MonthlyCPSubscriptionTypeImpl implements CPSubscriptionType {
 			}
 
 			if (monthDay < today) {
-				return now;
+				return date;
 			}
 
 			calendar.set(Calendar.DAY_OF_MONTH, monthDay);

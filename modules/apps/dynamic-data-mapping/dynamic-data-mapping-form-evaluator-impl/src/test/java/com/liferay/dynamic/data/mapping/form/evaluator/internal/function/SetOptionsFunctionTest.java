@@ -22,6 +22,7 @@ import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.util.KeyValuePair;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,6 +31,8 @@ import java.util.Map;
 
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -47,6 +50,11 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 @PrepareForTest(LanguageUtil.class)
 @RunWith(MockitoJUnitRunner.class)
 public class SetOptionsFunctionTest extends PowerMockito {
+
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
 
 	@Before
 	public void setUp() throws Exception {
@@ -79,12 +87,11 @@ public class SetOptionsFunctionTest extends PowerMockito {
 
 		String json = jsonObject.toJSONString();
 
-		DefaultDDMExpressionObserver defaultDDMExpressionObserver =
-			new DefaultDDMExpressionObserver();
+		DefaultDDMExpressionObserver spyDefaultDDMExpressionObserver = spy(
+			new DefaultDDMExpressionObserver());
 
-		DefaultDDMExpressionObserver spy = spy(defaultDDMExpressionObserver);
-
-		_setOptionsFunction.setDDMExpressionObserver(spy);
+		_setOptionsFunction.setDDMExpressionObserver(
+			spyDefaultDDMExpressionObserver);
 
 		_setOptionsFunction.setDDMExpressionParameterAccessor(
 			new DefaultDDMExpressionParameterAccessor());
@@ -95,7 +102,7 @@ public class SetOptionsFunctionTest extends PowerMockito {
 			ArgumentCaptor.forClass(UpdateFieldPropertyRequest.class);
 
 		Mockito.verify(
-			spy, Mockito.times(1)
+			spyDefaultDDMExpressionObserver, Mockito.times(1)
 		).updateFieldProperty(
 			argumentCaptor.capture()
 		);
@@ -132,12 +139,11 @@ public class SetOptionsFunctionTest extends PowerMockito {
 			"pt_BR"
 		);
 
-		DefaultDDMExpressionObserver defaultDDMExpressionObserver =
-			new DefaultDDMExpressionObserver();
+		DefaultDDMExpressionObserver spyDefaultDDMExpressionObserver = spy(
+			new DefaultDDMExpressionObserver());
 
-		DefaultDDMExpressionObserver spy = spy(defaultDDMExpressionObserver);
-
-		_setOptionsFunction.setDDMExpressionObserver(spy);
+		_setOptionsFunction.setDDMExpressionObserver(
+			spyDefaultDDMExpressionObserver);
 
 		_setOptionsFunction.setDDMExpressionParameterAccessor(
 			new DefaultDDMExpressionParameterAccessor());
@@ -148,7 +154,7 @@ public class SetOptionsFunctionTest extends PowerMockito {
 			ArgumentCaptor.forClass(UpdateFieldPropertyRequest.class);
 
 		Mockito.verify(
-			spy, Mockito.times(1)
+			spyDefaultDDMExpressionObserver, Mockito.times(1)
 		).updateFieldProperty(
 			argumentCaptor.capture()
 		);

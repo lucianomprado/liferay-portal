@@ -15,6 +15,7 @@
 package com.liferay.dynamic.data.mapping.form.field.type.internal.grid;
 
 import com.liferay.dynamic.data.mapping.form.field.type.DDMFormFieldValueAccessor;
+import com.liferay.dynamic.data.mapping.form.field.type.constants.DDMFormFieldTypeConstants;
 import com.liferay.dynamic.data.mapping.model.DDMFormField;
 import com.liferay.dynamic.data.mapping.model.DDMFormFieldOptions;
 import com.liferay.dynamic.data.mapping.model.Value;
@@ -39,7 +40,8 @@ import org.osgi.service.component.annotations.Reference;
  * @author Pedro Queiroz
  */
 @Component(
-	immediate = true, property = "ddm.form.field.type.name=grid",
+	immediate = true,
+	property = "ddm.form.field.type.name=" + DDMFormFieldTypeConstants.GRID,
 	service = {
 		DDMFormFieldValueAccessor.class, GridDDMFormFieldValueAccessor.class
 	}
@@ -72,9 +74,9 @@ public class GridDDMFormFieldValueAccessor
 	public boolean isEmpty(DDMFormFieldValue ddmFormFieldValue, Locale locale) {
 		JSONObject jsonObject = getValue(ddmFormFieldValue, locale);
 
-		Set<String> keys = getUniqueKeys(jsonObject);
+		Set<String> keys = _getUniqueKeys(jsonObject);
 
-		Set<String> rowValues = getDDMFormFieldRowValues(
+		Set<String> rowValues = _getDDMFormFieldRowValues(
 			ddmFormFieldValue.getDDMFormField());
 
 		Stream<String> stream = rowValues.stream();
@@ -95,14 +97,17 @@ public class GridDDMFormFieldValueAccessor
 		}
 	}
 
-	protected Set<String> getDDMFormFieldRowValues(DDMFormField ddmFormField) {
+	@Reference
+	protected JSONFactory jsonFactory;
+
+	private Set<String> _getDDMFormFieldRowValues(DDMFormField ddmFormField) {
 		DDMFormFieldOptions ddmFormFieldOptions =
 			(DDMFormFieldOptions)ddmFormField.getProperty("rows");
 
 		return ddmFormFieldOptions.getOptionsValues();
 	}
 
-	protected Set<String> getUniqueKeys(JSONObject jsonObject) {
+	private Set<String> _getUniqueKeys(JSONObject jsonObject) {
 		Set<String> uniqueKeys = new HashSet<>();
 
 		Iterator<String> iterator = jsonObject.keys();
@@ -113,9 +118,6 @@ public class GridDDMFormFieldValueAccessor
 
 		return uniqueKeys;
 	}
-
-	@Reference
-	protected JSONFactory jsonFactory;
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		GridDDMFormFieldValueAccessor.class);

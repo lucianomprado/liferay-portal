@@ -35,8 +35,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 /**
- * @author Brian Wing Shun Chan
+ * @author     Brian Wing Shun Chan
+ * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+ *             BaseCompanyIdUpgradeProcess}
  */
+@Deprecated
 public abstract class BaseUpgradeCompanyId extends UpgradeProcess {
 
 	@Override
@@ -68,7 +71,7 @@ public abstract class BaseUpgradeCompanyId extends UpgradeProcess {
 
 	protected abstract TableUpdater[] getTableUpdaters();
 
-	protected class TableUpdater implements Callable<Void> {
+	protected class TableUpdater extends BaseUpgradeCallable<Void> {
 
 		public TableUpdater(
 			String tableName, String foreignTableName, String columnName) {
@@ -90,8 +93,26 @@ public abstract class BaseUpgradeCompanyId extends UpgradeProcess {
 			_foreignNamesArray = foreignNamesArray;
 		}
 
+		public String getTableName() {
+			return _tableName;
+		}
+
+		public void setCreateCompanyIdColumn(boolean createCompanyIdColumn) {
+			_createCompanyIdColumn = createCompanyIdColumn;
+		}
+
+		public void update(Connection connection)
+			throws IOException, SQLException {
+
+			for (String[] foreignNames : _foreignNamesArray) {
+				runSQL(
+					connection,
+					getUpdateSQL(connection, foreignNames[0], foreignNames[1]));
+			}
+		}
+
 		@Override
-		public final Void call() throws Exception {
+		protected final Void doCall() throws Exception {
 			try (LoggingTimer loggingTimer = new LoggingTimer(_tableName);
 				Connection connection = DataAccess.getConnection()) {
 
@@ -119,35 +140,18 @@ public abstract class BaseUpgradeCompanyId extends UpgradeProcess {
 			return null;
 		}
 
-		public String getTableName() {
-			return _tableName;
-		}
-
-		public void setCreateCompanyIdColumn(boolean createCompanyIdColumn) {
-			_createCompanyIdColumn = createCompanyIdColumn;
-		}
-
-		public void update(Connection connection)
-			throws IOException, SQLException {
-
-			for (String[] foreignNames : _foreignNamesArray) {
-				runSQL(
-					connection,
-					getUpdateSQL(connection, foreignNames[0], foreignNames[1]));
-			}
-		}
-
 		protected List<Long> getCompanyIds(Connection connection)
 			throws SQLException {
 
 			List<Long> companyIds = new ArrayList<>();
 
-			try (PreparedStatement ps = connection.prepareStatement(
-					"select companyId from Company");
-				ResultSet rs = ps.executeQuery()) {
+			try (PreparedStatement preparedStatement =
+					connection.prepareStatement(
+						"select companyId from Company");
+				ResultSet resultSet = preparedStatement.executeQuery()) {
 
-				while (rs.next()) {
-					long companyId = rs.getLong(1);
+				while (resultSet.next()) {
+					long companyId = resultSet.getLong(1);
 
 					companyIds.add(companyId);
 				}
@@ -167,20 +171,10 @@ public abstract class BaseUpgradeCompanyId extends UpgradeProcess {
 				return String.valueOf(companyIds.get(0));
 			}
 
-			StringBundler sb = new StringBundler(10);
-
-			sb.append("select max(companyId) from ");
-			sb.append(foreignTableName);
-			sb.append(" where ");
-			sb.append(foreignTableName);
-			sb.append(".");
-			sb.append(foreignColumnName);
-			sb.append(" = ");
-			sb.append(_tableName);
-			sb.append(".");
-			sb.append(_columnName);
-
-			return sb.toString();
+			return StringBundler.concat(
+				"select max(companyId) from ", foreignTableName, " where ",
+				foreignTableName, ".", foreignColumnName, " = ", _tableName,
+				".", _columnName);
 		}
 
 		protected String getUpdateSQL(
@@ -193,15 +187,8 @@ public abstract class BaseUpgradeCompanyId extends UpgradeProcess {
 		}
 
 		protected String getUpdateSQL(String selectSQL) {
-			StringBundler sb = new StringBundler(5);
-
-			sb.append("update ");
-			sb.append(_tableName);
-			sb.append(" set companyId = (");
-			sb.append(selectSQL);
-			sb.append(")");
-
-			return sb.toString();
+			return StringBundler.concat(
+				"update ", _tableName, " set companyId = (", selectSQL, ")");
 		}
 
 		private final String _columnName;

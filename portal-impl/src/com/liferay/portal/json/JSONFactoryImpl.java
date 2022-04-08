@@ -35,6 +35,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 import org.jabsorb.serializer.MarshallException;
 
@@ -58,7 +59,7 @@ public class JSONFactoryImpl implements JSONFactory {
 			_jsonSerializer.registerSerializer(new LocaleSerializer());
 		}
 		catch (Exception exception) {
-			_log.error(exception, exception);
+			_log.error(exception);
 		}
 	}
 
@@ -71,7 +72,7 @@ public class JSONFactoryImpl implements JSONFactory {
 		}
 		catch (Exception exception) {
 			if (_log.isWarnEnabled()) {
-				_log.warn(exception, exception);
+				_log.warn(exception);
 			}
 
 			throw new IllegalStateException(
@@ -88,7 +89,7 @@ public class JSONFactoryImpl implements JSONFactory {
 		}
 		catch (Exception exception) {
 			if (_log.isWarnEnabled()) {
-				_log.warn(exception, exception);
+				_log.warn(exception);
 			}
 
 			throw new IllegalStateException(
@@ -105,7 +106,7 @@ public class JSONFactoryImpl implements JSONFactory {
 		}
 		catch (Exception exception) {
 			if (_log.isWarnEnabled()) {
-				_log.warn(exception, exception);
+				_log.warn(exception);
 			}
 
 			throw new IllegalStateException(
@@ -122,7 +123,7 @@ public class JSONFactoryImpl implements JSONFactory {
 		}
 		catch (Exception exception) {
 			if (_log.isWarnEnabled()) {
-				_log.warn(exception, exception);
+				_log.warn(exception);
 			}
 
 			throw new IllegalStateException(
@@ -169,6 +170,11 @@ public class JSONFactoryImpl implements JSONFactory {
 	}
 
 	@Override
+	public JSONObject createJSONObject(Map<?, ?> map) {
+		return new JSONObjectImpl(map);
+	}
+
+	@Override
 	public JSONObject createJSONObject(String json) throws JSONException {
 		return new JSONObjectImpl(json);
 	}
@@ -190,7 +196,7 @@ public class JSONFactoryImpl implements JSONFactory {
 		}
 		catch (Exception exception) {
 			if (_log.isWarnEnabled()) {
-				_log.warn(exception, exception);
+				_log.warn(exception);
 			}
 
 			throw new IllegalStateException(
@@ -223,7 +229,7 @@ public class JSONFactoryImpl implements JSONFactory {
 		}
 		catch (Exception exception) {
 			if (_log.isWarnEnabled()) {
-				_log.warn(exception, exception);
+				_log.warn(exception);
 			}
 
 			throw new IllegalStateException(
@@ -292,7 +298,7 @@ public class JSONFactoryImpl implements JSONFactory {
 		}
 		catch (MarshallException marshallException) {
 			if (_log.isWarnEnabled()) {
-				_log.warn(marshallException, marshallException);
+				_log.warn(marshallException);
 			}
 
 			throw new IllegalStateException(

@@ -20,13 +20,14 @@ import com.liferay.portal.kernel.cluster.ClusterExecutor;
 import com.liferay.portal.kernel.cluster.ClusterNode;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.util.Http;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.search.ccr.CrossClusterReplicationConfigurationHelper;
 import com.liferay.portal.search.elasticsearch7.internal.configuration.ElasticsearchConfigurationObserver;
 import com.liferay.portal.search.elasticsearch7.internal.configuration.ElasticsearchConfigurationWrapper;
 import com.liferay.portal.search.elasticsearch7.internal.configuration.OperationModeResolver;
 import com.liferay.portal.search.elasticsearch7.internal.connection.constants.ConnectionConstants;
-import com.liferay.portal.search.elasticsearch7.internal.util.SearchLogHelperUtil;
+import com.liferay.portal.search.elasticsearch7.internal.helper.SearchLogHelperUtil;
 
 import java.net.InetAddress;
 
@@ -264,6 +265,22 @@ public class ElasticsearchConnectionManager
 		}
 	}
 
+	protected ProxyConfig createProxyConfig() {
+		ProxyConfig.Builder proxyConfigBuilder = ProxyConfig.builder(http);
+
+		return proxyConfigBuilder.networkAddresses(
+			elasticsearchConfigurationWrapper.networkHostAddresses()
+		).host(
+			elasticsearchConfigurationWrapper.proxyHost()
+		).password(
+			elasticsearchConfigurationWrapper.proxyPassword()
+		).port(
+			elasticsearchConfigurationWrapper.proxyPort()
+		).userName(
+			elasticsearchConfigurationWrapper.proxyHost()
+		).build();
+	}
+
 	@Deactivate
 	protected void deactivate() {
 		elasticsearchConfigurationWrapper.unregister(this);
@@ -352,6 +369,9 @@ public class ElasticsearchConnectionManager
 		elasticsearchConfigurationWrapper;
 
 	@Reference
+	protected Http http;
+
+	@Reference
 	protected OperationModeResolver operationModeResolver;
 
 	private ElasticsearchConnection _createRemoteElasticsearchConnection() {
@@ -370,6 +390,8 @@ public class ElasticsearchConnectionManager
 			elasticsearchConfigurationWrapper.networkHostAddresses()
 		).password(
 			elasticsearchConfigurationWrapper.password()
+		).proxyConfig(
+			createProxyConfig()
 		).truststorePassword(
 			elasticsearchConfigurationWrapper.truststorePassword()
 		).truststorePath(

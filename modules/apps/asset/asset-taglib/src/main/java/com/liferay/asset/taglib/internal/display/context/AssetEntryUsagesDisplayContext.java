@@ -38,6 +38,7 @@ import com.liferay.layout.page.template.constants.LayoutPageTemplateEntryTypeCon
 import com.liferay.layout.page.template.model.LayoutPageTemplateEntry;
 import com.liferay.layout.page.template.model.LayoutPageTemplateStructure;
 import com.liferay.layout.page.template.service.LayoutPageTemplateEntryLocalServiceUtil;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
@@ -52,7 +53,6 @@ import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.Constants;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HttpUtil;
-import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
@@ -137,18 +137,13 @@ public class AssetEntryUsagesDisplayContext {
 				return StringPool.BLANK;
 			}
 
-			if (!_isDraft(layout)) {
+			if (!layout.isDraftLayout()) {
 				return layout.getName(_themeDisplay.getLocale());
 			}
 
-			StringBundler sb = new StringBundler(4);
-
-			sb.append(layout.getName(_themeDisplay.getLocale()));
-			sb.append(" (");
-			sb.append(LanguageUtil.get(_themeDisplay.getLocale(), "draft"));
-			sb.append(")");
-
-			return sb.toString();
+			return StringBundler.concat(
+				layout.getName(_themeDisplay.getLocale()), " (",
+				LanguageUtil.get(_themeDisplay.getLocale(), "draft"), ")");
 		}
 
 		long plid = assetEntryUsage.getPlid();
@@ -156,7 +151,7 @@ public class AssetEntryUsagesDisplayContext {
 		Layout layout = LayoutLocalServiceUtil.fetchLayout(
 			assetEntryUsage.getPlid());
 
-		if ((layout.getClassNameId() > 0) && (layout.getClassPK() > 0)) {
+		if (layout.isDraftLayout()) {
 			plid = layout.getClassPK();
 		}
 
@@ -168,18 +163,13 @@ public class AssetEntryUsagesDisplayContext {
 			return StringPool.BLANK;
 		}
 
-		if (!_isDraft(layout)) {
+		if (!layout.isDraftLayout()) {
 			return layoutPageTemplateEntry.getName();
 		}
 
-		StringBundler sb = new StringBundler(4);
-
-		sb.append(layoutPageTemplateEntry.getName());
-		sb.append(" (");
-		sb.append(LanguageUtil.get(_themeDisplay.getLocale(), "draft"));
-		sb.append(")");
-
-		return sb.toString();
+		return StringBundler.concat(
+			layoutPageTemplateEntry.getName(), " (",
+			LanguageUtil.get(_themeDisplay.getLocale(), "draft"), ")");
 	}
 
 	public String getAssetEntryUsageTypeLabel(AssetEntryUsage assetEntryUsage) {
@@ -204,13 +194,12 @@ public class AssetEntryUsagesDisplayContext {
 			(assetEntryUsage.getContainerType() != PortalUtil.getClassNameId(
 				LayoutPageTemplateStructure.class))) {
 
-			String portletTitle = PortalUtil.getPortletTitle(
-				PortletIdCodec.decodePortletName(
-					assetEntryUsage.getContainerKey()),
-				_themeDisplay.getLocale());
-
 			return LanguageUtil.format(
-				_resourceBundle, "x-widget", portletTitle);
+				_resourceBundle, "x-widget",
+				PortalUtil.getPortletTitle(
+					PortletIdCodec.decodePortletName(
+						assetEntryUsage.getContainerKey()),
+					_themeDisplay.getLocale()));
 		}
 
 		if (assetEntryUsage.getContainerType() == PortalUtil.getClassNameId(
@@ -290,11 +279,9 @@ public class AssetEntryUsagesDisplayContext {
 				(ThemeDisplay)_renderRequest.getAttribute(
 					WebKeys.THEME_DISPLAY);
 
-			Layout layout = LayoutLocalServiceUtil.fetchLayout(
-				assetEntryUsage.getPlid());
-
-			layoutURL = PortalUtil.getLayoutFriendlyURL(layout, themeDisplay);
-
+			layoutURL = PortalUtil.getLayoutFriendlyURL(
+				LayoutLocalServiceUtil.fetchLayout(assetEntryUsage.getPlid()),
+				themeDisplay);
 			layoutURL = HttpUtil.setParameter(
 				layoutURL, "previewAssetEntryId",
 				String.valueOf(assetEntryUsage.getAssetEntryId()));
@@ -303,18 +290,15 @@ public class AssetEntryUsagesDisplayContext {
 				String.valueOf(AssetRendererFactory.TYPE_LATEST));
 		}
 		else {
-			PortletURL portletURL = PortletURLFactoryUtil.create(
-				_renderRequest, assetEntryUsage.getContainerKey(),
-				assetEntryUsage.getPlid(), PortletRequest.RENDER_PHASE);
-
-			portletURL.setParameter(
-				"previewAssetEntryId",
-				String.valueOf(assetEntryUsage.getAssetEntryId()));
-			portletURL.setParameter(
-				"previewAssetEntryType",
-				String.valueOf(AssetRendererFactory.TYPE_LATEST));
-
-			layoutURL = portletURL.toString();
+			layoutURL = PortletURLBuilder.create(
+				PortletURLFactoryUtil.create(
+					_renderRequest, assetEntryUsage.getContainerKey(),
+					assetEntryUsage.getPlid(), PortletRequest.RENDER_PHASE)
+			).setParameter(
+				"previewAssetEntryId", assetEntryUsage.getAssetEntryId()
+			).setParameter(
+				"previewAssetEntryType", AssetRendererFactory.TYPE_LATEST
+			).buildString();
 		}
 
 		String portletURLString = HttpUtil.addParameter(
@@ -346,6 +330,8 @@ public class AssetEntryUsagesDisplayContext {
 				_renderRequest, getPortletURL(), null,
 				"there-are-no-asset-entry-usages");
 
+		assetEntryUsagesSearchContainer.setOrderByCol(_getOrderByCol());
+
 		boolean orderByAsc = false;
 
 		String orderByType = _getOrderByType();
@@ -354,63 +340,49 @@ public class AssetEntryUsagesDisplayContext {
 			orderByAsc = true;
 		}
 
-		OrderByComparator<AssetEntryUsage> orderByComparator =
-			new AssetEntryUsageModifiedDateComparator(orderByAsc);
-
-		assetEntryUsagesSearchContainer.setOrderByCol(_getOrderByCol());
-		assetEntryUsagesSearchContainer.setOrderByComparator(orderByComparator);
+		assetEntryUsagesSearchContainer.setOrderByComparator(
+			new AssetEntryUsageModifiedDateComparator(orderByAsc));
 		assetEntryUsagesSearchContainer.setOrderByType(_getOrderByType());
 
-		List<AssetEntryUsage> assetEntryUsages = null;
-
-		int assetEntryUsagesCount = 0;
-
 		if (Objects.equals(getNavigation(), "pages")) {
-			assetEntryUsages =
-				AssetEntryUsageLocalServiceUtil.getAssetEntryUsages(
+			assetEntryUsagesSearchContainer.setResultsAndTotal(
+				() -> AssetEntryUsageLocalServiceUtil.getAssetEntryUsages(
 					_assetEntry.getEntryId(),
 					AssetEntryUsageConstants.TYPE_LAYOUT,
 					assetEntryUsagesSearchContainer.getStart(),
 					assetEntryUsagesSearchContainer.getEnd(),
-					orderByComparator);
-
-			assetEntryUsagesCount = getPagesUsageCount();
+					assetEntryUsagesSearchContainer.getOrderByComparator()),
+				getPagesUsageCount());
 		}
 		else if (Objects.equals(getNavigation(), "page-templates")) {
-			assetEntryUsages =
-				AssetEntryUsageLocalServiceUtil.getAssetEntryUsages(
+			assetEntryUsagesSearchContainer.setResultsAndTotal(
+				() -> AssetEntryUsageLocalServiceUtil.getAssetEntryUsages(
 					_assetEntry.getEntryId(),
 					AssetEntryUsageConstants.TYPE_PAGE_TEMPLATE,
 					assetEntryUsagesSearchContainer.getStart(),
 					assetEntryUsagesSearchContainer.getEnd(),
-					orderByComparator);
-
-			assetEntryUsagesCount = getPageTemplatesUsageCount();
+					assetEntryUsagesSearchContainer.getOrderByComparator()),
+				getPageTemplatesUsageCount());
 		}
 		else if (Objects.equals(getNavigation(), "display-page-templates")) {
-			assetEntryUsages =
-				AssetEntryUsageLocalServiceUtil.getAssetEntryUsages(
+			assetEntryUsagesSearchContainer.setResultsAndTotal(
+				() -> AssetEntryUsageLocalServiceUtil.getAssetEntryUsages(
 					_assetEntry.getEntryId(),
 					AssetEntryUsageConstants.TYPE_DISPLAY_PAGE_TEMPLATE,
 					assetEntryUsagesSearchContainer.getStart(),
 					assetEntryUsagesSearchContainer.getEnd(),
-					orderByComparator);
-
-			assetEntryUsagesCount = getDisplayPagesUsageCount();
+					assetEntryUsagesSearchContainer.getOrderByComparator()),
+				getDisplayPagesUsageCount());
 		}
 		else {
-			assetEntryUsages =
-				AssetEntryUsageLocalServiceUtil.getAssetEntryUsages(
+			assetEntryUsagesSearchContainer.setResultsAndTotal(
+				() -> AssetEntryUsageLocalServiceUtil.getAssetEntryUsages(
 					_assetEntry.getEntryId(),
 					assetEntryUsagesSearchContainer.getStart(),
 					assetEntryUsagesSearchContainer.getEnd(),
-					orderByComparator);
-
-			assetEntryUsagesCount = getAllUsageCount();
+					assetEntryUsagesSearchContainer.getOrderByComparator()),
+				getAllUsageCount());
 		}
-
-		assetEntryUsagesSearchContainer.setResults(assetEntryUsages);
-		assetEntryUsagesSearchContainer.setTotal(assetEntryUsagesCount);
 
 		_searchContainer = assetEntryUsagesSearchContainer;
 
@@ -422,14 +394,10 @@ public class AssetEntryUsagesDisplayContext {
 			return true;
 		}
 
-		if (assetEntryUsage.getType() ==
-				AssetEntryUsageConstants.TYPE_DISPLAY_PAGE_TEMPLATE) {
-
-			return false;
-		}
-
-		if (assetEntryUsage.getType() !=
-				AssetEntryUsageConstants.TYPE_PAGE_TEMPLATE) {
+		if ((assetEntryUsage.getType() ==
+				AssetEntryUsageConstants.TYPE_DISPLAY_PAGE_TEMPLATE) ||
+			(assetEntryUsage.getType() !=
+				AssetEntryUsageConstants.TYPE_PAGE_TEMPLATE)) {
 
 			return false;
 		}
@@ -438,7 +406,7 @@ public class AssetEntryUsagesDisplayContext {
 
 		Layout layout = LayoutLocalServiceUtil.fetchLayout(plid);
 
-		if ((layout.getClassNameId() > 0) && (layout.getClassPK() > 0)) {
+		if (layout.isDraftLayout()) {
 			plid = layout.getClassPK();
 		}
 
@@ -446,12 +414,9 @@ public class AssetEntryUsagesDisplayContext {
 			LayoutPageTemplateEntryLocalServiceUtil.
 				fetchLayoutPageTemplateEntryByPlid(plid);
 
-		if (layoutPageTemplateEntry == null) {
-			return false;
-		}
-
-		if (layoutPageTemplateEntry.getType() ==
-				LayoutPageTemplateEntryTypeConstants.TYPE_WIDGET_PAGE) {
+		if ((layoutPageTemplateEntry == null) ||
+			(layoutPageTemplateEntry.getType() ==
+				LayoutPageTemplateEntryTypeConstants.TYPE_WIDGET_PAGE)) {
 
 			return false;
 		}
@@ -552,16 +517,6 @@ public class AssetEntryUsagesDisplayContext {
 		}
 
 		return 0;
-	}
-
-	private boolean _isDraft(Layout layout) {
-		if (layout.getClassNameId() != PortalUtil.getClassNameId(
-				Layout.class.getName())) {
-
-			return false;
-		}
-
-		return true;
 	}
 
 	private final AssetEntry _assetEntry;

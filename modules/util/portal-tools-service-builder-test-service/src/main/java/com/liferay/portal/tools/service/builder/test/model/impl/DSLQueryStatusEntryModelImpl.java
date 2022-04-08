@@ -24,6 +24,7 @@ import com.liferay.portal.kernel.model.impl.BaseModelImpl;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.tools.service.builder.test.model.DSLQueryStatusEntry;
 import com.liferay.portal.tools.service.builder.test.model.DSLQueryStatusEntryModel;
 
@@ -32,6 +33,7 @@ import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
 
+import java.sql.Blob;
 import java.sql.Types;
 
 import java.util.Collections;
@@ -39,6 +41,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
@@ -118,7 +121,7 @@ public class DSLQueryStatusEntryModelImpl
 
 	/**
 	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-	 *		#getColumnBitmask(String)
+	 *		#getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long DSLQUERYSTATUSENTRYID_COLUMN_BITMASK = 1L;
@@ -361,7 +364,9 @@ public class DSLQueryStatusEntryModelImpl
 		for (Map.Entry<String, Object> entry :
 				_columnOriginalValues.entrySet()) {
 
-			if (entry.getValue() != getColumnValue(entry.getKey())) {
+			if (!Objects.equals(
+					entry.getValue(), getColumnValue(entry.getKey()))) {
+
 				_columnBitmask |= _columnBitmasks.get(entry.getKey());
 			}
 		}
@@ -409,6 +414,23 @@ public class DSLQueryStatusEntryModelImpl
 		dslQueryStatusEntryImpl.setStatusDate(getStatusDate());
 
 		dslQueryStatusEntryImpl.resetOriginalValues();
+
+		return dslQueryStatusEntryImpl;
+	}
+
+	@Override
+	public DSLQueryStatusEntry cloneWithOriginalValues() {
+		DSLQueryStatusEntryImpl dslQueryStatusEntryImpl =
+			new DSLQueryStatusEntryImpl();
+
+		dslQueryStatusEntryImpl.setDslQueryStatusEntryId(
+			this.<Long>getColumnOriginalValue("dslQueryStatusEntryId"));
+		dslQueryStatusEntryImpl.setDslQueryEntryId(
+			this.<Long>getColumnOriginalValue("dslQueryEntryId"));
+		dslQueryStatusEntryImpl.setStatus(
+			this.<String>getColumnOriginalValue("status"));
+		dslQueryStatusEntryImpl.setStatusDate(
+			this.<Date>getColumnOriginalValue("statusDate"));
 
 		return dslQueryStatusEntryImpl;
 	}
@@ -516,7 +538,7 @@ public class DSLQueryStatusEntryModelImpl
 			attributeGetterFunctions = getAttributeGetterFunctions();
 
 		StringBundler sb = new StringBundler(
-			(4 * attributeGetterFunctions.size()) + 2);
+			(5 * attributeGetterFunctions.size()) + 2);
 
 		sb.append("{");
 
@@ -527,9 +549,27 @@ public class DSLQueryStatusEntryModelImpl
 			Function<DSLQueryStatusEntry, Object> attributeGetterFunction =
 				entry.getValue();
 
+			sb.append("\"");
 			sb.append(attributeName);
-			sb.append("=");
-			sb.append(attributeGetterFunction.apply((DSLQueryStatusEntry)this));
+			sb.append("\": ");
+
+			Object value = attributeGetterFunction.apply(
+				(DSLQueryStatusEntry)this);
+
+			if (value == null) {
+				sb.append("null");
+			}
+			else if (value instanceof Blob || value instanceof Date ||
+					 value instanceof Map || value instanceof String) {
+
+				sb.append(
+					"\"" + StringUtil.replace(value.toString(), "\"", "'") +
+						"\"");
+			}
+			else {
+				sb.append(value);
+			}
+
 			sb.append(", ");
 		}
 

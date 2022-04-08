@@ -14,14 +14,19 @@
 
 package com.liferay.item.selector.taglib.internal.display.context;
 
+import com.liferay.document.library.display.context.DLUIItemKeys;
+import com.liferay.document.library.portlet.toolbar.contributor.DLPortletToolbarContributor;
+import com.liferay.frontend.taglib.clay.servlet.taglib.util.CreationMenu;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemList;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemListBuilder;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.LabelItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.LabelItemListBuilder;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.ViewTypeItemList;
+import com.liferay.item.selector.taglib.internal.document.library.portlet.toolbar.contributor.DLPortletToolbarContributorRegistryUtil;
 import com.liferay.item.selector.taglib.servlet.taglib.RepositoryEntryBrowserTag;
 import com.liferay.item.selector.taglib.servlet.taglib.util.RepositoryEntryBrowserTagUtil;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.model.Group;
@@ -30,17 +35,21 @@ import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
 import com.liferay.portal.kernel.portlet.PortalPreferences;
 import com.liferay.portal.kernel.portlet.PortletPreferencesFactoryUtil;
 import com.liferay.portal.kernel.portlet.PortletURLUtil;
+import com.liferay.portal.kernel.servlet.taglib.ui.Menu;
+import com.liferay.portal.kernel.servlet.taglib.ui.URLMenuItem;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.ParamUtil;
+import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 import javax.portlet.PortletException;
 import javax.portlet.PortletURL;
@@ -74,25 +83,79 @@ public class ItemSelectorRepositoryEntryManagementToolbarDisplayContext {
 	}
 
 	public String getClearResultsURL() {
-		PortletURL clearResultsURL = _getPortletURL();
+		return PortletURLBuilder.create(
+			_getPortletURL()
+		).setKeywords(
+			StringPool.BLANK
+		).buildString();
+	}
 
-		clearResultsURL.setParameter("keywords", StringPool.BLANK);
+	public CreationMenu getCreationMenu() {
+		DLPortletToolbarContributor dlPortletToolbarContributor =
+			DLPortletToolbarContributorRegistryUtil.
+				getDLPortletToolbarContributor();
 
-		return clearResultsURL.toString();
+		List<Menu> menus = dlPortletToolbarContributor.getPortletTitleMenus(
+			_liferayPortletRequest, _liferayPortletResponse);
+
+		if (menus.isEmpty()) {
+			return null;
+		}
+
+		CreationMenu creationMenu = new CreationMenu();
+
+		creationMenu.setItemsIconAlignment("left");
+
+		Set<String> allowedCreationMenuUIItemKeys =
+			_getAllowedCreationMenuUIItemKeys();
+
+		if (SetUtil.isEmpty(allowedCreationMenuUIItemKeys)) {
+			return creationMenu;
+		}
+
+		for (Menu menu : menus) {
+			List<URLMenuItem> urlMenuItems =
+				(List<URLMenuItem>)(List<?>)menu.getMenuItems();
+
+			for (URLMenuItem urlMenuItem : urlMenuItems) {
+				if (allowedCreationMenuUIItemKeys.contains(
+						urlMenuItem.getKey())) {
+
+					creationMenu.addDropdownItem(
+						dropdownItem -> {
+							dropdownItem.setData(urlMenuItem.getData());
+							dropdownItem.setHref(urlMenuItem.getURL());
+							dropdownItem.setIcon(urlMenuItem.getIcon());
+							dropdownItem.setLabel(urlMenuItem.getLabel());
+							dropdownItem.setSeparator(
+								urlMenuItem.hasSeparator());
+						});
+				}
+			}
+		}
+
+		return creationMenu;
 	}
 
 	public PortletURL getCurrentSortingURL() throws PortletException {
-		PortletURL currentSortingURL = PortletURLUtil.clone(
-			_getPortletURL(), _liferayPortletResponse);
+		return PortletURLBuilder.create(
+			PortletURLUtil.clone(_getPortletURL(), _liferayPortletResponse)
+		).setParameter(
+			"orderByCol", _getOrderByCol()
+		).setParameter(
+			"orderByType", getOrderByType()
+		).setParameter(
+			"scope",
+			() -> {
+				if (_repositoryEntryBrowserDisplayContext.
+						isSearchEverywhere()) {
 
-		currentSortingURL.setParameter("orderByType", getOrderByType());
-		currentSortingURL.setParameter("orderByCol", _getOrderByCol());
+					return "everywhere";
+				}
 
-		if (_repositoryEntryBrowserDisplayContext.isSearchEverywhere()) {
-			currentSortingURL.setParameter("scope", "everywhere");
-		}
-
-		return currentSortingURL;
+				return null;
+			}
+		).buildPortletURL();
 	}
 
 	public List<DropdownItem> getFilterDropdownItems() {
@@ -145,11 +208,13 @@ public class ItemSelectorRepositoryEntryManagementToolbarDisplayContext {
 
 		return LabelItemListBuilder.add(
 			labelItem -> {
-				PortletURL removeLabelURL = getCurrentSortingURL();
-
-				removeLabelURL.setParameter("scope", (String)null);
-
-				labelItem.putData("removeLabelURL", removeLabelURL.toString());
+				labelItem.putData(
+					"removeLabelURL",
+					PortletURLBuilder.create(
+						getCurrentSortingURL()
+					).setParameter(
+						"scope", (String)null
+					).buildString());
 
 				labelItem.setCloseable(true);
 
@@ -174,23 +239,22 @@ public class ItemSelectorRepositoryEntryManagementToolbarDisplayContext {
 	}
 
 	public PortletURL getSearchURL() throws PortletException {
-		PortletURL searchURL = PortletURLUtil.clone(
-			_currentURLObj, _liferayPortletResponse);
-
-		searchURL.setParameter("keywords", (String)null);
-		searchURL.setParameter("resetCur", Boolean.TRUE.toString());
-
-		return searchURL;
+		return PortletURLBuilder.create(
+			PortletURLUtil.clone(_currentURLObj, _liferayPortletResponse)
+		).setKeywords(
+			(String)null
+		).setParameter(
+			"resetCur", true
+		).buildPortletURL();
 	}
 
 	public PortletURL getSortingURL() throws PortletException {
-		PortletURL sortingURL = getCurrentSortingURL();
-
-		sortingURL.setParameter(
+		return PortletURLBuilder.create(
+			getCurrentSortingURL()
+		).setParameter(
 			"orderByType",
-			Objects.equals(getOrderByType(), "asc") ? "desc" : "asc");
-
-		return sortingURL;
+			Objects.equals(getOrderByType(), "asc") ? "desc" : "asc"
+		).buildPortletURL();
 	}
 
 	public ViewTypeItemList getViewTypes() throws PortletException {
@@ -216,6 +280,33 @@ public class ItemSelectorRepositoryEntryManagementToolbarDisplayContext {
 
 	public boolean isDisabled() {
 		return false;
+	}
+
+	public boolean isShowCreationMenu() {
+		Set<String> allowedCreationMenuUIItemKeys =
+			_getAllowedCreationMenuUIItemKeys();
+
+		if ((allowedCreationMenuUIItemKeys == null) ||
+			!allowedCreationMenuUIItemKeys.isEmpty()) {
+
+			return true;
+		}
+
+		return false;
+	}
+
+	private Set<String> _getAllowedCreationMenuUIItemKeys() {
+		Set<String> allowedCreationMenuUIItemKeys =
+			(Set)_httpServletRequest.getAttribute(
+				"liferay-item-selector:repository-entry-browser:" +
+					"allowedCreationMenuUIItemKeys");
+
+		if (allowedCreationMenuUIItemKeys == null) {
+			return SetUtil.fromArray(
+				DLUIItemKeys.ADD_FOLDER, DLUIItemKeys.UPLOAD);
+		}
+
+		return allowedCreationMenuUIItemKeys;
 	}
 
 	private String _getCurrentScopeLabel() {

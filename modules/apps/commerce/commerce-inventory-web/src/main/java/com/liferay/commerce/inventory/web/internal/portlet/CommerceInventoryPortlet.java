@@ -14,12 +14,14 @@
 
 package com.liferay.commerce.inventory.web.internal.portlet;
 
+import com.liferay.commerce.inventory.model.CommerceInventoryWarehouse;
 import com.liferay.commerce.inventory.service.CommerceInventoryReplenishmentItemService;
 import com.liferay.commerce.inventory.service.CommerceInventoryWarehouseItemService;
 import com.liferay.commerce.inventory.service.CommerceInventoryWarehouseService;
 import com.liferay.commerce.inventory.web.internal.display.context.CommerceInventoryDisplayContext;
 import com.liferay.commerce.product.constants.CPPortletKeys;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCPortlet;
+import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.WebKeys;
 
@@ -55,7 +57,8 @@ import org.osgi.service.component.annotations.Reference;
 		"javax.portlet.init-param.view-template=/view.jsp",
 		"javax.portlet.name=" + CPPortletKeys.COMMERCE_INVENTORY,
 		"javax.portlet.resource-bundle=content.Language",
-		"javax.portlet.security-role-ref=power-user,user"
+		"javax.portlet.security-role-ref=power-user,user",
+		"javax.portlet.version=3.0"
 	},
 	service = {CommerceInventoryPortlet.class, Portlet.class}
 )
@@ -71,6 +74,7 @@ public class CommerceInventoryPortlet extends MVCPortlet {
 				_commerceInventoryReplenishmentItemService,
 				_commerceInventoryWarehouseService,
 				_commerceInventoryWarehouseItemService,
+				_commerceInventoryWarehouseModelResourcePermission,
 				_portal.getHttpServletRequest(renderRequest));
 
 		renderRequest.setAttribute(
@@ -86,6 +90,12 @@ public class CommerceInventoryPortlet extends MVCPortlet {
 	@Reference
 	private CommerceInventoryWarehouseItemService
 		_commerceInventoryWarehouseItemService;
+
+	@Reference(
+		target = "(model.class.name=com.liferay.commerce.inventory.model.CommerceInventoryWarehouse)"
+	)
+	private ModelResourcePermission<CommerceInventoryWarehouse>
+		_commerceInventoryWarehouseModelResourcePermission;
 
 	@Reference
 	private CommerceInventoryWarehouseService

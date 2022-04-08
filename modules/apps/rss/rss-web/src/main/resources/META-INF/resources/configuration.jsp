@@ -61,6 +61,7 @@
 
 					if (urls.length == 0) {
 						urls = new String[1];
+
 						urls[0] = StringPool.BLANK;
 					}
 
@@ -91,7 +92,7 @@
 
 			<liferay-ui:section>
 				<div class="display-template">
-					<liferay-ddm:template-selector
+					<liferay-template:template-selector
 						className="<%= RSSFeed.class.getName() %>"
 						displayStyle="<%= rssPortletInstanceConfiguration.displayStyle() %>"
 						displayStyleGroupId="<%= rssDisplayContext.getDisplayStyleGroupId() %>"
@@ -108,7 +109,7 @@
 
 				<aui:input label="num-of-expanded-entries-per-feed" name="preferences--expandedEntriesPerFeed--" type="number" value="<%= rssPortletInstanceConfiguration.expandedEntriesPerFeed() %>">
 					<aui:validator errorMessage='<%= LanguageUtil.get(request, "only-integers-are-allowed") %>' name="digits" />
-					<aui:validator errorMessage='<%= LanguageUtil.format(request, "only-integers-greater-than-or-equal-to-x-are-allowed", 1) %>' name="min">1</aui:validator>
+					<aui:validator errorMessage='<%= LanguageUtil.format(request, "only-integers-greater-than-or-equal-to-x-are-allowed", 0) %>' name="min">0</aui:validator>
 				</aui:input>
 
 				<aui:select disabled="<%= !rssPortletInstanceConfiguration.showFeedImage() %>" name="preferences--feedImageAlignment--">

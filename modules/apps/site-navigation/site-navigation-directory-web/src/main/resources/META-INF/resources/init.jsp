@@ -37,10 +37,10 @@ page import="com.liferay.portal.kernel.util.GetterUtil" %><%@
 page import="com.liferay.portal.kernel.util.HtmlUtil" %><%@
 page import="com.liferay.portal.kernel.util.ListUtil" %><%@
 page import="com.liferay.portal.kernel.util.ParamUtil" %><%@
+page import="com.liferay.portal.kernel.util.PortalUtil" %><%@
 page import="com.liferay.portal.kernel.util.Validator" %><%@
 page import="com.liferay.site.navigation.directory.web.internal.display.context.SitesDirectoryDisplayContext" %><%@
-page import="com.liferay.site.navigation.directory.web.internal.servlet.taglib.clay.GroupVerticalCard" %><%@
-page import="com.liferay.taglib.ui.SitesDirectoryTag" %>
+page import="com.liferay.site.navigation.directory.web.internal.servlet.taglib.clay.GroupVerticalCard" %>
 
 <%@ page import="java.util.List" %><%@
 page import="java.util.Objects" %>

@@ -16,7 +16,7 @@ package com.liferay.account.service.base;
 
 import com.liferay.account.model.AccountRole;
 import com.liferay.account.service.AccountRoleService;
-import com.liferay.account.service.persistence.AccountEntryPersistence;
+import com.liferay.account.service.AccountRoleServiceUtil;
 import com.liferay.account.service.persistence.AccountRolePersistence;
 import com.liferay.portal.aop.AopService;
 import com.liferay.portal.kernel.dao.db.DB;
@@ -28,8 +28,11 @@ import com.liferay.portal.kernel.module.framework.service.IdentifiableOSGiServic
 import com.liferay.portal.kernel.service.BaseServiceImpl;
 import com.liferay.portal.kernel.util.PortalUtil;
 
+import java.lang.reflect.Field;
+
 import javax.sql.DataSource;
 
+import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 
 /**
@@ -50,8 +53,13 @@ public abstract class AccountRoleServiceBaseImpl
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. Use <code>AccountRoleService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>com.liferay.account.service.AccountRoleServiceUtil</code>.
+	 * Never modify or reference this class directly. Use <code>AccountRoleService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>AccountRoleServiceUtil</code>.
 	 */
+	@Deactivate
+	protected void deactivate() {
+		_setServiceUtilService(null);
+	}
+
 	@Override
 	public Class<?>[] getAopInterfaces() {
 		return new Class<?>[] {
@@ -62,6 +70,8 @@ public abstract class AccountRoleServiceBaseImpl
 	@Override
 	public void setAopProxy(Object aopProxy) {
 		accountRoleService = (AccountRoleService)aopProxy;
+
+		_setServiceUtilService(accountRoleService);
 	}
 
 	/**
@@ -106,6 +116,20 @@ public abstract class AccountRoleServiceBaseImpl
 		}
 	}
 
+	private void _setServiceUtilService(AccountRoleService accountRoleService) {
+		try {
+			Field field = AccountRoleServiceUtil.class.getDeclaredField(
+				"_service");
+
+			field.setAccessible(true);
+
+			field.set(null, accountRoleService);
+		}
+		catch (ReflectiveOperationException reflectiveOperationException) {
+			throw new RuntimeException(reflectiveOperationException);
+		}
+	}
+
 	@Reference
 	protected com.liferay.account.service.AccountRoleLocalService
 		accountRoleLocalService;
@@ -116,32 +140,7 @@ public abstract class AccountRoleServiceBaseImpl
 	protected AccountRolePersistence accountRolePersistence;
 
 	@Reference
-	protected AccountEntryPersistence accountEntryPersistence;
-
-	@Reference
 	protected com.liferay.counter.kernel.service.CounterLocalService
 		counterLocalService;
-
-	@Reference
-	protected com.liferay.portal.kernel.service.RoleLocalService
-		roleLocalService;
-
-	@Reference
-	protected com.liferay.portal.kernel.service.RoleService roleService;
-
-	@Reference
-	protected com.liferay.portal.kernel.service.UserLocalService
-		userLocalService;
-
-	@Reference
-	protected com.liferay.portal.kernel.service.UserService userService;
-
-	@Reference
-	protected com.liferay.portal.kernel.service.UserGroupRoleLocalService
-		userGroupRoleLocalService;
-
-	@Reference
-	protected com.liferay.portal.kernel.service.UserGroupRoleService
-		userGroupRoleService;
 
 }

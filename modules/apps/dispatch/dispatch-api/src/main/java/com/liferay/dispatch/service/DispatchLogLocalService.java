@@ -139,6 +139,9 @@ public interface DispatchLogLocalService
 	public <T> T dslQuery(DSLQuery dslQuery);
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public int dslQueryCount(DSLQuery dslQuery);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public DynamicQuery dynamicQuery();
 
 	/**
@@ -211,6 +214,10 @@ public interface DispatchLogLocalService
 	public DispatchLog fetchLatestDispatchLog(long dispatchTriggerId);
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public DispatchLog fetchLatestDispatchLog(
+		long dispatchTriggerId, DispatchTaskStatus dispatchTaskStatus);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public ActionableDynamicQuery getActionableDynamicQuery();
 
 	/**
@@ -241,6 +248,11 @@ public interface DispatchLogLocalService
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public List<DispatchLog> getDispatchLogs(
 		long dispatchTriggerId, int start, int end);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public List<DispatchLog> getDispatchLogs(
+		long dispatchTriggerId, int start, int end,
+		OrderByComparator<DispatchLog> orderByComparator);
 
 	/**
 	 * Returns the number of dispatch logs.

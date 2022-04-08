@@ -14,6 +14,9 @@
 
 package com.liferay.taglib.aui.base;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.JspException;
 
@@ -33,6 +36,10 @@ public abstract class BaseInputTag extends com.liferay.taglib.BaseValidatorTagSu
 		return super.doStartTag();
 	}
 
+	public List<String> getActiveLanguageIds() {
+		return _activeLanguageIds;
+	}
+
 	public boolean getAutoFocus() {
 		return _autoFocus;
 	}
@@ -43,6 +50,14 @@ public abstract class BaseInputTag extends com.liferay.taglib.BaseValidatorTagSu
 
 	public java.lang.Object getBean() {
 		return _bean;
+	}
+
+	public java.lang.String getButtonIconOff() {
+		return _buttonIconOff;
+	}
+
+	public java.lang.String getButtonIconOn() {
+		return _buttonIconOn;
 	}
 
 	public boolean getChangesContext() {
@@ -105,6 +120,14 @@ public abstract class BaseInputTag extends com.liferay.taglib.BaseValidatorTagSu
 		return _helpTextCssClass;
 	}
 
+	public java.lang.String getIconOff() {
+		return _iconOff;
+	}
+
+	public java.lang.String getIconOn() {
+		return _iconOn;
+	}
+
 	public java.lang.String getId() {
 		return _id;
 	}
@@ -125,8 +148,16 @@ public abstract class BaseInputTag extends com.liferay.taglib.BaseValidatorTagSu
 		return _label;
 	}
 
+	public java.lang.String getLabelCssClass() {
+		return _labelCssClass;
+	}
+
 	public java.lang.String getLanguageId() {
 		return _languageId;
+	}
+
+	public java.lang.String getLanguagesDropdownDirection() {
+		return _languagesDropdownDirection;
 	}
 
 	public boolean getLast() {
@@ -221,6 +252,18 @@ public abstract class BaseInputTag extends com.liferay.taglib.BaseValidatorTagSu
 		return _wrapperCssClass;
 	}
 
+	public boolean isAdminMode() {
+		return _adminMode;
+	}
+
+	public void setActiveLanguageIds(List<String> activeLanguageIds) {
+		_activeLanguageIds = activeLanguageIds;
+	}
+
+	public void setAdminMode(boolean adminMode) {
+		_adminMode = adminMode;
+	}
+
 	public void setAutoFocus(boolean autoFocus) {
 		_autoFocus = autoFocus;
 	}
@@ -231,6 +274,14 @@ public abstract class BaseInputTag extends com.liferay.taglib.BaseValidatorTagSu
 
 	public void setBean(java.lang.Object bean) {
 		_bean = bean;
+	}
+
+	public void setButtonIconOff(java.lang.String buttonIconOff) {
+		_buttonIconOff = buttonIconOff;
+	}
+
+	public void setButtonIconOn(java.lang.String buttonIconOn) {
+		_buttonIconOn = buttonIconOn;
 	}
 
 	public void setChangesContext(boolean changesContext) {
@@ -293,6 +344,14 @@ public abstract class BaseInputTag extends com.liferay.taglib.BaseValidatorTagSu
 		_helpTextCssClass = helpTextCssClass;
 	}
 
+	public void setIconOff(java.lang.String iconOff) {
+		_iconOff = iconOff;
+	}
+
+	public void setIconOn(java.lang.String iconOn) {
+		_iconOn = iconOn;
+	}
+
 	public void setId(java.lang.String id) {
 		_id = id;
 	}
@@ -313,8 +372,16 @@ public abstract class BaseInputTag extends com.liferay.taglib.BaseValidatorTagSu
 		_label = label;
 	}
 
+	public void setLabelCssClass(java.lang.String labelCssClass) {
+		_labelCssClass = labelCssClass;
+	}
+
 	public void setLanguageId(java.lang.String languageId) {
 		_languageId = languageId;
+	}
+
+	public void setLanguagesDropdownDirection(java.lang.String languagesDropdownDirection) {
+		_languagesDropdownDirection = languagesDropdownDirection;
 	}
 
 	public void setLast(boolean last) {
@@ -413,9 +480,13 @@ public abstract class BaseInputTag extends com.liferay.taglib.BaseValidatorTagSu
 	protected void cleanUp() {
 		super.cleanUp();
 
+		_activeLanguageIds = new ArrayList<>();
+		_adminMode = false;
 		_autoFocus = false;
 		_autoSize = false;
 		_bean = null;
+		_buttonIconOff = null;
+		_buttonIconOn = null;
 		_changesContext = false;
 		_checked = false;
 		_classPK = 0;
@@ -431,12 +502,16 @@ public abstract class BaseInputTag extends com.liferay.taglib.BaseValidatorTagSu
 		_formName = null;
 		_helpMessage = null;
 		_helpTextCssClass = "input-group-addon";
+		_iconOff = null;
+		_iconOn = null;
 		_id = null;
 		_ignoreRequestValue = false;
 		_inlineField = false;
 		_inlineLabel = null;
 		_label = null;
+		_labelCssClass = null;
 		_languageId = null;
+		_languagesDropdownDirection = null;
 		_last = false;
 		_localized = false;
 		_localizeLabel = true;
@@ -469,9 +544,13 @@ public abstract class BaseInputTag extends com.liferay.taglib.BaseValidatorTagSu
 
 	@Override
 	protected void setAttributes(HttpServletRequest request) {
+		setNamespacedAttribute(request, "activeLanguageIds", _activeLanguageIds);
+		setNamespacedAttribute(request, "adminMode", _adminMode);
 		setNamespacedAttribute(request, "autoFocus", _autoFocus);
 		setNamespacedAttribute(request, "autoSize", _autoSize);
 		setNamespacedAttribute(request, "bean", _bean);
+		setNamespacedAttribute(request, "buttonIconOff", _buttonIconOff);
+		setNamespacedAttribute(request, "buttonIconOn", _buttonIconOn);
 		setNamespacedAttribute(request, "changesContext", _changesContext);
 		setNamespacedAttribute(request, "checked", _checked);
 		setNamespacedAttribute(request, "classPK", _classPK);
@@ -487,12 +566,16 @@ public abstract class BaseInputTag extends com.liferay.taglib.BaseValidatorTagSu
 		setNamespacedAttribute(request, "formName", _formName);
 		setNamespacedAttribute(request, "helpMessage", _helpMessage);
 		setNamespacedAttribute(request, "helpTextCssClass", _helpTextCssClass);
+		setNamespacedAttribute(request, "iconOff", _iconOff);
+		setNamespacedAttribute(request, "iconOn", _iconOn);
 		setNamespacedAttribute(request, "id", _id);
 		setNamespacedAttribute(request, "ignoreRequestValue", _ignoreRequestValue);
 		setNamespacedAttribute(request, "inlineField", _inlineField);
 		setNamespacedAttribute(request, "inlineLabel", _inlineLabel);
 		setNamespacedAttribute(request, "label", _label);
+		setNamespacedAttribute(request, "labelCssClass", _labelCssClass);
 		setNamespacedAttribute(request, "languageId", _languageId);
+		setNamespacedAttribute(request, "languagesDropdownDirection", _languagesDropdownDirection);
 		setNamespacedAttribute(request, "last", _last);
 		setNamespacedAttribute(request, "localized", _localized);
 		setNamespacedAttribute(request, "localizeLabel", _localizeLabel);
@@ -523,9 +606,13 @@ public abstract class BaseInputTag extends com.liferay.taglib.BaseValidatorTagSu
 	private static final String _PAGE =
 		"/html/taglib/aui/input/page.jsp";
 
+	private List<String> _activeLanguageIds = new ArrayList<>();
+	private boolean _adminMode = false;
 	private boolean _autoFocus = false;
 	private boolean _autoSize = false;
 	private java.lang.Object _bean = null;
+	private java.lang.String _buttonIconOff = null;
+	private java.lang.String _buttonIconOn = null;
 	private boolean _changesContext = false;
 	private boolean _checked = false;
 	private long _classPK = 0;
@@ -541,12 +628,16 @@ public abstract class BaseInputTag extends com.liferay.taglib.BaseValidatorTagSu
 	private java.lang.String _formName = null;
 	private java.lang.String _helpMessage = null;
 	private java.lang.String _helpTextCssClass = "input-group-addon";
+	private java.lang.String _iconOff = null;
+	private java.lang.String _iconOn = null;
 	private java.lang.String _id = null;
 	private boolean _ignoreRequestValue = false;
 	private boolean _inlineField = false;
 	private java.lang.String _inlineLabel = null;
 	private java.lang.String _label = null;
+	private java.lang.String _labelCssClass = null;
 	private java.lang.String _languageId = null;
+	private java.lang.String _languagesDropdownDirection = null;
 	private boolean _last = false;
 	private boolean _localized = false;
 	private boolean _localizeLabel = true;

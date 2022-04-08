@@ -41,7 +41,6 @@ import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Company;
-import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.LayoutConstants;
 import com.liferay.portal.kernel.portlet.PortletLayoutFinder;
 import com.liferay.portal.kernel.portlet.PortletLayoutFinderRegistryUtil;
@@ -54,7 +53,6 @@ import com.liferay.portal.kernel.repository.model.Folder;
 import com.liferay.portal.kernel.search.Document;
 import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.search.Hits;
-import com.liferay.portal.kernel.service.GroupLocalServiceUtil;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.WorkflowDefinitionLinkLocalServiceUtil;
 import com.liferay.portal.kernel.theme.PortletDisplay;
@@ -81,7 +79,6 @@ import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.kernel.workflow.WorkflowHandlerRegistryUtil;
 import com.liferay.portal.util.PropsValues;
-import com.liferay.portlet.documentlibrary.webdav.DLWebDAVUtil;
 import com.liferay.trash.kernel.util.TrashUtil;
 
 import java.io.Serializable;
@@ -224,59 +221,6 @@ public class DLImpl implements DL {
 		sb.append(id);
 
 		return sb.toString();
-	}
-
-	/**
-	 * @deprecated As of Mueller (7.2.x), replaced by {@link
-	 *             com.liferay.document.library.util.DLURLHelper#getFileEntryControlPanelLink(
-	 *             PortletRequest, long)}
-	 */
-	@Deprecated
-	@Override
-	public String getDLFileEntryControlPanelLink(
-		PortletRequest portletRequest, long fileEntryId) {
-
-		String portletId = PortletProviderUtil.getPortletId(
-			FileEntry.class.getName(), PortletProvider.Action.MANAGE);
-
-		PortletURL portletURL = PortalUtil.getControlPanelPortletURL(
-			portletRequest, portletId, PortletRequest.RENDER_PHASE);
-
-		portletURL.setParameter(
-			"mvcRenderCommandName", "/document_library/view_file_entry");
-		portletURL.setParameter("fileEntryId", String.valueOf(fileEntryId));
-
-		return portletURL.toString();
-	}
-
-	/**
-	 * @deprecated As of Mueller (7.2.x), replaced by {@link
-	 *             com.liferay.document.library.util.DLURLHelper#getFolderControlPanelLink(
-	 *             PortletRequest, long)}
-	 */
-	@Deprecated
-	@Override
-	public String getDLFolderControlPanelLink(
-		PortletRequest portletRequest, long folderId) {
-
-		String portletId = PortletProviderUtil.getPortletId(
-			Folder.class.getName(), PortletProvider.Action.MANAGE);
-
-		PortletURL portletURL = PortalUtil.getControlPanelPortletURL(
-			portletRequest, portletId, PortletRequest.RENDER_PHASE);
-
-		if (folderId == DLFolderConstants.DEFAULT_PARENT_FOLDER_ID) {
-			portletURL.setParameter(
-				"mvcRenderCommandName", "/document_library/view");
-		}
-		else {
-			portletURL.setParameter(
-				"mvcRenderCommandName", "/document_library/view_folder");
-		}
-
-		portletURL.setParameter("folderId", String.valueOf(folderId));
-
-		return portletURL.toString();
 	}
 
 	/**
@@ -461,7 +405,8 @@ public class DLImpl implements DL {
 				if (_log.isWarnEnabled()) {
 					_log.warn(
 						"Documents and Media search index is stale and " +
-							"contains file entry " + fileEntryId);
+							"contains file entry " + fileEntryId,
+						exception);
 				}
 			}
 		}
@@ -473,15 +418,10 @@ public class DLImpl implements DL {
 	public String getFileEntryImage(
 		FileEntry fileEntry, ThemeDisplay themeDisplay) {
 
-		StringBundler sb = new StringBundler(5);
-
-		sb.append("<img src=\"");
-		sb.append(themeDisplay.getPathThemeImages());
-		sb.append("/file_system/small/");
-		sb.append(fileEntry.getIcon());
-		sb.append(".png\" style=\"border-width: 0; text-align: left;\">");
-
-		return sb.toString();
+		return StringBundler.concat(
+			"<img src=\"", themeDisplay.getPathThemeImages(),
+			"/file_system/small/", fileEntry.getIcon(),
+			".png\" style=\"border-width: 0; text-align: left;\">");
 	}
 
 	@Override
@@ -737,60 +677,8 @@ public class DLImpl implements DL {
 			return StringBundler.concat(id, StringPool.PERIOD, version);
 		}
 
-		StringBundler sb = new StringBundler(5);
-
-		sb.append(id);
-		sb.append(StringPool.PERIOD);
-		sb.append(version);
-		sb.append(StringPool.PERIOD);
-		sb.append(languageId);
-
-		return sb.toString();
-	}
-
-	/**
-	 * @deprecated As of Mueller (7.2.x), replaced by {@link
-	 *             com.liferay.document.library.util.DLURLHelper#getThumbnailSrc(
-	 *             FileEntry, FileVersion, ThemeDisplay)}
-	 */
-	@Deprecated
-	@Override
-	public String getThumbnailSrc(
-			FileEntry fileEntry, FileVersion fileVersion,
-			ThemeDisplay themeDisplay)
-		throws Exception {
-
-		String thumbnailQueryString = null;
-
-		if (PropsValues.DL_FILE_ENTRY_THUMBNAIL_ENABLED) {
-			if (ImageProcessorUtil.hasImages(fileVersion)) {
-				thumbnailQueryString = "&imageThumbnail=1";
-			}
-			else if (PDFProcessorUtil.hasImages(fileVersion)) {
-				thumbnailQueryString = "&documentThumbnail=1";
-			}
-			else if (VideoProcessorUtil.hasVideo(fileVersion)) {
-				thumbnailQueryString = "&videoThumbnail=1";
-			}
-		}
-
-		return getImageSrc(
-			fileEntry, fileVersion, themeDisplay, thumbnailQueryString);
-	}
-
-	/**
-	 * @deprecated As of Mueller (7.2.x), replaced by {@link
-	 *             com.liferay.document.library.util.DLURLHelper#getThumbnailSrc(
-	 *             FileEntry, ThemeDisplay)}
-	 */
-	@Deprecated
-	@Override
-	public String getThumbnailSrc(
-			FileEntry fileEntry, ThemeDisplay themeDisplay)
-		throws Exception {
-
-		return getThumbnailSrc(
-			fileEntry, fileEntry.getFileVersion(), themeDisplay);
+		return StringBundler.concat(
+			id, StringPool.PERIOD, version, StringPool.PERIOD, languageId);
 	}
 
 	@Override
@@ -862,14 +750,17 @@ public class DLImpl implements DL {
 
 	@Override
 	public String getUniqueFileName(
-		long groupId, long folderId, String fileName) {
+		long groupId, long folderId, String fileName,
+		boolean ignoreDuplicateTitle) {
 
 		String uniqueFileTitle = FileUtil.stripExtension(fileName);
 
 		String extension = FileUtil.getExtension(fileName);
 
 		for (int i = 1;; i++) {
-			if (!_existsFileEntryByTitle(groupId, folderId, uniqueFileTitle) &&
+			if ((ignoreDuplicateTitle ||
+				 !_existsFileEntryByTitle(
+					 groupId, folderId, uniqueFileTitle)) &&
 				!_existsFileEntryByFileName(
 					groupId, extension, folderId, uniqueFileTitle)) {
 
@@ -883,113 +774,20 @@ public class DLImpl implements DL {
 		return getTitleWithExtension(uniqueFileTitle, extension);
 	}
 
-	/**
-	 * @deprecated As of Mueller (7.2.x), replaced by {@link
-	 *             com.liferay.document.library.util.DLURLHelper#getWebDavURL(
-	 *             ThemeDisplay, Folder, FileEntry)}
-	 */
-	@Deprecated
 	@Override
-	public String getWebDavURL(
-			ThemeDisplay themeDisplay, Folder folder, FileEntry fileEntry)
-		throws PortalException {
+	public String getUniqueTitle(long groupId, long folderId, String title) {
+		String uniqueFileTitle = title;
 
-		return getWebDavURL(themeDisplay, folder, fileEntry, false);
-	}
+		int i = 1;
 
-	/**
-	 * @deprecated As of Mueller (7.2.x), replaced by {@link
-	 *             com.liferay.document.library.util.DLURLHelper#getWebDavURL(
-	 *             ThemeDisplay, Folder, FileEntry, boolean)}
-	 */
-	@Deprecated
-	@Override
-	public String getWebDavURL(
-			ThemeDisplay themeDisplay, Folder folder, FileEntry fileEntry,
-			boolean manualCheckInRequired)
-		throws PortalException {
+		while (_existsFileEntryByTitle(groupId, folderId, uniqueFileTitle)) {
+			uniqueFileTitle = FileUtil.appendParentheticalSuffix(
+				title, String.valueOf(i));
 
-		return getWebDavURL(
-			themeDisplay, folder, fileEntry, manualCheckInRequired, false);
-	}
-
-	/**
-	 * @deprecated As of Mueller (7.2.x), replaced by {@link
-	 *             com.liferay.document.library.util.DLURLHelper#getWebDavURL(
-	 *             ThemeDisplay, Folder, FileEntry, boolean, boolean)}
-	 */
-	@Deprecated
-	@Override
-	public String getWebDavURL(
-			ThemeDisplay themeDisplay, Folder folder, FileEntry fileEntry,
-			boolean manualCheckInRequired, boolean openDocumentUrl)
-		throws PortalException {
-
-		StringBundler webDavURLSB = new StringBundler(7);
-
-		boolean secure = false;
-
-		if (themeDisplay.isSecure() ||
-			PropsValues.WEBDAV_SERVLET_HTTPS_REQUIRED) {
-
-			secure = true;
+			i++;
 		}
 
-		String portalURL = PortalUtil.getPortalURL(
-			themeDisplay.getServerName(), themeDisplay.getServerPort(), secure);
-
-		webDavURLSB.append(portalURL);
-
-		webDavURLSB.append(themeDisplay.getPathContext());
-		webDavURLSB.append("/webdav");
-
-		if (manualCheckInRequired) {
-			webDavURLSB.append(MANUAL_CHECK_IN_REQUIRED_PATH);
-		}
-
-		Group group = null;
-
-		if (fileEntry != null) {
-			group = GroupLocalServiceUtil.getGroup(fileEntry.getGroupId());
-		}
-		else {
-			group = themeDisplay.getScopeGroup();
-		}
-
-		webDavURLSB.append(group.getFriendlyURL());
-		webDavURLSB.append("/document_library");
-
-		StringBuilder sb = new StringBuilder();
-
-		if ((folder != null) &&
-			(folder.getFolderId() !=
-				DLFolderConstants.DEFAULT_PARENT_FOLDER_ID)) {
-
-			Folder curFolder = folder;
-
-			while (true) {
-				sb.insert(0, URLCodec.encodeURL(curFolder.getName(), true));
-				sb.insert(0, StringPool.SLASH);
-
-				if (curFolder.getParentFolderId() ==
-						DLFolderConstants.DEFAULT_PARENT_FOLDER_ID) {
-
-					break;
-				}
-
-				curFolder = DLAppLocalServiceUtil.getFolder(
-					curFolder.getParentFolderId());
-			}
-		}
-
-		if (fileEntry != null) {
-			sb.append(StringPool.SLASH);
-			sb.append(DLWebDAVUtil.escapeURLTitle(fileEntry.getFileName()));
-		}
-
-		webDavURLSB.append(sb.toString());
-
-		return webDavURLSB.toString();
+		return uniqueFileTitle;
 	}
 
 	@Override
@@ -1192,6 +990,10 @@ public class DLImpl implements DL {
 				groupId, folderId, getTitleWithExtension(title, extension));
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception);
+			}
+
 			return false;
 		}
 
@@ -1206,6 +1008,10 @@ public class DLImpl implements DL {
 				groupId, folderId, uniqueFileTitle);
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception);
+			}
+
 			return false;
 		}
 
@@ -1264,7 +1070,7 @@ public class DLImpl implements DL {
 			}
 			catch (Exception exception) {
 				if (_log.isDebugEnabled()) {
-					_log.debug(exception, exception);
+					_log.debug(exception);
 				}
 
 				fileIcons = new String[] {StringPool.BLANK};

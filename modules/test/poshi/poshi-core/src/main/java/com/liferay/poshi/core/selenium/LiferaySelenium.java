@@ -20,6 +20,8 @@ package com.liferay.poshi.core.selenium;
 @SuppressWarnings("deprecation")
 public interface LiferaySelenium {
 
+	public void acceptAlert();
+
 	public void addSelection(String locator, String optionLocator);
 
 	public void antCommand(String fileName, String target) throws Exception;
@@ -29,6 +31,8 @@ public interface LiferaySelenium {
 	public void assertAlert(String pattern) throws Exception;
 
 	public void assertAlertNotPresent() throws Exception;
+
+	public void assertAlertText(String pattern) throws Exception;
 
 	public void assertAttributeNotPresent(String attribute, String locator)
 		throws Exception;
@@ -164,6 +168,8 @@ public interface LiferaySelenium {
 
 	public void deleteAllEmails() throws Exception;
 
+	public void dismissAlert();
+
 	public void doubleClick(String locator);
 
 	public void doubleClickAt(String locator, String coordString);
@@ -174,14 +180,15 @@ public interface LiferaySelenium {
 		String locatorOfObjectToBeDragged,
 		String locatorOfDragDestinationObject);
 
+	public void dragAtAndDrop(
+		String locator, String coordString, String movementsString);
+
 	public void echo(String message);
 
 	public void executeJavaScript(
 		String javaScript, String argument1, String argument2);
 
 	public void fail(String message);
-
-	public String getAlert();
 
 	public String getAttribute(String attributeLocator);
 
@@ -216,9 +223,9 @@ public interface LiferaySelenium {
 
 	public String getNumberIncrement(String value);
 
-	public String getOcularResultImageDirName();
+	public String getOcularBaselineImageDirName();
 
-	public String getOcularSnapImageDirName();
+	public String getOcularResultImageDirName();
 
 	public String getOutputDirName();
 
@@ -327,6 +334,8 @@ public interface LiferaySelenium {
 
 	public void javaScriptMouseDown(String locator);
 
+	public void javaScriptMouseOver(String locator);
+
 	public void javaScriptMouseUp(String locator);
 
 	public void keyDown(String locator, String keySequence);
@@ -355,7 +364,9 @@ public interface LiferaySelenium {
 
 	public void mouseUpAt(String locator, String coordString);
 
-	public void ocularAssertElementImage(String locator) throws Exception;
+	public void ocularAssertElementImage(
+			String locator, String fileName, String match)
+		throws Exception;
 
 	public void open(String url) throws Exception;
 
@@ -371,13 +382,15 @@ public interface LiferaySelenium {
 
 	public void replyToEmail(String to, String body) throws Exception;
 
+	public void rightClick(String locator);
+
 	public void robotType(String script);
 
 	public void robotTypeShortcut(String script);
 
 	public void runScript(String script);
 
-	public void saveScreenshot() throws Exception;
+	public void saveScreenshot(String fileName) throws Exception;
 
 	public void saveScreenshotAndSource() throws Exception;
 
@@ -473,6 +486,8 @@ public interface LiferaySelenium {
 	public void type(String locator, String value) throws Exception;
 
 	public void typeAceEditor(String locator, String value);
+
+	public void typeAlert(String value);
 
 	public void typeAlloyEditor(String locator, String value);
 

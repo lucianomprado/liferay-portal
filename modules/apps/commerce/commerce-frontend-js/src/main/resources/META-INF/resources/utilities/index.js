@@ -15,26 +15,16 @@
 import {fetch} from 'frontend-js-web';
 
 import createOdataFilter from './odata';
-
-export function getAcceptLanguageHeaderParam() {
-	const browserLang = navigator.language || navigator.userLanguage;
-	const themeLang = Liferay.ThemeDisplay.getLanguageId().replace('_', '-');
-
-	if (browserLang === themeLang) {
-		return browserLang;
-	}
-
-	return `${browserLang}, ${themeLang};q=0.8`;
-}
+import {getProductMinQuantity} from './quantities';
 
 export const fetchHeaders = new Headers({
-	Accept: 'application/json',
-	'Accept-Language': getAcceptLanguageHeaderParam(),
+	'Accept': 'application/json',
+	'Accept-Language': Liferay.ThemeDisplay.getBCP47LanguageId(),
 	'Content-Type': 'application/json',
 });
 
 export const fetchParams = {
-	headers: Liferay.staticEnvHeaders || fetchHeaders,
+	headers: fetchHeaders,
 };
 
 export function getData(apiUrl, query, page, pageSize) {
@@ -66,6 +56,30 @@ export function liferayNavigate(url) {
 	}
 }
 
+export function getObjectFromPath(path, value) {
+	return path.reduceRight((item, key) => {
+		const formattedKey =
+			key === 'LANG' ? Liferay.ThemeDisplay.getLanguageId() : key;
+
+		return {
+			[formattedKey]: item,
+		};
+	}, value);
+}
+
+export function formatAutocompleteItem(id, idKey, label, labelKey) {
+	const idObj = getObjectFromPath(Array.isArray(idKey) ? idKey : [idKey], id);
+	const labelObj = getObjectFromPath(
+		Array.isArray(labelKey) ? labelKey : [labelKey],
+		label
+	);
+
+	return {
+		...idObj,
+		...labelObj,
+	};
+}
+
 export function getValueFromItem(item, fieldName) {
 	if (!fieldName || typeof item === 'string') {
 		return null;
@@ -85,6 +99,21 @@ export function getValueFromItem(item, fieldName) {
 	}
 
 	return item[fieldName];
+}
+
+export function gHash(string) {
+	let hash = 0;
+
+	if (string.length === 0) {
+		return hash;
+	}
+
+	[...string].forEach((char) => {
+		hash = (hash << 7) - hash + char.charCodeAt();
+		hash = hash & hash;
+	});
+
+	return hash;
 }
 
 export function excludeFromList(matchingList, againstList) {
@@ -242,4 +271,26 @@ export function sortByKey(items, keyName) {
 	];
 
 	return sortedItems;
+}
+
+export function isProductPurchasable(
+	availability,
+	productConfiguration,
+	purchasable
+) {
+	if (purchasable === false) {
+		return false;
+	}
+
+	if (productConfiguration.allowBackOrder) {
+		return true;
+	}
+
+	if (
+		availability.stockQuantity > getProductMinQuantity(productConfiguration)
+	) {
+		return true;
+	}
+
+	return false;
 }

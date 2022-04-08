@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import java.nio.file.DirectoryStream;
+import java.nio.file.FileVisitOption;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -44,6 +45,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -108,6 +110,50 @@ public class ModulesStructureTest {
 					_checkoutPrivateAppsDirs, StringUtil.split(dirs));
 			}
 		}
+	}
+
+	@Test
+	public void testScanArchivedProjects() throws IOException {
+		Path archivedPath = _modulesDirPath.resolve("apps/archived");
+
+		if (!Files.exists(archivedPath)) {
+			return;
+		}
+
+		Files.walkFileTree(
+			archivedPath, EnumSet.noneOf(FileVisitOption.class), 2,
+			new SimpleFileVisitor<Path>() {
+
+				@Override
+				public FileVisitResult visitFile(
+						Path path, BasicFileAttributes basicFileAttributes)
+					throws IOException {
+
+					if (Files.isDirectory(path)) {
+						return FileVisitResult.CONTINUE;
+					}
+
+					String fileName = String.valueOf(path.getFileName());
+
+					if (!StringUtil.startsWith(fileName, ".lfrbuild-portal") ||
+						StringUtil.endsWith(fileName, "-deprecated")) {
+
+						return FileVisitResult.CONTINUE;
+					}
+
+					Files.move(
+						path,
+						path.resolveSibling(".lfrbuild-portal-deprecated"));
+
+					Assert.fail(
+						StringBundler.concat(
+							"Renamed archived module build marker to ",
+							"'.lfrbuild-portal-deprecated' ", path));
+
+					return FileVisitResult.CONTINUE;
+				}
+
+			});
 	}
 
 	@Test
@@ -179,18 +225,22 @@ public class ModulesStructureTest {
 							}
 						}
 
-						if (!liferaySpringBootDefaultsPlugin) {
+						if (!dirName.endsWith("poshi-standalone") &&
+							!liferaySpringBootDefaultsPlugin) {
+
 							Assert.assertFalse(
 								"Forbidden " + gradlePropertiesPath,
 								Files.deleteIfExists(gradlePropertiesPath));
 						}
 
-						Path settingsGradlePath = dirPath.resolve(
-							"settings.gradle");
+						if (!dirName.endsWith("poshi-standalone")) {
+							Path settingsGradlePath = dirPath.resolve(
+								"settings.gradle");
 
-						Assert.assertFalse(
-							"Forbidden " + settingsGradlePath,
-							Files.deleteIfExists(settingsGradlePath));
+							Assert.assertFalse(
+								"Forbidden " + settingsGradlePath,
+								Files.deleteIfExists(settingsGradlePath));
+						}
 
 						if (Files.exists(dirPath.resolve("app.bnd"))) {
 							_testEquals(buildGradlePath, _APP_BUILD_GRADLE);
@@ -331,11 +381,8 @@ public class ModulesStructureTest {
 
 					String dirName = String.valueOf(dirPath.getFileName());
 
-					if (_excludedDirNames.contains(dirName)) {
-						return FileVisitResult.SKIP_SUBTREE;
-					}
-
-					if (dirName.equals("archetype-resources") ||
+					if (_excludedDirNames.contains(dirName) ||
+						dirName.equals("archetype-resources") ||
 						dirName.equals("gradleTest")) {
 
 						return FileVisitResult.SKIP_SUBTREE;
@@ -363,7 +410,7 @@ public class ModulesStructureTest {
 
 	@Test
 	public void testScanIgnoreFiles() throws IOException {
-		final String gitRepoGitIgnoreTemplate = StringUtil.read(
+		String gitRepoGitIgnoreTemplate = StringUtil.read(
 			ModulesStructureTest.class, "dependencies/git_repo_gitignore.tmpl");
 		final String themeGitIgnoreTemplate = StringUtil.read(
 			ModulesStructureTest.class, "dependencies/theme_gitignore.tmpl");
@@ -385,12 +432,9 @@ public class ModulesStructureTest {
 					String dirName = String.valueOf(dirPath.getFileName());
 
 					if (dirName.equals("gradleTest") ||
-						dirName.equals("project-templates")) {
+						dirName.equals("project-templates") ||
+						_excludedDirNames.contains(dirName)) {
 
-						return FileVisitResult.SKIP_SUBTREE;
-					}
-
-					if (_excludedDirNames.contains(dirName)) {
 						return FileVisitResult.SKIP_SUBTREE;
 					}
 
@@ -407,7 +451,9 @@ public class ModulesStructureTest {
 					}
 					else if (StringUtil.startsWith(
 								dirName, "frontend-theme-") &&
-							 Files.exists(dirPath.resolve("gulpfile.js"))) {
+							 Files.exists(dirPath.resolve("gulpfile.js")) &&
+							 !Files.exists(
+								 dirPath.resolve(".lfrbuild-releng-ignore"))) {
 
 						_testThemeIgnoreFiles(
 							dirPath, themeGitIgnoreTemplate,
@@ -686,11 +732,9 @@ public class ModulesStructureTest {
 
 				String fileName = String.valueOf(path.getFileName());
 
-				if (!fileName.endsWith(".gradle")) {
-					continue;
-				}
+				if (!fileName.endsWith(".gradle") ||
+					!fileName.startsWith("build-ext-")) {
 
-				if (!fileName.startsWith("build-ext-")) {
 					continue;
 				}
 
@@ -934,20 +978,19 @@ public class ModulesStructureTest {
 			return false;
 		}
 
+		String dirName = String.valueOf(dirPath.getFileName());
 		String name = gradleDependency.getModuleName();
 
-		if (name.equals("com.liferay.ant.bnd") ||
+		if (dirName.endsWith("poshi-standalone") ||
+			name.equals("com.liferay.ant.bnd") ||
 			name.equals("com.liferay.arquillian.extension.junit.bridge") ||
 			name.equals("com.liferay.gradle.plugins.defaults") ||
 			name.equals("com.liferay.portal.cache.test.util") ||
 			name.equals("com.liferay.poshi.core") ||
 			name.equals("com.liferay.whip") ||
-			!name.startsWith("com.liferay.")) {
-
-			return false;
-		}
-
-		if (_isInModulesRootDir(dirPath, "sdk", "third-party", "util") ||
+			!name.startsWith("com.liferay.") ||
+			_isInModulesRootDir(dirPath, "sdk", "third-party", "util") ||
+			Files.exists(dirPath.resolve("settings.gradle")) ||
 			Files.exists(dirPath.resolve(".lfrbuild-ci")) ||
 			_hasGitCommitMarkerFile(dirPath) || _isInGitRepoReadOnly(dirPath) ||
 			_isInPrivateModulesCheckoutDir(dirPath)) {
@@ -1494,17 +1537,13 @@ public class ModulesStructureTest {
 					ModulesStructureTestUtil.read(jsonPath));
 
 				if (matcher.find()) {
-					StringBundler sb = new StringBundler(4);
-
-					sb.append("Version must match the project version (");
-					sb.append(projectVersion);
-					sb.append(") ");
-					sb.append(jsonPath);
-
 					String jsonVersion = matcher.group(2);
 
 					Assert.assertTrue(
-						sb.toString(), jsonVersion.equals(projectVersion));
+						StringBundler.concat(
+							"Version must match the project version (",
+							projectVersion, ") ", jsonPath),
+						jsonVersion.equals(projectVersion));
 				}
 			}
 		}

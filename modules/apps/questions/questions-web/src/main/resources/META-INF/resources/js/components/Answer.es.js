@@ -12,21 +12,23 @@
  * details.
  */
 
-import {useMutation} from '@apollo/client';
 import ClayButton from '@clayui/button';
 import ClayIcon from '@clayui/icon';
+import ClayLabel from '@clayui/label';
 import classnames from 'classnames';
+import {useMutation} from 'graphql-hooks';
 import React, {useCallback, useEffect, useState} from 'react';
 import {withRouter} from 'react-router-dom';
 
 import {
-	client,
 	deleteMessageQuery,
 	markAsAnswerMessageBoardMessageQuery,
 } from '../utils/client.es';
+import lang from '../utils/lang.es';
 import ArticleBodyRenderer from './ArticleBodyRenderer.es';
 import Comments from './Comments.es';
 import Link from './Link.es';
+import Modal from './Modal.es';
 import Rating from './Rating.es';
 import UserRow from './UserRow.es';
 
@@ -42,48 +44,30 @@ export default withRouter(
 		const [comments, setComments] = useState(
 			answer.messageBoardMessages.items
 		);
+		const [dateModified, setDateModified] = useState('');
 		const [showAsAnswer, setShowAsAnswer] = useState(answer.showAsAnswer);
 		const [showNewComment, setShowNewComment] = useState(false);
+		const [showDeleteAnswerModal, setShowDeleteAnswerModal] = useState(
+			false
+		);
 
-		const [deleteMessage] = useMutation(deleteMessageQuery, {
-			onCompleted() {
-				if (comments && comments.length) {
-					Promise.all(
-						comments.map(({id}) =>
-							client.mutate({
-								mutation: deleteMessageQuery,
-								variables: {messageBoardMessageId: id},
-							})
-						)
-					).then(() => {
-						deleteAnswer(answer);
-					});
-				}
-				else {
-					deleteAnswer(answer);
-				}
-			},
-		});
+		const [deleteMessage] = useMutation(deleteMessageQuery);
 
 		const _commentsChange = useCallback((comments) => {
 			setComments([...comments]);
 		}, []);
 
 		const [markAsAnswerMessageBoardMessage] = useMutation(
-			markAsAnswerMessageBoardMessageQuery,
-			{
-				onCompleted() {
-					setShowAsAnswer(!showAsAnswer);
-					if (answerChange) {
-						answerChange(answer.id);
-					}
-				},
-			}
+			markAsAnswerMessageBoardMessageQuery
 		);
 
 		useEffect(() => {
 			setShowAsAnswer(answer.showAsAnswer);
 		}, [answer.showAsAnswer]);
+
+		useEffect(() => {
+			setDateModified(new Date(answer.dateModified).toLocaleDateString());
+		}, [answer.dateModified]);
 
 		return (
 			<>
@@ -103,11 +87,11 @@ export default withRouter(
 									answer.myRating &&
 									answer.myRating.ratingValue
 								}
-								type={'Message'}
+								type="Message"
 							/>
 						</div>
 
-						<div className="c-mb-4 c-mb-md-0 c-ml-3 col-lg-8 col-md-6 col-sm-12 col-xl-9">
+						<div className="c-mb-4 c-mb-md-0 c-ml-3 col-lg-11 col-md-10 col-sm-12 col-xl-11">
 							{showAsAnswer && (
 								<p
 									className="c-mb-0 font-weight-bold text-success"
@@ -121,91 +105,162 @@ export default withRouter(
 								</p>
 							)}
 
+							<span className="text-secondary">
+								{lang.sub(Liferay.Language.get('answered-x'), [
+									dateModified,
+								])}
+							</span>
+
+							{answer.status && answer.status !== 'approved' && (
+								<span className="c-ml-2 text-secondary">
+									<ClayLabel displayType="info">
+										{answer.status}
+									</ClayLabel>
+								</span>
+							)}
+
 							<div className="c-mt-2">
 								<ArticleBodyRenderer {...answer} />
 							</div>
-							{editable && (
-								<ClayButton.Group
-									className="font-weight-bold text-secondary"
-									spaced={true}
-								>
-									{answer.actions['reply-to-message'] && (
-										<ClayButton
-											className="text-reset"
-											displayType="unstyled"
-											onClick={() =>
-												setShowNewComment(true)
-											}
-										>
-											{Liferay.Language.get('reply')}
-										</ClayButton>
-									)}
 
-									{answer.actions.delete && (
-										<ClayButton
-											className="text-reset"
-											displayType="unstyled"
-											onClick={() => {
-												deleteMessage({
-													variables: {
-														messageBoardMessageId:
-															answer.id,
-													},
-												});
-											}}
+							<div className="d-flex justify-content-between">
+								<div>
+									{editable && (
+										<ClayButton.Group
+											className="font-weight-bold text-secondary"
+											spaced={true}
 										>
-											{Liferay.Language.get('delete')}
-										</ClayButton>
-									)}
+											{answer.actions[
+												'reply-to-message'
+											] &&
+												answer.status !== 'pending' && (
+													<ClayButton
+														className="text-reset"
+														displayType="unstyled"
+														onClick={() =>
+															setShowNewComment(
+																true
+															)
+														}
+													>
+														{Liferay.Language.get(
+															'reply'
+														)}
+													</ClayButton>
+												)}
 
-									{canMarkAsAnswer && (
-										<ClayButton
-											className="text-reset"
-											data-testid="mark-as-answer-button"
-											displayType="unstyled"
-											onClick={() => {
-												markAsAnswerMessageBoardMessage(
-													{
-														variables: {
-															messageBoardMessageId:
-																answer.id,
-															showAsAnswer: !showAsAnswer,
-														},
-													}
-												);
-											}}
-										>
-											{Liferay.Language.get(
-												showAsAnswer
-													? 'Unmark as answer'
-													: 'Mark as answer'
+											{answer.actions.delete && (
+												<>
+													<ClayButton
+														className="text-reset"
+														displayType="unstyled"
+														onClick={() => {
+															setShowDeleteAnswerModal(
+																true
+															);
+														}}
+													>
+														{Liferay.Language.get(
+															'delete'
+														)}
+													</ClayButton>
+													<Modal
+														body={Liferay.Language.get(
+															'do-you-want-to-delete–this-answer'
+														)}
+														callback={() => {
+															deleteMessage({
+																variables: {
+																	messageBoardMessageId:
+																		answer.id,
+																},
+															}).then(() => {
+																deleteAnswer(
+																	answer
+																);
+															});
+														}}
+														onClose={() => {
+															setShowDeleteAnswerModal(
+																false
+															);
+														}}
+														status="warning"
+														textPrimaryButton={Liferay.Language.get(
+															'delete'
+														)}
+														title={Liferay.Language.get(
+															'delete-answer'
+														)}
+														visible={
+															showDeleteAnswerModal
+														}
+													/>
+												</>
 											)}
-										</ClayButton>
-									)}
 
-									{/* this is an extra double check, remove it without creating 2 clay-group-item */}
-									{answer.actions.replace && (
-										<ClayButton
-											className="text-reset"
-											displayType="unstyled"
-										>
-											<Link
-												className="text-reset"
-												to={`${url}/answers/${answer.friendlyUrlPath}/edit`}
-											>
-												{Liferay.Language.get('edit')}
-											</Link>
-										</ClayButton>
-									)}
-								</ClayButton.Group>
-							)}
-						</div>
+											{canMarkAsAnswer && (
+												<ClayButton
+													className="text-reset"
+													data-testid="mark-as-answer-button"
+													displayType="unstyled"
+													onClick={() => {
+														markAsAnswerMessageBoardMessage(
+															{
+																variables: {
+																	messageBoardMessageId:
+																		answer.id,
+																	showAsAnswer: !showAsAnswer,
+																},
+															}
+														).then(() => {
+															setShowAsAnswer(
+																!showAsAnswer
+															);
+															if (answerChange) {
+																answerChange(
+																	answer.id
+																);
+															}
+														});
+													}}
+												>
+													{Liferay.Language.get(
+														showAsAnswer
+															? 'Unmark as answer'
+															: 'Mark as answer'
+													)}
+												</ClayButton>
+											)}
 
-						<div className="c-ml-md-auto c-ml-sm-2 c-mr-lg-2 c-mr-md-4 c-mr-xl-2">
-							<UserRow
-								creator={answer.creator}
-								statistics={answer.creatorStatistics}
-							/>
+											{/* this is an extra double check, remove it without creating 2 clay-group-item */}
+
+											{answer.actions.replace && (
+												<ClayButton
+													className="text-reset"
+													displayType="unstyled"
+												>
+													<Link
+														className="text-reset"
+														to={`${url}/answers/${answer.friendlyUrlPath}/edit`}
+													>
+														{Liferay.Language.get(
+															'edit'
+														)}
+													</Link>
+												</ClayButton>
+											)}
+										</ClayButton.Group>
+									)}
+								</div>
+
+								<div className="c-ml-md-auto c-ml-sm-2 c-mr-lg-2 c-mr-md-4 c-mr-xl-2">
+									<UserRow
+										creator={answer.creator}
+										statistics={answer.creatorStatistics}
+									/>
+								</div>
+							</div>
 						</div>
 					</div>
 				</div>

@@ -24,12 +24,16 @@ import com.liferay.knowledge.base.constants.KBPortletKeys;
 import com.liferay.knowledge.base.exception.NoSuchArticleException;
 import com.liferay.knowledge.base.model.KBArticle;
 import com.liferay.knowledge.base.service.KBArticleLocalService;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
 import com.liferay.portal.kernel.security.permission.resource.PortletResourcePermission;
+import com.liferay.portal.kernel.util.HtmlParser;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 
@@ -63,7 +67,7 @@ public class KBArticleAssetRendererFactory
 	public AssetEntry getAssetEntry(String className, long classPK)
 		throws PortalException {
 
-		KBArticle kbArticle = getKBArticle(
+		KBArticle kbArticle = _getKBArticle(
 			classPK, WorkflowConstants.STATUS_ANY);
 
 		return super.getAssetEntry(className, kbArticle.getClassPK());
@@ -76,15 +80,15 @@ public class KBArticleAssetRendererFactory
 		KBArticle kbArticle = null;
 
 		if (type == TYPE_LATEST_APPROVED) {
-			kbArticle = getKBArticle(
+			kbArticle = _getKBArticle(
 				classPK, WorkflowConstants.STATUS_APPROVED);
 		}
 		else {
-			kbArticle = getKBArticle(classPK, WorkflowConstants.STATUS_ANY);
+			kbArticle = _getKBArticle(classPK, WorkflowConstants.STATUS_ANY);
 		}
 
 		KBArticleAssetRenderer kbArticleAssetRenderer =
-			new KBArticleAssetRenderer(kbArticle);
+			new KBArticleAssetRenderer(_htmlParser, kbArticle);
 
 		kbArticleAssetRenderer.setAssetRendererType(type);
 		kbArticleAssetRenderer.setServletContext(_servletContext);
@@ -118,14 +122,14 @@ public class KBArticleAssetRendererFactory
 			LiferayPortletResponse liferayPortletResponse, long classTypeId)
 		throws PortalException {
 
-		PortletURL portletURL = _portal.getControlPanelPortletURL(
-			liferayPortletRequest, getGroup(liferayPortletRequest),
-			KBPortletKeys.KNOWLEDGE_BASE_ADMIN, 0, 0,
-			PortletRequest.RENDER_PHASE);
-
-		portletURL.setParameter("mvcPath", "/admin/edit_article.jsp");
-
-		return portletURL;
+		return PortletURLBuilder.create(
+			_portal.getControlPanelPortletURL(
+				liferayPortletRequest, getGroup(liferayPortletRequest),
+				KBPortletKeys.KNOWLEDGE_BASE_ADMIN, 0, 0,
+				PortletRequest.RENDER_PHASE)
+		).setMVCPath(
+			"/admin/edit_article.jsp"
+		).buildPortletURL();
 	}
 
 	@Override
@@ -153,7 +157,14 @@ public class KBArticleAssetRendererFactory
 		_servletContext = servletContext;
 	}
 
-	protected KBArticle getKBArticle(long classPK, int status)
+	@Reference(unbind = "-")
+	protected void setKBArticleLocalService(
+		KBArticleLocalService kbArticleLocalService) {
+
+		_kbArticleLocalService = kbArticleLocalService;
+	}
+
+	private KBArticle _getKBArticle(long classPK, int status)
 		throws PortalException {
 
 		KBArticle kbArticle = null;
@@ -162,6 +173,10 @@ public class KBArticleAssetRendererFactory
 			kbArticle = _kbArticleLocalService.getKBArticle(classPK);
 		}
 		catch (NoSuchArticleException noSuchArticleException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(noSuchArticleException);
+			}
+
 			kbArticle = _kbArticleLocalService.getLatestKBArticle(
 				classPK, status);
 		}
@@ -169,12 +184,11 @@ public class KBArticleAssetRendererFactory
 		return kbArticle;
 	}
 
-	@Reference(unbind = "-")
-	protected void setKBArticleLocalService(
-		KBArticleLocalService kbArticleLocalService) {
+	private static final Log _log = LogFactoryUtil.getLog(
+		KBArticleAssetRendererFactory.class);
 
-		_kbArticleLocalService = kbArticleLocalService;
-	}
+	@Reference
+	private HtmlParser _htmlParser;
 
 	private KBArticleLocalService _kbArticleLocalService;
 

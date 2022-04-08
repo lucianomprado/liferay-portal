@@ -43,6 +43,8 @@ public class FrontendTokenImpl implements FrontendToken {
 		_jsonLocalizer = frontendTokenDefinitionImpl.createJSONLocalizer(
 			jsonObject);
 
+		_name = jsonObject.getString("name");
+
 		_type = Type.parse(jsonObject.getString("type"));
 
 		if (_type == Type.BOOLEAN) {
@@ -104,8 +106,13 @@ public class FrontendTokenImpl implements FrontendToken {
 	}
 
 	@Override
-	public String getJSON(Locale locale) {
-		return _jsonLocalizer.getJSON(locale);
+	public JSONObject getJSONObject(Locale locale) {
+		return _jsonLocalizer.getJSONObject(locale);
+	}
+
+	@Override
+	public String getName() {
+		return _name;
 	}
 
 	@Override
@@ -118,10 +125,11 @@ public class FrontendTokenImpl implements FrontendToken {
 	}
 
 	private final Object _defaultValue;
-	private Collection<FrontendTokenMapping> _frontendTokenMappings =
+	private final Collection<FrontendTokenMapping> _frontendTokenMappings =
 		new ArrayList<>();
 	private final FrontendTokenSetImpl _frontendTokenSetImpl;
 	private final JSONLocalizer _jsonLocalizer;
+	private final String _name;
 	private final Type _type;
 
 }

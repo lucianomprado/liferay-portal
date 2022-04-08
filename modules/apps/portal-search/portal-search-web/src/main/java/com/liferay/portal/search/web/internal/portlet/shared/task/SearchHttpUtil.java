@@ -50,7 +50,10 @@ public class SearchHttpUtil {
 				JavaConstants.JAVAX_SERVLET_FORWARD_QUERY_STRING);
 		}
 		else {
-			requestURL = String.valueOf(httpServletRequest.getRequestURL());
+			requestURL = _portal.getAbsoluteURL(
+				httpServletRequest,
+				_http.getPath(
+					String.valueOf(httpServletRequest.getRequestURL())));
 
 			queryString = httpServletRequest.getQueryString();
 		}
@@ -79,9 +82,9 @@ public class SearchHttpUtil {
 		String completeURL = sb.toString();
 
 		if (httpServletRequest.isRequestedSessionIdFromURL()) {
-			HttpSession session = httpServletRequest.getSession();
+			HttpSession httpSession = httpServletRequest.getSession();
 
-			String sessionId = session.getId();
+			String sessionId = httpSession.getId();
 
 			completeURL = _portal.getURLWithSessionId(completeURL, sessionId);
 		}

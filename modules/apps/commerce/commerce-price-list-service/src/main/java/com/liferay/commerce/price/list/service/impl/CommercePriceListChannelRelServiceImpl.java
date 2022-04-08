@@ -44,7 +44,8 @@ public class CommercePriceListChannelRelServiceImpl
 
 		return commercePriceListChannelRelLocalService.
 			addCommercePriceListChannelRel(
-				commercePriceListId, commerceChannelId, order, serviceContext);
+				getUserId(), commercePriceListId, commerceChannelId, order,
+				serviceContext);
 	}
 
 	@Override
@@ -63,6 +64,18 @@ public class CommercePriceListChannelRelServiceImpl
 
 		commercePriceListChannelRelLocalService.
 			deleteCommercePriceListChannelRel(commercePriceListChannelRel);
+	}
+
+	@Override
+	public void deleteCommercePriceListChannelRelsByCommercePriceListId(
+			long commercePriceListId)
+		throws PortalException {
+
+		_commercePriceListModelResourcePermission.check(
+			getPermissionChecker(), commercePriceListId, ActionKeys.UPDATE);
+
+		commercePriceListChannelRelLocalService.
+			deleteCommercePriceListChannelRels(commercePriceListId);
 	}
 
 	@Override

@@ -24,17 +24,20 @@ import java.util.regex.Pattern;
  */
 public class BuildRunnerFactory {
 
-	public static BuildRunner<?, ?> newBuildRunner(BuildData buildData) {
+	public static BuildRunner<?> newBuildRunner(BuildData buildData) {
 		String jobName = buildData.getJobName();
 
-		BuildRunner<?, ?> buildRunner = null;
+		BuildRunner<?> buildRunner = null;
 
 		if (jobName.equals("root-cause-analysis-tool")) {
 			buildRunner = new RootCauseAnalysisToolTopLevelBuildRunner(
 				(PortalTopLevelBuildData)buildData);
 		}
-
-		if (jobName.contains("-batch")) {
+		else if (jobName.equals("root-cause-analysis-tool-batch")) {
+			buildRunner = new RootCauseAnalysisBatchBuildRunner(
+				(PortalBatchBuildData)buildData);
+		}
+		else if (jobName.contains("-batch")) {
 			buildRunner = new DefaultPortalBatchBuildRunner(
 				(PortalBatchBuildData)buildData);
 		}
@@ -53,11 +56,22 @@ public class BuildRunnerFactory {
 			}
 		}
 
+		if (jobName.startsWith(
+				"test-qa-websites-functional-daily-controller")) {
+
+			buildRunner = new QAWebsitesControllerBuildRunner(buildData);
+		}
+
+		if (jobName.startsWith("test-results-consistency-report-controller")) {
+			buildRunner = new TestResultsConsistencyReportControllerBuildRunner(
+				(BaseBuildData)buildData);
+		}
+
 		if (buildRunner == null) {
 			throw new RuntimeException("Invalid build data " + buildData);
 		}
 
-		return (BuildRunner<?, ?>)Proxy.newProxyInstance(
+		return (BuildRunner<?>)Proxy.newProxyInstance(
 			BuildRunner.class.getClassLoader(),
 			new Class<?>[] {BuildRunner.class}, new MethodLogger(buildRunner));
 	}

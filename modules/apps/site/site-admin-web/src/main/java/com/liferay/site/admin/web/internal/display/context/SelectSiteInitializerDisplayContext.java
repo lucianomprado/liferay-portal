@@ -14,6 +14,7 @@
 
 package com.liferay.site.admin.web.internal.display.context;
 
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.LayoutSetPrototype;
@@ -90,26 +91,24 @@ public class SelectSiteInitializerDisplayContext {
 		List<SiteInitializerItem> siteInitializerItems =
 			_getSiteInitializerItems();
 
-		siteInitializerItemSearchContainer.setTotal(
+		siteInitializerItemSearchContainer.setResultsAndTotal(
+			() -> ListUtil.subList(
+				siteInitializerItems,
+				siteInitializerItemSearchContainer.getStart(),
+				siteInitializerItemSearchContainer.getEnd()),
 			siteInitializerItems.size());
-
-		siteInitializerItems = ListUtil.subList(
-			siteInitializerItems, siteInitializerItemSearchContainer.getStart(),
-			siteInitializerItemSearchContainer.getEnd());
-
-		siteInitializerItemSearchContainer.setResults(siteInitializerItems);
 
 		return siteInitializerItemSearchContainer;
 	}
 
 	private PortletURL _getPortletURL() {
-		PortletURL portletURL = _renderResponse.createRenderURL();
-
-		portletURL.setParameter(
-			"mvcRenderCommandName", "/site_admin/select_site_initializer");
-		portletURL.setParameter("redirect", getBackURL());
-
-		return portletURL;
+		return PortletURLBuilder.createRenderURL(
+			_renderResponse
+		).setMVCRenderCommandName(
+			"/site_admin/select_site_initializer"
+		).setRedirect(
+			getBackURL()
+		).buildPortletURL();
 	}
 
 	private List<SiteInitializerItem> _getSiteInitializerItems()
@@ -133,13 +132,12 @@ public class SelectSiteInitializerDisplayContext {
 
 		List<SiteInitializer> siteInitializers =
 			_siteInitializerRegistry.getSiteInitializers(
-				themeDisplay.getCompanyId());
+				themeDisplay.getCompanyId(), true);
 
 		for (SiteInitializer siteInitializer : siteInitializers) {
-			SiteInitializerItem siteInitializerItem = new SiteInitializerItem(
-				siteInitializer, themeDisplay.getLocale());
-
-			siteInitializerItems.add(siteInitializerItem);
+			siteInitializerItems.add(
+				new SiteInitializerItem(
+					siteInitializer, themeDisplay.getLocale()));
 		}
 
 		return ListUtil.sort(

@@ -1,4 +1,4 @@
-@component-name = "portal-collaboration"
+@component-name = "portal-lima"
 definition {
 
 	property custom.properties = "locale.default.request=true${line.separator}locale.prepend.friendly.url.style=1";
@@ -32,9 +32,9 @@ definition {
 			groupName = "Site Name",
 			layoutName = "Canonical URL Test Page");
 
-		SitePages.openPagesAdmin(siteURLKey = "site-name");
+		PagesAdmin.openPagesAdmin(siteURLKey = "site-name");
 
-		SitePages.gotoPageMenuItem(
+		PagesAdmin.gotoPageEllipsisMenuItem(
 			menuItem = "Configure",
 			pageName = "Canonical URL Test Page");
 
@@ -91,7 +91,13 @@ definition {
 		}
 
 		AssertTextEquals(
-			locator1 = "Message#INFO",
+			key_text = "http://localhost:8080/web/guest/canonical-url-test-page",
+			locator1 = "TextInput#CUSTOM_CANONICAL_URL_ENABLED",
+			value1 = "http://localhost:8080/web/guest/canonical-url-test-page");
+
+		AssertVisible(
+			key_infoMessage = "Info:Due to the customization of the canonical URL, depending on the platform this page is shared, the Open Graph metadata shown might not be the one configured in this page.",
+			locator1 = "Message#INFO_SPECIFIC",
 			value1 = "Info:Due to the customization of the canonical URL, depending on the platform this page is shared, the Open Graph metadata shown might not be the one configured in this page.");
 
 		Type(
@@ -104,7 +110,7 @@ definition {
 
 		Navigator.gotoPage(pageName = "Canonical URL Test Page");
 
-		Page.assertCanonicalURL(portalURL = "http://mycustomizedurl.com/mydesiredurl");
+		Page.assertCanonicalURL(customCanonicalURL = "http://mycustomizedurl.com/mydesiredurl");
 	}
 
 	@description = "This ensures that canonical URLs can be set for each active language during page creation."
@@ -126,37 +132,61 @@ definition {
 			groupName = "Site Name",
 			layoutName = "Test Page");
 
-		SitePages.openPagesAdmin(siteURLKey = "site-name");
+		PagesAdmin.openPagesAdmin(siteURLKey = "site-name");
 
-		SitePages.gotoPageMenuItem(
+		PagesAdmin.gotoPageEllipsisMenuItem(
 			menuItem = "Configure",
 			pageName = "Test Page");
 
-		Navigator.gotoNavTab(navTab = "SEO");
-
-		Page.configureCanonicalURL(customCanonicalURL = "localhost:8080/english-canonical-url");
-
-		Page.configureCanonicalURL(
-			customCanonicalURL = "localhost:8080/spain-canonical-url",
-			locale = "es-ES");
-
-		Page.configureCanonicalURL(
-			customCanonicalURL = "localhost:8080/chinese-canonical-url",
-			locale = "zh-CN");
+		PagesAdmin.addLocalizedCanonicalURL(
+			localeList = "en-US,es-ES,zh-CN",
+			localizedCanonicalURLList = "localhost:8080/english-canonical-url,localhost:8080/spain-canonical-url,localhost:8080/chinese-canonical-url");
 
 		User.logoutPG();
 
 		Navigator.openSpecificURL(url = "${portalURL}/en/web/site-name/test-page");
 
-		Page.assertCanonicalURL(portalURL = "localhost:8080/english-canonical-url");
+		Page.assertCanonicalURL(customCanonicalURL = "localhost:8080/english-canonical-url");
 
 		Navigator.openSpecificURL(url = "${portalURL}/es/web/site-name/test-page");
 
-		Page.assertCanonicalURL(portalURL = "localhost:8080/spain-canonical-url");
+		Page.assertCanonicalURL(customCanonicalURL = "localhost:8080/spain-canonical-url");
 
 		Navigator.openSpecificURL(url = "${portalURL}/zh/web/site-name/test-page");
 
-		Page.assertCanonicalURL(portalURL = "localhost:8080/chinese-canonical-url");
+		Page.assertCanonicalURL(customCanonicalURL = "localhost:8080/chinese-canonical-url");
+	}
+
+	@description = "This test covers LPS-122797. It ensures that the Canonical URL does not have a limit of 75 characters."
+	@priority = "4"
+	test SetCustomURLWith76Characters {
+		JSONGroup.addGroup(groupName = "Site Name");
+
+		JSONLayout.addPublicLayout(
+			groupName = "Site Name",
+			layoutName = "Canonical URL Test Page");
+
+		PagesAdmin.openPagesAdmin(siteURLKey = "site-name");
+
+		PagesAdmin.gotoPageEllipsisMenuItem(
+			menuItem = "Configure",
+			pageName = "Canonical URL Test Page");
+
+		Navigator.gotoNavTab(navTab = "SEO");
+
+		Click(
+			checkboxName = "Use Custom Canonical URL",
+			locator1 = "Checkbox#ANY_CHECKBOX");
+
+		Type(
+			locator1 = "TextInput#CUSTOM_CANONICAL_URL",
+			value1 = "http://mycustomizedcharactersurl.com/mydesiredmorethan75charactersurlfortest");
+
+		PortletEntry.save();
+
+		AssertTextEquals(
+			locator1 = "TextInput#CUSTOM_CANONICAL_URL",
+			value1 = "http://mycustomizedcharactersurl.com/mydesiredmorethan75charactersurlfortest");
 	}
 
 	@priority = "5"
@@ -241,6 +271,31 @@ definition {
 		Page.assertAlternateURL(
 			locale = "es",
 			portalURL = "${portalURL}");
+	}
+
+	@description = "This test covers LPS-127840. It ensures that the Canonical URL has page name."
+	@priority = "3"
+	test ViewPageNameInCanonicalURL {
+		property custom.properties = "virtual.hosts.valid.hosts=localhost,127.0.0.1,www.able.com";
+		property test.name.skip.portal.instance = "CanonicalURL#ViewPageNameInCanonicalURL";
+
+		for (var num : list "1,2") {
+			JSONLayout.addPublicLayout(
+				groupName = "Guest",
+				layoutName = "page${num}");
+		}
+
+		Site.openSiteSettingsAdmin(siteURLKey = "guest");
+
+		Site.addVirtualHostsURLCP(
+			publicPageVirtualHostURL = "www.able.com",
+			publicVirtualHosts = "true");
+
+		User.logoutPG();
+
+		Navigator.openSpecificURL(url = "http://www.able.com:8080/page2");
+
+		Page.assertCanonicalURL(customCanonicalURL = "http://www.able.com:8080/page2");
 	}
 
 }

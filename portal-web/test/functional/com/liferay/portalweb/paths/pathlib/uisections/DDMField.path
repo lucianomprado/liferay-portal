@@ -2,15 +2,17 @@
 <head>
 <title>DDMField</title>
 </head>
+
 <body>
-<table cellpadding="1" cellspacing="1" border="1">
+<table border="1" cellpadding="1" cellspacing="1">
 <thead>
 <tr><td rowspan="1" colspan="3">DDMField</td></tr>
 </thead>
+
 <tbody>
 <tr>
 	<td>BOOLEAN</td>
-	<td>//div[@data-fieldname='${key_fieldName}']//label[@class='checkbox']</td>
+	<td>//div[@data-field-name='${key_fieldName}']//label[contains(.,'Boolean')]//input[@type='checkbox']</td>
 	<td></td>
 </tr>
 <tr>
@@ -19,13 +21,18 @@
 	<td></td>
 </tr>
 <tr>
-	<td>FIELD_DUPLICATE</td>
-	<td>//label[contains(.,'${key_fieldName}')]/..//button[@*='Duplicate']</td>
+	<td>GEOLOCATION</td>
+	<td>//div[@data-fieldname='${key_fieldName}']//span[contains(.,'${key_fieldFieldLabel}')]</td>
 	<td></td>
 </tr>
 <tr>
-	<td>GEOLOCATION</td>
-	<td>//div[@data-fieldname='${key_fieldName}']//span[contains(.,'${key_fieldFieldLabel}')]</td>
+	<td>GEOLOCATION_MAP</td>
+	<td>//div[contains(@class,'lfr-map')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>GEOLOCATION_MAP_INPUT</td>
+	<td>//div[contains(@class,'field-group')]//div[contains(@id,'Container')]/following-sibling::input | //div[contains(@class,'lfr-map')]/following-sibling::input</td>
 	<td></td>
 </tr>
 <tr>
@@ -41,6 +48,11 @@
 <tr>
 	<td>MULTIPLE_LINES</td>
 	<td>//label[normalize-space(text())='${key_fieldFieldLabel}']//following-sibling::textarea</td>
+	<td></td>
+</tr>
+<tr>
+	<td>MULTIPLE_LINES_2</td>
+	<td>xpath=(//label[normalize-space(text())='${key_fieldFieldLabel}']//following-sibling::textarea)[2]</td>
 	<td></td>
 </tr>
 <tr>
@@ -60,12 +72,12 @@
 </tr>
 <tr>
 	<td>SELECT_FROM_LIST</td>
-	<td>//label[normalize-space(text())='${key_fieldFieldLabel}']//following-sibling::select</td>
+	<td>//label[normalize-space(text())='${key_fieldFieldLabel}']//following-sibling::div[contains(@class,'form-builder-select-field')]//div[contains(@class,'option-selected')]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>SEPARATOR</td>
-	<td>//label[normalize-space(text())='${key_fieldFieldLabel}']//div[contains(@class,'separator')]</td>
+	<td>//label[normalize-space(text())='${key_fieldFieldLabel}']/following-sibling::hr[contains(@class,'separator')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -74,13 +86,28 @@
 	<td></td>
 </tr>
 <tr>
+	<td>CUSTOM_TEXT_BOX</td>
+	<td>//div[contains(@class,'ddm-field')][${key_position}]//textarea</td>
+	<td></td>
+</tr>
+<tr>
 	<td>WEB_CONTENT</td>
-	<td>//div[@data-fieldname='${key_fieldName}']//label[contains(.,'${key_fieldFieldLabel}')]</td>
+	<td>//div[@data-field-name='${key_fieldName}']//label[contains(.,'${key_fieldFieldLabel}')]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>WEB_CONTENT_TITLE_SELECTED</td>
 	<td>//div[@data-fieldname='${key_fieldName}']//input[@value='${key_fieldData}']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>REMOVE_REPEATED_FIELD</td>
+	<td>//div[contains(@data-field-name,'${key_fieldName}')]/..//button[@*='Remove']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>REMOVE_SPECIFIC_REPEATED_FIELD</td>
+	<td>//div[@class='ddm-field' and contains(.,'${key_fieldValue}')]//button[@class= 'ddm-form-field-repeatable-delete-button p-0 btn btn-sm btn-primary']</td>
 	<td></td>
 </tr>
 </tbody>

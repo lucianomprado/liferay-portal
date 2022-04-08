@@ -20,8 +20,8 @@ import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.upgrade.DummyUpgradeStep;
 import com.liferay.portal.upgrade.registry.UpgradeStepRegistrator;
 import com.liferay.portal.workflow.kaleo.designer.web.internal.upgrade.v1_0_0.UpgradePortletId;
-import com.liferay.portal.workflow.kaleo.designer.web.internal.upgrade.v1_0_1.UpgradeKaleoDefinitionVersion;
-import com.liferay.portal.workflow.kaleo.designer.web.internal.upgrade.v1_0_2.UpgradeKaleoDefinition;
+import com.liferay.portal.workflow.kaleo.designer.web.internal.upgrade.v1_0_1.KaleoDefinitionVersionUpgradeProcess;
+import com.liferay.portal.workflow.kaleo.designer.web.internal.upgrade.v1_0_2.KaleoDefinitionUpgradeProcess;
 import com.liferay.portal.workflow.kaleo.service.KaleoDefinitionLocalService;
 import com.liferay.portal.workflow.kaleo.service.KaleoDefinitionVersionLocalService;
 
@@ -36,19 +36,19 @@ public class KaleoDesignerWebUpgrade implements UpgradeStepRegistrator {
 
 	@Override
 	public void register(Registry registry) {
-		registry.register("0.0.0", "1.0.0", new DummyUpgradeStep());
+		registry.register("0.0.0", "1.0.2", new DummyUpgradeStep());
 
 		registry.register("0.0.1", "1.0.0", new UpgradePortletId());
 
 		registry.register(
 			"1.0.0", "1.0.1",
-			new UpgradeKaleoDefinitionVersion(
+			new KaleoDefinitionVersionUpgradeProcess(
 				_counterLocalService, _kaleoDefinitionLocalService,
 				_kaleoDefinitionVersionLocalService, _userLocalService));
 
 		registry.register(
 			"1.0.1", "1.0.2",
-			new UpgradeKaleoDefinition(
+			new KaleoDefinitionUpgradeProcess(
 				_counterLocalService, _kaleoDefinitionLocalService,
 				_userLocalService));
 	}

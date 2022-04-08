@@ -23,7 +23,6 @@ import com.liferay.dynamic.data.mapping.model.Value;
 import com.liferay.dynamic.data.mapping.service.DDMFormInstanceRecordLocalService;
 import com.liferay.dynamic.data.mapping.storage.DDMFormFieldValue;
 import com.liferay.dynamic.data.mapping.storage.DDMFormValues;
-import com.liferay.portal.json.JSONFactoryImpl;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
@@ -32,6 +31,7 @@ import com.liferay.portal.kernel.search.BaseModelSearchResult;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -39,6 +39,8 @@ import java.util.List;
 
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -54,10 +56,13 @@ import org.powermock.api.mockito.PowerMockito;
 @RunWith(MockitoJUnitRunner.class)
 public class TextDDMFormFieldTypeReportProcessorTest extends PowerMockito {
 
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
+
 	@Before
 	public void setUp() {
-		_setUpJSONFactoryUtil();
-
 		_textDDMFormFieldTypeReportProcessor.ddmFormInstanceRecordLocalService =
 			_ddmFormInstanceRecordLocalService;
 	}
@@ -509,7 +514,7 @@ public class TextDDMFormFieldTypeReportProcessorTest extends PowerMockito {
 		DDMFormValues ddmFormValues = mock(DDMFormValues.class);
 
 		when(
-			ddmFormValues.getDDMFormFieldValuesMap(false)
+			ddmFormValues.getDDMFormFieldValuesMap(true)
 		).thenReturn(
 			HashMapBuilder.<String, List<DDMFormFieldValue>>put(
 				"field1", Arrays.asList(ddmFormFieldValue)
@@ -526,12 +531,6 @@ public class TextDDMFormFieldTypeReportProcessorTest extends PowerMockito {
 		);
 
 		return ddmFormInstanceRecord;
-	}
-
-	private void _setUpJSONFactoryUtil() {
-		JSONFactoryUtil jsonFactoryUtil = new JSONFactoryUtil();
-
-		jsonFactoryUtil.setJSONFactory(new JSONFactoryImpl());
 	}
 
 	private static final int _VALUES_MAX_LENGTH = 5;

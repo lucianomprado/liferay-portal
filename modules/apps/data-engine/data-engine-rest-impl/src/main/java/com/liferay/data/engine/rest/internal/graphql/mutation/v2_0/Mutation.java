@@ -33,6 +33,7 @@ import com.liferay.portal.kernel.service.RoleLocalService;
 import com.liferay.portal.vulcan.accept.language.AcceptLanguage;
 import com.liferay.portal.vulcan.graphql.annotation.GraphQLField;
 import com.liferay.portal.vulcan.graphql.annotation.GraphQLName;
+import com.liferay.portal.vulcan.pagination.Page;
 
 import java.util.function.BiFunction;
 
@@ -138,6 +139,20 @@ public class Mutation {
 	}
 
 	@GraphQLField
+	public DataDefinition patchDataDefinition(
+			@GraphQLName("dataDefinitionId") Long dataDefinitionId,
+			@GraphQLName("dataDefinition") DataDefinition dataDefinition)
+		throws Exception {
+
+		return _applyComponentServiceObjects(
+			_dataDefinitionResourceComponentServiceObjects,
+			this::_populateResourceContext,
+			dataDefinitionResource ->
+				dataDefinitionResource.patchDataDefinition(
+					dataDefinitionId, dataDefinition));
+	}
+
+	@GraphQLField
 	public DataDefinition updateDataDefinition(
 			@GraphQLName("dataDefinitionId") Long dataDefinitionId,
 			@GraphQLName("dataDefinition") DataDefinition dataDefinition)
@@ -165,20 +180,24 @@ public class Mutation {
 	}
 
 	@GraphQLField
-	public boolean updateDataDefinitionPermission(
-			@GraphQLName("dataDefinitionId") Long dataDefinitionId,
-			@GraphQLName("permissions")
-				com.liferay.portal.vulcan.permission.Permission[] permissions)
+	public java.util.Collection<com.liferay.portal.vulcan.permission.Permission>
+			updateDataDefinitionPermissionsPage(
+				@GraphQLName("dataDefinitionId") Long dataDefinitionId,
+				@GraphQLName("permissions")
+					com.liferay.portal.vulcan.permission.Permission[]
+						permissions)
 		throws Exception {
 
-		_applyVoidComponentServiceObjects(
+		return _applyComponentServiceObjects(
 			_dataDefinitionResourceComponentServiceObjects,
 			this::_populateResourceContext,
-			dataDefinitionResource ->
-				dataDefinitionResource.putDataDefinitionPermission(
-					dataDefinitionId, permissions));
+			dataDefinitionResource -> {
+				Page paginationPage =
+					dataDefinitionResource.putDataDefinitionPermissionsPage(
+						dataDefinitionId, permissions);
 
-		return true;
+				return paginationPage.getItems();
+			});
 	}
 
 	@GraphQLField
@@ -197,7 +216,7 @@ public class Mutation {
 	}
 
 	@GraphQLField
-	public boolean deleteDataLayoutsDataDefinition(
+	public boolean deleteDataDefinitionDataLayout(
 			@GraphQLName("dataDefinitionId") Long dataDefinitionId)
 		throws Exception {
 
@@ -205,7 +224,7 @@ public class Mutation {
 			_dataLayoutResourceComponentServiceObjects,
 			this::_populateResourceContext,
 			dataLayoutResource ->
-				dataLayoutResource.deleteDataLayoutsDataDefinition(
+				dataLayoutResource.deleteDataDefinitionDataLayout(
 					dataDefinitionId));
 
 		return true;
@@ -308,7 +327,7 @@ public class Mutation {
 	}
 
 	@GraphQLField
-	public boolean deleteDataListViewsDataDefinition(
+	public boolean deleteDataDefinitionDataListView(
 			@GraphQLName("dataDefinitionId") Long dataDefinitionId)
 		throws Exception {
 
@@ -316,7 +335,7 @@ public class Mutation {
 			_dataListViewResourceComponentServiceObjects,
 			this::_populateResourceContext,
 			dataListViewResource ->
-				dataListViewResource.deleteDataListViewsDataDefinition(
+				dataListViewResource.deleteDataDefinitionDataListView(
 					dataDefinitionId));
 
 		return true;
@@ -620,20 +639,26 @@ public class Mutation {
 	}
 
 	@GraphQLField
-	public boolean updateDataRecordCollectionPermission(
-			@GraphQLName("dataRecordCollectionId") Long dataRecordCollectionId,
-			@GraphQLName("permissions")
-				com.liferay.portal.vulcan.permission.Permission[] permissions)
+	public java.util.Collection<com.liferay.portal.vulcan.permission.Permission>
+			updateDataRecordCollectionPermissionsPage(
+				@GraphQLName("dataRecordCollectionId") Long
+					dataRecordCollectionId,
+				@GraphQLName("permissions")
+					com.liferay.portal.vulcan.permission.Permission[]
+						permissions)
 		throws Exception {
 
-		_applyVoidComponentServiceObjects(
+		return _applyComponentServiceObjects(
 			_dataRecordCollectionResourceComponentServiceObjects,
 			this::_populateResourceContext,
-			dataRecordCollectionResource ->
-				dataRecordCollectionResource.putDataRecordCollectionPermission(
-					dataRecordCollectionId, permissions));
+			dataRecordCollectionResource -> {
+				Page paginationPage =
+					dataRecordCollectionResource.
+						putDataRecordCollectionPermissionsPage(
+							dataRecordCollectionId, permissions);
 
-		return true;
+				return paginationPage.getItems();
+			});
 	}
 
 	private <T, R, E1 extends Throwable, E2 extends Throwable> R

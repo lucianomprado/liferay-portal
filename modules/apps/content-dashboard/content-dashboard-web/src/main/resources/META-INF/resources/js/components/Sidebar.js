@@ -14,8 +14,8 @@
 
 import {ClayButtonWithIcon} from '@clayui/button';
 import ClayLayout from '@clayui/layout';
+import {useTimeout} from '@liferay/frontend-js-react-web';
 import classNames from 'classnames';
-import {useTimeout} from 'frontend-js-react-web';
 import React, {useContext, useEffect, useState} from 'react';
 
 const SidebarContext = React.createContext();
@@ -32,27 +32,26 @@ const SidebarHeader = ({title}) => {
 	const {onClose} = useContext(SidebarContext);
 
 	return (
-		<div className="sidebar-header">
-			<ClayLayout.ContentRow
-				className="sidebar-section"
-				verticalAlign="center"
-			>
-				<ClayLayout.ContentCol expand>
-					<div className="font-weight-bold text-truncate-inline">
-						<span className="text-truncate">{title}</span>
-					</div>
+		<section className="sidebar-header">
+			<ClayLayout.ContentRow className="sidebar-section">
+				<ClayLayout.ContentCol
+					className="justify-content-center"
+					expand
+				>
+					<p className="font-weight-bold mb-0 pr-2">{title}</p>
 				</ClayLayout.ContentCol>
 
 				<ClayLayout.ContentCol>
 					<ClayButtonWithIcon
-						className="component-action"
+						aria-label="Close"
+						className="mt-n2 text-secondary"
 						displayType="unstyled"
 						onClick={onClose}
-						symbol="times-small"
+						symbol="times"
 					/>
 				</ClayLayout.ContentCol>
 			</ClayLayout.ContentRow>
-		</div>
+		</section>
 	);
 };
 
@@ -82,10 +81,12 @@ const Sidebar = ({children, onClose = noop, open = true}) => {
 	}, [isOpen]);
 
 	return (
-		<div className="content-dashboard sidebar sidebar-light sidebar-sm">
-			<SidebarContext.Provider value={{onClose}}>
-				{children}
-			</SidebarContext.Provider>
+		<div className="cadmin">
+			<div className="content-dashboard sidebar sidebar-light sidebar-sm">
+				<SidebarContext.Provider value={{onClose}}>
+					{children}
+				</SidebarContext.Provider>
+			</div>
 		</div>
 	);
 };

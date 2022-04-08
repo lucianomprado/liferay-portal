@@ -28,12 +28,12 @@ import com.liferay.headless.commerce.admin.catalog.client.pagination.Page;
 import com.liferay.headless.commerce.admin.catalog.client.pagination.Pagination;
 import com.liferay.headless.commerce.admin.catalog.client.resource.v1_0.ProductOptionValueResource;
 import com.liferay.headless.commerce.admin.catalog.client.serdes.v1_0.ProductOptionValueSerDes;
+import com.liferay.petra.function.UnsafeTriConsumer;
 import com.liferay.petra.reflect.ReflectionUtil;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
-import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Group;
@@ -50,13 +50,14 @@ import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.vulcan.resource.EntityModelResource;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 
 import java.text.DateFormat;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -68,7 +69,9 @@ import javax.annotation.Generated;
 
 import javax.ws.rs.core.MultivaluedHashMap;
 
+import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.BeanUtilsBean;
+import org.apache.commons.lang.time.DateUtils;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -197,19 +200,18 @@ public abstract class BaseProductOptionValueResourceTestCase {
 	public void testGetProductOptionIdProductOptionValuesPage()
 		throws Exception {
 
-		Page<ProductOptionValue> page =
-			productOptionValueResource.
-				getProductOptionIdProductOptionValuesPage(
-					testGetProductOptionIdProductOptionValuesPage_getId(),
-					Pagination.of(1, 2));
-
-		Assert.assertEquals(0, page.getTotalCount());
-
 		Long id = testGetProductOptionIdProductOptionValuesPage_getId();
 		Long irrelevantId =
 			testGetProductOptionIdProductOptionValuesPage_getIrrelevantId();
 
-		if ((irrelevantId != null)) {
+		Page<ProductOptionValue> page =
+			productOptionValueResource.
+				getProductOptionIdProductOptionValuesPage(
+					id, null, Pagination.of(1, 10), null);
+
+		Assert.assertEquals(0, page.getTotalCount());
+
+		if (irrelevantId != null) {
 			ProductOptionValue irrelevantProductOptionValue =
 				testGetProductOptionIdProductOptionValuesPage_addProductOptionValue(
 					irrelevantId, randomIrrelevantProductOptionValue());
@@ -217,7 +219,7 @@ public abstract class BaseProductOptionValueResourceTestCase {
 			page =
 				productOptionValueResource.
 					getProductOptionIdProductOptionValuesPage(
-						irrelevantId, Pagination.of(1, 2));
+						irrelevantId, null, Pagination.of(1, 2), null);
 
 			Assert.assertEquals(1, page.getTotalCount());
 
@@ -238,7 +240,7 @@ public abstract class BaseProductOptionValueResourceTestCase {
 		page =
 			productOptionValueResource.
 				getProductOptionIdProductOptionValuesPage(
-					id, Pagination.of(1, 2));
+					id, null, Pagination.of(1, 10), null);
 
 		Assert.assertEquals(2, page.getTotalCount());
 
@@ -269,7 +271,7 @@ public abstract class BaseProductOptionValueResourceTestCase {
 		Page<ProductOptionValue> page1 =
 			productOptionValueResource.
 				getProductOptionIdProductOptionValuesPage(
-					id, Pagination.of(1, 2));
+					id, null, Pagination.of(1, 2), null);
 
 		List<ProductOptionValue> productOptionValues1 =
 			(List<ProductOptionValue>)page1.getItems();
@@ -280,7 +282,7 @@ public abstract class BaseProductOptionValueResourceTestCase {
 		Page<ProductOptionValue> page2 =
 			productOptionValueResource.
 				getProductOptionIdProductOptionValuesPage(
-					id, Pagination.of(2, 2));
+					id, null, Pagination.of(2, 2), null);
 
 		Assert.assertEquals(3, page2.getTotalCount());
 
@@ -293,12 +295,160 @@ public abstract class BaseProductOptionValueResourceTestCase {
 		Page<ProductOptionValue> page3 =
 			productOptionValueResource.
 				getProductOptionIdProductOptionValuesPage(
-					id, Pagination.of(1, 3));
+					id, null, Pagination.of(1, 3), null);
 
 		assertEqualsIgnoringOrder(
 			Arrays.asList(
 				productOptionValue1, productOptionValue2, productOptionValue3),
 			(List<ProductOptionValue>)page3.getItems());
+	}
+
+	@Test
+	public void testGetProductOptionIdProductOptionValuesPageWithSortDateTime()
+		throws Exception {
+
+		testGetProductOptionIdProductOptionValuesPageWithSort(
+			EntityField.Type.DATE_TIME,
+			(entityField, productOptionValue1, productOptionValue2) -> {
+				BeanUtils.setProperty(
+					productOptionValue1, entityField.getName(),
+					DateUtils.addMinutes(new Date(), -2));
+			});
+	}
+
+	@Test
+	public void testGetProductOptionIdProductOptionValuesPageWithSortDouble()
+		throws Exception {
+
+		testGetProductOptionIdProductOptionValuesPageWithSort(
+			EntityField.Type.DOUBLE,
+			(entityField, productOptionValue1, productOptionValue2) -> {
+				BeanUtils.setProperty(
+					productOptionValue1, entityField.getName(), 0.1);
+				BeanUtils.setProperty(
+					productOptionValue2, entityField.getName(), 0.5);
+			});
+	}
+
+	@Test
+	public void testGetProductOptionIdProductOptionValuesPageWithSortInteger()
+		throws Exception {
+
+		testGetProductOptionIdProductOptionValuesPageWithSort(
+			EntityField.Type.INTEGER,
+			(entityField, productOptionValue1, productOptionValue2) -> {
+				BeanUtils.setProperty(
+					productOptionValue1, entityField.getName(), 0);
+				BeanUtils.setProperty(
+					productOptionValue2, entityField.getName(), 1);
+			});
+	}
+
+	@Test
+	public void testGetProductOptionIdProductOptionValuesPageWithSortString()
+		throws Exception {
+
+		testGetProductOptionIdProductOptionValuesPageWithSort(
+			EntityField.Type.STRING,
+			(entityField, productOptionValue1, productOptionValue2) -> {
+				Class<?> clazz = productOptionValue1.getClass();
+
+				String entityFieldName = entityField.getName();
+
+				java.lang.reflect.Method method = clazz.getMethod(
+					"get" + StringUtil.upperCaseFirstLetter(entityFieldName));
+
+				Class<?> returnType = method.getReturnType();
+
+				if (returnType.isAssignableFrom(Map.class)) {
+					BeanUtils.setProperty(
+						productOptionValue1, entityFieldName,
+						Collections.singletonMap("Aaa", "Aaa"));
+					BeanUtils.setProperty(
+						productOptionValue2, entityFieldName,
+						Collections.singletonMap("Bbb", "Bbb"));
+				}
+				else if (entityFieldName.contains("email")) {
+					BeanUtils.setProperty(
+						productOptionValue1, entityFieldName,
+						"aaa" +
+							StringUtil.toLowerCase(
+								RandomTestUtil.randomString()) +
+									"@liferay.com");
+					BeanUtils.setProperty(
+						productOptionValue2, entityFieldName,
+						"bbb" +
+							StringUtil.toLowerCase(
+								RandomTestUtil.randomString()) +
+									"@liferay.com");
+				}
+				else {
+					BeanUtils.setProperty(
+						productOptionValue1, entityFieldName,
+						"aaa" +
+							StringUtil.toLowerCase(
+								RandomTestUtil.randomString()));
+					BeanUtils.setProperty(
+						productOptionValue2, entityFieldName,
+						"bbb" +
+							StringUtil.toLowerCase(
+								RandomTestUtil.randomString()));
+				}
+			});
+	}
+
+	protected void testGetProductOptionIdProductOptionValuesPageWithSort(
+			EntityField.Type type,
+			UnsafeTriConsumer
+				<EntityField, ProductOptionValue, ProductOptionValue, Exception>
+					unsafeTriConsumer)
+		throws Exception {
+
+		List<EntityField> entityFields = getEntityFields(type);
+
+		if (entityFields.isEmpty()) {
+			return;
+		}
+
+		Long id = testGetProductOptionIdProductOptionValuesPage_getId();
+
+		ProductOptionValue productOptionValue1 = randomProductOptionValue();
+		ProductOptionValue productOptionValue2 = randomProductOptionValue();
+
+		for (EntityField entityField : entityFields) {
+			unsafeTriConsumer.accept(
+				entityField, productOptionValue1, productOptionValue2);
+		}
+
+		productOptionValue1 =
+			testGetProductOptionIdProductOptionValuesPage_addProductOptionValue(
+				id, productOptionValue1);
+
+		productOptionValue2 =
+			testGetProductOptionIdProductOptionValuesPage_addProductOptionValue(
+				id, productOptionValue2);
+
+		for (EntityField entityField : entityFields) {
+			Page<ProductOptionValue> ascPage =
+				productOptionValueResource.
+					getProductOptionIdProductOptionValuesPage(
+						id, null, Pagination.of(1, 2),
+						entityField.getName() + ":asc");
+
+			assertEquals(
+				Arrays.asList(productOptionValue1, productOptionValue2),
+				(List<ProductOptionValue>)ascPage.getItems());
+
+			Page<ProductOptionValue> descPage =
+				productOptionValueResource.
+					getProductOptionIdProductOptionValuesPage(
+						id, null, Pagination.of(1, 2),
+						entityField.getName() + ":desc");
+
+			assertEquals(
+				Arrays.asList(productOptionValue2, productOptionValue1),
+				(List<ProductOptionValue>)descPage.getItems());
+		}
 	}
 
 	protected ProductOptionValue
@@ -352,6 +502,25 @@ public abstract class BaseProductOptionValueResourceTestCase {
 
 		throw new UnsupportedOperationException(
 			"This method needs to be implemented");
+	}
+
+	protected void assertContains(
+		ProductOptionValue productOptionValue,
+		List<ProductOptionValue> productOptionValues) {
+
+		boolean contains = false;
+
+		for (ProductOptionValue item : productOptionValues) {
+			if (equals(productOptionValue, item)) {
+				contains = true;
+
+				break;
+			}
+		}
+
+		Assert.assertTrue(
+			productOptionValues + " does not contain " + productOptionValue,
+			contains);
 	}
 
 	protected void assertHttpResponseStatusCode(
@@ -484,8 +653,8 @@ public abstract class BaseProductOptionValueResourceTestCase {
 	protected List<GraphQLField> getGraphQLFields() throws Exception {
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
-		for (Field field :
-				ReflectionUtil.getDeclaredFields(
+		for (java.lang.reflect.Field field :
+				getDeclaredFields(
 					com.liferay.headless.commerce.admin.catalog.dto.v1_0.
 						ProductOptionValue.class)) {
 
@@ -501,12 +670,13 @@ public abstract class BaseProductOptionValueResourceTestCase {
 		return graphQLFields;
 	}
 
-	protected List<GraphQLField> getGraphQLFields(Field... fields)
+	protected List<GraphQLField> getGraphQLFields(
+			java.lang.reflect.Field... fields)
 		throws Exception {
 
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
-		for (Field field : fields) {
+		for (java.lang.reflect.Field field : fields) {
 			com.liferay.portal.vulcan.graphql.annotation.GraphQLField
 				vulcanGraphQLField = field.getAnnotation(
 					com.liferay.portal.vulcan.graphql.annotation.GraphQLField.
@@ -520,7 +690,7 @@ public abstract class BaseProductOptionValueResourceTestCase {
 				}
 
 				List<GraphQLField> childrenGraphQLFields = getGraphQLFields(
-					ReflectionUtil.getDeclaredFields(clazz));
+					getDeclaredFields(clazz));
 
 				graphQLFields.add(
 					new GraphQLField(field.getName(), childrenGraphQLFields));
@@ -623,6 +793,19 @@ public abstract class BaseProductOptionValueResourceTestCase {
 		return false;
 	}
 
+	protected java.lang.reflect.Field[] getDeclaredFields(Class clazz)
+		throws Exception {
+
+		Stream<java.lang.reflect.Field> stream = Stream.of(
+			ReflectionUtil.getDeclaredFields(clazz));
+
+		return stream.filter(
+			field -> !field.isSynthetic()
+		).toArray(
+			java.lang.reflect.Field[]::new
+		);
+	}
+
 	protected java.util.Collection<EntityField> getEntityFields()
 		throws Exception {
 
@@ -693,8 +876,9 @@ public abstract class BaseProductOptionValueResourceTestCase {
 		}
 
 		if (entityFieldName.equals("priority")) {
-			throw new IllegalArgumentException(
-				"Invalid entity field " + entityFieldName);
+			sb.append(String.valueOf(productOptionValue.getPriority()));
+
+			return sb.toString();
 		}
 
 		throw new IllegalArgumentException(
@@ -807,12 +991,12 @@ public abstract class BaseProductOptionValueResourceTestCase {
 						_parameterMap.entrySet()) {
 
 					sb.append(entry.getKey());
-					sb.append(":");
+					sb.append(": ");
 					sb.append(entry.getValue());
-					sb.append(",");
+					sb.append(", ");
 				}
 
-				sb.setLength(sb.length() - 1);
+				sb.setLength(sb.length() - 2);
 
 				sb.append(")");
 			}
@@ -822,10 +1006,10 @@ public abstract class BaseProductOptionValueResourceTestCase {
 
 				for (GraphQLField graphQLField : _graphQLFields) {
 					sb.append(graphQLField.toString());
-					sb.append(",");
+					sb.append(", ");
 				}
 
-				sb.setLength(sb.length() - 1);
+				sb.setLength(sb.length() - 2);
 
 				sb.append("}");
 			}
@@ -839,8 +1023,8 @@ public abstract class BaseProductOptionValueResourceTestCase {
 
 	}
 
-	private static final Log _log = LogFactoryUtil.getLog(
-		BaseProductOptionValueResourceTestCase.class);
+	private static final com.liferay.portal.kernel.log.Log _log =
+		LogFactoryUtil.getLog(BaseProductOptionValueResourceTestCase.class);
 
 	private static BeanUtilsBean _beanUtilsBean = new BeanUtilsBean() {
 

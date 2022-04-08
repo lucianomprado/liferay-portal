@@ -14,96 +14,153 @@
 
 package com.liferay.commerce.frontend.taglib.servlet.taglib;
 
-import com.liferay.commerce.account.model.CommerceAccount;
 import com.liferay.commerce.constants.CommerceWebKeys;
 import com.liferay.commerce.context.CommerceContext;
 import com.liferay.commerce.frontend.taglib.internal.servlet.ServletContextUtil;
+import com.liferay.commerce.product.catalog.CPCatalogEntry;
 import com.liferay.commerce.product.model.CPDefinition;
 import com.liferay.commerce.product.service.CPDefinitionLocalServiceUtil;
-import com.liferay.commerce.product.util.CPCompareHelperUtil;
-import com.liferay.frontend.js.loader.modules.extender.npm.NPMResolver;
-import com.liferay.frontend.taglib.soy.servlet.taglib.ComponentRendererTag;
+import com.liferay.commerce.product.util.CPCompareHelper;
+import com.liferay.commerce.util.CommerceUtil;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.PortalUtil;
+import com.liferay.portal.kernel.util.CookieKeys;
+import com.liferay.taglib.util.IncludeTag;
 
 import java.util.List;
-import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.jsp.JspException;
+import javax.servlet.jsp.PageContext;
 
 /**
  * @author Fabio Diego Mastrorilli
  */
-public class CompareCheckboxTag extends ComponentRendererTag {
+public class CompareCheckboxTag extends IncludeTag {
 
 	@Override
-	public int doStartTag() {
-		putValue("checkboxVisible", true);
-		putValue("compareAvailable", true);
-		putValue("inCompare", false);
-		putValue("labelVisible", true);
-
-		Map<String, Object> context = getContext();
-
-		long cpDefinitionId = GetterUtil.getLong(context.get("productId"));
-
+	public int doStartTag() throws JspException {
 		try {
 			CPDefinition cpDefinition =
-				CPDefinitionLocalServiceUtil.getCPDefinition(cpDefinitionId);
+				CPDefinitionLocalServiceUtil.getCPDefinition(
+					_cpCatalogEntry.getCPDefinitionId());
 
-			putValue("pictureUrl", cpDefinition.getDefaultImageThumbnailSrc());
-
-			long commerceAccountId = 0;
+			HttpServletRequest httpServletRequest = getRequest();
 
 			CommerceContext commerceContext =
-				(CommerceContext)request.getAttribute(
+				(CommerceContext)httpServletRequest.getAttribute(
 					CommerceWebKeys.COMMERCE_CONTEXT);
 
-			CommerceAccount commerceAccount =
-				commerceContext.getCommerceAccount();
+			long commerceAccountId = CommerceUtil.getCommerceAccountId(
+				commerceContext);
 
-			if (commerceAccount != null) {
-				commerceAccountId = commerceAccount.getCommerceAccountId();
-			}
+			_pictureUrl = cpDefinition.getDefaultImageThumbnailSrc(
+				commerceAccountId);
 
-			HttpServletRequest originalHttpServletRequest =
-				PortalUtil.getOriginalServletRequest(request);
-
-			List<Long> cpDefinitionIds = CPCompareHelperUtil.getCPDefinitionIds(
+			List<Long> cpDefinitionIds = _getCPDefinitionIds(
 				commerceContext.getCommerceChannelGroupId(), commerceAccountId,
-				originalHttpServletRequest.getSession());
+				CookieKeys.getCookie(
+					httpServletRequest,
+					_getCPDefinitionIdsCookieKey(
+						commerceContext.getCommerceChannelGroupId())));
 
-			putValue("inCompare", cpDefinitionIds.contains(cpDefinitionId));
+			_inCompare = cpDefinitionIds.contains(
+				_cpCatalogEntry.getCPDefinitionId());
 		}
 		catch (Exception exception) {
-			_log.error(exception, exception);
-		}
+			_log.error(exception);
 
-		setTemplateNamespace("CompareCheckbox.render");
+			return SKIP_BODY;
+		}
 
 		return super.doStartTag();
 	}
 
+	public CPCatalogEntry getCPCatalogEntry() {
+		return _cpCatalogEntry;
+	}
+
+	public String getLabel() {
+		return _label;
+	}
+
+	public void setCPCatalogEntry(CPCatalogEntry cpCatalogEntry) {
+		_cpCatalogEntry = cpCatalogEntry;
+	}
+
+	public void setLabel(String label) {
+		_label = label;
+	}
+
 	@Override
-	public String getModule() {
-		NPMResolver npmResolver = ServletContextUtil.getNPMResolver();
+	public void setPageContext(PageContext pageContext) {
+		super.setPageContext(pageContext);
 
-		if (npmResolver == null) {
-			return StringPool.BLANK;
-		}
-
-		return npmResolver.resolveModuleName(
-			"commerce-frontend-taglib/compare_checkbox/CompareCheckbox.es");
+		setServletContext(ServletContextUtil.getServletContext());
 	}
 
-	public void setCPDefinitionId(long cpDefinitionId) {
-		putValue("productId", cpDefinitionId);
+	@Override
+	protected void cleanUp() {
+		super.cleanUp();
+
+		_cpCatalogEntry = null;
+		_disabled = false;
+		_inCompare = false;
+		_label = StringPool.BLANK;
+		_pictureUrl = null;
 	}
+
+	@Override
+	protected String getPage() {
+		return _PAGE;
+	}
+
+	@Override
+	protected void setAttributes(HttpServletRequest httpServletRequest) {
+		httpServletRequest.setAttribute(
+			"liferay-commerce:compare-checkbox:cpCatalogEntry",
+			_cpCatalogEntry);
+		httpServletRequest.setAttribute(
+			"liferay-commerce:compare-checkbox:disabled", _disabled);
+		httpServletRequest.setAttribute(
+			"liferay-commerce:compare-checkbox:inCompare", _inCompare);
+		httpServletRequest.setAttribute(
+			"liferay-commerce:compare-checkbox:label", _label);
+		httpServletRequest.setAttribute(
+			"liferay-commerce:compare-checkbox:pictureUrl", _pictureUrl);
+	}
+
+	private List<Long> _getCPDefinitionIds(
+			long groupId, long commerceAccountId,
+			String cpDefinitionIdsCookieValue)
+		throws PortalException {
+
+		CPCompareHelper cpCompareHelper =
+			ServletContextUtil.getCPCompareHelper();
+
+		return cpCompareHelper.getCPDefinitionIds(
+			groupId, commerceAccountId, cpDefinitionIdsCookieValue);
+	}
+
+	private String _getCPDefinitionIdsCookieKey(long commerceChannelGroupId) {
+		CPCompareHelper cpCompareHelper =
+			ServletContextUtil.getCPCompareHelper();
+
+		return cpCompareHelper.getCPDefinitionIdsCookieKey(
+			commerceChannelGroupId);
+	}
+
+	private static final String _PAGE = "/compare_checkbox/page.jsp";
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		CompareCheckboxTag.class);
+
+	private CPCatalogEntry _cpCatalogEntry;
+	private boolean _disabled;
+	private boolean _inCompare;
+	private String _label = StringPool.BLANK;
+	private String _pictureUrl;
 
 }

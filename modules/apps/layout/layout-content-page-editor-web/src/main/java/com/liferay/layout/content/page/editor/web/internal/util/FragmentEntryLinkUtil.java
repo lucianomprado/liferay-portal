@@ -25,6 +25,7 @@ import com.liferay.fragment.renderer.FragmentRenderer;
 import com.liferay.fragment.renderer.FragmentRendererController;
 import com.liferay.fragment.renderer.FragmentRendererTracker;
 import com.liferay.fragment.renderer.constants.FragmentRendererConstants;
+import com.liferay.fragment.service.FragmentEntryLinkLocalServiceUtil;
 import com.liferay.fragment.service.FragmentEntryLinkServiceUtil;
 import com.liferay.fragment.service.FragmentEntryLocalServiceUtil;
 import com.liferay.fragment.util.configuration.FragmentEntryConfigurationParser;
@@ -32,6 +33,7 @@ import com.liferay.item.selector.ItemSelector;
 import com.liferay.layout.content.page.editor.listener.ContentPageEditorListener;
 import com.liferay.layout.content.page.editor.listener.ContentPageEditorListenerTracker;
 import com.liferay.layout.service.LayoutClassedModelUsageLocalServiceUtil;
+import com.liferay.layout.util.structure.LayoutStructureItemCSSUtil;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
@@ -46,7 +48,6 @@ import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
-import com.liferay.segments.constants.SegmentsExperienceConstants;
 
 import java.util.List;
 import java.util.Locale;
@@ -68,8 +69,20 @@ public class FragmentEntryLinkUtil {
 		throws PortalException {
 
 		FragmentEntryLink fragmentEntryLink =
-			FragmentEntryLinkServiceUtil.deleteFragmentEntryLink(
+			FragmentEntryLinkLocalServiceUtil.fetchFragmentEntryLink(
 				fragmentEntryLinkId);
+
+		if (fragmentEntryLink == null) {
+			LayoutClassedModelUsageLocalServiceUtil.
+				deleteLayoutClassedModelUsages(
+					String.valueOf(fragmentEntryLinkId),
+					PortalUtil.getClassNameId(FragmentEntryLink.class), plid);
+
+			return;
+		}
+
+		FragmentEntryLinkServiceUtil.deleteFragmentEntryLink(
+			fragmentEntryLinkId);
 
 		if (fragmentEntryLink.getFragmentEntryId() == 0) {
 			JSONObject jsonObject = JSONFactoryUtil.createJSONObject(
@@ -169,8 +182,6 @@ public class FragmentEntryLinkUtil {
 
 			defaultFragmentRendererContext.setMode(
 				FragmentEntryLinkConstants.EDIT);
-			defaultFragmentRendererContext.setSegmentsExperienceIds(
-				new long[] {SegmentsExperienceConstants.ID_DEFAULT});
 
 			String configuration = fragmentRendererController.getConfiguration(
 				defaultFragmentRendererContext);
@@ -230,6 +241,10 @@ public class FragmentEntryLinkUtil {
 			).put(
 				"content", content
 			).put(
+				"cssClass",
+				LayoutStructureItemCSSUtil.getFragmentEntryLinkCssClass(
+					fragmentEntryLink)
+			).put(
 				"defaultConfigurationValues",
 				fragmentEntryConfigurationParser.
 					getConfigurationDefaultValuesJSONObject(configuration)
@@ -249,6 +264,11 @@ public class FragmentEntryLinkUtil {
 				"icon", icon
 			).put(
 				"name", name
+			).put(
+				"portletId", portletId
+			).put(
+				"segmentsExperienceId",
+				String.valueOf(fragmentEntryLink.getSegmentsExperienceId())
 			);
 		}
 		finally {

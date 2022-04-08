@@ -14,8 +14,8 @@
 
 package com.liferay.asset.auto.tagger.internal.model.listener;
 
-import com.liferay.asset.auto.tagger.internal.AssetAutoTaggerHelper;
 import com.liferay.asset.auto.tagger.internal.constants.AssetAutoTaggerDestinationNames;
+import com.liferay.asset.auto.tagger.internal.helper.AssetAutoTaggerHelper;
 import com.liferay.asset.auto.tagger.model.AssetAutoTaggerEntry;
 import com.liferay.asset.auto.tagger.service.AssetAutoTaggerEntryLocalService;
 import com.liferay.asset.kernel.model.AssetEntry;
@@ -67,7 +67,8 @@ public class AssetEntryModelListener extends BaseModelListener<AssetEntry> {
 	}
 
 	@Override
-	public void onBeforeUpdate(AssetEntry assetEntry)
+	public void onBeforeUpdate(
+			AssetEntry originalAssetEntry, AssetEntry assetEntry)
 		throws ModelListenerException {
 
 		AssetEntry assetEntryFromDatabase =
@@ -77,12 +78,9 @@ public class AssetEntryModelListener extends BaseModelListener<AssetEntry> {
 			TransactionCommitCallbackUtil.registerCallback(
 				(Callable<Void>)() -> {
 					if ((assetEntry.getPublishDate() == null) ||
-						!ListUtil.isEmpty(assetEntry.getTags())) {
+						!ListUtil.isEmpty(assetEntry.getTags()) ||
+						!_assetAutoTaggerHelper.isAutoTaggable(assetEntry)) {
 
-						return null;
-					}
-
-					if (!_assetAutoTaggerHelper.isAutoTaggable(assetEntry)) {
 						return null;
 					}
 

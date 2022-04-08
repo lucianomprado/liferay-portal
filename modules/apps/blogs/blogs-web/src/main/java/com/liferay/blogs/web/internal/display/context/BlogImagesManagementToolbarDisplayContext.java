@@ -16,9 +16,11 @@ package com.liferay.blogs.web.internal.display.context;
 
 import com.liferay.blogs.constants.BlogsPortletKeys;
 import com.liferay.blogs.web.internal.security.permission.resource.BlogsImagesFileEntryPermission;
+import com.liferay.frontend.taglib.clay.servlet.taglib.display.context.SearchContainerManagementToolbarDisplayContext;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemListBuilder;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.ViewTypeItemList;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.LanguageUtil;
@@ -26,7 +28,8 @@ import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
 import com.liferay.portal.kernel.portlet.PortalPreferences;
 import com.liferay.portal.kernel.portlet.PortletPreferencesFactoryUtil;
-import com.liferay.portal.kernel.portlet.PortletURLUtil;
+import com.liferay.portal.kernel.portlet.SearchDisplayStyleUtil;
+import com.liferay.portal.kernel.portlet.SearchOrderByUtil;
 import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
@@ -38,7 +41,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import javax.portlet.PortletException;
 import javax.portlet.PortletURL;
 
 import javax.servlet.http.HttpServletRequest;
@@ -46,23 +48,28 @@ import javax.servlet.http.HttpServletRequest;
 /**
  * @author Sergio González
  */
-public class BlogImagesManagementToolbarDisplayContext {
+public class BlogImagesManagementToolbarDisplayContext
+	extends SearchContainerManagementToolbarDisplayContext {
 
 	public BlogImagesManagementToolbarDisplayContext(
 		HttpServletRequest httpServletRequest,
 		LiferayPortletRequest liferayPortletRequest,
 		LiferayPortletResponse liferayPortletResponse,
-		PortletURL currentURLObj) {
+		SearchContainer<FileEntry> searchContainer) {
+
+		super(
+			httpServletRequest, liferayPortletRequest, liferayPortletResponse,
+			searchContainer);
 
 		_httpServletRequest = httpServletRequest;
 		_liferayPortletRequest = liferayPortletRequest;
 		_liferayPortletResponse = liferayPortletResponse;
-		_currentURLObj = currentURLObj;
 
 		_portalPreferences = PortletPreferencesFactoryUtil.getPortalPreferences(
 			liferayPortletRequest);
 	}
 
+	@Override
 	public List<DropdownItem> getActionDropdownItems() {
 		return DropdownItemListBuilder.add(
 			dropdownItem -> {
@@ -94,26 +101,20 @@ public class BlogImagesManagementToolbarDisplayContext {
 		return availableActions;
 	}
 
+	@Override
 	public String getDisplayStyle() {
-		String displayStyle = ParamUtil.getString(
-			_httpServletRequest, "displayStyle");
-
-		if (Validator.isNull(displayStyle)) {
-			displayStyle = _portalPreferences.getValue(
-				BlogsPortletKeys.BLOGS_ADMIN, "images-display-style", "icon");
-		}
-		else {
-			_portalPreferences.setValue(
-				BlogsPortletKeys.BLOGS_ADMIN, "images-display-style",
-				displayStyle);
-
-			_httpServletRequest.setAttribute(
-				WebKeys.SINGLE_PAGE_APPLICATION_CLEAR_CACHE, Boolean.TRUE);
+		if (Validator.isNotNull(_displayStyle)) {
+			return _displayStyle;
 		}
 
-		return displayStyle;
+		_displayStyle = SearchDisplayStyleUtil.getDisplayStyle(
+			_httpServletRequest, BlogsPortletKeys.BLOGS_ADMIN,
+			"images-display-style", "icon", true);
+
+		return _displayStyle;
 	}
 
+	@Override
 	public List<DropdownItem> getFilterDropdownItems() {
 		return DropdownItemListBuilder.addGroup(
 			dropdownGroupItem -> {
@@ -124,63 +125,104 @@ public class BlogImagesManagementToolbarDisplayContext {
 		).build();
 	}
 
+	@Override
 	public String getOrderByCol() {
-		return ParamUtil.getString(_httpServletRequest, "orderByCol", "title");
+		if (Validator.isNotNull(_orderByCol)) {
+			return _orderByCol;
+		}
+
+		_orderByCol = SearchOrderByUtil.getOrderByCol(
+			_httpServletRequest, BlogsPortletKeys.BLOGS_ADMIN,
+			"images-order-by-col", "title");
+
+		return _orderByCol;
 	}
 
+	@Override
 	public String getOrderByType() {
-		return ParamUtil.getString(_httpServletRequest, "orderByType", "desc");
+		if (Validator.isNotNull(_orderByType)) {
+			return _orderByType;
+		}
+
+		_orderByType = SearchOrderByUtil.getOrderByType(
+			_httpServletRequest, BlogsPortletKeys.BLOGS_ADMIN,
+			"images-order-by-type", "asc");
+
+		return _orderByType;
 	}
 
+	@Override
 	public String getSearchActionURL() {
-		PortletURL searchURL = _liferayPortletResponse.createRenderURL();
-
-		searchURL.setParameter("mvcRenderCommandName", "/blogs/view");
-		searchURL.setParameter("navigation", "images");
-		searchURL.setParameter("orderByCol", getOrderByCol());
-		searchURL.setParameter("orderByType", getOrderByType());
-
-		return searchURL.toString();
+		return PortletURLBuilder.createRenderURL(
+			_liferayPortletResponse
+		).setMVCRenderCommandName(
+			"/blogs/view"
+		).setNavigation(
+			"images"
+		).setParameter(
+			"orderByCol", getOrderByCol()
+		).setParameter(
+			"orderByType", getOrderByType()
+		).buildString();
 	}
 
-	public PortletURL getSortingURL() throws PortletException {
-		PortletURL sortingURL = _getCurrentSortingURL();
-
-		sortingURL.setParameter(
+	@Override
+	public String getSortingURL() {
+		return PortletURLBuilder.create(
+			_getCurrentSortingURL()
+		).setParameter(
 			"orderByType",
-			Objects.equals(getOrderByType(), "asc") ? "desc" : "asc");
-
-		return sortingURL;
+			Objects.equals(getOrderByType(), "asc") ? "desc" : "asc"
+		).buildString();
 	}
 
 	public ViewTypeItemList getViewTypes() {
-		PortletURL portletURL = _liferayPortletResponse.createRenderURL();
+		PortletURL portletURL = PortletURLBuilder.createRenderURL(
+			_liferayPortletResponse
+		).setMVCRenderCommandName(
+			"/blogs/view"
+		).setKeywords(
+			() -> {
+				String keywords = ParamUtil.getString(
+					_httpServletRequest, "keywords");
 
-		portletURL.setParameter("mvcRenderCommandName", "/blogs/view");
-		portletURL.setParameter("navigation", "images");
+				if (Validator.isNotNull(keywords)) {
+					return keywords;
+				}
 
-		int delta = ParamUtil.getInteger(
-			_httpServletRequest, SearchContainer.DEFAULT_DELTA_PARAM);
+				return null;
+			}
+		).setNavigation(
+			"images"
+		).setParameter(
+			"cur",
+			() -> {
+				int cur = ParamUtil.getInteger(
+					_httpServletRequest, SearchContainer.DEFAULT_CUR_PARAM);
 
-		if (delta > 0) {
-			portletURL.setParameter("delta", String.valueOf(delta));
-		}
+				if (cur > 0) {
+					return cur;
+				}
 
-		portletURL.setParameter("orderByCol", getOrderByCol());
-		portletURL.setParameter("orderByType", getOrderByType());
+				return null;
+			}
+		).setParameter(
+			"delta",
+			() -> {
+				int delta = ParamUtil.getInteger(
+					_httpServletRequest, SearchContainer.DEFAULT_DELTA_PARAM);
 
-		int cur = ParamUtil.getInteger(
-			_httpServletRequest, SearchContainer.DEFAULT_CUR_PARAM);
+				if (delta > 0) {
+					return delta;
+				}
 
-		if (cur > 0) {
-			portletURL.setParameter("cur", String.valueOf(cur));
-		}
-
-		String keywords = ParamUtil.getString(_httpServletRequest, "keywords");
-
-		if (Validator.isNotNull(keywords)) {
-			portletURL.setParameter("keywords", keywords);
-		}
+				return null;
+			}
+		).setParameter(
+			"orderByCol", getOrderByCol()
+		).setParameter(
+			"orderByType", getOrderByType()
+		).buildPortletURL();
 
 		return new ViewTypeItemList(portletURL, getDisplayStyle()) {
 			{
@@ -191,19 +233,23 @@ public class BlogImagesManagementToolbarDisplayContext {
 		};
 	}
 
-	private PortletURL _getCurrentSortingURL() throws PortletException {
-		PortletURL sortingURL = PortletURLUtil.clone(
-			_currentURLObj, _liferayPortletResponse);
+	private PortletURL _getCurrentSortingURL() {
+		return PortletURLBuilder.create(
+			getPortletURL()
+		).setKeywords(
+			() -> {
+				String keywords = ParamUtil.getString(
+					_httpServletRequest, "keywords");
 
-		sortingURL.setParameter(SearchContainer.DEFAULT_CUR_PARAM, "0");
+				if (Validator.isNotNull(keywords)) {
+					return keywords;
+				}
 
-		String keywords = ParamUtil.getString(_httpServletRequest, "keywords");
-
-		if (Validator.isNotNull(keywords)) {
-			sortingURL.setParameter("keywords", keywords);
-		}
-
-		return sortingURL;
+				return null;
+			}
+		).setParameter(
+			SearchContainer.DEFAULT_CUR_PARAM, "0"
+		).buildPortletURL();
 	}
 
 	private List<DropdownItem> _getOrderByDropdownItems() {
@@ -227,10 +273,12 @@ public class BlogImagesManagementToolbarDisplayContext {
 		).build();
 	}
 
-	private final PortletURL _currentURLObj;
+	private String _displayStyle;
 	private final HttpServletRequest _httpServletRequest;
 	private final LiferayPortletRequest _liferayPortletRequest;
 	private final LiferayPortletResponse _liferayPortletResponse;
+	private String _orderByCol;
+	private String _orderByType;
 	private final PortalPreferences _portalPreferences;
 
 }

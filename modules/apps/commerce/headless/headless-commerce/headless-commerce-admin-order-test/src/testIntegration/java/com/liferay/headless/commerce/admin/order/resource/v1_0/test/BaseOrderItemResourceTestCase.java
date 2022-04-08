@@ -34,7 +34,6 @@ import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
-import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Group;
@@ -47,13 +46,10 @@ import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.odata.entity.EntityField;
 import com.liferay.portal.odata.entity.EntityModel;
-import com.liferay.portal.test.log.CaptureAppender;
-import com.liferay.portal.test.log.Log4JLoggerTestUtil;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.vulcan.resource.EntityModelResource;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 
 import java.text.DateFormat;
@@ -73,7 +69,6 @@ import javax.ws.rs.core.MultivaluedHashMap;
 
 import org.apache.commons.beanutils.BeanUtilsBean;
 import org.apache.commons.lang.time.DateUtils;
-import org.apache.log4j.Level;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -187,10 +182,13 @@ public abstract class BaseOrderItemResourceTestCase {
 
 		orderItem.setDeliveryGroup(regex);
 		orderItem.setExternalReferenceCode(regex);
+		orderItem.setFormattedQuantity(regex);
+		orderItem.setOptions(regex);
 		orderItem.setOrderExternalReferenceCode(regex);
 		orderItem.setPrintedNote(regex);
 		orderItem.setSku(regex);
 		orderItem.setSkuExternalReferenceCode(regex);
+		orderItem.setUnitOfMeasure(regex);
 
 		String json = OrderItemSerDes.toJSON(orderItem);
 
@@ -200,10 +198,13 @@ public abstract class BaseOrderItemResourceTestCase {
 
 		Assert.assertEquals(regex, orderItem.getDeliveryGroup());
 		Assert.assertEquals(regex, orderItem.getExternalReferenceCode());
+		Assert.assertEquals(regex, orderItem.getFormattedQuantity());
+		Assert.assertEquals(regex, orderItem.getOptions());
 		Assert.assertEquals(regex, orderItem.getOrderExternalReferenceCode());
 		Assert.assertEquals(regex, orderItem.getPrintedNote());
 		Assert.assertEquals(regex, orderItem.getSku());
 		Assert.assertEquals(regex, orderItem.getSkuExternalReferenceCode());
+		Assert.assertEquals(regex, orderItem.getUnitOfMeasure());
 	}
 
 	@Test
@@ -261,7 +262,8 @@ public abstract class BaseOrderItemResourceTestCase {
 	public void testGraphQLGetOrderItemByExternalReferenceCode()
 		throws Exception {
 
-		OrderItem orderItem = testGraphQLOrderItem_addOrderItem();
+		OrderItem orderItem =
+			testGraphQLGetOrderItemByExternalReferenceCode_addOrderItem();
 
 		Assert.assertTrue(
 			equals(
@@ -311,6 +313,13 @@ public abstract class BaseOrderItemResourceTestCase {
 				"Object/code"));
 	}
 
+	protected OrderItem
+			testGraphQLGetOrderItemByExternalReferenceCode_addOrderItem()
+		throws Exception {
+
+		return testGraphQLOrderItem_addOrderItem();
+	}
+
 	@Test
 	public void testPatchOrderItemByExternalReferenceCode() throws Exception {
 		Assert.assertTrue(false);
@@ -339,7 +348,7 @@ public abstract class BaseOrderItemResourceTestCase {
 
 	@Test
 	public void testGraphQLDeleteOrderItem() throws Exception {
-		OrderItem orderItem = testGraphQLOrderItem_addOrderItem();
+		OrderItem orderItem = testGraphQLDeleteOrderItem_addOrderItem();
 
 		Assert.assertTrue(
 			JSONUtil.getValueAsBoolean(
@@ -352,26 +361,25 @@ public abstract class BaseOrderItemResourceTestCase {
 							}
 						})),
 				"JSONObject/data", "Object/deleteOrderItem"));
+		JSONArray errorsJSONArray = JSONUtil.getValueAsJSONArray(
+			invokeGraphQLQuery(
+				new GraphQLField(
+					"orderItem",
+					new HashMap<String, Object>() {
+						{
+							put("id", orderItem.getId());
+						}
+					},
+					new GraphQLField("id"))),
+			"JSONArray/errors");
 
-		try (CaptureAppender captureAppender =
-				Log4JLoggerTestUtil.configureLog4JLogger(
-					"graphql.execution.SimpleDataFetcherExceptionHandler",
-					Level.WARN)) {
+		Assert.assertTrue(errorsJSONArray.length() > 0);
+	}
 
-			JSONArray errorsJSONArray = JSONUtil.getValueAsJSONArray(
-				invokeGraphQLQuery(
-					new GraphQLField(
-						"orderItem",
-						new HashMap<String, Object>() {
-							{
-								put("id", orderItem.getId());
-							}
-						},
-						new GraphQLField("id"))),
-				"JSONArray/errors");
+	protected OrderItem testGraphQLDeleteOrderItem_addOrderItem()
+		throws Exception {
 
-			Assert.assertTrue(errorsJSONArray.length() > 0);
-		}
+		return testGraphQLOrderItem_addOrderItem();
 	}
 
 	@Test
@@ -392,7 +400,7 @@ public abstract class BaseOrderItemResourceTestCase {
 
 	@Test
 	public void testGraphQLGetOrderItem() throws Exception {
-		OrderItem orderItem = testGraphQLOrderItem_addOrderItem();
+		OrderItem orderItem = testGraphQLGetOrderItem_addOrderItem();
 
 		Assert.assertTrue(
 			equals(
@@ -431,6 +439,12 @@ public abstract class BaseOrderItemResourceTestCase {
 				"Object/code"));
 	}
 
+	protected OrderItem testGraphQLGetOrderItem_addOrderItem()
+		throws Exception {
+
+		return testGraphQLOrderItem_addOrderItem();
+	}
+
 	@Test
 	public void testPatchOrderItem() throws Exception {
 		Assert.assertTrue(false);
@@ -440,19 +454,18 @@ public abstract class BaseOrderItemResourceTestCase {
 	public void testGetOrderByExternalReferenceCodeOrderItemsPage()
 		throws Exception {
 
-		Page<OrderItem> page =
-			orderItemResource.getOrderByExternalReferenceCodeOrderItemsPage(
-				testGetOrderByExternalReferenceCodeOrderItemsPage_getExternalReferenceCode(),
-				Pagination.of(1, 2));
-
-		Assert.assertEquals(0, page.getTotalCount());
-
 		String externalReferenceCode =
 			testGetOrderByExternalReferenceCodeOrderItemsPage_getExternalReferenceCode();
 		String irrelevantExternalReferenceCode =
 			testGetOrderByExternalReferenceCodeOrderItemsPage_getIrrelevantExternalReferenceCode();
 
-		if ((irrelevantExternalReferenceCode != null)) {
+		Page<OrderItem> page =
+			orderItemResource.getOrderByExternalReferenceCodeOrderItemsPage(
+				externalReferenceCode, Pagination.of(1, 10));
+
+		Assert.assertEquals(0, page.getTotalCount());
+
+		if (irrelevantExternalReferenceCode != null) {
 			OrderItem irrelevantOrderItem =
 				testGetOrderByExternalReferenceCodeOrderItemsPage_addOrderItem(
 					irrelevantExternalReferenceCode,
@@ -479,7 +492,7 @@ public abstract class BaseOrderItemResourceTestCase {
 				externalReferenceCode, randomOrderItem());
 
 		page = orderItemResource.getOrderByExternalReferenceCodeOrderItemsPage(
-			externalReferenceCode, Pagination.of(1, 2));
+			externalReferenceCode, Pagination.of(1, 10));
 
 		Assert.assertEquals(2, page.getTotalCount());
 
@@ -575,21 +588,6 @@ public abstract class BaseOrderItemResourceTestCase {
 
 		assertEquals(randomOrderItem, postOrderItem);
 		assertValid(postOrderItem);
-
-		randomOrderItem = randomOrderItem();
-
-		assertHttpResponseStatusCode(
-			404,
-			orderItemResource.getOrderItemByExternalReferenceCodeHttpResponse(
-				randomOrderItem.getExternalReferenceCode()));
-
-		testPostOrderByExternalReferenceCodeOrderItem_addOrderItem(
-			randomOrderItem);
-
-		assertHttpResponseStatusCode(
-			200,
-			orderItemResource.getOrderItemByExternalReferenceCodeHttpResponse(
-				randomOrderItem.getExternalReferenceCode()));
 	}
 
 	protected OrderItem
@@ -603,15 +601,15 @@ public abstract class BaseOrderItemResourceTestCase {
 
 	@Test
 	public void testGetOrderIdOrderItemsPage() throws Exception {
-		Page<OrderItem> page = orderItemResource.getOrderIdOrderItemsPage(
-			testGetOrderIdOrderItemsPage_getId(), Pagination.of(1, 2));
-
-		Assert.assertEquals(0, page.getTotalCount());
-
 		Long id = testGetOrderIdOrderItemsPage_getId();
 		Long irrelevantId = testGetOrderIdOrderItemsPage_getIrrelevantId();
 
-		if ((irrelevantId != null)) {
+		Page<OrderItem> page = orderItemResource.getOrderIdOrderItemsPage(
+			id, Pagination.of(1, 10));
+
+		Assert.assertEquals(0, page.getTotalCount());
+
+		if (irrelevantId != null) {
 			OrderItem irrelevantOrderItem =
 				testGetOrderIdOrderItemsPage_addOrderItem(
 					irrelevantId, randomIrrelevantOrderItem());
@@ -634,7 +632,7 @@ public abstract class BaseOrderItemResourceTestCase {
 			id, randomOrderItem());
 
 		page = orderItemResource.getOrderIdOrderItemsPage(
-			id, Pagination.of(1, 2));
+			id, Pagination.of(1, 10));
 
 		Assert.assertEquals(2, page.getTotalCount());
 
@@ -713,20 +711,6 @@ public abstract class BaseOrderItemResourceTestCase {
 
 		assertEquals(randomOrderItem, postOrderItem);
 		assertValid(postOrderItem);
-
-		randomOrderItem = randomOrderItem();
-
-		assertHttpResponseStatusCode(
-			404,
-			orderItemResource.getOrderItemByExternalReferenceCodeHttpResponse(
-				randomOrderItem.getExternalReferenceCode()));
-
-		testPostOrderIdOrderItem_addOrderItem(randomOrderItem);
-
-		assertHttpResponseStatusCode(
-			200,
-			orderItemResource.getOrderItemByExternalReferenceCodeHttpResponse(
-				randomOrderItem.getExternalReferenceCode()));
 	}
 
 	protected OrderItem testPostOrderIdOrderItem_addOrderItem(
@@ -740,6 +724,23 @@ public abstract class BaseOrderItemResourceTestCase {
 	protected OrderItem testGraphQLOrderItem_addOrderItem() throws Exception {
 		throw new UnsupportedOperationException(
 			"This method needs to be implemented");
+	}
+
+	protected void assertContains(
+		OrderItem orderItem, List<OrderItem> orderItems) {
+
+		boolean contains = false;
+
+		for (OrderItem item : orderItems) {
+			if (equals(orderItem, item)) {
+				contains = true;
+
+				break;
+			}
+		}
+
+		Assert.assertTrue(
+			orderItems + " does not contain " + orderItem, contains);
 	}
 
 	protected void assertHttpResponseStatusCode(
@@ -810,6 +811,14 @@ public abstract class BaseOrderItemResourceTestCase {
 
 			if (Objects.equals("customFields", additionalAssertFieldName)) {
 				if (orderItem.getCustomFields() == null) {
+					valid = false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("decimalQuantity", additionalAssertFieldName)) {
+				if (orderItem.getDecimalQuantity() == null) {
 					valid = false;
 				}
 
@@ -962,8 +971,26 @@ public abstract class BaseOrderItemResourceTestCase {
 				continue;
 			}
 
+			if (Objects.equals(
+					"formattedQuantity", additionalAssertFieldName)) {
+
+				if (orderItem.getFormattedQuantity() == null) {
+					valid = false;
+				}
+
+				continue;
+			}
+
 			if (Objects.equals("name", additionalAssertFieldName)) {
 				if (orderItem.getName() == null) {
+					valid = false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("options", additionalAssertFieldName)) {
+				if (orderItem.getOptions() == null) {
 					valid = false;
 				}
 
@@ -1092,6 +1119,14 @@ public abstract class BaseOrderItemResourceTestCase {
 				continue;
 			}
 
+			if (Objects.equals("unitOfMeasure", additionalAssertFieldName)) {
+				if (orderItem.getUnitOfMeasure() == null) {
+					valid = false;
+				}
+
+				continue;
+			}
+
 			if (Objects.equals("unitPrice", additionalAssertFieldName)) {
 				if (orderItem.getUnitPrice() == null) {
 					valid = false;
@@ -1142,8 +1177,8 @@ public abstract class BaseOrderItemResourceTestCase {
 	protected List<GraphQLField> getGraphQLFields() throws Exception {
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
-		for (Field field :
-				ReflectionUtil.getDeclaredFields(
+		for (java.lang.reflect.Field field :
+				getDeclaredFields(
 					com.liferay.headless.commerce.admin.order.dto.v1_0.
 						OrderItem.class)) {
 
@@ -1159,12 +1194,13 @@ public abstract class BaseOrderItemResourceTestCase {
 		return graphQLFields;
 	}
 
-	protected List<GraphQLField> getGraphQLFields(Field... fields)
+	protected List<GraphQLField> getGraphQLFields(
+			java.lang.reflect.Field... fields)
 		throws Exception {
 
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
-		for (Field field : fields) {
+		for (java.lang.reflect.Field field : fields) {
 			com.liferay.portal.vulcan.graphql.annotation.GraphQLField
 				vulcanGraphQLField = field.getAnnotation(
 					com.liferay.portal.vulcan.graphql.annotation.GraphQLField.
@@ -1178,7 +1214,7 @@ public abstract class BaseOrderItemResourceTestCase {
 				}
 
 				List<GraphQLField> childrenGraphQLFields = getGraphQLFields(
-					ReflectionUtil.getDeclaredFields(clazz));
+					getDeclaredFields(clazz));
 
 				graphQLFields.add(
 					new GraphQLField(field.getName(), childrenGraphQLFields));
@@ -1215,6 +1251,17 @@ public abstract class BaseOrderItemResourceTestCase {
 				if (!equals(
 						(Map)orderItem1.getCustomFields(),
 						(Map)orderItem2.getCustomFields())) {
+
+					return false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("decimalQuantity", additionalAssertFieldName)) {
+				if (!Objects.deepEquals(
+						orderItem1.getDecimalQuantity(),
+						orderItem2.getDecimalQuantity())) {
 
 					return false;
 				}
@@ -1406,6 +1453,19 @@ public abstract class BaseOrderItemResourceTestCase {
 				continue;
 			}
 
+			if (Objects.equals(
+					"formattedQuantity", additionalAssertFieldName)) {
+
+				if (!Objects.deepEquals(
+						orderItem1.getFormattedQuantity(),
+						orderItem2.getFormattedQuantity())) {
+
+					return false;
+				}
+
+				continue;
+			}
+
 			if (Objects.equals("id", additionalAssertFieldName)) {
 				if (!Objects.deepEquals(
 						orderItem1.getId(), orderItem2.getId())) {
@@ -1419,6 +1479,16 @@ public abstract class BaseOrderItemResourceTestCase {
 			if (Objects.equals("name", additionalAssertFieldName)) {
 				if (!equals(
 						(Map)orderItem1.getName(), (Map)orderItem2.getName())) {
+
+					return false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("options", additionalAssertFieldName)) {
+				if (!Objects.deepEquals(
+						orderItem1.getOptions(), orderItem2.getOptions())) {
 
 					return false;
 				}
@@ -1586,6 +1656,17 @@ public abstract class BaseOrderItemResourceTestCase {
 				continue;
 			}
 
+			if (Objects.equals("unitOfMeasure", additionalAssertFieldName)) {
+				if (!Objects.deepEquals(
+						orderItem1.getUnitOfMeasure(),
+						orderItem2.getUnitOfMeasure())) {
+
+					return false;
+				}
+
+				continue;
+			}
+
 			if (Objects.equals("unitPrice", additionalAssertFieldName)) {
 				if (!Objects.deepEquals(
 						orderItem1.getUnitPrice(), orderItem2.getUnitPrice())) {
@@ -1641,6 +1722,19 @@ public abstract class BaseOrderItemResourceTestCase {
 		}
 
 		return false;
+	}
+
+	protected java.lang.reflect.Field[] getDeclaredFields(Class clazz)
+		throws Exception {
+
+		Stream<java.lang.reflect.Field> stream = Stream.of(
+			ReflectionUtil.getDeclaredFields(clazz));
+
+		return stream.filter(
+			field -> !field.isSynthetic()
+		).toArray(
+			java.lang.reflect.Field[]::new
+		);
 	}
 
 	protected java.util.Collection<EntityField> getEntityFields()
@@ -1699,6 +1793,11 @@ public abstract class BaseOrderItemResourceTestCase {
 		}
 
 		if (entityFieldName.equals("customFields")) {
+			throw new IllegalArgumentException(
+				"Invalid entity field " + entityFieldName);
+		}
+
+		if (entityFieldName.equals("decimalQuantity")) {
 			throw new IllegalArgumentException(
 				"Invalid entity field " + entityFieldName);
 		}
@@ -1779,6 +1878,14 @@ public abstract class BaseOrderItemResourceTestCase {
 				"Invalid entity field " + entityFieldName);
 		}
 
+		if (entityFieldName.equals("formattedQuantity")) {
+			sb.append("'");
+			sb.append(String.valueOf(orderItem.getFormattedQuantity()));
+			sb.append("'");
+
+			return sb.toString();
+		}
+
 		if (entityFieldName.equals("id")) {
 			throw new IllegalArgumentException(
 				"Invalid entity field " + entityFieldName);
@@ -1787,6 +1894,14 @@ public abstract class BaseOrderItemResourceTestCase {
 		if (entityFieldName.equals("name")) {
 			throw new IllegalArgumentException(
 				"Invalid entity field " + entityFieldName);
+		}
+
+		if (entityFieldName.equals("options")) {
+			sb.append("'");
+			sb.append(String.valueOf(orderItem.getOptions()));
+			sb.append("'");
+
+			return sb.toString();
 		}
 
 		if (entityFieldName.equals("orderExternalReferenceCode")) {
@@ -1822,8 +1937,9 @@ public abstract class BaseOrderItemResourceTestCase {
 		}
 
 		if (entityFieldName.equals("quantity")) {
-			throw new IllegalArgumentException(
-				"Invalid entity field " + entityFieldName);
+			sb.append(String.valueOf(orderItem.getQuantity()));
+
+			return sb.toString();
 		}
 
 		if (entityFieldName.equals("requestedDeliveryDate")) {
@@ -1861,8 +1977,9 @@ public abstract class BaseOrderItemResourceTestCase {
 		}
 
 		if (entityFieldName.equals("shippedQuantity")) {
-			throw new IllegalArgumentException(
-				"Invalid entity field " + entityFieldName);
+			sb.append(String.valueOf(orderItem.getShippedQuantity()));
+
+			return sb.toString();
 		}
 
 		if (entityFieldName.equals("shippingAddress")) {
@@ -1899,6 +2016,14 @@ public abstract class BaseOrderItemResourceTestCase {
 		if (entityFieldName.equals("subscription")) {
 			throw new IllegalArgumentException(
 				"Invalid entity field " + entityFieldName);
+		}
+
+		if (entityFieldName.equals("unitOfMeasure")) {
+			sb.append("'");
+			sb.append(String.valueOf(orderItem.getUnitOfMeasure()));
+			sb.append("'");
+
+			return sb.toString();
 		}
 
 		if (entityFieldName.equals("unitPrice")) {
@@ -1960,7 +2085,10 @@ public abstract class BaseOrderItemResourceTestCase {
 					RandomTestUtil.randomString());
 				externalReferenceCode = StringUtil.toLowerCase(
 					RandomTestUtil.randomString());
+				formattedQuantity = StringUtil.toLowerCase(
+					RandomTestUtil.randomString());
 				id = RandomTestUtil.randomLong();
+				options = StringUtil.toLowerCase(RandomTestUtil.randomString());
 				orderExternalReferenceCode = StringUtil.toLowerCase(
 					RandomTestUtil.randomString());
 				orderId = RandomTestUtil.randomLong();
@@ -1975,6 +2103,8 @@ public abstract class BaseOrderItemResourceTestCase {
 					RandomTestUtil.randomString());
 				skuId = RandomTestUtil.randomLong();
 				subscription = RandomTestUtil.randomBoolean();
+				unitOfMeasure = StringUtil.toLowerCase(
+					RandomTestUtil.randomString());
 			}
 		};
 	}
@@ -2033,12 +2163,12 @@ public abstract class BaseOrderItemResourceTestCase {
 						_parameterMap.entrySet()) {
 
 					sb.append(entry.getKey());
-					sb.append(":");
+					sb.append(": ");
 					sb.append(entry.getValue());
-					sb.append(",");
+					sb.append(", ");
 				}
 
-				sb.setLength(sb.length() - 1);
+				sb.setLength(sb.length() - 2);
 
 				sb.append(")");
 			}
@@ -2048,10 +2178,10 @@ public abstract class BaseOrderItemResourceTestCase {
 
 				for (GraphQLField graphQLField : _graphQLFields) {
 					sb.append(graphQLField.toString());
-					sb.append(",");
+					sb.append(", ");
 				}
 
-				sb.setLength(sb.length() - 1);
+				sb.setLength(sb.length() - 2);
 
 				sb.append("}");
 			}
@@ -2065,8 +2195,8 @@ public abstract class BaseOrderItemResourceTestCase {
 
 	}
 
-	private static final Log _log = LogFactoryUtil.getLog(
-		BaseOrderItemResourceTestCase.class);
+	private static final com.liferay.portal.kernel.log.Log _log =
+		LogFactoryUtil.getLog(BaseOrderItemResourceTestCase.class);
 
 	private static BeanUtilsBean _beanUtilsBean = new BeanUtilsBean() {
 

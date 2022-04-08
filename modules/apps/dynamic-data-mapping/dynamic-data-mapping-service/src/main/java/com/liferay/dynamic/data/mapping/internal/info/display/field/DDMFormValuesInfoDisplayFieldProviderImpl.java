@@ -22,6 +22,7 @@ import com.liferay.dynamic.data.mapping.kernel.DDMFormField;
 import com.liferay.dynamic.data.mapping.kernel.DDMFormFieldValue;
 import com.liferay.dynamic.data.mapping.kernel.DDMFormValues;
 import com.liferay.dynamic.data.mapping.kernel.Value;
+import com.liferay.dynamic.data.mapping.model.DDMFormFieldType;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
@@ -63,6 +64,7 @@ import org.osgi.service.component.annotations.Reference;
 public class DDMFormValuesInfoDisplayFieldProviderImpl<T extends GroupedModel>
 	implements DDMFormValuesInfoDisplayFieldProvider<T> {
 
+	@Override
 	public Map<String, Object> getInfoDisplayFieldsValues(
 			T t, DDMFormValues ddmFormValues, Locale locale)
 		throws PortalException {
@@ -88,7 +90,8 @@ public class DDMFormValuesInfoDisplayFieldProviderImpl<T extends GroupedModel>
 
 			List<DDMFormFieldValue> ddmFormFieldsValues = entry.getValue();
 
-			if ((Objects.equals(ddmFormField.getType(), "ddm-image") ||
+			if ((Objects.equals(
+					ddmFormField.getType(), DDMFormFieldType.IMAGE) ||
 				 Objects.equals(ddmFormField.getType(), "image")) &&
 				(ddmFormFieldsValues.size() > 1)) {
 
@@ -203,7 +206,8 @@ public class DDMFormValuesInfoDisplayFieldProviderImpl<T extends GroupedModel>
 		String valueString = value.getString(locale);
 
 		if (Objects.equals(ddmFormFieldValue.getType(), "date") ||
-			Objects.equals(ddmFormFieldValue.getType(), "ddm-date")) {
+			Objects.equals(
+				ddmFormFieldValue.getType(), DDMFormFieldType.DATE)) {
 
 			try {
 				DateFormat dateFormat = DateFormat.getDateInstance(
@@ -215,17 +219,23 @@ public class DDMFormValuesInfoDisplayFieldProviderImpl<T extends GroupedModel>
 				return dateFormat.format(date);
 			}
 			catch (Exception exception) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(exception);
+				}
+
 				return valueString;
 			}
 		}
-		else if (Objects.equals(ddmFormFieldValue.getType(), "ddm-decimal") ||
+		else if (Objects.equals(
+					ddmFormFieldValue.getType(), DDMFormFieldType.DECIMAL) ||
 				 Objects.equals(ddmFormFieldValue.getType(), "numeric")) {
 
 			NumberFormat numberFormat = NumberFormat.getNumberInstance(locale);
 
 			return numberFormat.format(GetterUtil.getDouble(valueString));
 		}
-		else if (Objects.equals(ddmFormFieldValue.getType(), "ddm-image") ||
+		else if (Objects.equals(
+					ddmFormFieldValue.getType(), DDMFormFieldType.IMAGE) ||
 				 Objects.equals(ddmFormFieldValue.getType(), "image")) {
 
 			JSONObject jsonObject = JSONFactoryUtil.createJSONObject(
@@ -261,7 +271,7 @@ public class DDMFormValuesInfoDisplayFieldProviderImpl<T extends GroupedModel>
 		}
 		catch (Exception exception) {
 			if (_log.isDebugEnabled()) {
-				_log.debug(exception, exception);
+				_log.debug(exception);
 			}
 		}
 

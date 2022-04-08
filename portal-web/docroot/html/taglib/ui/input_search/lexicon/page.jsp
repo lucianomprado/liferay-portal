@@ -18,13 +18,13 @@
 
 <%
 boolean autoFocus = GetterUtil.getBoolean(request.getAttribute("liferay-ui:input-search:autoFocus"));
-String buttonLabel = GetterUtil.getString((String)request.getAttribute("liferay-ui:input-search:buttonLabel"));
 String cssClass = GetterUtil.getString((String)request.getAttribute("liferay-ui:input-search:cssClass"));
 String id = GetterUtil.getString((String)request.getAttribute("liferay-ui:input-search:id"));
 String name = GetterUtil.getString((String)request.getAttribute("liferay-ui:input-search:name"));
 String placeholder = GetterUtil.getString((String)request.getAttribute("liferay-ui:input-search:placeholder"));
 boolean showButton = GetterUtil.getBoolean(request.getAttribute("liferay-ui:input-search:showButton"), true);
 String title = GetterUtil.getString((String)request.getAttribute("liferay-ui:input-search:title"));
+
 boolean useNamespace = GetterUtil.getBoolean(request.getAttribute("liferay-ui:input-search:useNamespace"), true);
 
 if (!useNamespace) {
@@ -34,24 +34,18 @@ if (!useNamespace) {
 String value = ParamUtil.getString(request, name);
 %>
 
-<div class="<%= cssClass %> basic-search input-group">
-	<div class="input-group-input">
-		<label class="hide-accessible" for="<%= namespace + id %>"><%= title %></label>
+<div class="<%= cssClass %> input-group lfr-input-search">
+	<div class="input-group-item">
+		<input aria-label="<%= title %>" class="form-control <%= showButton ? "input-group-inset input-group-inset-after" : null %> search-query" data-qa-id="searchInput" id="<%= namespace + id %>" name="<%= namespace + name %>" placeholder="<%= placeholder %>" title="<%= title %>" type="text" value="<%= HtmlUtil.escapeAttribute(value) %>" />
 
-		<div class="basic-search-slider">
-			<button class="basic-search-close btn btn-secondary" type="button"><aui:icon image="times" markupView="lexicon" /><span class="sr-only"><%= buttonLabel %></span></button>
-
-			<input class="form-control search-query" data-qa-id="searchInput" id="<%= namespace + id %>" name="<%= namespace + name %>" placeholder="<%= placeholder %>" title="<%= title %>" type="text" value="<%= HtmlUtil.escapeAttribute(value) %>" />
-		</div>
+		<c:if test="<%= showButton %>">
+			<div class="input-group-inset-item input-group-inset-item-after">
+				<button class="btn btn-unstyled" data-qa-id="searchButton" type="submit">
+					<aui:icon image="search" markupView="lexicon" />
+				</button>
+			</div>
+		</c:if>
 	</div>
-
-	<c:if test="<%= showButton %>">
-		<div class="input-group-btn">
-			<button class="btn btn-secondary" data-qa-id="searchButton" type="submit">
-				<aui:icon image="search" markupView="lexicon" />
-			</button>
-		</div>
-	</c:if>
 </div>
 
 <c:if test="<%= autoFocus %>">

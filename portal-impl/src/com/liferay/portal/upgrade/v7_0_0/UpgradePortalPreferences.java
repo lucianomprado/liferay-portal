@@ -76,20 +76,21 @@ public class UpgradePortalPreferences extends UpgradeProcess {
 
 	protected void upgradeStagingPortalPreferences() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer();
-			PreparedStatement ps1 = connection.prepareStatement(
+			PreparedStatement preparedStatement1 = connection.prepareStatement(
 				"select portalPreferencesId, preferences from " +
 					"PortalPreferences");
-			ResultSet rs = ps1.executeQuery();
-			PreparedStatement ps2 =
+			ResultSet resultSet = preparedStatement1.executeQuery();
+			PreparedStatement preparedStatement2 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection,
 					"update PortalPreferences set preferences = ? where " +
 						"portalPreferencesId = ?")) {
 
-			while (rs.next()) {
-				long portalPreferencesId = rs.getLong("portalPreferencesId");
+			while (resultSet.next()) {
+				long portalPreferencesId = resultSet.getLong(
+					"portalPreferencesId");
 
-				String oldPreferences = rs.getString("preferences");
+				String oldPreferences = resultSet.getString("preferences");
 
 				String newPreferences = null;
 
@@ -102,7 +103,8 @@ public class UpgradePortalPreferences extends UpgradeProcess {
 						_log.warn(
 							StringBundler.concat(
 								"Portal preferences ", portalPreferencesId,
-								" contains invalid XML, resetting to default"));
+								" contains invalid XML, resetting to default"),
+							documentException);
 					}
 
 					newPreferences = PortletConstants.DEFAULT_PREFERENCES;
@@ -112,14 +114,14 @@ public class UpgradePortalPreferences extends UpgradeProcess {
 					continue;
 				}
 
-				ps2.setString(1, newPreferences);
+				preparedStatement2.setString(1, newPreferences);
 
-				ps2.setLong(2, portalPreferencesId);
+				preparedStatement2.setLong(2, portalPreferencesId);
 
-				ps2.addBatch();
+				preparedStatement2.addBatch();
 			}
 
-			ps2.executeBatch();
+			preparedStatement2.executeBatch();
 		}
 	}
 

@@ -15,6 +15,7 @@
 package com.liferay.dynamic.data.mapping.form.field.type.internal.checkbox;
 
 import com.liferay.dynamic.data.mapping.form.field.type.DDMFormFieldValueRenderer;
+import com.liferay.dynamic.data.mapping.form.field.type.constants.DDMFormFieldTypeConstants;
 import com.liferay.dynamic.data.mapping.storage.DDMFormFieldValue;
 import com.liferay.portal.kernel.language.LanguageUtil;
 
@@ -27,7 +28,8 @@ import org.osgi.service.component.annotations.Reference;
  * @author Renato Rego
  */
 @Component(
-	immediate = true, property = "ddm.form.field.type.name=checkbox",
+	immediate = true,
+	property = "ddm.form.field.type.name=" + DDMFormFieldTypeConstants.CHECKBOX,
 	service = DDMFormFieldValueRenderer.class
 )
 public class CheckboxDDMFormFieldValueRenderer
@@ -39,10 +41,10 @@ public class CheckboxDDMFormFieldValueRenderer
 			ddmFormFieldValue, locale);
 
 		if (valueBoolean == Boolean.TRUE) {
-			return LanguageUtil.get(locale, "yes");
+			return LanguageUtil.get(locale, "true");
 		}
 
-		return LanguageUtil.get(locale, "no");
+		return LanguageUtil.get(locale, "false");
 	}
 
 	@Reference

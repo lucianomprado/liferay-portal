@@ -26,12 +26,26 @@ definition {
 		Button.click(button = "Cancel");
 	}
 
+	macro clickCheckOut {
+		Click(locator1 = "Button#CHECKOUT");
+	}
+
+	macro clickCollapse {
+		Click(
+			key_label = "${label}",
+			locator1 = "DDMEditStructure#FORM_COLLAPSE_BUTTON");
+	}
+
 	macro clickComment {
 		Click(locator1 = "Button#COMMENT");
 	}
 
 	macro clickConfirm {
 		Click(locator1 = "Button#CONFIRM");
+	}
+
+	macro clickCreate {
+		Button.click(button = "Create");
 	}
 
 	macro clickDelete {
@@ -95,7 +109,9 @@ definition {
 	}
 
 	macro clickSelect {
-		Button.click(button = "Select");
+		Click.javaScriptClick(
+			key_text = "Select",
+			locator1 = "Button#ANY");
 	}
 
 	macro clickShare {
@@ -108,6 +124,12 @@ definition {
 
 	macro clickSubmitForPublication {
 		Button.click(button = "Submit for Publication");
+	}
+
+	macro clickTrash {
+		ScrollWebElementIntoView(locator1 = "Button#TRASH_ENABLED");
+
+		Click(locator1 = "Button#TRASH_ENABLED");
 	}
 
 	macro clickUpdate {

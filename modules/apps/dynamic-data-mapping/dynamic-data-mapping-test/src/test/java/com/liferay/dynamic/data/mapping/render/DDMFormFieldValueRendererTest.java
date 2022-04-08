@@ -46,6 +46,7 @@ import com.liferay.portal.kernel.util.FastDateFormatFactoryUtil;
 import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.JavaDetector;
 import com.liferay.portal.kernel.util.LocaleUtil;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 import com.liferay.portal.util.CalendarFactoryImpl;
 import com.liferay.portal.util.DateFormatFactoryImpl;
 import com.liferay.portal.util.FastDateFormatFactoryImpl;
@@ -53,6 +54,8 @@ import com.liferay.portal.util.HtmlImpl;
 
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 import org.mockito.Matchers;
@@ -64,6 +67,11 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
  */
 @PrepareForTest({DLAppLocalServiceUtil.class, LayoutServiceUtil.class})
 public class DDMFormFieldValueRendererTest extends BaseDDMTestCase {
+
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
 
 	@Before
 	@Override
@@ -92,12 +100,12 @@ public class DDMFormFieldValueRendererTest extends BaseDDMTestCase {
 		String renderedValue = ddmFormFieldValueRenderer.render(
 			ddmFormFieldValue, LocaleUtil.US);
 
-		Assert.assertEquals("No", renderedValue);
+		Assert.assertEquals("False", renderedValue);
 
 		renderedValue = ddmFormFieldValueRenderer.render(
 			ddmFormFieldValue, LocaleUtil.BRAZIL);
 
-		Assert.assertEquals("Sim", renderedValue);
+		Assert.assertEquals("Verdadeiro", renderedValue);
 	}
 
 	@Test
@@ -120,12 +128,12 @@ public class DDMFormFieldValueRendererTest extends BaseDDMTestCase {
 		String renderedValue = ddmFormFieldValueRenderer.render(
 			ddmFormValues.getDDMFormFieldValues(), LocaleUtil.US);
 
-		Assert.assertEquals("No, Yes", renderedValue);
+		Assert.assertEquals("False, True", renderedValue);
 
 		renderedValue = ddmFormFieldValueRenderer.render(
 			ddmFormValues.getDDMFormFieldValues(), LocaleUtil.BRAZIL);
 
-		Assert.assertEquals("Sim, Sim", renderedValue);
+		Assert.assertEquals("Verdadeiro, Verdadeiro", renderedValue);
 	}
 
 	@Test
@@ -512,7 +520,6 @@ public class DDMFormFieldValueRendererTest extends BaseDDMTestCase {
 			new FastDateFormatFactoryImpl());
 	}
 
-	@Override
 	protected void setUpHtmlUtil() {
 		HtmlUtil htmlUtil = new HtmlUtil();
 

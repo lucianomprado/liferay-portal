@@ -32,6 +32,7 @@ import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.util.DateFormatFactory;
 import com.liferay.portal.kernel.util.DateFormatFactoryUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import java.text.SimpleDateFormat;
 
@@ -41,6 +42,8 @@ import org.apache.chemistry.opencmis.commons.enums.CapabilityQuery;
 
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 import org.mockito.Mockito;
@@ -51,6 +54,11 @@ import org.mockito.MockitoAnnotations;
  * @author André de Oliveira
  */
 public class BaseCmisSearchQueryBuilderTest {
+
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
 
 	@Before
 	public void setUp() throws Exception {
@@ -276,12 +284,12 @@ public class BaseCmisSearchQueryBuilderTest {
 	public void testPrefixQuery() throws Exception {
 		SearchContext searchContext = getSearchContext();
 
-		searchContext.setKeywords("Test*");
+		searchContext.setKeywords("test*");
 
 		String cmisQuery = buildQuery(searchContext);
 
 		assertQueryEquals(
-			"(cmis:name LIKE 'Test%' OR cmis:createdBy LIKE 'Test%')",
+			"(cmis:name LIKE 'test%' OR cmis:createdBy LIKE 'test%')",
 			cmisQuery);
 	}
 

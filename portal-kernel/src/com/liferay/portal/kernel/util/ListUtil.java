@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.ToLongFunction;
@@ -357,6 +358,14 @@ public class ListUtil {
 		return !isEmpty(list);
 	}
 
+	public static <E> void isNotEmptyForEach(
+		List<? extends E> list, Consumer<? super E> consumer) {
+
+		if (!isEmpty(list)) {
+			list.forEach(consumer);
+		}
+	}
+
 	public static boolean isNotNull(List<?> list) {
 		return !isNull(list);
 	}
@@ -592,7 +601,7 @@ public class ListUtil {
 	}
 
 	public static <T, R> List<R> toList(List<T> list, Function<T, R> function) {
-		final List<R> result = new ArrayList<>(list.size());
+		List<R> result = new ArrayList<>(list.size());
 
 		for (T t : list) {
 			result.add(function.apply(t));

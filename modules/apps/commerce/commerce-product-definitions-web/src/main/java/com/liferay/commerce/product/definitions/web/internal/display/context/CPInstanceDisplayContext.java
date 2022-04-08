@@ -30,30 +30,31 @@ import com.liferay.commerce.product.model.CommerceCatalog;
 import com.liferay.commerce.product.portlet.action.ActionHelper;
 import com.liferay.commerce.product.service.CPDefinitionOptionRelService;
 import com.liferay.commerce.product.service.CPMeasurementUnitLocalService;
-import com.liferay.commerce.product.servlet.taglib.ui.CPDefinitionScreenNavigationConstants;
+import com.liferay.commerce.product.servlet.taglib.ui.constants.CPDefinitionScreenNavigationConstants;
 import com.liferay.commerce.product.util.CPInstanceHelper;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.CreationMenu;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.CreationMenuBuilder;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.LanguageUtil;
-import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
 import com.liferay.portal.kernel.portlet.LiferayWindowState;
 import com.liferay.portal.kernel.portlet.PortletProvider;
 import com.liferay.portal.kernel.portlet.PortletProviderUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
+import com.liferay.portal.kernel.util.CalendarFactoryUtil;
 import com.liferay.portal.kernel.util.Constants;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.taglib.util.CustomAttributesUtil;
 
 import java.math.BigDecimal;
 
+import java.util.Calendar;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import javax.portlet.ActionRequest;
-import javax.portlet.ActionURL;
 import javax.portlet.PortletURL;
 import javax.portlet.RenderRequest;
 import javax.portlet.RenderResponse;
@@ -198,16 +199,44 @@ public class CPInstanceDisplayContext extends BaseCPDefinitionsDisplayContext {
 		return creationMenu;
 	}
 
+	public int getDiscontinuedDateField(int field) throws PortalException {
+		CPInstance cpInstance = getCPInstance();
+
+		if (cpInstance == null) {
+			if (field == Calendar.MONTH) {
+				return -1;
+			}
+
+			return 0;
+		}
+
+		Date discontinuedDate = cpInstance.getDiscontinuedDate();
+
+		if (discontinuedDate != null) {
+			Calendar calendar = CalendarFactoryUtil.getCalendar(
+				discontinuedDate.getTime());
+
+			return calendar.get(field);
+		}
+
+		if (field == Calendar.MONTH) {
+			return -1;
+		}
+
+		return 0;
+	}
+
 	@Override
 	public PortletURL getPortletURL() throws PortalException {
 		PortletURL portletURL = super.getPortletURL();
 
 		if (getCPDefinitionId() > 0) {
 			portletURL.setParameter(
-				"mvcRenderCommandName", "editProductDefinition");
+				"mvcRenderCommandName", "/cp_definitions/edit_cp_definition");
 		}
 		else {
-			portletURL.setParameter("mvcRenderCommandName", "viewInstances");
+			portletURL.setParameter(
+				"mvcRenderCommandName", "/cp_definitions/view_cp_instances");
 			portletURL.setParameter(
 				"catalogNavigationItem", "view-all-instances");
 		}
@@ -244,6 +273,44 @@ public class CPInstanceDisplayContext extends BaseCPDefinitionsDisplayContext {
 				cpInstance.getCPInstanceId(), getCommerceCurrency());
 
 		return round(commerceMoney.getPrice());
+	}
+
+	public long getReplacementCPInstanceId() throws PortalException {
+		CPInstance cpInstance = getCPInstance();
+
+		if (cpInstance == null) {
+			return 0;
+		}
+
+		CPInstance replacementCPInstance =
+			_cpInstanceHelper.fetchReplacementCPInstance(
+				cpInstance.getReplacementCProductId(),
+				cpInstance.getReplacementCPInstanceUuid());
+
+		if (replacementCPInstance == null) {
+			return 0;
+		}
+
+		return replacementCPInstance.getCPInstanceId();
+	}
+
+	public String getReplacementCPInstanceLabel() throws PortalException {
+		CPInstance cpInstance = getCPInstance();
+
+		if (cpInstance == null) {
+			return StringPool.BLANK;
+		}
+
+		CPInstance replacementCPInstance =
+			_cpInstanceHelper.fetchReplacementCPInstance(
+				cpInstance.getReplacementCProductId(),
+				cpInstance.getReplacementCPInstanceUuid());
+
+		if (replacementCPInstance == null) {
+			return StringPool.BLANK;
+		}
+
+		return replacementCPInstance.getSku();
 	}
 
 	@Override
@@ -295,33 +362,31 @@ public class CPInstanceDisplayContext extends BaseCPDefinitionsDisplayContext {
 	}
 
 	private String _getAddMultipleCPInstancePortletURL() throws Exception {
-		LiferayPortletResponse liferayPortletResponse =
-			cpRequestHelper.getLiferayPortletResponse();
-
-		ActionURL portletURL = liferayPortletResponse.createActionURL();
-
-		portletURL.setParameter(
-			ActionRequest.ACTION_NAME, "editProductInstance");
-		portletURL.setParameter(Constants.CMD, Constants.ADD_MULTIPLE);
-		portletURL.setParameter("redirect", cpRequestHelper.getCurrentURL());
-		portletURL.setParameter(
-			"cpDefinitionId", String.valueOf(getCPDefinitionId()));
-
-		return portletURL.toString();
+		return PortletURLBuilder.createActionURL(
+			cpRequestHelper.getLiferayPortletResponse()
+		).setActionName(
+			"/cp_definitions/edit_cp_instance"
+		).setCMD(
+			Constants.ADD_MULTIPLE
+		).setRedirect(
+			cpRequestHelper.getCurrentURL()
+		).setParameter(
+			"cpDefinitionId", getCPDefinitionId()
+		).buildString();
 	}
 
 	private String _getEditCPInstancePortletURL() throws Exception {
-		PortletURL portletURL = PortletProviderUtil.getPortletURL(
-			httpServletRequest, CPDefinition.class.getName(),
-			PortletProvider.Action.MANAGE);
-
-		portletURL.setParameter("mvcRenderCommandName", "editProductInstance");
-		portletURL.setParameter(
-			"cpDefinitionId", String.valueOf(getCPDefinitionId()));
-
-		portletURL.setWindowState(LiferayWindowState.POP_UP);
-
-		return portletURL.toString();
+		return PortletURLBuilder.create(
+			PortletProviderUtil.getPortletURL(
+				httpServletRequest, CPDefinition.class.getName(),
+				PortletProvider.Action.MANAGE)
+		).setMVCRenderCommandName(
+			"/cp_definitions/edit_cp_instance"
+		).setParameter(
+			"cpDefinitionId", getCPDefinitionId()
+		).setWindowState(
+			LiferayWindowState.POP_UP
+		).buildString();
 	}
 
 	private final CommerceCurrencyLocalService _commerceCurrencyLocalService;

@@ -15,7 +15,11 @@
 package com.liferay.headless.commerce.delivery.catalog.internal.resource.v1_0;
 
 import com.liferay.commerce.account.exception.NoSuchAccountException;
+import com.liferay.commerce.account.model.CommerceAccount;
+import com.liferay.commerce.account.service.CommerceAccountLocalService;
 import com.liferay.commerce.account.util.CommerceAccountHelper;
+import com.liferay.commerce.context.CommerceContext;
+import com.liferay.commerce.context.CommerceContextFactory;
 import com.liferay.commerce.product.catalog.CPCatalogEntry;
 import com.liferay.commerce.product.catalog.CPQuery;
 import com.liferay.commerce.product.data.source.CPDataSourceResult;
@@ -32,6 +36,7 @@ import com.liferay.headless.commerce.delivery.catalog.internal.dto.v1_0.converte
 import com.liferay.headless.commerce.delivery.catalog.internal.odata.entity.v1_0.ProductEntityModel;
 import com.liferay.headless.commerce.delivery.catalog.resource.v1_0.ProductResource;
 import com.liferay.petra.function.UnsafeConsumer;
+import com.liferay.portal.kernel.change.tracking.CTAware;
 import com.liferay.portal.kernel.search.BooleanClause;
 import com.liferay.portal.kernel.search.BooleanClauseFactoryUtil;
 import com.liferay.portal.kernel.search.BooleanClauseOccur;
@@ -56,9 +61,6 @@ import java.io.Serializable;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-
-import javax.validation.constraints.NotNull;
 
 import javax.ws.rs.core.MultivaluedMap;
 
@@ -68,22 +70,21 @@ import org.osgi.service.component.annotations.ServiceScope;
 
 /**
  * @author Andrea Sbarra
+ * @author Alessio Antonio Rendina
  */
 @Component(
 	enabled = false,
 	properties = "OSGI-INF/liferay/rest/v1_0/product.properties",
 	scope = ServiceScope.PROTOTYPE, service = ProductResource.class
 )
+@CTAware
 public class ProductResourceImpl
 	extends BaseProductResourceImpl implements EntityModelResource {
 
 	@Override
 	public Product getChannelProduct(
-			@NotNull Long channelId, @NotNull Long productId, Long accountId)
+			Long channelId, Long productId, Long accountId)
 		throws Exception {
-
-		CommerceChannel commerceChannel =
-			_commerceChannelLocalService.getCommerceChannel(channelId);
 
 		CPDefinition cpDefinition =
 			_cpDefinitionLocalService.fetchCPDefinitionByCProductId(productId);
@@ -92,42 +93,54 @@ public class ProductResourceImpl
 			throw new NoSuchCProductException();
 		}
 
+		CommerceChannel commerceChannel =
+			_commerceChannelLocalService.getCommerceChannel(channelId);
+
+		Long commerceAccountId = _getCommerceAccountId(
+			accountId, commerceChannel);
+
 		_commerceProductViewPermission.check(
-			PermissionThreadLocal.getPermissionChecker(),
-			_getAccountId(accountId, commerceChannel),
+			PermissionThreadLocal.getPermissionChecker(), commerceAccountId,
 			commerceChannel.getGroupId(), cpDefinition.getCPDefinitionId());
 
-		return _toProduct(cpDefinition);
+		return _toProduct(
+			_commerceContextFactory.create(
+				contextCompany.getCompanyId(), commerceChannel.getGroupId(),
+				contextUser.getUserId(), 0, commerceAccountId),
+			cpDefinition);
 	}
 
 	@Override
 	public Page<Product> getChannelProductsPage(
-			@NotNull Long channelId, Long accountId, Filter filter,
+			Long channelId, Long accountId, Filter filter,
 			Pagination pagination, Sort[] sorts)
 		throws Exception {
 
-		long companyId = contextCompany.getCompanyId();
 		SearchContext searchContext = new SearchContext();
 
 		CommerceChannel commerceChannel =
 			_commerceChannelLocalService.getCommerceChannel(channelId);
 
-		Map<String, Serializable> attributes =
+		Long commerceAccountId = _getCommerceAccountId(
+			accountId, commerceChannel);
+
+		searchContext.setAttributes(
 			HashMapBuilder.<String, Serializable>put(
 				Field.STATUS, WorkflowConstants.STATUS_APPROVED
 			).put(
+				"commerceAccountGroupIds",
+				_commerceAccountHelper.getCommerceAccountGroupIds(
+					commerceAccountId)
+			).put(
 				"commerceChannelGroupId", commerceChannel.getGroupId()
-			).build();
+			).build());
 
-		long[] commerceAccountGroupIds =
-			_commerceAccountHelper.getCommerceAccountGroupIds(
-				_getAccountId(accountId, commerceChannel));
-
-		searchContext.setAttribute(
-			"commerceAccountGroupIds", commerceAccountGroupIds);
-
-		searchContext.setAttributes(attributes);
-		searchContext.setCompanyId(companyId);
+		searchContext.setBooleanClauses(
+			new BooleanClause[] {
+				_getBooleanClause(
+					booleanQuery -> booleanQuery.getPreBooleanFilter(), filter)
+			});
+		searchContext.setCompanyId(contextCompany.getCompanyId());
 
 		CPQuery cpQuery = new CPQuery();
 
@@ -136,46 +149,23 @@ public class ProductResourceImpl
 		cpQuery.setOrderByType1("ASC");
 		cpQuery.setOrderByType2("DESC");
 
-		BooleanClause<Query> booleanClause = _getBooleanClause(
-			booleanQuery -> booleanQuery.getPreBooleanFilter(), filter);
-
-		searchContext.setBooleanClauses(new BooleanClause[] {booleanClause});
-
-		CPDataSourceResult cpDataSourceResult = _cpDefinitionHelper.search(
-			commerceChannel.getGroupId(), searchContext, cpQuery,
-			pagination.getStartPosition(), pagination.getEndPosition());
-
 		return Page.of(
-			_toProducts(cpDataSourceResult), pagination,
-			cpDataSourceResult.getLength());
+			_toProducts(
+				_commerceContextFactory.create(
+					contextCompany.getCompanyId(), commerceChannel.getGroupId(),
+					contextUser.getUserId(), 0, commerceAccountId),
+				_cpDefinitionHelper.search(
+					commerceChannel.getGroupId(), searchContext, cpQuery,
+					pagination.getStartPosition(),
+					pagination.getEndPosition())),
+			pagination,
+			_cpDefinitionHelper.searchCount(
+				commerceChannel.getGroupId(), searchContext, cpQuery));
 	}
 
 	@Override
 	public EntityModel getEntityModel(MultivaluedMap multivaluedMap) {
 		return _entityModel;
-	}
-
-	private Long _getAccountId(Long accountId, CommerceChannel commerceChannel)
-		throws Exception {
-
-		int countUserCommerceAccounts =
-			_commerceAccountHelper.countUserCommerceAccounts(
-				contextUser.getUserId(), commerceChannel.getGroupId());
-
-		if (countUserCommerceAccounts > 1) {
-			if (accountId == null) {
-				throw new NoSuchAccountException();
-			}
-		}
-		else {
-			long[] commerceAccountIds =
-				_commerceAccountHelper.getUserCommerceAccountIds(
-					contextUser.getUserId(), commerceChannel.getGroupId());
-
-			return commerceAccountIds[0];
-		}
-
-		return accountId;
 	}
 
 	private BooleanClause<Query> _getBooleanClause(
@@ -203,14 +193,53 @@ public class ProductResourceImpl
 			booleanQuery, BooleanClauseOccur.MUST.getName());
 	}
 
-	private Product _toProduct(CPDefinition cpDefinition) throws Exception {
-		return _productDTOConverter.toDTO(
-			new ProductDTOConverterContext(
-				contextAcceptLanguage.getPreferredLocale(),
-				cpDefinition.getCPDefinitionId(), cpDefinition));
+	private Long _getCommerceAccountId(
+			Long accountId, CommerceChannel commerceChannel)
+		throws Exception {
+
+		int countUserCommerceAccounts =
+			_commerceAccountHelper.countUserCommerceAccounts(
+				contextUser.getUserId(), commerceChannel.getGroupId());
+
+		if (countUserCommerceAccounts > 1) {
+			if (accountId == null) {
+				throw new NoSuchAccountException();
+			}
+		}
+		else {
+			long[] commerceAccountIds =
+				_commerceAccountHelper.getUserCommerceAccountIds(
+					contextUser.getUserId(), commerceChannel.getGroupId());
+
+			if (commerceAccountIds.length == 0) {
+				CommerceAccount commerceAccount =
+					_commerceAccountLocalService.getGuestCommerceAccount(
+						contextUser.getCompanyId());
+
+				commerceAccountIds = new long[] {
+					commerceAccount.getCommerceAccountId()
+				};
+			}
+
+			return commerceAccountIds[0];
+		}
+
+		return accountId;
 	}
 
-	private List<Product> _toProducts(CPDataSourceResult cpDataSourceResult)
+	private Product _toProduct(
+			CommerceContext commerceContext, CPDefinition cpDefinition)
+		throws Exception {
+
+		return _productDTOConverter.toDTO(
+			new ProductDTOConverterContext(
+				commerceContext, cpDefinition, cpDefinition.getCPDefinitionId(),
+				contextAcceptLanguage.getPreferredLocale()));
+	}
+
+	private List<Product> _toProducts(
+			CommerceContext commerceContext,
+			CPDataSourceResult cpDataSourceResult)
 		throws Exception {
 
 		List<Product> products = new ArrayList<>();
@@ -221,8 +250,9 @@ public class ProductResourceImpl
 			products.add(
 				_productDTOConverter.toDTO(
 					new ProductDTOConverterContext(
-						contextAcceptLanguage.getPreferredLocale(),
-						cpCatalogEntry.getCPDefinitionId(), cpCatalogEntry)));
+						commerceContext, cpCatalogEntry,
+						cpCatalogEntry.getCPDefinitionId(),
+						contextAcceptLanguage.getPreferredLocale())));
 		}
 
 		return products;
@@ -234,7 +264,13 @@ public class ProductResourceImpl
 	private CommerceAccountHelper _commerceAccountHelper;
 
 	@Reference
+	private CommerceAccountLocalService _commerceAccountLocalService;
+
+	@Reference
 	private CommerceChannelLocalService _commerceChannelLocalService;
+
+	@Reference
+	private CommerceContextFactory _commerceContextFactory;
 
 	@Reference
 	private CommerceProductViewPermission _commerceProductViewPermission;

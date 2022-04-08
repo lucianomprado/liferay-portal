@@ -22,6 +22,7 @@ import com.liferay.portal.kernel.cluster.ClusterMasterExecutor;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.security.SecureRandomUtil;
+import com.liferay.portal.kernel.util.Base64;
 import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.MethodHandler;
 import com.liferay.portal.kernel.util.MethodKey;
@@ -50,6 +51,7 @@ import org.osgi.service.component.annotations.Reference;
 public class PunchOutAccessTokenProviderImpl
 	implements PunchOutAccessTokenProvider {
 
+	@Override
 	public PunchOutAccessToken generatePunchOutAccessToken(
 		long groupId, long commerceAccountId, String currencyCode,
 		String userEmailAddress, String commerceOrderUuid,
@@ -74,13 +76,15 @@ public class PunchOutAccessTokenProviderImpl
 			}
 			catch (Exception exception) {
 				_log.error(
-					"Timeout setting punch out access token to master node");
+					"Timeout setting punch out access token to master node",
+					exception);
 			}
 		}
 
 		return punchOutAccessToken;
 	}
 
+	@Override
 	public PunchOutAccessToken getPunchOutAccessToken(String token) {
 		if (!_clusterMasterExecutor.isEnabled() ||
 			_clusterMasterExecutor.isMaster()) {
@@ -97,12 +101,14 @@ public class PunchOutAccessTokenProviderImpl
 		}
 		catch (Exception exception) {
 			_log.error(
-				"Timeout getting punch out access token from master node");
+				"Timeout getting punch out access token from master node",
+				exception);
 
 			return null;
 		}
 	}
 
+	@Override
 	public PunchOutAccessToken removePunchOutAccessToken(String token) {
 		if (!_clusterMasterExecutor.isEnabled() ||
 			_clusterMasterExecutor.isMaster()) {
@@ -119,7 +125,8 @@ public class PunchOutAccessTokenProviderImpl
 		}
 		catch (Exception exception) {
 			_log.error(
-				"Timeout removing punch out access token from master node");
+				"Timeout removing punch out access token from master node",
+				exception);
 
 			return null;
 		}
@@ -160,7 +167,7 @@ public class PunchOutAccessTokenProviderImpl
 				PunchOutAccessToken punchOutAccessToken =
 					punchOutAccessTokenDelayed.getPunchOutAccessToken();
 
-				String tokenString = String.valueOf(
+				String tokenString = Base64.encodeToURL(
 					punchOutAccessToken.getToken());
 
 				if (token.equals(tokenString)) {
@@ -233,7 +240,8 @@ public class PunchOutAccessTokenProviderImpl
 			PunchOutAccessToken punchOutAccessToken =
 				punchOutAccessTokenDelayed.getPunchOutAccessToken();
 
-			String tokenString = String.valueOf(punchOutAccessToken.getToken());
+			String tokenString = Base64.encodeToURL(
+				punchOutAccessToken.getToken());
 
 			if (token.equals(tokenString)) {
 				return punchOutAccessToken;

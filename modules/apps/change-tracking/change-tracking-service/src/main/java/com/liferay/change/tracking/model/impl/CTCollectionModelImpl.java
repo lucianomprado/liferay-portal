@@ -16,7 +16,6 @@ package com.liferay.change.tracking.model.impl;
 
 import com.liferay.change.tracking.model.CTCollection;
 import com.liferay.change.tracking.model.CTCollectionModel;
-import com.liferay.change.tracking.model.CTCollectionSoap;
 import com.liferay.expando.kernel.model.ExpandoBridge;
 import com.liferay.expando.kernel.util.ExpandoBridgeFactoryUtil;
 import com.liferay.petra.string.StringBundler;
@@ -32,21 +31,22 @@ import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.util.DateUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
+import com.liferay.portal.kernel.util.StringUtil;
 
 import java.io.Serializable;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
 
+import java.sql.Blob;
 import java.sql.Types;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
@@ -76,9 +76,9 @@ public class CTCollectionModelImpl
 		{"mvccVersion", Types.BIGINT}, {"ctCollectionId", Types.BIGINT},
 		{"companyId", Types.BIGINT}, {"userId", Types.BIGINT},
 		{"createDate", Types.TIMESTAMP}, {"modifiedDate", Types.TIMESTAMP},
-		{"name", Types.VARCHAR}, {"description", Types.VARCHAR},
-		{"status", Types.INTEGER}, {"statusByUserId", Types.BIGINT},
-		{"statusDate", Types.TIMESTAMP}
+		{"schemaVersionId", Types.BIGINT}, {"name", Types.VARCHAR},
+		{"description", Types.VARCHAR}, {"status", Types.INTEGER},
+		{"statusByUserId", Types.BIGINT}, {"statusDate", Types.TIMESTAMP}
 	};
 
 	public static final Map<String, Integer> TABLE_COLUMNS_MAP =
@@ -91,6 +91,7 @@ public class CTCollectionModelImpl
 		TABLE_COLUMNS_MAP.put("userId", Types.BIGINT);
 		TABLE_COLUMNS_MAP.put("createDate", Types.TIMESTAMP);
 		TABLE_COLUMNS_MAP.put("modifiedDate", Types.TIMESTAMP);
+		TABLE_COLUMNS_MAP.put("schemaVersionId", Types.BIGINT);
 		TABLE_COLUMNS_MAP.put("name", Types.VARCHAR);
 		TABLE_COLUMNS_MAP.put("description", Types.VARCHAR);
 		TABLE_COLUMNS_MAP.put("status", Types.INTEGER);
@@ -99,7 +100,7 @@ public class CTCollectionModelImpl
 	}
 
 	public static final String TABLE_SQL_CREATE =
-		"create table CTCollection (mvccVersion LONG default 0 not null,ctCollectionId LONG not null primary key,companyId LONG,userId LONG,createDate DATE null,modifiedDate DATE null,name VARCHAR(75) null,description VARCHAR(200) null,status INTEGER,statusByUserId LONG,statusDate DATE null)";
+		"create table CTCollection (mvccVersion LONG default 0 not null,ctCollectionId LONG not null primary key,companyId LONG,userId LONG,createDate DATE null,modifiedDate DATE null,schemaVersionId LONG,name VARCHAR(75) null,description VARCHAR(200) null,status INTEGER,statusByUserId LONG,statusDate DATE null)";
 
 	public static final String TABLE_SQL_DROP = "drop table CTCollection";
 
@@ -116,23 +117,29 @@ public class CTCollectionModelImpl
 	public static final String TX_MANAGER = "liferayTransactionManager";
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long COMPANYID_COLUMN_BITMASK = 1L;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
-	public static final long STATUS_COLUMN_BITMASK = 2L;
+	public static final long SCHEMAVERSIONID_COLUMN_BITMASK = 2L;
+
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
+	 */
+	@Deprecated
+	public static final long STATUS_COLUMN_BITMASK = 4L;
 
 	/**
 	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-	 *		#getColumnBitmask(String)
+	 *		#getColumnBitmask(String)}
 	 */
 	@Deprecated
-	public static final long CREATEDATE_COLUMN_BITMASK = 4L;
+	public static final long CREATEDATE_COLUMN_BITMASK = 8L;
 
 	/**
 	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
@@ -146,59 +153,6 @@ public class CTCollectionModelImpl
 	 */
 	@Deprecated
 	public static void setFinderCacheEnabled(boolean finderCacheEnabled) {
-	}
-
-	/**
-	 * Converts the soap model instance into a normal model instance.
-	 *
-	 * @param soapModel the soap model instance to convert
-	 * @return the normal model instance
-	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
-	 */
-	@Deprecated
-	public static CTCollection toModel(CTCollectionSoap soapModel) {
-		if (soapModel == null) {
-			return null;
-		}
-
-		CTCollection model = new CTCollectionImpl();
-
-		model.setMvccVersion(soapModel.getMvccVersion());
-		model.setCtCollectionId(soapModel.getCtCollectionId());
-		model.setCompanyId(soapModel.getCompanyId());
-		model.setUserId(soapModel.getUserId());
-		model.setCreateDate(soapModel.getCreateDate());
-		model.setModifiedDate(soapModel.getModifiedDate());
-		model.setName(soapModel.getName());
-		model.setDescription(soapModel.getDescription());
-		model.setStatus(soapModel.getStatus());
-		model.setStatusByUserId(soapModel.getStatusByUserId());
-		model.setStatusDate(soapModel.getStatusDate());
-
-		return model;
-	}
-
-	/**
-	 * Converts the soap model instances into normal model instances.
-	 *
-	 * @param soapModels the soap model instances to convert
-	 * @return the normal model instances
-	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
-	 */
-	@Deprecated
-	public static List<CTCollection> toModels(CTCollectionSoap[] soapModels) {
-		if (soapModels == null) {
-			return null;
-		}
-
-		List<CTCollection> models = new ArrayList<CTCollection>(
-			soapModels.length);
-
-		for (CTCollectionSoap soapModel : soapModels) {
-			models.add(toModel(soapModel));
-		}
-
-		return models;
 	}
 
 	public CTCollectionModelImpl() {
@@ -351,6 +305,11 @@ public class CTCollectionModelImpl
 		attributeSetterBiConsumers.put(
 			"modifiedDate",
 			(BiConsumer<CTCollection, Date>)CTCollection::setModifiedDate);
+		attributeGetterFunctions.put(
+			"schemaVersionId", CTCollection::getSchemaVersionId);
+		attributeSetterBiConsumers.put(
+			"schemaVersionId",
+			(BiConsumer<CTCollection, Long>)CTCollection::setSchemaVersionId);
 		attributeGetterFunctions.put("name", CTCollection::getName);
 		attributeSetterBiConsumers.put(
 			"name", (BiConsumer<CTCollection, String>)CTCollection::setName);
@@ -503,6 +462,31 @@ public class CTCollectionModelImpl
 
 	@JSON
 	@Override
+	public long getSchemaVersionId() {
+		return _schemaVersionId;
+	}
+
+	@Override
+	public void setSchemaVersionId(long schemaVersionId) {
+		if (_columnOriginalValues == Collections.EMPTY_MAP) {
+			_setColumnOriginalValues();
+		}
+
+		_schemaVersionId = schemaVersionId;
+	}
+
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *             #getColumnOriginalValue(String)}
+	 */
+	@Deprecated
+	public long getOriginalSchemaVersionId() {
+		return GetterUtil.getLong(
+			this.<Long>getColumnOriginalValue("schemaVersionId"));
+	}
+
+	@JSON
+	@Override
 	public String getName() {
 		if (_name == null) {
 			return "";
@@ -626,7 +610,9 @@ public class CTCollectionModelImpl
 		for (Map.Entry<String, Object> entry :
 				_columnOriginalValues.entrySet()) {
 
-			if (entry.getValue() != getColumnValue(entry.getKey())) {
+			if (!Objects.equals(
+					entry.getValue(), getColumnValue(entry.getKey()))) {
+
 				_columnBitmask |= _columnBitmasks.get(entry.getKey());
 			}
 		}
@@ -672,6 +658,7 @@ public class CTCollectionModelImpl
 		ctCollectionImpl.setUserId(getUserId());
 		ctCollectionImpl.setCreateDate(getCreateDate());
 		ctCollectionImpl.setModifiedDate(getModifiedDate());
+		ctCollectionImpl.setSchemaVersionId(getSchemaVersionId());
 		ctCollectionImpl.setName(getName());
 		ctCollectionImpl.setDescription(getDescription());
 		ctCollectionImpl.setStatus(getStatus());
@@ -679,6 +666,36 @@ public class CTCollectionModelImpl
 		ctCollectionImpl.setStatusDate(getStatusDate());
 
 		ctCollectionImpl.resetOriginalValues();
+
+		return ctCollectionImpl;
+	}
+
+	@Override
+	public CTCollection cloneWithOriginalValues() {
+		CTCollectionImpl ctCollectionImpl = new CTCollectionImpl();
+
+		ctCollectionImpl.setMvccVersion(
+			this.<Long>getColumnOriginalValue("mvccVersion"));
+		ctCollectionImpl.setCtCollectionId(
+			this.<Long>getColumnOriginalValue("ctCollectionId"));
+		ctCollectionImpl.setCompanyId(
+			this.<Long>getColumnOriginalValue("companyId"));
+		ctCollectionImpl.setUserId(this.<Long>getColumnOriginalValue("userId"));
+		ctCollectionImpl.setCreateDate(
+			this.<Date>getColumnOriginalValue("createDate"));
+		ctCollectionImpl.setModifiedDate(
+			this.<Date>getColumnOriginalValue("modifiedDate"));
+		ctCollectionImpl.setSchemaVersionId(
+			this.<Long>getColumnOriginalValue("schemaVersionId"));
+		ctCollectionImpl.setName(this.<String>getColumnOriginalValue("name"));
+		ctCollectionImpl.setDescription(
+			this.<String>getColumnOriginalValue("description"));
+		ctCollectionImpl.setStatus(
+			this.<Integer>getColumnOriginalValue("status"));
+		ctCollectionImpl.setStatusByUserId(
+			this.<Long>getColumnOriginalValue("statusByUserId"));
+		ctCollectionImpl.setStatusDate(
+			this.<Date>getColumnOriginalValue("statusDate"));
 
 		return ctCollectionImpl;
 	}
@@ -782,6 +799,8 @@ public class CTCollectionModelImpl
 			ctCollectionCacheModel.modifiedDate = Long.MIN_VALUE;
 		}
 
+		ctCollectionCacheModel.schemaVersionId = getSchemaVersionId();
+
 		ctCollectionCacheModel.name = getName();
 
 		String name = ctCollectionCacheModel.name;
@@ -820,7 +839,7 @@ public class CTCollectionModelImpl
 			getAttributeGetterFunctions();
 
 		StringBundler sb = new StringBundler(
-			(4 * attributeGetterFunctions.size()) + 2);
+			(5 * attributeGetterFunctions.size()) + 2);
 
 		sb.append("{");
 
@@ -831,9 +850,26 @@ public class CTCollectionModelImpl
 			Function<CTCollection, Object> attributeGetterFunction =
 				entry.getValue();
 
+			sb.append("\"");
 			sb.append(attributeName);
-			sb.append("=");
-			sb.append(attributeGetterFunction.apply((CTCollection)this));
+			sb.append("\": ");
+
+			Object value = attributeGetterFunction.apply((CTCollection)this);
+
+			if (value == null) {
+				sb.append("null");
+			}
+			else if (value instanceof Blob || value instanceof Date ||
+					 value instanceof Map || value instanceof String) {
+
+				sb.append(
+					"\"" + StringUtil.replace(value.toString(), "\"", "'") +
+						"\"");
+			}
+			else {
+				sb.append(value);
+			}
+
 			sb.append(", ");
 		}
 
@@ -891,6 +927,7 @@ public class CTCollectionModelImpl
 	private Date _createDate;
 	private Date _modifiedDate;
 	private boolean _setModifiedDate;
+	private long _schemaVersionId;
 	private String _name;
 	private String _description;
 	private int _status;
@@ -930,6 +967,7 @@ public class CTCollectionModelImpl
 		_columnOriginalValues.put("userId", _userId);
 		_columnOriginalValues.put("createDate", _createDate);
 		_columnOriginalValues.put("modifiedDate", _modifiedDate);
+		_columnOriginalValues.put("schemaVersionId", _schemaVersionId);
 		_columnOriginalValues.put("name", _name);
 		_columnOriginalValues.put("description", _description);
 		_columnOriginalValues.put("status", _status);
@@ -960,15 +998,17 @@ public class CTCollectionModelImpl
 
 		columnBitmasks.put("modifiedDate", 32L);
 
-		columnBitmasks.put("name", 64L);
+		columnBitmasks.put("schemaVersionId", 64L);
 
-		columnBitmasks.put("description", 128L);
+		columnBitmasks.put("name", 128L);
 
-		columnBitmasks.put("status", 256L);
+		columnBitmasks.put("description", 256L);
 
-		columnBitmasks.put("statusByUserId", 512L);
+		columnBitmasks.put("status", 512L);
 
-		columnBitmasks.put("statusDate", 1024L);
+		columnBitmasks.put("statusByUserId", 1024L);
+
+		columnBitmasks.put("statusDate", 2048L);
 
 		_columnBitmasks = Collections.unmodifiableMap(columnBitmasks);
 	}

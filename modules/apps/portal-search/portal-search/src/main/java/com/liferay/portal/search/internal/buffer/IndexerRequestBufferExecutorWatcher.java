@@ -78,19 +78,17 @@ public class IndexerRequestBufferExecutorWatcher {
 		IndexerRequestBufferExecutor indexerRequestBufferExecutor,
 		Map<String, Object> properties) {
 
-		String bufferedExecutionMode = _getBufferedExecutionMode(properties);
-
 		_indexerRequestBufferExecutors.put(
-			bufferedExecutionMode, indexerRequestBufferExecutor);
+			_getBufferedExecutionMode(properties),
+			indexerRequestBufferExecutor);
 	}
 
 	protected void removeIndexerRequestBufferExecutor(
 		IndexerRequestBufferExecutor indexerRequestBufferExecutor,
 		Map<String, Object> properties) {
 
-		String bufferedExecutionMode = _getBufferedExecutionMode(properties);
-
-		_indexerRequestBufferExecutors.remove(bufferedExecutionMode);
+		_indexerRequestBufferExecutors.remove(
+			_getBufferedExecutionMode(properties));
 	}
 
 	private String _getBufferedExecutionMode(Map<String, Object> properties) {
@@ -112,7 +110,7 @@ public class IndexerRequestBufferExecutorWatcher {
 	@Reference(target = "(buffered.execution.mode=DEFAULT)")
 	private IndexerRequestBufferExecutor _defaultIndexerRequestBufferExecutor;
 
-	private IndexerRegistryConfiguration _indexerRegistryConfiguration;
+	private volatile IndexerRegistryConfiguration _indexerRegistryConfiguration;
 	private final Map<String, IndexerRequestBufferExecutor>
 		_indexerRequestBufferExecutors = new ConcurrentHashMap<>();
 

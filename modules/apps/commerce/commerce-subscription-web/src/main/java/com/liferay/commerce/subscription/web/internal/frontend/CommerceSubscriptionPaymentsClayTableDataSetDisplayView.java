@@ -14,6 +14,7 @@
 
 package com.liferay.commerce.subscription.web.internal.frontend;
 
+import com.liferay.commerce.subscription.web.internal.frontend.constants.CommerceSubscriptionDataSetConstants;
 import com.liferay.frontend.taglib.clay.data.set.ClayDataSetDisplayView;
 import com.liferay.frontend.taglib.clay.data.set.view.table.BaseTableClayDataSetDisplayView;
 import com.liferay.frontend.taglib.clay.data.set.view.table.ClayTableSchema;
@@ -41,10 +42,10 @@ public class CommerceSubscriptionPaymentsClayTableDataSetDisplayView
 		ClayTableSchemaBuilder clayTableSchemaBuilder =
 			_clayTableSchemaBuilderFactory.create();
 
-		ClayTableSchemaField typeField =
+		ClayTableSchemaField typeClayTableSchemaField =
 			clayTableSchemaBuilder.addClayTableSchemaField("type", "type");
 
-		typeField.setContentRenderer("label");
+		typeClayTableSchemaField.setContentRenderer("label");
 
 		clayTableSchemaBuilder.addClayTableSchemaField("date", "date");
 

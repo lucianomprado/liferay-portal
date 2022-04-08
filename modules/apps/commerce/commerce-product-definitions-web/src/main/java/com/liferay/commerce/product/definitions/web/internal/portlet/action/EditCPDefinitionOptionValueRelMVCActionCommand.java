@@ -51,27 +51,12 @@ import org.osgi.service.component.annotations.Reference;
 	enabled = false, immediate = true,
 	property = {
 		"javax.portlet.name=" + CPPortletKeys.CP_DEFINITIONS,
-		"mvc.command.name=editProductDefinitionOptionValueRel"
+		"mvc.command.name=/cp_definitions/edit_cp_definition_option_value_rel"
 	},
 	service = MVCActionCommand.class
 )
 public class EditCPDefinitionOptionValueRelMVCActionCommand
 	extends BaseMVCActionCommand {
-
-	protected CPDefinitionOptionValueRel deleteCPDefinitionOptionValueRels(
-			ActionRequest actionRequest)
-		throws Exception {
-
-		long cpDefinitionOptionValueRelId = ParamUtil.getLong(
-			actionRequest, "cpDefinitionOptionValueRelId");
-
-		if (cpDefinitionOptionValueRelId > 0) {
-			return _cpDefinitionOptionValueRelService.
-				deleteCPDefinitionOptionValueRel(cpDefinitionOptionValueRelId);
-		}
-
-		return null;
-	}
 
 	@Override
 	protected void doProcessAction(
@@ -82,16 +67,16 @@ public class EditCPDefinitionOptionValueRelMVCActionCommand
 
 		try {
 			if (cmd.equals(Constants.ADD) || cmd.equals(Constants.UPDATE)) {
-				updateCPDefinitionOptionValueRel(actionRequest);
+				_updateCPDefinitionOptionValueRel(actionRequest);
 			}
 			else if (cmd.equals(Constants.DELETE)) {
-				deleteCPDefinitionOptionValueRels(actionRequest);
+				_deleteCPDefinitionOptionValueRels(actionRequest);
 			}
 			else if (cmd.equals("deleteSku")) {
-				resetCPInstanceAndQuantity(actionRequest);
+				_resetCPInstanceAndQuantity(actionRequest);
 			}
 			else if (cmd.equals("updatePreselected")) {
-				updatePreselected(actionRequest);
+				_updatePreselected(actionRequest);
 			}
 		}
 		catch (Exception exception) {
@@ -108,15 +93,30 @@ public class EditCPDefinitionOptionValueRelMVCActionCommand
 
 				actionResponse.setRenderParameter(
 					"mvcRenderCommandName",
-					"editProductDefinitionOptionValueRel");
+					"/cp_definitions/edit_cp_definition_option_value_rel");
 			}
 			else {
-				_log.error(exception, exception);
+				_log.error(exception);
 			}
 		}
 	}
 
-	protected CPDefinitionOptionValueRel resetCPInstanceAndQuantity(
+	private CPDefinitionOptionValueRel _deleteCPDefinitionOptionValueRels(
+			ActionRequest actionRequest)
+		throws Exception {
+
+		long cpDefinitionOptionValueRelId = ParamUtil.getLong(
+			actionRequest, "cpDefinitionOptionValueRelId");
+
+		if (cpDefinitionOptionValueRelId > 0) {
+			return _cpDefinitionOptionValueRelService.
+				deleteCPDefinitionOptionValueRel(cpDefinitionOptionValueRelId);
+		}
+
+		return null;
+	}
+
+	private CPDefinitionOptionValueRel _resetCPInstanceAndQuantity(
 			ActionRequest actionRequest)
 		throws PortalException {
 
@@ -128,25 +128,17 @@ public class EditCPDefinitionOptionValueRelMVCActionCommand
 				cpDefinitionOptionValueRelId);
 	}
 
-	protected CPDefinitionOptionValueRel updateCPDefinitionOptionValueRel(
+	private CPDefinitionOptionValueRel _updateCPDefinitionOptionValueRel(
 			ActionRequest actionRequest)
 		throws Exception {
 
 		long cpDefinitionOptionValueRelId = ParamUtil.getLong(
 			actionRequest, "cpDefinitionOptionValueRelId");
 
-		long cpDefinitionOptionRelId = ParamUtil.getLong(
-			actionRequest, "cpDefinitionOptionRelId");
 		Map<Locale, String> nameMap = LocalizationUtil.getLocalizationMap(
 			actionRequest, "name");
 		double priority = ParamUtil.getDouble(actionRequest, "priority");
 		String key = ParamUtil.getString(actionRequest, "key");
-		long cpInstanceId = ParamUtil.getLong(actionRequest, "cpInstanceId");
-		int quantity = ParamUtil.getInteger(actionRequest, "quantity");
-		boolean preselected = ParamUtil.getBoolean(
-			actionRequest, "preselected");
-		BigDecimal price = (BigDecimal)ParamUtil.getNumber(
-			actionRequest, "price", BigDecimal.ZERO);
 
 		ServiceContext serviceContext = ServiceContextFactory.getInstance(
 			CPDefinitionOptionValueRel.class.getName(), actionRequest);
@@ -154,6 +146,9 @@ public class EditCPDefinitionOptionValueRelMVCActionCommand
 		if (cpDefinitionOptionValueRelId <= 0) {
 
 			// Add commerce product definition option value rel
+
+			long cpDefinitionOptionRelId = ParamUtil.getLong(
+				actionRequest, "cpDefinitionOptionRelId");
 
 			return _cpDefinitionOptionValueRelService.
 				addCPDefinitionOptionValueRel(
@@ -163,13 +158,20 @@ public class EditCPDefinitionOptionValueRelMVCActionCommand
 
 		// Update commerce product definition option value rel
 
+		long cpInstanceId = ParamUtil.getLong(actionRequest, "cpInstanceId");
+		int quantity = ParamUtil.getInteger(actionRequest, "quantity");
+		boolean preselected = ParamUtil.getBoolean(
+			actionRequest, "preselected");
+		BigDecimal price = (BigDecimal)ParamUtil.getNumber(
+			actionRequest, "price", BigDecimal.ZERO);
+
 		return _cpDefinitionOptionValueRelService.
 			updateCPDefinitionOptionValueRel(
 				cpDefinitionOptionValueRelId, nameMap, priority, key,
 				cpInstanceId, quantity, preselected, price, serviceContext);
 	}
 
-	protected CPDefinitionOptionValueRel updatePreselected(
+	private CPDefinitionOptionValueRel _updatePreselected(
 			ActionRequest actionRequest)
 		throws PortalException {
 

@@ -15,16 +15,20 @@
 package com.liferay.message.boards.web.internal.upload.format.handlers;
 
 import com.liferay.message.boards.web.internal.util.MBAttachmentFileEntryReference;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.portletfilerepository.PortletFileRepository;
 import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -37,6 +41,11 @@ import org.mockito.runners.MockitoJUnitRunner;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class MBMessageBBCodeFormatUploadHandlerTest {
+
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
 
 	@Before
 	public void setUp() {
@@ -114,8 +123,8 @@ public class MBMessageBBCodeFormatUploadHandlerTest {
 		List<MBAttachmentFileEntryReference> fileEntryReferences =
 			new ArrayList<>();
 
-		StringBuilder originalContent = new StringBuilder();
-		StringBuilder expectedContent = new StringBuilder();
+		StringBundler originalContentSB = new StringBundler();
+		StringBundler expectedContentSB = new StringBundler();
 
 		for (int tempFileId = 0; tempFileId < 3; tempFileId++) {
 			FileEntry fileEntry = Mockito.mock(FileEntry.class);
@@ -138,16 +147,18 @@ public class MBMessageBBCodeFormatUploadHandlerTest {
 			fileEntryReferences.add(
 				new MBAttachmentFileEntryReference(tempFileId, fileEntry));
 
-			originalContent.append(curOriginalContent);
+			originalContentSB.append(curOriginalContent);
 
-			expectedContent.append("[img]" + finalURL + "[/img]");
+			expectedContentSB.append("[img]");
+			expectedContentSB.append(finalURL);
+			expectedContentSB.append("[/img]");
 		}
 
 		String finalContent =
 			_mbMessageBBCodeFormatUploadHandler.replaceImageReferences(
-				originalContent.toString(), fileEntryReferences);
+				originalContentSB.toString(), fileEntryReferences);
 
-		Assert.assertEquals(expectedContent.toString(), finalContent);
+		Assert.assertEquals(expectedContentSB.toString(), finalContent);
 	}
 
 	private final MBMessageBBCodeFormatUploadHandler

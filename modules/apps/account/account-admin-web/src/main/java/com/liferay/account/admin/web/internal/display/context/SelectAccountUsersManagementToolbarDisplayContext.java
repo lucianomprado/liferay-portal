@@ -19,6 +19,7 @@ import com.liferay.account.configuration.AccountEntryEmailDomainsConfiguration;
 import com.liferay.frontend.taglib.clay.servlet.taglib.display.context.SearchContainerManagementToolbarDisplayContext;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.CreationMenu;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.CreationMenuBuilder;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.language.LanguageUtil;
@@ -46,26 +47,30 @@ public class SelectAccountUsersManagementToolbarDisplayContext
 		HttpServletRequest httpServletRequest,
 		LiferayPortletRequest liferayPortletRequest,
 		LiferayPortletResponse liferayPortletResponse,
-		SearchContainer<AccountUserDisplay> searchContainer) {
+		SearchContainer<AccountUserDisplay> searchContainer,
+		SelectAccountUsersDisplayContext selectAccountUsersDisplayContext) {
 
 		super(
 			httpServletRequest, liferayPortletRequest, liferayPortletResponse,
 			searchContainer);
+
+		_selectAccountUsersDisplayContext = selectAccountUsersDisplayContext;
 	}
 
 	@Override
 	public String getClearResultsURL() {
-		PortletURL clearResultsURL = getPortletURL();
-
-		clearResultsURL.setParameter("navigation", (String)null);
-		clearResultsURL.setParameter("keywords", StringPool.BLANK);
-
-		return clearResultsURL.toString();
+		return PortletURLBuilder.create(
+			getPortletURL()
+		).setKeywords(
+			StringPool.BLANK
+		).setNavigation(
+			(String)null
+		).buildString();
 	}
 
 	@Override
 	public CreationMenu getCreationMenu() {
-		if (!isShowCreateButton()) {
+		if (!_selectAccountUsersDisplayContext.isShowCreateButton()) {
 			return null;
 		}
 
@@ -76,15 +81,6 @@ public class SelectAccountUsersManagementToolbarDisplayContext
 					LanguageUtil.get(httpServletRequest, "new-user"));
 			}
 		).build();
-	}
-
-	@Override
-	public String getDefaultEventHandler() {
-		if (!isShowCreateButton()) {
-			return null;
-		}
-
-		return "SELECT_ACCOUNT_USERS_MANAGEMENT_TOOLBAR_DEFAULT_EVENT_HANDLER";
 	}
 
 	@Override
@@ -107,30 +103,14 @@ public class SelectAccountUsersManagementToolbarDisplayContext
 		return false;
 	}
 
-	public boolean isOpenModalOnRedirect() {
-		return ParamUtil.getBoolean(httpServletRequest, "openModalOnRedirect");
-	}
-
 	@Override
 	public Boolean isSelectable() {
-		return !isSingleSelect();
-	}
-
-	public boolean isShowCreateButton() {
-		return ParamUtil.getBoolean(liferayPortletRequest, "showCreateButton");
-	}
-
-	public boolean isShowFilter() {
-		return ParamUtil.getBoolean(liferayPortletRequest, "showFilter", true);
-	}
-
-	public boolean isSingleSelect() {
-		return ParamUtil.getBoolean(liferayPortletRequest, "singleSelect");
+		return !_selectAccountUsersDisplayContext.isSingleSelect();
 	}
 
 	@Override
 	protected String[] getNavigationKeys() {
-		if (!isShowFilter()) {
+		if (!_selectAccountUsersDisplayContext.isShowFilter()) {
 			return new String[0];
 		}
 
@@ -149,7 +129,7 @@ public class SelectAccountUsersManagementToolbarDisplayContext
 		}
 		catch (ConfigurationException configurationException) {
 			if (_log.isDebugEnabled()) {
-				_log.debug(configurationException, configurationException);
+				_log.debug(configurationException);
 			}
 		}
 
@@ -169,5 +149,8 @@ public class SelectAccountUsersManagementToolbarDisplayContext
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		SelectAccountUsersManagementToolbarDisplayContext.class);
+
+	private final SelectAccountUsersDisplayContext
+		_selectAccountUsersDisplayContext;
 
 }

@@ -88,7 +88,10 @@ DLFileEntryAdditionalMetadataSetsDisplayContext dlFileEntryAdditionalMetadataSet
 						'" href="javascript:;" title="<%= LanguageUtil.get(request, "remove") %>"><%= UnicodeFormatter.toString(removeStructureIcon) %></a>';
 
 					searchContainer.addRow(
-						[selectedItem.name, ddmStructureLink],
+						[
+							Liferay.Util.escapeHTML(selectedItem.name),
+							ddmStructureLink,
+						],
 						selectedItem.ddmstructureid
 					);
 
@@ -96,7 +99,7 @@ DLFileEntryAdditionalMetadataSetsDisplayContext dlFileEntryAdditionalMetadataSet
 				}
 			},
 			selectEventName: '<portlet:namespace />selectDDMStructure',
-			title: '<%= UnicodeLanguageUtil.get(request, "select-structure") %>',
+			title: '<%= UnicodeLanguageUtil.get(request, "select-metadata-set") %>',
 			url:
 				'<portlet:renderURL windowState="<%= LiferayWindowState.POP_UP.toString() %>"><portlet:param name="mvcPath" value="/document_library/ddm/select_ddm_structure.jsp" /><portlet:param name="ddmStructureId" value="<%= String.valueOf(dlFileEntryAdditionalMetadataSetsDisplayContext.getDDMStructureId()) %>" /></portlet:renderURL>',
 		});
@@ -110,7 +113,7 @@ DLFileEntryAdditionalMetadataSetsDisplayContext dlFileEntryAdditionalMetadataSet
 
 	searchContainer.get('contentBox').delegate(
 		'click',
-		function (event) {
+		(event) => {
 			var link = event.currentTarget;
 
 			var tr = link.ancestor('tr');

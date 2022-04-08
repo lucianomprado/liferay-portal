@@ -31,7 +31,6 @@ import com.liferay.portal.kernel.util.Constants;
 import com.liferay.portal.kernel.util.LocalizationUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
-import com.liferay.portal.kernel.util.Validator;
 
 import java.io.File;
 
@@ -40,8 +39,6 @@ import java.util.Map;
 
 import javax.portlet.ActionRequest;
 import javax.portlet.ActionResponse;
-import javax.portlet.PortletRequest;
-import javax.portlet.PortletURL;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -54,24 +51,12 @@ import org.osgi.service.component.annotations.Reference;
 	enabled = false, immediate = true,
 	property = {
 		"javax.portlet.name=" + CPPortletKeys.COMMERCE_PAYMENT_METHODS,
-		"mvc.command.name=editCommercePaymentMethodGroupRel"
+		"mvc.command.name=/commerce_payment_methods/edit_commerce_payment_method_group_rel"
 	},
 	service = MVCActionCommand.class
 )
 public class EditCommercePaymentMethodGroupRelMVCActionCommand
 	extends BaseMVCActionCommand {
-
-	protected void deleteCommercePaymentMethodGroupRel(
-			ActionRequest actionRequest)
-		throws PortalException {
-
-		long commercePaymentMethodGroupRelId = ParamUtil.getLong(
-			actionRequest, "commercePaymentMethodGroupRelId");
-
-		_commercePaymentMethodGroupRelService.
-			deleteCommercePaymentMethodGroupRel(
-				commercePaymentMethodGroupRelId);
-	}
 
 	@Override
 	protected void doProcessAction(
@@ -82,12 +67,12 @@ public class EditCommercePaymentMethodGroupRelMVCActionCommand
 
 		try {
 			if (cmd.equals(Constants.DELETE)) {
-				deleteCommercePaymentMethodGroupRel(actionRequest);
+				_deleteCommercePaymentMethodGroupRel(actionRequest);
 			}
 			else if (cmd.equals(Constants.ADD) ||
 					 cmd.equals(Constants.UPDATE)) {
 
-				updateCommercePaymentMethodGroupRel(actionRequest);
+				_updateCommercePaymentMethodGroupRel(actionRequest);
 			}
 		}
 		catch (Exception exception) {
@@ -108,7 +93,8 @@ public class EditCommercePaymentMethodGroupRelMVCActionCommand
 
 				actionResponse.setRenderParameter(
 					"mvcRenderCommandName",
-					"editCommercePaymentMethodGroupRel");
+					"/commerce_payment_methods" +
+						"/edit_commerce_payment_method_group_rel");
 			}
 			else {
 				throw exception;
@@ -116,35 +102,19 @@ public class EditCommercePaymentMethodGroupRelMVCActionCommand
 		}
 	}
 
-	protected String getRedirectURL(
-		ActionRequest actionRequest, long commercePaymentMethodGroupRelId,
-		String mvcRenderCommandName) {
+	private void _deleteCommercePaymentMethodGroupRel(
+			ActionRequest actionRequest)
+		throws PortalException {
 
-		PortletURL portletURL = _portal.getControlPanelPortletURL(
-			actionRequest, CPPortletKeys.COMMERCE_CHANNELS,
-			PortletRequest.RENDER_PHASE);
+		long commercePaymentMethodGroupRelId = ParamUtil.getLong(
+			actionRequest, "commercePaymentMethodGroupRelId");
 
-		portletURL.setParameter("mvcRenderCommandName", mvcRenderCommandName);
-		portletURL.setParameter(
-			"commercePaymentMethodGroupRelId",
-			String.valueOf(commercePaymentMethodGroupRelId));
-
-		String redirect = ParamUtil.getString(actionRequest, "redirect");
-
-		if (Validator.isNotNull(redirect)) {
-			portletURL.setParameter("redirect", redirect);
-		}
-
-		String engineKey = ParamUtil.getString(actionRequest, "engineKey");
-
-		if (Validator.isNotNull(engineKey)) {
-			portletURL.setParameter("engineKey", engineKey);
-		}
-
-		return portletURL.toString();
+		_commercePaymentMethodGroupRelService.
+			deleteCommercePaymentMethodGroupRel(
+				commercePaymentMethodGroupRelId);
 	}
 
-	protected CommercePaymentMethodGroupRel updateCommercePaymentMethodGroupRel(
+	private CommercePaymentMethodGroupRel _updateCommercePaymentMethodGroupRel(
 			ActionRequest actionRequest)
 		throws PortalException {
 
@@ -159,24 +129,25 @@ public class EditCommercePaymentMethodGroupRelMVCActionCommand
 			LocalizationUtil.getLocalizationMap(
 				actionRequest, "descriptionMapAsXML");
 		File imageFile = uploadPortletRequest.getFile("imageFile");
-		String commercePaymentMethodEngineKey = ParamUtil.getString(
-			actionRequest, "commercePaymentMethodEngineKey");
 		double priority = ParamUtil.getDouble(actionRequest, "priority");
 		boolean active = ParamUtil.getBoolean(actionRequest, "active");
-		long commerceChannelId = ParamUtil.getLong(
-			actionRequest, "commerceChannelId");
 
 		long commercePaymentMethodGroupRelId = ParamUtil.getLong(
 			actionRequest, "commercePaymentMethodGroupRelId");
 
 		if (commercePaymentMethodGroupRelId <= 0) {
+			long commerceChannelId = ParamUtil.getLong(
+				actionRequest, "commerceChannelId");
+
 			CommerceChannel commerceChannel =
 				_commerceChannelService.getCommerceChannel(commerceChannelId);
+
+			String commercePaymentMethodEngineKey = ParamUtil.getString(
+				actionRequest, "commercePaymentMethodEngineKey");
 
 			commercePaymentMethodGroupRel =
 				_commercePaymentMethodGroupRelService.
 					addCommercePaymentMethodGroupRel(
-						_portal.getUserId(actionRequest),
 						commerceChannel.getGroupId(), nameMap, descriptionMap,
 						imageFile, commercePaymentMethodEngineKey, priority,
 						active);

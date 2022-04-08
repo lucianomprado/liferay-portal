@@ -34,6 +34,7 @@ import com.liferay.frontend.taglib.clay.data.set.view.table.ClayTableSchemaBuild
 import com.liferay.frontend.taglib.clay.data.set.view.table.ClayTableSchemaField;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemListBuilder;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.portlet.LiferayWindowState;
@@ -41,15 +42,12 @@ import com.liferay.portal.kernel.portlet.PortletProvider;
 import com.liferay.portal.kernel.portlet.PortletProviderUtil;
 import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
-import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.WebKeys;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
-import javax.portlet.PortletURL;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -82,10 +80,10 @@ public class CommerceShippingMethodClayTable
 		ClayTableSchemaBuilder clayTableSchemaBuilder =
 			_clayTableSchemaBuilderFactory.create();
 
-		ClayTableSchemaField nameField =
+		ClayTableSchemaField nameClayTableSchemaField =
 			clayTableSchemaBuilder.addClayTableSchemaField("name", "name");
 
-		nameField.setContentRenderer("actionLink");
+		nameClayTableSchemaField.setContentRenderer("actionLink");
 
 		clayTableSchemaBuilder.addClayTableSchemaField(
 			"description", "description");
@@ -93,10 +91,10 @@ public class CommerceShippingMethodClayTable
 		clayTableSchemaBuilder.addClayTableSchemaField(
 			"shippingEngine", "shipping-engine");
 
-		ClayTableSchemaField statusField =
+		ClayTableSchemaField statusClayTableSchemaField =
 			clayTableSchemaBuilder.addClayTableSchemaField("status", "status");
 
-		statusField.setContentRenderer("label");
+		statusClayTableSchemaField.setContentRenderer("label");
 
 		return clayTableSchemaBuilder.build();
 	}
@@ -108,24 +106,27 @@ public class CommerceShippingMethodClayTable
 
 		return DropdownItemListBuilder.add(
 			dropdownItem -> {
-				ShippingMethod shippingMethod = (ShippingMethod)model;
+				dropdownItem.setHref(
+					PortletURLBuilder.create(
+						PortletProviderUtil.getPortletURL(
+							httpServletRequest,
+							CommerceShippingMethod.class.getName(),
+							PortletProvider.Action.EDIT)
+					).setParameter(
+						"commerceChannelId",
+						ParamUtil.getLong(
+							httpServletRequest, "commerceChannelId")
+					).setParameter(
+						"commerceShippingMethodEngineKey",
+						() -> {
+							ShippingMethod shippingMethod =
+								(ShippingMethod)model;
 
-				long commerceChannelId = ParamUtil.getLong(
-					httpServletRequest, "commerceChannelId");
-
-				PortletURL portletURL = PortletProviderUtil.getPortletURL(
-					httpServletRequest, CommerceShippingMethod.class.getName(),
-					PortletProvider.Action.EDIT);
-
-				portletURL.setParameter(
-					"commerceChannelId", String.valueOf(commerceChannelId));
-				portletURL.setParameter(
-					"commerceShippingMethodEngineKey",
-					String.valueOf(shippingMethod.getKey()));
-
-				portletURL.setWindowState(LiferayWindowState.POP_UP);
-
-				dropdownItem.setHref(portletURL.toString());
+							return shippingMethod.getKey();
+						}
+					).setWindowState(
+						LiferayWindowState.POP_UP
+					).buildString());
 
 				dropdownItem.setLabel(
 					LanguageUtil.get(httpServletRequest, "edit"));
@@ -179,11 +180,9 @@ public class CommerceShippingMethodClayTable
 
 			shippingMethods.add(
 				new ShippingMethod(
-					HtmlUtil.escape(commerceShippingDescription),
-					entry.getKey(), HtmlUtil.escape(commerceShippingName),
-					HtmlUtil.escape(
-						commerceShippingEngine.getName(
-							themeDisplay.getLocale())),
+					commerceShippingDescription, entry.getKey(),
+					commerceShippingName,
+					commerceShippingEngine.getName(themeDisplay.getLocale()),
 					CommerceChannelClayTableUtil.getLabelField(
 						_isActive(commerceShippingMethod),
 						themeDisplay.getLocale())));

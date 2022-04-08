@@ -12,22 +12,26 @@
  * details.
  */
 
-import {useMutation} from '@apollo/client';
 import ClayButton from '@clayui/button';
 import ClayIcon from '@clayui/icon';
-import React from 'react';
+import ClayLabel from '@clayui/label';
+import {useMutation} from 'graphql-hooks';
+import React, {useEffect, useState} from 'react';
 
 import {deleteMessageQuery} from '../utils/client.es';
+import lang from '../utils/lang.es';
 import ArticleBodyRenderer from './ArticleBodyRenderer.es';
+import Modal from './Modal.es';
 
-export default ({comment, commentChange, editable = true}) => {
-	const [deleteMessage] = useMutation(deleteMessageQuery, {
-		onCompleted() {
-			if (commentChange) {
-				commentChange(comment);
-			}
-		},
-	});
+export default function Comment({comment, commentChange, editable = true}) {
+	const [dateModified, setDateModified] = useState('');
+	const [showDeleteCommentModal, setShowDeleteCommentModal] = useState(false);
+
+	const [deleteMessage] = useMutation(deleteMessageQuery);
+
+	useEffect(() => {
+		setDateModified(new Date(comment.dateModified).toLocaleDateString());
+	}, [comment.dateModified]);
 
 	return (
 		<div className="c-my-3 questions-reply row">
@@ -39,27 +43,64 @@ export default ({comment, commentChange, editable = true}) => {
 			</div>
 
 			<div className="col-10 col-lg-11">
+				<span className="text-secondary">
+					{lang.sub(Liferay.Language.get('replied-x'), [
+						dateModified,
+					])}
+				</span>
+
+				{comment.status && comment.status !== 'approved' && (
+					<span className="c-ml-2 text-secondary">
+						<ClayLabel displayType="info">
+							{comment.status}
+						</ClayLabel>
+					</span>
+				)}
+
 				<div className="c-mb-0">
 					<ArticleBodyRenderer
 						{...comment}
-						signature={comment.creator.name}
+						signature={comment.creator && comment.creator.name}
 					/>
 				</div>
 
 				{editable && comment.actions.delete && (
-					<ClayButton
-						className="c-mt-3 font-weight-bold text-secondary"
-						displayType="unstyled"
-						onClick={() => {
-							deleteMessage({
-								variables: {messageBoardMessageId: comment.id},
-							});
-						}}
-					>
-						{Liferay.Language.get('delete')}
-					</ClayButton>
+					<>
+						<ClayButton
+							className="c-mt-3 font-weight-bold text-secondary"
+							displayType="unstyled"
+							onClick={() => {
+								setShowDeleteCommentModal(true);
+							}}
+						>
+							{Liferay.Language.get('delete')}
+						</ClayButton>
+						<Modal
+							body={Liferay.Language.get(
+								'do-you-want-to-delete–this-comment'
+							)}
+							callback={() => {
+								deleteMessage({
+									variables: {
+										messageBoardMessageId: comment.id,
+									},
+								}).then(() => {
+									if (commentChange) {
+										commentChange(comment);
+									}
+								});
+							}}
+							onClose={() => {
+								setShowDeleteCommentModal(false);
+							}}
+							status="warning"
+							textPrimaryButton={Liferay.Language.get('delete')}
+							title={Liferay.Language.get('delete-comment')}
+							visible={showDeleteCommentModal}
+						/>
+					</>
 				)}
 			</div>
 		</div>
 	);
-};
+}

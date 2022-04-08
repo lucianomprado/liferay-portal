@@ -287,9 +287,11 @@ public class DLSharepointStorageImpl extends BaseSharepointStorageImpl {
 				serviceContext.setAssetTagNames(assetTagNames);
 
 				fileEntry = DLAppServiceUtil.updateFileEntry(
-					fileEntryId, newName, mimeType, newName, description,
-					changeLog, DLVersionNumberIncrease.fromMajorVersion(false),
-					file, serviceContext);
+					fileEntryId, newName, mimeType, newName, StringPool.BLANK,
+					description, changeLog,
+					DLVersionNumberIncrease.fromMajorVersion(false), file,
+					fileEntry.getExpirationDate(), fileEntry.getReviewDate(),
+					serviceContext);
 
 				if (folderId != newParentFolderId) {
 					fileEntry = DLAppServiceUtil.moveFileEntry(
@@ -372,8 +374,6 @@ public class DLSharepointStorageImpl extends BaseSharepointStorageImpl {
 			try {
 				FileEntry fileEntry = getFileEntry(sharepointRequest);
 
-				long fileEntryId = fileEntry.getFileEntryId();
-
 				description = fileEntry.getDescription();
 
 				String[] assetTagNames = AssetTagLocalServiceUtil.getTagNames(
@@ -383,19 +383,21 @@ public class DLSharepointStorageImpl extends BaseSharepointStorageImpl {
 				serviceContext.setAssetTagNames(assetTagNames);
 
 				DLAppServiceUtil.updateFileEntry(
-					fileEntryId, title, contentType, title, description,
-					changeLog, DLVersionNumberIncrease.fromMajorVersion(false),
-					file, serviceContext);
+					fileEntry.getFileEntryId(), title, contentType, title,
+					StringPool.BLANK, description, changeLog,
+					DLVersionNumberIncrease.fromMajorVersion(false), file,
+					fileEntry.getExpirationDate(), fileEntry.getReviewDate(),
+					serviceContext);
 			}
 			catch (NoSuchFileEntryException noSuchFileEntryException) {
 				if (_log.isDebugEnabled()) {
-					_log.debug(
-						noSuchFileEntryException, noSuchFileEntryException);
+					_log.debug(noSuchFileEntryException);
 				}
 
 				DLAppServiceUtil.addFileEntry(
-					groupId, parentFolderId, title, contentType, title,
-					description, changeLog, file, serviceContext);
+					null, groupId, parentFolderId, title, contentType, null,
+					null, description, changeLog, file, null, null,
+					serviceContext);
 			}
 		}
 		finally {

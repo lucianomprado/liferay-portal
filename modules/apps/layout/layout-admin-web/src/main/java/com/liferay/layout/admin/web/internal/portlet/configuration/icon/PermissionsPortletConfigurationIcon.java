@@ -49,7 +49,7 @@ import org.osgi.service.component.annotations.Reference;
 	immediate = true,
 	property = {
 		"javax.portlet.name=" + LayoutAdminPortletKeys.GROUP_PAGES,
-		"path=/layout/edit_layout"
+		"path=/layout_admin/edit_layout"
 	},
 	service = PortletConfigurationIcon.class
 )
@@ -86,7 +86,7 @@ public class PermissionsPortletConfigurationIcon
 		}
 		catch (Exception exception) {
 			if (_log.isDebugEnabled()) {
-				_log.debug(exception, exception);
+				_log.debug(exception);
 			}
 		}
 
@@ -97,15 +97,10 @@ public class PermissionsPortletConfigurationIcon
 	public boolean isShow(PortletRequest portletRequest) {
 		Layout layout = _getLayout(portletRequest);
 
-		if (layout == null) {
-			return false;
-		}
+		if ((layout == null) ||
+			(layout.getStatus() == WorkflowConstants.STATUS_DRAFT) ||
+			_staging.isIncomplete(layout)) {
 
-		if (layout.getStatus() == WorkflowConstants.STATUS_DRAFT) {
-			return false;
-		}
-
-		if (_staging.isIncomplete(layout)) {
 			return false;
 		}
 
@@ -125,7 +120,7 @@ public class PermissionsPortletConfigurationIcon
 		}
 		catch (Exception exception) {
 			if (_log.isDebugEnabled()) {
-				_log.debug(exception, exception);
+				_log.debug(exception);
 			}
 		}
 

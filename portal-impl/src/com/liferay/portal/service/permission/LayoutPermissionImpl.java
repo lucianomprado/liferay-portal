@@ -279,7 +279,11 @@ public class LayoutPermissionImpl
 			}
 		}
 
-		if (permissionChecker.hasPermission(
+		if ((layout.isDraftLayout() &&
+			 permissionChecker.hasPermission(
+				 group, Layout.class.getName(), layout.getClassPK(),
+				 actionId)) ||
+			permissionChecker.hasPermission(
 				group, Layout.class.getName(), layout.getPlid(), actionId)) {
 
 			return true;
@@ -592,8 +596,6 @@ public class LayoutPermissionImpl
 				if (count >= 0) {
 					return true;
 				}
-
-				return false;
 			}
 			catch (PortalException | RuntimeException exception) {
 				throw exception;

@@ -37,12 +37,11 @@
 	</c:if>
 
 	<c:if test="<%= Validator.isNotNull(actionDropdownItems) %>">
-		<div class="taglib-empty-result-message-actions">
+		<div class="c-mt-3 text-center">
 			<c:choose>
 				<c:when test="<%= actionDropdownItems.size() > 1 %>">
 					<clay:dropdown-menu
-						componentId="<%= componentId %>"
-						defaultEventHandler="<%= defaultEventHandler %>"
+						additionalProps="<%= additionalProps %>"
 						displayType="<%= buttonCssClass %>"
 						dropdownItems="<%= actionDropdownItems %>"
 						label="new"
@@ -60,25 +59,19 @@
 					<c:choose>
 						<c:when test='<%= Validator.isNotNull(actionDropdownItem.get("href")) %>'>
 							<clay:link
-								buttonStyle="<%= buttonCssClass %>"
-								componentId="<%= componentId %>"
-								data='<%= (HashMap)actionDropdownItem.get("data") %>'
-								defaultEventHandler="<%= defaultEventHandler %>"
+								displayType="<%= buttonCssClass %>"
 								href='<%= String.valueOf(actionDropdownItem.get("href")) %>'
 								label='<%= String.valueOf(actionDropdownItem.get("label")) %>'
-								propsTransformer="<%= propsTransformer %>"
-								servletContext="<%= application %>"
+								type="button"
 							/>
 						</c:when>
 						<c:otherwise>
 							<clay:button
-								componentId="<%= componentId %>"
-								data='<%= (HashMap)actionDropdownItem.get("data") %>'
-								defaultEventHandler="<%= defaultEventHandler %>"
+								additionalProps='<%= (HashMap)actionDropdownItem.get("data") %>'
 								displayType="<%= buttonCssClass %>"
 								label='<%= String.valueOf(actionDropdownItem.get("label")) %>'
-								propsTransformer="<%= propsTransformer %>"
-								servletContext="<%= application %>"
+								propsTransformer="<%= buttonPropsTransformer %>"
+								propsTransformerServletContext="<%= propsTransformerServletContext %>"
 							/>
 						</c:otherwise>
 					</c:choose>

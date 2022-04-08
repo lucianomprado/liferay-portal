@@ -59,7 +59,7 @@ public class SkuSerDes {
 		sb.append("{");
 
 		DateFormat liferayToJSONDateFormat = new SimpleDateFormat(
-			"yyyy-MM-dd'T'HH:mm:ss'Z'");
+			"yyyy-MM-dd'T'HH:mm:ssXX");
 
 		if (sku.getCost() != null) {
 			if (sb.length() > 1) {
@@ -79,6 +79,31 @@ public class SkuSerDes {
 			sb.append("\"depth\": ");
 
 			sb.append(sku.getDepth());
+		}
+
+		if (sku.getDiscontinued() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"discontinued\": ");
+
+			sb.append(sku.getDiscontinued());
+		}
+
+		if (sku.getDiscontinuedDate() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"discontinuedDate\": ");
+
+			sb.append("\"");
+
+			sb.append(
+				liferayToJSONDateFormat.format(sku.getDiscontinuedDate()));
+
+			sb.append("\"");
 		}
 
 		if (sku.getDisplayDate() != null) {
@@ -261,6 +286,30 @@ public class SkuSerDes {
 			sb.append(sku.getPurchasable());
 		}
 
+		if (sku.getReplacementSkuExternalReferenceCode() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"replacementSkuExternalReferenceCode\": ");
+
+			sb.append("\"");
+
+			sb.append(_escape(sku.getReplacementSkuExternalReferenceCode()));
+
+			sb.append("\"");
+		}
+
+		if (sku.getReplacementSkuId() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"replacementSkuId\": ");
+
+			sb.append(sku.getReplacementSkuId());
+		}
+
 		if (sku.getSku() != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -328,7 +377,7 @@ public class SkuSerDes {
 		Map<String, String> map = new TreeMap<>();
 
 		DateFormat liferayToJSONDateFormat = new SimpleDateFormat(
-			"yyyy-MM-dd'T'HH:mm:ss'Z'");
+			"yyyy-MM-dd'T'HH:mm:ssXX");
 
 		if (sku.getCost() == null) {
 			map.put("cost", null);
@@ -342,6 +391,22 @@ public class SkuSerDes {
 		}
 		else {
 			map.put("depth", String.valueOf(sku.getDepth()));
+		}
+
+		if (sku.getDiscontinued() == null) {
+			map.put("discontinued", null);
+		}
+		else {
+			map.put("discontinued", String.valueOf(sku.getDiscontinued()));
+		}
+
+		if (sku.getDiscontinuedDate() == null) {
+			map.put("discontinuedDate", null);
+		}
+		else {
+			map.put(
+				"discontinuedDate",
+				liferayToJSONDateFormat.format(sku.getDiscontinuedDate()));
 		}
 
 		if (sku.getDisplayDate() == null) {
@@ -464,6 +529,23 @@ public class SkuSerDes {
 			map.put("purchasable", String.valueOf(sku.getPurchasable()));
 		}
 
+		if (sku.getReplacementSkuExternalReferenceCode() == null) {
+			map.put("replacementSkuExternalReferenceCode", null);
+		}
+		else {
+			map.put(
+				"replacementSkuExternalReferenceCode",
+				String.valueOf(sku.getReplacementSkuExternalReferenceCode()));
+		}
+
+		if (sku.getReplacementSkuId() == null) {
+			map.put("replacementSkuId", null);
+		}
+		else {
+			map.put(
+				"replacementSkuId", String.valueOf(sku.getReplacementSkuId()));
+		}
+
 		if (sku.getSku() == null) {
 			map.put("sku", null);
 		}
@@ -513,12 +595,23 @@ public class SkuSerDes {
 
 			if (Objects.equals(jsonParserFieldName, "cost")) {
 				if (jsonParserFieldValue != null) {
-					sku.setCost((BigDecimal)jsonParserFieldValue);
+					sku.setCost(new BigDecimal((String)jsonParserFieldValue));
 				}
 			}
 			else if (Objects.equals(jsonParserFieldName, "depth")) {
 				if (jsonParserFieldValue != null) {
 					sku.setDepth(Double.valueOf((String)jsonParserFieldValue));
+				}
+			}
+			else if (Objects.equals(jsonParserFieldName, "discontinued")) {
+				if (jsonParserFieldValue != null) {
+					sku.setDiscontinued((Boolean)jsonParserFieldValue);
+				}
+			}
+			else if (Objects.equals(jsonParserFieldName, "discontinuedDate")) {
+				if (jsonParserFieldValue != null) {
+					sku.setDiscontinuedDate(
+						toDate((String)jsonParserFieldValue));
 				}
 			}
 			else if (Objects.equals(jsonParserFieldName, "displayDate")) {
@@ -579,7 +672,7 @@ public class SkuSerDes {
 			}
 			else if (Objects.equals(jsonParserFieldName, "price")) {
 				if (jsonParserFieldValue != null) {
-					sku.setPrice((BigDecimal)jsonParserFieldValue);
+					sku.setPrice(new BigDecimal((String)jsonParserFieldValue));
 				}
 			}
 			else if (Objects.equals(jsonParserFieldName, "productId")) {
@@ -596,7 +689,8 @@ public class SkuSerDes {
 			}
 			else if (Objects.equals(jsonParserFieldName, "promoPrice")) {
 				if (jsonParserFieldValue != null) {
-					sku.setPromoPrice((BigDecimal)jsonParserFieldValue);
+					sku.setPromoPrice(
+						new BigDecimal((String)jsonParserFieldValue));
 				}
 			}
 			else if (Objects.equals(jsonParserFieldName, "published")) {
@@ -607,6 +701,21 @@ public class SkuSerDes {
 			else if (Objects.equals(jsonParserFieldName, "purchasable")) {
 				if (jsonParserFieldValue != null) {
 					sku.setPurchasable((Boolean)jsonParserFieldValue);
+				}
+			}
+			else if (Objects.equals(
+						jsonParserFieldName,
+						"replacementSkuExternalReferenceCode")) {
+
+				if (jsonParserFieldValue != null) {
+					sku.setReplacementSkuExternalReferenceCode(
+						(String)jsonParserFieldValue);
+				}
+			}
+			else if (Objects.equals(jsonParserFieldName, "replacementSkuId")) {
+				if (jsonParserFieldValue != null) {
+					sku.setReplacementSkuId(
+						Long.valueOf((String)jsonParserFieldValue));
 				}
 			}
 			else if (Objects.equals(jsonParserFieldName, "sku")) {
@@ -628,9 +737,6 @@ public class SkuSerDes {
 				if (jsonParserFieldValue != null) {
 					sku.setWidth(Double.valueOf((String)jsonParserFieldValue));
 				}
-			}
-			else if (jsonParserFieldName.equals("status")) {
-				throw new IllegalArgumentException();
 			}
 		}
 
@@ -660,7 +766,7 @@ public class SkuSerDes {
 
 			sb.append("\"");
 			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -696,7 +802,7 @@ public class SkuSerDes {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 

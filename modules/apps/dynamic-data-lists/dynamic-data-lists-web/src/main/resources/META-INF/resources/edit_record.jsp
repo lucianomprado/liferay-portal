@@ -103,9 +103,8 @@ else {
 </portlet:actionURL>
 
 <c:if test="<%= record != null %>">
-	<clay:management-toolbar-v2
+	<clay:management-toolbar
 		infoPanelId="infoPanelId"
-		namespace="<%= liferayPortletResponse.getNamespace() %>"
 		selectable="<%= false %>"
 		showSearch="<%= false %>"
 	/>
@@ -185,7 +184,12 @@ else {
 				<liferay-ui:error exception="<%= DuplicateFileEntryException.class %>" message="a-file-with-that-name-already-exists" />
 
 				<liferay-ui:error exception="<%= FileSizeException.class %>">
-					<liferay-ui:message arguments="<%= LanguageUtil.formatStorageSize(DLValidatorUtil.getMaxAllowableSize(), locale) %>" key="please-enter-a-file-with-a-valid-file-size-no-larger-than-x" translateArguments="<%= false %>" />
+
+					<%
+					FileSizeException fileSizeException = (FileSizeException)errorException;
+					%>
+
+					<liferay-ui:message arguments="<%= LanguageUtil.formatStorageSize(fileSizeException.getMaxSize(), locale) %>" key="please-enter-a-file-with-a-valid-file-size-no-larger-than-x" translateArguments="<%= false %>" />
 				</liferay-ui:error>
 
 				<liferay-ui:error exception="<%= StorageFieldRequiredException.class %>" message="please-fill-out-all-required-fields" />
@@ -297,12 +301,15 @@ else {
 </aui:script>
 
 <%
-PortletURL portletURL = renderResponse.createRenderURL();
-
-portletURL.setParameter("mvcPath", "/view_record_set.jsp");
-portletURL.setParameter("recordSetId", String.valueOf(recordSetId));
-
-PortalUtil.addPortletBreadcrumbEntry(request, recordSet.getName(locale), portletURL.toString());
+PortalUtil.addPortletBreadcrumbEntry(
+	request, recordSet.getName(locale),
+	PortletURLBuilder.createRenderURL(
+		renderResponse
+	).setMVCPath(
+		"/view_record_set.jsp"
+	).setParameter(
+		"recordSetId", recordSetId
+	).buildString());
 
 if (record != null) {
 	PortalUtil.addPortletBreadcrumbEntry(request, LanguageUtil.format(request, "edit-x", ddmStructure.getName(locale), false), currentURL);

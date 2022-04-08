@@ -29,7 +29,6 @@ import com.liferay.portal.kernel.messaging.BaseMessageListener;
 import com.liferay.portal.kernel.messaging.DestinationNames;
 import com.liferay.portal.kernel.messaging.Message;
 import com.liferay.portal.kernel.messaging.MessageListener;
-import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.module.framework.ModuleServiceLifecycle;
 import com.liferay.portal.kernel.scheduler.SchedulerEngineHelper;
 import com.liferay.portal.kernel.scheduler.SchedulerEntry;
@@ -46,7 +45,6 @@ import java.util.List;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
-import org.osgi.service.component.annotations.Modified;
 import org.osgi.service.component.annotations.Reference;
 
 /**
@@ -60,7 +58,6 @@ import org.osgi.service.component.annotations.Reference;
 public class SendAnalyticsMessagesMessageListener extends BaseMessageListener {
 
 	@Activate
-	@Modified
 	protected void activate() {
 		Class<?> clazz = getClass();
 
@@ -87,9 +84,7 @@ public class SendAnalyticsMessagesMessageListener extends BaseMessageListener {
 			return;
 		}
 
-		for (Company company : _companyLocalService.getCompanies(false)) {
-			_process(company.getCompanyId());
-		}
+		_companyLocalService.forEachCompanyId(companyId -> _process(companyId));
 	}
 
 	@Override

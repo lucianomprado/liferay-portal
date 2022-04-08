@@ -16,6 +16,7 @@ package com.liferay.blogs.internal.trash;
 
 import com.liferay.blogs.model.BlogsEntry;
 import com.liferay.blogs.service.BlogsEntryLocalService;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.LayoutConstants;
 import com.liferay.portal.kernel.portlet.PortletProvider;
@@ -63,14 +64,15 @@ public class BlogsEntryTrashHandler extends BaseTrashHandler {
 			PortletRequest portletRequest, long classPK)
 		throws PortalException {
 
-		PortletURL portletURL = getRestoreURL(portletRequest, classPK, false);
-
 		BlogsEntry entry = _blogsEntryLocalService.getEntry(classPK);
 
-		portletURL.setParameter("entryId", String.valueOf(entry.getEntryId()));
-		portletURL.setParameter("urlTitle", entry.getUrlTitle());
-
-		return portletURL.toString();
+		return PortletURLBuilder.create(
+			_getRestoreURL(portletRequest, classPK, false)
+		).setParameter(
+			"entryId", entry.getEntryId()
+		).setParameter(
+			"urlTitle", entry.getUrlTitle()
+		).buildString();
 	}
 
 	@Override
@@ -78,7 +80,7 @@ public class BlogsEntryTrashHandler extends BaseTrashHandler {
 			PortletRequest portletRequest, long classPK)
 		throws PortalException {
 
-		PortletURL portletURL = getRestoreURL(portletRequest, classPK, true);
+		PortletURL portletURL = _getRestoreURL(portletRequest, classPK, true);
 
 		return portletURL.toString();
 	}
@@ -121,7 +123,16 @@ public class BlogsEntryTrashHandler extends BaseTrashHandler {
 		_blogsEntryLocalService.restoreEntryFromTrash(userId, classPK);
 	}
 
-	protected PortletURL getRestoreURL(
+	@Override
+	protected boolean hasPermission(
+			PermissionChecker permissionChecker, long classPK, String actionId)
+		throws PortalException {
+
+		return _blogsEntryModelResourcePermission.contains(
+			permissionChecker, classPK, actionId);
+	}
+
+	private PortletURL _getRestoreURL(
 			PortletRequest portletRequest, long classPK, boolean containerModel)
 		throws PortalException {
 
@@ -151,15 +162,6 @@ public class BlogsEntryTrashHandler extends BaseTrashHandler {
 		}
 
 		return portletURL;
-	}
-
-	@Override
-	protected boolean hasPermission(
-			PermissionChecker permissionChecker, long classPK, String actionId)
-		throws PortalException {
-
-		return _blogsEntryModelResourcePermission.contains(
-			permissionChecker, classPK, actionId);
 	}
 
 	@Reference

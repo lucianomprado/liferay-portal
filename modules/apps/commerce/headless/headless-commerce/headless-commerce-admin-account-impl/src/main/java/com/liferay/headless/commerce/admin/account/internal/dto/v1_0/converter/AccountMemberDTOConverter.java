@@ -37,7 +37,7 @@ import org.osgi.service.component.annotations.Reference;
  */
 @Component(
 	enabled = false,
-	property = "model.class.name=com.liferay.commerce.account.model.CommerceAccountUserRel",
+	property = "dto.class.name=com.liferay.commerce.account.model.CommerceAccountUserRel",
 	service = {AccountMemberDTOConverter.class, DTOConverter.class}
 )
 public class AccountMemberDTOConverter
@@ -63,6 +63,7 @@ public class AccountMemberDTOConverter
 				accountId = commerceAccountUserRel.getCommerceAccountId();
 				accountRoles = _getAccountRoles(
 					commerceAccountUserRel, dtoConverterContext);
+				email = user.getEmailAddress();
 				name = user.getFullName();
 				userId = user.getUserId();
 			}

@@ -45,7 +45,7 @@ import org.osgi.service.component.annotations.Reference;
 	enabled = false, immediate = true,
 	property = {
 		"javax.portlet.name=" + CommercePortletKeys.COMMERCE_SHIPPING_METHODS,
-		"mvc.command.name=editCommerceShippingFixedOption"
+		"mvc.command.name=/commerce_shipping_methods/edit_commerce_shipping_fixed_option"
 	},
 	service = MVCRenderCommand.class
 )
@@ -58,7 +58,8 @@ public class EditCommerceShippingFixedOptionMVCRenderCommand
 		throws PortletException {
 
 		RequestDispatcher requestDispatcher =
-			_servletContext.getRequestDispatcher("/edit_shipping_option.jsp");
+			_servletContext.getRequestDispatcher(
+				"/edit_commerce_shipping_fixed_option.jsp");
 
 		try {
 			CommerceShippingFixedOptionsDisplayContext
@@ -66,9 +67,9 @@ public class EditCommerceShippingFixedOptionMVCRenderCommand
 					new CommerceShippingFixedOptionsDisplayContext(
 						_commerceChannelLocalService,
 						_commerceCurrencyLocalService,
-						_commerceShippingMethodService,
-						_commerceShippingFixedOptionService, _portal,
-						renderRequest, renderResponse);
+						_commerceShippingFixedOptionService,
+						_commerceShippingMethodService, _portal, renderRequest,
+						renderResponse);
 
 			renderRequest.setAttribute(
 				WebKeys.PORTLET_DISPLAY_CONTEXT,
@@ -87,8 +88,7 @@ public class EditCommerceShippingFixedOptionMVCRenderCommand
 				return "/error.jsp";
 			}
 
-			throw new PortletException(
-				"Unable to include edit_shipping_option.jsp", exception);
+			throw new PortletException(exception);
 		}
 
 		return MVCRenderConstants.MVC_PATH_VALUE_SKIP_DISPATCH;

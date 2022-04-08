@@ -19,6 +19,7 @@ import com.liferay.asset.display.page.constants.AssetDisplayPageConstants;
 import com.liferay.asset.display.page.model.AssetDisplayPageEntry;
 import com.liferay.asset.display.page.portlet.AssetDisplayPageEntryFormProcessor;
 import com.liferay.asset.display.page.service.AssetDisplayPageEntryLocalService;
+import com.liferay.asset.display.page.util.AssetDisplayPageUtil;
 import com.liferay.asset.kernel.service.AssetEntryLocalServiceUtil;
 import com.liferay.document.library.kernel.model.DLFileEntry;
 import com.liferay.document.library.kernel.model.DLFolder;
@@ -105,8 +106,9 @@ public class AssetDisplayPageFormProcessorTest {
 			_layoutPageTemplateEntryLocalService.addLayoutPageTemplateEntry(
 				TestPropsValues.getUserId(), _group.getGroupId(), 0,
 				classNameId, 0, RandomTestUtil.randomString(),
-				LayoutPageTemplateEntryTypeConstants.TYPE_DISPLAY_PAGE, true, 0,
-				0, 0, WorkflowConstants.STATUS_APPROVED, new ServiceContext());
+				LayoutPageTemplateEntryTypeConstants.TYPE_DISPLAY_PAGE, 0, true,
+				0, 0, 0, WorkflowConstants.STATUS_APPROVED,
+				new ServiceContext());
 
 		_withAndWithoutAssetEntry(
 			fileEntry -> {
@@ -124,19 +126,16 @@ public class AssetDisplayPageFormProcessorTest {
 							layoutPageTemplateEntry.
 								getLayoutPageTemplateEntryId())));
 
-				AssetDisplayPageEntry assetDisplayPageEntry =
+				Assert.assertNull(
 					_assetDisplayPageEntryLocalService.
 						fetchAssetDisplayPageEntry(
 							_group.getGroupId(), classNameId,
-							fileEntry.getFileEntryId());
+							fileEntry.getFileEntryId()));
 
-				Assert.assertEquals(
-					AssetDisplayPageConstants.TYPE_DEFAULT,
-					assetDisplayPageEntry.getType());
-
-				Assert.assertEquals(
-					layoutPageTemplateEntry.getLayoutPageTemplateEntryId(),
-					assetDisplayPageEntry.getLayoutPageTemplateEntryId());
+				Assert.assertTrue(
+					AssetDisplayPageUtil.hasAssetDisplayPage(
+						fileEntry.getGroupId(), classNameId,
+						fileEntry.getFileEntryId(), 0));
 			});
 	}
 
@@ -204,8 +203,9 @@ public class AssetDisplayPageFormProcessorTest {
 			_layoutPageTemplateEntryLocalService.addLayoutPageTemplateEntry(
 				TestPropsValues.getUserId(), _group.getGroupId(), 0,
 				classNameId, 0, RandomTestUtil.randomString(),
-				LayoutPageTemplateEntryTypeConstants.TYPE_DISPLAY_PAGE, true, 0,
-				0, 0, WorkflowConstants.STATUS_APPROVED, new ServiceContext());
+				LayoutPageTemplateEntryTypeConstants.TYPE_DISPLAY_PAGE, 0, true,
+				0, 0, 0, WorkflowConstants.STATUS_APPROVED,
+				new ServiceContext());
 
 		_withAndWithoutAssetEntry(
 			fileEntry -> {
@@ -217,19 +217,15 @@ public class AssetDisplayPageFormProcessorTest {
 							layoutPageTemplateEntry.
 								getLayoutPageTemplateEntryId())));
 
-				AssetDisplayPageEntry assetDisplayPageEntry =
+				Assert.assertNull(
 					_assetDisplayPageEntryLocalService.
 						fetchAssetDisplayPageEntry(
 							_group.getGroupId(), classNameId,
-							fileEntry.getFileEntryId());
-
-				Assert.assertEquals(
-					layoutPageTemplateEntry.getLayoutPageTemplateEntryId(),
-					assetDisplayPageEntry.getLayoutPageTemplateEntryId());
-
-				Assert.assertEquals(
-					layoutPageTemplateEntry.getType(),
-					AssetDisplayPageConstants.TYPE_DEFAULT);
+							fileEntry.getFileEntryId()));
+				Assert.assertTrue(
+					AssetDisplayPageUtil.hasAssetDisplayPage(
+						fileEntry.getGroupId(), classNameId,
+						fileEntry.getFileEntryId(), 0));
 			});
 	}
 

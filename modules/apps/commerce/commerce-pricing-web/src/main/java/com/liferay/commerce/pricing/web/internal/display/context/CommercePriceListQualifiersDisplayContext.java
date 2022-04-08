@@ -14,25 +14,29 @@
 
 package com.liferay.commerce.pricing.web.internal.display.context;
 
-import com.liferay.commerce.account.model.CommerceAccount;
+import com.liferay.account.constants.AccountPortletKeys;
+import com.liferay.commerce.model.CommerceOrderType;
 import com.liferay.commerce.price.list.model.CommercePriceList;
 import com.liferay.commerce.price.list.service.CommercePriceListAccountRelService;
+import com.liferay.commerce.price.list.service.CommercePriceListChannelRelService;
 import com.liferay.commerce.price.list.service.CommercePriceListCommerceAccountGroupRelService;
+import com.liferay.commerce.price.list.service.CommercePriceListOrderTypeRelService;
 import com.liferay.commerce.price.list.service.CommercePriceListService;
 import com.liferay.commerce.product.model.CommerceChannel;
 import com.liferay.commerce.product.service.CommerceCatalogService;
-import com.liferay.commerce.product.service.CommerceChannelRelService;
-import com.liferay.frontend.taglib.clay.data.set.servlet.taglib.util.ClayDataSetActionDropdownItem;
+import com.liferay.frontend.data.set.model.FDSActionDropdownItem;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.portlet.PortletProvider;
 import com.liferay.portal.kernel.portlet.PortletProviderUtil;
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
+import com.liferay.portal.kernel.util.ListUtil;
+import com.liferay.portal.kernel.util.Portal;
 
-import java.util.ArrayList;
 import java.util.List;
 
-import javax.portlet.PortletURL;
+import javax.portlet.PortletRequest;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -44,24 +48,30 @@ public class CommercePriceListQualifiersDisplayContext
 
 	public CommercePriceListQualifiersDisplayContext(
 		CommerceCatalogService commerceCatalogService,
-		CommerceChannelRelService commerceChannelRelService,
 		CommercePriceListAccountRelService commercePriceListAccountRelService,
+		CommercePriceListChannelRelService commercePriceListChannelRelService,
 		CommercePriceListCommerceAccountGroupRelService
 			commercePriceListCommerceAccountGroupRelService,
+		CommercePriceListOrderTypeRelService
+			commercePriceListOrderTypeRelService,
 		ModelResourcePermission<CommercePriceList>
 			commercePriceListModelResourcePermission,
-		CommercePriceListService commercePriceListService,
+		CommercePriceListService commercePriceListService, Portal portal,
 		HttpServletRequest httpServletRequest) {
 
 		super(
 			commerceCatalogService, commercePriceListModelResourcePermission,
 			commercePriceListService, httpServletRequest);
 
-		_commerceChannelRelService = commerceChannelRelService;
 		_commercePriceListAccountRelService =
 			commercePriceListAccountRelService;
+		_commercePriceListChannelRelService =
+			commercePriceListChannelRelService;
 		_commercePriceListCommerceAccountGroupRelService =
 			commercePriceListCommerceAccountGroupRelService;
+		_commercePriceListOrderTypeRelService =
+			commercePriceListOrderTypeRelService;
+		_portal = portal;
 	}
 
 	public String getActiveAccountEligibility() throws PortalException {
@@ -88,49 +98,59 @@ public class CommercePriceListQualifiersDisplayContext
 	}
 
 	public String getActiveChannelEligibility() throws PortalException {
-		long commercePriceListId = getCommercePriceListId();
+		int commercePriceListChannelRelsCount =
+			_commercePriceListChannelRelService.
+				getCommercePriceListChannelRelsCount(getCommercePriceListId());
 
-		long commerceChannelRelsCount =
-			_commerceChannelRelService.getCommerceChannelRelsCount(
-				CommercePriceList.class.getName(), commercePriceListId);
-
-		if (commerceChannelRelsCount > 0) {
+		if (commercePriceListChannelRelsCount > 0) {
 			return "channels";
 		}
 
 		return "all";
 	}
 
-	public List<ClayDataSetActionDropdownItem>
-			getPriceListAccountClayDataSetActionDropdownItems()
-		throws PortalException {
+	public String getActiveOrderTypeEligibility() throws PortalException {
+		int commercePriceListChannelRelsCount =
+			_commercePriceListOrderTypeRelService.
+				getCommercePriceListOrderTypeRelsCount(
+					getCommercePriceListId(), null);
 
-		PortletURL portletURL = PortletProviderUtil.getPortletURL(
-			httpServletRequest, CommerceAccount.class.getName(),
-			PortletProvider.Action.EDIT);
+		if (commercePriceListChannelRelsCount > 0) {
+			return "orderTypes";
+		}
 
-		portletURL.setParameter("mvcRenderCommandName", "editCommerceAccount");
-		portletURL.setParameter(
-			"redirect", commercePricingRequestHelper.getCurrentURL());
-		portletURL.setParameter("commerceAccountId", "{account.id}");
-
-		return getClayDataSetActionDropdownItems(portletURL.toString(), false);
+		return "all";
 	}
 
-	public List<ClayDataSetActionDropdownItem>
-			getPriceListAccountGroupClayDataSetActionDropdownItems()
+	public List<FDSActionDropdownItem>
+			getPriceListAccountFDSActionDropdownItems()
 		throws PortalException {
 
-		List<ClayDataSetActionDropdownItem> clayDataSetActionDropdownItems =
-			new ArrayList<>();
+		return getFDSActionDropdownItems(
+			PortletURLBuilder.create(
+				_portal.getControlPanelPortletURL(
+					httpServletRequest,
+					AccountPortletKeys.ACCOUNT_ENTRIES_ADMIN,
+					PortletRequest.RENDER_PHASE)
+			).setMVCRenderCommandName(
+				"/account_admin/edit_account_entry"
+			).setRedirect(
+				commercePricingRequestHelper.getCurrentURL()
+			).setParameter(
+				"accountEntryId", "{account.id}"
+			).buildString(),
+			false);
+	}
 
-		clayDataSetActionDropdownItems.add(
-			new ClayDataSetActionDropdownItem(
+	public List<FDSActionDropdownItem>
+			getPriceListAccountGroupFDSActionDropdownItems()
+		throws PortalException {
+
+		return ListUtil.fromArray(
+			new FDSActionDropdownItem(
 				null, "trash", "delete",
 				LanguageUtil.get(httpServletRequest, "delete"), "delete",
 				"delete", "headless"));
-
-		return clayDataSetActionDropdownItems;
 	}
 
 	public String getPriceListAccountGroupsApiURL() throws PortalException {
@@ -145,20 +165,23 @@ public class CommercePriceListQualifiersDisplayContext
 				"/price-list-accounts?nestedFields=account";
 	}
 
-	public List<ClayDataSetActionDropdownItem>
-			getPriceListChannelClayDataSetActionDropdownItems()
+	public List<FDSActionDropdownItem>
+			getPriceListChannelFDSActionDropdownItems()
 		throws PortalException {
 
-		PortletURL portletURL = PortletProviderUtil.getPortletURL(
-			httpServletRequest, CommerceChannel.class.getName(),
-			PortletProvider.Action.MANAGE);
-
-		portletURL.setParameter("mvcRenderCommandName", "editCommerceChannel");
-		portletURL.setParameter(
-			"redirect", commercePricingRequestHelper.getCurrentURL());
-		portletURL.setParameter("commerceChannelId", "{channel.id}");
-
-		return getClayDataSetActionDropdownItems(portletURL.toString(), false);
+		return getFDSActionDropdownItems(
+			PortletURLBuilder.create(
+				PortletProviderUtil.getPortletURL(
+					httpServletRequest, CommerceChannel.class.getName(),
+					PortletProvider.Action.MANAGE)
+			).setMVCRenderCommandName(
+				"/commerce_channels/edit_commerce_channel"
+			).setRedirect(
+				commercePricingRequestHelper.getCurrentURL()
+			).setParameter(
+				"commerceChannelId", "{channel.id}"
+			).buildString(),
+			false);
 	}
 
 	public String getPriceListChannelsApiURL() throws PortalException {
@@ -167,10 +190,39 @@ public class CommercePriceListQualifiersDisplayContext
 				"/price-list-channels?nestedFields=channel";
 	}
 
-	private final CommerceChannelRelService _commerceChannelRelService;
+	public List<FDSActionDropdownItem>
+			getPriceListOrderTypeFDSActionDropdownItems()
+		throws PortalException {
+
+		return getFDSActionDropdownItems(
+			PortletURLBuilder.create(
+				PortletProviderUtil.getPortletURL(
+					httpServletRequest, CommerceOrderType.class.getName(),
+					PortletProvider.Action.MANAGE)
+			).setMVCRenderCommandName(
+				"/commerce_order_type/edit_commerce_order_type"
+			).setRedirect(
+				commercePricingRequestHelper.getCurrentURL()
+			).setParameter(
+				"commerceOrderTypeId", "{orderType.id}"
+			).buildString(),
+			false);
+	}
+
+	public String getPriceListOrderTypesAPIURL() throws PortalException {
+		return "/o/headless-commerce-admin-pricing/v2.0/price-lists/" +
+			getCommercePriceListId() +
+				"/price-list-order-types?nestedFields=orderType";
+	}
+
 	private final CommercePriceListAccountRelService
 		_commercePriceListAccountRelService;
+	private final CommercePriceListChannelRelService
+		_commercePriceListChannelRelService;
 	private final CommercePriceListCommerceAccountGroupRelService
 		_commercePriceListCommerceAccountGroupRelService;
+	private final CommercePriceListOrderTypeRelService
+		_commercePriceListOrderTypeRelService;
+	private final Portal _portal;
 
 }

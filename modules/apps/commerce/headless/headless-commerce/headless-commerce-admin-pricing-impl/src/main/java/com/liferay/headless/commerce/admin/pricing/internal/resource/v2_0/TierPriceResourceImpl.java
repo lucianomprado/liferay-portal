@@ -17,7 +17,6 @@ package com.liferay.headless.commerce.admin.pricing.internal.resource.v2_0;
 import com.liferay.commerce.price.list.exception.NoSuchPriceEntryException;
 import com.liferay.commerce.price.list.exception.NoSuchTierPriceEntryException;
 import com.liferay.commerce.price.list.model.CommercePriceEntry;
-import com.liferay.commerce.price.list.model.CommercePriceList;
 import com.liferay.commerce.price.list.model.CommerceTierPriceEntry;
 import com.liferay.commerce.price.list.service.CommercePriceEntryService;
 import com.liferay.commerce.price.list.service.CommerceTierPriceEntryService;
@@ -27,8 +26,8 @@ import com.liferay.headless.commerce.admin.pricing.internal.util.v2_0.TierPriceU
 import com.liferay.headless.commerce.admin.pricing.resource.v2_0.TierPriceResource;
 import com.liferay.headless.commerce.core.util.DateConfig;
 import com.liferay.headless.commerce.core.util.ServiceContextHelper;
+import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
 import com.liferay.portal.kernel.service.ServiceContext;
-import com.liferay.portal.kernel.util.CalendarFactoryUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.vulcan.dto.converter.DTOConverterRegistry;
@@ -39,11 +38,8 @@ import com.liferay.portal.vulcan.pagination.Pagination;
 import java.math.BigDecimal;
 
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.TimeZone;
 
 import javax.ws.rs.core.Response;
 
@@ -73,11 +69,11 @@ public class TierPriceResourceImpl extends BaseTierPriceResourceImpl {
 
 		CommerceTierPriceEntry commerceTierPriceEntry =
 			_commerceTierPriceEntryService.fetchByExternalReferenceCode(
-				contextCompany.getCompanyId(), externalReferenceCode);
+				externalReferenceCode, contextCompany.getCompanyId());
 
 		if (commerceTierPriceEntry == null) {
 			throw new NoSuchTierPriceEntryException(
-				"Unable to find Tier Price with externalReferenceCode: " +
+				"Unable to find tier price with external reference code " +
 					externalReferenceCode);
 		}
 
@@ -96,7 +92,7 @@ public class TierPriceResourceImpl extends BaseTierPriceResourceImpl {
 
 		if (commercePriceEntry == null) {
 			throw new NoSuchPriceEntryException(
-				"Unable to find Price Entry with externalReferenceCode: " +
+				"Unable to find price entry with external reference code " +
 					externalReferenceCode);
 		}
 
@@ -149,11 +145,11 @@ public class TierPriceResourceImpl extends BaseTierPriceResourceImpl {
 
 		CommerceTierPriceEntry commerceTierPriceEntry =
 			_commerceTierPriceEntryService.fetchByExternalReferenceCode(
-				contextCompany.getCompanyId(), externalReferenceCode);
+				externalReferenceCode, contextCompany.getCompanyId());
 
 		if (commerceTierPriceEntry == null) {
 			throw new NoSuchTierPriceEntryException(
-				"Unable to find Tier Price with externalReferenceCode: " +
+				"Unable to find tier price with external reference code " +
 					externalReferenceCode);
 		}
 
@@ -181,11 +177,11 @@ public class TierPriceResourceImpl extends BaseTierPriceResourceImpl {
 
 		CommerceTierPriceEntry commerceTierPriceEntry =
 			_commerceTierPriceEntryService.fetchByExternalReferenceCode(
-				contextCompany.getCompanyId(), externalReferenceCode);
+				externalReferenceCode, contextCompany.getCompanyId());
 
 		if (commerceTierPriceEntry == null) {
 			throw new NoSuchTierPriceEntryException(
-				"Unable to find Tier Price with externalReferenceCode: " +
+				"Unable to find tier price with external reference code " +
 					externalReferenceCode);
 		}
 
@@ -207,12 +203,12 @@ public class TierPriceResourceImpl extends BaseTierPriceResourceImpl {
 
 		if (commercePriceEntry == null) {
 			throw new NoSuchPriceEntryException(
-				"Unable to find Price Entry with externalReferenceCode: " +
+				"Unable to find price entry with external reference code " +
 					externalReferenceCode);
 		}
 
 		CommerceTierPriceEntry commerceTierPriceEntry =
-			TierPriceUtil.upsertCommerceTierPriceEntry(
+			TierPriceUtil.addOrUpdateCommerceTierPriceEntry(
 				_commerceTierPriceEntryService, tierPrice, commercePriceEntry,
 				_serviceContextHelper);
 
@@ -225,7 +221,7 @@ public class TierPriceResourceImpl extends BaseTierPriceResourceImpl {
 		throws Exception {
 
 		CommerceTierPriceEntry commerceTierPriceEntry =
-			TierPriceUtil.upsertCommerceTierPriceEntry(
+			TierPriceUtil.addOrUpdateCommerceTierPriceEntry(
 				_commerceTierPriceEntryService, tierPrice,
 				_commercePriceEntryService.getCommercePriceEntry(id),
 				_serviceContextHelper);
@@ -238,63 +234,24 @@ public class TierPriceResourceImpl extends BaseTierPriceResourceImpl {
 			CommerceTierPriceEntry commerceTierPriceEntry)
 		throws Exception {
 
-		CommercePriceEntry commercePriceEntry =
-			commerceTierPriceEntry.getCommercePriceEntry();
-
-		CommercePriceList commercePriceList =
-			commercePriceEntry.getCommercePriceList();
-
 		return HashMapBuilder.<String, Map<String, String>>put(
 			"delete",
 			addAction(
-				"UPDATE", commercePriceList.getCommercePriceListId(),
-				"deleteTierPrice", commerceTierPriceEntry.getUserId(),
-				"com.liferay.commerce.price.list.model.CommercePriceList",
-				commercePriceList.getGroupId())
+				"UPDATE", commerceTierPriceEntry.getCommerceTierPriceEntryId(),
+				"deleteTierPrice",
+				_commerceTierPriceEntryModelResourcePermission)
 		).put(
 			"get",
 			addAction(
-				"VIEW", commercePriceList.getCommercePriceListId(),
-				"getTierPrice", commerceTierPriceEntry.getUserId(),
-				"com.liferay.commerce.price.list.model.CommercePriceList",
-				commercePriceList.getGroupId())
+				"VIEW", commerceTierPriceEntry.getCommerceTierPriceEntryId(),
+				"getTierPrice", _commerceTierPriceEntryModelResourcePermission)
 		).put(
 			"update",
 			addAction(
-				"UPDATE", commercePriceList.getCommercePriceListId(),
-				"patchTierPrice", commerceTierPriceEntry.getUserId(),
-				"com.liferay.commerce.price.list.model.CommercePriceList",
-				commercePriceList.getGroupId())
+				"UPDATE", commerceTierPriceEntry.getCommerceTierPriceEntryId(),
+				"patchTierPrice",
+				_commerceTierPriceEntryModelResourcePermission)
 		).build();
-	}
-
-	private DateConfig _getDisplayDateConfig(Date date, TimeZone timeZone) {
-		if (date == null) {
-			return new DateConfig(CalendarFactoryUtil.getCalendar(timeZone));
-		}
-
-		long time = date.getTime();
-
-		Calendar calendar = CalendarFactoryUtil.getCalendar(time, timeZone);
-
-		return new DateConfig(calendar);
-	}
-
-	private DateConfig _getExpirationDateConfig(Date date, TimeZone timeZone) {
-		if (date == null) {
-			Calendar expirationCalendar = CalendarFactoryUtil.getCalendar(
-				timeZone);
-
-			expirationCalendar.add(Calendar.MONTH, 1);
-
-			return new DateConfig(expirationCalendar);
-		}
-
-		long time = date.getTime();
-
-		Calendar calendar = CalendarFactoryUtil.getCalendar(time, timeZone);
-
-		return new DateConfig(calendar);
 	}
 
 	private TierPrice _toTierPrice(Long commerceTierPriceEntryId)
@@ -334,16 +291,15 @@ public class TierPriceResourceImpl extends BaseTierPriceResourceImpl {
 			CommerceTierPriceEntry commerceTierPriceEntry, TierPrice tierPrice)
 		throws Exception {
 
-		ServiceContext serviceContext =
-			_serviceContextHelper.getServiceContext();
-
 		CommercePriceEntry commercePriceEntry =
 			commerceTierPriceEntry.getCommercePriceEntry();
 
-		DateConfig displayDateConfig = _getDisplayDateConfig(
-			tierPrice.getDisplayDate(), serviceContext.getTimeZone());
+		ServiceContext serviceContext =
+			_serviceContextHelper.getServiceContext();
 
-		DateConfig expirationDateConfig = _getExpirationDateConfig(
+		DateConfig displayDateConfig = DateConfig.toDisplayDateConfig(
+			tierPrice.getDisplayDate(), serviceContext.getTimeZone());
+		DateConfig expirationDateConfig = DateConfig.toExpirationDateConfig(
 			tierPrice.getExpirationDate(), serviceContext.getTimeZone());
 
 		return _commerceTierPriceEntryService.updateCommerceTierPriceEntry(
@@ -367,6 +323,12 @@ public class TierPriceResourceImpl extends BaseTierPriceResourceImpl {
 
 	@Reference
 	private CommercePriceEntryService _commercePriceEntryService;
+
+	@Reference(
+		target = "(model.class.name=com.liferay.commerce.price.list.model.CommerceTierPriceEntry)"
+	)
+	private ModelResourcePermission<CommerceTierPriceEntry>
+		_commerceTierPriceEntryModelResourcePermission;
 
 	@Reference
 	private CommerceTierPriceEntryService _commerceTierPriceEntryService;

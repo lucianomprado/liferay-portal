@@ -106,9 +106,8 @@ public class MercanetCommercePaymentMethod implements CommercePaymentMethod {
 
 	@Override
 	public String getDescription(Locale locale) {
-		ResourceBundle resourceBundle = _getResourceBundle(locale);
-
-		return LanguageUtil.get(resourceBundle, "mercanet-description");
+		return LanguageUtil.get(
+			_getResourceBundle(locale), "mercanet-description");
 	}
 
 	@Override
@@ -118,9 +117,7 @@ public class MercanetCommercePaymentMethod implements CommercePaymentMethod {
 
 	@Override
 	public String getName(Locale locale) {
-		ResourceBundle resourceBundle = _getResourceBundle(locale);
-
-		return LanguageUtil.get(resourceBundle, KEY);
+		return LanguageUtil.get(_getResourceBundle(locale), KEY);
 	}
 
 	@Override
@@ -187,15 +184,10 @@ public class MercanetCommercePaymentMethod implements CommercePaymentMethod {
 			returnURL.getProtocol(), returnURL.getHost(), returnURL.getPort(),
 			returnURL.getPath());
 
-		StringBundler automaticURLSB = new StringBundler(5);
-
-		automaticURLSB.append(baseURL.toString());
-		automaticURLSB.append("?groupId=");
-		automaticURLSB.append(parameters.get("groupId")[0]);
-		automaticURLSB.append("&type=automatic&uuid=");
-		automaticURLSB.append(parameters.get("uuid")[0]);
-
-		URL automaticURL = new URL(automaticURLSB.toString());
+		URL automaticURL = new URL(
+			StringBundler.concat(
+				baseURL.toString(), "?groupId=", parameters.get("groupId")[0],
+				"&type=automatic&uuid=", parameters.get("uuid")[0]));
 
 		paymentRequest.setAutomaticResponseUrl(automaticURL);
 
@@ -259,15 +251,16 @@ public class MercanetCommercePaymentMethod implements CommercePaymentMethod {
 				resultMessage, false);
 		}
 
-		URL redirectionURL = initializationResponse.getRedirectionUrl();
-
 		String url = StringBundler.concat(
-			_getServletUrl(mercanetCommercePaymentRequest), "?redirectUrl=",
-			URLCodec.encodeURL(redirectionURL.toString()), "&redirectionData=",
+			_getServletUrl(mercanetCommercePaymentRequest), "?redirectURL=",
+			URLCodec.encodeURL(
+				String.valueOf(initializationResponse.getRedirectionUrl())),
+			"&redirectionData=",
 			URLEncoder.encode(
-				initializationResponse.getRedirectionData(), "UTF-8"),
+				initializationResponse.getRedirectionData(), StringPool.UTF8),
 			"&seal=",
-			URLEncoder.encode(initializationResponse.getSeal(), "UTF-8"));
+			URLEncoder.encode(
+				initializationResponse.getSeal(), StringPool.UTF8));
 
 		return new CommercePaymentResult(
 			transactionId, commerceOrder.getCommerceOrderId(),

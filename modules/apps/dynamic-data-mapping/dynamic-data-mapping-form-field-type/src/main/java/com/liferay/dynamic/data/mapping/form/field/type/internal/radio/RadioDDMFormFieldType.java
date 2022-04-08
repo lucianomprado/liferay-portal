@@ -17,6 +17,7 @@ package com.liferay.dynamic.data.mapping.form.field.type.internal.radio;
 import com.liferay.dynamic.data.mapping.form.field.type.BaseDDMFormFieldType;
 import com.liferay.dynamic.data.mapping.form.field.type.DDMFormFieldType;
 import com.liferay.dynamic.data.mapping.form.field.type.DDMFormFieldTypeSettings;
+import com.liferay.dynamic.data.mapping.form.field.type.constants.DDMFormFieldTypeConstants;
 
 import org.osgi.service.component.annotations.Component;
 
@@ -32,8 +33,8 @@ import org.osgi.service.component.annotations.Component;
 		"ddm.form.field.type.group=basic",
 		"ddm.form.field.type.icon=radio-button",
 		"ddm.form.field.type.label=radio-field-type-label",
-		"ddm.form.field.type.name=radio",
-		"ddm.form.field.type.scope=app-builder,forms"
+		"ddm.form.field.type.name=" + DDMFormFieldTypeConstants.RADIO,
+		"ddm.form.field.type.scope=document-library,forms,journal"
 	},
 	service = DDMFormFieldType.class
 )
@@ -53,7 +54,7 @@ public class RadioDDMFormFieldType extends BaseDDMFormFieldType {
 
 	@Override
 	public String getName() {
-		return "radio";
+		return DDMFormFieldTypeConstants.RADIO;
 	}
 
 }

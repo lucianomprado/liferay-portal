@@ -26,7 +26,7 @@
 
 			<c:if test="<%= showSubmitButton || Validator.isNotNull(submitButtonLabel) %>">
 				<button class="btn btn-primary form-submitter ml-3" type="submit">
-					<%= Validator.isNotNull(submitButtonLabel) ? submitButtonLabel : LanguageUtil.get(request, "submit") %>
+					<%= Validator.isNotNull(submitButtonLabel) ? HtmlUtil.escape(submitButtonLabel) : LanguageUtil.get(request, "submit") %>
 				</button>
 			</c:if>
 		</div>
@@ -48,7 +48,7 @@
 		window.top.Liferay.fire(events.CLOSE_MODAL, eventDetail);
 	}
 
-	window.addEventListener('keyup', function (event) {
+	window.addEventListener('keyup', (event) => {
 		event.preventDefault();
 
 		if (event.key === 'Escape') {
@@ -62,8 +62,8 @@
 
 	window.top.Liferay.fire(events.IS_LOADING_MODAL, {isLoading: false});
 
-	document.querySelectorAll('.modal-closer').forEach(function (trigger) {
-		trigger.addEventListener('click', function (e) {
+	document.querySelectorAll('.modal-closer').forEach((trigger) => {
+		trigger.addEventListener('click', (e) => {
 			e.preventDefault();
 			window.top.Liferay.fire(events.CLOSE_MODAL);
 		});
@@ -76,7 +76,7 @@
 	if (iframeForm) {
 		iframeForm.appendChild(iframeFooter);
 
-		iframeForm.addEventListener('submit', function (e) {
+		iframeForm.addEventListener('submit', (e) => {
 			window.top.Liferay.fire(events.IS_LOADING_MODAL, {isLoading: true});
 
 			var form = Liferay.Form.get(iframeForm.id);

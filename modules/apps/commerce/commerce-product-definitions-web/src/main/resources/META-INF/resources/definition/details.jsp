@@ -27,7 +27,7 @@ String defaultLanguageId = cpDefinitionsDisplayContext.getCatalogDefaultLanguage
 
 String productTypeName = BeanParamUtil.getString(cpDefinition, request, "productTypeName");
 
-String friendlyURLBase = themeDisplay.getPortalURL() + CPConstants.SEPARATOR_PRODUCT_URL;
+String friendlyURLBase = themeDisplay.getPortalURL() + cpDefinitionsDisplayContext.getProductURLSeparator();
 
 boolean neverExpire = ParamUtil.getBoolean(request, "neverExpire", true);
 
@@ -42,7 +42,7 @@ if ((cpDefinition != null) && (cpDefinition.getExpirationDate() != null)) {
 	</div>
 </c:if>
 
-<portlet:actionURL name="editProductDefinition" var="editProductDefinitionActionURL" />
+<portlet:actionURL name="/cp_definitions/edit_cp_definition" var="editProductDefinitionActionURL" />
 
 <aui:form action="<%= editProductDefinitionActionURL %>" cssClass="pt-4" method="post" name="fm">
 	<aui:input name="<%= Constants.CMD %>" type="hidden" value="<%= (cpDefinition == null) ? Constants.ADD : Constants.UPDATE %>" />
@@ -73,7 +73,7 @@ if ((cpDefinition != null) && (cpDefinition.getExpirationDate() != null)) {
 							for (CommerceCatalog curCommerceCatalog : commerceCatalogs) {
 							%>
 
-								<aui:option data-languageId="<%= curCommerceCatalog.getCatalogDefaultLanguageId() %>" label="<%= curCommerceCatalog.getName() %>" selected="<%= (cpDefinition == null) ? (commerceCatalogs.size() == 1) : cpDefinitionsDisplayContext.isSelectedCatalog(curCommerceCatalog) %>" value="<%= curCommerceCatalog.getGroupId() %>" />
+								<aui:option data-languageId="<%= curCommerceCatalog.getCatalogDefaultLanguageId() %>" label="<%= HtmlUtil.escape(curCommerceCatalog.getName()) %>" selected="<%= (cpDefinition == null) ? (commerceCatalogs.size() == 1) : cpDefinitionsDisplayContext.isSelectedCatalog(curCommerceCatalog) %>" value="<%= curCommerceCatalog.getGroupId() %>" />
 
 							<%
 							}
@@ -111,7 +111,6 @@ if ((cpDefinition != null) && (cpDefinition.getExpirationDate() != null)) {
 					<div class="entry-content form-group">
 						<liferay-ui:input-localized
 							defaultLanguageId="<%= defaultLanguageId %>"
-							editorName="alloyeditor"
 							name="descriptionMapAsXML"
 							type="editor"
 							xml="<%= descriptionMapAsXML %>"
@@ -155,6 +154,7 @@ if ((cpDefinition != null) && (cpDefinition.getExpirationDate() != null)) {
 						className="<%= CPDefinition.class.getName() %>"
 						classPK="<%= cpDefinitionId %>"
 						groupIds="<%= new long[] {company.getGroupId()} %>"
+						visibilityTypes="<%= AssetVocabularyConstants.VISIBILITY_TYPES %>"
 					/>
 				</aui:field-wrapper>
 
@@ -227,7 +227,7 @@ if ((cpDefinition != null) && (cpDefinition.getExpirationDate() != null)) {
 								headers: headers,
 								method: 'POST',
 							}
-						).then(function () {
+						).then(() => {
 							Liferay.fire(events.UPDATE_DATASET_DISPLAY, {
 								id:
 									'<%= CommerceProductDataSetConstants.COMMERCE_DATA_SET_KEY_PRODUCT_DEFINITION_SPECIFICATIONS %>',
@@ -256,12 +256,12 @@ if ((cpDefinition != null) && (cpDefinition.getExpirationDate() != null)) {
 								method: 'POST',
 							}
 						)
-							.then(function (response) {
+							.then((response) => {
 								if (response.ok) {
 									return response.json();
 								}
 
-								return response.json().then(function (data) {
+								return response.json().then((data) => {
 									return Promise.reject(data.errorDescription);
 								});
 							})
@@ -300,7 +300,7 @@ if ((cpDefinition != null) && (cpDefinition.getExpirationDate() != null)) {
 								fieldName: 'key',
 							},
 						],
-						spritemap: '<%= themeDisplay.getPathThemeImages() %>/lexicon/icons.svg',
+						spritemap: '<%= themeDisplay.getPathThemeImages() %>/clay/icons.svg',
 						titleLabel:
 							'<%= LanguageUtil.get(request, "add-existing-specification") %>',
 					});
@@ -319,12 +319,13 @@ if ((cpDefinition != null) && (cpDefinition.getExpirationDate() != null)) {
 							).build()
 						%>'
 						dataProviderKey="<%= CommerceProductDataSetConstants.COMMERCE_DATA_SET_KEY_PRODUCT_DEFINITION_SPECIFICATIONS %>"
-						formId="fm"
+						formName="fm"
 						id="<%= CommerceProductDataSetConstants.COMMERCE_DATA_SET_KEY_PRODUCT_DEFINITION_SPECIFICATIONS %>"
 						itemsPerPage="<%= 10 %>"
 						namespace="<%= liferayPortletResponse.getNamespace() %>"
 						pageNumber="<%= 1 %>"
 						portletURL="<%= currentURLObj %>"
+						selectedItemsKey="cpdefinitionSpecificationOptionValueId"
 						showManagementBar="<%= false %>"
 					/>
 				</commerce-ui:panel>
@@ -356,7 +357,7 @@ if ((cpDefinition != null) && (cpDefinition.getExpirationDate() != null)) {
 	<aui:script>
 		document
 			.getElementById('<portlet:namespace />commerceCatalogGroupId')
-			.addEventListener('change', function (event) {
+			.addEventListener('change', (event) => {
 				var languageId = event.target.querySelector(
 					'[value="' + event.target.value + '"]'
 				).dataset.languageid;

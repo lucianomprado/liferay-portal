@@ -71,7 +71,7 @@ import org.apache.chemistry.opencmis.commons.exceptions.CmisObjectNotFoundExcept
 /**
  * @author Alexander Chow
  */
-public class CMISFileEntry extends CMISModel implements FileEntry {
+public class CMISFileEntry extends BaseCMISModel implements FileEntry {
 
 	public CMISFileEntry(
 		CMISRepository cmisRepository, String uuid, long fileEntryId,
@@ -97,6 +97,9 @@ public class CMISFileEntry extends CMISModel implements FileEntry {
 			cmisFileEntry.setParentFolder(getParentFolder());
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception);
+			}
 		}
 
 		cmisFileEntry.setPrimaryKey(getPrimaryKey());
@@ -151,7 +154,7 @@ public class CMISFileEntry extends CMISModel implements FileEntry {
 				PrincipalThreadLocal.getUserId(), this, true);
 		}
 		catch (Exception exception) {
-			_log.error(exception, exception);
+			_log.error(exception);
 		}
 
 		if (contentStream == null) {
@@ -176,7 +179,7 @@ public class CMISFileEntry extends CMISModel implements FileEntry {
 						PrincipalThreadLocal.getUserId(), this, true);
 				}
 				catch (Exception exception) {
-					_log.error(exception, exception);
+					_log.error(exception);
 				}
 
 				if (contentStream == null) {
@@ -198,6 +201,11 @@ public class CMISFileEntry extends CMISModel implements FileEntry {
 		GregorianCalendar creationDate = _document.getCreationDate();
 
 		return creationDate.getTime();
+	}
+
+	@Override
+	public Date getExpirationDate() {
+		return null;
 	}
 
 	@Override
@@ -288,6 +296,9 @@ public class CMISFileEntry extends CMISModel implements FileEntry {
 			}
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception);
+			}
 		}
 
 		try {
@@ -305,7 +316,7 @@ public class CMISFileEntry extends CMISModel implements FileEntry {
 			setParentFolder(parentFolder);
 		}
 		catch (Exception exception) {
-			_log.error(exception, exception);
+			_log.error(exception);
 		}
 
 		return parentFolder;
@@ -420,7 +431,7 @@ public class CMISFileEntry extends CMISModel implements FileEntry {
 			}
 		}
 		catch (PortalException portalException) {
-			_log.error(portalException, portalException);
+			_log.error(portalException);
 		}
 
 		return ContentTypes.APPLICATION_OCTET_STREAM;
@@ -487,6 +498,11 @@ public class CMISFileEntry extends CMISModel implements FileEntry {
 	}
 
 	@Override
+	public Date getReviewDate() {
+		return null;
+	}
+
+	@Override
 	public long getSize() {
 		return _document.getContentStreamLength();
 	}
@@ -531,6 +547,9 @@ public class CMISFileEntry extends CMISModel implements FileEntry {
 			return user.getUserUuid();
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception);
+			}
 		}
 
 		return StringPool.BLANK;

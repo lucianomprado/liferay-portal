@@ -101,9 +101,9 @@ public abstract class BaseAuthFilter extends BasePortalFilter {
 			HttpServletResponse httpServletResponse)
 		throws Exception {
 
-		HttpSession session = httpServletRequest.getSession();
+		HttpSession httpSession = httpServletRequest.getSession();
 
-		User user = (User)session.getAttribute(WebKeys.USER);
+		User user = (User)httpSession.getAttribute(WebKeys.USER);
 
 		if (user == null) {
 			long userId = 0;
@@ -112,12 +112,12 @@ public abstract class BaseAuthFilter extends BasePortalFilter {
 				userId = HttpAuthManagerUtil.getBasicUserId(httpServletRequest);
 			}
 			catch (Exception exception) {
-				_log.error(exception, exception);
+				_log.error(exception);
 			}
 
 			if (userId > 0) {
 				httpServletRequest = setCredentials(
-					httpServletRequest, session,
+					httpServletRequest, httpSession,
 					UserLocalServiceUtil.getUser(userId),
 					HttpServletRequest.BASIC_AUTH);
 			}
@@ -150,9 +150,9 @@ public abstract class BaseAuthFilter extends BasePortalFilter {
 			HttpServletResponse httpServletResponse)
 		throws Exception {
 
-		HttpSession session = httpServletRequest.getSession();
+		HttpSession httpSession = httpServletRequest.getSession();
 
-		User user = (User)session.getAttribute(WebKeys.USER);
+		User user = (User)httpSession.getAttribute(WebKeys.USER);
 
 		if (user == null) {
 			long userId = 0;
@@ -162,12 +162,12 @@ public abstract class BaseAuthFilter extends BasePortalFilter {
 					httpServletRequest);
 			}
 			catch (Exception exception) {
-				_log.error(exception, exception);
+				_log.error(exception);
 			}
 
 			if (userId > 0) {
 				httpServletRequest = setCredentials(
-					httpServletRequest, session,
+					httpServletRequest, httpSession,
 					UserLocalServiceUtil.getUser(userId),
 					HttpServletRequest.DIGEST_AUTH);
 			}
@@ -215,9 +215,8 @@ public abstract class BaseAuthFilter extends BasePortalFilter {
 			return;
 		}
 
-		permissionChecker = PermissionCheckerFactoryUtil.create(user);
-
-		PermissionThreadLocal.setPermissionChecker(permissionChecker);
+		PermissionThreadLocal.setPermissionChecker(
+			PermissionCheckerFactoryUtil.create(user));
 	}
 
 	@Override
@@ -298,7 +297,7 @@ public abstract class BaseAuthFilter extends BasePortalFilter {
 				// LPS-52675
 
 				if (_log.isDebugEnabled()) {
-					_log.debug(noSuchUserException, noSuchUserException);
+					_log.debug(noSuchUserException);
 				}
 
 				httpServletResponse.sendRedirect(
@@ -345,14 +344,14 @@ public abstract class BaseAuthFilter extends BasePortalFilter {
 	}
 
 	protected HttpServletRequest setCredentials(
-			HttpServletRequest httpServletRequest, HttpSession session,
+			HttpServletRequest httpServletRequest, HttpSession httpSession,
 			User user, String authType)
 		throws Exception {
 
 		httpServletRequest = new ProtectedServletRequest(
 			httpServletRequest, String.valueOf(user.getUserId()), authType);
 
-		session.setAttribute(WebKeys.USER, user);
+		httpSession.setAttribute(WebKeys.USER, user);
 
 		PrincipalThreadLocal.setPassword(
 			PortalUtil.getUserPassword(httpServletRequest));

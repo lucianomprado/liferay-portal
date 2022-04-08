@@ -96,6 +96,16 @@
 		display: inline;
 	}
 
+	.sheet {
+		> *:last-child,
+		.custom-control:last-of-type,
+		.form-group:last-of-type,
+		.tree-item:last-child,
+		ul:last-of-type {
+			margin-bottom: 0;
+		}
+	}
+
 	input.file-selector {
 		display: block;
 		margin: 0.5em 0 1.5em;
@@ -185,20 +195,6 @@
 .lfr-tree-loading-icon {
 	margin: 0 auto;
 	padding-top: 5px;
-}
-
-.list-group-item-content h6.background-task-status-row {
-	display: inline;
-	margin-right: 1%;
-
-	a {
-		color: #65b6f0;
-	}
-
-	a:hover {
-		color: #65b6f0;
-		text-decoration: none;
-	}
 }
 
 .pages-selector {

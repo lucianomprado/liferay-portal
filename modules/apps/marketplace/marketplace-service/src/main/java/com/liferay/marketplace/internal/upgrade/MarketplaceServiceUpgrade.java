@@ -17,6 +17,7 @@ package com.liferay.marketplace.internal.upgrade;
 import com.liferay.expando.kernel.service.ExpandoColumnLocalService;
 import com.liferay.expando.kernel.service.ExpandoTableLocalService;
 import com.liferay.expando.kernel.service.ExpandoValueLocalService;
+import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.upgrade.DummyUpgradeStep;
 import com.liferay.portal.upgrade.registry.UpgradeStepRegistrator;
 
@@ -34,21 +35,24 @@ public class MarketplaceServiceUpgrade implements UpgradeStepRegistrator {
 	public void register(Registry registry) {
 		registry.register(
 			"0.0.1", "1.0.0",
-			new com.liferay.marketplace.internal.upgrade.v0_0_1.UpgradeExpando(
-				_expandoColumnLocalService, _expandoTableLocalService,
-				_expandoValueLocalService));
+			new com.liferay.marketplace.internal.upgrade.v0_0_1.
+				ExpandoUpgradeProcess(
+					_companyLocalService, _expandoColumnLocalService,
+					_expandoTableLocalService, _expandoValueLocalService));
 
 		registry.register(
 			"1.0.0", "1.0.1",
-			new com.liferay.marketplace.internal.upgrade.v1_0_0.UpgradeApp(),
 			new com.liferay.marketplace.internal.upgrade.v1_0_0.
-				UpgradeModule());
+				AppUpgradeProcess(),
+			new com.liferay.marketplace.internal.upgrade.v1_0_0.
+				ModuleUpgradeProcess());
 
 		registry.register("1.0.1", "1.0.2", new DummyUpgradeStep());
 
 		registry.register(
 			"1.0.2", "2.0.0",
-			new com.liferay.marketplace.internal.upgrade.v2_0_0.UpgradeApp());
+			new com.liferay.marketplace.internal.upgrade.v2_0_0.
+				AppUpgradeProcess());
 
 		registry.register(
 			"2.0.0", "2.0.1",
@@ -57,7 +61,13 @@ public class MarketplaceServiceUpgrade implements UpgradeStepRegistrator {
 
 		registry.register(
 			"2.0.1", "2.0.2",
-			new com.liferay.marketplace.internal.upgrade.v2_0_2.UpgradeApp());
+			new com.liferay.marketplace.internal.upgrade.v2_0_2.
+				AppUpgradeProcess());
+
+		registry.register(
+			"2.0.2", "2.0.3",
+			new com.liferay.marketplace.internal.upgrade.v2_0_3.
+				AppUpgradeProcess());
 	}
 
 	@Reference(unbind = "-")
@@ -80,6 +90,9 @@ public class MarketplaceServiceUpgrade implements UpgradeStepRegistrator {
 
 		_expandoValueLocalService = expandoValueLocalService;
 	}
+
+	@Reference
+	private CompanyLocalService _companyLocalService;
 
 	private ExpandoColumnLocalService _expandoColumnLocalService;
 	private ExpandoTableLocalService _expandoTableLocalService;

@@ -246,11 +246,8 @@ public class ExportImportDateUtil {
 
 			// This is a valid scenario in case of group level portlets
 
-			if (portletDataContext.getStartDate() == null) {
-				return portletLastPublishDate;
-			}
-
-			if (portletLastPublishDate.before(
+			if ((portletDataContext.getStartDate() == null) ||
+				portletLastPublishDate.before(
 					portletDataContext.getStartDate())) {
 
 				return portletLastPublishDate;
@@ -390,11 +387,12 @@ public class ExportImportDateUtil {
 			if (_log.isDebugEnabled()) {
 				_log.debug(
 					"Not updating the portlet setup for " + portletId +
-						" because no setup was returned for the current page");
+						" because no setup was returned for the current page",
+					unsupportedOperationException);
 			}
 		}
 		catch (Exception exception) {
-			_log.error(exception, exception);
+			_log.error(exception);
 		}
 	}
 
@@ -487,11 +485,11 @@ public class ExportImportDateUtil {
 			}
 		}
 		else if (range.equals(RANGE_LAST)) {
-			Date now = new Date();
+			Date date = new Date();
 
-			startDate = new Date(now.getTime() - (rangeLast * Time.HOUR));
+			startDate = new Date(date.getTime() - (rangeLast * Time.HOUR));
 
-			endDate = now;
+			endDate = date;
 		}
 
 		return new DateRange(startDate, endDate);

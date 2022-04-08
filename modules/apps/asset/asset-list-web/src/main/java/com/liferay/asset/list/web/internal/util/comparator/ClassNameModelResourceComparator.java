@@ -41,8 +41,9 @@ public class ClassNameModelResourceComparator extends OrderByComparator<Long> {
 	public ClassNameModelResourceComparator(boolean ascending, Locale locale) {
 		_ascending = ascending;
 
-		_collator = CollatorUtil.getInstance(locale);
 		_locale = locale;
+
+		_collator = CollatorUtil.getInstance(locale);
 	}
 
 	@Override
@@ -63,7 +64,7 @@ public class ClassNameModelResourceComparator extends OrderByComparator<Long> {
 		}
 		catch (PortalException portalException) {
 			if (_log.isDebugEnabled()) {
-				_log.debug(portalException, portalException);
+				_log.debug(portalException);
 			}
 		}
 

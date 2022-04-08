@@ -41,6 +41,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
@@ -107,25 +108,25 @@ public class DLContentModelImpl
 	public static final String TX_MANAGER = "liferayTransactionManager";
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long COMPANYID_COLUMN_BITMASK = 1L;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long PATH_COLUMN_BITMASK = 2L;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long REPOSITORYID_COLUMN_BITMASK = 4L;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long VERSION_COLUMN_BITMASK = 8L;
@@ -531,7 +532,9 @@ public class DLContentModelImpl
 		for (Map.Entry<String, Object> entry :
 				_columnOriginalValues.entrySet()) {
 
-			if (entry.getValue() != getColumnValue(entry.getKey())) {
+			if (!Objects.equals(
+					entry.getValue(), getColumnValue(entry.getKey()))) {
+
 				_columnBitmask |= _columnBitmasks.get(entry.getKey());
 			}
 		}
@@ -582,6 +585,29 @@ public class DLContentModelImpl
 		dlContentImpl.setSize(getSize());
 
 		dlContentImpl.resetOriginalValues();
+
+		return dlContentImpl;
+	}
+
+	@Override
+	public DLContent cloneWithOriginalValues() {
+		DLContentImpl dlContentImpl = new DLContentImpl();
+
+		dlContentImpl.setMvccVersion(
+			this.<Long>getColumnOriginalValue("mvccVersion"));
+		dlContentImpl.setCtCollectionId(
+			this.<Long>getColumnOriginalValue("ctCollectionId"));
+		dlContentImpl.setContentId(
+			this.<Long>getColumnOriginalValue("contentId"));
+		dlContentImpl.setGroupId(this.<Long>getColumnOriginalValue("groupId"));
+		dlContentImpl.setCompanyId(
+			this.<Long>getColumnOriginalValue("companyId"));
+		dlContentImpl.setRepositoryId(
+			this.<Long>getColumnOriginalValue("repositoryId"));
+		dlContentImpl.setPath(this.<String>getColumnOriginalValue("path_"));
+		dlContentImpl.setVersion(
+			this.<String>getColumnOriginalValue("version"));
+		dlContentImpl.setSize(this.<Long>getColumnOriginalValue("size_"));
 
 		return dlContentImpl;
 	}
@@ -696,24 +722,42 @@ public class DLContentModelImpl
 	public String toString() {
 		StringBundler sb = new StringBundler(21);
 
-		sb.append("{mvccVersion=");
+		sb.append("{\"mvccVersion\": ");
+
 		sb.append(getMvccVersion());
-		sb.append(", ctCollectionId=");
+
+		sb.append(", \"ctCollectionId\": ");
+
 		sb.append(getCtCollectionId());
-		sb.append(", contentId=");
+
+		sb.append(", \"contentId\": ");
+
 		sb.append(getContentId());
-		sb.append(", groupId=");
+
+		sb.append(", \"groupId\": ");
+
 		sb.append(getGroupId());
-		sb.append(", companyId=");
+
+		sb.append(", \"companyId\": ");
+
 		sb.append(getCompanyId());
-		sb.append(", repositoryId=");
+
+		sb.append(", \"repositoryId\": ");
+
 		sb.append(getRepositoryId());
-		sb.append(", path=");
-		sb.append(getPath());
-		sb.append(", version=");
-		sb.append(getVersion());
-		sb.append(", size=");
+
+		sb.append(", \"path\": ");
+
+		sb.append("\"" + getPath() + "\"");
+
+		sb.append(", \"version\": ");
+
+		sb.append("\"" + getVersion() + "\"");
+
+		sb.append(", \"size\": ");
+
 		sb.append(getSize());
+
 		sb.append("}");
 
 		return sb.toString();
@@ -729,39 +773,57 @@ public class DLContentModelImpl
 
 		sb.append(
 			"<column><column-name>mvccVersion</column-name><column-value><![CDATA[");
+
 		sb.append(getMvccVersion());
+
 		sb.append("]]></column-value></column>");
 		sb.append(
 			"<column><column-name>ctCollectionId</column-name><column-value><![CDATA[");
+
 		sb.append(getCtCollectionId());
+
 		sb.append("]]></column-value></column>");
 		sb.append(
 			"<column><column-name>contentId</column-name><column-value><![CDATA[");
+
 		sb.append(getContentId());
+
 		sb.append("]]></column-value></column>");
 		sb.append(
 			"<column><column-name>groupId</column-name><column-value><![CDATA[");
+
 		sb.append(getGroupId());
+
 		sb.append("]]></column-value></column>");
 		sb.append(
 			"<column><column-name>companyId</column-name><column-value><![CDATA[");
+
 		sb.append(getCompanyId());
+
 		sb.append("]]></column-value></column>");
 		sb.append(
 			"<column><column-name>repositoryId</column-name><column-value><![CDATA[");
+
 		sb.append(getRepositoryId());
+
 		sb.append("]]></column-value></column>");
 		sb.append(
 			"<column><column-name>path</column-name><column-value><![CDATA[");
+
 		sb.append(getPath());
+
 		sb.append("]]></column-value></column>");
 		sb.append(
 			"<column><column-name>version</column-name><column-value><![CDATA[");
+
 		sb.append(getVersion());
+
 		sb.append("]]></column-value></column>");
 		sb.append(
 			"<column><column-name>size</column-name><column-value><![CDATA[");
+
 		sb.append(getSize());
+
 		sb.append("]]></column-value></column>");
 
 		sb.append("</model>");

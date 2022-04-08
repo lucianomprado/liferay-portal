@@ -32,13 +32,10 @@ import com.liferay.commerce.product.test.util.CPTestUtil;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.model.Company;
-import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.security.permission.PermissionCheckerFactoryUtil;
 import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
 import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
-import com.liferay.portal.kernel.test.rule.DataGuard;
-import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
 import com.liferay.portal.kernel.test.util.CompanyTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
@@ -55,6 +52,7 @@ import org.frutilla.FrutillaRule;
 
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
@@ -63,7 +61,6 @@ import org.junit.runner.RunWith;
 /**
  * @author Igor Beslic
  */
-@DataGuard(scope = DataGuard.Scope.METHOD)
 @RunWith(Arquillian.class)
 public class CommerceOptionValueHelperTest {
 
@@ -74,13 +71,16 @@ public class CommerceOptionValueHelperTest {
 			new LiferayIntegrationTestRule(),
 			PermissionCheckerMethodTestRule.INSTANCE);
 
+	@BeforeClass
+	public static void setUpClass() throws Exception {
+		_company = CompanyTestUtil.addCompany();
+	}
+
 	@Before
 	public void setUp() throws Exception {
-		_company = CompanyTestUtil.addCompany();
-
 		_commerceCatalog = CommerceCatalogLocalServiceUtil.addCommerceCatalog(
-			RandomTestUtil.randomString(), RandomTestUtil.randomString(),
-			LocaleUtil.US.getDisplayLanguage(), null,
+			null, RandomTestUtil.randomString(), RandomTestUtil.randomString(),
+			LocaleUtil.US.getDisplayLanguage(),
 			ServiceContextTestUtil.getServiceContext(_company.getGroupId()));
 	}
 
@@ -248,10 +248,9 @@ public class CommerceOptionValueHelperTest {
 	}
 
 	private void _setupPermissionChecker() throws Exception {
-		User user = UserLocalServiceUtil.getUser(_commerceCatalog.getUserId());
-
 		PermissionThreadLocal.setPermissionChecker(
-			PermissionCheckerFactoryUtil.create(user));
+			PermissionCheckerFactoryUtil.create(
+				UserLocalServiceUtil.getUser(_commerceCatalog.getUserId())));
 	}
 
 	private void _testToCommerceOptionValues(
@@ -288,6 +287,8 @@ public class CommerceOptionValueHelperTest {
 			"{\"key\":\"%s\", \"value\":[\"%s\"]}", optionKey, optionValueKey);
 	}
 
+	private static Company _company;
+
 	private CommerceCatalog _commerceCatalog;
 
 	@Inject
@@ -295,9 +296,6 @@ public class CommerceOptionValueHelperTest {
 
 	@Inject
 	private CommerceOptionValueHelper _commerceOptionValueHelper;
-
-	@DeleteAfterTestRun
-	private Company _company;
 
 	@Inject
 	private CPDefinitionLocalService _cpDefinitionLocalService;

@@ -7,10 +7,11 @@
 
 @import 'overrides/base';
 @import 'overrides/button';
-@import 'overrides/card';
 @import 'overrides/checkout_page';
+@import 'overrides/compare_checkbox';
 @import 'overrides/dataset-display';
 @import 'overrides/input';
+@import 'overrides/mini-compare';
 @import 'overrides/modal';
 @import 'overrides/nav';
 @import 'overrides/order_detail_page';
@@ -18,15 +19,13 @@
 @import 'overrides/panel';
 @import 'overrides/portlet';
 @import 'overrides/search_bar';
+@import 'overrides/status';
 @import 'overrides/table';
 
-@import 'components/commerce_account_list';
-@import 'components/commerce_account_selector';
 @import 'components/commerce_account_switcher';
 @import 'components/commerce_add_to_tick';
 @import 'components/commerce_button';
 @import 'components/commerce_collapse';
-@import 'components/commerce_compare_table';
 @import 'components/commerce_cta';
 @import 'components/commerce_datalist';
 @import 'components/commerce_dot';
@@ -51,14 +50,12 @@
 
 @import 'components/minium_action_toggle';
 @import 'components/minium_actions_toggle_wrapper';
-@import 'components/minium_card';
 @import 'components/minium_content';
 @import 'components/minium_frame';
 @import 'components/minium_logo';
 @import 'components/minium_main_navigation';
 @import 'components/minium_notification_badge';
 @import 'components/minium_product_tiles';
-@import 'components/minium_products_compare';
 @import 'components/minium_sidebar';
 @import 'components/minium_table_actions';
 @import 'components/minium_tabs';
@@ -66,16 +63,20 @@
 @import 'components/minium_topbar';
 @import 'components/minium_user_nav';
 
-@import './components/bom';
-@import './components/price';
 @import 'components/account_management';
+@import 'components/account_selector';
+@import 'components/add_to_cart';
+@import 'components/add_to_wish_list';
 @import 'components/added_input_item';
 @import 'components/autocomplete_input';
+@import 'components/label';
 @import 'components/main_link';
 @import 'components/mini_cart';
+@import 'components/product_card';
 @import 'components/product_compare_checkbox';
 @import 'components/product_detail';
 @import 'components/product_header';
+@import 'components/products_comparison_table';
 @import 'components/quantity_selector';
 @import 'components/thumb_menu';
 @import 'components/user_invitation';

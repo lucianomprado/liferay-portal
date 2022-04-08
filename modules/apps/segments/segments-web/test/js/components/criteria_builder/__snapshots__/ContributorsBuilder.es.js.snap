@@ -57,676 +57,670 @@ exports[`ContributorsBuilder renders builder with sidebar: initialRenderEditing 
           class="sidebar-collapse"
         >
           <ul
-            class="list-unstyled sidebar-collapse-groups"
+            class="sidebar-collapse-groups"
           >
             <li
-              class="sidebar-collapse-user"
+              class="sidebar-collapse-item sidebar-collapse-user active"
             >
+              <a
+                class="sidebar-collapse-header"
+              >
+                User
+                <span>
+                  <svg
+                    class="lexicon-icon lexicon-icon-angle-right active"
+                    role="presentation"
+                  >
+                    <use
+                      xlink:href="#angle-right"
+                    />
+                  </svg>
+                </span>
+              </a>
               <div
-                class="sidebar-collapse-header-root"
+                class="flex-grow-1 sidebar-collapse-body"
               >
-                <a
-                  class="d-flex justify-content-between sidebar-collapse-header"
+                <p
+                  class="pt-3 px-4 text-secondary"
                 >
-                  User
-                  <span
-                    class="collapse-icon"
+                  inherited-attributes-are-not-taken-into-account-to-include-members-in-segments
+                </p>
+                <ul
+                  class="pl-0"
+                >
+                  <li
+                    class="criteria-sidebar-item-root color--user"
+                    draggable="true"
                   >
-                    <svg
-                      class="lexicon-icon lexicon-icon-angle-right active"
-                      role="presentation"
+                    <span
+                      class="inline-item"
                     >
-                      <use
-                        xlink:href="#angle-right"
-                      />
-                    </svg>
-                  </span>
-                </a>
+                      <svg
+                        class="lexicon-icon lexicon-icon-drag"
+                        role="presentation"
+                      >
+                        <use
+                          xlink:href="#drag"
+                        />
+                      </svg>
+                    </span>
+                    <span
+                      class="criteria-sidebar-item-type sticker sticker-dark"
+                    >
+                      <span
+                        class="inline-item"
+                      >
+                        <svg
+                          class="lexicon-icon lexicon-icon-text"
+                          role="presentation"
+                        >
+                          <use
+                            xlink:href="#text"
+                          />
+                        </svg>
+                      </span>
+                    </span>
+                    Ancestor Organization IDs
+                  </li>
+                  <li
+                    class="criteria-sidebar-item-root color--user"
+                    draggable="true"
+                  >
+                    <span
+                      class="inline-item"
+                    >
+                      <svg
+                        class="lexicon-icon lexicon-icon-drag"
+                        role="presentation"
+                      >
+                        <use
+                          xlink:href="#drag"
+                        />
+                      </svg>
+                    </span>
+                    <span
+                      class="criteria-sidebar-item-type sticker sticker-dark"
+                    >
+                      <span
+                        class="inline-item"
+                      >
+                        <svg
+                          class="lexicon-icon lexicon-icon-text"
+                          role="presentation"
+                        >
+                          <use
+                            xlink:href="#text"
+                          />
+                        </svg>
+                      </span>
+                    </span>
+                    Class PK
+                  </li>
+                  <li
+                    class="criteria-sidebar-item-root color--user"
+                    draggable="true"
+                  >
+                    <span
+                      class="inline-item"
+                    >
+                      <svg
+                        class="lexicon-icon lexicon-icon-drag"
+                        role="presentation"
+                      >
+                        <use
+                          xlink:href="#drag"
+                        />
+                      </svg>
+                    </span>
+                    <span
+                      class="criteria-sidebar-item-type sticker sticker-dark"
+                    >
+                      <span
+                        class="inline-item"
+                      >
+                        <svg
+                          class="lexicon-icon lexicon-icon-text"
+                          role="presentation"
+                        >
+                          <use
+                            xlink:href="#text"
+                          />
+                        </svg>
+                      </span>
+                    </span>
+                    Company ID
+                  </li>
+                  <li
+                    class="criteria-sidebar-item-root color--user"
+                    draggable="true"
+                  >
+                    <span
+                      class="inline-item"
+                    >
+                      <svg
+                        class="lexicon-icon lexicon-icon-drag"
+                        role="presentation"
+                      >
+                        <use
+                          xlink:href="#drag"
+                        />
+                      </svg>
+                    </span>
+                    <span
+                      class="criteria-sidebar-item-type sticker sticker-dark"
+                    >
+                      <span
+                        class="inline-item"
+                      >
+                        <svg
+                          class="lexicon-icon lexicon-icon-date"
+                          role="presentation"
+                        >
+                          <use
+                            xlink:href="#date"
+                          />
+                        </svg>
+                      </span>
+                    </span>
+                    Date Modified
+                  </li>
+                  <li
+                    class="criteria-sidebar-item-root color--user"
+                    draggable="true"
+                  >
+                    <span
+                      class="inline-item"
+                    >
+                      <svg
+                        class="lexicon-icon lexicon-icon-drag"
+                        role="presentation"
+                      >
+                        <use
+                          xlink:href="#drag"
+                        />
+                      </svg>
+                    </span>
+                    <span
+                      class="criteria-sidebar-item-type sticker sticker-dark"
+                    >
+                      <span
+                        class="inline-item"
+                      >
+                        <svg
+                          class="lexicon-icon lexicon-icon-text"
+                          role="presentation"
+                        >
+                          <use
+                            xlink:href="#text"
+                          />
+                        </svg>
+                      </span>
+                    </span>
+                    Email Address
+                  </li>
+                  <li
+                    class="criteria-sidebar-item-root color--user"
+                    draggable="true"
+                  >
+                    <span
+                      class="inline-item"
+                    >
+                      <svg
+                        class="lexicon-icon lexicon-icon-drag"
+                        role="presentation"
+                      >
+                        <use
+                          xlink:href="#drag"
+                        />
+                      </svg>
+                    </span>
+                    <span
+                      class="criteria-sidebar-item-type sticker sticker-dark"
+                    >
+                      <span
+                        class="inline-item"
+                      >
+                        <svg
+                          class="lexicon-icon lexicon-icon-text"
+                          role="presentation"
+                        >
+                          <use
+                            xlink:href="#text"
+                          />
+                        </svg>
+                      </span>
+                    </span>
+                    First Name
+                  </li>
+                  <li
+                    class="criteria-sidebar-item-root color--user"
+                    draggable="true"
+                  >
+                    <span
+                      class="inline-item"
+                    >
+                      <svg
+                        class="lexicon-icon lexicon-icon-drag"
+                        role="presentation"
+                      >
+                        <use
+                          xlink:href="#drag"
+                        />
+                      </svg>
+                    </span>
+                    <span
+                      class="criteria-sidebar-item-type sticker sticker-dark"
+                    >
+                      <span
+                        class="inline-item"
+                      >
+                        <svg
+                          class="lexicon-icon lexicon-icon-text"
+                          role="presentation"
+                        >
+                          <use
+                            xlink:href="#text"
+                          />
+                        </svg>
+                      </span>
+                    </span>
+                    Group ID
+                  </li>
+                  <li
+                    class="criteria-sidebar-item-root color--user"
+                    draggable="true"
+                  >
+                    <span
+                      class="inline-item"
+                    >
+                      <svg
+                        class="lexicon-icon lexicon-icon-drag"
+                        role="presentation"
+                      >
+                        <use
+                          xlink:href="#drag"
+                        />
+                      </svg>
+                    </span>
+                    <span
+                      class="criteria-sidebar-item-type sticker sticker-dark"
+                    >
+                      <span
+                        class="inline-item"
+                      >
+                        <svg
+                          class="lexicon-icon lexicon-icon-text"
+                          role="presentation"
+                        >
+                          <use
+                            xlink:href="#text"
+                          />
+                        </svg>
+                      </span>
+                    </span>
+                    Group IDs
+                  </li>
+                  <li
+                    class="criteria-sidebar-item-root color--user"
+                    draggable="true"
+                  >
+                    <span
+                      class="inline-item"
+                    >
+                      <svg
+                        class="lexicon-icon lexicon-icon-drag"
+                        role="presentation"
+                      >
+                        <use
+                          xlink:href="#drag"
+                        />
+                      </svg>
+                    </span>
+                    <span
+                      class="criteria-sidebar-item-type sticker sticker-dark"
+                    >
+                      <span
+                        class="inline-item"
+                      >
+                        <svg
+                          class="lexicon-icon lexicon-icon-text"
+                          role="presentation"
+                        >
+                          <use
+                            xlink:href="#text"
+                          />
+                        </svg>
+                      </span>
+                    </span>
+                    Job Title
+                  </li>
+                  <li
+                    class="criteria-sidebar-item-root color--user"
+                    draggable="true"
+                  >
+                    <span
+                      class="inline-item"
+                    >
+                      <svg
+                        class="lexicon-icon lexicon-icon-drag"
+                        role="presentation"
+                      >
+                        <use
+                          xlink:href="#drag"
+                        />
+                      </svg>
+                    </span>
+                    <span
+                      class="criteria-sidebar-item-type sticker sticker-dark"
+                    >
+                      <span
+                        class="inline-item"
+                      >
+                        <svg
+                          class="lexicon-icon lexicon-icon-text"
+                          role="presentation"
+                        >
+                          <use
+                            xlink:href="#text"
+                          />
+                        </svg>
+                      </span>
+                    </span>
+                    Last Name
+                  </li>
+                  <li
+                    class="criteria-sidebar-item-root color--user"
+                    draggable="true"
+                  >
+                    <span
+                      class="inline-item"
+                    >
+                      <svg
+                        class="lexicon-icon lexicon-icon-drag"
+                        role="presentation"
+                      >
+                        <use
+                          xlink:href="#drag"
+                        />
+                      </svg>
+                    </span>
+                    <span
+                      class="criteria-sidebar-item-type sticker sticker-dark"
+                    >
+                      <span
+                        class="inline-item"
+                      >
+                        <svg
+                          class="lexicon-icon lexicon-icon-text"
+                          role="presentation"
+                        >
+                          <use
+                            xlink:href="#text"
+                          />
+                        </svg>
+                      </span>
+                    </span>
+                    Organization IDs
+                  </li>
+                  <li
+                    class="criteria-sidebar-item-root color--user"
+                    draggable="true"
+                  >
+                    <span
+                      class="inline-item"
+                    >
+                      <svg
+                        class="lexicon-icon lexicon-icon-drag"
+                        role="presentation"
+                      >
+                        <use
+                          xlink:href="#drag"
+                        />
+                      </svg>
+                    </span>
+                    <span
+                      class="criteria-sidebar-item-type sticker sticker-dark"
+                    >
+                      <span
+                        class="inline-item"
+                      >
+                        <svg
+                          class="lexicon-icon lexicon-icon-text"
+                          role="presentation"
+                        >
+                          <use
+                            xlink:href="#text"
+                          />
+                        </svg>
+                      </span>
+                    </span>
+                    Role IDs
+                  </li>
+                  <li
+                    class="criteria-sidebar-item-root color--user"
+                    draggable="true"
+                  >
+                    <span
+                      class="inline-item"
+                    >
+                      <svg
+                        class="lexicon-icon lexicon-icon-drag"
+                        role="presentation"
+                      >
+                        <use
+                          xlink:href="#drag"
+                        />
+                      </svg>
+                    </span>
+                    <span
+                      class="criteria-sidebar-item-type sticker sticker-dark"
+                    >
+                      <span
+                        class="inline-item"
+                      >
+                        <svg
+                          class="lexicon-icon lexicon-icon-text"
+                          role="presentation"
+                        >
+                          <use
+                            xlink:href="#text"
+                          />
+                        </svg>
+                      </span>
+                    </span>
+                    Scope Group ID
+                  </li>
+                  <li
+                    class="criteria-sidebar-item-root color--user"
+                    draggable="true"
+                  >
+                    <span
+                      class="inline-item"
+                    >
+                      <svg
+                        class="lexicon-icon lexicon-icon-drag"
+                        role="presentation"
+                      >
+                        <use
+                          xlink:href="#drag"
+                        />
+                      </svg>
+                    </span>
+                    <span
+                      class="criteria-sidebar-item-type sticker sticker-dark"
+                    >
+                      <span
+                        class="inline-item"
+                      >
+                        <svg
+                          class="lexicon-icon lexicon-icon-text"
+                          role="presentation"
+                        >
+                          <use
+                            xlink:href="#text"
+                          />
+                        </svg>
+                      </span>
+                    </span>
+                    Screen Name
+                  </li>
+                  <li
+                    class="criteria-sidebar-item-root color--user"
+                    draggable="true"
+                  >
+                    <span
+                      class="inline-item"
+                    >
+                      <svg
+                        class="lexicon-icon lexicon-icon-drag"
+                        role="presentation"
+                      >
+                        <use
+                          xlink:href="#drag"
+                        />
+                      </svg>
+                    </span>
+                    <span
+                      class="criteria-sidebar-item-type sticker sticker-dark"
+                    >
+                      <span
+                        class="inline-item"
+                      >
+                        <svg
+                          class="lexicon-icon lexicon-icon-text"
+                          role="presentation"
+                        >
+                          <use
+                            xlink:href="#text"
+                          />
+                        </svg>
+                      </span>
+                    </span>
+                    Team IDs
+                  </li>
+                  <li
+                    class="criteria-sidebar-item-root color--user"
+                    draggable="true"
+                  >
+                    <span
+                      class="inline-item"
+                    >
+                      <svg
+                        class="lexicon-icon lexicon-icon-drag"
+                        role="presentation"
+                      >
+                        <use
+                          xlink:href="#drag"
+                        />
+                      </svg>
+                    </span>
+                    <span
+                      class="criteria-sidebar-item-type sticker sticker-dark"
+                    >
+                      <span
+                        class="inline-item"
+                      >
+                        <svg
+                          class="lexicon-icon lexicon-icon-text"
+                          role="presentation"
+                        >
+                          <use
+                            xlink:href="#text"
+                          />
+                        </svg>
+                      </span>
+                    </span>
+                    User Group IDs
+                  </li>
+                  <li
+                    class="criteria-sidebar-item-root color--user"
+                    draggable="true"
+                  >
+                    <span
+                      class="inline-item"
+                    >
+                      <svg
+                        class="lexicon-icon lexicon-icon-drag"
+                        role="presentation"
+                      >
+                        <use
+                          xlink:href="#drag"
+                        />
+                      </svg>
+                    </span>
+                    <span
+                      class="criteria-sidebar-item-type sticker sticker-dark"
+                    >
+                      <span
+                        class="inline-item"
+                      >
+                        <svg
+                          class="lexicon-icon lexicon-icon-text"
+                          role="presentation"
+                        >
+                          <use
+                            xlink:href="#text"
+                          />
+                        </svg>
+                      </span>
+                    </span>
+                    User ID
+                  </li>
+                  <li
+                    class="criteria-sidebar-item-root color--user"
+                    draggable="true"
+                  >
+                    <span
+                      class="inline-item"
+                    >
+                      <svg
+                        class="lexicon-icon lexicon-icon-drag"
+                        role="presentation"
+                      >
+                        <use
+                          xlink:href="#drag"
+                        />
+                      </svg>
+                    </span>
+                    <span
+                      class="criteria-sidebar-item-type sticker sticker-dark"
+                    >
+                      <span
+                        class="inline-item"
+                      >
+                        <svg
+                          class="lexicon-icon lexicon-icon-text"
+                          role="presentation"
+                        >
+                          <use
+                            xlink:href="#text"
+                          />
+                        </svg>
+                      </span>
+                    </span>
+                    User Name
+                  </li>
+                </ul>
               </div>
-              <ul
-                class="properties-list active"
-              >
-                <li
-                  class="criteria-sidebar-item-root color--user"
-                  draggable="true"
-                >
-                  <span
-                    class="inline-item"
-                  >
-                    <svg
-                      class="lexicon-icon lexicon-icon-drag"
-                      role="presentation"
-                    >
-                      <use
-                        xlink:href="#drag"
-                      />
-                    </svg>
-                  </span>
-                  <span
-                    class="criteria-sidebar-item-type sticker sticker-light"
-                  >
-                    <span
-                      class="inline-item"
-                    >
-                      <svg
-                        class="lexicon-icon lexicon-icon-text"
-                        role="presentation"
-                      >
-                        <use
-                          xlink:href="#text"
-                        />
-                      </svg>
-                    </span>
-                  </span>
-                  Ancestor Organization IDs
-                </li>
-                <li
-                  class="criteria-sidebar-item-root color--user"
-                  draggable="true"
-                >
-                  <span
-                    class="inline-item"
-                  >
-                    <svg
-                      class="lexicon-icon lexicon-icon-drag"
-                      role="presentation"
-                    >
-                      <use
-                        xlink:href="#drag"
-                      />
-                    </svg>
-                  </span>
-                  <span
-                    class="criteria-sidebar-item-type sticker sticker-light"
-                  >
-                    <span
-                      class="inline-item"
-                    >
-                      <svg
-                        class="lexicon-icon lexicon-icon-text"
-                        role="presentation"
-                      >
-                        <use
-                          xlink:href="#text"
-                        />
-                      </svg>
-                    </span>
-                  </span>
-                  Class PK
-                </li>
-                <li
-                  class="criteria-sidebar-item-root color--user"
-                  draggable="true"
-                >
-                  <span
-                    class="inline-item"
-                  >
-                    <svg
-                      class="lexicon-icon lexicon-icon-drag"
-                      role="presentation"
-                    >
-                      <use
-                        xlink:href="#drag"
-                      />
-                    </svg>
-                  </span>
-                  <span
-                    class="criteria-sidebar-item-type sticker sticker-light"
-                  >
-                    <span
-                      class="inline-item"
-                    >
-                      <svg
-                        class="lexicon-icon lexicon-icon-text"
-                        role="presentation"
-                      >
-                        <use
-                          xlink:href="#text"
-                        />
-                      </svg>
-                    </span>
-                  </span>
-                  Company ID
-                </li>
-                <li
-                  class="criteria-sidebar-item-root color--user"
-                  draggable="true"
-                >
-                  <span
-                    class="inline-item"
-                  >
-                    <svg
-                      class="lexicon-icon lexicon-icon-drag"
-                      role="presentation"
-                    >
-                      <use
-                        xlink:href="#drag"
-                      />
-                    </svg>
-                  </span>
-                  <span
-                    class="criteria-sidebar-item-type sticker sticker-light"
-                  >
-                    <span
-                      class="inline-item"
-                    >
-                      <svg
-                        class="lexicon-icon lexicon-icon-date"
-                        role="presentation"
-                      >
-                        <use
-                          xlink:href="#date"
-                        />
-                      </svg>
-                    </span>
-                  </span>
-                  Date Modified
-                </li>
-                <li
-                  class="criteria-sidebar-item-root color--user"
-                  draggable="true"
-                >
-                  <span
-                    class="inline-item"
-                  >
-                    <svg
-                      class="lexicon-icon lexicon-icon-drag"
-                      role="presentation"
-                    >
-                      <use
-                        xlink:href="#drag"
-                      />
-                    </svg>
-                  </span>
-                  <span
-                    class="criteria-sidebar-item-type sticker sticker-light"
-                  >
-                    <span
-                      class="inline-item"
-                    >
-                      <svg
-                        class="lexicon-icon lexicon-icon-text"
-                        role="presentation"
-                      >
-                        <use
-                          xlink:href="#text"
-                        />
-                      </svg>
-                    </span>
-                  </span>
-                  Email Address
-                </li>
-                <li
-                  class="criteria-sidebar-item-root color--user"
-                  draggable="true"
-                >
-                  <span
-                    class="inline-item"
-                  >
-                    <svg
-                      class="lexicon-icon lexicon-icon-drag"
-                      role="presentation"
-                    >
-                      <use
-                        xlink:href="#drag"
-                      />
-                    </svg>
-                  </span>
-                  <span
-                    class="criteria-sidebar-item-type sticker sticker-light"
-                  >
-                    <span
-                      class="inline-item"
-                    >
-                      <svg
-                        class="lexicon-icon lexicon-icon-text"
-                        role="presentation"
-                      >
-                        <use
-                          xlink:href="#text"
-                        />
-                      </svg>
-                    </span>
-                  </span>
-                  First Name
-                </li>
-                <li
-                  class="criteria-sidebar-item-root color--user"
-                  draggable="true"
-                >
-                  <span
-                    class="inline-item"
-                  >
-                    <svg
-                      class="lexicon-icon lexicon-icon-drag"
-                      role="presentation"
-                    >
-                      <use
-                        xlink:href="#drag"
-                      />
-                    </svg>
-                  </span>
-                  <span
-                    class="criteria-sidebar-item-type sticker sticker-light"
-                  >
-                    <span
-                      class="inline-item"
-                    >
-                      <svg
-                        class="lexicon-icon lexicon-icon-text"
-                        role="presentation"
-                      >
-                        <use
-                          xlink:href="#text"
-                        />
-                      </svg>
-                    </span>
-                  </span>
-                  Group ID
-                </li>
-                <li
-                  class="criteria-sidebar-item-root color--user"
-                  draggable="true"
-                >
-                  <span
-                    class="inline-item"
-                  >
-                    <svg
-                      class="lexicon-icon lexicon-icon-drag"
-                      role="presentation"
-                    >
-                      <use
-                        xlink:href="#drag"
-                      />
-                    </svg>
-                  </span>
-                  <span
-                    class="criteria-sidebar-item-type sticker sticker-light"
-                  >
-                    <span
-                      class="inline-item"
-                    >
-                      <svg
-                        class="lexicon-icon lexicon-icon-text"
-                        role="presentation"
-                      >
-                        <use
-                          xlink:href="#text"
-                        />
-                      </svg>
-                    </span>
-                  </span>
-                  Group IDs
-                </li>
-                <li
-                  class="criteria-sidebar-item-root color--user"
-                  draggable="true"
-                >
-                  <span
-                    class="inline-item"
-                  >
-                    <svg
-                      class="lexicon-icon lexicon-icon-drag"
-                      role="presentation"
-                    >
-                      <use
-                        xlink:href="#drag"
-                      />
-                    </svg>
-                  </span>
-                  <span
-                    class="criteria-sidebar-item-type sticker sticker-light"
-                  >
-                    <span
-                      class="inline-item"
-                    >
-                      <svg
-                        class="lexicon-icon lexicon-icon-text"
-                        role="presentation"
-                      >
-                        <use
-                          xlink:href="#text"
-                        />
-                      </svg>
-                    </span>
-                  </span>
-                  Job Title
-                </li>
-                <li
-                  class="criteria-sidebar-item-root color--user"
-                  draggable="true"
-                >
-                  <span
-                    class="inline-item"
-                  >
-                    <svg
-                      class="lexicon-icon lexicon-icon-drag"
-                      role="presentation"
-                    >
-                      <use
-                        xlink:href="#drag"
-                      />
-                    </svg>
-                  </span>
-                  <span
-                    class="criteria-sidebar-item-type sticker sticker-light"
-                  >
-                    <span
-                      class="inline-item"
-                    >
-                      <svg
-                        class="lexicon-icon lexicon-icon-text"
-                        role="presentation"
-                      >
-                        <use
-                          xlink:href="#text"
-                        />
-                      </svg>
-                    </span>
-                  </span>
-                  Last Name
-                </li>
-                <li
-                  class="criteria-sidebar-item-root color--user"
-                  draggable="true"
-                >
-                  <span
-                    class="inline-item"
-                  >
-                    <svg
-                      class="lexicon-icon lexicon-icon-drag"
-                      role="presentation"
-                    >
-                      <use
-                        xlink:href="#drag"
-                      />
-                    </svg>
-                  </span>
-                  <span
-                    class="criteria-sidebar-item-type sticker sticker-light"
-                  >
-                    <span
-                      class="inline-item"
-                    >
-                      <svg
-                        class="lexicon-icon lexicon-icon-text"
-                        role="presentation"
-                      >
-                        <use
-                          xlink:href="#text"
-                        />
-                      </svg>
-                    </span>
-                  </span>
-                  Organization IDs
-                </li>
-                <li
-                  class="criteria-sidebar-item-root color--user"
-                  draggable="true"
-                >
-                  <span
-                    class="inline-item"
-                  >
-                    <svg
-                      class="lexicon-icon lexicon-icon-drag"
-                      role="presentation"
-                    >
-                      <use
-                        xlink:href="#drag"
-                      />
-                    </svg>
-                  </span>
-                  <span
-                    class="criteria-sidebar-item-type sticker sticker-light"
-                  >
-                    <span
-                      class="inline-item"
-                    >
-                      <svg
-                        class="lexicon-icon lexicon-icon-text"
-                        role="presentation"
-                      >
-                        <use
-                          xlink:href="#text"
-                        />
-                      </svg>
-                    </span>
-                  </span>
-                  Role IDs
-                </li>
-                <li
-                  class="criteria-sidebar-item-root color--user"
-                  draggable="true"
-                >
-                  <span
-                    class="inline-item"
-                  >
-                    <svg
-                      class="lexicon-icon lexicon-icon-drag"
-                      role="presentation"
-                    >
-                      <use
-                        xlink:href="#drag"
-                      />
-                    </svg>
-                  </span>
-                  <span
-                    class="criteria-sidebar-item-type sticker sticker-light"
-                  >
-                    <span
-                      class="inline-item"
-                    >
-                      <svg
-                        class="lexicon-icon lexicon-icon-text"
-                        role="presentation"
-                      >
-                        <use
-                          xlink:href="#text"
-                        />
-                      </svg>
-                    </span>
-                  </span>
-                  Scope Group ID
-                </li>
-                <li
-                  class="criteria-sidebar-item-root color--user"
-                  draggable="true"
-                >
-                  <span
-                    class="inline-item"
-                  >
-                    <svg
-                      class="lexicon-icon lexicon-icon-drag"
-                      role="presentation"
-                    >
-                      <use
-                        xlink:href="#drag"
-                      />
-                    </svg>
-                  </span>
-                  <span
-                    class="criteria-sidebar-item-type sticker sticker-light"
-                  >
-                    <span
-                      class="inline-item"
-                    >
-                      <svg
-                        class="lexicon-icon lexicon-icon-text"
-                        role="presentation"
-                      >
-                        <use
-                          xlink:href="#text"
-                        />
-                      </svg>
-                    </span>
-                  </span>
-                  Screen Name
-                </li>
-                <li
-                  class="criteria-sidebar-item-root color--user"
-                  draggable="true"
-                >
-                  <span
-                    class="inline-item"
-                  >
-                    <svg
-                      class="lexicon-icon lexicon-icon-drag"
-                      role="presentation"
-                    >
-                      <use
-                        xlink:href="#drag"
-                      />
-                    </svg>
-                  </span>
-                  <span
-                    class="criteria-sidebar-item-type sticker sticker-light"
-                  >
-                    <span
-                      class="inline-item"
-                    >
-                      <svg
-                        class="lexicon-icon lexicon-icon-text"
-                        role="presentation"
-                      >
-                        <use
-                          xlink:href="#text"
-                        />
-                      </svg>
-                    </span>
-                  </span>
-                  Team IDs
-                </li>
-                <li
-                  class="criteria-sidebar-item-root color--user"
-                  draggable="true"
-                >
-                  <span
-                    class="inline-item"
-                  >
-                    <svg
-                      class="lexicon-icon lexicon-icon-drag"
-                      role="presentation"
-                    >
-                      <use
-                        xlink:href="#drag"
-                      />
-                    </svg>
-                  </span>
-                  <span
-                    class="criteria-sidebar-item-type sticker sticker-light"
-                  >
-                    <span
-                      class="inline-item"
-                    >
-                      <svg
-                        class="lexicon-icon lexicon-icon-text"
-                        role="presentation"
-                      >
-                        <use
-                          xlink:href="#text"
-                        />
-                      </svg>
-                    </span>
-                  </span>
-                  User Group IDs
-                </li>
-                <li
-                  class="criteria-sidebar-item-root color--user"
-                  draggable="true"
-                >
-                  <span
-                    class="inline-item"
-                  >
-                    <svg
-                      class="lexicon-icon lexicon-icon-drag"
-                      role="presentation"
-                    >
-                      <use
-                        xlink:href="#drag"
-                      />
-                    </svg>
-                  </span>
-                  <span
-                    class="criteria-sidebar-item-type sticker sticker-light"
-                  >
-                    <span
-                      class="inline-item"
-                    >
-                      <svg
-                        class="lexicon-icon lexicon-icon-text"
-                        role="presentation"
-                      >
-                        <use
-                          xlink:href="#text"
-                        />
-                      </svg>
-                    </span>
-                  </span>
-                  User ID
-                </li>
-                <li
-                  class="criteria-sidebar-item-root color--user"
-                  draggable="true"
-                >
-                  <span
-                    class="inline-item"
-                  >
-                    <svg
-                      class="lexicon-icon lexicon-icon-drag"
-                      role="presentation"
-                    >
-                      <use
-                        xlink:href="#drag"
-                      />
-                    </svg>
-                  </span>
-                  <span
-                    class="criteria-sidebar-item-type sticker sticker-light"
-                  >
-                    <span
-                      class="inline-item"
-                    >
-                      <svg
-                        class="lexicon-icon lexicon-icon-text"
-                        role="presentation"
-                      >
-                        <use
-                          xlink:href="#text"
-                        />
-                      </svg>
-                    </span>
-                  </span>
-                  User Name
-                </li>
-              </ul>
             </li>
             <li
-              class="sidebar-collapse-user-organization"
+              class="sidebar-collapse-item sidebar-collapse-user-organization"
             >
-              <div
-                class="sidebar-collapse-header-root"
+              <a
+                class="sidebar-collapse-header"
               >
-                <a
-                  class="d-flex justify-content-between sidebar-collapse-header"
-                >
-                  User Organization
-                  <span
-                    class="collapse-icon"
+                User Organization
+                <span>
+                  <svg
+                    class="lexicon-icon lexicon-icon-angle-right"
+                    role="presentation"
                   >
-                    <svg
-                      class="lexicon-icon lexicon-icon-angle-right"
-                      role="presentation"
-                    >
-                      <use
-                        xlink:href="#angle-right"
-                      />
-                    </svg>
-                  </span>
-                </a>
-              </div>
-              <ul
-                class="properties-list"
-              />
+                    <use
+                      xlink:href="#angle-right"
+                    />
+                  </svg>
+                </span>
+              </a>
             </li>
           </ul>
         </div>
@@ -850,676 +844,670 @@ exports[`ContributorsBuilder renders builder without sidebar: initialRenderNotEd
           class="sidebar-collapse"
         >
           <ul
-            class="list-unstyled sidebar-collapse-groups"
+            class="sidebar-collapse-groups"
           >
             <li
-              class="sidebar-collapse-user"
+              class="sidebar-collapse-item sidebar-collapse-user active"
             >
+              <a
+                class="sidebar-collapse-header"
+              >
+                User
+                <span>
+                  <svg
+                    class="lexicon-icon lexicon-icon-angle-right active"
+                    role="presentation"
+                  >
+                    <use
+                      xlink:href="#angle-right"
+                    />
+                  </svg>
+                </span>
+              </a>
               <div
-                class="sidebar-collapse-header-root"
+                class="flex-grow-1 sidebar-collapse-body"
               >
-                <a
-                  class="d-flex justify-content-between sidebar-collapse-header"
+                <p
+                  class="pt-3 px-4 text-secondary"
                 >
-                  User
-                  <span
-                    class="collapse-icon"
+                  inherited-attributes-are-not-taken-into-account-to-include-members-in-segments
+                </p>
+                <ul
+                  class="pl-0"
+                >
+                  <li
+                    class="criteria-sidebar-item-root color--user"
+                    draggable="true"
                   >
-                    <svg
-                      class="lexicon-icon lexicon-icon-angle-right active"
-                      role="presentation"
+                    <span
+                      class="inline-item"
                     >
-                      <use
-                        xlink:href="#angle-right"
-                      />
-                    </svg>
-                  </span>
-                </a>
+                      <svg
+                        class="lexicon-icon lexicon-icon-drag"
+                        role="presentation"
+                      >
+                        <use
+                          xlink:href="#drag"
+                        />
+                      </svg>
+                    </span>
+                    <span
+                      class="criteria-sidebar-item-type sticker sticker-dark"
+                    >
+                      <span
+                        class="inline-item"
+                      >
+                        <svg
+                          class="lexicon-icon lexicon-icon-text"
+                          role="presentation"
+                        >
+                          <use
+                            xlink:href="#text"
+                          />
+                        </svg>
+                      </span>
+                    </span>
+                    Ancestor Organization IDs
+                  </li>
+                  <li
+                    class="criteria-sidebar-item-root color--user"
+                    draggable="true"
+                  >
+                    <span
+                      class="inline-item"
+                    >
+                      <svg
+                        class="lexicon-icon lexicon-icon-drag"
+                        role="presentation"
+                      >
+                        <use
+                          xlink:href="#drag"
+                        />
+                      </svg>
+                    </span>
+                    <span
+                      class="criteria-sidebar-item-type sticker sticker-dark"
+                    >
+                      <span
+                        class="inline-item"
+                      >
+                        <svg
+                          class="lexicon-icon lexicon-icon-text"
+                          role="presentation"
+                        >
+                          <use
+                            xlink:href="#text"
+                          />
+                        </svg>
+                      </span>
+                    </span>
+                    Class PK
+                  </li>
+                  <li
+                    class="criteria-sidebar-item-root color--user"
+                    draggable="true"
+                  >
+                    <span
+                      class="inline-item"
+                    >
+                      <svg
+                        class="lexicon-icon lexicon-icon-drag"
+                        role="presentation"
+                      >
+                        <use
+                          xlink:href="#drag"
+                        />
+                      </svg>
+                    </span>
+                    <span
+                      class="criteria-sidebar-item-type sticker sticker-dark"
+                    >
+                      <span
+                        class="inline-item"
+                      >
+                        <svg
+                          class="lexicon-icon lexicon-icon-text"
+                          role="presentation"
+                        >
+                          <use
+                            xlink:href="#text"
+                          />
+                        </svg>
+                      </span>
+                    </span>
+                    Company ID
+                  </li>
+                  <li
+                    class="criteria-sidebar-item-root color--user"
+                    draggable="true"
+                  >
+                    <span
+                      class="inline-item"
+                    >
+                      <svg
+                        class="lexicon-icon lexicon-icon-drag"
+                        role="presentation"
+                      >
+                        <use
+                          xlink:href="#drag"
+                        />
+                      </svg>
+                    </span>
+                    <span
+                      class="criteria-sidebar-item-type sticker sticker-dark"
+                    >
+                      <span
+                        class="inline-item"
+                      >
+                        <svg
+                          class="lexicon-icon lexicon-icon-date"
+                          role="presentation"
+                        >
+                          <use
+                            xlink:href="#date"
+                          />
+                        </svg>
+                      </span>
+                    </span>
+                    Date Modified
+                  </li>
+                  <li
+                    class="criteria-sidebar-item-root color--user"
+                    draggable="true"
+                  >
+                    <span
+                      class="inline-item"
+                    >
+                      <svg
+                        class="lexicon-icon lexicon-icon-drag"
+                        role="presentation"
+                      >
+                        <use
+                          xlink:href="#drag"
+                        />
+                      </svg>
+                    </span>
+                    <span
+                      class="criteria-sidebar-item-type sticker sticker-dark"
+                    >
+                      <span
+                        class="inline-item"
+                      >
+                        <svg
+                          class="lexicon-icon lexicon-icon-text"
+                          role="presentation"
+                        >
+                          <use
+                            xlink:href="#text"
+                          />
+                        </svg>
+                      </span>
+                    </span>
+                    Email Address
+                  </li>
+                  <li
+                    class="criteria-sidebar-item-root color--user"
+                    draggable="true"
+                  >
+                    <span
+                      class="inline-item"
+                    >
+                      <svg
+                        class="lexicon-icon lexicon-icon-drag"
+                        role="presentation"
+                      >
+                        <use
+                          xlink:href="#drag"
+                        />
+                      </svg>
+                    </span>
+                    <span
+                      class="criteria-sidebar-item-type sticker sticker-dark"
+                    >
+                      <span
+                        class="inline-item"
+                      >
+                        <svg
+                          class="lexicon-icon lexicon-icon-text"
+                          role="presentation"
+                        >
+                          <use
+                            xlink:href="#text"
+                          />
+                        </svg>
+                      </span>
+                    </span>
+                    First Name
+                  </li>
+                  <li
+                    class="criteria-sidebar-item-root color--user"
+                    draggable="true"
+                  >
+                    <span
+                      class="inline-item"
+                    >
+                      <svg
+                        class="lexicon-icon lexicon-icon-drag"
+                        role="presentation"
+                      >
+                        <use
+                          xlink:href="#drag"
+                        />
+                      </svg>
+                    </span>
+                    <span
+                      class="criteria-sidebar-item-type sticker sticker-dark"
+                    >
+                      <span
+                        class="inline-item"
+                      >
+                        <svg
+                          class="lexicon-icon lexicon-icon-text"
+                          role="presentation"
+                        >
+                          <use
+                            xlink:href="#text"
+                          />
+                        </svg>
+                      </span>
+                    </span>
+                    Group ID
+                  </li>
+                  <li
+                    class="criteria-sidebar-item-root color--user"
+                    draggable="true"
+                  >
+                    <span
+                      class="inline-item"
+                    >
+                      <svg
+                        class="lexicon-icon lexicon-icon-drag"
+                        role="presentation"
+                      >
+                        <use
+                          xlink:href="#drag"
+                        />
+                      </svg>
+                    </span>
+                    <span
+                      class="criteria-sidebar-item-type sticker sticker-dark"
+                    >
+                      <span
+                        class="inline-item"
+                      >
+                        <svg
+                          class="lexicon-icon lexicon-icon-text"
+                          role="presentation"
+                        >
+                          <use
+                            xlink:href="#text"
+                          />
+                        </svg>
+                      </span>
+                    </span>
+                    Group IDs
+                  </li>
+                  <li
+                    class="criteria-sidebar-item-root color--user"
+                    draggable="true"
+                  >
+                    <span
+                      class="inline-item"
+                    >
+                      <svg
+                        class="lexicon-icon lexicon-icon-drag"
+                        role="presentation"
+                      >
+                        <use
+                          xlink:href="#drag"
+                        />
+                      </svg>
+                    </span>
+                    <span
+                      class="criteria-sidebar-item-type sticker sticker-dark"
+                    >
+                      <span
+                        class="inline-item"
+                      >
+                        <svg
+                          class="lexicon-icon lexicon-icon-text"
+                          role="presentation"
+                        >
+                          <use
+                            xlink:href="#text"
+                          />
+                        </svg>
+                      </span>
+                    </span>
+                    Job Title
+                  </li>
+                  <li
+                    class="criteria-sidebar-item-root color--user"
+                    draggable="true"
+                  >
+                    <span
+                      class="inline-item"
+                    >
+                      <svg
+                        class="lexicon-icon lexicon-icon-drag"
+                        role="presentation"
+                      >
+                        <use
+                          xlink:href="#drag"
+                        />
+                      </svg>
+                    </span>
+                    <span
+                      class="criteria-sidebar-item-type sticker sticker-dark"
+                    >
+                      <span
+                        class="inline-item"
+                      >
+                        <svg
+                          class="lexicon-icon lexicon-icon-text"
+                          role="presentation"
+                        >
+                          <use
+                            xlink:href="#text"
+                          />
+                        </svg>
+                      </span>
+                    </span>
+                    Last Name
+                  </li>
+                  <li
+                    class="criteria-sidebar-item-root color--user"
+                    draggable="true"
+                  >
+                    <span
+                      class="inline-item"
+                    >
+                      <svg
+                        class="lexicon-icon lexicon-icon-drag"
+                        role="presentation"
+                      >
+                        <use
+                          xlink:href="#drag"
+                        />
+                      </svg>
+                    </span>
+                    <span
+                      class="criteria-sidebar-item-type sticker sticker-dark"
+                    >
+                      <span
+                        class="inline-item"
+                      >
+                        <svg
+                          class="lexicon-icon lexicon-icon-text"
+                          role="presentation"
+                        >
+                          <use
+                            xlink:href="#text"
+                          />
+                        </svg>
+                      </span>
+                    </span>
+                    Organization IDs
+                  </li>
+                  <li
+                    class="criteria-sidebar-item-root color--user"
+                    draggable="true"
+                  >
+                    <span
+                      class="inline-item"
+                    >
+                      <svg
+                        class="lexicon-icon lexicon-icon-drag"
+                        role="presentation"
+                      >
+                        <use
+                          xlink:href="#drag"
+                        />
+                      </svg>
+                    </span>
+                    <span
+                      class="criteria-sidebar-item-type sticker sticker-dark"
+                    >
+                      <span
+                        class="inline-item"
+                      >
+                        <svg
+                          class="lexicon-icon lexicon-icon-text"
+                          role="presentation"
+                        >
+                          <use
+                            xlink:href="#text"
+                          />
+                        </svg>
+                      </span>
+                    </span>
+                    Role IDs
+                  </li>
+                  <li
+                    class="criteria-sidebar-item-root color--user"
+                    draggable="true"
+                  >
+                    <span
+                      class="inline-item"
+                    >
+                      <svg
+                        class="lexicon-icon lexicon-icon-drag"
+                        role="presentation"
+                      >
+                        <use
+                          xlink:href="#drag"
+                        />
+                      </svg>
+                    </span>
+                    <span
+                      class="criteria-sidebar-item-type sticker sticker-dark"
+                    >
+                      <span
+                        class="inline-item"
+                      >
+                        <svg
+                          class="lexicon-icon lexicon-icon-text"
+                          role="presentation"
+                        >
+                          <use
+                            xlink:href="#text"
+                          />
+                        </svg>
+                      </span>
+                    </span>
+                    Scope Group ID
+                  </li>
+                  <li
+                    class="criteria-sidebar-item-root color--user"
+                    draggable="true"
+                  >
+                    <span
+                      class="inline-item"
+                    >
+                      <svg
+                        class="lexicon-icon lexicon-icon-drag"
+                        role="presentation"
+                      >
+                        <use
+                          xlink:href="#drag"
+                        />
+                      </svg>
+                    </span>
+                    <span
+                      class="criteria-sidebar-item-type sticker sticker-dark"
+                    >
+                      <span
+                        class="inline-item"
+                      >
+                        <svg
+                          class="lexicon-icon lexicon-icon-text"
+                          role="presentation"
+                        >
+                          <use
+                            xlink:href="#text"
+                          />
+                        </svg>
+                      </span>
+                    </span>
+                    Screen Name
+                  </li>
+                  <li
+                    class="criteria-sidebar-item-root color--user"
+                    draggable="true"
+                  >
+                    <span
+                      class="inline-item"
+                    >
+                      <svg
+                        class="lexicon-icon lexicon-icon-drag"
+                        role="presentation"
+                      >
+                        <use
+                          xlink:href="#drag"
+                        />
+                      </svg>
+                    </span>
+                    <span
+                      class="criteria-sidebar-item-type sticker sticker-dark"
+                    >
+                      <span
+                        class="inline-item"
+                      >
+                        <svg
+                          class="lexicon-icon lexicon-icon-text"
+                          role="presentation"
+                        >
+                          <use
+                            xlink:href="#text"
+                          />
+                        </svg>
+                      </span>
+                    </span>
+                    Team IDs
+                  </li>
+                  <li
+                    class="criteria-sidebar-item-root color--user"
+                    draggable="true"
+                  >
+                    <span
+                      class="inline-item"
+                    >
+                      <svg
+                        class="lexicon-icon lexicon-icon-drag"
+                        role="presentation"
+                      >
+                        <use
+                          xlink:href="#drag"
+                        />
+                      </svg>
+                    </span>
+                    <span
+                      class="criteria-sidebar-item-type sticker sticker-dark"
+                    >
+                      <span
+                        class="inline-item"
+                      >
+                        <svg
+                          class="lexicon-icon lexicon-icon-text"
+                          role="presentation"
+                        >
+                          <use
+                            xlink:href="#text"
+                          />
+                        </svg>
+                      </span>
+                    </span>
+                    User Group IDs
+                  </li>
+                  <li
+                    class="criteria-sidebar-item-root color--user"
+                    draggable="true"
+                  >
+                    <span
+                      class="inline-item"
+                    >
+                      <svg
+                        class="lexicon-icon lexicon-icon-drag"
+                        role="presentation"
+                      >
+                        <use
+                          xlink:href="#drag"
+                        />
+                      </svg>
+                    </span>
+                    <span
+                      class="criteria-sidebar-item-type sticker sticker-dark"
+                    >
+                      <span
+                        class="inline-item"
+                      >
+                        <svg
+                          class="lexicon-icon lexicon-icon-text"
+                          role="presentation"
+                        >
+                          <use
+                            xlink:href="#text"
+                          />
+                        </svg>
+                      </span>
+                    </span>
+                    User ID
+                  </li>
+                  <li
+                    class="criteria-sidebar-item-root color--user"
+                    draggable="true"
+                  >
+                    <span
+                      class="inline-item"
+                    >
+                      <svg
+                        class="lexicon-icon lexicon-icon-drag"
+                        role="presentation"
+                      >
+                        <use
+                          xlink:href="#drag"
+                        />
+                      </svg>
+                    </span>
+                    <span
+                      class="criteria-sidebar-item-type sticker sticker-dark"
+                    >
+                      <span
+                        class="inline-item"
+                      >
+                        <svg
+                          class="lexicon-icon lexicon-icon-text"
+                          role="presentation"
+                        >
+                          <use
+                            xlink:href="#text"
+                          />
+                        </svg>
+                      </span>
+                    </span>
+                    User Name
+                  </li>
+                </ul>
               </div>
-              <ul
-                class="properties-list active"
-              >
-                <li
-                  class="criteria-sidebar-item-root color--user"
-                  draggable="true"
-                >
-                  <span
-                    class="inline-item"
-                  >
-                    <svg
-                      class="lexicon-icon lexicon-icon-drag"
-                      role="presentation"
-                    >
-                      <use
-                        xlink:href="#drag"
-                      />
-                    </svg>
-                  </span>
-                  <span
-                    class="criteria-sidebar-item-type sticker sticker-light"
-                  >
-                    <span
-                      class="inline-item"
-                    >
-                      <svg
-                        class="lexicon-icon lexicon-icon-text"
-                        role="presentation"
-                      >
-                        <use
-                          xlink:href="#text"
-                        />
-                      </svg>
-                    </span>
-                  </span>
-                  Ancestor Organization IDs
-                </li>
-                <li
-                  class="criteria-sidebar-item-root color--user"
-                  draggable="true"
-                >
-                  <span
-                    class="inline-item"
-                  >
-                    <svg
-                      class="lexicon-icon lexicon-icon-drag"
-                      role="presentation"
-                    >
-                      <use
-                        xlink:href="#drag"
-                      />
-                    </svg>
-                  </span>
-                  <span
-                    class="criteria-sidebar-item-type sticker sticker-light"
-                  >
-                    <span
-                      class="inline-item"
-                    >
-                      <svg
-                        class="lexicon-icon lexicon-icon-text"
-                        role="presentation"
-                      >
-                        <use
-                          xlink:href="#text"
-                        />
-                      </svg>
-                    </span>
-                  </span>
-                  Class PK
-                </li>
-                <li
-                  class="criteria-sidebar-item-root color--user"
-                  draggable="true"
-                >
-                  <span
-                    class="inline-item"
-                  >
-                    <svg
-                      class="lexicon-icon lexicon-icon-drag"
-                      role="presentation"
-                    >
-                      <use
-                        xlink:href="#drag"
-                      />
-                    </svg>
-                  </span>
-                  <span
-                    class="criteria-sidebar-item-type sticker sticker-light"
-                  >
-                    <span
-                      class="inline-item"
-                    >
-                      <svg
-                        class="lexicon-icon lexicon-icon-text"
-                        role="presentation"
-                      >
-                        <use
-                          xlink:href="#text"
-                        />
-                      </svg>
-                    </span>
-                  </span>
-                  Company ID
-                </li>
-                <li
-                  class="criteria-sidebar-item-root color--user"
-                  draggable="true"
-                >
-                  <span
-                    class="inline-item"
-                  >
-                    <svg
-                      class="lexicon-icon lexicon-icon-drag"
-                      role="presentation"
-                    >
-                      <use
-                        xlink:href="#drag"
-                      />
-                    </svg>
-                  </span>
-                  <span
-                    class="criteria-sidebar-item-type sticker sticker-light"
-                  >
-                    <span
-                      class="inline-item"
-                    >
-                      <svg
-                        class="lexicon-icon lexicon-icon-date"
-                        role="presentation"
-                      >
-                        <use
-                          xlink:href="#date"
-                        />
-                      </svg>
-                    </span>
-                  </span>
-                  Date Modified
-                </li>
-                <li
-                  class="criteria-sidebar-item-root color--user"
-                  draggable="true"
-                >
-                  <span
-                    class="inline-item"
-                  >
-                    <svg
-                      class="lexicon-icon lexicon-icon-drag"
-                      role="presentation"
-                    >
-                      <use
-                        xlink:href="#drag"
-                      />
-                    </svg>
-                  </span>
-                  <span
-                    class="criteria-sidebar-item-type sticker sticker-light"
-                  >
-                    <span
-                      class="inline-item"
-                    >
-                      <svg
-                        class="lexicon-icon lexicon-icon-text"
-                        role="presentation"
-                      >
-                        <use
-                          xlink:href="#text"
-                        />
-                      </svg>
-                    </span>
-                  </span>
-                  Email Address
-                </li>
-                <li
-                  class="criteria-sidebar-item-root color--user"
-                  draggable="true"
-                >
-                  <span
-                    class="inline-item"
-                  >
-                    <svg
-                      class="lexicon-icon lexicon-icon-drag"
-                      role="presentation"
-                    >
-                      <use
-                        xlink:href="#drag"
-                      />
-                    </svg>
-                  </span>
-                  <span
-                    class="criteria-sidebar-item-type sticker sticker-light"
-                  >
-                    <span
-                      class="inline-item"
-                    >
-                      <svg
-                        class="lexicon-icon lexicon-icon-text"
-                        role="presentation"
-                      >
-                        <use
-                          xlink:href="#text"
-                        />
-                      </svg>
-                    </span>
-                  </span>
-                  First Name
-                </li>
-                <li
-                  class="criteria-sidebar-item-root color--user"
-                  draggable="true"
-                >
-                  <span
-                    class="inline-item"
-                  >
-                    <svg
-                      class="lexicon-icon lexicon-icon-drag"
-                      role="presentation"
-                    >
-                      <use
-                        xlink:href="#drag"
-                      />
-                    </svg>
-                  </span>
-                  <span
-                    class="criteria-sidebar-item-type sticker sticker-light"
-                  >
-                    <span
-                      class="inline-item"
-                    >
-                      <svg
-                        class="lexicon-icon lexicon-icon-text"
-                        role="presentation"
-                      >
-                        <use
-                          xlink:href="#text"
-                        />
-                      </svg>
-                    </span>
-                  </span>
-                  Group ID
-                </li>
-                <li
-                  class="criteria-sidebar-item-root color--user"
-                  draggable="true"
-                >
-                  <span
-                    class="inline-item"
-                  >
-                    <svg
-                      class="lexicon-icon lexicon-icon-drag"
-                      role="presentation"
-                    >
-                      <use
-                        xlink:href="#drag"
-                      />
-                    </svg>
-                  </span>
-                  <span
-                    class="criteria-sidebar-item-type sticker sticker-light"
-                  >
-                    <span
-                      class="inline-item"
-                    >
-                      <svg
-                        class="lexicon-icon lexicon-icon-text"
-                        role="presentation"
-                      >
-                        <use
-                          xlink:href="#text"
-                        />
-                      </svg>
-                    </span>
-                  </span>
-                  Group IDs
-                </li>
-                <li
-                  class="criteria-sidebar-item-root color--user"
-                  draggable="true"
-                >
-                  <span
-                    class="inline-item"
-                  >
-                    <svg
-                      class="lexicon-icon lexicon-icon-drag"
-                      role="presentation"
-                    >
-                      <use
-                        xlink:href="#drag"
-                      />
-                    </svg>
-                  </span>
-                  <span
-                    class="criteria-sidebar-item-type sticker sticker-light"
-                  >
-                    <span
-                      class="inline-item"
-                    >
-                      <svg
-                        class="lexicon-icon lexicon-icon-text"
-                        role="presentation"
-                      >
-                        <use
-                          xlink:href="#text"
-                        />
-                      </svg>
-                    </span>
-                  </span>
-                  Job Title
-                </li>
-                <li
-                  class="criteria-sidebar-item-root color--user"
-                  draggable="true"
-                >
-                  <span
-                    class="inline-item"
-                  >
-                    <svg
-                      class="lexicon-icon lexicon-icon-drag"
-                      role="presentation"
-                    >
-                      <use
-                        xlink:href="#drag"
-                      />
-                    </svg>
-                  </span>
-                  <span
-                    class="criteria-sidebar-item-type sticker sticker-light"
-                  >
-                    <span
-                      class="inline-item"
-                    >
-                      <svg
-                        class="lexicon-icon lexicon-icon-text"
-                        role="presentation"
-                      >
-                        <use
-                          xlink:href="#text"
-                        />
-                      </svg>
-                    </span>
-                  </span>
-                  Last Name
-                </li>
-                <li
-                  class="criteria-sidebar-item-root color--user"
-                  draggable="true"
-                >
-                  <span
-                    class="inline-item"
-                  >
-                    <svg
-                      class="lexicon-icon lexicon-icon-drag"
-                      role="presentation"
-                    >
-                      <use
-                        xlink:href="#drag"
-                      />
-                    </svg>
-                  </span>
-                  <span
-                    class="criteria-sidebar-item-type sticker sticker-light"
-                  >
-                    <span
-                      class="inline-item"
-                    >
-                      <svg
-                        class="lexicon-icon lexicon-icon-text"
-                        role="presentation"
-                      >
-                        <use
-                          xlink:href="#text"
-                        />
-                      </svg>
-                    </span>
-                  </span>
-                  Organization IDs
-                </li>
-                <li
-                  class="criteria-sidebar-item-root color--user"
-                  draggable="true"
-                >
-                  <span
-                    class="inline-item"
-                  >
-                    <svg
-                      class="lexicon-icon lexicon-icon-drag"
-                      role="presentation"
-                    >
-                      <use
-                        xlink:href="#drag"
-                      />
-                    </svg>
-                  </span>
-                  <span
-                    class="criteria-sidebar-item-type sticker sticker-light"
-                  >
-                    <span
-                      class="inline-item"
-                    >
-                      <svg
-                        class="lexicon-icon lexicon-icon-text"
-                        role="presentation"
-                      >
-                        <use
-                          xlink:href="#text"
-                        />
-                      </svg>
-                    </span>
-                  </span>
-                  Role IDs
-                </li>
-                <li
-                  class="criteria-sidebar-item-root color--user"
-                  draggable="true"
-                >
-                  <span
-                    class="inline-item"
-                  >
-                    <svg
-                      class="lexicon-icon lexicon-icon-drag"
-                      role="presentation"
-                    >
-                      <use
-                        xlink:href="#drag"
-                      />
-                    </svg>
-                  </span>
-                  <span
-                    class="criteria-sidebar-item-type sticker sticker-light"
-                  >
-                    <span
-                      class="inline-item"
-                    >
-                      <svg
-                        class="lexicon-icon lexicon-icon-text"
-                        role="presentation"
-                      >
-                        <use
-                          xlink:href="#text"
-                        />
-                      </svg>
-                    </span>
-                  </span>
-                  Scope Group ID
-                </li>
-                <li
-                  class="criteria-sidebar-item-root color--user"
-                  draggable="true"
-                >
-                  <span
-                    class="inline-item"
-                  >
-                    <svg
-                      class="lexicon-icon lexicon-icon-drag"
-                      role="presentation"
-                    >
-                      <use
-                        xlink:href="#drag"
-                      />
-                    </svg>
-                  </span>
-                  <span
-                    class="criteria-sidebar-item-type sticker sticker-light"
-                  >
-                    <span
-                      class="inline-item"
-                    >
-                      <svg
-                        class="lexicon-icon lexicon-icon-text"
-                        role="presentation"
-                      >
-                        <use
-                          xlink:href="#text"
-                        />
-                      </svg>
-                    </span>
-                  </span>
-                  Screen Name
-                </li>
-                <li
-                  class="criteria-sidebar-item-root color--user"
-                  draggable="true"
-                >
-                  <span
-                    class="inline-item"
-                  >
-                    <svg
-                      class="lexicon-icon lexicon-icon-drag"
-                      role="presentation"
-                    >
-                      <use
-                        xlink:href="#drag"
-                      />
-                    </svg>
-                  </span>
-                  <span
-                    class="criteria-sidebar-item-type sticker sticker-light"
-                  >
-                    <span
-                      class="inline-item"
-                    >
-                      <svg
-                        class="lexicon-icon lexicon-icon-text"
-                        role="presentation"
-                      >
-                        <use
-                          xlink:href="#text"
-                        />
-                      </svg>
-                    </span>
-                  </span>
-                  Team IDs
-                </li>
-                <li
-                  class="criteria-sidebar-item-root color--user"
-                  draggable="true"
-                >
-                  <span
-                    class="inline-item"
-                  >
-                    <svg
-                      class="lexicon-icon lexicon-icon-drag"
-                      role="presentation"
-                    >
-                      <use
-                        xlink:href="#drag"
-                      />
-                    </svg>
-                  </span>
-                  <span
-                    class="criteria-sidebar-item-type sticker sticker-light"
-                  >
-                    <span
-                      class="inline-item"
-                    >
-                      <svg
-                        class="lexicon-icon lexicon-icon-text"
-                        role="presentation"
-                      >
-                        <use
-                          xlink:href="#text"
-                        />
-                      </svg>
-                    </span>
-                  </span>
-                  User Group IDs
-                </li>
-                <li
-                  class="criteria-sidebar-item-root color--user"
-                  draggable="true"
-                >
-                  <span
-                    class="inline-item"
-                  >
-                    <svg
-                      class="lexicon-icon lexicon-icon-drag"
-                      role="presentation"
-                    >
-                      <use
-                        xlink:href="#drag"
-                      />
-                    </svg>
-                  </span>
-                  <span
-                    class="criteria-sidebar-item-type sticker sticker-light"
-                  >
-                    <span
-                      class="inline-item"
-                    >
-                      <svg
-                        class="lexicon-icon lexicon-icon-text"
-                        role="presentation"
-                      >
-                        <use
-                          xlink:href="#text"
-                        />
-                      </svg>
-                    </span>
-                  </span>
-                  User ID
-                </li>
-                <li
-                  class="criteria-sidebar-item-root color--user"
-                  draggable="true"
-                >
-                  <span
-                    class="inline-item"
-                  >
-                    <svg
-                      class="lexicon-icon lexicon-icon-drag"
-                      role="presentation"
-                    >
-                      <use
-                        xlink:href="#drag"
-                      />
-                    </svg>
-                  </span>
-                  <span
-                    class="criteria-sidebar-item-type sticker sticker-light"
-                  >
-                    <span
-                      class="inline-item"
-                    >
-                      <svg
-                        class="lexicon-icon lexicon-icon-text"
-                        role="presentation"
-                      >
-                        <use
-                          xlink:href="#text"
-                        />
-                      </svg>
-                    </span>
-                  </span>
-                  User Name
-                </li>
-              </ul>
             </li>
             <li
-              class="sidebar-collapse-user-organization"
+              class="sidebar-collapse-item sidebar-collapse-user-organization"
             >
-              <div
-                class="sidebar-collapse-header-root"
+              <a
+                class="sidebar-collapse-header"
               >
-                <a
-                  class="d-flex justify-content-between sidebar-collapse-header"
-                >
-                  User Organization
-                  <span
-                    class="collapse-icon"
+                User Organization
+                <span>
+                  <svg
+                    class="lexicon-icon lexicon-icon-angle-right"
+                    role="presentation"
                   >
-                    <svg
-                      class="lexicon-icon lexicon-icon-angle-right"
-                      role="presentation"
-                    >
-                      <use
-                        xlink:href="#angle-right"
-                      />
-                    </svg>
-                  </span>
-                </a>
-              </div>
-              <ul
-                class="properties-list"
-              />
+                    <use
+                      xlink:href="#angle-right"
+                    />
+                  </svg>
+                </span>
+              </a>
             </li>
           </ul>
         </div>

@@ -84,7 +84,7 @@ public class EditableValuesTransformerUtil {
 		}
 		catch (JSONException jsonException) {
 			if (_log.isWarnEnabled()) {
-				_log.warn(jsonException, jsonException);
+				_log.warn(jsonException);
 			}
 		}
 
@@ -166,7 +166,19 @@ public class EditableValuesTransformerUtil {
 		JSONObject jsonObject, long segmentsExperienceId) {
 
 		if (!jsonObject.has(_ID_PREFIX + segmentsExperienceId)) {
-			return JSONFactoryUtil.createJSONObject();
+			JSONObject newJSONObject = JSONFactoryUtil.createJSONObject();
+
+			Iterator<String> valueKeysIterator = jsonObject.keys();
+
+			while (valueKeysIterator.hasNext()) {
+				String valueKey = valueKeysIterator.next();
+
+				if (!valueKey.startsWith(_ID_PREFIX)) {
+					newJSONObject.put(valueKey, jsonObject.get(valueKey));
+				}
+			}
+
+			return newJSONObject;
 		}
 
 		return jsonObject.getJSONObject(_ID_PREFIX + segmentsExperienceId);

@@ -14,10 +14,9 @@
 
 import {fireEvent} from '@testing-library/dom';
 import userEvent from '@testing-library/user-event';
-import {buildFragment} from 'frontend-js-web';
+import {EventEmitter, buildFragment} from 'frontend-js-web';
 
 import App from '../../src/main/resources/META-INF/resources/app/App';
-import EventEmitter from '../../src/main/resources/META-INF/resources/events/EventEmitter';
 import Route from '../../src/main/resources/META-INF/resources/route/Route';
 import HtmlScreen from '../../src/main/resources/META-INF/resources/screen/HtmlScreen';
 import Screen from '../../src/main/resources/META-INF/resources/screen/Screen';
@@ -53,7 +52,6 @@ describe('App', function () {
 
 		jest.resetAllMocks();
 
-		jest.spyOn(console, 'log').mockImplementation(() => {});
 		jest.spyOn(window, 'scrollTo').mockImplementation((top, left) => {
 			window.history.state.scrollTop = top;
 			window.history.state.scrollLeft = left;
@@ -440,11 +438,11 @@ describe('App', function () {
 
 		const callback = () => {
 
-			//this.app.clearScreensCache();
+			// this.app.clearScreensCache();
 
 			expect(Object.keys(this.app.screens)).toHaveLength(1);
 
-			//event.dispose();
+			// event.dispose();
 
 			done();
 		};
@@ -523,7 +521,7 @@ describe('App', function () {
 			host: 'localhost',
 			hostname: 'localhost',
 			origin: 'http://localhost',
-			pathname: '/path',
+			pathname: '/base/path',
 			search: '',
 		});
 
@@ -536,6 +534,10 @@ describe('App', function () {
 		expect(this.app.canNavigate('http://localhost/base/')).toBe(true);
 		expect(this.app.canNavigate('http://localhost/base')).toBe(true);
 		expect(this.app.canNavigate('http://localhost/base/path')).toBe(true);
+		expect(this.app.canNavigate('http://localhost/base/path#')).toBe(false);
+		expect(this.app.canNavigate('http://localhost/base/path#foo')).toBe(
+			false
+		);
 		expect(this.app.canNavigate('http://localhost/base/path1')).toBe(false);
 		expect(this.app.canNavigate('http://localhost/path')).toBe(false);
 		expect(this.app.canNavigate('http://external/path')).toBe(false);
@@ -2127,7 +2129,7 @@ describe('App', function () {
 							done();
 						});
 
-						//pendingNavigate.cancel();
+						// pendingNavigate.cancel();
 
 					}
 				});

@@ -76,7 +76,7 @@ public class MSCognitiveServicesImageAssetAutoTagProvider
 				return Collections.emptyList();
 			}
 
-			checkAPIEndpoint(
+			_checkAPIEndpoint(
 				msCognitiveServicesAssetAutoTagProviderCompanyConfiguration.
 					apiEndpoint());
 
@@ -93,14 +93,14 @@ public class MSCognitiveServicesImageAssetAutoTagProvider
 		}
 		catch (Exception exception) {
 			if (_log.isWarnEnabled()) {
-				_log.warn(exception, exception);
+				_log.warn(exception);
 			}
 
 			return Collections.emptyList();
 		}
 	}
 
-	protected void checkAPIEndpoint(String apiEndpoint)
+	private void _checkAPIEndpoint(String apiEndpoint)
 		throws MalformedURLException, UnknownHostException {
 
 		URL url = new URL(apiEndpoint);

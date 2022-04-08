@@ -14,7 +14,7 @@
 
 package com.liferay.document.library.document.conversion.internal.upgrade;
 
-import com.liferay.document.library.document.conversion.internal.upgrade.v1_0_0.UpgradeOpenOfficeConfiguration;
+import com.liferay.document.library.document.conversion.internal.upgrade.v1_0_0.OpenOfficeConfigurationUpgradeProcess;
 import com.liferay.portal.configuration.upgrade.PrefsPropsToConfigurationUpgradeHelper;
 import com.liferay.portal.kernel.upgrade.DummyUpgradeStep;
 import com.liferay.portal.upgrade.registry.UpgradeStepRegistrator;
@@ -30,11 +30,11 @@ public class DocumentConversionUpgrade implements UpgradeStepRegistrator {
 
 	@Override
 	public void register(Registry registry) {
-		registry.register("0.0.0", "0.0.1", new DummyUpgradeStep());
+		registry.register("0.0.0", "1.0.0", new DummyUpgradeStep());
 
 		registry.register(
 			"0.0.1", "1.0.0",
-			new UpgradeOpenOfficeConfiguration(
+			new OpenOfficeConfigurationUpgradeProcess(
 				_prefsPropsToConfigurationUpgradeHelper));
 	}
 

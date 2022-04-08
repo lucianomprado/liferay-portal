@@ -20,18 +20,21 @@ import com.liferay.headless.commerce.machine.learning.dto.v1_0.AccountForecast;
 import com.liferay.headless.commerce.machine.learning.internal.constants.CommerceMLForecastConstants;
 import com.liferay.headless.commerce.machine.learning.internal.dto.v1_0.converter.AccountForecastDTOConverter;
 import com.liferay.headless.commerce.machine.learning.internal.dto.v1_0.converter.CommerceMLForecastCompositeResourcePrimaryKey;
-import com.liferay.headless.commerce.machine.learning.internal.util.v1_0.CommerceAccountPermissionHelper;
+import com.liferay.headless.commerce.machine.learning.internal.helper.v1_0.CommerceAccountPermissionHelper;
 import com.liferay.headless.commerce.machine.learning.resource.v1_0.AccountForecastResource;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.vulcan.dto.converter.DefaultDTOConverterContext;
 import com.liferay.portal.vulcan.pagination.Page;
 import com.liferay.portal.vulcan.pagination.Pagination;
 
-import java.util.ArrayList;
+import java.io.Serializable;
+
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -47,6 +50,46 @@ import org.osgi.service.component.annotations.ServiceScope;
 )
 public class AccountForecastResourceImpl
 	extends BaseAccountForecastResourceImpl {
+
+	@Override
+	public void create(
+			Collection<AccountForecast> accountForecasts,
+			Map<String, Serializable> parameters)
+		throws Exception {
+
+		contextBatchUnsafeConsumer.accept(
+			accountForecasts,
+			accountForecast -> {
+				CommerceAccountCommerceMLForecast
+					commerceAccountCommerceMLForecast =
+						_commerceAccountCommerceMLForecastManager.create();
+
+				if (accountForecast.getActual() != null) {
+					commerceAccountCommerceMLForecast.setActual(
+						accountForecast.getActual());
+				}
+
+				commerceAccountCommerceMLForecast.setCommerceAccountId(
+					accountForecast.getAccount());
+				commerceAccountCommerceMLForecast.setCompanyId(
+					contextCompany.getCompanyId());
+				commerceAccountCommerceMLForecast.setForecast(
+					accountForecast.getForecast());
+				commerceAccountCommerceMLForecast.setForecastLowerBound(
+					accountForecast.getForecastLowerBound());
+				commerceAccountCommerceMLForecast.setForecastUpperBound(
+					accountForecast.getForecastUpperBound());
+				commerceAccountCommerceMLForecast.setPeriod("month");
+				commerceAccountCommerceMLForecast.setScope("commerce-account");
+				commerceAccountCommerceMLForecast.setTarget("revenue");
+				commerceAccountCommerceMLForecast.setTimestamp(
+					accountForecast.getTimestamp());
+
+				_commerceAccountCommerceMLForecastManager.
+					addCommerceAccountCommerceMLForecast(
+						commerceAccountCommerceMLForecast);
+			});
+	}
 
 	@Override
 	public Page<AccountForecast> getAccountForecastsByMonthlyRevenuePage(
@@ -77,53 +120,30 @@ public class AccountForecastResourceImpl
 				CommerceMLForecastConstants.FORECAST_LENGTH_DEFAULT;
 		}
 
-		List<CommerceAccountCommerceMLForecast>
-			commerceAccountCommerceMLForecasts =
+		return Page.of(
+			transform(
 				_commerceAccountCommerceMLForecastManager.
 					getMonthlyRevenueCommerceAccountCommerceMLForecasts(
 						contextCompany.getCompanyId(),
 						ArrayUtil.toLongArray(commerceAccountIds), startDate,
 						historyLength, forecastLength,
 						pagination.getStartPosition(),
-						pagination.getEndPosition());
-
-		long totalItems =
+						pagination.getEndPosition()),
+				commerceAccountCommerceMLForecast ->
+					_accountForecastDTOConverter.toDTO(
+						new DefaultDTOConverterContext(
+							new CommerceMLForecastCompositeResourcePrimaryKey(
+								commerceAccountCommerceMLForecast.
+									getCompanyId(),
+								commerceAccountCommerceMLForecast.
+									getForecastId()),
+							contextAcceptLanguage.getPreferredLocale()))),
+			pagination,
 			_commerceAccountCommerceMLForecastManager.
 				getMonthlyRevenueCommerceAccountCommerceMLForecastsCount(
 					contextCompany.getCompanyId(),
 					ArrayUtil.toLongArray(commerceAccountIds), startDate,
-					historyLength, forecastLength);
-
-		return Page.of(
-			_toAccountForecasts(commerceAccountCommerceMLForecasts), pagination,
-			totalItems);
-	}
-
-	private List<AccountForecast> _toAccountForecasts(
-			List<CommerceAccountCommerceMLForecast>
-				commerceAccountCommerceMLForecasts)
-		throws Exception {
-
-		List<AccountForecast> accountForecasts = new ArrayList<>();
-
-		for (CommerceAccountCommerceMLForecast
-				commerceAccountCommerceMLForecast :
-					commerceAccountCommerceMLForecasts) {
-
-			CommerceMLForecastCompositeResourcePrimaryKey
-				commerceMLForecastCompositeResourcePrimaryKey =
-					new CommerceMLForecastCompositeResourcePrimaryKey(
-						commerceAccountCommerceMLForecast.getCompanyId(),
-						commerceAccountCommerceMLForecast.getForecastId());
-
-			accountForecasts.add(
-				_accountForecastDTOConverter.toDTO(
-					new DefaultDTOConverterContext(
-						commerceMLForecastCompositeResourcePrimaryKey,
-						contextAcceptLanguage.getPreferredLocale())));
-		}
-
-		return accountForecasts;
+					historyLength, forecastLength));
 	}
 
 	@Reference

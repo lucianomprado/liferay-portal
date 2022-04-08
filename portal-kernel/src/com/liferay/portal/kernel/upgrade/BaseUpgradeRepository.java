@@ -19,8 +19,11 @@ import com.liferay.portal.kernel.util.LoggingTimer;
 import java.sql.PreparedStatement;
 
 /**
- * @author Adolfo Pérez
+ * @author     Adolfo Pérez
+ * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+ *             BaseRepositoryUpgradeProcess}
  */
+@Deprecated
 public abstract class BaseUpgradeRepository extends UpgradeProcess {
 
 	@Override
@@ -36,15 +39,16 @@ public abstract class BaseUpgradeRepository extends UpgradeProcess {
 				String oldPortletName = renamePortletNames[0];
 				String newPortletName = renamePortletNames[1];
 
-				try (PreparedStatement ps = connection.prepareStatement(
-						"update Repository set portletId = ?, name = ? where " +
-							"portletId = ?")) {
+				try (PreparedStatement preparedStatement =
+						connection.prepareStatement(
+							"update Repository set portletId = ?, name = ? " +
+								"where portletId = ?")) {
 
-					ps.setString(1, newPortletName);
-					ps.setString(2, newPortletName);
-					ps.setString(3, oldPortletName);
+					preparedStatement.setString(1, newPortletName);
+					preparedStatement.setString(2, newPortletName);
+					preparedStatement.setString(3, oldPortletName);
 
-					ps.executeUpdate();
+					preparedStatement.executeUpdate();
 				}
 			}
 		}

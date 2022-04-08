@@ -29,7 +29,7 @@ import com.liferay.headless.commerce.admin.pricing.resource.v2_0.DiscountCategor
 import com.liferay.headless.commerce.core.util.ServiceContextHelper;
 import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.search.filter.Filter;
-import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.vulcan.dto.converter.DTOConverterRegistry;
 import com.liferay.portal.vulcan.dto.converter.DefaultDTOConverterContext;
@@ -75,7 +75,7 @@ public class DiscountCategoryResourceImpl
 
 		if (commerceDiscount == null) {
 			throw new NoSuchDiscountException(
-				"Unable to find Discount with externalReferenceCode: " +
+				"Unable to find discount with external reference code " +
 					externalReferenceCode);
 		}
 
@@ -127,14 +127,15 @@ public class DiscountCategoryResourceImpl
 
 		if (commerceDiscount == null) {
 			throw new NoSuchDiscountException(
-				"Unable to find Discount with externalReferenceCode: " +
+				"Unable to find discount with external reference code " +
 					externalReferenceCode);
 		}
 
 		CommerceDiscountRel commerceDiscountRel =
 			DiscountCategoryUtil.addCommerceDiscountRel(
-				_assetCategoryLocalService, _commerceDiscountRelService,
-				discountCategory, commerceDiscount, _serviceContextHelper);
+				contextCompany.getGroupId(), _assetCategoryLocalService,
+				_commerceDiscountRelService, discountCategory, commerceDiscount,
+				_serviceContextHelper);
 
 		return _toDiscountCategory(
 			commerceDiscountRel.getCommerceDiscountRelId());
@@ -147,8 +148,8 @@ public class DiscountCategoryResourceImpl
 
 		CommerceDiscountRel commerceDiscountRel =
 			DiscountCategoryUtil.addCommerceDiscountRel(
-				_assetCategoryLocalService, _commerceDiscountRelService,
-				discountCategory,
+				contextCompany.getGroupId(), _assetCategoryLocalService,
+				_commerceDiscountRelService, discountCategory,
 				_commerceDiscountService.getCommerceDiscount(id),
 				_serviceContextHelper);
 
@@ -160,21 +161,12 @@ public class DiscountCategoryResourceImpl
 			CommerceDiscountRel commerceDiscountRel)
 		throws Exception {
 
-		ServiceContext serviceContext =
-			_serviceContextHelper.getServiceContext();
-
 		return HashMapBuilder.<String, Map<String, String>>put(
 			"delete",
-			() -> {
-				CommerceDiscount commerceDiscount =
-					commerceDiscountRel.getCommerceDiscount();
-
-				return addAction(
-					"UPDATE", commerceDiscount.getCommerceDiscountId(),
-					"deleteDiscountCategory", commerceDiscountRel.getUserId(),
-					"com.liferay.commerce.discount.model.CommerceDiscount",
-					serviceContext.getScopeGroupId());
-			}
+			addAction(
+				"UPDATE", commerceDiscountRel.getCommerceDiscountRelId(),
+				"deleteDiscountCategory",
+				_commerceDiscountRelModelResourcePermission)
 		).build();
 	}
 
@@ -211,6 +203,12 @@ public class DiscountCategoryResourceImpl
 
 	@Reference
 	private AssetCategoryLocalService _assetCategoryLocalService;
+
+	@Reference(
+		target = "(model.class.name=com.liferay.commerce.discount.model.CommerceDiscountRel)"
+	)
+	private ModelResourcePermission<CommerceDiscountRel>
+		_commerceDiscountRelModelResourcePermission;
 
 	@Reference
 	private CommerceDiscountRelService _commerceDiscountRelService;

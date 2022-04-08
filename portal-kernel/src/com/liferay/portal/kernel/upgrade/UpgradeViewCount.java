@@ -20,8 +20,11 @@ import com.liferay.portal.kernel.util.PortalUtil;
 import java.sql.PreparedStatement;
 
 /**
- * @author Samuel Trong Tran
+ * @author     Samuel Trong Tran
+ * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+ *             ViewCountUpgradeProcess}
  */
+@Deprecated
 public class UpgradeViewCount extends UpgradeProcess {
 
 	public UpgradeViewCount(
@@ -40,14 +43,14 @@ public class UpgradeViewCount extends UpgradeProcess {
 			return;
 		}
 
-		try (PreparedStatement ps = connection.prepareStatement(
+		try (PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
 					"insert into ViewCountEntry (companyId, classNameId, ",
 					"classPK, viewCount) select companyId, ",
 					PortalUtil.getClassNameId(_clazz), ", ", _primaryColumnName,
 					", ", _viewCountColumnName, " from ", _tableName))) {
 
-			ps.executeUpdate();
+			preparedStatement.executeUpdate();
 		}
 
 		runSQL(

@@ -16,8 +16,14 @@ package com.liferay.asset.tags.selector.web.internal.display.context;
 
 import com.liferay.asset.kernel.model.AssetTag;
 import com.liferay.asset.kernel.service.AssetTagServiceUtil;
+import com.liferay.asset.tags.selector.web.internal.constants.AssetTagsSelectorPortletKeys;
 import com.liferay.asset.tags.selector.web.internal.search.EntriesChecker;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
+import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.model.Group;
+import com.liferay.portal.kernel.portlet.SearchOrderByUtil;
+import com.liferay.portal.kernel.service.GroupLocalServiceUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
@@ -26,7 +32,7 @@ import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portlet.asset.util.comparator.AssetTagNameComparator;
 
-import java.util.List;
+import java.util.Locale;
 
 import javax.portlet.PortletURL;
 import javax.portlet.RenderRequest;
@@ -56,6 +62,14 @@ public class AssetTagsSelectorDisplayContext {
 		_rowChecker = rowChecker;
 	}
 
+	public String getAssetTagGroupName(AssetTag assetTag, Locale locale)
+		throws PortalException {
+
+		Group group = GroupLocalServiceUtil.getGroup(assetTag.getGroupId());
+
+		return group.getDescriptiveName(locale);
+	}
+
 	public String getEventName() {
 		if (Validator.isNotNull(_eventName)) {
 			return _eventName;
@@ -73,22 +87,25 @@ public class AssetTagsSelectorDisplayContext {
 			return _orderByType;
 		}
 
-		_orderByType = ParamUtil.getString(
-			_httpServletRequest, "orderByType", "asc");
+		_orderByType = SearchOrderByUtil.getOrderByType(
+			_httpServletRequest,
+			AssetTagsSelectorPortletKeys.ASSET_TAGS_SELECTOR, "asc");
 
 		return _orderByType;
 	}
 
 	public PortletURL getPortletURL() {
-		PortletURL portletURL = _renderResponse.createRenderURL();
-
-		portletURL.setParameter("mvcPath", _getMvcPath());
-		portletURL.setParameter("groupIds", StringUtil.merge(_getGroupIds()));
-		portletURL.setParameter("eventName", getEventName());
-		portletURL.setParameter(
-			"selectedTagNames", StringUtil.merge(getSelectedTagNames()));
-
-		return portletURL;
+		return PortletURLBuilder.createRenderURL(
+			_renderResponse
+		).setMVCPath(
+			_getMvcPath()
+		).setParameter(
+			"eventName", getEventName()
+		).setParameter(
+			"groupIds", StringUtil.merge(_getGroupIds())
+		).setParameter(
+			"selectedTagNames", StringUtil.merge(getSelectedTagNames())
+		).buildPortletURL();
 	}
 
 	public String[] getSelectedTagNames() {
@@ -122,25 +139,19 @@ public class AssetTagsSelectorDisplayContext {
 
 		tagsSearchContainer.setOrderByComparator(
 			new AssetTagNameComparator(orderByAsc));
-
 		tagsSearchContainer.setOrderByType(orderByType);
+
+		tagsSearchContainer.setResultsAndTotal(
+			() -> AssetTagServiceUtil.getTags(
+				_getGroupIds(), _getKeywords(), tagsSearchContainer.getStart(),
+				tagsSearchContainer.getEnd(),
+				tagsSearchContainer.getOrderByComparator()),
+			AssetTagServiceUtil.getTagsCount(_getGroupIds(), _getKeywords()));
 
 		if (_rowChecker) {
 			tagsSearchContainer.setRowChecker(
 				new EntriesChecker(_renderRequest, _renderResponse));
 		}
-
-		int tagsCount = AssetTagServiceUtil.getTagsCount(
-			_getGroupIds(), _getKeywords());
-
-		tagsSearchContainer.setTotal(tagsCount);
-
-		List<AssetTag> tags = AssetTagServiceUtil.getTags(
-			_getGroupIds(), _getKeywords(), tagsSearchContainer.getStart(),
-			tagsSearchContainer.getEnd(),
-			tagsSearchContainer.getOrderByComparator());
-
-		tagsSearchContainer.setResults(tags);
 
 		_tagsSearchContainer = tagsSearchContainer;
 
@@ -192,8 +203,9 @@ public class AssetTagsSelectorDisplayContext {
 			return _orderByCol;
 		}
 
-		_orderByCol = ParamUtil.getString(
-			_httpServletRequest, "orderByCol", "name");
+		_orderByCol = SearchOrderByUtil.getOrderByCol(
+			_httpServletRequest,
+			AssetTagsSelectorPortletKeys.ASSET_TAGS_SELECTOR, "name");
 
 		return _orderByCol;
 	}

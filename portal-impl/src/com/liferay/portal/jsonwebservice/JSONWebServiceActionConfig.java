@@ -17,6 +17,8 @@ package com.liferay.portal.jsonwebservice;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.jsonwebservice.JSONWebServiceActionMapping;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.MethodParameter;
 import com.liferay.portal.kernel.util.MethodParametersResolverUtil;
@@ -33,15 +35,6 @@ import java.util.Objects;
 public class JSONWebServiceActionConfig
 	implements Comparable<JSONWebServiceActionConfig>,
 			   JSONWebServiceActionMapping {
-
-	public JSONWebServiceActionConfig(
-		String contextName, String contextPath, Class<?> actionClass,
-		Method actionMethod, String path, String method) {
-
-		this(
-			contextName, contextPath, null, actionClass, actionMethod, path,
-			method);
-	}
 
 	public JSONWebServiceActionConfig(
 		String contextName, String contextPath, Object actionObject,
@@ -69,14 +62,9 @@ public class JSONWebServiceActionConfig
 		_actionMethod = newActionMethod;
 
 		if (Validator.isNotNull(_contextName)) {
-			StringBundler sb = new StringBundler(4);
-
-			sb.append(StringPool.SLASH);
-			sb.append(_contextName);
-			sb.append(StringPool.PERIOD);
-			sb.append(path.substring(1));
-
-			path = sb.toString();
+			path = StringBundler.concat(
+				StringPool.SLASH, _contextName, StringPool.PERIOD,
+				path.substring(1));
 		}
 
 		_path = path;
@@ -99,6 +87,9 @@ public class JSONWebServiceActionConfig
 				actionMethod.getName(), actionMethod.getParameterTypes());
 		}
 		catch (NoSuchMethodException noSuchMethodException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(noSuchMethodException);
+			}
 		}
 
 		_realActionMethod = realActionMethod;
@@ -213,30 +204,16 @@ public class JSONWebServiceActionConfig
 
 	@Override
 	public String toString() {
-		StringBundler sb = new StringBundler(19);
-
-		sb.append("{actionClass=");
-		sb.append(_actionClass);
-		sb.append(", actionMethod=");
-		sb.append(_actionMethod);
-		sb.append(", contextName=");
-		sb.append(_contextName);
-		sb.append(", contextPath=");
-		sb.append(_contextPath);
-		sb.append(", deprecated=");
-		sb.append(_deprecated);
-		sb.append(", method=");
-		sb.append(_method);
-		sb.append(", path=");
-		sb.append(_path);
-		sb.append(", realActionMethod=");
-		sb.append(_realActionMethod);
-		sb.append(", signature=");
-		sb.append(_signature);
-		sb.append("}");
-
-		return sb.toString();
+		return StringBundler.concat(
+			"{actionClass=", _actionClass, ", actionMethod=", _actionMethod,
+			", contextName=", _contextName, ", contextPath=", _contextPath,
+			", deprecated=", _deprecated, ", method=", _method, ", path=",
+			_path, ", realActionMethod=", _realActionMethod, ", signature=",
+			_signature, "}");
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		JSONWebServiceActionConfig.class);
 
 	private final Class<?> _actionClass;
 	private final Method _actionMethod;

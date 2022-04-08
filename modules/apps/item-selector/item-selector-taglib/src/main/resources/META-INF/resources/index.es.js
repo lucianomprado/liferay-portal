@@ -12,4 +12,10 @@
  * details.
  */
 
+export {default as ImageEditor} from './image_editor/ImageEditor';
 export {default as ItemSelectorRepositoryEntryBrowser} from './repository_entry_browser/js/ItemSelectorRepositoryEntryBrowser.es';
+
+export {
+	STR_NULL_IMAGE_FILE_ENTRY_ID,
+	default as imageSelectorImageAtom,
+} from './atoms/imageSelectorImageAtom';

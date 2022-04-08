@@ -24,22 +24,20 @@ import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.util.UserTestUtil;
 import com.liferay.portal.kernel.util.HashMapDictionary;
+import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portal.kernel.util.PortalUtil;
-import com.liferay.portal.test.log.CaptureAppender;
-import com.liferay.portal.test.log.Log4JLoggerTestUtil;
+import com.liferay.portal.test.log.LogCapture;
+import com.liferay.portal.test.log.LoggerTestUtil;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 
 import java.net.URISyntaxException;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Dictionary;
 
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
-
-import org.apache.log4j.Level;
 
 import org.junit.Assert;
 import org.junit.ClassRule;
@@ -70,9 +68,8 @@ public class ScopeCheckerGuestAllowedTest extends BaseClientTestCase {
 
 		testApplication("/annotated-guest-default/no-scope", "no-scope", 200);
 
-		try (CaptureAppender captureAppender =
-				Log4JLoggerTestUtil.configureLog4JLogger(
-					"portal_web.docroot.errors.code_jsp", Level.WARN)) {
+		try (LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
+				"portal_web.docroot.errors.code_jsp", LoggerTestUtil.WARN)) {
 
 			testApplication(
 				"/annotated-guest-not-allowed/", "everything.read", 403);
@@ -85,9 +82,8 @@ public class ScopeCheckerGuestAllowedTest extends BaseClientTestCase {
 
 		testApplication("/default-jaxrs-app-guest-default/", "get", 200);
 
-		try (CaptureAppender captureAppender =
-				Log4JLoggerTestUtil.configureLog4JLogger(
-					"portal_web.docroot.errors.code_jsp", Level.WARN)) {
+		try (LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
+				"portal_web.docroot.errors.code_jsp", LoggerTestUtil.WARN)) {
 
 			testApplication(
 				"/default-jaxrs-app-guest-not-allowed/", "get", 403);
@@ -97,9 +93,8 @@ public class ScopeCheckerGuestAllowedTest extends BaseClientTestCase {
 
 		testApplication("/methods-guest-default/", "get", 200);
 
-		try (CaptureAppender captureAppender =
-				Log4JLoggerTestUtil.configureLog4JLogger(
-					"portal_web.docroot.errors.code_jsp", Level.WARN)) {
+		try (LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
+				"portal_web.docroot.errors.code_jsp", LoggerTestUtil.WARN)) {
 
 			testApplication("/methods-guest-not-allowed/", "get", 403);
 		}
@@ -110,74 +105,65 @@ public class ScopeCheckerGuestAllowedTest extends BaseClientTestCase {
 
 		@Override
 		protected void prepareTest() throws Exception {
-			Dictionary<String, Object> properties = new HashMapDictionary<>();
-
-			properties.put("auth.verifier.guest.allowed", true);
-			properties.put("oauth2.scope.checker.type", "annotations");
-
 			registerJaxRsApplication(
 				new TestAnnotatedApplication(), "annotated-guest-allowed",
-				properties);
-
-			properties = new HashMapDictionary<>();
-
-			properties.put("oauth2.scope.checker.type", "annotations");
+				HashMapDictionaryBuilder.<String, Object>put(
+					"auth.verifier.guest.allowed", true
+				).put(
+					"oauth2.scope.checker.type", "annotations"
+				).build());
 
 			registerJaxRsApplication(
 				new TestAnnotatedApplication(), "annotated-guest-default",
-				properties);
-
-			properties = new HashMapDictionary<>();
-
-			properties.put("auth.verifier.guest.allowed", false);
-			properties.put("oauth2.scope.checker.type", "annotations");
+				HashMapDictionaryBuilder.<String, Object>put(
+					"oauth2.scope.checker.type", "annotations"
+				).build());
 
 			registerJaxRsApplication(
 				new TestAnnotatedApplication(), "annotated-guest-not-allowed",
-				properties);
-
-			properties = new HashMapDictionary<>();
-
-			properties.put("auth.verifier.guest.allowed", true);
+				HashMapDictionaryBuilder.<String, Object>put(
+					"auth.verifier.guest.allowed", false
+				).put(
+					"oauth2.scope.checker.type", "annotations"
+				).build());
 
 			registerJaxRsApplication(
 				new TestApplication(), "default-jaxrs-app-guest-allowed",
-				properties);
+				HashMapDictionaryBuilder.<String, Object>put(
+					"auth.verifier.guest.allowed", true
+				).build());
 
 			registerJaxRsApplication(
 				new TestApplication(), "default-jaxrs-app-guest-default",
 				new HashMapDictionary<>());
 
-			properties = new HashMapDictionary<>();
-
-			properties.put("auth.verifier.guest.allowed", false);
-
 			registerJaxRsApplication(
 				new TestApplication(), "default-jaxrs-app-guest-not-allowed",
-				properties);
-
-			properties = new HashMapDictionary<>();
-
-			properties.put("auth.verifier.guest.allowed", true);
-			properties.put("oauth2.scope.checker.type", "http.method");
+				HashMapDictionaryBuilder.<String, Object>put(
+					"auth.verifier.guest.allowed", false
+				).build());
 
 			registerJaxRsApplication(
-				new TestApplication(), "methods-guest-allowed", properties);
-
-			properties = new HashMapDictionary<>();
-
-			properties.put("oauth2.scope.checker.type", "http.method");
-
-			registerJaxRsApplication(
-				new TestApplication(), "methods-guest-default", properties);
-
-			properties = new HashMapDictionary<>();
-
-			properties.put("auth.verifier.guest.allowed", false);
-			properties.put("oauth2.scope.checker.type", "http.method");
+				new TestApplication(), "methods-guest-allowed",
+				HashMapDictionaryBuilder.<String, Object>put(
+					"auth.verifier.guest.allowed", true
+				).put(
+					"oauth2.scope.checker.type", "http.method"
+				).build());
 
 			registerJaxRsApplication(
-				new TestApplication(), "methods-guest-not-allowed", properties);
+				new TestApplication(), "methods-guest-default",
+				HashMapDictionaryBuilder.<String, Object>put(
+					"oauth2.scope.checker.type", "http.method"
+				).build());
+
+			registerJaxRsApplication(
+				new TestApplication(), "methods-guest-not-allowed",
+				HashMapDictionaryBuilder.<String, Object>put(
+					"auth.verifier.guest.allowed", false
+				).put(
+					"oauth2.scope.checker.type", "http.method"
+				).build());
 
 			long defaultCompanyId = PortalUtil.getDefaultCompanyId();
 

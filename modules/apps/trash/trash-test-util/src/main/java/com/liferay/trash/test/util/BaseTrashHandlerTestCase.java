@@ -19,6 +19,8 @@ import com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery;
 import com.liferay.portal.kernel.dao.orm.Property;
 import com.liferay.portal.kernel.dao.orm.PropertyFactoryUtil;
 import com.liferay.portal.kernel.exception.NoSuchModelException;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.BaseModel;
 import com.liferay.portal.kernel.model.ClassedModel;
 import com.liferay.portal.kernel.model.ContainerModel;
@@ -1046,6 +1048,9 @@ public abstract class BaseTrashHandlerTestCase {
 			Assert.fail();
 		}
 		catch (NoSuchModelException noSuchModelException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(noSuchModelException);
+			}
 		}
 	}
 
@@ -1138,6 +1143,9 @@ public abstract class BaseTrashHandlerTestCase {
 			Assert.fail();
 		}
 		catch (NoSuchModelException noSuchModelException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(noSuchModelException);
+			}
 		}
 
 		Assert.assertEquals(
@@ -1899,6 +1907,9 @@ public abstract class BaseTrashHandlerTestCase {
 			Assert.fail();
 		}
 		catch (NoSuchModelException noSuchModelException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(noSuchModelException);
+			}
 		}
 	}
 
@@ -1940,6 +1951,9 @@ public abstract class BaseTrashHandlerTestCase {
 			Assert.fail();
 		}
 		catch (NoSuchModelException noSuchModelException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(noSuchModelException);
+			}
 		}
 
 		Assert.assertEquals(
@@ -3373,10 +3387,10 @@ public abstract class BaseTrashHandlerTestCase {
 	}
 
 	protected long getDeletionSystemEventCount(
-			TrashHandler trashHandler, final long systemEventSetKey)
+			TrashHandler trashHandler, long systemEventSetKey)
 		throws Exception {
 
-		final long systemEventClassNameId = PortalUtil.getClassNameId(
+		long systemEventClassNameId = PortalUtil.getClassNameId(
 			trashHandler.getSystemEventClassName());
 
 		ActionableDynamicQuery actionableDynamicQuery =
@@ -3492,5 +3506,8 @@ public abstract class BaseTrashHandlerTestCase {
 	protected Group group;
 
 	private static final String _TRASH_PREFIX = StringPool.SLASH;
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		BaseTrashHandlerTestCase.class);
 
 }

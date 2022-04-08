@@ -23,8 +23,10 @@ import com.liferay.dynamic.data.mapping.configuration.DDMWebConfiguration;
 import com.liferay.dynamic.data.mapping.exception.NoSuchStructureException;
 import com.liferay.dynamic.data.mapping.exception.NoSuchTemplateException;
 import com.liferay.dynamic.data.mapping.exception.StorageFieldRequiredException;
+import com.liferay.dynamic.data.mapping.form.values.factory.DDMFormValuesFactory;
 import com.liferay.dynamic.data.mapping.util.DDMFormValuesToMapConverter;
 import com.liferay.dynamic.data.mapping.util.DDMTemplateHelper;
+import com.liferay.dynamic.data.mapping.util.FieldsToDDMFormValuesConverter;
 import com.liferay.exportimport.kernel.exception.ExportImportContentValidationException;
 import com.liferay.item.selector.ItemSelector;
 import com.liferay.journal.configuration.JournalFileUploadsConfiguration;
@@ -56,6 +58,8 @@ import com.liferay.journal.exception.NoSuchFeedException;
 import com.liferay.journal.exception.NoSuchFolderException;
 import com.liferay.journal.util.JournalContent;
 import com.liferay.journal.util.JournalConverter;
+import com.liferay.journal.web.internal.configuration.FFBulkTranslationConfiguration;
+import com.liferay.journal.web.internal.configuration.FFJournalAutoSaveDraftConfiguration;
 import com.liferay.journal.web.internal.configuration.JournalWebConfiguration;
 import com.liferay.journal.web.internal.helper.JournalDDMTemplateHelper;
 import com.liferay.journal.web.internal.portlet.action.ActionUtil;
@@ -69,6 +73,7 @@ import com.liferay.portal.kernel.portlet.bridges.mvc.MVCPortlet;
 import com.liferay.portal.kernel.security.auth.PrincipalException;
 import com.liferay.portal.kernel.servlet.SessionErrors;
 import com.liferay.portal.kernel.upload.LiferayFileItemException;
+import com.liferay.translation.security.permission.TranslationPermission;
 import com.liferay.translation.url.provider.TranslationURLProvider;
 import com.liferay.trash.TrashHelper;
 import com.liferay.trash.util.TrashWebKeys;
@@ -97,6 +102,9 @@ import org.osgi.service.component.annotations.Reference;
 @Component(
 	configurationPid = {
 		"com.liferay.dynamic.data.mapping.configuration.DDMWebConfiguration",
+		"com.liferay.journal.configuration.JournalFileUploadsConfiguration",
+		"com.liferay.journal.web.internal.configuration.FFBulkTranslationConfiguration",
+		"com.liferay.journal.web.internal.configuration.FFJournalAutoSaveDraftConfiguration",
 		"com.liferay.journal.web.internal.configuration.JournalWebConfiguration"
 	},
 	configurationPolicy = ConfigurationPolicy.OPTIONAL, immediate = true,
@@ -104,7 +112,6 @@ import org.osgi.service.component.annotations.Reference;
 		"com.liferay.portlet.add-default-resource=true",
 		"com.liferay.portlet.css-class-wrapper=portlet-journal",
 		"com.liferay.portlet.display-category=category.hidden",
-		"com.liferay.portlet.header-portlet-css=/css/ddm_form.css",
 		"com.liferay.portlet.header-portlet-css=/css/main.css",
 		"com.liferay.portlet.icon=/icons/journal.png",
 		"com.liferay.portlet.layout-cacheable=true",
@@ -157,10 +164,21 @@ public class JournalPortlet extends MVCPortlet {
 		}
 
 		renderRequest.setAttribute(
+			DDMFormValuesFactory.class.getName(), _ddmFormValuesFactory);
+		renderRequest.setAttribute(
 			DDMFormValuesToMapConverter.class.getName(),
 			_ddmFormValuesToMapConverter);
 		renderRequest.setAttribute(
 			DDMWebConfiguration.class.getName(), _ddmWebConfiguration);
+		renderRequest.setAttribute(
+			FFBulkTranslationConfiguration.class.getName(),
+			_ffBulkTranslationConfiguration);
+		renderRequest.setAttribute(
+			FFJournalAutoSaveDraftConfiguration.class.getName(),
+			_ffJournalAutoSaveDraftConfiguration);
+		renderRequest.setAttribute(
+			FieldsToDDMFormValuesConverter.class.getName(),
+			_fieldsToDDMFormValuesConverter);
 		renderRequest.setAttribute(
 			JournalFileUploadsConfiguration.class.getName(),
 			_journalFileUploadsConfiguration);
@@ -170,6 +188,8 @@ public class JournalPortlet extends MVCPortlet {
 			JournalWebKeys.JOURNAL_CONTENT, _journalContent);
 		renderRequest.setAttribute(
 			JournalWebKeys.JOURNAL_CONVERTER, _journalConverter);
+		renderRequest.setAttribute(
+			TranslationPermission.class.getName(), _translationPermission);
 		renderRequest.setAttribute(
 			TranslationURLProvider.class.getName(), _translationURLProvider);
 
@@ -187,7 +207,12 @@ public class JournalPortlet extends MVCPortlet {
 		resourceRequest.setAttribute(
 			DDMTemplateHelper.class.getName(), _ddmTemplateHelper);
 		resourceRequest.setAttribute(
+			FFJournalAutoSaveDraftConfiguration.class.getName(),
+			_ffJournalAutoSaveDraftConfiguration);
+		resourceRequest.setAttribute(
 			JournalWebConfiguration.class.getName(), _journalWebConfiguration);
+		resourceRequest.setAttribute(
+			TranslationPermission.class.getName(), _translationPermission);
 		resourceRequest.setAttribute(
 			TranslationURLProvider.class.getName(), _translationURLProvider);
 		resourceRequest.setAttribute(TrashWebKeys.TRASH_HELPER, _trashHelper);
@@ -200,6 +225,11 @@ public class JournalPortlet extends MVCPortlet {
 	protected void activate(Map<String, Object> properties) {
 		_ddmWebConfiguration = ConfigurableUtil.createConfigurable(
 			DDMWebConfiguration.class, properties);
+		_ffBulkTranslationConfiguration = ConfigurableUtil.createConfigurable(
+			FFBulkTranslationConfiguration.class, properties);
+		_ffJournalAutoSaveDraftConfiguration =
+			ConfigurableUtil.createConfigurable(
+				FFJournalAutoSaveDraftConfiguration.class, properties);
 		_journalFileUploadsConfiguration = ConfigurableUtil.createConfigurable(
 			JournalFileUploadsConfiguration.class, properties);
 		_journalWebConfiguration = ConfigurableUtil.createConfigurable(
@@ -225,10 +255,10 @@ public class JournalPortlet extends MVCPortlet {
 		}
 		catch (Exception exception) {
 			if (_log.isDebugEnabled()) {
-				_log.debug(exception, exception);
+				_log.debug(exception);
 			}
 			else {
-				_log.error(exception.getMessage());
+				_log.error(exception);
 			}
 
 			SessionErrors.add(renderRequest, exception.getClass());
@@ -313,12 +343,22 @@ public class JournalPortlet extends MVCPortlet {
 		_assetDisplayPageFriendlyURLProvider;
 
 	@Reference
+	private DDMFormValuesFactory _ddmFormValuesFactory;
+
+	@Reference
 	private DDMFormValuesToMapConverter _ddmFormValuesToMapConverter;
 
 	@Reference
 	private DDMTemplateHelper _ddmTemplateHelper;
 
 	private volatile DDMWebConfiguration _ddmWebConfiguration;
+	private volatile FFBulkTranslationConfiguration
+		_ffBulkTranslationConfiguration;
+	private volatile FFJournalAutoSaveDraftConfiguration
+		_ffJournalAutoSaveDraftConfiguration;
+
+	@Reference
+	private FieldsToDDMFormValuesConverter _fieldsToDDMFormValuesConverter;
 
 	@Reference
 	private ItemSelector _itemSelector;
@@ -335,6 +375,9 @@ public class JournalPortlet extends MVCPortlet {
 	private volatile JournalFileUploadsConfiguration
 		_journalFileUploadsConfiguration;
 	private volatile JournalWebConfiguration _journalWebConfiguration;
+
+	@Reference
+	private TranslationPermission _translationPermission;
 
 	@Reference
 	private TranslationURLProvider _translationURLProvider;

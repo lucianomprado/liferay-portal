@@ -25,17 +25,18 @@ import com.liferay.portal.kernel.search.background.task.ReindexBackgroundTaskCon
 import com.liferay.portal.kernel.search.background.task.ReindexStatusMessageSender;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.search.index.IndexNameBuilder;
 import com.liferay.portal.search.internal.SearchEngineHelperImpl;
 import com.liferay.portal.search.internal.background.task.ReindexSingleIndexerBackgroundTaskExecutor;
 import com.liferay.portal.search.test.util.search.engine.SearchEngineFixture;
-import com.liferay.registry.BasicRegistryImpl;
-import com.liferay.registry.RegistryUtil;
+import com.liferay.portal.util.PropsImpl;
 
 import java.io.Serializable;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import org.mockito.Matchers;
@@ -47,6 +48,11 @@ import org.mockito.MockitoAnnotations;
  * @author Adam Brandizzi
  */
 public abstract class BaseReindexSingleIndexerBackgroundTaskExecutorTestCase {
+
+	@BeforeClass
+	public static void setUpClass() {
+		PropsUtil.setProps(new PropsImpl());
+	}
 
 	@Before
 	public void setUp() throws Exception {
@@ -102,8 +108,6 @@ public abstract class BaseReindexSingleIndexerBackgroundTaskExecutorTestCase {
 
 	protected ReindexSingleIndexerBackgroundTaskExecutor
 		getReindexSingleIndexerBackgroundTaskExecutor() {
-
-		RegistryUtil.setRegistry(new BasicRegistryImpl());
 
 		return new ReindexSingleIndexerBackgroundTaskExecutor() {
 			{
@@ -161,6 +165,6 @@ public abstract class BaseReindexSingleIndexerBackgroundTaskExecutorTestCase {
 	private SearchEngineHelper _searchEngineHelper;
 
 	@Mock
-	private ServiceTrackerList<Indexer<?>, Indexer<?>> _systemIndexers;
+	private ServiceTrackerList<Indexer<?>> _systemIndexers;
 
 }

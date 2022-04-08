@@ -117,13 +117,17 @@ public class AMServlet extends HttpServlet {
 			}
 		}
 		catch (AMException.AMNotFound amException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(amException, amException);
+			}
+
 			httpServletResponse.sendError(
 				HttpServletResponse.SC_NOT_FOUND,
 				httpServletRequest.getRequestURI());
 		}
 		catch (Exception exception) {
 			if (_log.isWarnEnabled()) {
-				_log.warn(exception, exception);
+				_log.warn(exception);
 			}
 
 			Throwable throwable = exception.getCause();

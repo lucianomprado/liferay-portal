@@ -15,6 +15,7 @@
 package com.liferay.dynamic.data.mapping.form.field.type.internal.key.value;
 
 import com.liferay.dynamic.data.mapping.form.field.type.DDMFormFieldTemplateContextContributor;
+import com.liferay.dynamic.data.mapping.form.field.type.constants.DDMFormFieldTypeConstants;
 import com.liferay.dynamic.data.mapping.model.DDMFormField;
 import com.liferay.dynamic.data.mapping.model.LocalizedValue;
 import com.liferay.dynamic.data.mapping.model.Value;
@@ -37,7 +38,8 @@ import org.osgi.service.component.annotations.Component;
  * @author Marcellus Tavares
  */
 @Component(
-	immediate = true, property = "ddm.form.field.type.name=key_value",
+	immediate = true,
+	property = "ddm.form.field.type.name=" + DDMFormFieldTypeConstants.KEY_VALUE,
 	service = {
 		DDMFormFieldTemplateContextContributor.class,
 		KeyValueDDMFormFieldTemplateContextContributor.class
@@ -58,25 +60,25 @@ public class KeyValueDDMFormFieldTemplateContextContributor
 			GetterUtil.getBoolean(ddmFormField.getProperty("autoFocus"))
 		).put(
 			"placeholder",
-			getValueString(
+			_getValueString(
 				(LocalizedValue)ddmFormField.getProperty("placeholder"), locale)
 		).put(
 			"strings",
 			HashMapBuilder.put(
 				"keyLabel",
 				LanguageUtil.get(
-					getDisplayLocale(
+					_getDisplayLocale(
 						ddmFormFieldRenderingContext.getHttpServletRequest()),
 					"field-name")
 			).build()
 		).put(
 			"tooltip",
-			getValueString(
+			_getValueString(
 				(LocalizedValue)ddmFormField.getProperty("tooltip"), locale)
 		).build();
 	}
 
-	protected Locale getDisplayLocale(HttpServletRequest httpServletRequest) {
+	private Locale _getDisplayLocale(HttpServletRequest httpServletRequest) {
 		ThemeDisplay themeDisplay =
 			(ThemeDisplay)httpServletRequest.getAttribute(
 				WebKeys.THEME_DISPLAY);
@@ -84,7 +86,7 @@ public class KeyValueDDMFormFieldTemplateContextContributor
 		return themeDisplay.getLocale();
 	}
 
-	protected String getValueString(Value value, Locale locale) {
+	private String _getValueString(Value value, Locale locale) {
 		if (value != null) {
 			return value.getString(locale);
 		}

@@ -14,6 +14,7 @@
 
 package com.liferay.portal.workflow.kaleo.designer.web.internal.portlet;
 
+import com.liferay.account.model.AccountRole;
 import com.liferay.portal.configuration.metatype.bnd.util.ConfigurableUtil;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -33,10 +34,11 @@ import com.liferay.portal.kernel.security.auth.PrincipalException;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
+import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.service.RoleLocalService;
 import com.liferay.portal.kernel.service.UserLocalService;
-import com.liferay.portal.kernel.service.permission.RolePermissionUtil;
-import com.liferay.portal.kernel.service.permission.UserPermissionUtil;
+import com.liferay.portal.kernel.service.permission.RolePermission;
+import com.liferay.portal.kernel.service.permission.UserPermission;
 import com.liferay.portal.kernel.servlet.MultiSessionMessages;
 import com.liferay.portal.kernel.servlet.SessionErrors;
 import com.liferay.portal.kernel.servlet.SessionMessages;
@@ -62,7 +64,6 @@ import com.liferay.portal.workflow.kaleo.service.KaleoDefinitionVersionLocalServ
 
 import java.io.IOException;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -134,11 +135,10 @@ public class KaleoDesignerPortlet extends MVCPortlet {
 				renderRequest, DuplicateKaleoDefinitionNameException.class)) {
 
 			try {
-				setKaleoDefinitionVersionRenderRequestAttribute(
-					renderRequest, renderResponse);
+				_setKaleoDefinitionVersionRenderRequestAttribute(renderRequest);
 			}
 			catch (Exception exception) {
-				_log.error(exception, exception);
+				_log.error(exception);
 			}
 		}
 
@@ -161,16 +161,17 @@ public class KaleoDesignerPortlet extends MVCPortlet {
 			String resourceID = resourceRequest.getResourceID();
 
 			if (resourceID.equals("kaleoDefinitionVersions")) {
-				serveKaleoDefinitionVersions(resourceRequest, resourceResponse);
+				_serveKaleoDefinitionVersions(
+					resourceRequest, resourceResponse);
 			}
 			else if (resourceID.equals("roles")) {
-				serveRoles(resourceRequest, resourceResponse);
+				_serveRoles(resourceRequest, resourceResponse);
 			}
 			else if (resourceID.equals("scriptLanguages")) {
-				serveScriptLanguages(resourceRequest, resourceResponse);
+				_serveScriptLanguages(resourceRequest, resourceResponse);
 			}
 			else if (resourceID.equals("users")) {
-				serveUsers(resourceRequest, resourceResponse);
+				_serveUsers(resourceRequest, resourceResponse);
 			}
 			else {
 				super.serveResource(resourceRequest, resourceResponse);
@@ -204,7 +205,7 @@ public class KaleoDesignerPortlet extends MVCPortlet {
 
 		String portletId = _http.getParameter(redirect, "p_p_id", false);
 
-		if (isRedirectToAnotherPortlet(portletId)) {
+		if (_isRedirectToAnotherPortlet(portletId)) {
 			String successMessage = ParamUtil.getString(
 				actionRequest, "successMessage");
 
@@ -231,8 +232,22 @@ public class KaleoDesignerPortlet extends MVCPortlet {
 		}
 	}
 
-	protected Integer[] getRoleTypesObj(int type) {
-		if ((type == RoleConstants.TYPE_DEPOT) ||
+	@Override
+	protected boolean isAlwaysSendRedirect() {
+		return true;
+	}
+
+	@Reference(unbind = "-")
+	protected void setKaleoDefinitionVersionLocalService(
+		KaleoDefinitionVersionLocalService kaleoDefinitionVersionLocalService) {
+
+		_kaleoDefinitionVersionLocalService =
+			kaleoDefinitionVersionLocalService;
+	}
+
+	private Integer[] _getRoleTypesObj(int type) {
+		if ((type == RoleConstants.TYPE_ACCOUNT) ||
+			(type == RoleConstants.TYPE_DEPOT) ||
 			(type == RoleConstants.TYPE_ORGANIZATION) ||
 			(type == RoleConstants.TYPE_REGULAR) ||
 			(type == RoleConstants.TYPE_SITE)) {
@@ -243,24 +258,17 @@ public class KaleoDesignerPortlet extends MVCPortlet {
 		return new Integer[0];
 	}
 
-	@Override
-	protected boolean isAlwaysSendRedirect() {
-		return true;
-	}
+	private boolean _isRedirectToAnotherPortlet(String portletId) {
+		if (Validator.isNull(portletId) ||
+			portletId.contains(KaleoDesignerPortletKeys.KALEO_DESIGNER)) {
 
-	protected boolean isRedirectToAnotherPortlet(String portletId) {
-		if (Validator.isNull(portletId)) {
-			return false;
-		}
-
-		if (portletId.contains(KaleoDesignerPortletKeys.KALEO_DESIGNER)) {
 			return false;
 		}
 
 		return true;
 	}
 
-	protected void serveKaleoDefinitionVersions(
+	private void _serveKaleoDefinitionVersions(
 			ResourceRequest resourceRequest, ResourceResponse resourceResponse)
 		throws Exception {
 
@@ -320,14 +328,14 @@ public class KaleoDesignerPortlet extends MVCPortlet {
 		writeJSON(resourceRequest, resourceResponse, jsonObject);
 	}
 
-	protected void serveRoles(
+	private void _serveRoles(
 			ResourceRequest resourceRequest, ResourceResponse resourceResponse)
 		throws Exception {
 
 		ThemeDisplay themeDisplay = (ThemeDisplay)resourceRequest.getAttribute(
 			WebKeys.THEME_DISPLAY);
 
-		List<Role> roles = new ArrayList<>();
+		List<Role> roles = null;
 
 		long[] roleIds = ParamUtil.getLongValues(resourceRequest, "roleIds");
 
@@ -338,15 +346,24 @@ public class KaleoDesignerPortlet extends MVCPortlet {
 			String keywords = ParamUtil.getString(resourceRequest, "keywords");
 			int type = ParamUtil.getInteger(resourceRequest, "type");
 
+			LinkedHashMap<String, Object> params = new LinkedHashMap<>();
+
+			if (type == RoleConstants.TYPE_ACCOUNT) {
+				params.put(
+					"classNameId",
+					_classNameLocalService.getClassNameId(AccountRole.class));
+			}
+
 			roles = _roleLocalService.search(
-				themeDisplay.getCompanyId(), keywords, getRoleTypesObj(type), 0,
-				SearchContainer.DEFAULT_DELTA, new RoleNameComparator());
+				themeDisplay.getCompanyId(), keywords, _getRoleTypesObj(type),
+				params, 0, SearchContainer.DEFAULT_DELTA,
+				new RoleNameComparator());
 		}
 
 		JSONArray jsonArray = JSONFactoryUtil.createJSONArray();
 
 		for (Role role : roles) {
-			if (!RolePermissionUtil.contains(
+			if (!_rolePermission.contains(
 					themeDisplay.getPermissionChecker(), role.getRoleId(),
 					ActionKeys.VIEW)) {
 
@@ -364,7 +381,7 @@ public class KaleoDesignerPortlet extends MVCPortlet {
 		writeJSON(resourceRequest, resourceResponse, jsonArray);
 	}
 
-	protected void serveScriptLanguages(
+	private void _serveScriptLanguages(
 			ResourceRequest resourceRequest, ResourceResponse resourceResponse)
 		throws Exception {
 
@@ -383,17 +400,17 @@ public class KaleoDesignerPortlet extends MVCPortlet {
 		JSONArray jsonArray = JSONFactoryUtil.createJSONArray();
 
 		for (Object supportedScriptLanguage : sortedSupportedScriptLanguages) {
-			String scriptLanguage = supportedScriptLanguage.toString();
-
 			jsonArray.put(
 				JSONUtil.put(
-					"scriptLanguage", StringUtil.toLowerCase(scriptLanguage)));
+					"scriptLanguage",
+					StringUtil.toLowerCase(
+						supportedScriptLanguage.toString())));
 		}
 
 		writeJSON(resourceRequest, resourceResponse, jsonArray);
 	}
 
-	protected void serveUsers(
+	private void _serveUsers(
 			ResourceRequest resourceRequest, ResourceResponse resourceResponse)
 		throws Exception {
 
@@ -449,7 +466,7 @@ public class KaleoDesignerPortlet extends MVCPortlet {
 		JSONArray jsonArray = JSONFactoryUtil.createJSONArray();
 
 		for (User user : users) {
-			if (!UserPermissionUtil.contains(
+			if (!_userPermission.contains(
 					themeDisplay.getPermissionChecker(), user.getUserId(),
 					ActionKeys.VIEW)) {
 
@@ -471,16 +488,8 @@ public class KaleoDesignerPortlet extends MVCPortlet {
 		writeJSON(resourceRequest, resourceResponse, jsonArray);
 	}
 
-	@Reference(unbind = "-")
-	protected void setKaleoDefinitionVersionLocalService(
-		KaleoDefinitionVersionLocalService kaleoDefinitionVersionLocalService) {
-
-		_kaleoDefinitionVersionLocalService =
-			kaleoDefinitionVersionLocalService;
-	}
-
-	protected void setKaleoDefinitionVersionRenderRequestAttribute(
-			RenderRequest renderRequest, RenderResponse renderResponse)
+	private void _setKaleoDefinitionVersionRenderRequestAttribute(
+			RenderRequest renderRequest)
 		throws PortalException {
 
 		ThemeDisplay themeDisplay = (ThemeDisplay)renderRequest.getAttribute(
@@ -489,9 +498,7 @@ public class KaleoDesignerPortlet extends MVCPortlet {
 		KaleoDesignerDisplayContext kaleoDesignerDisplayContext =
 			new KaleoDesignerDisplayContext(
 				renderRequest, _kaleoDefinitionVersionLocalService,
-				ResourceBundleLoaderUtil.
-					getResourceBundleLoaderByBundleSymbolicName(
-						"com.liferay.portal.workflow.kaleo.designer.web"),
+				ResourceBundleLoaderUtil.getPortalResourceBundleLoader(),
 				_userLocalService);
 
 		kaleoDesignerDisplayContext.setCompanyAdministratorCanPublish(
@@ -532,7 +539,10 @@ public class KaleoDesignerPortlet extends MVCPortlet {
 	private static final Log _log = LogFactoryUtil.getLog(
 		KaleoDesignerPortlet.class);
 
-	private boolean _companyAdministratorCanPublish;
+	@Reference
+	private ClassNameLocalService _classNameLocalService;
+
+	private volatile boolean _companyAdministratorCanPublish;
 
 	@Reference
 	private Http _http;
@@ -548,6 +558,12 @@ public class KaleoDesignerPortlet extends MVCPortlet {
 	private RoleLocalService _roleLocalService;
 
 	@Reference
+	private RolePermission _rolePermission;
+
+	@Reference
 	private UserLocalService _userLocalService;
+
+	@Reference
+	private UserPermission _userPermission;
 
 }

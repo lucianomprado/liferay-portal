@@ -27,12 +27,14 @@ import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.util.DateUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
+import com.liferay.portal.kernel.util.StringUtil;
 
 import java.io.Serializable;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
 
+import java.sql.Blob;
 import java.sql.Types;
 
 import java.util.Collections;
@@ -40,6 +42,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
@@ -108,26 +111,26 @@ public class CTAutoResolutionInfoModelImpl
 	public static final String TX_MANAGER = "liferayTransactionManager";
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long CTCOLLECTIONID_COLUMN_BITMASK = 1L;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long MODELCLASSNAMEID_COLUMN_BITMASK = 2L;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long SOURCEMODELCLASSPK_COLUMN_BITMASK = 4L;
 
 	/**
 	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-	 *		#getColumnBitmask(String)
+	 *		#getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long CREATEDATE_COLUMN_BITMASK = 8L;
@@ -511,7 +514,9 @@ public class CTAutoResolutionInfoModelImpl
 		for (Map.Entry<String, Object> entry :
 				_columnOriginalValues.entrySet()) {
 
-			if (entry.getValue() != getColumnValue(entry.getKey())) {
+			if (!Objects.equals(
+					entry.getValue(), getColumnValue(entry.getKey()))) {
+
 				_columnBitmask |= _columnBitmasks.get(entry.getKey());
 			}
 		}
@@ -565,6 +570,33 @@ public class CTAutoResolutionInfoModelImpl
 		ctAutoResolutionInfoImpl.setConflictIdentifier(getConflictIdentifier());
 
 		ctAutoResolutionInfoImpl.resetOriginalValues();
+
+		return ctAutoResolutionInfoImpl;
+	}
+
+	@Override
+	public CTAutoResolutionInfo cloneWithOriginalValues() {
+		CTAutoResolutionInfoImpl ctAutoResolutionInfoImpl =
+			new CTAutoResolutionInfoImpl();
+
+		ctAutoResolutionInfoImpl.setMvccVersion(
+			this.<Long>getColumnOriginalValue("mvccVersion"));
+		ctAutoResolutionInfoImpl.setCtAutoResolutionInfoId(
+			this.<Long>getColumnOriginalValue("ctAutoResolutionInfoId"));
+		ctAutoResolutionInfoImpl.setCompanyId(
+			this.<Long>getColumnOriginalValue("companyId"));
+		ctAutoResolutionInfoImpl.setCreateDate(
+			this.<Date>getColumnOriginalValue("createDate"));
+		ctAutoResolutionInfoImpl.setCtCollectionId(
+			this.<Long>getColumnOriginalValue("ctCollectionId"));
+		ctAutoResolutionInfoImpl.setModelClassNameId(
+			this.<Long>getColumnOriginalValue("modelClassNameId"));
+		ctAutoResolutionInfoImpl.setSourceModelClassPK(
+			this.<Long>getColumnOriginalValue("sourceModelClassPK"));
+		ctAutoResolutionInfoImpl.setTargetModelClassPK(
+			this.<Long>getColumnOriginalValue("targetModelClassPK"));
+		ctAutoResolutionInfoImpl.setConflictIdentifier(
+			this.<String>getColumnOriginalValue("conflictIdentifier"));
 
 		return ctAutoResolutionInfoImpl;
 	}
@@ -688,7 +720,7 @@ public class CTAutoResolutionInfoModelImpl
 			attributeGetterFunctions = getAttributeGetterFunctions();
 
 		StringBundler sb = new StringBundler(
-			(4 * attributeGetterFunctions.size()) + 2);
+			(5 * attributeGetterFunctions.size()) + 2);
 
 		sb.append("{");
 
@@ -699,10 +731,27 @@ public class CTAutoResolutionInfoModelImpl
 			Function<CTAutoResolutionInfo, Object> attributeGetterFunction =
 				entry.getValue();
 
+			sb.append("\"");
 			sb.append(attributeName);
-			sb.append("=");
-			sb.append(
-				attributeGetterFunction.apply((CTAutoResolutionInfo)this));
+			sb.append("\": ");
+
+			Object value = attributeGetterFunction.apply(
+				(CTAutoResolutionInfo)this);
+
+			if (value == null) {
+				sb.append("null");
+			}
+			else if (value instanceof Blob || value instanceof Date ||
+					 value instanceof Map || value instanceof String) {
+
+				sb.append(
+					"\"" + StringUtil.replace(value.toString(), "\"", "'") +
+						"\"");
+			}
+			else {
+				sb.append(value);
+			}
+
 			sb.append(", ");
 		}
 

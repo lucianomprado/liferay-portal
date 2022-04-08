@@ -44,7 +44,7 @@ import org.osgi.service.component.annotations.Reference;
 	enabled = false, immediate = true,
 	property = {
 		"javax.portlet.name=" + CommerceVirtualOrderPortletKeys.COMMERCE_VIRTUAL_ORDER_ITEM_CONTENT,
-		"mvc.command.name=downloadCommerceVirtualOrderItem"
+		"mvc.command.name=/commerce_virtual_order_item_content/download_commerce_virtual_order_item"
 	},
 	service = MVCResourceCommand.class
 )
@@ -70,7 +70,7 @@ public class DownloadCommerceVirtualOrderItemMVCResourceCommand
 				HttpHeaders.CONTENT_DISPOSITION_ATTACHMENT);
 		}
 		catch (Exception exception) {
-			_log.error(exception, exception);
+			_log.error(exception);
 		}
 	}
 

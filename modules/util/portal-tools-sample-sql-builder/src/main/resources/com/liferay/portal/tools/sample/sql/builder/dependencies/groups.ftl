@@ -1,14 +1,30 @@
-<#assign guestGroupModel = dataFactory.newGuestGroupModel() />
+<#assign
+	globalGroupModel = dataFactory.newGlobalGroupModel()
+	guestGroupModel = dataFactory.newGuestGroupModel()
+
+	commerceCurrencyModel = dataFactory.newCommerceCurrencyModel()
+	countryModel = dataFactory.newCountryModel()
+/>
+
+${dataFactory.toInsertSQL(commerceCurrencyModel)}
+
+${dataFactory.toInsertSQL(countryModel)}
 
 <#include "default_user.ftl">
 
-<@insertLayout _layoutModel=dataFactory.newLayoutModel(guestGroupModel.groupId, "welcome", "com_liferay_login_web_portlet_LoginPortlet,", "com_liferay_hello_world_web_portlet_HelloWorldPortlet,") />
+<#include "commerce_groups.ftl">
 
-<@insertGroup _groupModel=dataFactory.newGlobalGroupModel() />
+<@insertGroup _groupModel=globalGroupModel />
 
 <@insertGroup _groupModel=guestGroupModel />
 
 <@insertGroup _groupModel=dataFactory.newUserPersonalSiteGroupModel() />
+
+<#include "asset.ftl">
+
+<#include "ddm.ftl">
+
+<#include "segments.ftl">
 
 <#list dataFactory.newGroupModels() as groupModel>
 	<#assign groupId = groupModel.groupId />
@@ -36,13 +52,27 @@
 		_parentDLFolderId=0
 	/>
 
-	<#assign publicLayoutModels = dataFactory.newPublicLayoutModels(groupId) />
+	<#assign homePageContentLayoutModels = dataFactory.newContentPageLayoutModels(groupId, "welcome") />
 
-	<#list publicLayoutModels as publicLayoutModel>
-		<@insertLayout _layoutModel=publicLayoutModel />
+	<@insertContentPageLayout
+		_fragmentEntryLinkModels=dataFactory.newFragmentEntryLinkModels(homePageContentLayoutModels)
+		_layoutModels=homePageContentLayoutModels
+		_templateFileName="default-homepage-layout-definition.json"
+	/>
+
+	<#list dataFactory.newGroupLayoutModels(groupId) as groupLayoutModel>
+		<@insertLayout _layoutModel=groupLayoutModel />
 	</#list>
 
 	<@insertGroup _groupModel=groupModel />
 
 	${csvFileWriter.write("repository", groupId + ", " + groupModel.name + "\n")}
 </#list>
+
+<#assign defaultSiteHomePageContentLayoutModels = dataFactory.newContentPageLayoutModels(guestGroupModel.groupId, "welcome") />
+
+<@insertContentPageLayout
+	_fragmentEntryLinkModels=dataFactory.newFragmentEntryLinkModels(defaultSiteHomePageContentLayoutModels)
+	_layoutModels=defaultSiteHomePageContentLayoutModels
+	_templateFileName="default-homepage-layout-definition.json"
+/>

@@ -14,6 +14,7 @@
 
 package com.liferay.commerce.product.definitions.web.internal.frontend;
 
+import com.liferay.commerce.product.definitions.web.internal.frontend.constants.CommerceProductDataSetConstants;
 import com.liferay.commerce.product.definitions.web.internal.model.ProductOption;
 import com.liferay.commerce.product.model.CPDefinition;
 import com.liferay.commerce.product.model.CPDefinitionOptionRel;
@@ -24,14 +25,12 @@ import com.liferay.dynamic.data.mapping.form.field.type.DDMFormFieldTypeServices
 import com.liferay.frontend.taglib.clay.data.Filter;
 import com.liferay.frontend.taglib.clay.data.Pagination;
 import com.liferay.frontend.taglib.clay.data.set.provider.ClayDataSetDataProvider;
-import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.search.BaseModelSearchResult;
 import com.liferay.portal.kernel.search.Sort;
-import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
@@ -41,7 +40,6 @@ import com.liferay.portal.kernel.util.Validator;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
@@ -89,9 +87,8 @@ public class CommerceProductOptionDataSetDataProvider
 					_getDDMFormFieldTypeLabel(
 						cpDefinitionOptionRel.getDDMFormFieldTypeName(),
 						locale),
-					HtmlUtil.escape(
-						cpDefinitionOptionRel.getName(
-							LanguageUtil.getLanguageId(locale))),
+					cpDefinitionOptionRel.getName(
+						LanguageUtil.getLanguageId(locale)),
 					cpDefinitionOptionRel.getPriority(),
 					LanguageUtil.get(
 						locale,
@@ -112,22 +109,15 @@ public class CommerceProductOptionDataSetDataProvider
 			HttpServletRequest httpServletRequest, Filter filter)
 		throws PortalException {
 
-		String keywords = filter.getKeywords();
-
 		long cpDefinitionId = ParamUtil.getLong(
 			httpServletRequest, "cpDefinitionId");
 
-		if (Validator.isNotNull(keywords) || (cpDefinitionId == 0)) {
-			BaseModelSearchResult<CPDefinitionOptionRel> baseModelSearchResult =
-				_getBaseModelSearchResult(
-					cpDefinitionId, keywords, QueryUtil.ALL_POS,
-					QueryUtil.ALL_POS, null);
-
-			return baseModelSearchResult.getLength();
-		}
-
-		return _cpDefinitionOptionRelService.getCPDefinitionOptionRelsCount(
+		CPDefinition cpDefinition = _cpDefinitionService.getCPDefinition(
 			cpDefinitionId);
+
+		return _cpDefinitionOptionRelService.searchCPDefinitionOptionRelsCount(
+			cpDefinition.getCompanyId(), cpDefinition.getGroupId(),
+			cpDefinition.getCPDefinitionId(), filter.getKeywords());
 	}
 
 	private BaseModelSearchResult<CPDefinitionOptionRel>
@@ -141,23 +131,18 @@ public class CommerceProductOptionDataSetDataProvider
 
 		return _cpDefinitionOptionRelService.searchCPDefinitionOptionRels(
 			cpDefinition.getCompanyId(), cpDefinition.getGroupId(),
-			cpDefinitionId, keywords, start, end, sort);
+			cpDefinitionId, keywords, start, end, new Sort[] {sort});
 	}
 
 	private List<CPDefinitionOptionRel> _getCPDefinitionOptionRels(
 			long cpDefinitionId, String keywords, int start, int end, Sort sort)
 		throws PortalException {
 
-		if (Validator.isNotNull(keywords) || (cpDefinitionId == 0)) {
-			BaseModelSearchResult<CPDefinitionOptionRel> baseModelSearchResult =
-				_getBaseModelSearchResult(
-					cpDefinitionId, keywords, start, end, sort);
+		BaseModelSearchResult<CPDefinitionOptionRel> baseModelSearchResult =
+			_getBaseModelSearchResult(
+				cpDefinitionId, keywords, start, end, sort);
 
-			return baseModelSearchResult.getBaseModels();
-		}
-
-		return _cpDefinitionOptionRelService.getCPDefinitionOptionRels(
-			cpDefinitionId, start, end);
+		return baseModelSearchResult.getBaseModels();
 	}
 
 	private String _getDDMFormFieldTypeLabel(
@@ -167,24 +152,22 @@ public class CommerceProductOptionDataSetDataProvider
 			_ddmFormFieldTypeServicesTracker.getDDMFormFieldType(
 				ddmFormFieldTypeName);
 
-		Map<String, Object> ddmFormFieldTypeProperties =
-			_ddmFormFieldTypeServicesTracker.getDDMFormFieldTypeProperties(
-				ddmFormFieldType.getName());
-
 		String label = MapUtil.getString(
-			ddmFormFieldTypeProperties, "ddm.form.field.type.label");
+			_ddmFormFieldTypeServicesTracker.getDDMFormFieldTypeProperties(
+				ddmFormFieldType.getName()),
+			"ddm.form.field.type.label");
 
 		try {
-			ResourceBundle resourceBundle = ResourceBundleUtil.getBundle(
-				"content.Language", locale, ddmFormFieldType.getClass());
-
 			if (Validator.isNotNull(label)) {
+				ResourceBundle resourceBundle = ResourceBundleUtil.getBundle(
+					"content.Language", locale, ddmFormFieldType.getClass());
+
 				return LanguageUtil.get(resourceBundle, label);
 			}
 		}
 		catch (MissingResourceException missingResourceException) {
 			if (_log.isWarnEnabled()) {
-				_log.warn(missingResourceException, missingResourceException);
+				_log.warn(missingResourceException);
 			}
 		}
 

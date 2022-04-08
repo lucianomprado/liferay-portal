@@ -137,11 +137,11 @@ public class SearchPermissionCheckerImpl implements SearchPermissionChecker {
 		}
 		catch (NoSuchResourceException noSuchResourceException) {
 			if (_log.isDebugEnabled()) {
-				_log.debug(noSuchResourceException, noSuchResourceException);
+				_log.debug(noSuchResourceException);
 			}
 		}
 		catch (Exception exception) {
-			_log.error(exception, exception);
+			_log.error(exception);
 		}
 	}
 
@@ -156,7 +156,7 @@ public class SearchPermissionCheckerImpl implements SearchPermissionChecker {
 				searchContext);
 		}
 		catch (Exception exception) {
-			_log.error(exception, exception);
+			_log.error(exception);
 
 			return booleanFilter;
 		}
@@ -173,7 +173,7 @@ public class SearchPermissionCheckerImpl implements SearchPermissionChecker {
 			indexer.reindex(resourceName, GetterUtil.getLong(resourceClassPK));
 		}
 		catch (Exception exception) {
-			_log.error(exception, exception);
+			_log.error(exception);
 		}
 	}
 
@@ -207,14 +207,6 @@ public class SearchPermissionCheckerImpl implements SearchPermissionChecker {
 
 		_searchPermissionFilterContributors.add(
 			searchPermissionFilterContributor);
-	}
-
-	protected PermissionChecker getPermissionChecker() {
-		if (permissionChecker != null) {
-			return permissionChecker;
-		}
-
-		return PermissionThreadLocal.getPermissionChecker();
 	}
 
 	protected void removeSearchPermissionFieldContributor(
@@ -332,7 +324,7 @@ public class SearchPermissionCheckerImpl implements SearchPermissionChecker {
 		else {
 			roles.addAll(
 				roleLocalService.getRoles(
-					permissionChecker.getGuestUserRoleIds()));
+					permissionChecker.getRoleIds(userId, 0)));
 		}
 
 		int termsCount = roles.size();
@@ -458,7 +450,7 @@ public class SearchPermissionCheckerImpl implements SearchPermissionChecker {
 			return null;
 		}
 
-		PermissionChecker permissionChecker = getPermissionChecker();
+		PermissionChecker permissionChecker = _getPermissionChecker();
 
 		User user = permissionChecker.getUser();
 
@@ -506,6 +498,14 @@ public class SearchPermissionCheckerImpl implements SearchPermissionChecker {
 			companyId, searchGroupIds, userId, permissionChecker,
 			_getPermissionName(searchContext, className),
 			searchPermissionContext);
+	}
+
+	private PermissionChecker _getPermissionChecker() {
+		if (permissionChecker != null) {
+			return permissionChecker;
+		}
+
+		return PermissionThreadLocal.getPermissionChecker();
 	}
 
 	private BooleanFilter _getPermissionFilter(

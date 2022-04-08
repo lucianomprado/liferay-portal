@@ -14,6 +14,7 @@
 
 package com.liferay.commerce.internal.upgrade;
 
+import com.liferay.account.service.AccountEntryLocalService;
 import com.liferay.commerce.account.service.CommerceAccountLocalService;
 import com.liferay.commerce.account.service.CommerceAccountOrganizationRelLocalService;
 import com.liferay.commerce.internal.upgrade.v1_1_0.CommerceOrderItemUpgradeProcess;
@@ -35,16 +36,31 @@ import com.liferay.commerce.internal.upgrade.v4_5_1.CommerceShippingMethodUpgrad
 import com.liferay.commerce.internal.upgrade.v4_6_0.ShipmentUpgradeProcess;
 import com.liferay.commerce.internal.upgrade.v4_6_0.SubscriptionUpgradeProcess;
 import com.liferay.commerce.internal.upgrade.v4_8_1.CommerceOrderStatusesUpgradeProcess;
+import com.liferay.commerce.internal.upgrade.v5_0_0.CommerceAddressRestrictionUpgradeProcess;
+import com.liferay.commerce.internal.upgrade.v5_0_1.CommercePermissionUpgradeProcess;
+import com.liferay.commerce.internal.upgrade.v7_2_0.util.CommerceOrderTypeRelTable;
+import com.liferay.commerce.internal.upgrade.v7_2_0.util.CommerceOrderTypeTable;
+import com.liferay.commerce.internal.upgrade.v8_2_0.CommerceShipmentExternalReferenceCodeUpgradeProcess;
+import com.liferay.commerce.internal.upgrade.v8_4_0.util.CommerceShippingOptionAccountEntryRelTable;
 import com.liferay.commerce.product.service.CPDefinitionLocalService;
 import com.liferay.commerce.product.service.CPInstanceLocalService;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.service.AddressLocalService;
 import com.liferay.portal.kernel.service.ClassNameLocalService;
+import com.liferay.portal.kernel.service.CountryLocalService;
 import com.liferay.portal.kernel.service.EmailAddressLocalService;
 import com.liferay.portal.kernel.service.GroupLocalService;
+import com.liferay.portal.kernel.service.ListTypeLocalService;
 import com.liferay.portal.kernel.service.OrganizationLocalService;
+import com.liferay.portal.kernel.service.PhoneLocalService;
+import com.liferay.portal.kernel.service.RegionLocalService;
+import com.liferay.portal.kernel.service.ResourceActionLocalService;
+import com.liferay.portal.kernel.service.ResourcePermissionLocalService;
 import com.liferay.portal.kernel.service.UserLocalService;
+import com.liferay.portal.kernel.upgrade.CTModelUpgradeProcess;
 import com.liferay.portal.kernel.upgrade.DummyUpgradeProcess;
+import com.liferay.portal.kernel.upgrade.MVCCVersionUpgradeProcess;
 import com.liferay.portal.upgrade.registry.UpgradeStepRegistrator;
 
 import org.osgi.service.component.annotations.Component;
@@ -176,6 +192,99 @@ public class CommerceUpgradeStepRegistrator implements UpgradeStepRegistrator {
 			new com.liferay.commerce.internal.upgrade.v4_9_0.
 				CommerceOrderItemUpgradeProcess());
 
+		registry.register(
+			"4.9.0", "4.9.1",
+			new com.liferay.commerce.internal.upgrade.v4_9_1.
+				CommerceOrderUpgradeProcess());
+
+		registry.register(
+			"4.9.1", "4.10.0",
+			new com.liferay.commerce.internal.upgrade.v4_10_0.
+				CommerceOrderItemUpgradeProcess());
+
+		registry.register(
+			"4.10.0", "5.0.0",
+			new com.liferay.commerce.internal.upgrade.v5_0_0.
+				CommerceAddressUpgradeProcess(),
+			new CommerceAddressRestrictionUpgradeProcess());
+
+		registry.register(
+			"5.0.0", "5.0.1",
+			new CommercePermissionUpgradeProcess(
+				_resourceActionLocalService, _resourcePermissionLocalService));
+
+		registry.register(
+			"5.0.1", "6.0.0",
+			new com.liferay.commerce.internal.upgrade.v6_0_0.
+				CommerceCountryUpgradeProcess(_countryLocalService),
+			new com.liferay.commerce.internal.upgrade.v6_0_0.
+				CommerceRegionUpgradeProcess(_regionLocalService));
+
+		registry.register(
+			"6.0.0", "7.0.0",
+			new com.liferay.commerce.internal.upgrade.v7_0_0.
+				CommerceAddressUpgradeProcess(
+					_addressLocalService, _accountEntryLocalService,
+					_listTypeLocalService, _phoneLocalService));
+
+		registry.register(
+			"7.0.0", "7.1.0",
+			new com.liferay.commerce.internal.upgrade.v7_1_0.
+				CommerceOrderUpgradeProcess());
+
+		registry.register(
+			"7.1.0", "7.2.0", CommerceOrderTypeTable.create(),
+			CommerceOrderTypeRelTable.create());
+
+		registry.register(
+			"7.2.0", "7.3.0",
+			new MVCCVersionUpgradeProcess() {
+
+				@Override
+				protected String[] getModuleTableNames() {
+					return new String[] {
+						"CPDAvailabilityEstimate", "CPDefinitionInventory",
+						"CommerceAddressRestriction",
+						"CommerceAvailabilityEstimate", "CommerceOrder",
+						"CommerceOrderItem", "CommerceOrderNote",
+						"CommerceOrderPayment", "CommerceOrderType",
+						"CommerceOrderTypeRel", "CommerceShipment",
+						"CommerceShipmentItem", "CommerceShippingMethod",
+						"CommerceSubscriptionEntry"
+					};
+				}
+
+			});
+
+		registry.register(
+			"7.3.0", "8.0.0",
+			new com.liferay.commerce.internal.upgrade.v8_0_0.
+				CommerceOrderItemUpgradeProcess());
+
+		registry.register("8.0.0", "8.0.1", new DummyUpgradeProcess());
+
+		registry.register(
+			"8.0.1", "8.1.0",
+			new com.liferay.commerce.internal.upgrade.v8_1_0.
+				CommerceOrderUpgradeProcess());
+
+		registry.register(
+			"8.1.0", "8.1.1",
+			new com.liferay.commerce.internal.upgrade.v8_1_1.
+				CommerceAddressUpgradeProcess());
+
+		registry.register(
+			"8.1.1", "8.2.0",
+			new CommerceShipmentExternalReferenceCodeUpgradeProcess());
+
+		registry.register(
+			"8.2.0", "8.3.0",
+			new CTModelUpgradeProcess("CPDefinitionInventory"));
+
+		registry.register(
+			"8.3.0", "8.4.0",
+			CommerceShippingOptionAccountEntryRelTable.create());
+
 		if (_log.isInfoEnabled()) {
 			_log.info("Commerce upgrade step registrator finished");
 		}
@@ -183,6 +292,12 @@ public class CommerceUpgradeStepRegistrator implements UpgradeStepRegistrator {
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		CommerceUpgradeStepRegistrator.class);
+
+	@Reference
+	private AccountEntryLocalService _accountEntryLocalService;
+
+	@Reference
+	private AddressLocalService _addressLocalService;
 
 	@Reference
 	private ClassNameLocalService _classNameLocalService;
@@ -193,6 +308,9 @@ public class CommerceUpgradeStepRegistrator implements UpgradeStepRegistrator {
 	@Reference
 	private CommerceAccountOrganizationRelLocalService
 		_commerceAccountOrganizationRelLocalService;
+
+	@Reference
+	private CountryLocalService _countryLocalService;
 
 	@Reference
 	private CPDefinitionLocalService _cpDefinitionLocalService;
@@ -207,7 +325,22 @@ public class CommerceUpgradeStepRegistrator implements UpgradeStepRegistrator {
 	private GroupLocalService _groupLocalService;
 
 	@Reference
+	private ListTypeLocalService _listTypeLocalService;
+
+	@Reference
 	private OrganizationLocalService _organizationLocalService;
+
+	@Reference
+	private PhoneLocalService _phoneLocalService;
+
+	@Reference
+	private RegionLocalService _regionLocalService;
+
+	@Reference
+	private ResourceActionLocalService _resourceActionLocalService;
+
+	@Reference
+	private ResourcePermissionLocalService _resourcePermissionLocalService;
 
 	@Reference
 	private UserLocalService _userLocalService;

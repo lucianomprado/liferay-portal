@@ -20,15 +20,18 @@ import com.liferay.dynamic.data.mapping.expression.DDMExpressionFunctionFactory;
 import com.liferay.dynamic.data.mapping.expression.DDMExpressionFunctionTracker;
 import com.liferay.dynamic.data.mapping.expression.internal.functions.PowFunction;
 import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import java.math.BigDecimal;
 
 import org.junit.Assert;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import org.mockito.Matchers;
-import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import org.powermock.api.mockito.PowerMockito;
@@ -39,16 +42,35 @@ import org.powermock.api.mockito.PowerMockito;
 @RunWith(MockitoJUnitRunner.class)
 public class DDMExpressionFactoryImplTest extends PowerMockito {
 
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
+
+	@Before
+	public void setUp() throws Exception {
+		_setUpDDMExpressionFunctionTracker();
+	}
+
 	@Test
 	public void testCreateDDMExpression() throws Exception {
-		DDMExpressionFactoryImpl ddmExpressionFactoryImpl =
-			new DDMExpressionFactoryImpl();
+		DDMExpression<BigDecimal> ddmExpression =
+			_ddmExpressionFactoryImpl.createExpression(
+				CreateExpressionRequest.Builder.newBuilder(
+					"pow(2,3)"
+				).build());
 
-		ddmExpressionFactoryImpl.ddmExpressionFunctionTracker =
-			_ddmExpressionFunctionTracker;
+		BigDecimal bigDecimal = ddmExpression.evaluate();
+
+		Assert.assertEquals(0, bigDecimal.compareTo(new BigDecimal(8)));
+	}
+
+	private void _setUpDDMExpressionFunctionTracker() throws Exception {
+		DDMExpressionFunctionTracker ddmExpressionFunctionTracker = mock(
+			DDMExpressionFunctionTracker.class);
 
 		when(
-			_ddmExpressionFunctionTracker.getDDMExpressionFunctionFactories(
+			ddmExpressionFunctionTracker.getDDMExpressionFunctionFactories(
 				Matchers.any())
 		).thenReturn(
 			HashMapBuilder.<String, DDMExpressionFunctionFactory>put(
@@ -56,18 +78,14 @@ public class DDMExpressionFactoryImplTest extends PowerMockito {
 			).build()
 		);
 
-		CreateExpressionRequest.Builder builder =
-			CreateExpressionRequest.Builder.newBuilder("pow(2,3)");
-
-		DDMExpression<BigDecimal> ddmExpression =
-			ddmExpressionFactoryImpl.createExpression(builder.build());
-
-		BigDecimal actual = ddmExpression.evaluate();
-
-		Assert.assertEquals(0, actual.compareTo(new BigDecimal(8)));
+		field(
+			DDMExpressionFactoryImpl.class, "ddmExpressionFunctionTracker"
+		).set(
+			_ddmExpressionFactoryImpl, ddmExpressionFunctionTracker
+		);
 	}
 
-	@Mock
-	private DDMExpressionFunctionTracker _ddmExpressionFunctionTracker;
+	private final DDMExpressionFactoryImpl _ddmExpressionFactoryImpl =
+		new DDMExpressionFactoryImpl();
 
 }

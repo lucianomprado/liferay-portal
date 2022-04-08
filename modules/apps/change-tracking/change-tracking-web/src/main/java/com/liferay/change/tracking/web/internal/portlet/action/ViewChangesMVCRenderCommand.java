@@ -16,16 +16,19 @@ package com.liferay.change.tracking.web.internal.portlet.action;
 
 import com.liferay.change.tracking.closure.CTClosureFactory;
 import com.liferay.change.tracking.constants.CTConstants;
+import com.liferay.change.tracking.constants.CTPortletKeys;
 import com.liferay.change.tracking.model.CTCollection;
 import com.liferay.change.tracking.model.CTPreferences;
 import com.liferay.change.tracking.service.CTCollectionLocalService;
+import com.liferay.change.tracking.service.CTCollectionService;
 import com.liferay.change.tracking.service.CTEntryLocalService;
 import com.liferay.change.tracking.service.CTPreferencesLocalService;
+import com.liferay.change.tracking.service.CTSchemaVersionLocalService;
 import com.liferay.change.tracking.web.internal.configuration.CTConfiguration;
-import com.liferay.change.tracking.web.internal.constants.CTPortletKeys;
 import com.liferay.change.tracking.web.internal.constants.CTWebKeys;
 import com.liferay.change.tracking.web.internal.display.BasePersistenceRegistry;
 import com.liferay.change.tracking.web.internal.display.CTDisplayRendererRegistry;
+import com.liferay.change.tracking.web.internal.display.context.PublicationsDisplayContext;
 import com.liferay.change.tracking.web.internal.display.context.ViewChangesDisplayContext;
 import com.liferay.change.tracking.web.internal.scheduler.PublishScheduler;
 import com.liferay.portal.configuration.metatype.bnd.util.ConfigurableUtil;
@@ -99,27 +102,36 @@ public class ViewChangesMVCRenderCommand implements MVCRenderCommand {
 					themeDisplay.getPermissionChecker(), ctCollection,
 					ActionKeys.VIEW)) {
 
-				return "/publications/view.jsp";
+				return "/publications/view_publications.jsp";
 			}
+
+			ViewChangesDisplayContext viewChangesDisplayContext =
+				new ViewChangesDisplayContext(
+					activeCtCollectionId, _basePersistenceRegistry,
+					_ctClosureFactory, ctCollection, _ctCollectionLocalService,
+					_ctConfiguration, _ctDisplayRendererRegistry,
+					_ctEntryLocalService, _ctSchemaVersionLocalService,
+					_groupLocalService, _language, _portal,
+					new PublicationsDisplayContext(
+						_ctCollectionLocalService, _ctCollectionService,
+						_ctDisplayRendererRegistry, _ctEntryLocalService,
+						_ctPreferencesLocalService,
+						_portal.getHttpServletRequest(renderRequest), _language,
+						renderRequest, renderResponse),
+					_publishScheduler, renderRequest, renderResponse,
+					_userLocalService);
+
+			renderRequest.setAttribute(
+				CTWebKeys.VIEW_CHANGES_DISPLAY_CONTEXT,
+				viewChangesDisplayContext);
 		}
 		catch (PortalException portalException) {
 			if (_log.isWarnEnabled()) {
-				_log.warn(portalException, portalException);
+				_log.warn(portalException);
 			}
 
-			return "/publications/view.jsp";
+			return "/publications/view_publications.jsp";
 		}
-
-		ViewChangesDisplayContext viewChangesDisplayContext =
-			new ViewChangesDisplayContext(
-				activeCtCollectionId, _basePersistenceRegistry,
-				_ctClosureFactory, ctCollection, _ctConfiguration,
-				_ctDisplayRendererRegistry, _ctEntryLocalService,
-				_groupLocalService, _language, _portal, _publishScheduler,
-				renderRequest, renderResponse, _userLocalService);
-
-		renderRequest.setAttribute(
-			CTWebKeys.VIEW_CHANGES_DISPLAY_CONTEXT, viewChangesDisplayContext);
 
 		return "/publications/view_changes.jsp";
 	}
@@ -149,6 +161,9 @@ public class ViewChangesMVCRenderCommand implements MVCRenderCommand {
 	private ModelResourcePermission<CTCollection>
 		_ctCollectionModelResourcePermission;
 
+	@Reference
+	private CTCollectionService _ctCollectionService;
+
 	private volatile CTConfiguration _ctConfiguration;
 
 	@Reference
@@ -159,6 +174,9 @@ public class ViewChangesMVCRenderCommand implements MVCRenderCommand {
 
 	@Reference
 	private CTPreferencesLocalService _ctPreferencesLocalService;
+
+	@Reference
+	private CTSchemaVersionLocalService _ctSchemaVersionLocalService;
 
 	@Reference
 	private GroupLocalService _groupLocalService;

@@ -36,10 +36,25 @@ List<DepotEntryGroupRel> depotEntryGroupRels = depotAdminSitesDisplayContext.get
 		<c:if test="<%= !depotAdminSitesDisplayContext.isLiveDepotEntry() %>">
 			<clay:content-col>
 				<span class="heading-end">
+
+					<%
+					PortletURL itemSelectorURL = depotAdminSitesDisplayContext.getItemSelectorURL();
+
+					String itemSelectorURLString = itemSelectorURL.toString();
+					%>
+
 					<clay:button
+						additionalProps='<%=
+							HashMapBuilder.<String, Object>put(
+								"currentURL", currentURL
+							).put(
+								"itemSelectorURL", itemSelectorURLString
+							).build()
+						%>'
 						displayType="secondary"
 						id='<%= liferayPortletResponse.getNamespace() + "addConnectedSiteButton" %>'
 						label="add"
+						propsTransformer="js/AddConnectedSitesButtonPropsTransformer"
 						small="<%= true %>"
 						title="connect-to-a-site"
 					/>
@@ -133,37 +148,4 @@ List<DepotEntryGroupRel> depotEntryGroupRels = depotAdminSitesDisplayContext.get
 			markupView="lexicon"
 		/>
 	</liferay-ui:search-container>
-
-	<aui:script require="metal-dom/src/all/dom as dom">
-		var addConnectedSiteButton = document.querySelector(
-			'#<portlet:namespace />addConnectedSiteButton'
-		);
-
-		if (addConnectedSiteButton) {
-			addConnectedSiteButton.addEventListener('click', function (event) {
-				Liferay.Util.openSelectionModal({
-					onSelect: function (event) {
-						var toGroupIdInput = document.querySelector(
-							'#<portlet:namespace />toGroupId'
-						);
-
-						toGroupIdInput.value = event.groupid;
-
-						var redirectInput = document.querySelector(
-							'#<portlet:namespace />redirect'
-						);
-
-						redirectInput.value = '<%= currentURL %>';
-
-						submitForm(toGroupIdInput.form);
-					},
-					selectEventName:
-						'<%= liferayPortletResponse.getNamespace() + "selectSite" %>',
-					title: '<liferay-ui:message key="select-site" />',
-					url:
-						'<%= String.valueOf(depotAdminSitesDisplayContext.getItemSelectorURL()) %>',
-				});
-			});
-		}
-	</aui:script>
 </clay:sheet-section>

@@ -78,6 +78,10 @@ function AssetCategories({
 
 	return (
 		<ClayForm.Group>
+			<label htmlFor={`${namespace}queryCategoryIds${index}`}>
+				{Liferay.Language.get('categories')}
+			</label>
+
 			<AssetVocabularyCategoriesSelector
 				categoryIds={rule.queryValues ? rule.queryValues : ''}
 				eventName={`${namespace}selectCategory`}
@@ -138,6 +142,7 @@ function Keywords({index, namespace, onChange, rule}) {
 
 function Rule({
 	categorySelectorURL,
+	disabled,
 	groupIds,
 	index,
 	namespace,
@@ -234,23 +239,26 @@ function Rule({
 				</div>
 			</div>
 
-			<div className="container-trash">
-				<ClayButton
-					className="condition-card-delete"
-					data-index={index}
-					monospaced
-					onClick={onDeleteRule}
-					small
-				>
-					<ClayIcon symbol="trash" />
-				</ClayButton>
-			</div>
+			{!disabled && (
+				<div className="container-trash">
+					<ClayButton
+						className="condition-card-delete"
+						data-index={index}
+						monospaced
+						onClick={onDeleteRule}
+						small
+					>
+						<ClayIcon symbol="trash" />
+					</ClayButton>
+				</div>
+			)}
 		</>
 	);
 }
 
 function AutoField({
 	categorySelectorURL,
+	disabled,
 	groupIds,
 	namespace,
 	rules,
@@ -319,6 +327,7 @@ function AutoField({
 					<li className="timeline-item" key={index}>
 						<Rule
 							categorySelectorURL={categorySelectorURL}
+							disabled={disabled}
 							groupIds={groupIds}
 							index={index}
 							namespace={namespace}
@@ -332,18 +341,20 @@ function AutoField({
 				))}
 			</ul>
 
-			<div className="addbutton-timeline-item">
-				<div className="add-condition timeline-increment-icon">
-					<ClayButton
-						className="form-builder-rule-add-condition form-builder-timeline-add-item"
-						monospaced
-						onClick={handleAddRule}
-						small
-					>
-						<ClayIcon symbol="plus" />
-					</ClayButton>
+			{!disabled && (
+				<div className="addbutton-timeline-item">
+					<div className="add-condition timeline-increment-icon">
+						<ClayButton
+							className="form-builder-rule-add-condition form-builder-timeline-add-item"
+							monospaced
+							onClick={handleAddRule}
+							small
+						>
+							<ClayIcon symbol="plus" />
+						</ClayButton>
+					</div>
 				</div>
-			</div>
+			)}
 		</>
 	);
 }

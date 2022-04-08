@@ -2,11 +2,13 @@
 <head>
 <title>GoogleDrive</title>
 </head>
+
 <body>
-<table cellpadding="1" cellspacing="1" border="1">
+<table border="1" cellpadding="1" cellspacing="1">
 <thead>
 <tr><td rowspan="1" colspan="3">GoogleDrive</td></tr>
 </thead>
+
 <tbody>
 <tr>
 	<td>HEADER</td>
@@ -40,12 +42,12 @@
 </tr>
 <tr>
 	<td>GRID_VIEW_BUTTON</td>
-	<td>//div[contains(@role,'button') and contains(@aria-label,'Grid view') and contains(@aria-hidden,'false')]</td>
+	<td>//div[contains(@role,'button') and contains(@aria-label,'Grid view')]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>LIST_VIEW_BUTTON</td>
-	<td>//div[contains(@role,'button') and contains(@aria-label,'List view') and contains(@aria-hidden,'false')]</td>
+	<td>//div[contains(@role,'button') and contains(@aria-label,'List view')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -82,7 +84,7 @@
 </tr>
 <tr>
 	<td>LIST_VIEW_DOCUMENT_SPECIFIC</td>
-	<td>//div[contains(@aria-label,'Files and folders list view.')]//span[contains(.,'${key_googleDocName}')])</td>
+	<td>//div[contains(@aria-label,'Files and folders list view.')]//span[contains(.,'${key_googleDocName}')]</td>
 	<td></td>
 </tr>
 </tbody>

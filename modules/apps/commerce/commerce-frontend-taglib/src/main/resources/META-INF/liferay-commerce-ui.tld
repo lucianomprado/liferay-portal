@@ -16,51 +16,76 @@
 		<body-content>empty</body-content>
 	</tag>
 	<tag>
-		<name>add-account-modal</name>
-		<tag-class>com.liferay.commerce.frontend.taglib.servlet.taglib.AddAccountModalTag</tag-class>
-		<body-content>empty</body-content>
-		<attribute>
-			<name>componentId</name>
-			<required>true</required>
-			<rtexprvalue>true</rtexprvalue>
-		</attribute>
-	</tag>
-	<tag>
-		<name>add-address-modal</name>
-		<tag-class>com.liferay.commerce.frontend.taglib.servlet.taglib.AddressModalTag</tag-class>
-		<body-content>empty</body-content>
-		<attribute>
-			<name>componentId</name>
-			<required>true</required>
-			<rtexprvalue>true</rtexprvalue>
-		</attribute>
-	</tag>
-	<tag>
-		<name>add-organizations-modal</name>
-		<tag-class>com.liferay.commerce.frontend.taglib.servlet.taglib.AddOrganizationsModalTag</tag-class>
-		<body-content>empty</body-content>
-		<attribute>
-			<name>componentId</name>
-			<required>true</required>
-			<rtexprvalue>true</rtexprvalue>
-		</attribute>
-	</tag>
-	<tag>
 		<name>add-to-cart</name>
 		<tag-class>com.liferay.commerce.frontend.taglib.servlet.taglib.AddToCartTag</tag-class>
 		<body-content>empty</body-content>
 		<attribute>
+			<name>alignment</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<name>CPCatalogEntry</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
 			<name>CPInstanceId</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<name>iconOnly</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<name>inline</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<name>namespace</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<name>options</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<name>size</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+	</tag>
+	<tag>
+		<name>add-to-wish-list</name>
+		<tag-class>com.liferay.commerce.frontend.taglib.servlet.taglib.AddToWishListTag</tag-class>
+		<body-content>empty</body-content>
+		<attribute>
+			<name>CPCatalogEntry</name>
 			<required>true</required>
 			<rtexprvalue>true</rtexprvalue>
 		</attribute>
 		<attribute>
-			<name>id</name>
+			<name>large</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+	</tag>
+	<tag>
+		<name>availability-label</name>
+		<tag-class>com.liferay.commerce.frontend.taglib.servlet.taglib.AvailabilityLabelTag</tag-class>
+		<body-content>empty</body-content>
+		<attribute>
+			<name>CPCatalogEntry</name>
 			<required>true</required>
 			<rtexprvalue>true</rtexprvalue>
 		</attribute>
 		<attribute>
-			<name>textContent</name>
+			<name>namespace</name>
 			<required>false</required>
 			<rtexprvalue>true</rtexprvalue>
 		</attribute>
@@ -71,22 +96,17 @@
 		<body-content>empty</body-content>
 	</tag>
 	<tag>
-		<name>commerce-quantity-selector</name>
-		<tag-class>com.liferay.commerce.frontend.taglib.servlet.taglib.QuantitySelectorTag</tag-class>
-		<body-content>empty</body-content>
-	</tag>
-	<tag>
 		<name>compare-checkbox</name>
 		<tag-class>com.liferay.commerce.frontend.taglib.servlet.taglib.CompareCheckboxTag</tag-class>
 		<body-content>empty</body-content>
 		<attribute>
-			<name>componentId</name>
+			<name>CPCatalogEntry</name>
 			<required>true</required>
 			<rtexprvalue>true</rtexprvalue>
 		</attribute>
 		<attribute>
-			<name>CPDefinitionId</name>
-			<required>true</required>
+			<name>label</name>
+			<required>false</required>
 			<rtexprvalue>true</rtexprvalue>
 		</attribute>
 	</tag>
@@ -108,6 +128,11 @@
 		<attribute>
 			<name>CPDefinitionId</name>
 			<required>true</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<name>namespace</name>
+			<required>false</required>
 			<rtexprvalue>true</rtexprvalue>
 		</attribute>
 	</tag>
@@ -430,32 +455,17 @@
 		<tag-class>com.liferay.commerce.frontend.taglib.servlet.taglib.PriceTag</tag-class>
 		<body-content>empty</body-content>
 		<attribute>
-			<name>additionalDiscountClasses</name>
+			<name>compact</name>
 			<required>false</required>
 			<rtexprvalue>true</rtexprvalue>
 		</attribute>
 		<attribute>
-			<name>additionalPriceClasses</name>
-			<required>false</required>
-			<rtexprvalue>true</rtexprvalue>
-		</attribute>
-		<attribute>
-			<name>additionalPromoPriceClasses</name>
-			<required>false</required>
-			<rtexprvalue>true</rtexprvalue>
-		</attribute>
-		<attribute>
-			<name>CPDefinitionId</name>
-			<required>false</required>
-			<rtexprvalue>true</rtexprvalue>
-		</attribute>
-		<attribute>
-			<name>CPInstanceId</name>
+			<name>CPCatalogEntry</name>
 			<required>true</required>
 			<rtexprvalue>true</rtexprvalue>
 		</attribute>
 		<attribute>
-			<name>id</name>
+			<name>namespace</name>
 			<required>false</required>
 			<rtexprvalue>true</rtexprvalue>
 		</attribute>
@@ -503,41 +513,6 @@
 		</attribute>
 	</tag>
 	<tag>
-		<name>side-panel-content</name>
-		<tag-class>com.liferay.commerce.frontend.taglib.servlet.taglib.SidePanelContentTag</tag-class>
-		<body-content>JSP</body-content>
-		<attribute>
-			<name>screenNavigatorKey</name>
-			<required>false</required>
-			<rtexprvalue>true</rtexprvalue>
-		</attribute>
-		<attribute>
-			<name>screenNavigatorModelBean</name>
-			<required>false</required>
-			<rtexprvalue>true</rtexprvalue>
-		</attribute>
-		<attribute>
-			<name>screenNavigatorPortletURL</name>
-			<required>false</required>
-			<rtexprvalue>true</rtexprvalue>
-		</attribute>
-		<attribute>
-			<name>showCloseButton</name>
-			<required>false</required>
-			<rtexprvalue>true</rtexprvalue>
-		</attribute>
-		<attribute>
-			<name>sidePanelId</name>
-			<required>false</required>
-			<rtexprvalue>true</rtexprvalue>
-		</attribute>
-		<attribute>
-			<name>title</name>
-			<required>false</required>
-			<rtexprvalue>true</rtexprvalue>
-		</attribute>
-	</tag>
-	<tag>
 		<name>step-tracker</name>
 		<tag-class>com.liferay.commerce.frontend.taglib.servlet.taglib.StepTrackerTag</tag-class>
 		<body-content>empty</body-content>
@@ -548,36 +523,6 @@
 		</attribute>
 		<attribute>
 			<name>steps</name>
-			<required>true</required>
-			<rtexprvalue>true</rtexprvalue>
-		</attribute>
-	</tag>
-	<tag>
-		<name>user-invitation-modal</name>
-		<tag-class>com.liferay.commerce.frontend.taglib.servlet.taglib.UserInvitationModalTag</tag-class>
-		<body-content>empty</body-content>
-		<attribute>
-			<name>componentId</name>
-			<required>true</required>
-			<rtexprvalue>true</rtexprvalue>
-		</attribute>
-	</tag>
-	<tag>
-		<name>user-roles-modal</name>
-		<tag-class>com.liferay.commerce.frontend.taglib.servlet.taglib.UserRolesModalTag</tag-class>
-		<body-content>empty</body-content>
-		<attribute>
-			<name>commerceAccountId</name>
-			<required>true</required>
-			<rtexprvalue>true</rtexprvalue>
-		</attribute>
-		<attribute>
-			<name>componentId</name>
-			<required>true</required>
-			<rtexprvalue>true</rtexprvalue>
-		</attribute>
-		<attribute>
-			<name>userId</name>
 			<required>true</required>
 			<rtexprvalue>true</rtexprvalue>
 		</attribute>

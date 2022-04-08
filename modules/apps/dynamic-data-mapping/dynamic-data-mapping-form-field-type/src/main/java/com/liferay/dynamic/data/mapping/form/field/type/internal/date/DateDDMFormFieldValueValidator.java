@@ -16,6 +16,7 @@ package com.liferay.dynamic.data.mapping.form.field.type.internal.date;
 
 import com.liferay.dynamic.data.mapping.form.field.type.DDMFormFieldValueValidationException;
 import com.liferay.dynamic.data.mapping.form.field.type.DDMFormFieldValueValidator;
+import com.liferay.dynamic.data.mapping.form.field.type.constants.DDMFormFieldTypeConstants;
 import com.liferay.dynamic.data.mapping.model.DDMFormField;
 import com.liferay.dynamic.data.mapping.model.Value;
 import com.liferay.portal.kernel.json.JSONFactory;
@@ -36,7 +37,8 @@ import org.osgi.service.component.annotations.Reference;
  * @author Pedro Queiroz
  */
 @Component(
-	immediate = true, property = "ddm.form.field.type.name=date",
+	immediate = true,
+	property = "ddm.form.field.type.name=" + DDMFormFieldTypeConstants.DATE,
 	service = DDMFormFieldValueValidator.class
 )
 public class DateDDMFormFieldValueValidator
@@ -47,13 +49,16 @@ public class DateDDMFormFieldValueValidator
 		throws DDMFormFieldValueValidationException {
 
 		for (Locale availableLocale : value.getAvailableLocales()) {
-			validateDateValue(
+			_validateDateValue(
 				ddmFormField, availableLocale,
 				value.getString(availableLocale));
 		}
 	}
 
-	protected void validateDateValue(
+	@Reference
+	protected JSONFactory jsonFactory;
+
+	private void _validateDateValue(
 			DDMFormField ddmFormField, Locale locale, String valueString)
 		throws DDMFormFieldValueValidationException {
 
@@ -63,7 +68,7 @@ public class DateDDMFormFieldValueValidator
 			}
 			catch (ParseException parseException) {
 				if (_log.isDebugEnabled()) {
-					_log.debug(parseException, parseException);
+					_log.debug(parseException);
 				}
 
 				throw new DDMFormFieldValueValidationException(
@@ -72,16 +77,7 @@ public class DateDDMFormFieldValueValidator
 						ddmFormField.getName()));
 			}
 		}
-		else if (ddmFormField.isRequired()) {
-			throw new DDMFormFieldValueValidationException(
-				String.format(
-					"Date input cannot be null \"%s\"",
-					ddmFormField.getName()));
-		}
 	}
-
-	@Reference
-	protected JSONFactory jsonFactory;
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		DateDDMFormFieldValueValidator.class);

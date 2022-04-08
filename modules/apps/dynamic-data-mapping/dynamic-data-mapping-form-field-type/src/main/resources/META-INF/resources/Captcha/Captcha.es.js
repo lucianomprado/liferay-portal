@@ -19,7 +19,7 @@ import {FieldBase} from '../FieldBase/ReactFieldBase.es';
 
 const Captcha = ({html, name, ...otherProps}) => {
 	// eslint-disable-next-line react-hooks/exhaustive-deps
-	const contentMemoized = useMemo(() => html.content, []);
+	const contentMemoized = useMemo(() => html, []);
 	const elRef = useRef(null);
 
 	useEffect(() => {
@@ -51,11 +51,12 @@ const Captcha = ({html, name, ...otherProps}) => {
 	}, [elRef, name]);
 
 	return (
-		<FieldBase {...otherProps} name={name} visible={true}>
+		<FieldBase {...otherProps} hideEditedFlag name={name} visible={true}>
 			<div
 				dangerouslySetInnerHTML={{__html: contentMemoized}}
 				ref={elRef}
 			/>
+
 			<input id={name} type="hidden" />
 		</FieldBase>
 	);

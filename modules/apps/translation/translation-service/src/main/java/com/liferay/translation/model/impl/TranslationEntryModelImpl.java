@@ -30,26 +30,26 @@ import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.translation.model.TranslationEntry;
 import com.liferay.translation.model.TranslationEntryModel;
-import com.liferay.translation.model.TranslationEntrySoap;
 
 import java.io.Serializable;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
 
+import java.sql.Blob;
 import java.sql.Types;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
@@ -76,15 +76,16 @@ public class TranslationEntryModelImpl
 	public static final String TABLE_NAME = "TranslationEntry";
 
 	public static final Object[][] TABLE_COLUMNS = {
-		{"mvccVersion", Types.BIGINT}, {"uuid_", Types.VARCHAR},
-		{"translationEntryId", Types.BIGINT}, {"groupId", Types.BIGINT},
-		{"companyId", Types.BIGINT}, {"userId", Types.BIGINT},
-		{"userName", Types.VARCHAR}, {"createDate", Types.TIMESTAMP},
-		{"modifiedDate", Types.TIMESTAMP}, {"classNameId", Types.BIGINT},
-		{"classPK", Types.BIGINT}, {"content", Types.CLOB},
-		{"contentType", Types.VARCHAR}, {"languageId", Types.VARCHAR},
-		{"status", Types.INTEGER}, {"statusByUserId", Types.BIGINT},
-		{"statusByUserName", Types.VARCHAR}, {"statusDate", Types.TIMESTAMP}
+		{"mvccVersion", Types.BIGINT}, {"ctCollectionId", Types.BIGINT},
+		{"uuid_", Types.VARCHAR}, {"translationEntryId", Types.BIGINT},
+		{"groupId", Types.BIGINT}, {"companyId", Types.BIGINT},
+		{"userId", Types.BIGINT}, {"userName", Types.VARCHAR},
+		{"createDate", Types.TIMESTAMP}, {"modifiedDate", Types.TIMESTAMP},
+		{"classNameId", Types.BIGINT}, {"classPK", Types.BIGINT},
+		{"content", Types.CLOB}, {"contentType", Types.VARCHAR},
+		{"languageId", Types.VARCHAR}, {"status", Types.INTEGER},
+		{"statusByUserId", Types.BIGINT}, {"statusByUserName", Types.VARCHAR},
+		{"statusDate", Types.TIMESTAMP}
 	};
 
 	public static final Map<String, Integer> TABLE_COLUMNS_MAP =
@@ -92,6 +93,7 @@ public class TranslationEntryModelImpl
 
 	static {
 		TABLE_COLUMNS_MAP.put("mvccVersion", Types.BIGINT);
+		TABLE_COLUMNS_MAP.put("ctCollectionId", Types.BIGINT);
 		TABLE_COLUMNS_MAP.put("uuid_", Types.VARCHAR);
 		TABLE_COLUMNS_MAP.put("translationEntryId", Types.BIGINT);
 		TABLE_COLUMNS_MAP.put("groupId", Types.BIGINT);
@@ -112,7 +114,7 @@ public class TranslationEntryModelImpl
 	}
 
 	public static final String TABLE_SQL_CREATE =
-		"create table TranslationEntry (mvccVersion LONG default 0 not null,uuid_ VARCHAR(75) null,translationEntryId LONG not null primary key,groupId LONG,companyId LONG,userId LONG,userName VARCHAR(75) null,createDate DATE null,modifiedDate DATE null,classNameId LONG,classPK LONG,content TEXT null,contentType VARCHAR(75) null,languageId VARCHAR(75) null,status INTEGER,statusByUserId LONG,statusByUserName VARCHAR(75) null,statusDate DATE null)";
+		"create table TranslationEntry (mvccVersion LONG default 0 not null,ctCollectionId LONG default 0 not null,uuid_ VARCHAR(75) null,translationEntryId LONG not null,groupId LONG,companyId LONG,userId LONG,userName VARCHAR(75) null,createDate DATE null,modifiedDate DATE null,classNameId LONG,classPK LONG,content TEXT null,contentType VARCHAR(75) null,languageId VARCHAR(75) null,status INTEGER,statusByUserId LONG,statusByUserName VARCHAR(75) null,statusDate DATE null,primary key (translationEntryId, ctCollectionId))";
 
 	public static final String TABLE_SQL_DROP = "drop table TranslationEntry";
 
@@ -129,44 +131,44 @@ public class TranslationEntryModelImpl
 	public static final String TX_MANAGER = "liferayTransactionManager";
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long CLASSNAMEID_COLUMN_BITMASK = 1L;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long CLASSPK_COLUMN_BITMASK = 2L;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long COMPANYID_COLUMN_BITMASK = 4L;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long GROUPID_COLUMN_BITMASK = 8L;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long LANGUAGEID_COLUMN_BITMASK = 16L;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long UUID_COLUMN_BITMASK = 32L;
 
 	/**
 	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-	 *		#getColumnBitmask(String)
+	 *		#getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long TRANSLATIONENTRYID_COLUMN_BITMASK = 64L;
@@ -183,68 +185,6 @@ public class TranslationEntryModelImpl
 	 */
 	@Deprecated
 	public static void setFinderCacheEnabled(boolean finderCacheEnabled) {
-	}
-
-	/**
-	 * Converts the soap model instance into a normal model instance.
-	 *
-	 * @param soapModel the soap model instance to convert
-	 * @return the normal model instance
-	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
-	 */
-	@Deprecated
-	public static TranslationEntry toModel(TranslationEntrySoap soapModel) {
-		if (soapModel == null) {
-			return null;
-		}
-
-		TranslationEntry model = new TranslationEntryImpl();
-
-		model.setMvccVersion(soapModel.getMvccVersion());
-		model.setUuid(soapModel.getUuid());
-		model.setTranslationEntryId(soapModel.getTranslationEntryId());
-		model.setGroupId(soapModel.getGroupId());
-		model.setCompanyId(soapModel.getCompanyId());
-		model.setUserId(soapModel.getUserId());
-		model.setUserName(soapModel.getUserName());
-		model.setCreateDate(soapModel.getCreateDate());
-		model.setModifiedDate(soapModel.getModifiedDate());
-		model.setClassNameId(soapModel.getClassNameId());
-		model.setClassPK(soapModel.getClassPK());
-		model.setContent(soapModel.getContent());
-		model.setContentType(soapModel.getContentType());
-		model.setLanguageId(soapModel.getLanguageId());
-		model.setStatus(soapModel.getStatus());
-		model.setStatusByUserId(soapModel.getStatusByUserId());
-		model.setStatusByUserName(soapModel.getStatusByUserName());
-		model.setStatusDate(soapModel.getStatusDate());
-
-		return model;
-	}
-
-	/**
-	 * Converts the soap model instances into normal model instances.
-	 *
-	 * @param soapModels the soap model instances to convert
-	 * @return the normal model instances
-	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
-	 */
-	@Deprecated
-	public static List<TranslationEntry> toModels(
-		TranslationEntrySoap[] soapModels) {
-
-		if (soapModels == null) {
-			return null;
-		}
-
-		List<TranslationEntry> models = new ArrayList<TranslationEntry>(
-			soapModels.length);
-
-		for (TranslationEntrySoap soapModel : soapModels) {
-			models.add(toModel(soapModel));
-		}
-
-		return models;
 	}
 
 	public TranslationEntryModelImpl() {
@@ -379,6 +319,12 @@ public class TranslationEntryModelImpl
 			"mvccVersion",
 			(BiConsumer<TranslationEntry, Long>)
 				TranslationEntry::setMvccVersion);
+		attributeGetterFunctions.put(
+			"ctCollectionId", TranslationEntry::getCtCollectionId);
+		attributeSetterBiConsumers.put(
+			"ctCollectionId",
+			(BiConsumer<TranslationEntry, Long>)
+				TranslationEntry::setCtCollectionId);
 		attributeGetterFunctions.put("uuid", TranslationEntry::getUuid);
 		attributeSetterBiConsumers.put(
 			"uuid",
@@ -487,6 +433,21 @@ public class TranslationEntryModelImpl
 		}
 
 		_mvccVersion = mvccVersion;
+	}
+
+	@JSON
+	@Override
+	public long getCtCollectionId() {
+		return _ctCollectionId;
+	}
+
+	@Override
+	public void setCtCollectionId(long ctCollectionId) {
+		if (_columnOriginalValues == Collections.EMPTY_MAP) {
+			_setColumnOriginalValues();
+		}
+
+		_ctCollectionId = ctCollectionId;
 	}
 
 	@JSON
@@ -989,7 +950,9 @@ public class TranslationEntryModelImpl
 		for (Map.Entry<String, Object> entry :
 				_columnOriginalValues.entrySet()) {
 
-			if (entry.getValue() != getColumnValue(entry.getKey())) {
+			if (!Objects.equals(
+					entry.getValue(), getColumnValue(entry.getKey()))) {
+
 				_columnBitmask |= _columnBitmasks.get(entry.getKey());
 			}
 		}
@@ -1030,6 +993,7 @@ public class TranslationEntryModelImpl
 		TranslationEntryImpl translationEntryImpl = new TranslationEntryImpl();
 
 		translationEntryImpl.setMvccVersion(getMvccVersion());
+		translationEntryImpl.setCtCollectionId(getCtCollectionId());
 		translationEntryImpl.setUuid(getUuid());
 		translationEntryImpl.setTranslationEntryId(getTranslationEntryId());
 		translationEntryImpl.setGroupId(getGroupId());
@@ -1049,6 +1013,52 @@ public class TranslationEntryModelImpl
 		translationEntryImpl.setStatusDate(getStatusDate());
 
 		translationEntryImpl.resetOriginalValues();
+
+		return translationEntryImpl;
+	}
+
+	@Override
+	public TranslationEntry cloneWithOriginalValues() {
+		TranslationEntryImpl translationEntryImpl = new TranslationEntryImpl();
+
+		translationEntryImpl.setMvccVersion(
+			this.<Long>getColumnOriginalValue("mvccVersion"));
+		translationEntryImpl.setCtCollectionId(
+			this.<Long>getColumnOriginalValue("ctCollectionId"));
+		translationEntryImpl.setUuid(
+			this.<String>getColumnOriginalValue("uuid_"));
+		translationEntryImpl.setTranslationEntryId(
+			this.<Long>getColumnOriginalValue("translationEntryId"));
+		translationEntryImpl.setGroupId(
+			this.<Long>getColumnOriginalValue("groupId"));
+		translationEntryImpl.setCompanyId(
+			this.<Long>getColumnOriginalValue("companyId"));
+		translationEntryImpl.setUserId(
+			this.<Long>getColumnOriginalValue("userId"));
+		translationEntryImpl.setUserName(
+			this.<String>getColumnOriginalValue("userName"));
+		translationEntryImpl.setCreateDate(
+			this.<Date>getColumnOriginalValue("createDate"));
+		translationEntryImpl.setModifiedDate(
+			this.<Date>getColumnOriginalValue("modifiedDate"));
+		translationEntryImpl.setClassNameId(
+			this.<Long>getColumnOriginalValue("classNameId"));
+		translationEntryImpl.setClassPK(
+			this.<Long>getColumnOriginalValue("classPK"));
+		translationEntryImpl.setContent(
+			this.<String>getColumnOriginalValue("content"));
+		translationEntryImpl.setContentType(
+			this.<String>getColumnOriginalValue("contentType"));
+		translationEntryImpl.setLanguageId(
+			this.<String>getColumnOriginalValue("languageId"));
+		translationEntryImpl.setStatus(
+			this.<Integer>getColumnOriginalValue("status"));
+		translationEntryImpl.setStatusByUserId(
+			this.<Long>getColumnOriginalValue("statusByUserId"));
+		translationEntryImpl.setStatusByUserName(
+			this.<String>getColumnOriginalValue("statusByUserName"));
+		translationEntryImpl.setStatusDate(
+			this.<Date>getColumnOriginalValue("statusDate"));
 
 		return translationEntryImpl;
 	}
@@ -1128,6 +1138,8 @@ public class TranslationEntryModelImpl
 			new TranslationEntryCacheModel();
 
 		translationEntryCacheModel.mvccVersion = getMvccVersion();
+
+		translationEntryCacheModel.ctCollectionId = getCtCollectionId();
 
 		translationEntryCacheModel.uuid = getUuid();
 
@@ -1229,7 +1241,7 @@ public class TranslationEntryModelImpl
 			attributeGetterFunctions = getAttributeGetterFunctions();
 
 		StringBundler sb = new StringBundler(
-			(4 * attributeGetterFunctions.size()) + 2);
+			(5 * attributeGetterFunctions.size()) + 2);
 
 		sb.append("{");
 
@@ -1240,9 +1252,27 @@ public class TranslationEntryModelImpl
 			Function<TranslationEntry, Object> attributeGetterFunction =
 				entry.getValue();
 
+			sb.append("\"");
 			sb.append(attributeName);
-			sb.append("=");
-			sb.append(attributeGetterFunction.apply((TranslationEntry)this));
+			sb.append("\": ");
+
+			Object value = attributeGetterFunction.apply(
+				(TranslationEntry)this);
+
+			if (value == null) {
+				sb.append("null");
+			}
+			else if (value instanceof Blob || value instanceof Date ||
+					 value instanceof Map || value instanceof String) {
+
+				sb.append(
+					"\"" + StringUtil.replace(value.toString(), "\"", "'") +
+						"\"");
+			}
+			else {
+				sb.append(value);
+			}
+
 			sb.append(", ");
 		}
 
@@ -1294,6 +1324,7 @@ public class TranslationEntryModelImpl
 	}
 
 	private long _mvccVersion;
+	private long _ctCollectionId;
 	private String _uuid;
 	private long _translationEntryId;
 	private long _groupId;
@@ -1343,6 +1374,7 @@ public class TranslationEntryModelImpl
 		_columnOriginalValues = new HashMap<String, Object>();
 
 		_columnOriginalValues.put("mvccVersion", _mvccVersion);
+		_columnOriginalValues.put("ctCollectionId", _ctCollectionId);
 		_columnOriginalValues.put("uuid_", _uuid);
 		_columnOriginalValues.put("translationEntryId", _translationEntryId);
 		_columnOriginalValues.put("groupId", _groupId);
@@ -1385,39 +1417,41 @@ public class TranslationEntryModelImpl
 
 		columnBitmasks.put("mvccVersion", 1L);
 
-		columnBitmasks.put("uuid_", 2L);
+		columnBitmasks.put("ctCollectionId", 2L);
 
-		columnBitmasks.put("translationEntryId", 4L);
+		columnBitmasks.put("uuid_", 4L);
 
-		columnBitmasks.put("groupId", 8L);
+		columnBitmasks.put("translationEntryId", 8L);
 
-		columnBitmasks.put("companyId", 16L);
+		columnBitmasks.put("groupId", 16L);
 
-		columnBitmasks.put("userId", 32L);
+		columnBitmasks.put("companyId", 32L);
 
-		columnBitmasks.put("userName", 64L);
+		columnBitmasks.put("userId", 64L);
 
-		columnBitmasks.put("createDate", 128L);
+		columnBitmasks.put("userName", 128L);
 
-		columnBitmasks.put("modifiedDate", 256L);
+		columnBitmasks.put("createDate", 256L);
 
-		columnBitmasks.put("classNameId", 512L);
+		columnBitmasks.put("modifiedDate", 512L);
 
-		columnBitmasks.put("classPK", 1024L);
+		columnBitmasks.put("classNameId", 1024L);
 
-		columnBitmasks.put("content", 2048L);
+		columnBitmasks.put("classPK", 2048L);
 
-		columnBitmasks.put("contentType", 4096L);
+		columnBitmasks.put("content", 4096L);
 
-		columnBitmasks.put("languageId", 8192L);
+		columnBitmasks.put("contentType", 8192L);
 
-		columnBitmasks.put("status", 16384L);
+		columnBitmasks.put("languageId", 16384L);
 
-		columnBitmasks.put("statusByUserId", 32768L);
+		columnBitmasks.put("status", 32768L);
 
-		columnBitmasks.put("statusByUserName", 65536L);
+		columnBitmasks.put("statusByUserId", 65536L);
 
-		columnBitmasks.put("statusDate", 131072L);
+		columnBitmasks.put("statusByUserName", 131072L);
+
+		columnBitmasks.put("statusDate", 262144L);
 
 		_columnBitmasks = Collections.unmodifiableMap(columnBitmasks);
 	}

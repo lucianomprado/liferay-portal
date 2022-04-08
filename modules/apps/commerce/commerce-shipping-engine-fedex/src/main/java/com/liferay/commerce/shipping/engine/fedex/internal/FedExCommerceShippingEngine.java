@@ -22,11 +22,11 @@ import com.liferay.commerce.model.CommerceOrder;
 import com.liferay.commerce.model.CommerceShippingEngine;
 import com.liferay.commerce.model.CommerceShippingMethod;
 import com.liferay.commerce.model.CommerceShippingOption;
-import com.liferay.commerce.price.CommerceProductPriceCalculation;
 import com.liferay.commerce.product.service.CPMeasurementUnitLocalService;
+import com.liferay.commerce.product.service.CommerceChannelService;
 import com.liferay.commerce.service.CommerceAddressRestrictionLocalService;
 import com.liferay.commerce.service.CommerceShippingMethodLocalService;
-import com.liferay.commerce.shipping.engine.fedex.internal.util.FedExCommerceShippingOptionHelper;
+import com.liferay.commerce.shipping.engine.fedex.internal.helper.FedExCommerceShippingOptionHelper;
 import com.liferay.commerce.shipping.origin.locator.CommerceShippingOriginLocator;
 import com.liferay.commerce.util.CommerceShippingHelper;
 import com.liferay.portal.kernel.language.LanguageUtil;
@@ -74,7 +74,7 @@ public class FedExCommerceShippingEngine implements CommerceShippingEngine {
 				_commerceAddressRestrictionLocalService.
 					isCommerceShippingMethodRestricted(
 						_getCommerceShippingMethodId(commerceOrder),
-						commerceAddress.getCommerceCountryId());
+						commerceAddress.getCountryId());
 
 			if (restricted) {
 				return Collections.emptyList();
@@ -83,10 +83,9 @@ public class FedExCommerceShippingEngine implements CommerceShippingEngine {
 			FedExCommerceShippingOptionHelper
 				fedExCommerceShippingOptionHelper =
 					new FedExCommerceShippingOptionHelper(
-						commerceContext, commerceOrder,
-						_commerceCurrencyLocalService,
-						_commerceProductPriceCalculation,
-						_commerceShippingHelper, _commerceShippingOriginLocator,
+						_commerceChannelService, commerceContext, commerceOrder,
+						_commerceCurrencyLocalService, _commerceShippingHelper,
+						_commerceShippingOriginLocator,
 						_cpMeasurementUnitLocalService, _configurationProvider,
 						_getResourceBundle(locale));
 
@@ -105,16 +104,13 @@ public class FedExCommerceShippingEngine implements CommerceShippingEngine {
 
 	@Override
 	public String getDescription(Locale locale) {
-		ResourceBundle resourceBundle = _getResourceBundle(locale);
-
-		return LanguageUtil.get(resourceBundle, "fedex-description");
+		return LanguageUtil.get(
+			_getResourceBundle(locale), "fedex-description");
 	}
 
 	@Override
 	public String getName(Locale locale) {
-		ResourceBundle resourceBundle = _getResourceBundle(locale);
-
-		return LanguageUtil.get(resourceBundle, "fedex");
+		return LanguageUtil.get(_getResourceBundle(locale), "fedex");
 	}
 
 	private long _getCommerceShippingMethodId(CommerceOrder commerceOrder) {
@@ -139,10 +135,10 @@ public class FedExCommerceShippingEngine implements CommerceShippingEngine {
 		_commerceAddressRestrictionLocalService;
 
 	@Reference
-	private CommerceCurrencyLocalService _commerceCurrencyLocalService;
+	private CommerceChannelService _commerceChannelService;
 
 	@Reference
-	private CommerceProductPriceCalculation _commerceProductPriceCalculation;
+	private CommerceCurrencyLocalService _commerceCurrencyLocalService;
 
 	@Reference
 	private CommerceShippingHelper _commerceShippingHelper;

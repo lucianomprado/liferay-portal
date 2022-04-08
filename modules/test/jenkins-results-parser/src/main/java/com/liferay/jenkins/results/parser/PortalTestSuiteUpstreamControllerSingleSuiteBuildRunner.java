@@ -35,7 +35,7 @@ public class PortalTestSuiteUpstreamControllerSingleSuiteBuildRunner
 	public void run() {
 		retirePreviousBuilds();
 
-		if (_allowConcurrentBuilds()) {
+		if (_allowConcurrentBuilds() || _expirePreviousBuild()) {
 			super.run();
 
 			return;
@@ -152,9 +152,9 @@ public class PortalTestSuiteUpstreamControllerSingleSuiteBuildRunner
 			invocationParameters.put(
 				"TESTRAY_BUILD_NAME", buildData.getTestrayBuildName());
 			invocationParameters.put(
-				"TESTRAY_BUILD_TYPE", buildData.getTestrayBuildType());
-			invocationParameters.put(
 				"TESTRAY_PROJECT_NAME", testrayProjectName);
+			invocationParameters.put(
+				"TESTRAY_ROUTINE_NAME", buildData.getTestrayRoutineName());
 		}
 
 		invocationParameters.putAll(buildData.getBuildParameters());
@@ -224,6 +224,81 @@ public class PortalTestSuiteUpstreamControllerSingleSuiteBuildRunner
 		}
 
 		return true;
+	}
+
+	private boolean _expirePreviousBuild() {
+		for (JSONObject previousBuildJSONObject :
+				getPreviousBuildJSONObjects()) {
+
+			String description = previousBuildJSONObject.optString(
+				"description", "");
+
+			if (!description.contains("IN PROGRESS") &&
+				!description.contains("IN QUEUE")) {
+
+				continue;
+			}
+
+			long timestamp = previousBuildJSONObject.optLong("timestamp", 0);
+
+			if (timestamp == 0) {
+				continue;
+			}
+
+			long inProgressBuildDuration =
+				JenkinsResultsParserUtil.getCurrentTimeMillis() - timestamp;
+
+			System.out.println(
+				JenkinsResultsParserUtil.combine(
+					"In progress build started ",
+					JenkinsResultsParserUtil.toDurationString(
+						inProgressBuildDuration),
+					" ago"));
+
+			if (inProgressBuildDuration < _getControllerBuildTimeout()) {
+				return false;
+			}
+
+			Matcher matcher = _buildURLPattern.matcher(
+				previousBuildJSONObject.getString("url"));
+
+			if (!matcher.find()) {
+				return false;
+			}
+
+			description = description.replace("IN PROGRESS", "EXPIRE");
+			description = description.replace("IN QUEUE", "EXPIRE");
+
+			JenkinsResultsParserUtil.updateBuildDescription(
+				description, previousBuildJSONObject.getInt("number"),
+				matcher.group("jobName"), matcher.group("masterHostname"));
+
+			return true;
+		}
+
+		return false;
+	}
+
+	private long _getControllerBuildTimeout() {
+		try {
+			S buildData = getBuildData();
+
+			String controllerBuildTimeout =
+				JenkinsResultsParserUtil.getProperty(
+					JenkinsResultsParserUtil.getBuildProperties(),
+					"controller.build.timeout", buildData.getJobName());
+
+			if (!JenkinsResultsParserUtil.isNullOrEmpty(
+					controllerBuildTimeout)) {
+
+				return Long.parseLong(controllerBuildTimeout) * 1000;
+			}
+
+			return _CONTROLLER_BUILD_TIMEOUT_DEFAULT;
+		}
+		catch (IOException ioException) {
+			throw new RuntimeException(ioException);
+		}
 	}
 
 	private String _getPortalBranchAbbreviatedSHA() {
@@ -313,7 +388,8 @@ public class PortalTestSuiteUpstreamControllerSingleSuiteBuildRunner
 				continue;
 			}
 
-			Matcher buildURLMatcher = _buildURLPattern.matcher(description);
+			Matcher buildURLMatcher = _buildDescriptionPattern.matcher(
+				description);
 
 			if (!buildURLMatcher.find()) {
 				continue;
@@ -385,8 +461,14 @@ public class PortalTestSuiteUpstreamControllerSingleSuiteBuildRunner
 		return false;
 	}
 
-	private static final Pattern _buildURLPattern = Pattern.compile(
+	private static final Integer _CONTROLLER_BUILD_TIMEOUT_DEFAULT =
+		1000 * 60 * 60 * 24;
+
+	private static final Pattern _buildDescriptionPattern = Pattern.compile(
 		"<a href=\"(?<buildURL>[^\"]+)\">Build URL</a>");
+	private static final Pattern _buildURLPattern = Pattern.compile(
+		"https://(?<masterHostname>test-\\d+-\\d+)\\.?.*/job/" +
+			"(?<jobName>[^/]+)/(?<buildNumber>\\d+)/?");
 	private static final Pattern _portalBranchSHAPattern = Pattern.compile(
 		"<strong>Git ID:</strong> <a href=\"https://github.com/[^/]+/[^/]+/" +
 			"commit/(?<branchSHA>[0-9a-f]{40})\">[0-9a-f]{7}</a>");

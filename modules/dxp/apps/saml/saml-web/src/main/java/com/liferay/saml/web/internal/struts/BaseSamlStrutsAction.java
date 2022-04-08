@@ -16,8 +16,10 @@ package com.liferay.saml.web.internal.struts;
 
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.resource.bundle.ResourceBundleLoaderUtil;
 import com.liferay.portal.kernel.servlet.SessionErrors;
 import com.liferay.portal.kernel.struts.StrutsAction;
+import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.saml.runtime.configuration.SamlProviderConfigurationHelper;
 import com.liferay.saml.runtime.exception.StatusException;
 import com.liferay.saml.util.JspUtil;
@@ -40,6 +42,10 @@ public abstract class BaseSamlStrutsAction implements StrutsAction {
 			return "/common/referer_js.jsp";
 		}
 
+		httpServletRequest.setAttribute(
+			WebKeys.RESOURCE_BUNDLE_LOADER,
+			ResourceBundleLoaderUtil.getPortalResourceBundleLoader());
+
 		Thread currentThread = Thread.currentThread();
 
 		ClassLoader contextClassLoader = currentThread.getContextClassLoader();
@@ -53,10 +59,10 @@ public abstract class BaseSamlStrutsAction implements StrutsAction {
 		}
 		catch (Exception exception) {
 			if (_log.isDebugEnabled()) {
-				_log.debug(exception, exception);
+				_log.debug(exception);
 			}
 			else {
-				_log.error(exception.getMessage());
+				_log.error(exception);
 			}
 
 			Class<?> clazz = exception.getClass();

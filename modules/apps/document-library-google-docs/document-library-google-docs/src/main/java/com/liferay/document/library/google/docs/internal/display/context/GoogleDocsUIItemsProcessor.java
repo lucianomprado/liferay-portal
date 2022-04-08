@@ -15,7 +15,7 @@
 package com.liferay.document.library.google.docs.internal.display.context;
 
 import com.liferay.document.library.display.context.DLUIItemKeys;
-import com.liferay.document.library.google.docs.internal.util.GoogleDocsMetadataHelper;
+import com.liferay.document.library.google.docs.internal.helper.GoogleDocsMetadataHelper;
 import com.liferay.document.library.google.docs.internal.util.constants.GoogleDocsConstants;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.servlet.taglib.ui.MenuItem;
@@ -99,7 +99,7 @@ public class GoogleDocsUIItemsProcessor {
 			"content.Language", themeDisplay.getLocale(), getClass());
 
 		String message = LanguageUtil.get(
-			resourceBundle, "edit-in-google-docs");
+			resourceBundle, "edit-in-google-drive");
 
 		urlUIItem.setLabel(message);
 
@@ -129,6 +129,7 @@ public class GoogleDocsUIItemsProcessor {
 		_removeUIItem(uiItems, DLUIItemKeys.CHECKOUT);
 		_removeUIItem(uiItems, DLUIItemKeys.DOWNLOAD);
 		_removeUIItem(uiItems, DLUIItemKeys.OPEN_IN_MS_OFFICE);
+		_removeUIItem(uiItems, "#edit-in-google-drive");
 	}
 
 	private final GoogleDocsMetadataHelper _googleDocsMetadataHelper;

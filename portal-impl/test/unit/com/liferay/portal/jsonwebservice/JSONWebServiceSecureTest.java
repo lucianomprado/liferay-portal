@@ -17,19 +17,22 @@ package com.liferay.portal.jsonwebservice;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.jsonwebservice.action.JSONWebServiceInvokerAction;
 import com.liferay.portal.kernel.jsonwebservice.JSONWebServiceAction;
+import com.liferay.portal.kernel.module.util.SystemBundleUtil;
+import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
-import com.liferay.registry.Registry;
-import com.liferay.registry.RegistryUtil;
-import com.liferay.registry.ServiceRegistration;
-
-import java.util.Collections;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import jodd.typeconverter.TypeConversionException;
 
 import junit.framework.TestCase;
 
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
+
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceRegistration;
 
 import org.springframework.mock.web.MockHttpServletRequest;
 
@@ -37,6 +40,11 @@ import org.springframework.mock.web.MockHttpServletRequest;
  * @author Igor Spasic
  */
 public class JSONWebServiceSecureTest extends BaseJSONWebServiceTestCase {
+
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
 
 	@BeforeClass
 	public static void setUpClass() throws Exception {
@@ -67,31 +75,25 @@ public class JSONWebServiceSecureTest extends BaseJSONWebServiceTestCase {
 		MockHttpServletRequest mockHttpServletRequest = createHttpRequest(
 			"/open/run2");
 
-		StringBundler sb = new StringBundler(16);
-
-		sb.append("{\"class\":");
-		sb.append("\"com.liferay.portal.kernel.dao.orm.EntityCacheUtil\",");
-
-		sb.append("\"entityCache\":{\"class\":");
-		sb.append("\"com.liferay.portal.dao.orm.common.EntityCacheImpl\",");
-
-		sb.append("\"multiVMPool\":{\"class\":");
-		sb.append("\"com.liferay.portal.cache.MultiVMPoolImpl\",");
-
-		sb.append("\"portalCacheManager\":{\"class\":");
-		sb.append("\"com.liferay.portal.cache.memcached.");
-		sb.append("MemcachePortalCacheManager\",\"timeout\":60,\"");
-		sb.append("timeoutTimeUnit\":\"SECONDS\",");
-
-		sb.append("\"memcachedClientPool\":{\"class\":");
-		sb.append("\"com.liferay.portal.cache.memcached.");
-		sb.append("DefaultMemcachedClientFactory\",");
-
-		sb.append("\"connectionFactory\":{\"class\":");
-		sb.append("\"net.spy.memcached.BinaryConnectionFactory\"},");
-		sb.append("\"addresses\":[\"remoteattackerhost:11211\"]}}}}}");
-
-		mockHttpServletRequest.setParameter("bytes", sb.toString());
+		mockHttpServletRequest.setParameter(
+			"bytes",
+			StringBundler.concat(
+				"{\"class\":",
+				"\"com.liferay.portal.kernel.dao.orm.EntityCacheUtil\",",
+				"\"entityCache\":{\"class\":",
+				"\"com.liferay.portal.dao.orm.common.EntityCacheImpl\",",
+				"\"multiVMPool\":{\"class\":",
+				"\"com.liferay.portal.cache.MultiVMPoolImpl\",",
+				"\"portalCacheManager\":{\"class\":",
+				"\"com.liferay.portal.cache.memcached.",
+				"MemcachePortalCacheManager\",\"timeout\":60,\"",
+				"timeoutTimeUnit\":\"SECONDS\",",
+				"\"memcachedClientPool\":{\"class\":",
+				"\"com.liferay.portal.cache.memcached.",
+				"DefaultMemcachedClientFactory\",",
+				"\"connectionFactory\":{\"class\":",
+				"\"net.spy.memcached.BinaryConnectionFactory\"},",
+				"\"addresses\":[\"remoteattackerhost:11211\"]}}}}}"));
 
 		JSONWebServiceAction jsonWebServiceAction = lookupJSONWebServiceAction(
 			mockHttpServletRequest);
@@ -169,12 +171,12 @@ public class JSONWebServiceSecureTest extends BaseJSONWebServiceTestCase {
 		catch (Exception exception) {
 		}
 
-		Registry registry = RegistryUtil.getRegistry();
+		BundleContext bundleContext = SystemBundleUtil.getBundleContext();
 
 		ServiceRegistration<Object> serviceRegistration =
-			registry.registerService(
+			bundleContext.registerService(
 				Object.class, new Object(),
-				Collections.singletonMap(
+				MapUtil.singletonDictionary(
 					PropsKeys.
 						JSONWS_WEB_SERVICE_PARAMETER_TYPE_WHITELIST_CLASS_NAMES,
 					new String[] {"java.util.Random", "some.other.Class"}));

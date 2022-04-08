@@ -84,7 +84,7 @@ public class GetPersonalMenuItemsMVCResourceCommand
 				httpServletResponse, jsonArray.toString());
 		}
 		catch (Exception exception) {
-			_log.error(exception, exception);
+			_log.error(exception);
 		}
 	}
 
@@ -202,11 +202,11 @@ public class GetPersonalMenuItemsMVCResourceCommand
 				continue;
 			}
 
-			String portletId = ParamUtil.getString(portletRequest, "portletId");
-
 			JSONObject jsonObject = JSONUtil.put(
 				"active",
-				personalMenuEntry.isActive(portletRequest, portletId));
+				personalMenuEntry.isActive(
+					portletRequest,
+					ParamUtil.getString(portletRequest, "portletId")));
 
 			try {
 				jsonObject.put(
@@ -215,7 +215,7 @@ public class GetPersonalMenuItemsMVCResourceCommand
 						_portal.getHttpServletRequest(portletRequest)));
 			}
 			catch (PortalException portalException) {
-				_log.error(portalException, portalException);
+				_log.error(portalException);
 			}
 
 			jsonObject.put(
@@ -243,22 +243,24 @@ public class GetPersonalMenuItemsMVCResourceCommand
 			WebKeys.THEME_DISPLAY);
 
 		if (themeDisplay.isImpersonated()) {
-			JSONObject impersonationJSONObject = JSONUtil.put(
-				"items",
-				_getImpersonationItemsJSONArray(portletRequest, themeDisplay));
+			jsonArray.put(
+				JSONUtil.put(
+					"items",
+					_getImpersonationItemsJSONArray(
+						portletRequest, themeDisplay)
+				).put(
+					"label",
+					() -> {
+						User user = themeDisplay.getUser();
 
-			User user = themeDisplay.getUser();
-
-			impersonationJSONObject.put(
-				"label",
-				StringUtil.appendParentheticalSuffix(
-					user.getFullName(),
-					LanguageUtil.get(themeDisplay.getLocale(), "impersonated"))
-			).put(
-				"type", "group"
-			);
-
-			jsonArray.put(impersonationJSONObject);
+						return StringUtil.appendParentheticalSuffix(
+							user.getFullName(),
+							LanguageUtil.get(
+								themeDisplay.getLocale(), "impersonated"));
+					}
+				).put(
+					"type", "group"
+				));
 		}
 
 		JSONObject dividerJSONObject = JSONUtil.put("type", "divider");

@@ -49,34 +49,12 @@ import org.osgi.service.component.annotations.Reference;
 	enabled = false, immediate = true,
 	property = {
 		"javax.portlet.name=" + CommercePortletKeys.COMMERCE_OPEN_ORDER_CONTENT,
-		"mvc.command.name=editCommerceOrderItem"
+		"mvc.command.name=/commerce_open_order_content/edit_commerce_order_item"
 	},
 	service = MVCActionCommand.class
 )
 public class EditCommerceOrderItemMVCActionCommand
 	extends BaseMVCActionCommand {
-
-	protected void deleteCommerceOrderItems(ActionRequest actionRequest)
-		throws PortalException {
-
-		CommerceContext commerceContext =
-			(CommerceContext)actionRequest.getAttribute(
-				CommerceWebKeys.COMMERCE_CONTEXT);
-
-		long commerceOrderId = ParamUtil.getLong(
-			actionRequest, "commerceOrderId");
-
-		CommerceOrder commerceOrder = _commerceOrderService.getCommerceOrder(
-			commerceOrderId);
-
-		List<CommerceOrderItem> commerceOrderItems =
-			commerceOrder.getCommerceOrderItems();
-
-		for (CommerceOrderItem commerceOrderItem : commerceOrderItems) {
-			_commerceOrderItemService.deleteCommerceOrderItem(
-				commerceOrderItem.getCommerceOrderItemId(), commerceContext);
-		}
-	}
 
 	@Override
 	protected void doProcessAction(
@@ -105,12 +83,12 @@ public class EditCommerceOrderItemMVCActionCommand
 						CommerceOrderItem.class.getName(), actionRequest);
 
 				_commerceOrderItemService.updateCommerceOrderItem(
-					commerceOrderItem.getCommerceOrderItemId(), quantity,
-					commerceOrderItem.getJson(), commerceContext,
+					commerceOrderItem.getCommerceOrderItemId(),
+					commerceOrderItem.getJson(), quantity, commerceContext,
 					serviceContext);
 			}
 			else if (cmd.equals(Constants.RESET)) {
-				deleteCommerceOrderItems(actionRequest);
+				_deleteCommerceOrderItems(actionRequest);
 			}
 		}
 		catch (CommerceOrderValidatorException
@@ -132,6 +110,28 @@ public class EditCommerceOrderItemMVCActionCommand
 			else {
 				throw exception;
 			}
+		}
+	}
+
+	private void _deleteCommerceOrderItems(ActionRequest actionRequest)
+		throws PortalException {
+
+		CommerceContext commerceContext =
+			(CommerceContext)actionRequest.getAttribute(
+				CommerceWebKeys.COMMERCE_CONTEXT);
+
+		long commerceOrderId = ParamUtil.getLong(
+			actionRequest, "commerceOrderId");
+
+		CommerceOrder commerceOrder = _commerceOrderService.getCommerceOrder(
+			commerceOrderId);
+
+		List<CommerceOrderItem> commerceOrderItems =
+			commerceOrder.getCommerceOrderItems();
+
+		for (CommerceOrderItem commerceOrderItem : commerceOrderItems) {
+			_commerceOrderItemService.deleteCommerceOrderItem(
+				commerceOrderItem.getCommerceOrderItemId(), commerceContext);
 		}
 	}
 

@@ -49,13 +49,55 @@ import org.osgi.service.component.annotations.Reference;
 	property = {
 		"javax.portlet.name=" + CommerceWishListPortletKeys.COMMERCE_WISH_LIST_CONTENT,
 		"javax.portlet.name=" + CommerceWishListPortletKeys.MY_COMMERCE_WISH_LISTS,
-		"mvc.command.name=editCommerceWishList"
+		"mvc.command.name=/commerce_wish_list_content/edit_commerce_wish_list"
 	},
 	service = MVCActionCommand.class
 )
 public class EditCommerceWishListMVCActionCommand extends BaseMVCActionCommand {
 
-	protected void deleteCommerceWishLists(ActionRequest actionRequest)
+	@Override
+	protected void doProcessAction(
+			ActionRequest actionRequest, ActionResponse actionResponse)
+		throws Exception {
+
+		String cmd = ParamUtil.getString(actionRequest, Constants.CMD);
+
+		try {
+			if (cmd.equals(Constants.ADD) || cmd.equals(Constants.UPDATE)) {
+				_updateCommerceWishList(actionRequest);
+			}
+			else if (cmd.equals(Constants.DELETE)) {
+				_deleteCommerceWishLists(actionRequest);
+			}
+			else if (cmd.equals(Constants.SAVE)) {
+				_saveCommerceWishList(actionRequest, actionResponse);
+
+				hideDefaultSuccessMessage(actionRequest);
+			}
+		}
+		catch (Exception exception) {
+			if (exception instanceof NoSuchWishListException ||
+				exception instanceof PrincipalException) {
+
+				SessionErrors.add(actionRequest, exception.getClass());
+			}
+			else if (exception instanceof CommerceWishListNameException) {
+				hideDefaultErrorMessage(actionRequest);
+				hideDefaultSuccessMessage(actionRequest);
+
+				SessionErrors.add(actionRequest, exception.getClass());
+
+				actionResponse.setRenderParameter(
+					"mvcRenderCommandName",
+					"/commerce_wish_list_content/edit_commerce_wish_list");
+			}
+			else {
+				throw exception;
+			}
+		}
+	}
+
+	private void _deleteCommerceWishLists(ActionRequest actionRequest)
 		throws PortalException {
 
 		long[] deleteCommerceWishListIds = null;
@@ -78,48 +120,7 @@ public class EditCommerceWishListMVCActionCommand extends BaseMVCActionCommand {
 		}
 	}
 
-	@Override
-	protected void doProcessAction(
-			ActionRequest actionRequest, ActionResponse actionResponse)
-		throws Exception {
-
-		String cmd = ParamUtil.getString(actionRequest, Constants.CMD);
-
-		try {
-			if (cmd.equals(Constants.ADD) || cmd.equals(Constants.UPDATE)) {
-				updateCommerceWishList(actionRequest);
-			}
-			else if (cmd.equals(Constants.DELETE)) {
-				deleteCommerceWishLists(actionRequest);
-			}
-			else if (cmd.equals(Constants.SAVE)) {
-				saveCommerceWishList(actionRequest, actionResponse);
-
-				hideDefaultSuccessMessage(actionRequest);
-			}
-		}
-		catch (Exception exception) {
-			if (exception instanceof NoSuchWishListException ||
-				exception instanceof PrincipalException) {
-
-				SessionErrors.add(actionRequest, exception.getClass());
-			}
-			else if (exception instanceof CommerceWishListNameException) {
-				hideDefaultErrorMessage(actionRequest);
-				hideDefaultSuccessMessage(actionRequest);
-
-				SessionErrors.add(actionRequest, exception.getClass());
-
-				actionResponse.setRenderParameter(
-					"mvcRenderCommandName", "editCommerceWishList");
-			}
-			else {
-				throw exception;
-			}
-		}
-	}
-
-	protected void saveCommerceWishList(
+	private void _saveCommerceWishList(
 			ActionRequest actionRequest, ActionResponse actionResponse)
 		throws PortalException {
 
@@ -140,7 +141,7 @@ public class EditCommerceWishListMVCActionCommand extends BaseMVCActionCommand {
 			String.valueOf(commerceWishList.getCommerceWishListId()));
 	}
 
-	protected void updateCommerceWishList(ActionRequest actionRequest)
+	private void _updateCommerceWishList(ActionRequest actionRequest)
 		throws PortalException {
 
 		long commerceWishListId = ParamUtil.getLong(
@@ -150,14 +151,14 @@ public class EditCommerceWishListMVCActionCommand extends BaseMVCActionCommand {
 		boolean defaultWishList = ParamUtil.getBoolean(
 			actionRequest, "defaultWishList");
 
-		ServiceContext serviceContext = ServiceContextFactory.getInstance(
-			CommerceWishList.class.getName(), actionRequest);
-
 		if (commerceWishListId > 0) {
 			_commerceWishListService.updateCommerceWishList(
 				commerceWishListId, name, defaultWishList);
 		}
 		else {
+			ServiceContext serviceContext = ServiceContextFactory.getInstance(
+				CommerceWishList.class.getName(), actionRequest);
+
 			_commerceWishListService.addCommerceWishList(
 				name, defaultWishList, serviceContext);
 		}

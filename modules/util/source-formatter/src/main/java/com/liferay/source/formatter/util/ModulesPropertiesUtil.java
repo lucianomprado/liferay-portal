@@ -20,8 +20,8 @@ import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
-import com.liferay.source.formatter.checks.util.BNDSourceUtil;
-import com.liferay.source.formatter.checks.util.SourceUtil;
+import com.liferay.source.formatter.check.util.BNDSourceUtil;
+import com.liferay.source.formatter.check.util.SourceUtil;
 
 import java.io.File;
 import java.io.IOException;
@@ -211,7 +211,7 @@ public class ModulesPropertiesUtil {
 	private static final String[] _SKIP_DIR_NAMES = {
 		".git", ".gradle", ".idea", ".m2", ".settings", "bin", "build",
 		"classes", "dependencies", "node_modules", "node_modules_cache",
-		"private", "sdk", "sql", "src", "test", "test-classes", "test-coverage",
+		"private", "sdk", "sql", "src", "test-classes", "test-coverage",
 		"test-results", "tmp"
 	};
 

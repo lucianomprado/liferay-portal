@@ -91,7 +91,8 @@ public class PunchOutSessionHelper {
 			_log.error(
 				"Failed to determine whether user has " +
 					PunchOutConstants.ROLE_NAME_ACCOUNT_PUNCH_OUT +
-						" role under commerce account");
+						" role under commerce account",
+				exception);
 
 			return false;
 		}
@@ -150,13 +151,13 @@ public class PunchOutSessionHelper {
 	}
 
 	private PunchOutConfiguration _getPunchOutConfiguration(
-		long channelGroupId) {
+		long commerceChannelGroupId) {
 
 		try {
 			return _configurationProvider.getConfiguration(
 				PunchOutConfiguration.class,
 				new GroupServiceSettingsLocator(
-					channelGroupId, PunchOutConstants.SERVICE_NAME));
+					commerceChannelGroupId, PunchOutConstants.SERVICE_NAME));
 		}
 		catch (ConfigurationException configurationException) {
 			_log.error(

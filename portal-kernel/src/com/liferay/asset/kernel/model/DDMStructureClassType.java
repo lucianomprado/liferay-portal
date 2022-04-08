@@ -27,6 +27,7 @@ import com.liferay.portal.kernel.util.Validator;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author Adolfo Pérez
@@ -97,6 +98,7 @@ public class DDMStructureClassType implements ClassType {
 			String type = ddmFormField.getType();
 
 			if (Validator.isNull(indexType) ||
+				Objects.equals(indexType, "none") ||
 				!ArrayUtil.contains(_SELECTABLE_DDM_STRUCTURE_FIELDS, type)) {
 
 				continue;
@@ -106,17 +108,19 @@ public class DDMStructureClassType implements ClassType {
 
 			classTypeFields.add(
 				new ClassTypeField(
+					ddmStructure.getStructureId(),
+					ddmFormField.getFieldReference(),
 					label.getString(LocaleUtil.fromLanguageId(_languageId)),
-					ddmFormField.getName(), type,
-					ddmStructure.getStructureId()));
+					ddmFormField.getName(), type));
 		}
 
 		return classTypeFields;
 	}
 
 	private static final String[] _SELECTABLE_DDM_STRUCTURE_FIELDS = {
-		"checkbox", "ddm-date", "ddm-decimal", "ddm-image", "ddm-integer",
-		"ddm-number", "ddm-text-html", "radio", "select", "text", "textarea"
+		"checkbox", "checkbox_multiple", "date", "ddm-date", "ddm-decimal",
+		"ddm-image", "ddm-integer", "ddm-number", "ddm-text-html", "image",
+		"numeric", "radio", "rich_text", "select", "text", "textarea"
 	};
 
 	private final long _classTypeId;

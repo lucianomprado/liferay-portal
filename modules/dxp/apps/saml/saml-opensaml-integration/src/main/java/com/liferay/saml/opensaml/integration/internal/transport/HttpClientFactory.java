@@ -103,7 +103,7 @@ public class HttpClientFactory {
 			}
 			catch (IOException ioException) {
 				if (_log.isDebugEnabled()) {
-					_log.debug(ioException, ioException);
+					_log.debug(ioException);
 				}
 			}
 		}
@@ -148,6 +148,9 @@ public class HttpClientFactory {
 				Thread.sleep(500);
 			}
 			catch (InterruptedException interruptedException) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(interruptedException);
+				}
 			}
 
 			retry++;

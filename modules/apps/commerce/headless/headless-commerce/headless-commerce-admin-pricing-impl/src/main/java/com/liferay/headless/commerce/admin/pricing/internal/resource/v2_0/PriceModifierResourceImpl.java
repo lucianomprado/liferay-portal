@@ -32,8 +32,8 @@ import com.liferay.headless.commerce.core.util.DateConfig;
 import com.liferay.headless.commerce.core.util.ServiceContextHelper;
 import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.search.filter.Filter;
+import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
 import com.liferay.portal.kernel.service.ServiceContext;
-import com.liferay.portal.kernel.util.CalendarFactoryUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.vulcan.dto.converter.DTOConverterRegistry;
@@ -42,11 +42,8 @@ import com.liferay.portal.vulcan.pagination.Page;
 import com.liferay.portal.vulcan.pagination.Pagination;
 
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.TimeZone;
 
 import javax.ws.rs.core.Response;
 
@@ -76,11 +73,11 @@ public class PriceModifierResourceImpl extends BasePriceModifierResourceImpl {
 
 		CommercePriceModifier commercePriceModifier =
 			_commercePriceModifierService.fetchByExternalReferenceCode(
-				contextCompany.getCompanyId(), externalReferenceCode);
+				externalReferenceCode, contextCompany.getCompanyId());
 
 		if (commercePriceModifier == null) {
 			throw new NoSuchPriceModifierException(
-				"Unable to find Price Modifier with externalReferenceCode: " +
+				"Unable to find price modifier with external reference code " +
 					externalReferenceCode);
 		}
 
@@ -96,11 +93,11 @@ public class PriceModifierResourceImpl extends BasePriceModifierResourceImpl {
 
 		CommercePriceList commercePriceList =
 			_commercePriceListService.fetchByExternalReferenceCode(
-				contextCompany.getCompanyId(), externalReferenceCode);
+				externalReferenceCode, contextCompany.getCompanyId());
 
 		if (commercePriceList == null) {
 			throw new NoSuchPriceListException(
-				"Unable to find Price List with externalReferenceCode: " +
+				"Unable to find price list with external reference code " +
 					externalReferenceCode);
 		}
 
@@ -152,11 +149,11 @@ public class PriceModifierResourceImpl extends BasePriceModifierResourceImpl {
 
 		CommercePriceModifier commercePriceModifier =
 			_commercePriceModifierService.fetchByExternalReferenceCode(
-				contextCompany.getCompanyId(), externalReferenceCode);
+				externalReferenceCode, contextCompany.getCompanyId());
 
 		if (commercePriceModifier == null) {
 			throw new NoSuchPriceModifierException(
-				"Unable to find Price Modifier with externalReferenceCode: " +
+				"Unable to find price modifier with external reference code " +
 					externalReferenceCode);
 		}
 
@@ -184,11 +181,11 @@ public class PriceModifierResourceImpl extends BasePriceModifierResourceImpl {
 
 		CommercePriceModifier commercePriceModifier =
 			_commercePriceModifierService.fetchByExternalReferenceCode(
-				contextCompany.getCompanyId(), externalReferenceCode);
+				externalReferenceCode, contextCompany.getCompanyId());
 
 		if (commercePriceModifier == null) {
 			throw new NoSuchPriceModifierException(
-				"Unable to find Price Modifier with externalReferenceCode: " +
+				"Unable to find price modifier with external reference code " +
 					externalReferenceCode);
 		}
 
@@ -206,16 +203,16 @@ public class PriceModifierResourceImpl extends BasePriceModifierResourceImpl {
 
 		CommercePriceList commercePriceList =
 			_commercePriceListService.fetchByExternalReferenceCode(
-				contextCompany.getCompanyId(), externalReferenceCode);
+				externalReferenceCode, contextCompany.getCompanyId());
 
 		if (commercePriceList == null) {
 			throw new NoSuchPriceListException(
-				"Unable to find Price List with externalReferenceCode: " +
+				"Unable to find price list with external reference code " +
 					externalReferenceCode);
 		}
 
 		CommercePriceModifier commercePriceModifier =
-			_upsertCommercePriceModifier(commercePriceList, priceModifier);
+			_addOrUpdateCommercePriceModifier(commercePriceList, priceModifier);
 
 		return _toPriceModifier(
 			commercePriceModifier.getCommercePriceModifierId());
@@ -227,12 +224,51 @@ public class PriceModifierResourceImpl extends BasePriceModifierResourceImpl {
 		throws Exception {
 
 		CommercePriceModifier commercePriceModifier =
-			_upsertCommercePriceModifier(
+			_addOrUpdateCommercePriceModifier(
 				_commercePriceListService.getCommercePriceList(id),
 				priceModifier);
 
 		return _toPriceModifier(
 			commercePriceModifier.getCommercePriceModifierId());
+	}
+
+	private CommercePriceModifier _addOrUpdateCommercePriceModifier(
+			CommercePriceList commercePriceList, PriceModifier priceModifier)
+		throws Exception {
+
+		ServiceContext serviceContext = _serviceContextHelper.getServiceContext(
+			commercePriceList.getGroupId());
+
+		DateConfig displayDateConfig = DateConfig.toDisplayDateConfig(
+			priceModifier.getDisplayDate(), serviceContext.getTimeZone());
+		DateConfig expirationDateConfig = DateConfig.toExpirationDateConfig(
+			priceModifier.getExpirationDate(), serviceContext.getTimeZone());
+
+		CommercePriceModifier commercePriceModifier =
+			_commercePriceModifierService.addOrUpdateCommercePriceModifier(
+				priceModifier.getExternalReferenceCode(),
+				GetterUtil.getLong(priceModifier.getId()),
+				commercePriceList.getGroupId(), priceModifier.getTitle(),
+				priceModifier.getTarget(),
+				commercePriceList.getCommercePriceListId(),
+				priceModifier.getModifierType(),
+				priceModifier.getModifierAmount(),
+				GetterUtil.get(priceModifier.getPriority(), 0D),
+				GetterUtil.getBoolean(priceModifier.getActive(), true),
+				displayDateConfig.getMonth(), displayDateConfig.getDay(),
+				displayDateConfig.getYear(), displayDateConfig.getHour(),
+				displayDateConfig.getMinute(), expirationDateConfig.getMonth(),
+				expirationDateConfig.getDay(), expirationDateConfig.getYear(),
+				expirationDateConfig.getHour(),
+				expirationDateConfig.getMinute(),
+				GetterUtil.getBoolean(priceModifier.getNeverExpire(), true),
+				serviceContext);
+
+		// Update nested resources
+
+		_updateNestedResources(priceModifier, commercePriceModifier);
+
+		return commercePriceModifier;
 	}
 
 	private Map<String, Map<String, String>> _getActions(
@@ -242,54 +278,22 @@ public class PriceModifierResourceImpl extends BasePriceModifierResourceImpl {
 		return HashMapBuilder.<String, Map<String, String>>put(
 			"delete",
 			addAction(
-				"UPDATE", commercePriceModifier.getCommercePriceListId(),
-				"deletePriceModifier", commercePriceModifier.getUserId(),
-				"com.liferay.commerce.price.list.model.CommercePriceList",
-				commercePriceModifier.getGroupId())
+				"UPDATE", commercePriceModifier.getCommercePriceModifierId(),
+				"deletePriceModifier",
+				_commercePriceModifierModelResourcePermission)
 		).put(
 			"get",
 			addAction(
-				"VIEW", commercePriceModifier.getCommercePriceListId(),
-				"getPriceModifier", commercePriceModifier.getUserId(),
-				"com.liferay.commerce.price.list.model.CommercePriceList",
-				commercePriceModifier.getGroupId())
+				"VIEW", commercePriceModifier.getCommercePriceModifierId(),
+				"getPriceModifier",
+				_commercePriceModifierModelResourcePermission)
 		).put(
 			"update",
 			addAction(
-				"UPDATE", commercePriceModifier.getCommercePriceListId(),
-				"patchPriceModifier", commercePriceModifier.getUserId(),
-				"com.liferay.commerce.price.list.model.CommercePriceList",
-				commercePriceModifier.getGroupId())
+				"UPDATE", commercePriceModifier.getCommercePriceModifierId(),
+				"patchPriceModifier",
+				_commercePriceModifierModelResourcePermission)
 		).build();
-	}
-
-	private DateConfig _getDisplayDateConfig(Date date, TimeZone timeZone) {
-		if (date == null) {
-			return new DateConfig(CalendarFactoryUtil.getCalendar(timeZone));
-		}
-
-		long time = date.getTime();
-
-		Calendar calendar = CalendarFactoryUtil.getCalendar(time, timeZone);
-
-		return new DateConfig(calendar);
-	}
-
-	private DateConfig _getExpirationDateConfig(Date date, TimeZone timeZone) {
-		if (date == null) {
-			Calendar expirationCalendar = CalendarFactoryUtil.getCalendar(
-				timeZone);
-
-			expirationCalendar.add(Calendar.MONTH, 1);
-
-			return new DateConfig(expirationCalendar);
-		}
-
-		long time = date.getTime();
-
-		Calendar calendar = CalendarFactoryUtil.getCalendar(time, timeZone);
-
-		return new DateConfig(calendar);
 	}
 
 	private PriceModifier _toPriceModifier(Long commercePriceModifierId)
@@ -330,10 +334,11 @@ public class PriceModifierResourceImpl extends BasePriceModifierResourceImpl {
 			CommercePriceModifier commercePriceModifier)
 		throws Exception {
 
-		PriceModifierUtil.upsertCommercePriceModifierRels(
-			_assetCategoryLocalService, _commercePricingClassService,
-			_cProductLocalService, _commercePriceModifierRelService,
-			priceModifier, commercePriceModifier, _serviceContextHelper);
+		PriceModifierUtil.addOrUpdateCommercePriceModifierRels(
+			contextCompany.getGroupId(), _assetCategoryLocalService,
+			_commercePricingClassService, _cProductLocalService,
+			_commercePriceModifierRelService, priceModifier,
+			commercePriceModifier, _serviceContextHelper);
 	}
 
 	private CommercePriceModifier _updatePriceModifier(
@@ -344,10 +349,9 @@ public class PriceModifierResourceImpl extends BasePriceModifierResourceImpl {
 		ServiceContext serviceContext =
 			_serviceContextHelper.getServiceContext();
 
-		DateConfig displayDateConfig = _getDisplayDateConfig(
+		DateConfig displayDateConfig = DateConfig.toDisplayDateConfig(
 			priceModifier.getDisplayDate(), serviceContext.getTimeZone());
-
-		DateConfig expirationDateConfig = _getExpirationDateConfig(
+		DateConfig expirationDateConfig = DateConfig.toExpirationDateConfig(
 			priceModifier.getExpirationDate(), serviceContext.getTimeZone());
 
 		commercePriceModifier =
@@ -373,52 +377,17 @@ public class PriceModifierResourceImpl extends BasePriceModifierResourceImpl {
 		return commercePriceModifier;
 	}
 
-	private CommercePriceModifier _upsertCommercePriceModifier(
-			CommercePriceList commercePriceList, PriceModifier priceModifier)
-		throws Exception {
-
-		ServiceContext serviceContext = _serviceContextHelper.getServiceContext(
-			commercePriceList.getGroupId());
-
-		DateConfig displayDateConfig = _getDisplayDateConfig(
-			priceModifier.getDisplayDate(), serviceContext.getTimeZone());
-
-		DateConfig expirationDateConfig = _getExpirationDateConfig(
-			priceModifier.getExpirationDate(), serviceContext.getTimeZone());
-
-		CommercePriceModifier commercePriceModifier =
-			_commercePriceModifierService.upsertCommercePriceModifier(
-				serviceContext.getUserId(),
-				GetterUtil.getLong(priceModifier.getId()),
-				commercePriceList.getGroupId(), priceModifier.getTitle(),
-				priceModifier.getTarget(),
-				commercePriceList.getCommercePriceListId(),
-				priceModifier.getModifierType(),
-				priceModifier.getModifierAmount(),
-				GetterUtil.get(priceModifier.getPriority(), 0D),
-				GetterUtil.getBoolean(priceModifier.getActive(), true),
-				displayDateConfig.getMonth(), displayDateConfig.getDay(),
-				displayDateConfig.getYear(), displayDateConfig.getHour(),
-				displayDateConfig.getMinute(), expirationDateConfig.getMonth(),
-				expirationDateConfig.getDay(), expirationDateConfig.getYear(),
-				expirationDateConfig.getHour(),
-				expirationDateConfig.getMinute(),
-				priceModifier.getExternalReferenceCode(),
-				GetterUtil.getBoolean(priceModifier.getNeverExpire(), true),
-				serviceContext);
-
-		// Update nested resources
-
-		_updateNestedResources(priceModifier, commercePriceModifier);
-
-		return commercePriceModifier;
-	}
-
 	@Reference
 	private AssetCategoryLocalService _assetCategoryLocalService;
 
 	@Reference
 	private CommercePriceListService _commercePriceListService;
+
+	@Reference(
+		target = "(model.class.name=com.liferay.commerce.pricing.model.CommercePriceModifier)"
+	)
+	private ModelResourcePermission<CommercePriceModifier>
+		_commercePriceModifierModelResourcePermission;
 
 	@Reference
 	private CommercePriceModifierRelService _commercePriceModifierRelService;

@@ -16,6 +16,7 @@ package com.liferay.login.web.internal.portlet.util;
 
 import com.liferay.login.web.constants.LoginPortletKeys;
 import com.liferay.petra.content.ContentUtil;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.model.Company;
@@ -64,49 +65,50 @@ public class LoginUtil {
 		ThemeDisplay themeDisplay = (ThemeDisplay)portletRequest.getAttribute(
 			WebKeys.THEME_DISPLAY);
 
-		Map<String, String> definitionTerms = LinkedHashMapBuilder.put(
+		return LinkedHashMapBuilder.put(
 			"[$FROM_ADDRESS$]", HtmlUtil.escape(emailFromAddress)
 		).put(
 			"[$FROM_NAME$]", HtmlUtil.escape(emailFromName)
-		).build();
+		).put(
+			"[$PASSWORD_RESET_URL$]",
+			() -> {
+				if (showPasswordTerms) {
+					return LanguageUtil.get(
+						themeDisplay.getLocale(), "the-password-reset-url");
+				}
 
-		if (showPasswordTerms) {
-			definitionTerms.put(
-				"[$PASSWORD_RESET_URL$]",
-				LanguageUtil.get(
-					themeDisplay.getLocale(), "the-password-reset-url"));
-		}
+				return null;
+			}
+		).put(
+			"[$PORTAL_URL$]",
+			() -> {
+				Company company = themeDisplay.getCompany();
 
-		Company company = themeDisplay.getCompany();
-
-		definitionTerms.put("[$PORTAL_URL$]", company.getVirtualHostname());
-
-		definitionTerms.put(
+				return company.getVirtualHostname();
+			}
+		).put(
 			"[$REMOTE_ADDRESS$]",
 			LanguageUtil.get(
-				themeDisplay.getLocale(), "the-browser's-remote-address"));
-		definitionTerms.put(
+				themeDisplay.getLocale(), "the-browser's-remote-address")
+		).put(
 			"[$REMOTE_HOST$]",
 			LanguageUtil.get(
-				themeDisplay.getLocale(), "the-browser's-remote-host"));
-		definitionTerms.put(
+				themeDisplay.getLocale(), "the-browser's-remote-host")
+		).put(
 			"[$TO_ADDRESS$]",
 			LanguageUtil.get(
-				themeDisplay.getLocale(),
-				"the-address-of-the-email-recipient"));
-		definitionTerms.put(
+				themeDisplay.getLocale(), "the-address-of-the-email-recipient")
+		).put(
 			"[$TO_NAME$]",
 			LanguageUtil.get(
-				themeDisplay.getLocale(), "the-name-of-the-email-recipient"));
-		definitionTerms.put(
+				themeDisplay.getLocale(), "the-name-of-the-email-recipient")
+		).put(
 			"[$USER_ID$]",
-			LanguageUtil.get(themeDisplay.getLocale(), "the-user-id"));
-
-		definitionTerms.put(
+			LanguageUtil.get(themeDisplay.getLocale(), "the-user-id")
+		).put(
 			"[$USER_SCREENNAME$]",
-			LanguageUtil.get(themeDisplay.getLocale(), "the-user-screen-name"));
-
-		return definitionTerms;
+			LanguageUtil.get(themeDisplay.getLocale(), "the-user-screen-name")
+		).build();
 	}
 
 	public static String getEmailFromAddress(
@@ -176,16 +178,19 @@ public class LoginUtil {
 			HttpServletRequest httpServletRequest, long plid)
 		throws PortletModeException, WindowStateException {
 
-		PortletURL portletURL = PortletURLFactoryUtil.create(
-			httpServletRequest, LoginPortletKeys.LOGIN, plid,
-			PortletRequest.RENDER_PHASE);
-
-		portletURL.setParameter("saveLastPath", Boolean.FALSE.toString());
-		portletURL.setParameter("mvcRenderCommandName", "/login/login");
-		portletURL.setPortletMode(PortletMode.VIEW);
-		portletURL.setWindowState(WindowState.MAXIMIZED);
-
-		return portletURL;
+		return PortletURLBuilder.create(
+			PortletURLFactoryUtil.create(
+				httpServletRequest, LoginPortletKeys.LOGIN, plid,
+				PortletRequest.RENDER_PHASE)
+		).setMVCRenderCommandName(
+			"/login/login"
+		).setParameter(
+			"saveLastPath", false
+		).setPortletMode(
+			PortletMode.VIEW
+		).setWindowState(
+			WindowState.MAXIMIZED
+		).buildPortletURL();
 	}
 
 	public static void sendPassword(

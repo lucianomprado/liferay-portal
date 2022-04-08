@@ -185,7 +185,7 @@ public class AddSegmentsExperimentMVCActionCommandTest {
 
 		long classNameId = _classNameLocalService.getClassNameId(
 			Layout.class.getName());
-		Layout layout = LayoutTestUtil.addLayout(_group);
+		Layout layout = LayoutTestUtil.addTypePortletLayout(_group);
 
 		return SegmentsTestUtil.addSegmentsExperience(
 			segmentsEntry.getSegmentsEntryId(), classNameId, layout.getPlid(),
@@ -200,10 +200,8 @@ public class AddSegmentsExperimentMVCActionCommandTest {
 		MockLiferayPortletActionRequest mockLiferayPortletActionRequest =
 			new MockLiferayPortletActionRequest();
 
-		ThemeDisplay themeDisplay = _getThemeDisplay();
-
 		mockLiferayPortletActionRequest.setAttribute(
-			WebKeys.THEME_DISPLAY, themeDisplay);
+			WebKeys.THEME_DISPLAY, _getThemeDisplay());
 
 		mockLiferayPortletActionRequest.setParameter(
 			"classNameId", String.valueOf(segmentsExperience.getClassNameId()));

@@ -747,7 +747,7 @@ public class PortletRequestModel implements Serializable {
 		}
 		catch (IllegalStateException illegalStateException) {
 			if (_log.isWarnEnabled()) {
-				_log.warn(illegalStateException.getMessage());
+				_log.warn(illegalStateException);
 			}
 		}
 	}
@@ -765,7 +765,7 @@ public class PortletRequestModel implements Serializable {
 			}
 			catch (IllegalStateException illegalStateException) {
 				if (_log.isWarnEnabled()) {
-					_log.warn(illegalStateException.getMessage());
+					_log.warn(illegalStateException);
 				}
 			}
 
@@ -780,6 +780,9 @@ public class PortletRequestModel implements Serializable {
 					_renderURLExclusive = renderURL.toString();
 				}
 				catch (WindowStateException windowStateException) {
+					if (_log.isDebugEnabled()) {
+						_log.debug(windowStateException);
+					}
 				}
 
 				try {
@@ -788,6 +791,9 @@ public class PortletRequestModel implements Serializable {
 					_renderURLMaximized = renderURL.toString();
 				}
 				catch (WindowStateException windowStateException) {
+					if (_log.isDebugEnabled()) {
+						_log.debug(windowStateException);
+					}
 				}
 
 				try {
@@ -796,6 +802,9 @@ public class PortletRequestModel implements Serializable {
 					_renderURLMinimized = renderURL.toString();
 				}
 				catch (WindowStateException windowStateException) {
+					if (_log.isDebugEnabled()) {
+						_log.debug(windowStateException);
+					}
 				}
 
 				try {
@@ -804,6 +813,9 @@ public class PortletRequestModel implements Serializable {
 					_renderURLNormal = renderURL.toString();
 				}
 				catch (WindowStateException windowStateException) {
+					if (_log.isDebugEnabled()) {
+						_log.debug(windowStateException);
+					}
 				}
 
 				try {
@@ -812,11 +824,14 @@ public class PortletRequestModel implements Serializable {
 					_renderURLPopUp = renderURL.toString();
 				}
 				catch (WindowStateException windowStateException) {
+					if (_log.isDebugEnabled()) {
+						_log.debug(windowStateException);
+					}
 				}
 			}
 			catch (IllegalStateException illegalStateException) {
 				if (_log.isWarnEnabled()) {
-					_log.warn(illegalStateException.getMessage());
+					_log.warn(illegalStateException);
 				}
 			}
 

@@ -18,7 +18,6 @@ import com.liferay.expando.kernel.model.ExpandoBridge;
 import com.liferay.expando.kernel.util.ExpandoBridgeFactoryUtil;
 import com.liferay.oauth2.provider.model.OAuth2Application;
 import com.liferay.oauth2.provider.model.OAuth2ApplicationModel;
-import com.liferay.oauth2.provider.model.OAuth2ApplicationSoap;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.bean.AutoEscapeBeanHandler;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -31,21 +30,22 @@ import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
+import com.liferay.portal.kernel.util.StringUtil;
 
 import java.io.Serializable;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
 
+import java.sql.Blob;
 import java.sql.Types;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
@@ -83,7 +83,8 @@ public class OAuth2ApplicationModelImpl
 		{"clientSecret", Types.VARCHAR}, {"description", Types.VARCHAR},
 		{"features", Types.VARCHAR}, {"homePageURL", Types.VARCHAR},
 		{"iconFileEntryId", Types.BIGINT}, {"name", Types.VARCHAR},
-		{"privacyPolicyURL", Types.VARCHAR}, {"redirectURIs", Types.VARCHAR}
+		{"privacyPolicyURL", Types.VARCHAR}, {"redirectURIs", Types.VARCHAR},
+		{"rememberDevice", Types.BOOLEAN}, {"trustedApplication", Types.BOOLEAN}
 	};
 
 	public static final Map<String, Integer> TABLE_COLUMNS_MAP =
@@ -110,10 +111,12 @@ public class OAuth2ApplicationModelImpl
 		TABLE_COLUMNS_MAP.put("name", Types.VARCHAR);
 		TABLE_COLUMNS_MAP.put("privacyPolicyURL", Types.VARCHAR);
 		TABLE_COLUMNS_MAP.put("redirectURIs", Types.VARCHAR);
+		TABLE_COLUMNS_MAP.put("rememberDevice", Types.BOOLEAN);
+		TABLE_COLUMNS_MAP.put("trustedApplication", Types.BOOLEAN);
 	}
 
 	public static final String TABLE_SQL_CREATE =
-		"create table OAuth2Application (oAuth2ApplicationId LONG not null primary key,companyId LONG,userId LONG,userName VARCHAR(75) null,createDate DATE null,modifiedDate DATE null,oA2AScopeAliasesId LONG,allowedGrantTypes VARCHAR(75) null,clientCredentialUserId LONG,clientCredentialUserName VARCHAR(75) null,clientId VARCHAR(75) null,clientProfile INTEGER,clientSecret VARCHAR(75) null,description STRING null,features STRING null,homePageURL STRING null,iconFileEntryId LONG,name VARCHAR(75) null,privacyPolicyURL STRING null,redirectURIs STRING null)";
+		"create table OAuth2Application (oAuth2ApplicationId LONG not null primary key,companyId LONG,userId LONG,userName VARCHAR(75) null,createDate DATE null,modifiedDate DATE null,oA2AScopeAliasesId LONG,allowedGrantTypes VARCHAR(128) null,clientCredentialUserId LONG,clientCredentialUserName VARCHAR(75) null,clientId VARCHAR(75) null,clientProfile INTEGER,clientSecret VARCHAR(75) null,description STRING null,features STRING null,homePageURL STRING null,iconFileEntryId LONG,name VARCHAR(75) null,privacyPolicyURL STRING null,redirectURIs STRING null,rememberDevice BOOLEAN,trustedApplication BOOLEAN)";
 
 	public static final String TABLE_SQL_DROP = "drop table OAuth2Application";
 
@@ -130,20 +133,20 @@ public class OAuth2ApplicationModelImpl
 	public static final String TX_MANAGER = "liferayTransactionManager";
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long CLIENTID_COLUMN_BITMASK = 1L;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long COMPANYID_COLUMN_BITMASK = 2L;
 
 	/**
 	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-	 *		#getColumnBitmask(String)
+	 *		#getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long OAUTH2APPLICATIONID_COLUMN_BITMASK = 4L;
@@ -160,72 +163,6 @@ public class OAuth2ApplicationModelImpl
 	 */
 	@Deprecated
 	public static void setFinderCacheEnabled(boolean finderCacheEnabled) {
-	}
-
-	/**
-	 * Converts the soap model instance into a normal model instance.
-	 *
-	 * @param soapModel the soap model instance to convert
-	 * @return the normal model instance
-	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
-	 */
-	@Deprecated
-	public static OAuth2Application toModel(OAuth2ApplicationSoap soapModel) {
-		if (soapModel == null) {
-			return null;
-		}
-
-		OAuth2Application model = new OAuth2ApplicationImpl();
-
-		model.setOAuth2ApplicationId(soapModel.getOAuth2ApplicationId());
-		model.setCompanyId(soapModel.getCompanyId());
-		model.setUserId(soapModel.getUserId());
-		model.setUserName(soapModel.getUserName());
-		model.setCreateDate(soapModel.getCreateDate());
-		model.setModifiedDate(soapModel.getModifiedDate());
-		model.setOAuth2ApplicationScopeAliasesId(
-			soapModel.getOAuth2ApplicationScopeAliasesId());
-		model.setAllowedGrantTypes(soapModel.getAllowedGrantTypes());
-		model.setClientCredentialUserId(soapModel.getClientCredentialUserId());
-		model.setClientCredentialUserName(
-			soapModel.getClientCredentialUserName());
-		model.setClientId(soapModel.getClientId());
-		model.setClientProfile(soapModel.getClientProfile());
-		model.setClientSecret(soapModel.getClientSecret());
-		model.setDescription(soapModel.getDescription());
-		model.setFeatures(soapModel.getFeatures());
-		model.setHomePageURL(soapModel.getHomePageURL());
-		model.setIconFileEntryId(soapModel.getIconFileEntryId());
-		model.setName(soapModel.getName());
-		model.setPrivacyPolicyURL(soapModel.getPrivacyPolicyURL());
-		model.setRedirectURIs(soapModel.getRedirectURIs());
-
-		return model;
-	}
-
-	/**
-	 * Converts the soap model instances into normal model instances.
-	 *
-	 * @param soapModels the soap model instances to convert
-	 * @return the normal model instances
-	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
-	 */
-	@Deprecated
-	public static List<OAuth2Application> toModels(
-		OAuth2ApplicationSoap[] soapModels) {
-
-		if (soapModels == null) {
-			return null;
-		}
-
-		List<OAuth2Application> models = new ArrayList<OAuth2Application>(
-			soapModels.length);
-
-		for (OAuth2ApplicationSoap soapModel : soapModels) {
-			models.add(toModel(soapModel));
-		}
-
-		return models;
 	}
 
 	public OAuth2ApplicationModelImpl() {
@@ -474,6 +411,18 @@ public class OAuth2ApplicationModelImpl
 			"redirectURIs",
 			(BiConsumer<OAuth2Application, String>)
 				OAuth2Application::setRedirectURIs);
+		attributeGetterFunctions.put(
+			"rememberDevice", OAuth2Application::getRememberDevice);
+		attributeSetterBiConsumers.put(
+			"rememberDevice",
+			(BiConsumer<OAuth2Application, Boolean>)
+				OAuth2Application::setRememberDevice);
+		attributeGetterFunctions.put(
+			"trustedApplication", OAuth2Application::getTrustedApplication);
+		attributeSetterBiConsumers.put(
+			"trustedApplication",
+			(BiConsumer<OAuth2Application, Boolean>)
+				OAuth2Application::setTrustedApplication);
 
 		_attributeGetterFunctions = Collections.unmodifiableMap(
 			attributeGetterFunctions);
@@ -896,6 +845,48 @@ public class OAuth2ApplicationModelImpl
 		_redirectURIs = redirectURIs;
 	}
 
+	@JSON
+	@Override
+	public boolean getRememberDevice() {
+		return _rememberDevice;
+	}
+
+	@JSON
+	@Override
+	public boolean isRememberDevice() {
+		return _rememberDevice;
+	}
+
+	@Override
+	public void setRememberDevice(boolean rememberDevice) {
+		if (_columnOriginalValues == Collections.EMPTY_MAP) {
+			_setColumnOriginalValues();
+		}
+
+		_rememberDevice = rememberDevice;
+	}
+
+	@JSON
+	@Override
+	public boolean getTrustedApplication() {
+		return _trustedApplication;
+	}
+
+	@JSON
+	@Override
+	public boolean isTrustedApplication() {
+		return _trustedApplication;
+	}
+
+	@Override
+	public void setTrustedApplication(boolean trustedApplication) {
+		if (_columnOriginalValues == Collections.EMPTY_MAP) {
+			_setColumnOriginalValues();
+		}
+
+		_trustedApplication = trustedApplication;
+	}
+
 	public long getColumnBitmask() {
 		if (_columnBitmask > 0) {
 			return _columnBitmask;
@@ -910,7 +901,9 @@ public class OAuth2ApplicationModelImpl
 		for (Map.Entry<String, Object> entry :
 				_columnOriginalValues.entrySet()) {
 
-			if (entry.getValue() != getColumnValue(entry.getKey())) {
+			if (!Objects.equals(
+					entry.getValue(), getColumnValue(entry.getKey()))) {
+
 				_columnBitmask |= _columnBitmasks.get(entry.getKey());
 			}
 		}
@@ -974,8 +967,63 @@ public class OAuth2ApplicationModelImpl
 		oAuth2ApplicationImpl.setName(getName());
 		oAuth2ApplicationImpl.setPrivacyPolicyURL(getPrivacyPolicyURL());
 		oAuth2ApplicationImpl.setRedirectURIs(getRedirectURIs());
+		oAuth2ApplicationImpl.setRememberDevice(isRememberDevice());
+		oAuth2ApplicationImpl.setTrustedApplication(isTrustedApplication());
 
 		oAuth2ApplicationImpl.resetOriginalValues();
+
+		return oAuth2ApplicationImpl;
+	}
+
+	@Override
+	public OAuth2Application cloneWithOriginalValues() {
+		OAuth2ApplicationImpl oAuth2ApplicationImpl =
+			new OAuth2ApplicationImpl();
+
+		oAuth2ApplicationImpl.setOAuth2ApplicationId(
+			this.<Long>getColumnOriginalValue("oAuth2ApplicationId"));
+		oAuth2ApplicationImpl.setCompanyId(
+			this.<Long>getColumnOriginalValue("companyId"));
+		oAuth2ApplicationImpl.setUserId(
+			this.<Long>getColumnOriginalValue("userId"));
+		oAuth2ApplicationImpl.setUserName(
+			this.<String>getColumnOriginalValue("userName"));
+		oAuth2ApplicationImpl.setCreateDate(
+			this.<Date>getColumnOriginalValue("createDate"));
+		oAuth2ApplicationImpl.setModifiedDate(
+			this.<Date>getColumnOriginalValue("modifiedDate"));
+		oAuth2ApplicationImpl.setOAuth2ApplicationScopeAliasesId(
+			this.<Long>getColumnOriginalValue("oA2AScopeAliasesId"));
+		oAuth2ApplicationImpl.setAllowedGrantTypes(
+			this.<String>getColumnOriginalValue("allowedGrantTypes"));
+		oAuth2ApplicationImpl.setClientCredentialUserId(
+			this.<Long>getColumnOriginalValue("clientCredentialUserId"));
+		oAuth2ApplicationImpl.setClientCredentialUserName(
+			this.<String>getColumnOriginalValue("clientCredentialUserName"));
+		oAuth2ApplicationImpl.setClientId(
+			this.<String>getColumnOriginalValue("clientId"));
+		oAuth2ApplicationImpl.setClientProfile(
+			this.<Integer>getColumnOriginalValue("clientProfile"));
+		oAuth2ApplicationImpl.setClientSecret(
+			this.<String>getColumnOriginalValue("clientSecret"));
+		oAuth2ApplicationImpl.setDescription(
+			this.<String>getColumnOriginalValue("description"));
+		oAuth2ApplicationImpl.setFeatures(
+			this.<String>getColumnOriginalValue("features"));
+		oAuth2ApplicationImpl.setHomePageURL(
+			this.<String>getColumnOriginalValue("homePageURL"));
+		oAuth2ApplicationImpl.setIconFileEntryId(
+			this.<Long>getColumnOriginalValue("iconFileEntryId"));
+		oAuth2ApplicationImpl.setName(
+			this.<String>getColumnOriginalValue("name"));
+		oAuth2ApplicationImpl.setPrivacyPolicyURL(
+			this.<String>getColumnOriginalValue("privacyPolicyURL"));
+		oAuth2ApplicationImpl.setRedirectURIs(
+			this.<String>getColumnOriginalValue("redirectURIs"));
+		oAuth2ApplicationImpl.setRememberDevice(
+			this.<Boolean>getColumnOriginalValue("rememberDevice"));
+		oAuth2ApplicationImpl.setTrustedApplication(
+			this.<Boolean>getColumnOriginalValue("trustedApplication"));
 
 		return oAuth2ApplicationImpl;
 	}
@@ -1182,6 +1230,10 @@ public class OAuth2ApplicationModelImpl
 			oAuth2ApplicationCacheModel.redirectURIs = null;
 		}
 
+		oAuth2ApplicationCacheModel.rememberDevice = isRememberDevice();
+
+		oAuth2ApplicationCacheModel.trustedApplication = isTrustedApplication();
+
 		return oAuth2ApplicationCacheModel;
 	}
 
@@ -1191,7 +1243,7 @@ public class OAuth2ApplicationModelImpl
 			attributeGetterFunctions = getAttributeGetterFunctions();
 
 		StringBundler sb = new StringBundler(
-			(4 * attributeGetterFunctions.size()) + 2);
+			(5 * attributeGetterFunctions.size()) + 2);
 
 		sb.append("{");
 
@@ -1202,9 +1254,27 @@ public class OAuth2ApplicationModelImpl
 			Function<OAuth2Application, Object> attributeGetterFunction =
 				entry.getValue();
 
+			sb.append("\"");
 			sb.append(attributeName);
-			sb.append("=");
-			sb.append(attributeGetterFunction.apply((OAuth2Application)this));
+			sb.append("\": ");
+
+			Object value = attributeGetterFunction.apply(
+				(OAuth2Application)this);
+
+			if (value == null) {
+				sb.append("null");
+			}
+			else if (value instanceof Blob || value instanceof Date ||
+					 value instanceof Map || value instanceof String) {
+
+				sb.append(
+					"\"" + StringUtil.replace(value.toString(), "\"", "'") +
+						"\"");
+			}
+			else {
+				sb.append(value);
+			}
+
 			sb.append(", ");
 		}
 
@@ -1276,6 +1346,8 @@ public class OAuth2ApplicationModelImpl
 	private String _name;
 	private String _privacyPolicyURL;
 	private String _redirectURIs;
+	private boolean _rememberDevice;
+	private boolean _trustedApplication;
 
 	public <T> T getColumnValue(String columnName) {
 		columnName = _attributeNames.getOrDefault(columnName, columnName);
@@ -1329,6 +1401,8 @@ public class OAuth2ApplicationModelImpl
 		_columnOriginalValues.put("name", _name);
 		_columnOriginalValues.put("privacyPolicyURL", _privacyPolicyURL);
 		_columnOriginalValues.put("redirectURIs", _redirectURIs);
+		_columnOriginalValues.put("rememberDevice", _rememberDevice);
+		_columnOriginalValues.put("trustedApplication", _trustedApplication);
 	}
 
 	private static final Map<String, String> _attributeNames;
@@ -1392,6 +1466,10 @@ public class OAuth2ApplicationModelImpl
 		columnBitmasks.put("privacyPolicyURL", 262144L);
 
 		columnBitmasks.put("redirectURIs", 524288L);
+
+		columnBitmasks.put("rememberDevice", 1048576L);
+
+		columnBitmasks.put("trustedApplication", 2097152L);
 
 		_columnBitmasks = Collections.unmodifiableMap(columnBitmasks);
 	}

@@ -56,9 +56,7 @@ public class NavItemUtil {
 
 		Layout layout = themeDisplay.getLayout();
 
-		if ((layout.getClassNameId() == _portal.getClassNameId(Layout.class)) &&
-			(layout.getClassPK() > 0)) {
-
+		if (layout.isDraftLayout()) {
 			layout = _layoutLocalService.fetchLayout(layout.getClassPK());
 		}
 
@@ -120,7 +118,8 @@ public class NavItemUtil {
 						siteNavigationMenuItem.getType());
 
 			try {
-				if (!siteNavigationMenuItemType.hasPermission(
+				if ((siteNavigationMenuItemType == null) ||
+					!siteNavigationMenuItemType.hasPermission(
 						themeDisplay.getPermissionChecker(),
 						siteNavigationMenuItem)) {
 
@@ -134,7 +133,7 @@ public class NavItemUtil {
 			}
 			catch (PortalException portalException) {
 				if (_log.isDebugEnabled()) {
-					_log.debug(portalException, portalException);
+					_log.debug(portalException);
 				}
 			}
 		}

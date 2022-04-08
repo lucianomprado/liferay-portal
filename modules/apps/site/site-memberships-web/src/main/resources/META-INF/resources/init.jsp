@@ -26,7 +26,8 @@ taglib uri="http://liferay.com/tld/theme" prefix="liferay-theme" %><%@
 taglib uri="http://liferay.com/tld/ui" prefix="liferay-ui" %><%@
 taglib uri="http://liferay.com/tld/util" prefix="liferay-util" %>
 
-<%@ page import="com.liferay.petra.string.StringPool" %><%@
+<%@ page import="com.liferay.petra.portlet.url.builder.PortletURLBuilder" %><%@
+page import="com.liferay.petra.string.StringPool" %><%@
 page import="com.liferay.portal.kernel.dao.search.ResultRow" %><%@
 page import="com.liferay.portal.kernel.exception.DuplicateGroupException" %><%@
 page import="com.liferay.portal.kernel.exception.GroupKeyException" %><%@
@@ -92,7 +93,7 @@ page import="com.liferay.site.memberships.web.internal.display.context.UsersDisp
 page import="com.liferay.site.memberships.web.internal.display.context.UsersManagementToolbarDisplayContext" %><%@
 page import="com.liferay.site.memberships.web.internal.display.context.ViewMembershipRequestsDisplayContext" %><%@
 page import="com.liferay.site.memberships.web.internal.display.context.ViewMembershipRequestsManagementToolbarDisplayContext" %><%@
-page import="com.liferay.site.memberships.web.internal.servlet.taglib.clay.OrganizationsVerticalCard" %><%@
+page import="com.liferay.site.memberships.web.internal.servlet.taglib.clay.OrganizationsUserCard" %><%@
 page import="com.liferay.site.memberships.web.internal.servlet.taglib.clay.RoleVerticalCard" %><%@
 page import="com.liferay.site.memberships.web.internal.servlet.taglib.clay.SelectRoleVerticalCard" %><%@
 page import="com.liferay.site.memberships.web.internal.servlet.taglib.clay.UsersUserCard" %><%@

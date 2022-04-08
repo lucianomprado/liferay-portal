@@ -82,14 +82,15 @@ public class SharingEntrySearchDLTest {
 			ServiceContextTestUtil.getServiceContext(
 				_group.getGroupId(), TestPropsValues.getUserId());
 
-		serviceContext.setAddGuestPermissions(false);
 		serviceContext.setAddGroupPermissions(false);
+		serviceContext.setAddGuestPermissions(false);
 
 		_fileEntry = _dlAppLocalService.addFileEntry(
-			TestPropsValues.getUserId(), _group.getGroupId(),
+			null, TestPropsValues.getUserId(), _group.getGroupId(),
 			DLFolderConstants.DEFAULT_PARENT_FOLDER_ID,
 			StringUtil.randomString(), "text/plain", _title,
-			StringUtil.randomString(), StringPool.BLANK, "Searching".getBytes(),
+			StringUtil.randomString(), StringUtil.randomString(),
+			StringPool.BLANK, "Searching".getBytes(), null, null,
 			serviceContext);
 
 		_classNameId = _classNameLocalService.getClassNameId(

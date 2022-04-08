@@ -86,18 +86,43 @@ public class AccessControlImpl implements AccessControl {
 
 	@Override
 	public AuthVerifierResult.State verifyRequest() throws PortalException {
+		AuthVerifierResult authVerifierResult = null;
+
 		AccessControlContext accessControlContext =
 			AccessControlUtil.getAccessControlContext();
 
-		AuthVerifierResult authVerifierResult =
-			AuthVerifierPipeline.verifyRequest(accessControlContext);
+		Map<String, Object> settings = accessControlContext.getSettings();
+
+		if (!settings.containsKey(AuthVerifierPipeline.class.getName())) {
+			AuthVerifierPipeline portalAuthVerifierPipeline =
+				AuthVerifierPipeline.getPortalAuthVerifierPipeline();
+
+			authVerifierResult = portalAuthVerifierPipeline.verifyRequest(
+				accessControlContext);
+		}
+		else {
+			AuthVerifierPipeline authVerifierPipeline =
+				(AuthVerifierPipeline)settings.get(
+					AuthVerifierPipeline.class.getName());
+
+			authVerifierResult = authVerifierPipeline.verifyRequest(
+				accessControlContext);
+
+			if (authVerifierResult.getState() !=
+					AuthVerifierResult.State.SUCCESS) {
+
+				AuthVerifierPipeline portalAuthVerifierPipeline =
+					AuthVerifierPipeline.getPortalAuthVerifierPipeline();
+
+				authVerifierResult = portalAuthVerifierPipeline.verifyRequest(
+					accessControlContext);
+			}
+		}
 
 		Map<String, Object> authVerifierResultSettings =
 			authVerifierResult.getSettings();
 
 		if (authVerifierResultSettings != null) {
-			Map<String, Object> settings = accessControlContext.getSettings();
-
 			settings.putAll(authVerifierResultSettings);
 		}
 

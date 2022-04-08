@@ -8,12 +8,17 @@ create table AccountEntry (
 	createDate DATE null,
 	modifiedDate DATE null,
 	defaultBillingAddressId LONG,
+	defaultCPaymentMethodKey VARCHAR(75) null,
+	defaultDeliveryCTermEntryId LONG,
+	defaultPaymentCTermEntryId LONG,
 	defaultShippingAddressId LONG,
 	parentAccountEntryId LONG,
 	description STRING null,
 	domains STRING null,
+	emailAddress VARCHAR(254) null,
 	logoId LONG,
 	name VARCHAR(100) null,
+	taxExemptionCode VARCHAR(75) null,
 	taxIdNumber VARCHAR(75) null,
 	type_ VARCHAR(75) null,
 	status INTEGER
@@ -44,16 +49,23 @@ create table AccountGroup (
 	userName VARCHAR(75) null,
 	createDate DATE null,
 	modifiedDate DATE null,
+	defaultAccountGroup BOOLEAN,
+	description VARCHAR(75) null,
 	name VARCHAR(75) null,
-	description VARCHAR(75) null
+	type_ VARCHAR(75) null
 );
 
-create table AccountGroupAccountEntryRel (
+create table AccountGroupRel (
 	mvccVersion LONG default 0 not null,
-	AccountGroupAccountEntryRelId LONG not null primary key,
+	accountGroupRelId LONG not null primary key,
 	companyId LONG,
+	userId LONG,
+	userName VARCHAR(75) null,
+	createDate DATE null,
+	modifiedDate DATE null,
 	accountGroupId LONG,
-	accountEntryId LONG
+	classNameId LONG,
+	classPK LONG
 );
 
 create table AccountRole (

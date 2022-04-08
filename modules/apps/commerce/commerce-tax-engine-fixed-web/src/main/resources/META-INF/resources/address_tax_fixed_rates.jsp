@@ -20,7 +20,7 @@
 CommerceTaxFixedRateAddressRelsDisplayContext commerceTaxFixedRateAddressRelsDisplayContext = (CommerceTaxFixedRateAddressRelsDisplayContext)request.getAttribute(WebKeys.PORTLET_DISPLAY_CONTEXT);
 %>
 
-<portlet:actionURL name="editCommerceTaxFixedRateAddressRel" var="editCommerceTaxFixedRateAddressRelActionURL" />
+<portlet:actionURL name="/commerce_tax_methods/edit_commerce_tax_fixed_rate_address_rel" var="editCommerceTaxFixedRateAddressRelActionURL" />
 
 <aui:form action="<%= editCommerceTaxFixedRateAddressRelActionURL %>" method="post" name="fm">
 	<aui:input name="<%= Constants.CMD %>" type="hidden" value="updateConfiguration" />
@@ -31,34 +31,39 @@ CommerceTaxFixedRateAddressRelsDisplayContext commerceTaxFixedRateAddressRelsDis
 	<commerce-ui:panel
 		title='<%= LanguageUtil.get(resourceBundle, "taxed-address") %>'
 	>
-		<aui:select name="applyTaxTo" onChange='<%= liferayPortletResponse.getNamespace() + "selectApplyTaxTo();" %>'>
+		<aui:select id="applyTaxTo" name="applyTaxTo">
 			<aui:option label="shipping-address" selected="<%= commerceTaxFixedRateAddressRelsDisplayContext.isTaxAppliedToShippingAddress() %>" value="<%= true %>" />
 			<aui:option label="billing-address" selected="<%= !commerceTaxFixedRateAddressRelsDisplayContext.isTaxAppliedToShippingAddress() %>" value="<%= false %>" />
 		</aui:select>
 	</commerce-ui:panel>
 
-	<clay:data-set-display
-		contextParams='<%=
-			HashMapBuilder.<String, String>put(
-				"commerceChannelId", String.valueOf(commerceTaxFixedRateAddressRelsDisplayContext.getCommerceChannelId())
-			).put(
-				"commerceTaxMethodId", String.valueOf(commerceTaxFixedRateAddressRelsDisplayContext.getCommerceTaxMethodId())
-			).build()
-		%>'
-		creationMenu="<%= commerceTaxFixedRateAddressRelsDisplayContext.getCreationMenu() %>"
-		dataProviderKey="<%= CommerceTaxRateSettingDataSetConstants.COMMERCE_DATA_SET_KEY_TAX_RATE_SETTING %>"
-		id="<%= commerceTaxFixedRateAddressRelsDisplayContext.getDatasetView() %>"
-		itemsPerPage="<%= 10 %>"
-		namespace="<%= liferayPortletResponse.getNamespace() %>"
-		pageNumber="<%= 1 %>"
-		portletURL="<%= commerceTaxFixedRateAddressRelsDisplayContext.getPortletURL() %>"
-	/>
+	<commerce-ui:panel
+		bodyClasses="p-0"
+	>
+		<clay:data-set-display
+			contextParams='<%=
+				HashMapBuilder.<String, String>put(
+					"commerceChannelId", String.valueOf(commerceTaxFixedRateAddressRelsDisplayContext.getCommerceChannelId())
+				).put(
+					"commerceTaxMethodId", String.valueOf(commerceTaxFixedRateAddressRelsDisplayContext.getCommerceTaxMethodId())
+				).build()
+			%>'
+			creationMenu="<%= commerceTaxFixedRateAddressRelsDisplayContext.getCreationMenu() %>"
+			dataProviderKey="<%= CommerceTaxRateSettingDataSetConstants.COMMERCE_DATA_SET_KEY_TAX_RATE_SETTING %>"
+			id="<%= commerceTaxFixedRateAddressRelsDisplayContext.getDatasetView() %>"
+			itemsPerPage="<%= 10 %>"
+			namespace="<%= liferayPortletResponse.getNamespace() %>"
+			pageNumber="<%= 1 %>"
+			portletURL="<%= commerceTaxFixedRateAddressRelsDisplayContext.getPortletURL() %>"
+			selectedItemsKey="taxRateSettingId"
+		/>
+	</commerce-ui:panel>
+
+	<aui:button-row>
+		<aui:button cssClass="btn-lg" type="submit" />
+	</aui:button-row>
 </aui:form>
 
-<aui:script>
-	function <portlet:namespace />selectApplyTaxTo() {
-		var fm = window.document.querySelector(document.<portlet:namespace />fm);
-
-		submitForm(fm);
-	}
-</aui:script>
+<liferay-frontend:component
+	module="js/addressTaxFixedRates"
+/>

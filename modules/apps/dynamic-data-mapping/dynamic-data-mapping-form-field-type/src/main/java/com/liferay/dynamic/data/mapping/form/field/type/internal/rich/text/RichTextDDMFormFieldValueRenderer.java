@@ -15,11 +15,12 @@
 package com.liferay.dynamic.data.mapping.form.field.type.internal.rich.text;
 
 import com.liferay.dynamic.data.mapping.form.field.type.DDMFormFieldValueRenderer;
+import com.liferay.dynamic.data.mapping.form.field.type.constants.DDMFormFieldTypeConstants;
 import com.liferay.dynamic.data.mapping.model.Value;
 import com.liferay.dynamic.data.mapping.storage.DDMFormFieldValue;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.Html;
+import com.liferay.portal.kernel.util.HtmlParser;
 
 import java.util.Locale;
 
@@ -30,7 +31,8 @@ import org.osgi.service.component.annotations.Reference;
  * @author Marcela Cunha
  */
 @Component(
-	immediate = true, property = "ddm.form.field.type.name=rich_text",
+	immediate = true,
+	property = "ddm.form.field.type.name=" + DDMFormFieldTypeConstants.RICH_TEXT,
 	service = {
 		DDMFormFieldValueRenderer.class, RichTextDDMFormFieldValueRenderer.class
 	}
@@ -46,10 +48,11 @@ public class RichTextDDMFormFieldValueRenderer
 			return StringPool.BLANK;
 		}
 
-		return GetterUtil.getString(_html.extractText(value.getString(locale)));
+		return GetterUtil.getString(
+			_htmlParser.extractText(value.getString(locale)));
 	}
 
 	@Reference
-	private Html _html;
+	private HtmlParser _htmlParser;
 
 }

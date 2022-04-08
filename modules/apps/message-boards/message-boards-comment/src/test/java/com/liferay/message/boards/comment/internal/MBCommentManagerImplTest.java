@@ -26,6 +26,7 @@ import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import java.util.Collections;
 import java.util.List;
@@ -33,6 +34,8 @@ import java.util.function.Function;
 
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 import org.mockito.Matchers;
@@ -45,6 +48,11 @@ import org.mockito.MockitoAnnotations;
  */
 public class MBCommentManagerImplTest extends Mockito {
 
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
+
 	@Before
 	public void setUp() throws Exception {
 		MockitoAnnotations.initMocks(this);
@@ -56,9 +64,9 @@ public class MBCommentManagerImplTest extends Mockito {
 		ReflectionTestUtil.setFieldValue(
 			_mbCommentManagerImpl, "_portal", _portal);
 
-		setUpMBCommentManagerImpl();
-		setUpPortalUtil();
-		setUpServiceContext();
+		_setUpMBCommentManagerImpl();
+		_setUpPortalUtil();
+		_setUpServiceContext();
 	}
 
 	@Test
@@ -126,7 +134,7 @@ public class MBCommentManagerImplTest extends Mockito {
 
 	@Test(expected = DuplicateCommentException.class)
 	public void testAddDuplicateComment() throws Exception {
-		setUpExistingComment(_BODY);
+		_setUpExistingComment(_BODY);
 
 		_mbCommentManagerImpl.addComment(
 			_USER_ID, _GROUP_ID, _CLASS_NAME, _ENTRY_ID, _BODY,
@@ -135,7 +143,7 @@ public class MBCommentManagerImplTest extends Mockito {
 
 	@Test
 	public void testAddUniqueComment() throws Exception {
-		setUpExistingComment(_BODY + RandomTestUtil.randomString());
+		_setUpExistingComment(_BODY + RandomTestUtil.randomString());
 
 		_mbCommentManagerImpl.addComment(
 			_USER_ID, _GROUP_ID, _CLASS_NAME, _ENTRY_ID, _BODY,
@@ -211,7 +219,7 @@ public class MBCommentManagerImplTest extends Mockito {
 			_mbCommentManagerImpl.getCommentsCount(_CLASS_NAME, classPK));
 	}
 
-	protected void setUpExistingComment(String body) {
+	private void _setUpExistingComment(String body) {
 		when(
 			_mbMessage.getBody()
 		).thenReturn(
@@ -228,7 +236,7 @@ public class MBCommentManagerImplTest extends Mockito {
 		);
 	}
 
-	protected void setUpMBCommentManagerImpl() throws Exception {
+	private void _setUpMBCommentManagerImpl() throws Exception {
 		when(
 			_mbMessageDisplay.getThread()
 		).thenReturn(
@@ -266,13 +274,13 @@ public class MBCommentManagerImplTest extends Mockito {
 		);
 	}
 
-	protected void setUpPortalUtil() {
+	private void _setUpPortalUtil() {
 		PortalUtil portalUtil = new PortalUtil();
 
 		portalUtil.setPortal(_portal);
 	}
 
-	protected void setUpServiceContext() {
+	private void _setUpServiceContext() {
 		when(
 			_serviceContextFunction.apply(MBMessage.class.getName())
 		).thenReturn(

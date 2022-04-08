@@ -234,13 +234,13 @@ public class CPDefinitionOptionRelIndexer
 	protected void doReindex(String[] ids) throws Exception {
 		long companyId = GetterUtil.getLong(ids[0]);
 
-		reindexCPDefinitionOptionRels(companyId);
+		_reindexCPDefinitionOptionRels(companyId);
 	}
 
-	protected void reindexCPDefinitionOptionRels(long companyId)
-		throws PortalException {
+	private void _reindexCPDefinitionOptionRels(long companyId)
+		throws Exception {
 
-		final IndexableActionableDynamicQuery indexableActionableDynamicQuery =
+		IndexableActionableDynamicQuery indexableActionableDynamicQuery =
 			_cpDefinitionOptionRelLocalService.
 				getIndexableActionableDynamicQuery();
 
@@ -253,10 +253,12 @@ public class CPDefinitionOptionRelIndexer
 				}
 				catch (PortalException portalException) {
 					if (_log.isWarnEnabled()) {
+						long cpDefinitionOptionRelId =
+							cpDefinitionOptionRel.getCPDefinitionOptionRelId();
+
 						_log.warn(
 							"Unable to index definition option rel " +
-								cpDefinitionOptionRel.
-									getCPDefinitionOptionRelId(),
+								cpDefinitionOptionRelId,
 							portalException);
 					}
 				}

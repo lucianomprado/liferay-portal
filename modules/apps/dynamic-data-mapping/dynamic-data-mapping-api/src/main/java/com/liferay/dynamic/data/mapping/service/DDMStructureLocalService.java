@@ -160,11 +160,13 @@ public interface DDMStructureLocalService
 	 group permissions for the structure.
 	 * @return the new structure
 	 */
+	@Indexable(type = IndexableType.REINDEX)
 	public DDMStructure copyStructure(
 			long userId, long structureId, Map<Locale, String> nameMap,
 			Map<Locale, String> descriptionMap, ServiceContext serviceContext)
 		throws PortalException;
 
+	@Indexable(type = IndexableType.REINDEX)
 	public DDMStructure copyStructure(
 			long userId, long structureId, ServiceContext serviceContext)
 		throws PortalException;
@@ -281,6 +283,9 @@ public interface DDMStructureLocalService
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public <T> T dslQuery(DSLQuery dslQuery);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public int dslQueryCount(DSLQuery dslQuery);
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public DynamicQuery dynamicQuery();

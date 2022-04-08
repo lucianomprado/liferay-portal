@@ -24,6 +24,7 @@ WikiPortletInstanceConfiguration wikiPortletInstanceConfiguration = wikiRequestH
 boolean followRedirect = ParamUtil.getBoolean(request, "followRedirect", true);
 
 WikiNode node = (WikiNode)request.getAttribute(WikiWebKeys.WIKI_NODE);
+
 WikiPage wikiPage = (WikiPage)request.getAttribute(WikiWebKeys.WIKI_PAGE);
 
 WikiPage originalPage = null;
@@ -63,43 +64,66 @@ viewPageURL.setParameter("title", title);
 PortletURL viewParentPageURL = null;
 
 if (Validator.isNotNull(parentTitle)) {
-	viewParentPageURL = PortletURLUtil.clone(viewPageURL, renderResponse);
-
-	viewParentPageURL.setParameter("title", parentTitle);
+	viewParentPageURL = PortletURLBuilder.create(
+		PortletURLUtil.clone(viewPageURL, renderResponse)
+	).setParameter(
+		"title", parentTitle
+	).buildPortletURL();
 
 	parentTitle = StringUtil.shorten(parentTitle, 20);
 }
 
-PortletURL addPageURL = renderResponse.createRenderURL();
+PortletURL addPageURL = PortletURLBuilder.createRenderURL(
+	renderResponse
+).setMVCRenderCommandName(
+	"/wiki/edit_page"
+).setRedirect(
+	currentURL
+).setParameter(
+	"editTitle", "1"
+).setParameter(
+	"nodeId", node.getNodeId()
+).setParameter(
+	"parentTitle", wikiPage.getTitle()
+).setParameter(
+	"title", StringPool.BLANK
+).buildPortletURL();
 
-addPageURL.setParameter("mvcRenderCommandName", "/wiki/edit_page");
-addPageURL.setParameter("redirect", currentURL);
-addPageURL.setParameter("nodeId", String.valueOf(node.getNodeId()));
-addPageURL.setParameter("title", StringPool.BLANK);
-addPageURL.setParameter("editTitle", "1");
-addPageURL.setParameter("parentTitle", wikiPage.getTitle());
+PortletURL editPageURL = PortletURLBuilder.createRenderURL(
+	renderResponse
+).setMVCRenderCommandName(
+	"/wiki/edit_page"
+).setRedirect(
+	currentURL
+).setParameter(
+	"nodeId", node.getNodeId()
+).setParameter(
+	"title", title
+).buildPortletURL();
 
-PortletURL editPageURL = renderResponse.createRenderURL();
+PortletURL printPageURL = PortletURLBuilder.create(
+	PortletURLUtil.clone(viewPageURL, renderResponse)
+).setParameter(
+	"viewMode", Constants.PRINT
+).setWindowState(
+	LiferayWindowState.POP_UP
+).buildPortletURL();
 
-editPageURL.setParameter("mvcRenderCommandName", "/wiki/edit_page");
-editPageURL.setParameter("redirect", currentURL);
-editPageURL.setParameter("nodeId", String.valueOf(node.getNodeId()));
-editPageURL.setParameter("title", title);
+PortletURL categorizedPagesURL = PortletURLBuilder.createRenderURL(
+	renderResponse
+).setMVCRenderCommandName(
+	"/wiki/view_categorized_pages"
+).setParameter(
+	"nodeId", node.getNodeId()
+).buildPortletURL();
 
-PortletURL printPageURL = PortletURLUtil.clone(viewPageURL, renderResponse);
-
-printPageURL.setParameter("viewMode", Constants.PRINT);
-printPageURL.setWindowState(LiferayWindowState.POP_UP);
-
-PortletURL categorizedPagesURL = renderResponse.createRenderURL();
-
-categorizedPagesURL.setParameter("mvcRenderCommandName", "/wiki/view_categorized_pages");
-categorizedPagesURL.setParameter("nodeId", String.valueOf(node.getNodeId()));
-
-PortletURL taggedPagesURL = renderResponse.createRenderURL();
-
-taggedPagesURL.setParameter("mvcRenderCommandName", "/wiki/view_tagged_pages");
-taggedPagesURL.setParameter("nodeId", String.valueOf(node.getNodeId()));
+PortletURL taggedPagesURL = PortletURLBuilder.createRenderURL(
+	renderResponse
+).setMVCRenderCommandName(
+	"/wiki/view_tagged_pages"
+).setParameter(
+	"nodeId", node.getNodeId()
+).buildPortletURL();
 
 AssetEntry layoutAssetEntry = AssetEntryLocalServiceUtil.getEntry(WikiPage.class.getName(), wikiPage.getResourcePrimKey());
 
@@ -120,8 +144,6 @@ if (portletTitleBasedNavigation) {
 
 	portletDisplay.setShowBackIcon(true);
 	portletDisplay.setURLBack((viewParentPageURL != null) ? viewParentPageURL.toString() : backToViewPagesURL.toString());
-
-	renderResponse.setTitle(wikiPage.getTitle());
 }
 %>
 
@@ -140,7 +162,7 @@ if (portletTitleBasedNavigation) {
 	</liferay-frontend:info-bar>
 </c:if>
 
-<div <%= portletTitleBasedNavigation ? "class=\"closed container-fluid container-fluid-max-xl sidenav-container sidenav-right\" id=\"" + liferayPortletResponse.getNamespace() + "infoPanelId\"" : StringPool.BLANK %>>
+<div <%= portletTitleBasedNavigation ? "class=\"closed sidenav-container sidenav-right\" id=\"" + liferayPortletResponse.getNamespace() + "infoPanelId\"" : StringPool.BLANK %>>
 	<c:if test="<%= portletTitleBasedNavigation %>">
 		<liferay-frontend:sidebar-panel>
 			<liferay-util:include page="/wiki_admin/page_info_panel.jsp" servletContext="<%= application %>" />
@@ -148,80 +170,80 @@ if (portletTitleBasedNavigation) {
 	</c:if>
 
 	<div class="sidenav-content">
-		<div <%= portletTitleBasedNavigation ? "class=\"panel main-content-card\"" : StringPool.BLANK %>>
-			<div <%= portletTitleBasedNavigation ? "class=\"panel-body\"" : StringPool.BLANK %>>
-				<c:if test="<%= !portletTitleBasedNavigation %>">
-					<c:choose>
-						<c:when test="<%= print %>">
-							<aui:script>
-								window.onafterprint = function () {
-									window.close();
-								};
+		<clay:container-fluid>
+			<div <%= portletTitleBasedNavigation ? "class=\"container-form-lg\"" : StringPool.BLANK %>>
+				<div <%= portletTitleBasedNavigation ? "class=\"sheet\"" : StringPool.BLANK %>>
+					<c:if test="<%= !portletTitleBasedNavigation %>">
+						<c:choose>
+							<c:when test="<%= print %>">
+								<aui:script>
+									window.onafterprint = function () {
+										window.close();
+									};
 
-								window.onfocus = function () {
-									window.close();
-								};
+									window.onfocus = function () {
+										window.close();
+									};
 
-								print();
-							</aui:script>
-						</c:when>
-						<c:otherwise>
-							<aui:script>
-								function <portlet:namespace />printPage() {
-									window.open(
-										'<%= printPageURL %>',
-										'',
-										'directories=0,height=480,left=80,location=1,menubar=1,resizable=1,scrollbars=yes,status=0,toolbar=0,top=180,width=640'
-									);
-								}
-							</aui:script>
-						</c:otherwise>
-					</c:choose>
+									print();
+								</aui:script>
+							</c:when>
+							<c:otherwise>
+								<aui:script>
+									function <portlet:namespace />printPage() {
+										window.open(
+											'<%= printPageURL %>',
+											'',
+											'directories=0,height=480,left=80,location=1,menubar=1,resizable=1,scrollbars=yes,status=0,toolbar=0,top=180,width=640'
+										);
+									}
+								</aui:script>
+							</c:otherwise>
+						</c:choose>
 
-					<liferay-util:include page="/wiki/top_links.jsp" servletContext="<%= application %>" />
-				</c:if>
+						<liferay-util:include page="/wiki/top_links.jsp" servletContext="<%= application %>" />
+					</c:if>
 
-				<%
-				List<WikiPage> entries = new ArrayList<>();
+					<%
+					List<WikiPage> entries = new ArrayList<>();
 
-				entries.add(wikiPage);
+					entries.add(wikiPage);
 
-				String formattedContent = null;
+					String formattedContent = null;
 
-				WikiEngineRenderer wikiEngineRenderer = (WikiEngineRenderer)request.getAttribute(WikiWebKeys.WIKI_ENGINE_RENDERER);
+					WikiEngineRenderer wikiEngineRenderer = (WikiEngineRenderer)request.getAttribute(WikiWebKeys.WIKI_ENGINE_RENDERER);
 
-				try {
-					formattedContent = WikiUtil.getFormattedContent(wikiEngineRenderer, renderRequest, renderResponse, wikiPage, viewPageURL, editPageURL, title, preview);
-				}
-				catch (Exception e) {
-					formattedContent = wikiPage.getContent();
-				}
-				%>
+					try {
+						formattedContent = WikiUtil.getFormattedContent(wikiEngineRenderer, renderRequest, renderResponse, wikiPage, viewPageURL, editPageURL, title, preview);
+					}
+					catch (Exception e) {
+						formattedContent = wikiPage.getContent();
+					}
+					%>
 
-				<c:if test="<%= !portletTitleBasedNavigation %>">
-					<div class="lfr-alert-container"></div>
-				</c:if>
+					<c:if test="<%= !portletTitleBasedNavigation %>">
+						<div class="lfr-alert-container"></div>
+					</c:if>
 
-				<liferay-ddm:template-renderer
-					className="<%= WikiPage.class.getName() %>"
-					contextObjects='<%=
-						HashMapBuilder.<String, Object>put(
-							"assetEntry", layoutAssetEntry
-						).put(
-							"formattedContent", formattedContent
-						).put(
-							"viewURL", viewPageURL.toString()
-						).put(
-							"wikiPortletInstanceConfiguration", wikiPortletInstanceConfiguration
-						).put(
-							"wikiPortletInstanceOverriddenConfiguration", wikiPortletInstanceConfiguration
-						).build()
-					%>'
-					displayStyle="<%= wikiPortletInstanceSettingsHelper.getDisplayStyle() %>"
-					displayStyleGroupId="<%= wikiPortletInstanceSettingsHelper.getDisplayStyleGroupId() %>"
-					entries="<%= entries %>"
-				>
-					<div class="main-content-body">
+					<liferay-ddm:template-renderer
+						className="<%= WikiPage.class.getName() %>"
+						contextObjects='<%=
+							HashMapBuilder.<String, Object>put(
+								"assetEntry", layoutAssetEntry
+							).put(
+								"formattedContent", formattedContent
+							).put(
+								"viewURL", viewPageURL.toString()
+							).put(
+								"wikiPortletInstanceConfiguration", wikiPortletInstanceConfiguration
+							).put(
+								"wikiPortletInstanceOverriddenConfiguration", wikiPortletInstanceConfiguration
+							).build()
+						%>'
+						displayStyle="<%= wikiPortletInstanceSettingsHelper.getDisplayStyle() %>"
+						displayStyleGroupId="<%= wikiPortletInstanceSettingsHelper.getDisplayStyleGroupId() %>"
+						entries="<%= entries %>"
+					>
 						<c:choose>
 							<c:when test="<%= !portletTitleBasedNavigation %>">
 								<liferay-ui:header
@@ -232,7 +254,7 @@ if (portletTitleBasedNavigation) {
 								/>
 							</c:when>
 							<c:otherwise>
-								<h2><%= title %></h2>
+								<h2 class="sheet-title"><%= title %></h2>
 							</c:otherwise>
 						</c:choose>
 
@@ -261,20 +283,21 @@ if (portletTitleBasedNavigation) {
 									</c:if>
 								</c:if>
 
-								<%
-								PortletURL viewPageDetailsURL = PortletURLUtil.clone(viewPageURL, renderResponse);
-
-								viewPageDetailsURL.setParameter("mvcRenderCommandName", "/wiki/view_page_details");
-								viewPageDetailsURL.setParameter("redirect", currentURL);
-								%>
-
 								<liferay-ui:icon
 									icon="document"
 									label="<%= true %>"
 									markupView="lexicon"
 									message="details"
 									method="get"
-									url="<%= viewPageDetailsURL.toString() %>"
+									url='<%=
+										PortletURLBuilder.create(
+											PortletURLUtil.clone(viewPageURL, renderResponse)
+										).setMVCRenderCommandName(
+											"/wiki/view_page_details"
+										).setRedirect(
+											currentURL
+										).buildString()
+%>'
 								/>
 
 								<liferay-ui:icon
@@ -290,12 +313,17 @@ if (portletTitleBasedNavigation) {
 						<c:if test="<%= originalPage != null %>">
 
 							<%
-							PortletURL originalViewPageURL = renderResponse.createRenderURL();
-
-							originalViewPageURL.setParameter("mvcRenderCommandName", "/wiki/view");
-							originalViewPageURL.setParameter("nodeName", node.getName());
-							originalViewPageURL.setParameter("title", originalPage.getTitle());
-							originalViewPageURL.setParameter("followRedirect", "false");
+							PortletURL originalViewPageURL = PortletURLBuilder.createRenderURL(
+								renderResponse
+							).setMVCRenderCommandName(
+								"/wiki/view"
+							).setParameter(
+								"followRedirect", "false"
+							).setParameter(
+								"nodeName", node.getName()
+							).setParameter(
+								"title", originalPage.getTitle()
+							).buildPortletURL();
 							%>
 
 							<div class="page-redirect" onClick="location.href = '<%= originalViewPageURL.toString() %>';">
@@ -399,88 +427,89 @@ if (portletTitleBasedNavigation) {
 								</div>
 							</c:if>
 						</c:if>
-					</div>
-				</liferay-ddm:template-renderer>
+					</liferay-ddm:template-renderer>
 
-				<%
-				if (!Objects.equals(wikiPage.getTitle(), wikiGroupServiceConfiguration.frontPageName())) {
-					if (!portletName.equals(WikiPortletKeys.WIKI_DISPLAY)) {
-						PortalUtil.setPageSubtitle(wikiPage.getTitle(), request);
+					<%
+					if (!Objects.equals(wikiPage.getTitle(), wikiGroupServiceConfiguration.frontPageName())) {
+						if (!portletName.equals(WikiPortletKeys.WIKI_DISPLAY)) {
+							PortalUtil.setPageSubtitle(wikiPage.getTitle(), request);
 
-						String description = wikiPage.getContent();
+							String description = wikiPage.getContent();
 
-						if (Objects.equals(wikiPage.getFormat(), "html")) {
-							description = HtmlUtil.stripHtml(description);
+							if (Objects.equals(wikiPage.getFormat(), "html")) {
+								description = HtmlUtil.stripHtml(description);
+							}
+
+							description = StringUtil.shorten(description, 200);
+
+							PortalUtil.setPageDescription(description, request);
+
+							PortalUtil.setPageKeywords(assetHelper.getAssetKeywords(WikiPage.class.getName(), wikiPage.getResourcePrimKey()), request);
 						}
 
-						description = StringUtil.shorten(description, 200);
+						List<WikiPage> parentPages = wikiPage.getViewableParentPages();
 
-						PortalUtil.setPageDescription(description, request);
-						PortalUtil.setPageKeywords(assetHelper.getAssetKeywords(WikiPage.class.getName(), wikiPage.getResourcePrimKey()), request);
+						for (WikiPage curParentPage : parentPages) {
+							viewPageURL.setParameter("title", curParentPage.getTitle());
+
+							PortalUtil.addPortletBreadcrumbEntry(request, curParentPage.getTitle(), viewPageURL.toString());
+						}
+
+						viewPageURL.setParameter("title", wikiPage.getTitle());
+
+						PortalUtil.addPortletBreadcrumbEntry(request, wikiPage.getTitle(), viewPageURL.toString());
 					}
-
-					List<WikiPage> parentPages = wikiPage.getViewableParentPages();
-
-					for (WikiPage curParentPage : parentPages) {
-						viewPageURL.setParameter("title", curParentPage.getTitle());
-
-						PortalUtil.addPortletBreadcrumbEntry(request, curParentPage.getTitle(), viewPageURL.toString());
-					}
-
-					viewPageURL.setParameter("title", wikiPage.getTitle());
-
-					PortalUtil.addPortletBreadcrumbEntry(request, wikiPage.getTitle(), viewPageURL.toString());
-				}
-				%>
-
-				<liferay-util:dynamic-include key="com.liferay.wiki.web#/wiki/view.jsp#post" />
-			</div>
-		</div>
-
-		<c:if test="<%= Validator.isNotNull(formattedContent) && (followRedirect || (redirectPage == null)) && !childPages.isEmpty() %>">
-			<h4 class="text-default">
-				<liferay-ui:message arguments="<%= childPages.size() %>" key="child-pages-x" translateArguments="<%= false %>" />
-			</h4>
-
-			<div>
-				<ul class="list-group">
-
-					<%
-					for (WikiPage childPage : childPages) {
 					%>
 
-						<li class="list-group-item">
-							<h3>
+					<liferay-util:dynamic-include key="com.liferay.wiki.web#/wiki/view.jsp#post" />
+				</div>
+			</div>
+
+			<c:if test="<%= Validator.isNotNull(formattedContent) && (followRedirect || (redirectPage == null)) && !childPages.isEmpty() %>">
+				<h4 class="text-default">
+					<liferay-ui:message arguments="<%= childPages.size() %>" key="child-pages-x" translateArguments="<%= false %>" />
+				</h4>
+
+				<div>
+					<ul class="list-group">
+
+						<%
+						for (WikiPage childPage : childPages) {
+						%>
+
+							<li class="list-group-item">
+								<h3>
+									<aui:a
+										href="<%=
+PortletURLBuilder.create(
+										PortletURLUtil.clone(viewPageURL, renderResponse)
+									).setParameter(
+										"title", childPage.getTitle()
+									).buildString() %>"><%= childPage.getTitle() %></aui:a
+									>
+								</h3>
 
 								<%
-								PortletURL rowURL = PortletURLUtil.clone(viewPageURL, renderResponse);
+								String childPageFormattedContent = null;
 
-								rowURL.setParameter("title", childPage.getTitle());
+								try {
+									childPageFormattedContent = WikiUtil.getFormattedContent(wikiEngineRenderer, renderRequest, renderResponse, childPage, viewPageURL, editPageURL, childPage.getTitle(), false);
+								}
+								catch (Exception e) {
+									childPageFormattedContent = childPage.getContent();
+								}
 								%>
 
-								<aui:a href="<%= rowURL.toString() %>"><%= childPage.getTitle() %></aui:a>
-							</h3>
+								<p class="text-default"><%= StringUtil.shorten(HtmlParserUtil.extractText(childPageFormattedContent), 200) %></p>
+							</li>
 
-							<%
-							String childPageFormattedContent = null;
+						<%
+						}
+						%>
 
-							try {
-								childPageFormattedContent = WikiUtil.getFormattedContent(wikiEngineRenderer, renderRequest, renderResponse, childPage, viewPageURL, editPageURL, childPage.getTitle(), false);
-							}
-							catch (Exception e) {
-								childPageFormattedContent = childPage.getContent();
-							}
-							%>
-
-							<p class="text-default"><%= StringUtil.shorten(HtmlUtil.extractText(childPageFormattedContent), 200) %></p>
-						</li>
-
-					<%
-					}
-					%>
-
-				</ul>
-			</div>
-		</c:if>
+					</ul>
+				</div>
+			</c:if>
+		</clay:container-fluid>
 	</div>
 </div>

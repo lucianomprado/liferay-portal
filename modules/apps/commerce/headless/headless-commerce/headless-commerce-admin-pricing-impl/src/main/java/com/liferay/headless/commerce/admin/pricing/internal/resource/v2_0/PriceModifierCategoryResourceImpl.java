@@ -29,6 +29,7 @@ import com.liferay.headless.commerce.admin.pricing.resource.v2_0.PriceModifierCa
 import com.liferay.headless.commerce.core.util.ServiceContextHelper;
 import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.search.filter.Filter;
+import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.vulcan.dto.converter.DTOConverterRegistry;
 import com.liferay.portal.vulcan.dto.converter.DefaultDTOConverterContext;
@@ -71,11 +72,11 @@ public class PriceModifierCategoryResourceImpl
 
 		CommercePriceModifier commercePriceModifier =
 			_commercePriceModifierService.fetchByExternalReferenceCode(
-				contextCompany.getCompanyId(), externalReferenceCode);
+				externalReferenceCode, contextCompany.getCompanyId());
 
 		if (commercePriceModifier == null) {
 			throw new NoSuchPriceModifierException(
-				"Unable to find Price Modifier with externalReferenceCode: " +
+				"Unable to find price modifier with external reference code " +
 					externalReferenceCode);
 		}
 
@@ -129,19 +130,19 @@ public class PriceModifierCategoryResourceImpl
 
 		CommercePriceModifier commercePriceModifier =
 			_commercePriceModifierService.fetchByExternalReferenceCode(
-				contextCompany.getCompanyId(), externalReferenceCode);
+				externalReferenceCode, contextCompany.getCompanyId());
 
 		if (commercePriceModifier == null) {
 			throw new NoSuchPriceModifierException(
-				"Unable to find Price Modifier with externalReferenceCode: " +
+				"Unable to find price modifier with external reference code " +
 					externalReferenceCode);
 		}
 
 		CommercePriceModifierRel commercePriceModifierRel =
 			PriceModifierCategoryUtil.addCommercePriceModifierRel(
-				_assetCategoryLocalService, _commercePriceModifierRelService,
-				priceModifierCategory, commercePriceModifier,
-				_serviceContextHelper);
+				contextCompany.getGroupId(), _assetCategoryLocalService,
+				_commercePriceModifierRelService, priceModifierCategory,
+				commercePriceModifier, _serviceContextHelper);
 
 		return _toPriceModifierCategory(
 			commercePriceModifierRel.getCommercePriceModifierRelId());
@@ -154,8 +155,8 @@ public class PriceModifierCategoryResourceImpl
 
 		CommercePriceModifierRel commercePriceModifierRel =
 			PriceModifierCategoryUtil.addCommercePriceModifierRel(
-				_assetCategoryLocalService, _commercePriceModifierRelService,
-				priceModifierCategory,
+				contextCompany.getGroupId(), _assetCategoryLocalService,
+				_commercePriceModifierRelService, priceModifierCategory,
 				_commercePriceModifierService.getCommercePriceModifier(id),
 				_serviceContextHelper);
 
@@ -169,17 +170,11 @@ public class PriceModifierCategoryResourceImpl
 
 		return HashMapBuilder.<String, Map<String, String>>put(
 			"delete",
-			() -> {
-				CommercePriceModifier commercePriceModifier =
-					commercePriceModifierRel.getCommercePriceModifier();
-
-				return addAction(
-					"UPDATE", commercePriceModifier.getCommercePriceListId(),
-					"deletePriceModifierCategory",
-					commercePriceModifier.getUserId(),
-					"com.liferay.commerce.price.list.model.CommercePriceList",
-					commercePriceModifier.getGroupId());
-			}
+			addAction(
+				"UPDATE",
+				commercePriceModifierRel.getCommercePriceModifierRelId(),
+				"deletePriceModifierCategory",
+				_commercePriceModifierRelModelResourcePermission)
 		).build();
 	}
 
@@ -219,6 +214,12 @@ public class PriceModifierCategoryResourceImpl
 
 	@Reference
 	private AssetCategoryLocalService _assetCategoryLocalService;
+
+	@Reference(
+		target = "(model.class.name=com.liferay.commerce.pricing.model.CommercePriceModifierRel)"
+	)
+	private ModelResourcePermission<CommercePriceModifierRel>
+		_commercePriceModifierRelModelResourcePermission;
 
 	@Reference
 	private CommercePriceModifierRelService _commercePriceModifierRelService;

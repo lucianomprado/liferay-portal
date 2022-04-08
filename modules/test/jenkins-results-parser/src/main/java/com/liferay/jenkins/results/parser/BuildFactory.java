@@ -14,10 +14,10 @@
 
 package com.liferay.jenkins.results.parser;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 
-import java.util.Objects;
 import java.util.Properties;
 import java.util.regex.Matcher;
 
@@ -90,27 +90,16 @@ public class BuildFactory {
 			}
 		}
 
+		if (jobName.contains("legacy")) {
+			return new LegacyTopLevelBuild(url, (TopLevelBuild)parentBuild);
+		}
+
 		if (jobName.equals("root-cause-analysis-tool")) {
 			return new RootCauseAnalysisToolBuild(
 				url, (TopLevelBuild)parentBuild);
 		}
 
 		if (jobName.startsWith("test-portal-acceptance-pullrequest")) {
-			String testSuite = null;
-
-			try {
-				testSuite = JenkinsResultsParserUtil.getBuildParameter(
-					url, "CI_TEST_SUITE");
-			}
-			catch (RuntimeException runtimeException) {
-				System.out.println(runtimeException.getMessage());
-			}
-
-			if (Objects.equals(testSuite, "bundle")) {
-				return new StandaloneTopLevelBuild(
-					url, (TopLevelBuild)parentBuild);
-			}
-
 			return new PullRequestPortalTopLevelBuild(
 				url, (TopLevelBuild)parentBuild);
 		}
@@ -130,8 +119,29 @@ public class BuildFactory {
 				url, (TopLevelBuild)parentBuild);
 		}
 
+		if (jobName.equals("test-portal-app-release")) {
+			return new PortalAppReleaseTopLevelBuild(
+				url, (TopLevelBuild)parentBuild);
+		}
+
+		if (jobName.startsWith("test-portal-aws(")) {
+			return new PortalAWSTopLevelBuild(url, (TopLevelBuild)parentBuild);
+		}
+
+		if (jobName.startsWith("test-portal-environment(") ||
+			jobName.startsWith("test-portal-environment-release(") ||
+			jobName.startsWith("test-portal-fixpack-environment(")) {
+
+			return new PortalEnvironmentBuild(url, (TopLevelBuild)parentBuild);
+		}
+
 		if (jobName.equals("test-portal-fixpack-release")) {
 			return new PortalFixpackReleasePortalTopLevelBuild(
+				url, (TopLevelBuild)parentBuild);
+		}
+
+		if (jobName.equals("test-portal-hotfix-release")) {
+			return new PortalHotfixReleasePortalTopLevelBuild(
 				url, (TopLevelBuild)parentBuild);
 		}
 
@@ -140,11 +150,23 @@ public class BuildFactory {
 				url, (TopLevelBuild)parentBuild);
 		}
 
+		if (jobName.matches(
+				"test-subrepository-acceptance-pullrequest\\(.*\\)")) {
+
+			return new PullRequestSubrepositoryTopLevelBuild(
+				url, (TopLevelBuild)parentBuild);
+		}
+
 		if (jobName.contains("plugins")) {
 			return new PluginsTopLevelBuild(url, (TopLevelBuild)parentBuild);
 		}
 
 		if (jobName.contains("portal")) {
+			if (jobName.contains("upstream")) {
+				return new UpstreamPortalTopLevelBuild(
+					url, (TopLevelBuild)parentBuild);
+			}
+
 			return new PortalTopLevelBuild(url, (TopLevelBuild)parentBuild);
 		}
 
@@ -155,35 +177,57 @@ public class BuildFactory {
 		return new DefaultTopLevelBuild(url, (TopLevelBuild)parentBuild);
 	}
 
-	public static Build newBuildFromArchive(String archiveName) {
-		String url = JenkinsResultsParserUtil.combine(
-			"${dependencies.url}/", archiveName, "/", "archive.properties");
+	public static synchronized Build newBuildFromArchive(
+		File archiveRootDir, String archiveName) {
 
-		Properties archiveProperties = new Properties();
+		String originalUrlDependenciesFile =
+			JenkinsResultsParserUtil.urlDependenciesFile;
 
 		try {
-			archiveProperties.load(
-				new StringReader(
-					JenkinsResultsParserUtil.toString(
-						JenkinsResultsParserUtil.getLocalURL(url))));
-		}
-		catch (IOException ioException) {
-			throw new RuntimeException(
-				"Unable to find archive " + archiveName, ioException);
-		}
+			if (archiveRootDir != null) {
+				JenkinsResultsParserUtil.urlDependenciesFile =
+					JenkinsResultsParserUtil.combine(
+						"file:", archiveRootDir.getPath(), "/");
+			}
 
-		return newBuild(
-			archiveProperties.getProperty("top.level.build.url"), null);
+			String url = JenkinsResultsParserUtil.combine(
+				Build.DEPENDENCIES_URL_TOKEN, "/", archiveName, "/",
+				"archive.properties");
+
+			Properties archiveProperties = new Properties();
+
+			try {
+				archiveProperties.load(
+					new StringReader(
+						JenkinsResultsParserUtil.toString(
+							JenkinsResultsParserUtil.getLocalURL(url))));
+			}
+			catch (IOException ioException) {
+				throw new RuntimeException(
+					"Unable to find archive " + archiveName, ioException);
+			}
+
+			return newBuild(
+				archiveProperties.getProperty("top.level.build.url"), null);
+		}
+		finally {
+			JenkinsResultsParserUtil.urlDependenciesFile =
+				originalUrlDependenciesFile;
+		}
+	}
+
+	public static Build newBuildFromArchive(String archiveName) {
+		return newBuildFromArchive(null, archiveName);
 	}
 
 	private static final String _BUILD_URL_SUFFIX_REGEX =
 		JenkinsResultsParserUtil.combine(
-			"((?<axisVariable>AXIS_VARIABLE=[^,]+,[^/]+)|)/?",
+			"((?<axisVariable>AXIS_VARIABLE=[^,/]+(,[^/]+)?)|)/?",
 			"((?<buildNumber>\\d+)|buildWithParameters\\?" +
 				"(?<queryString>.*))/?");
 
 	private static final String[] _TOKENS_BATCH = {
-		"-batch", "-dist", "environment-"
+		"-batch", "-chrome", "-dist", "-edge", "-firefox", "-ie11", "-safari"
 	};
 
 	private static final MultiPattern _buildURLMultiPattern = new MultiPattern(
@@ -191,7 +235,10 @@ public class BuildFactory {
 			"\\w+://(?<master>[^/]+)/+job/+(?<jobName>[^/]+)/?",
 			_BUILD_URL_SUFFIX_REGEX),
 		JenkinsResultsParserUtil.combine(
-			".*?Test/+[^/]+/+test-[0-9]-[0-9]{1,2}/", "(?<jobName>[^/]+)/?",
-			_BUILD_URL_SUFFIX_REGEX));
+			".*?Test/+[^/]+/+(?<master>test-[0-9]-[0-9]{1,2})/",
+			"(?<jobName>[^/]+)/?", _BUILD_URL_SUFFIX_REGEX),
+		JenkinsResultsParserUtil.combine(
+			"file:/.*", "(?<master>test-[0-9]-[0-9]{1,2})/",
+			"(?<jobName>[^/]+)/?", _BUILD_URL_SUFFIX_REGEX));
 
 }

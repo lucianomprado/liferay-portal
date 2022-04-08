@@ -31,11 +31,7 @@ definition {
 			locator1 = "Portlet#HEADER",
 			value1 = "Templates for Structure: ${ddlDataDefinitionName}");
 
-		var key_assetTitle = "Templates";
-
-		AssertElementPresent.assertVisible(
-			locator1 = "NavBar#ASSET_TITLE",
-			value1 = "Templates");
+		AssertElementPresent.assertVisible(locator1 = "NavBar#ASSET_TEMPLATE");
 
 		LexiconEntry.gotoAddMenuItem(menuItem = "Add Display Template");
 
@@ -64,9 +60,11 @@ definition {
 		}
 
 		if (isSet(ddlDisplayTemplateScriptFile)) {
-			UploadCommonFile(
+			var dependencyFilePath = TestCase.getDependenciesDirPath(fileName = "${ddlDisplayTemplateScriptFile}");
+
+			UploadFile(
 				locator1 = "DDMEditTemplate#SCRIPT_FILE_FIELD",
-				value1 = "${ddlDisplayTemplateScriptFile}");
+				value1 = "${dependencyFilePath}");
 		}
 
 		Pause(locator1 = "3000");
@@ -115,11 +113,7 @@ definition {
 			locator1 = "Portlet#HEADER",
 			value1 = "Templates for Structure: Data Definition");
 
-		var key_assetTitle = "Templates";
-
-		AssertElementPresent.assertVisible(
-			locator1 = "NavBar#ASSET_TITLE",
-			value1 = "Templates");
+		AssertElementPresent.assertVisible(locator1 = "NavBar#ASSET_TEMPLATE");
 
 		LexiconEntry.gotoAdd();
 
@@ -174,7 +168,7 @@ definition {
 		Navigator.openURL();
 
 		ProductMenu.gotoPortlet(
-			category = "Content &amp; Data",
+			category = "Content & Data",
 			portlet = "Dynamic Data Lists");
 
 		DDLNavigator.gotoManageDataDefinitions();
@@ -312,7 +306,7 @@ definition {
 		Navigator.openURL();
 
 		ProductMenu.gotoPortlet(
-			category = "Content &amp; Data",
+			category = "Content & Data",
 			portlet = "Dynamic Data Lists");
 
 		DDLNavigator.gotoManageDataDefinitions();

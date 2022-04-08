@@ -42,7 +42,7 @@ import org.osgi.service.component.annotations.Reference;
 	enabled = false, immediate = true,
 	property = {
 		"javax.portlet.name=" + CommercePricingPortletKeys.COMMERCE_PRICING_CLASSES,
-		"mvc.command.name=editCommercePricingClass"
+		"mvc.command.name=/commerce_pricing_classes/edit_commerce_pricing_class"
 	},
 	service = MVCActionCommand.class
 )
@@ -89,14 +89,13 @@ public class EditCommercePricingClassMVCActionCommand
 		if (commercePricingClassId <= 0) {
 			commercePricingClass =
 				_commercePricingClassService.addCommercePricingClass(
-					serviceContext.getUserId(), titleMap, descriptionMap,
-					serviceContext);
+					null, titleMap, descriptionMap, serviceContext);
 		}
 		else {
 			commercePricingClass =
 				_commercePricingClassService.updateCommercePricingClass(
-					commercePricingClassId, serviceContext.getUserId(),
-					titleMap, descriptionMap, serviceContext);
+					commercePricingClassId, titleMap, descriptionMap,
+					serviceContext);
 		}
 
 		return commercePricingClass;

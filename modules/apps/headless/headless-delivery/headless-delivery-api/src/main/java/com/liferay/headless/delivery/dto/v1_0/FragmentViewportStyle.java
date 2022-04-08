@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import com.liferay.petra.function.UnsafeSupplier;
 import com.liferay.petra.string.StringBundler;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.vulcan.graphql.annotation.GraphQLField;
 import com.liferay.portal.vulcan.graphql.annotation.GraphQLName;
 import com.liferay.portal.vulcan.util.ObjectMapperUtil;
@@ -42,7 +43,10 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @generated
  */
 @Generated("")
-@GraphQLName("FragmentViewportStyle")
+@GraphQLName(
+	description = "The fragment's viewport style.",
+	value = "FragmentViewportStyle"
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "FragmentViewportStyle")
 public class FragmentViewportStyle implements Serializable {
@@ -51,7 +55,44 @@ public class FragmentViewportStyle implements Serializable {
 		return ObjectMapperUtil.readValue(FragmentViewportStyle.class, json);
 	}
 
-	@Schema
+	public static FragmentViewportStyle unsafeToDTO(String json) {
+		return ObjectMapperUtil.unsafeReadValue(
+			FragmentViewportStyle.class, json);
+	}
+
+	@Schema(
+		description = "Specifies if the fragment's viewport is hidden to the user."
+	)
+	public Boolean getHidden() {
+		return hidden;
+	}
+
+	public void setHidden(Boolean hidden) {
+		this.hidden = hidden;
+	}
+
+	@JsonIgnore
+	public void setHidden(
+		UnsafeSupplier<Boolean, Exception> hiddenUnsafeSupplier) {
+
+		try {
+			hidden = hiddenUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField(
+		description = "Specifies if the fragment's viewport is hidden to the user."
+	)
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected Boolean hidden;
+
+	@Schema(description = "The fragment viewport's margin bottom.")
 	public String getMarginBottom() {
 		return marginBottom;
 	}
@@ -75,11 +116,11 @@ public class FragmentViewportStyle implements Serializable {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The fragment viewport's margin bottom.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String marginBottom;
 
-	@Schema
+	@Schema(description = "The fragment viewport's margin left.")
 	public String getMarginLeft() {
 		return marginLeft;
 	}
@@ -103,11 +144,11 @@ public class FragmentViewportStyle implements Serializable {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The fragment viewport's margin left.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String marginLeft;
 
-	@Schema
+	@Schema(description = "The fragment viewport's margin right.")
 	public String getMarginRight() {
 		return marginRight;
 	}
@@ -131,11 +172,11 @@ public class FragmentViewportStyle implements Serializable {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The fragment viewport's margin right.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String marginRight;
 
-	@Schema
+	@Schema(description = "The fragment viewport's margin top.")
 	public String getMarginTop() {
 		return marginTop;
 	}
@@ -159,11 +200,11 @@ public class FragmentViewportStyle implements Serializable {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The fragment viewport's margin top.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String marginTop;
 
-	@Schema
+	@Schema(description = "The fragment viewport's padding bottom.")
 	public String getPaddingBottom() {
 		return paddingBottom;
 	}
@@ -187,11 +228,11 @@ public class FragmentViewportStyle implements Serializable {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The fragment viewport's padding bottom.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String paddingBottom;
 
-	@Schema
+	@Schema(description = "The fragment viewport's padding left.")
 	public String getPaddingLeft() {
 		return paddingLeft;
 	}
@@ -215,11 +256,11 @@ public class FragmentViewportStyle implements Serializable {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The fragment viewport's padding left.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String paddingLeft;
 
-	@Schema
+	@Schema(description = "The fragment viewport's padding right.")
 	public String getPaddingRight() {
 		return paddingRight;
 	}
@@ -243,11 +284,11 @@ public class FragmentViewportStyle implements Serializable {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The fragment viewport's padding right.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String paddingRight;
 
-	@Schema
+	@Schema(description = "The fragment viewport's padding top.")
 	public String getPaddingTop() {
 		return paddingTop;
 	}
@@ -271,9 +312,37 @@ public class FragmentViewportStyle implements Serializable {
 		}
 	}
 
-	@GraphQLField
+	@GraphQLField(description = "The fragment viewport's padding top.")
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String paddingTop;
+
+	@Schema(description = "The fragment viewport's text align.")
+	public String getTextAlign() {
+		return textAlign;
+	}
+
+	public void setTextAlign(String textAlign) {
+		this.textAlign = textAlign;
+	}
+
+	@JsonIgnore
+	public void setTextAlign(
+		UnsafeSupplier<String, Exception> textAlignUnsafeSupplier) {
+
+		try {
+			textAlign = textAlignUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField(description = "The fragment viewport's text align.")
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected String textAlign;
 
 	@Override
 	public boolean equals(Object object) {
@@ -302,6 +371,16 @@ public class FragmentViewportStyle implements Serializable {
 		StringBundler sb = new StringBundler();
 
 		sb.append("{");
+
+		if (hidden != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"hidden\": ");
+
+			sb.append(hidden);
+		}
 
 		if (marginBottom != null) {
 			if (sb.length() > 1) {
@@ -415,21 +494,36 @@ public class FragmentViewportStyle implements Serializable {
 			sb.append("\"");
 		}
 
+		if (textAlign != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"textAlign\": ");
+
+			sb.append("\"");
+
+			sb.append(_escape(textAlign));
+
+			sb.append("\"");
+		}
+
 		sb.append("}");
 
 		return sb.toString();
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.headless.delivery.dto.v1_0.FragmentViewportStyle",
 		name = "x-class-name"
 	)
 	public String xClassName;
 
 	private static String _escape(Object object) {
-		String string = String.valueOf(object);
-
-		return string.replaceAll("\"", "\\\\\"");
+		return StringUtil.replace(
+			String.valueOf(object), _JSON_ESCAPE_STRINGS[0],
+			_JSON_ESCAPE_STRINGS[1]);
 	}
 
 	private static boolean _isArray(Object value) {
@@ -455,8 +549,8 @@ public class FragmentViewportStyle implements Serializable {
 			Map.Entry<String, ?> entry = iterator.next();
 
 			sb.append("\"");
-			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append(_escape(entry.getKey()));
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -487,7 +581,7 @@ public class FragmentViewportStyle implements Serializable {
 			}
 			else if (value instanceof String) {
 				sb.append("\"");
-				sb.append(value);
+				sb.append(_escape(value));
 				sb.append("\"");
 			}
 			else {
@@ -495,7 +589,7 @@ public class FragmentViewportStyle implements Serializable {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 
@@ -503,5 +597,10 @@ public class FragmentViewportStyle implements Serializable {
 
 		return sb.toString();
 	}
+
+	private static final String[][] _JSON_ESCAPE_STRINGS = {
+		{"\\", "\"", "\b", "\f", "\n", "\r", "\t"},
+		{"\\\\", "\\\"", "\\b", "\\f", "\\n", "\\r", "\\t"}
+	};
 
 }

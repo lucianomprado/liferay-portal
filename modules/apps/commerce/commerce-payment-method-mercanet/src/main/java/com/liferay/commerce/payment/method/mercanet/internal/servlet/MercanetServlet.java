@@ -21,15 +21,14 @@ import com.liferay.commerce.payment.method.mercanet.internal.connector.Environme
 import com.liferay.commerce.payment.method.mercanet.internal.connector.PaypageClient;
 import com.liferay.commerce.payment.method.mercanet.internal.constants.MercanetCommercePaymentMethodConstants;
 import com.liferay.commerce.payment.util.CommercePaymentHttpHelper;
-import com.liferay.commerce.product.model.CommerceChannel;
 import com.liferay.commerce.product.service.CommerceChannelLocalService;
+import com.liferay.commerce.service.CommerceOrderLocalService;
 import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.module.configuration.ConfigurationException;
 import com.liferay.portal.kernel.module.configuration.ConfigurationProvider;
-import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.security.permission.PermissionCheckerFactoryUtil;
 import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
 import com.liferay.portal.kernel.servlet.PortalSessionThreadLocal;
@@ -57,7 +56,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -83,10 +81,9 @@ public class MercanetServlet extends HttpServlet {
 		throws IOException, ServletException {
 
 		try {
-			HttpSession httpSession = httpServletRequest.getSession();
-
 			if (PortalSessionThreadLocal.getHttpSession() == null) {
-				PortalSessionThreadLocal.setHttpSession(httpSession);
+				PortalSessionThreadLocal.setHttpSession(
+					httpServletRequest.getSession());
 			}
 
 			// Handle initializing permission checker for guests
@@ -100,7 +97,7 @@ public class MercanetServlet extends HttpServlet {
 			requestDispatcher.forward(httpServletRequest, httpServletResponse);
 		}
 		catch (Exception exception) {
-			_log.error(exception, exception);
+			_log.error(exception);
 		}
 	}
 
@@ -118,17 +115,14 @@ public class MercanetServlet extends HttpServlet {
 			Map<String, String> parameterMap = _getResponseParameters(data);
 
 			if (Objects.equals("normal", type)) {
-				HttpSession httpSession = httpServletRequest.getSession();
-
 				if (PortalSessionThreadLocal.getHttpSession() == null) {
-					PortalSessionThreadLocal.setHttpSession(httpSession);
+					PortalSessionThreadLocal.setHttpSession(
+						httpServletRequest.getSession());
 				}
 
-				PermissionChecker permissionChecker =
+				PermissionThreadLocal.setPermissionChecker(
 					PermissionCheckerFactoryUtil.create(
-						_portal.getUser(httpServletRequest));
-
-				PermissionThreadLocal.setPermissionChecker(permissionChecker);
+						_portal.getUser(httpServletRequest)));
 
 				String redirect = ParamUtil.getString(
 					httpServletRequest, "redirect");
@@ -150,18 +144,16 @@ public class MercanetServlet extends HttpServlet {
 			}
 
 			if (Objects.equals("automatic", type)) {
-				CommerceOrder commerceOrder =
-					_commercePaymentHttpHelper.getCommerceOrder(
-						httpServletRequest);
+				String uuid = ParamUtil.getString(httpServletRequest, "uuid");
+				long groupId = ParamUtil.getLong(httpServletRequest, "groupId");
 
-				CommerceChannel commerceChannel =
-					_commerceChannelLocalService.
-						getCommerceChannelByOrderGroupId(
-							commerceOrder.getGroupId());
+				CommerceOrder commerceOrder =
+					_commerceOrderLocalService.getCommerceOrderByUuidAndGroupId(
+						uuid, groupId);
 
 				MercanetGroupServiceConfiguration
 					mercanetGroupServiceConfiguration = _getConfiguration(
-						commerceChannel.getSiteGroupId());
+						commerceOrder.getGroupId());
 
 				String environment = StringUtil.toUpperCase(
 					mercanetGroupServiceConfiguration.environment());
@@ -175,14 +167,12 @@ public class MercanetServlet extends HttpServlet {
 					Integer.valueOf(keyVersion),
 					mercanetGroupServiceConfiguration.secretKey());
 
-				Map<String, String> verifyMap = HashMapBuilder.put(
-					"Data", data
-				).put(
-					"Seal", ParamUtil.getString(httpServletRequest, "Seal")
-				).build();
-
 				PaypageResponse paypageResponse = paypageClient.decodeResponse(
-					verifyMap);
+					HashMapBuilder.put(
+						"Data", data
+					).put(
+						"Seal", ParamUtil.getString(httpServletRequest, "Seal")
+					).build());
 
 				ResponseData responseData = paypageResponse.getData();
 
@@ -209,7 +199,7 @@ public class MercanetServlet extends HttpServlet {
 			}
 		}
 		catch (Exception exception) {
-			_log.error(exception, exception);
+			_log.error(exception);
 		}
 	}
 
@@ -230,7 +220,12 @@ public class MercanetServlet extends HttpServlet {
 		for (String param : params) {
 			String[] kvp = StringUtil.split(param, CharPool.EQUAL);
 
-			map.put(kvp[0], kvp[1]);
+			if (kvp.length < 2) {
+				map.put(kvp[0], StringPool.BLANK);
+			}
+			else {
+				map.put(kvp[0], kvp[1]);
+			}
 		}
 
 		return map;
@@ -241,6 +236,9 @@ public class MercanetServlet extends HttpServlet {
 
 	@Reference
 	private CommerceChannelLocalService _commerceChannelLocalService;
+
+	@Reference
+	private CommerceOrderLocalService _commerceOrderLocalService;
 
 	@Reference
 	private CommercePaymentEngine _commercePaymentEngine;

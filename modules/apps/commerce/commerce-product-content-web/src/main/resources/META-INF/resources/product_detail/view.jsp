@@ -18,13 +18,16 @@
 
 <%
 CPContentConfigurationDisplayContext cpContentConfigurationDisplayContext = (CPContentConfigurationDisplayContext)request.getAttribute(WebKeys.PORTLET_DISPLAY_CONTEXT);
+
 CPContentHelper cpContentHelper = (CPContentHelper)request.getAttribute(CPContentWebKeys.CP_CONTENT_HELPER);
 
+CPCatalogEntry cpCatalogEntry = cpContentHelper.getCPCatalogEntry(request);
+
 Map<String, Object> contextObjects = HashMapBuilder.<String, Object>put(
+	"cpCatalogEntry", cpCatalogEntry
+).put(
 	"cpContentHelper", cpContentHelper
 ).build();
-
-CPCatalogEntry cpCatalogEntry = cpContentHelper.getCPCatalogEntry(request);
 
 CPInstance cpInstance = cpContentHelper.getDefaultCPInstance(request);
 

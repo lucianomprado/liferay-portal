@@ -50,6 +50,14 @@ definition {
 		LexiconEntry.gotoEllipsisMenuItem(menuItem = "Export");
 	}
 
+	macro exportFragment {
+		FragmentsAdminNavigator.gotoCollection(collectionName = "${collectionName}");
+
+		FragmentsAdminNavigator.gotoEntryEllipsisItem(
+			entry = "${fragmentName}",
+			item = "Export");
+	}
+
 	macro exportMultipleCollections {
 		for (var collectionName : list "${collectionNameList}") {
 			Check(
@@ -69,9 +77,7 @@ definition {
 	macro importCollectionFromDependenciesFolder {
 		FragmentsAdminNavigator.gotoImportCollection();
 
-		UploadCommonFile(
-			locator1 = "TextInput#FILE",
-			value1 = "${collectionZipFile}");
+		UploadDependencyFile.uploadArchiveFile(fileName = "${collectionZipFile}");
 
 		SelectFrameTop();
 
@@ -108,8 +114,53 @@ definition {
 		IFrame.closeFrame();
 	}
 
+	macro importFragmentFromTempFolder {
+		WaitForLiferayEvent.initializeLiferayEventLog();
+
+		LexiconEntry.gotoEllipsisMenuItem(menuItem = "Import");
+
+		SelectFrame(locator1 = "IFrame#MODAL_BODY");
+
+		var entriesZipFileName = TestCase.getDownloadedTempFileName(fileNamePattern = "entries-*.zip");
+
+		UploadTempFile(
+			locator1 = "TextInput#FILE",
+			value1 = "${entriesZipFileName}");
+
+		SelectFrameTop();
+
+		Button.clickImport();
+
+		SelectFrame.selectFrameNoLoading(locator1 = "IFrame#MODAL_IFRAME");
+
+		Alert.viewSuccessMessage();
+
+		SelectFrameTop();
+
+		IFrame.closeFrame();
+	}
+
 	macro openFragmentsAdmin {
 		Navigator.openWithAppendToBaseURL(urlAppend = "group/${siteURLKey}/~/control_panel/manage/-/fragments");
+	}
+
+	macro propagateChanges {
+		if (isSet(itemNameList)) {
+			for (var itemName : list "${itemNameList}") {
+				Check(
+					key_tableEntry = "${itemName}",
+					locator1 = "LexiconTable#TABLE_ENTRY_CHECKBOX");
+			}
+		}
+		else {
+			PortletEntry.selectAll();
+		}
+
+		Click(
+			key_text = "propagation",
+			locator1 = "Icon#ANY");
+
+		Alert.viewSuccessMessage();
 	}
 
 	macro selectCollection {
@@ -130,6 +181,13 @@ definition {
 		LexiconCard.viewCardLabel(
 			card = "${entry}",
 			cardLabel = "${workflowStatus}");
+	}
+
+	macro viewSiteUsages {
+		LexiconTable.viewTableEntryInfo(
+			columnName = "usages",
+			tableEntry = "${siteName}",
+			tableEntryInfo = "${usages}");
 	}
 
 }

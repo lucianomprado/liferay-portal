@@ -19,6 +19,7 @@ import com.liferay.commerce.payment.engine.CommercePaymentEngine;
 import com.liferay.commerce.payment.engine.CommerceSubscriptionEngine;
 import com.liferay.commerce.payment.method.paypal.internal.constants.PayPalCommercePaymentMethodConstants;
 import com.liferay.commerce.payment.util.CommercePaymentHttpHelper;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.servlet.PortalSessionThreadLocal;
@@ -31,7 +32,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -57,36 +57,34 @@ public class CommercePaymentMethodPayPalServlet extends HttpServlet {
 		throws IOException, ServletException {
 
 		try {
-			HttpSession httpSession = httpServletRequest.getSession();
-
 			if (PortalSessionThreadLocal.getHttpSession() == null) {
-				PortalSessionThreadLocal.setHttpSession(httpSession);
+				PortalSessionThreadLocal.setHttpSession(
+					httpServletRequest.getSession());
 			}
 
 			CommerceOrder commerceOrder =
 				_commercePaymentHttpHelper.getCommerceOrder(httpServletRequest);
 
-			String paymentId = ParamUtil.getString(
-				httpServletRequest, "paymentId");
-
 			boolean cancel = ParamUtil.getBoolean(httpServletRequest, "cancel");
 
 			if (cancel) {
 				_commercePaymentEngine.cancelPayment(
-					commerceOrder.getCommerceOrderId(), paymentId,
+					commerceOrder.getCommerceOrderId(), StringPool.BLANK,
 					httpServletRequest);
 			}
 			else {
+				String orderType = ParamUtil.getString(
+					httpServletRequest, "orderType");
 				String token = ParamUtil.getString(httpServletRequest, "token");
 
-				if (paymentId.isEmpty() && !token.isEmpty()) {
-					_commerceSubscriptionEngine.completeRecurringPayment(
+				if (orderType.equals("normal")) {
+					_commercePaymentEngine.completePayment(
 						commerceOrder.getCommerceOrderId(), token,
 						httpServletRequest);
 				}
-				else {
-					_commercePaymentEngine.completePayment(
-						commerceOrder.getCommerceOrderId(), paymentId,
+				else if (orderType.equals("subscription")) {
+					_commerceSubscriptionEngine.completeRecurringPayment(
+						commerceOrder.getCommerceOrderId(), token,
 						httpServletRequest);
 				}
 			}
@@ -97,7 +95,7 @@ public class CommercePaymentMethodPayPalServlet extends HttpServlet {
 			httpServletResponse.sendRedirect(redirect);
 		}
 		catch (Exception exception) {
-			_log.error(exception, exception);
+			_log.error(exception);
 		}
 	}
 

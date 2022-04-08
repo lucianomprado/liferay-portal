@@ -1,5 +1,57 @@
 definition {
 
+	macro addAnyProductRelation {
+		Click(locator1 = "Button#PLUS");
+
+		Click(
+			key_selectAction = "Add ${key_relation}",
+			locator1 = "FormViewBuilder#FIELD_ELLIPSIS_ACTION_FIELDSET");
+
+		SelectFrame.selectFrameNoLoading(locator1 = "IFrame#MODAL_IFRAME");
+
+		Type(
+			locator1 = "CommerceEntry#SEARCH_PRODUCT_RELATIONS",
+			value1 = "${key_product}");
+
+		Click(locator1 = "Button#SEARCH");
+
+		Check.checkToggleSwitch(
+			locator1 = "CommerceAccelerators#SELECT_PRODUCT_RELATIONS",
+			productName = "${key_product}");
+
+		SelectFrameTop();
+
+		Button.clickAdd();
+
+		Alert.viewSuccessMessage();
+	}
+
+	macro addProductRelation {
+		Click(locator1 = "Button#PLUS");
+
+		Click(
+			key_selectAction = "Add Up-Sell Product",
+			locator1 = "FormViewBuilder#FIELD_ELLIPSIS_ACTION_FIELDSET");
+
+		SelectFrame.selectFrameNoLoading(locator1 = "IFrame#MODAL_IFRAME");
+
+		Type(
+			locator1 = "CommerceEntry#SEARCH_PRODUCT_RELATIONS",
+			value1 = "${productNameRelation}");
+
+		Click(locator1 = "Button#SEARCH");
+
+		Check.checkToggleSwitch(
+			locator1 = "CommerceAccelerators#SELECT_PRODUCT_RELATIONS",
+			productName = "${productNameRelation}");
+
+		SelectFrameTop();
+
+		Button.clickAdd();
+
+		Alert.viewSuccessMessage();
+	}
+
 	macro assignAllRelationsToProductsEntry {
 		Click(locator1 = "CommerceEntry#ADD_BUTTON");
 
@@ -40,6 +92,23 @@ definition {
 			key_entryName = "${entryName}",
 			key_title = "${title}",
 			locator1 = "CommerceEntry#ADD_RELATION_FIELD_SELECT");
+	}
+
+	macro productRelationSetPriority {
+		Click(
+			key_value = "${productNameRelation}",
+			locator1 = "CommerceEntry#BODY_VERTICAL_ELLIPSIS");
+
+		MenuItem.click(menuItem = "Edit");
+
+		SelectFrame.selectFrameNoLoading(locator1 = "IFrame#MODAL_IFRAME");
+
+		Type(
+			key_fieldLabel = "Priority",
+			locator1 = "TextInput#GENERIC_TEXT_INPUT",
+			value1 = "${priorityValue}");
+
+		Button.clickSubmitButton();
 	}
 
 }

@@ -2,20 +2,17 @@
 <head>
 <title>MyWorkflowTasksTask</title>
 </head>
+
 <body>
-<table cellpadding="1" cellspacing="1" border="1">
+<table border="1" cellpadding="1" cellspacing="1">
 <thead>
 <tr><td rowspan="1" colspan="3">MyWorkflowTasksTask</td></tr>
 </thead>
+
 <tbody>
 <tr>
 	<td>ASSIGNED_TO</td>
 	<td>//div[@class='lfr-asset-assigned']</td>
-	<td></td>
-</tr>
-<tr>
-	<td>ORDER</td>
-	<td>//a[contains(@class,'order-arrow-up-active')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -58,7 +55,7 @@
 <!--ACTIVITIES-->
 <tr>
 	<td>ACTIVITIES</td>
-	<td>//div[contains(@class,'panel-title') and contains(.,'Activities')]/a</td>
+	<td>//span[contains(@class,'panel-title') and contains(.,'Activities')]</td>
 	<td></td>
 </tr>
 <tr>

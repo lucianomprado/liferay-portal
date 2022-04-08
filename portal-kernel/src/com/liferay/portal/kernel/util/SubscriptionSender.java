@@ -14,6 +14,9 @@
 
 package com.liferay.portal.kernel.util;
 
+import com.liferay.asset.kernel.model.AssetEntry;
+import com.liferay.asset.kernel.model.AssetTag;
+import com.liferay.asset.kernel.service.AssetEntryLocalServiceUtil;
 import com.liferay.mail.kernel.model.FileAttachment;
 import com.liferay.mail.kernel.model.MailMessage;
 import com.liferay.mail.kernel.model.SMTPAccount;
@@ -79,6 +82,22 @@ import javax.mail.internet.InternetAddress;
  * @author Roberto Díaz
  */
 public class SubscriptionSender implements Serializable {
+
+	public void addAssetEntryPersistedSubscribers(
+		String assetEntryClassName, long assetEntryClassPK) {
+
+		AssetEntry assetEntry = AssetEntryLocalServiceUtil.fetchEntry(
+			assetEntryClassName, assetEntryClassPK);
+
+		if (assetEntry == null) {
+			return;
+		}
+
+		for (AssetTag assetTag : assetEntry.getTags()) {
+			addPersistedSubscribers(
+				AssetTag.class.getName(), assetTag.getTagId());
+		}
+	}
 
 	public void addFileAttachment(File file) {
 		addFileAttachment(file, null);
@@ -545,6 +564,9 @@ public class SubscriptionSender implements Serializable {
 			}
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception);
+			}
 		}
 
 		this.scopeGroupId = scopeGroupId;
@@ -761,7 +783,7 @@ public class SubscriptionSender implements Serializable {
 			}
 		}
 		catch (Exception exception) {
-			_log.error(exception, exception);
+			_log.error(exception);
 
 			return;
 		}
@@ -796,6 +818,14 @@ public class SubscriptionSender implements Serializable {
 			sendEmail(to, locale);
 		}
 		else {
+			if (!user.isActive()) {
+				if (_log.isDebugEnabled()) {
+					_log.debug("Skip inactive user " + user.getUserId());
+				}
+
+				return;
+			}
+
 			sendNotification(user);
 		}
 	}

@@ -12,10 +12,10 @@
  * details.
  */
 
-import {render} from 'frontend-js-react-web';
+import {render} from '@liferay/frontend-js-react-web';
 
-import SidebarPanel from '../SidebarPanel';
-import SidebarPanelInfoView from '../components/SidebarPanelInfoView';
+import SidebarPanel from '../components/SidebarPanel';
+import SidebarPanelInfoView from '../components/SidebarPanelInfoView/SidebarPanelInfoView';
 import SidebarPanelMetricsView from '../components/SidebarPanelMetricsView';
 
 const deselectAllRows = (portletNamespace) => {

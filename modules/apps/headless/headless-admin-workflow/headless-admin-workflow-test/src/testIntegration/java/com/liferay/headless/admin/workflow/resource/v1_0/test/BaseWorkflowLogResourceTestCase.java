@@ -33,7 +33,6 @@ import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
-import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Group;
@@ -50,7 +49,6 @@ import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.vulcan.resource.EntityModelResource;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 
 import java.text.DateFormat;
@@ -182,6 +180,7 @@ public abstract class BaseWorkflowLogResourceTestCase {
 		WorkflowLog workflowLog = randomWorkflowLog();
 
 		workflowLog.setCommentLog(regex);
+		workflowLog.setDescription(regex);
 		workflowLog.setPreviousState(regex);
 		workflowLog.setState(regex);
 
@@ -192,25 +191,25 @@ public abstract class BaseWorkflowLogResourceTestCase {
 		workflowLog = WorkflowLogSerDes.toDTO(json);
 
 		Assert.assertEquals(regex, workflowLog.getCommentLog());
+		Assert.assertEquals(regex, workflowLog.getDescription());
 		Assert.assertEquals(regex, workflowLog.getPreviousState());
 		Assert.assertEquals(regex, workflowLog.getState());
 	}
 
 	@Test
 	public void testGetWorkflowInstanceWorkflowLogsPage() throws Exception {
-		Page<WorkflowLog> page =
-			workflowLogResource.getWorkflowInstanceWorkflowLogsPage(
-				testGetWorkflowInstanceWorkflowLogsPage_getWorkflowInstanceId(),
-				null, Pagination.of(1, 2));
-
-		Assert.assertEquals(0, page.getTotalCount());
-
 		Long workflowInstanceId =
 			testGetWorkflowInstanceWorkflowLogsPage_getWorkflowInstanceId();
 		Long irrelevantWorkflowInstanceId =
 			testGetWorkflowInstanceWorkflowLogsPage_getIrrelevantWorkflowInstanceId();
 
-		if ((irrelevantWorkflowInstanceId != null)) {
+		Page<WorkflowLog> page =
+			workflowLogResource.getWorkflowInstanceWorkflowLogsPage(
+				workflowInstanceId, null, Pagination.of(1, 10));
+
+		Assert.assertEquals(0, page.getTotalCount());
+
+		if (irrelevantWorkflowInstanceId != null) {
 			WorkflowLog irrelevantWorkflowLog =
 				testGetWorkflowInstanceWorkflowLogsPage_addWorkflowLog(
 					irrelevantWorkflowInstanceId,
@@ -236,7 +235,7 @@ public abstract class BaseWorkflowLogResourceTestCase {
 				workflowInstanceId, randomWorkflowLog());
 
 		page = workflowLogResource.getWorkflowInstanceWorkflowLogsPage(
-			workflowInstanceId, null, Pagination.of(1, 2));
+			workflowInstanceId, null, Pagination.of(1, 10));
 
 		Assert.assertEquals(2, page.getTotalCount());
 
@@ -334,7 +333,7 @@ public abstract class BaseWorkflowLogResourceTestCase {
 
 	@Test
 	public void testGraphQLGetWorkflowLog() throws Exception {
-		WorkflowLog workflowLog = testGraphQLWorkflowLog_addWorkflowLog();
+		WorkflowLog workflowLog = testGraphQLGetWorkflowLog_addWorkflowLog();
 
 		Assert.assertTrue(
 			equals(
@@ -375,21 +374,26 @@ public abstract class BaseWorkflowLogResourceTestCase {
 				"Object/code"));
 	}
 
+	protected WorkflowLog testGraphQLGetWorkflowLog_addWorkflowLog()
+		throws Exception {
+
+		return testGraphQLWorkflowLog_addWorkflowLog();
+	}
+
 	@Test
 	public void testGetWorkflowTaskWorkflowLogsPage() throws Exception {
-		Page<WorkflowLog> page =
-			workflowLogResource.getWorkflowTaskWorkflowLogsPage(
-				testGetWorkflowTaskWorkflowLogsPage_getWorkflowTaskId(), null,
-				Pagination.of(1, 2));
-
-		Assert.assertEquals(0, page.getTotalCount());
-
 		Long workflowTaskId =
 			testGetWorkflowTaskWorkflowLogsPage_getWorkflowTaskId();
 		Long irrelevantWorkflowTaskId =
 			testGetWorkflowTaskWorkflowLogsPage_getIrrelevantWorkflowTaskId();
 
-		if ((irrelevantWorkflowTaskId != null)) {
+		Page<WorkflowLog> page =
+			workflowLogResource.getWorkflowTaskWorkflowLogsPage(
+				workflowTaskId, null, Pagination.of(1, 10));
+
+		Assert.assertEquals(0, page.getTotalCount());
+
+		if (irrelevantWorkflowTaskId != null) {
 			WorkflowLog irrelevantWorkflowLog =
 				testGetWorkflowTaskWorkflowLogsPage_addWorkflowLog(
 					irrelevantWorkflowTaskId, randomIrrelevantWorkflowLog());
@@ -414,7 +418,7 @@ public abstract class BaseWorkflowLogResourceTestCase {
 				workflowTaskId, randomWorkflowLog());
 
 		page = workflowLogResource.getWorkflowTaskWorkflowLogsPage(
-			workflowTaskId, null, Pagination.of(1, 2));
+			workflowTaskId, null, Pagination.of(1, 10));
 
 		Assert.assertEquals(2, page.getTotalCount());
 
@@ -499,6 +503,23 @@ public abstract class BaseWorkflowLogResourceTestCase {
 			"This method needs to be implemented");
 	}
 
+	protected void assertContains(
+		WorkflowLog workflowLog, List<WorkflowLog> workflowLogs) {
+
+		boolean contains = false;
+
+		for (WorkflowLog item : workflowLogs) {
+			if (equals(workflowLog, item)) {
+				contains = true;
+
+				break;
+			}
+		}
+
+		Assert.assertTrue(
+			workflowLogs + " does not contain " + workflowLog, contains);
+	}
+
 	protected void assertHttpResponseStatusCode(
 		int expectedHttpResponseStatusCode,
 		HttpInvoker.HttpResponse actualHttpResponse) {
@@ -573,6 +594,14 @@ public abstract class BaseWorkflowLogResourceTestCase {
 
 			if (Objects.equals("commentLog", additionalAssertFieldName)) {
 				if (workflowLog.getCommentLog() == null) {
+					valid = false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("description", additionalAssertFieldName)) {
+				if (workflowLog.getDescription() == null) {
 					valid = false;
 				}
 
@@ -675,8 +704,8 @@ public abstract class BaseWorkflowLogResourceTestCase {
 	protected List<GraphQLField> getGraphQLFields() throws Exception {
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
-		for (Field field :
-				ReflectionUtil.getDeclaredFields(
+		for (java.lang.reflect.Field field :
+				getDeclaredFields(
 					com.liferay.headless.admin.workflow.dto.v1_0.WorkflowLog.
 						class)) {
 
@@ -692,12 +721,13 @@ public abstract class BaseWorkflowLogResourceTestCase {
 		return graphQLFields;
 	}
 
-	protected List<GraphQLField> getGraphQLFields(Field... fields)
+	protected List<GraphQLField> getGraphQLFields(
+			java.lang.reflect.Field... fields)
 		throws Exception {
 
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
-		for (Field field : fields) {
+		for (java.lang.reflect.Field field : fields) {
 			com.liferay.portal.vulcan.graphql.annotation.GraphQLField
 				vulcanGraphQLField = field.getAnnotation(
 					com.liferay.portal.vulcan.graphql.annotation.GraphQLField.
@@ -711,7 +741,7 @@ public abstract class BaseWorkflowLogResourceTestCase {
 				}
 
 				List<GraphQLField> childrenGraphQLFields = getGraphQLFields(
-					ReflectionUtil.getDeclaredFields(clazz));
+					getDeclaredFields(clazz));
 
 				graphQLFields.add(
 					new GraphQLField(field.getName(), childrenGraphQLFields));
@@ -761,6 +791,17 @@ public abstract class BaseWorkflowLogResourceTestCase {
 				if (!Objects.deepEquals(
 						workflowLog1.getDateCreated(),
 						workflowLog2.getDateCreated())) {
+
+					return false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("description", additionalAssertFieldName)) {
+				if (!Objects.deepEquals(
+						workflowLog1.getDescription(),
+						workflowLog2.getDescription())) {
 
 					return false;
 				}
@@ -896,6 +937,19 @@ public abstract class BaseWorkflowLogResourceTestCase {
 		return false;
 	}
 
+	protected java.lang.reflect.Field[] getDeclaredFields(Class clazz)
+		throws Exception {
+
+		Stream<java.lang.reflect.Field> stream = Stream.of(
+			ReflectionUtil.getDeclaredFields(clazz));
+
+		return stream.filter(
+			field -> !field.isSynthetic()
+		).toArray(
+			java.lang.reflect.Field[]::new
+		);
+	}
+
 	protected java.util.Collection<EntityField> getEntityFields()
 		throws Exception {
 
@@ -987,6 +1041,14 @@ public abstract class BaseWorkflowLogResourceTestCase {
 
 				sb.append(_dateFormat.format(workflowLog.getDateCreated()));
 			}
+
+			return sb.toString();
+		}
+
+		if (entityFieldName.equals("description")) {
+			sb.append("'");
+			sb.append(String.valueOf(workflowLog.getDescription()));
+			sb.append("'");
 
 			return sb.toString();
 		}
@@ -1089,6 +1151,8 @@ public abstract class BaseWorkflowLogResourceTestCase {
 				commentLog = StringUtil.toLowerCase(
 					RandomTestUtil.randomString());
 				dateCreated = RandomTestUtil.nextDate();
+				description = StringUtil.toLowerCase(
+					RandomTestUtil.randomString());
 				id = RandomTestUtil.randomLong();
 				previousState = StringUtil.toLowerCase(
 					RandomTestUtil.randomString());
@@ -1152,12 +1216,12 @@ public abstract class BaseWorkflowLogResourceTestCase {
 						_parameterMap.entrySet()) {
 
 					sb.append(entry.getKey());
-					sb.append(":");
+					sb.append(": ");
 					sb.append(entry.getValue());
-					sb.append(",");
+					sb.append(", ");
 				}
 
-				sb.setLength(sb.length() - 1);
+				sb.setLength(sb.length() - 2);
 
 				sb.append(")");
 			}
@@ -1167,10 +1231,10 @@ public abstract class BaseWorkflowLogResourceTestCase {
 
 				for (GraphQLField graphQLField : _graphQLFields) {
 					sb.append(graphQLField.toString());
-					sb.append(",");
+					sb.append(", ");
 				}
 
-				sb.setLength(sb.length() - 1);
+				sb.setLength(sb.length() - 2);
 
 				sb.append("}");
 			}
@@ -1184,8 +1248,8 @@ public abstract class BaseWorkflowLogResourceTestCase {
 
 	}
 
-	private static final Log _log = LogFactoryUtil.getLog(
-		BaseWorkflowLogResourceTestCase.class);
+	private static final com.liferay.portal.kernel.log.Log _log =
+		LogFactoryUtil.getLog(BaseWorkflowLogResourceTestCase.class);
 
 	private static BeanUtilsBean _beanUtilsBean = new BeanUtilsBean() {
 

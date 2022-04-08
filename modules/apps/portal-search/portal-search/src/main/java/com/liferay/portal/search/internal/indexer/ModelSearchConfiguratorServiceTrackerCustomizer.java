@@ -35,6 +35,7 @@ import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermi
 import com.liferay.portal.kernel.util.ClassUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.Props;
+import com.liferay.portal.search.batch.BatchIndexingHelper;
 import com.liferay.portal.search.index.IndexStatusManager;
 import com.liferay.portal.search.index.UpdateDocumentIndexWriter;
 import com.liferay.portal.search.indexer.BaseModelDocumentFactory;
@@ -45,7 +46,10 @@ import com.liferay.portal.search.indexer.IndexerQueryBuilder;
 import com.liferay.portal.search.indexer.IndexerSearcher;
 import com.liferay.portal.search.indexer.IndexerSummaryBuilder;
 import com.liferay.portal.search.indexer.IndexerWriter;
-import com.liferay.portal.search.internal.searcher.IndexSearcherHelper;
+import com.liferay.portal.search.internal.expando.helper.ExpandoQueryContributorHelper;
+import com.liferay.portal.search.internal.indexer.helper.AddSearchKeywordsQueryContributorHelper;
+import com.liferay.portal.search.internal.indexer.helper.PreFilterContributorHelper;
+import com.liferay.portal.search.internal.searcher.helper.IndexSearcherHelper;
 import com.liferay.portal.search.permission.SearchPermissionDocumentContributor;
 import com.liferay.portal.search.permission.SearchPermissionIndexWriter;
 import com.liferay.portal.search.spi.model.index.contributor.ModelDocumentContributor;
@@ -90,7 +94,7 @@ public class ModelSearchConfiguratorServiceTrackerCustomizer
 		int serviceRanking = GetterUtil.getInteger(
 			serviceReference.getProperty(Constants.SERVICE_RANKING));
 
-		final ModelSearchConfigurator<T> modelSearchConfigurator =
+		ModelSearchConfigurator<T> modelSearchConfigurator =
 			_bundleContext.getService(serviceReference);
 
 		ServiceRegistrationHolder serviceRegistrationHolder =
@@ -101,15 +105,12 @@ public class ModelSearchConfiguratorServiceTrackerCustomizer
 			(serviceRegistrationHolder._serviceRanking > serviceRanking)) {
 
 			if (_log.isWarnEnabled()) {
-				StringBundler sb = new StringBundler(5);
-
-				sb.append(ClassUtil.getClassName(serviceRegistrationHolder));
-				sb.append(" is already registered with a higher ranking of ");
-				sb.append(serviceRegistrationHolder._serviceRanking);
-				sb.append(" for: ");
-				sb.append(modelSearchConfigurator.getClassName());
-
-				_log.warn(sb.toString());
+				_log.warn(
+					StringBundler.concat(
+						ClassUtil.getClassName(serviceRegistrationHolder),
+						" is already registered with a higher ranking of ",
+						serviceRegistrationHolder._serviceRanking, " for: ",
+						modelSearchConfigurator.getClassName()));
 			}
 
 			return modelSearchConfigurator;
@@ -122,7 +123,7 @@ public class ModelSearchConfiguratorServiceTrackerCustomizer
 			Collections.singletonMap(
 				"indexer.class.name", modelSearchConfigurator.getClassName()));
 
-		Indexer<?> defaultIndexer = buildIndexer(
+		Indexer<?> defaultIndexer = _buildIndexer(
 			modelSearchConfigurator, serviceRegistrationHolder,
 			serviceProperties);
 
@@ -195,7 +196,75 @@ public class ModelSearchConfiguratorServiceTrackerCustomizer
 			this);
 	}
 
-	protected Indexer<?> buildIndexer(
+	@Deactivate
+	protected void deactivate() {
+		_bundleContext = null;
+
+		_serviceTracker.close();
+		_documentContributors.close();
+		_queryConfigContributors.close();
+		_searchContextContributors.close();
+
+		_serviceRegistrationHolders.forEach(
+			(key, serviceRegistrationHolder) ->
+				serviceRegistrationHolder.close());
+	}
+
+	@Reference
+	protected AddSearchKeywordsQueryContributorHelper
+		addSearchKeywordsQueryContributorHelper;
+
+	@Reference
+	protected BaseModelDocumentFactory baseModelDocumentFactory;
+
+	@Reference
+	protected BaseModelRetriever baseModelRetriever;
+
+	@Reference
+	protected BatchIndexingHelper batchIndexingHelper;
+
+	@Reference
+	protected ExpandoQueryContributorHelper expandoQueryContributorHelper;
+
+	@Reference
+	protected HitsProcessorRegistry hitsProcessorRegistry;
+
+	@Reference
+	protected IndexerRegistry indexerRegistry;
+
+	@Reference
+	protected IndexSearcherHelper indexSearcherHelper;
+
+	@Reference
+	protected IndexStatusManager indexStatusManager;
+
+	@Reference
+	protected IndexWriterHelper indexWriterHelper;
+
+	@Reference
+	protected PreFilterContributorHelper preFilterContributorHelper;
+
+	@Reference
+	protected Props props;
+
+	@Reference
+	protected RelatedEntryIndexerRegistry relatedEntryIndexerRegistry;
+
+	@Reference
+	protected SearchPermissionDocumentContributor
+		searchPermissionDocumentContributor;
+
+	@Reference
+	protected SearchPermissionIndexWriter searchPermissionIndexWriter;
+
+	@Reference
+	protected SearchResultPermissionFilterFactory
+		searchResultPermissionFilterFactory;
+
+	@Reference
+	protected UpdateDocumentIndexWriter updateDocumentIndexWriter;
+
+	private Indexer<?> _buildIndexer(
 		ModelSearchConfigurator<T> modelSearchConfigurator,
 		ServiceRegistrationHolder serviceRegistrationHolder,
 		Dictionary<String, ?> serviceProperties) {
@@ -226,14 +295,14 @@ public class ModelSearchConfiguratorServiceTrackerCustomizer
 
 		IndexerQueryBuilderImpl indexerQueryBuilderImpl =
 			new IndexerQueryBuilderImpl<>(
-				indexerRegistry,
+				addSearchKeywordsQueryContributorHelper,
+				expandoQueryContributorHelper, indexerRegistry,
 				modelSearchConfigurator.getModelSearchSettings(),
 				new ModelKeywordQueryContributorsHolderImpl(
 					modelSearchConfigurator.getKeywordQueryContributors()),
 				modelSearchConfigurator.getSearchContextContributors(),
-				keywordQueryContributorsHolder, preFilterContributorHelper,
-				_searchContextContributors, indexerPostProcessorsHolder,
-				relatedEntryIndexerRegistry);
+				preFilterContributorHelper, _searchContextContributors,
+				indexerPostProcessorsHolder, relatedEntryIndexerRegistry);
 
 		ServiceRegistration<IndexerQueryBuilder>
 			indexerQueryBuilderServiceRegistration =
@@ -278,7 +347,7 @@ public class ModelSearchConfiguratorServiceTrackerCustomizer
 
 		IndexerWriter<?> indexerWriter = new IndexerWriterImpl<>(
 			modelSearchConfigurator.getModelSearchSettings(),
-			baseModelRetriever,
+			baseModelRetriever, batchIndexingHelper,
 			modelSearchConfigurator.getModelIndexerWriterContributor(),
 			indexerDocumentBuilder, searchPermissionIndexWriter,
 			updateDocumentIndexWriter, indexStatusManager, indexWriterHelper,
@@ -313,84 +382,20 @@ public class ModelSearchConfiguratorServiceTrackerCustomizer
 			indexerSummaryBuilder, indexerPostProcessorsHolder);
 	}
 
-	@Deactivate
-	protected void deactivate() {
-		_bundleContext = null;
-
-		_serviceTracker.close();
-		_documentContributors.close();
-		_queryConfigContributors.close();
-		_searchContextContributors.close();
-
-		_serviceRegistrationHolders.forEach(
-			(key, serviceRegistrationHolder) ->
-				serviceRegistrationHolder.close());
-	}
-
-	@Reference
-	protected BaseModelDocumentFactory baseModelDocumentFactory;
-
-	@Reference
-	protected BaseModelRetriever baseModelRetriever;
-
-	@Reference
-	protected HitsProcessorRegistry hitsProcessorRegistry;
-
-	@Reference
-	protected IndexerRegistry indexerRegistry;
-
-	@Reference
-	protected IndexSearcherHelper indexSearcherHelper;
-
-	@Reference
-	protected IndexStatusManager indexStatusManager;
-
-	@Reference
-	protected IndexWriterHelper indexWriterHelper;
-
-	@Reference
-	protected KeywordQueryContributorsHolder keywordQueryContributorsHolder;
-
-	@Reference
-	protected PreFilterContributorHelper preFilterContributorHelper;
-
-	@Reference
-	protected Props props;
-
-	@Reference
-	protected RelatedEntryIndexerRegistry relatedEntryIndexerRegistry;
-
-	@Reference
-	protected SearchPermissionDocumentContributor
-		searchPermissionDocumentContributor;
-
-	@Reference
-	protected SearchPermissionIndexWriter searchPermissionIndexWriter;
-
-	@Reference
-	protected SearchResultPermissionFilterFactory
-		searchResultPermissionFilterFactory;
-
-	@Reference
-	protected UpdateDocumentIndexWriter updateDocumentIndexWriter;
-
 	private static final Log _log = LogFactoryUtil.getLog(
 		ModelSearchConfiguratorServiceTrackerCustomizer.class);
 
 	private BundleContext _bundleContext;
-	private ServiceTrackerList<DocumentContributor<?>, DocumentContributor<?>>
-		_documentContributors;
+	private ServiceTrackerList<DocumentContributor<?>> _documentContributors;
 	private ServiceTrackerMap<String, ModelResourcePermission<?>>
 		_modelResourcePermissionServiceTrackerMap;
 
 	@Reference(target = ModuleServiceLifecycle.PORTLETS_INITIALIZED)
 	private ModuleServiceLifecycle _moduleServiceLifecycle;
 
-	private ServiceTrackerList<QueryConfigContributor, QueryConfigContributor>
-		_queryConfigContributors;
-	private ServiceTrackerList
-		<SearchContextContributor, SearchContextContributor>
-			_searchContextContributors;
+	private ServiceTrackerList<QueryConfigContributor> _queryConfigContributors;
+	private ServiceTrackerList<SearchContextContributor>
+		_searchContextContributors;
 	private final Map<String, ServiceRegistrationHolder>
 		_serviceRegistrationHolders = new Hashtable<>();
 	private ServiceTracker

@@ -16,17 +16,16 @@ package com.liferay.commerce.cart.content.web.internal.display.context;
 
 import com.liferay.commerce.account.constants.CommerceAccountConstants;
 import com.liferay.commerce.account.model.CommerceAccount;
-import com.liferay.commerce.cart.content.web.internal.display.context.util.CommerceCartContentRequestHelper;
+import com.liferay.commerce.cart.content.web.internal.display.context.helper.CommerceCartContentRequestHelper;
 import com.liferay.commerce.cart.content.web.internal.portlet.configuration.CommerceCartContentPortletInstanceConfiguration;
 import com.liferay.commerce.context.CommerceContext;
+import com.liferay.commerce.currency.model.CommerceMoney;
 import com.liferay.commerce.model.CommerceOrder;
 import com.liferay.commerce.model.CommerceOrderItem;
 import com.liferay.commerce.order.CommerceOrderValidatorRegistry;
 import com.liferay.commerce.order.CommerceOrderValidatorResult;
 import com.liferay.commerce.price.CommerceOrderPrice;
 import com.liferay.commerce.price.CommerceOrderPriceCalculation;
-import com.liferay.commerce.price.CommerceProductPrice;
-import com.liferay.commerce.price.CommerceProductPriceCalculation;
 import com.liferay.commerce.pricing.constants.CommercePricingConstants;
 import com.liferay.commerce.product.constants.CPActionKeys;
 import com.liferay.commerce.product.model.CommerceChannel;
@@ -34,9 +33,13 @@ import com.liferay.commerce.product.service.CommerceChannelLocalService;
 import com.liferay.commerce.product.util.CPDefinitionHelper;
 import com.liferay.commerce.product.util.CPInstanceHelper;
 import com.liferay.commerce.service.CommerceOrderItemService;
+import com.liferay.commerce.util.CommerceBigDecimalUtil;
+import com.liferay.commerce.util.CommerceUtil;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
+import com.liferay.portal.kernel.repository.model.FileVersion;
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
 import com.liferay.portal.kernel.security.permission.resource.PortletResourcePermission;
 import com.liferay.portal.kernel.theme.PortletDisplay;
@@ -44,13 +47,16 @@ import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.Constants;
 import com.liferay.portal.kernel.util.KeyValuePair;
 import com.liferay.portal.kernel.util.ParamUtil;
+import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.Validator;
+
+import java.math.BigDecimal;
 
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 
-import javax.portlet.ActionRequest;
 import javax.portlet.PortletURL;
 
 import javax.servlet.http.HttpServletRequest;
@@ -62,31 +68,29 @@ import javax.servlet.http.HttpServletRequest;
 public class CommerceCartContentDisplayContext {
 
 	public CommerceCartContentDisplayContext(
-			HttpServletRequest httpServletRequest,
 			CommerceChannelLocalService commerceChannelLocalService,
 			CommerceOrderItemService commerceOrderItemService,
-			CommerceOrderPriceCalculation commerceOrderPriceCalculation,
-			CommerceOrderValidatorRegistry commerceOrderValidatorRegistry,
-			CommerceProductPriceCalculation commerceProductPriceCalculation,
-			CPDefinitionHelper cpDefinitionHelper,
-			CPInstanceHelper cpInstanceHelper,
 			ModelResourcePermission<CommerceOrder>
 				commerceOrderModelResourcePermission,
-			PortletResourcePermission commerceProductPortletResourcePermission)
+			CommerceOrderPriceCalculation commerceOrderPriceCalculation,
+			CommerceOrderValidatorRegistry commerceOrderValidatorRegistry,
+			PortletResourcePermission commerceProductPortletResourcePermission,
+			CPDefinitionHelper cpDefinitionHelper,
+			CPInstanceHelper cpInstanceHelper,
+			HttpServletRequest httpServletRequest, Portal portal)
 		throws PortalException {
 
 		_commerceChannelLocalService = commerceChannelLocalService;
 		_commerceOrderItemService = commerceOrderItemService;
+		this.commerceOrderModelResourcePermission =
+			commerceOrderModelResourcePermission;
 		_commerceOrderPriceCalculation = commerceOrderPriceCalculation;
 		_commerceOrderValidatorRegistry = commerceOrderValidatorRegistry;
-		_commerceProductPriceCalculation = commerceProductPriceCalculation;
 		_commerceProductPortletResourcePermission =
 			commerceProductPortletResourcePermission;
 
 		this.cpDefinitionHelper = cpDefinitionHelper;
 		this.cpInstanceHelper = cpInstanceHelper;
-		this.commerceOrderModelResourcePermission =
-			commerceOrderModelResourcePermission;
 
 		commerceCartContentRequestHelper = new CommerceCartContentRequestHelper(
 			httpServletRequest);
@@ -99,6 +103,9 @@ public class CommerceCartContentDisplayContext {
 		_commerceCartContentPortletInstanceConfiguration =
 			portletDisplay.getPortletInstanceConfiguration(
 				CommerceCartContentPortletInstanceConfiguration.class);
+
+		_httpServletRequest = httpServletRequest;
+		_portal = portal;
 	}
 
 	public CommerceOrder getCommerceOrder() throws PortalException {
@@ -119,14 +126,6 @@ public class CommerceCartContentDisplayContext {
 		}
 
 		return commerceOrder.getCommerceOrderId();
-	}
-
-	public String getCommerceOrderItemThumbnailSrc(
-			CommerceOrderItem commerceOrderItem)
-		throws Exception {
-
-		return cpInstanceHelper.getCPInstanceThumbnailSrc(
-			commerceOrderItem.getCPInstanceId());
 	}
 
 	public CommerceOrderPrice getCommerceOrderPrice() throws PortalException {
@@ -154,15 +153,6 @@ public class CommerceCartContentDisplayContext {
 		return commerceChannel.getPriceDisplayType();
 	}
 
-	public CommerceProductPrice getCommerceProductPrice(
-			CommerceOrderItem commerceOrderItem)
-		throws PortalException {
-
-		return _commerceProductPriceCalculation.getCommerceProductPrice(
-			commerceOrderItem.getCPInstanceId(),
-			commerceOrderItem.getQuantity(), commerceContext);
-	}
-
 	public String getCPDefinitionURL(
 			long cpDefinitionId, ThemeDisplay themeDisplay)
 		throws PortalException {
@@ -170,22 +160,42 @@ public class CommerceCartContentDisplayContext {
 		return cpDefinitionHelper.getFriendlyURL(cpDefinitionId, themeDisplay);
 	}
 
+	public FileVersion getCPInstanceImageFileVersion(
+			CommerceOrderItem commerceOrderItem)
+		throws Exception {
+
+		return cpInstanceHelper.getCPInstanceImageFileVersion(
+			CommerceUtil.getCommerceAccountId(commerceContext),
+			_portal.getCompanyId(_httpServletRequest),
+			commerceOrderItem.getCPInstanceId());
+	}
+
 	public String getDeleteURL(CommerceOrderItem commerceOrderItem) {
-		LiferayPortletResponse liferayPortletResponse =
-			commerceCartContentRequestHelper.getLiferayPortletResponse();
+		return PortletURLBuilder.createActionURL(
+			commerceCartContentRequestHelper.getLiferayPortletResponse()
+		).setActionName(
+			"/commerce_cart_content/edit_commerce_order_item"
+		).setCMD(
+			Constants.DELETE
+		).setRedirect(
+			commerceCartContentRequestHelper.getCurrentURL()
+		).setParameter(
+			"commerceOrderItemId", commerceOrderItem.getCommerceOrderItemId()
+		).buildString();
+	}
 
-		PortletURL portletURL = liferayPortletResponse.createActionURL();
+	public CommerceMoney getDiscountAmountCommerceMoney(
+			CommerceOrderItem commerceOrderItem)
+		throws PortalException {
 
-		portletURL.setParameter(
-			ActionRequest.ACTION_NAME, "editCommerceOrderItem");
-		portletURL.setParameter(Constants.CMD, Constants.DELETE);
-		portletURL.setParameter(
-			"redirect", commerceCartContentRequestHelper.getCurrentURL());
-		portletURL.setParameter(
-			"commerceOrderItemId",
-			String.valueOf(commerceOrderItem.getCommerceOrderItemId()));
+		if (Objects.equals(
+				getCommercePriceDisplayType(),
+				CommercePricingConstants.TAX_INCLUDED_IN_PRICE)) {
 
-		return portletURL.toString();
+			return commerceOrderItem.getDiscountWithTaxAmountMoney();
+		}
+
+		return commerceOrderItem.getDiscountAmountMoney();
 	}
 
 	public String getDisplayStyle() {
@@ -209,6 +219,20 @@ public class CommerceCartContentDisplayContext {
 		return _displayStyleGroupId;
 	}
 
+	public CommerceMoney getFinalPriceCommerceMoney(
+			CommerceOrderItem commerceOrderItem)
+		throws PortalException {
+
+		if (Objects.equals(
+				getCommercePriceDisplayType(),
+				CommercePricingConstants.TAX_INCLUDED_IN_PRICE)) {
+
+			return commerceOrderItem.getFinalPriceWithTaxAmountMoney();
+		}
+
+		return commerceOrderItem.getFinalPriceMoney();
+	}
+
 	public List<KeyValuePair> getKeyValuePairs(
 			long cpDefinitionId, String json, Locale locale)
 		throws PortalException {
@@ -216,7 +240,7 @@ public class CommerceCartContentDisplayContext {
 		return cpInstanceHelper.getKeyValuePairs(cpDefinitionId, json, locale);
 	}
 
-	public PortletURL getPortletURL() throws PortalException {
+	public PortletURL getPortletURL() {
 		LiferayPortletResponse liferayPortletResponse =
 			commerceCartContentRequestHelper.getLiferayPortletResponse();
 
@@ -248,9 +272,7 @@ public class CommerceCartContentDisplayContext {
 
 		_searchContainer = new SearchContainer<>(
 			commerceCartContentRequestHelper.getLiferayPortletRequest(),
-			getPortletURL(), null, null);
-
-		_searchContainer.setEmptyResultsMessage("no-items-were-found");
+			getPortletURL(), null, "no-items-were-found");
 
 		long commerceOrderId = getCommerceOrderId();
 
@@ -258,19 +280,42 @@ public class CommerceCartContentDisplayContext {
 			return _searchContainer;
 		}
 
-		int total = _commerceOrderItemService.getCommerceOrderItemsCount(
-			commerceOrderId);
-
-		_searchContainer.setTotal(total);
-
-		List<CommerceOrderItem> results =
-			_commerceOrderItemService.getCommerceOrderItems(
+		_searchContainer.setResultsAndTotal(
+			() -> _commerceOrderItemService.getCommerceOrderItems(
 				commerceOrderId, _searchContainer.getStart(),
-				_searchContainer.getEnd());
-
-		_searchContainer.setResults(results);
+				_searchContainer.getEnd()),
+			_commerceOrderItemService.getCommerceOrderItemsCount(
+				commerceOrderId));
 
 		return _searchContainer;
+	}
+
+	public CommerceMoney getUnitPriceCommerceMoney(
+			CommerceOrderItem commerceOrderItem)
+		throws PortalException {
+
+		if (Objects.equals(
+				getCommercePriceDisplayType(),
+				CommercePricingConstants.TAX_INCLUDED_IN_PRICE)) {
+
+			return commerceOrderItem.getUnitPriceWithTaxAmountMoney();
+		}
+
+		return commerceOrderItem.getUnitPriceMoney();
+	}
+
+	public CommerceMoney getUnitPromoPriceCommerceMoney(
+			CommerceOrderItem commerceOrderItem)
+		throws PortalException {
+
+		if (Objects.equals(
+				getCommercePriceDisplayType(),
+				CommercePricingConstants.TAX_INCLUDED_IN_PRICE)) {
+
+			return commerceOrderItem.getPromoPriceWithTaxAmountMoney();
+		}
+
+		return commerceOrderItem.getPromoPriceMoney();
 	}
 
 	public boolean hasPermission(String actionId) throws PortalException {
@@ -302,6 +347,27 @@ public class CommerceCartContentDisplayContext {
 			CPActionKeys.VIEW_PRICE);
 	}
 
+	public boolean isUnitPromoPriceActive(CommerceOrderItem commerceOrderItem)
+		throws PortalException {
+
+		CommerceMoney unitPriceCommerceMoney = getUnitPriceCommerceMoney(
+			commerceOrderItem);
+		CommerceMoney unitPromoPriceCommerceMoney =
+			getUnitPromoPriceCommerceMoney(commerceOrderItem);
+
+		if (!unitPromoPriceCommerceMoney.isEmpty() &&
+			CommerceBigDecimalUtil.gt(
+				unitPromoPriceCommerceMoney.getPrice(), BigDecimal.ZERO) &&
+			CommerceBigDecimalUtil.lt(
+				unitPromoPriceCommerceMoney.getPrice(),
+				unitPriceCommerceMoney.getPrice())) {
+
+			return true;
+		}
+
+		return false;
+	}
+
 	public boolean isValidCommerceOrder() throws PortalException {
 		CommerceOrder commerceOrder = getCommerceOrder();
 
@@ -318,18 +384,6 @@ public class CommerceCartContentDisplayContext {
 
 		return _commerceOrderValidatorRegistry.isValid(
 			commerceCartContentRequestHelper.getLocale(), commerceOrder);
-	}
-
-	public List<CommerceOrderValidatorResult> validateCommerceOrderItem(
-			long commerceOrderItemId)
-		throws PortalException {
-
-		CommerceOrderItem commerceOrderItem =
-			_commerceOrderItemService.fetchCommerceOrderItem(
-				commerceOrderItemId);
-
-		return _commerceOrderValidatorRegistry.validate(
-			commerceCartContentRequestHelper.getLocale(), commerceOrderItem);
 	}
 
 	protected final CommerceCartContentRequestHelper
@@ -350,9 +404,9 @@ public class CommerceCartContentDisplayContext {
 		_commerceOrderValidatorRegistry;
 	private final PortletResourcePermission
 		_commerceProductPortletResourcePermission;
-	private final CommerceProductPriceCalculation
-		_commerceProductPriceCalculation;
 	private long _displayStyleGroupId;
+	private final HttpServletRequest _httpServletRequest;
+	private final Portal _portal;
 	private SearchContainer<CommerceOrderItem> _searchContainer;
 
 }

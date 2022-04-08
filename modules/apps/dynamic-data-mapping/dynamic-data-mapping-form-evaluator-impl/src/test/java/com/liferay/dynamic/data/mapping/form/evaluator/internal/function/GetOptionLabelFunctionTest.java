@@ -19,9 +19,12 @@ import com.liferay.dynamic.data.mapping.model.DDMFormFieldOptions;
 import com.liferay.dynamic.data.mapping.model.LocalizedValue;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.LocaleUtil;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 import org.mockito.Mockito;
@@ -32,6 +35,11 @@ import org.powermock.api.mockito.PowerMockito;
  * @author Marcos Martins
  */
 public class GetOptionLabelFunctionTest extends PowerMockito {
+
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
 
 	@Before
 	public void setUp() throws Exception {
@@ -66,7 +74,8 @@ public class GetOptionLabelFunctionTest extends PowerMockito {
 		_getOptionLabelFunction.setDDMExpressionFieldAccessor(
 			ddmExpressionFieldAccessor);
 
-		_getOptionLabelFunction.setLocale(LocaleUtil.BRAZIL);
+		_getOptionLabelFunction.setDDMExpressionParameterAccessor(
+			new DefaultDDMExpressionParameterAccessor());
 
 		Assert.assertEquals(
 			"Opcao 1",
@@ -107,6 +116,14 @@ public class GetOptionLabelFunctionTest extends PowerMockito {
 
 		_getOptionLabelFunction.setDDMExpressionFieldAccessor(
 			ddmExpressionFieldAccessor);
+
+		DefaultDDMExpressionParameterAccessor ddmExpressionParameterAccessor =
+			new DefaultDDMExpressionParameterAccessor();
+
+		ddmExpressionParameterAccessor.setGetLocaleSupplier(() -> null);
+
+		_getOptionLabelFunction.setDDMExpressionParameterAccessor(
+			ddmExpressionParameterAccessor);
 
 		Assert.assertEquals(
 			"Option 1",

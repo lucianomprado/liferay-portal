@@ -44,6 +44,8 @@ import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.portlet.PortletResponseUtil;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCPortlet;
 import com.liferay.portal.kernel.security.auth.PrincipalException;
@@ -207,6 +209,10 @@ public abstract class BaseKBPortlet extends MVCPortlet {
 			jsonObject.put("deleted", Boolean.TRUE);
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception);
+			}
+
 			String errorMessage = themeDisplay.translate(
 				"an-unexpected-error-occurred-while-deleting-the-file");
 
@@ -259,7 +265,7 @@ public abstract class BaseKBPortlet extends MVCPortlet {
 		String cmd = ParamUtil.getString(renderRequest, Constants.CMD);
 
 		if (Validator.isNotNull(cmd) && cmd.equals("compareVersions")) {
-			compareVersions(renderRequest);
+			_compareVersions(renderRequest);
 		}
 
 		doRender(renderRequest, renderResponse);
@@ -335,6 +341,9 @@ public abstract class BaseKBPortlet extends MVCPortlet {
 								resourceResponse));
 					}
 					catch (ServletException servletException) {
+						if (_log.isDebugEnabled()) {
+							_log.debug(servletException);
+						}
 					}
 				}
 
@@ -425,9 +434,10 @@ public abstract class BaseKBPortlet extends MVCPortlet {
 			String urlTitle = ParamUtil.getString(actionRequest, "urlTitle");
 
 			kbArticle = kbArticleService.addKBArticle(
-				portal.getPortletId(actionRequest), parentResourceClassNameId,
-				parentResourcePrimKey, title, urlTitle, content, description,
-				sourceURL, sections, selectedFileNames, serviceContext);
+				null, portal.getPortletId(actionRequest),
+				parentResourceClassNameId, parentResourcePrimKey, title,
+				urlTitle, content, description, sourceURL, sections,
+				selectedFileNames, serviceContext);
 		}
 		else if (cmd.equals(Constants.REVERT)) {
 			int version = ParamUtil.getInteger(
@@ -466,7 +476,7 @@ public abstract class BaseKBPortlet extends MVCPortlet {
 			if (cmd.equals(Constants.ADD) && Validator.isNotNull(redirect)) {
 				actionRequest.setAttribute(
 					WebKeys.REDIRECT,
-					getContentRedirect(
+					_getContentRedirect(
 						KBArticle.class, kbArticle.getResourcePrimKey(),
 						redirect));
 			}
@@ -591,30 +601,6 @@ public abstract class BaseKBPortlet extends MVCPortlet {
 		}
 	}
 
-	protected void compareVersions(RenderRequest renderRequest)
-		throws PortletException {
-
-		long resourcePrimKey = ParamUtil.getLong(
-			renderRequest, "resourcePrimKey");
-		double sourceVersion = ParamUtil.getDouble(
-			renderRequest, "sourceVersion");
-		double targetVersion = ParamUtil.getDouble(
-			renderRequest, "targetVersion");
-
-		String diffHtmlResults = null;
-
-		try {
-			diffHtmlResults = adminHelper.getKBArticleDiff(
-				resourcePrimKey, GetterUtil.getInteger(sourceVersion),
-				GetterUtil.getInteger(targetVersion), "content");
-		}
-		catch (Exception exception) {
-			throw new PortletException(exception);
-		}
-
-		renderRequest.setAttribute(WebKeys.DIFF_HTML_RESULTS, diffHtmlResults);
-	}
-
 	protected void deleteKBArticle(
 			ActionRequest actionRequest, ActionResponse actionResponse,
 			long resourcePrimKey)
@@ -626,24 +612,6 @@ public abstract class BaseKBPortlet extends MVCPortlet {
 	protected abstract void doRender(
 			RenderRequest renderRequest, RenderResponse renderResponse)
 		throws IOException, PortletException;
-
-	protected String getContentRedirect(
-		Class<?> clazz, long classPK, String redirect) {
-
-		String portletId = HttpUtil.getParameter(
-			redirect, "portletResource", false);
-
-		String namespace = PortalUtil.getPortletNamespace(portletId);
-
-		if (Validator.isNotNull(portletId)) {
-			redirect = HttpUtil.addParameter(
-				redirect, namespace + "className", clazz.getName());
-			redirect = HttpUtil.addParameter(
-				redirect, namespace + "classPK", classPK);
-		}
-
-		return redirect;
-	}
 
 	@Override
 	protected boolean isSessionErrorException(Throwable throwable) {
@@ -725,5 +693,49 @@ public abstract class BaseKBPortlet extends MVCPortlet {
 	protected KBTemplateService kbTemplateService;
 	protected Portal portal;
 	protected UploadResponseHandler uploadResponseHandler;
+
+	private void _compareVersions(RenderRequest renderRequest)
+		throws PortletException {
+
+		long resourcePrimKey = ParamUtil.getLong(
+			renderRequest, "resourcePrimKey");
+		double sourceVersion = ParamUtil.getDouble(
+			renderRequest, "sourceVersion");
+		double targetVersion = ParamUtil.getDouble(
+			renderRequest, "targetVersion");
+
+		String diffHtmlResults = null;
+
+		try {
+			diffHtmlResults = adminHelper.getKBArticleDiff(
+				resourcePrimKey, GetterUtil.getInteger(sourceVersion),
+				GetterUtil.getInteger(targetVersion), "content");
+		}
+		catch (Exception exception) {
+			throw new PortletException(exception);
+		}
+
+		renderRequest.setAttribute(WebKeys.DIFF_HTML_RESULTS, diffHtmlResults);
+	}
+
+	private String _getContentRedirect(
+		Class<?> clazz, long classPK, String redirect) {
+
+		String portletId = HttpUtil.getParameter(
+			redirect, "portletResource", false);
+
+		String namespace = PortalUtil.getPortletNamespace(portletId);
+
+		if (Validator.isNotNull(portletId)) {
+			redirect = HttpUtil.addParameter(
+				redirect, namespace + "className", clazz.getName());
+			redirect = HttpUtil.addParameter(
+				redirect, namespace + "classPK", classPK);
+		}
+
+		return redirect;
+	}
+
+	private static final Log _log = LogFactoryUtil.getLog(BaseKBPortlet.class);
 
 }

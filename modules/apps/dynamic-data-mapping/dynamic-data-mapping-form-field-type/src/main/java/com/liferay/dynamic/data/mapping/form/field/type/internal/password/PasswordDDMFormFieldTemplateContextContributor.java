@@ -15,6 +15,7 @@
 package com.liferay.dynamic.data.mapping.form.field.type.internal.password;
 
 import com.liferay.dynamic.data.mapping.form.field.type.DDMFormFieldTemplateContextContributor;
+import com.liferay.dynamic.data.mapping.form.field.type.constants.DDMFormFieldTypeConstants;
 import com.liferay.dynamic.data.mapping.model.DDMFormField;
 import com.liferay.dynamic.data.mapping.model.LocalizedValue;
 import com.liferay.dynamic.data.mapping.model.Value;
@@ -31,7 +32,8 @@ import org.osgi.service.component.annotations.Component;
  * @author Marcellus Tavares
  */
 @Component(
-	immediate = true, property = "ddm.form.field.type.name=password",
+	immediate = true,
+	property = "ddm.form.field.type.name=" + DDMFormFieldTypeConstants.PASSWORD,
 	service = {
 		DDMFormFieldTemplateContextContributor.class,
 		PasswordDDMFormFieldTemplateContextContributor.class
@@ -47,35 +49,35 @@ public class PasswordDDMFormFieldTemplateContextContributor
 
 		return HashMapBuilder.<String, Object>put(
 			"placeholder",
-			getPlaceholder(ddmFormField, ddmFormFieldRenderingContext)
+			_getPlaceholder(ddmFormField, ddmFormFieldRenderingContext)
 		).put(
-			"tooltip", getTooltip(ddmFormField, ddmFormFieldRenderingContext)
+			"tooltip", _getTooltip(ddmFormField, ddmFormFieldRenderingContext)
 		).build();
 	}
 
-	protected String getPlaceholder(
+	private String _getPlaceholder(
 		DDMFormField ddmFormField,
 		DDMFormFieldRenderingContext ddmFormFieldRenderingContext) {
 
 		LocalizedValue placeholder = (LocalizedValue)ddmFormField.getProperty(
 			"placeholder");
 
-		return getValueString(
+		return _getValueString(
 			placeholder, ddmFormFieldRenderingContext.getLocale());
 	}
 
-	protected String getTooltip(
+	private String _getTooltip(
 		DDMFormField ddmFormField,
 		DDMFormFieldRenderingContext ddmFormFieldRenderingContext) {
 
 		LocalizedValue tooltip = (LocalizedValue)ddmFormField.getProperty(
 			"tooltip");
 
-		return getValueString(
+		return _getValueString(
 			tooltip, ddmFormFieldRenderingContext.getLocale());
 	}
 
-	protected String getValueString(Value value, Locale locale) {
+	private String _getValueString(Value value, Locale locale) {
 		if (value != null) {
 			return value.getString(locale);
 		}

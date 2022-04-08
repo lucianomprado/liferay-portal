@@ -28,6 +28,7 @@
 <#macro insertContentLayout
 	_layoutModel
 	_fragmentEntryModel
+	_journalArticleModel
 >
 	${dataFactory.toInsertSQL(_layoutModel)}
 
@@ -41,7 +42,7 @@
 
 	${dataFactory.toInsertSQL(journalContentPortletPreferencesModel)}
 
-	${dataFactory.toInsertSQL(dataFactory.newJournalContentPortletPreferenceValueModel(journalContentPortletPreferencesModel))}
+	${dataFactory.toInsertSQL(dataFactory.newJournalContentPortletPreferenceValueModel(journalContentPortletPreferencesModel, _journalArticleModel))}
 
 	<#local layoutPageTemplateStructureModel = dataFactory.newLayoutPageTemplateStructureModel(_layoutModel)>
 
@@ -52,10 +53,35 @@
 	${dataFactory.toInsertSQL(layoutPageTemplateStructureRelModel)}
 </#macro>
 
+<#macro insertContentPageLayout
+	_fragmentEntryLinkModels
+	_layoutModels
+	_templateFileName
+>
+	<#list _fragmentEntryLinkModels as fragmentEntryLinkModel>
+		${dataFactory.toInsertSQL(fragmentEntryLinkModel)}
+	</#list>
+
+	<#list _layoutModels as layoutModel>
+		${dataFactory.toInsertSQL(layoutModel)}
+
+		${dataFactory.toInsertSQL(dataFactory.newLayoutFriendlyURLModel(layoutModel))}
+
+		<#local layoutPageTemplateStructureModel = dataFactory.newLayoutPageTemplateStructureModel(layoutModel)>
+
+		${dataFactory.toInsertSQL(layoutPageTemplateStructureModel)}
+
+		<#local layoutPageTemplateStructureRelModel = dataFactory.newLayoutPageTemplateStructureRelModel(layoutModel, layoutPageTemplateStructureModel, _fragmentEntryLinkModels, _templateFileName)>
+
+		${dataFactory.toInsertSQL(layoutPageTemplateStructureRelModel)}
+	</#list>
+</#macro>
+
 <#macro insertDDMContent
 	_ddmStorageLinkId
 	_ddmStructureId
 	_entry
+	_ddmStructureVersionId = 0
 	_currentIndex = -1
 >
 	<#if _currentIndex = -1>
@@ -65,7 +91,7 @@
 
 		<#local ddmFieldAttributeModels = dataFactory.newDDMFieldAttributeModels(_entry, ddmFieldModels, ddmStorageLinkModel)>
 	<#else>
-		<#local ddmStorageLinkModel = dataFactory.newDDMStorageLinkModel(_entry, _ddmStorageLinkId, _ddmStructureId)>
+		<#local ddmStorageLinkModel = dataFactory.newDDMStorageLinkModel(_entry, _ddmStorageLinkId, _ddmStructureId, _ddmStructureVersionId)>
 
 		<#local ddmFieldModels = dataFactory.newDDMFieldModels(_currentIndex, _entry, ddmStorageLinkModel)>
 
@@ -102,7 +128,7 @@
 	_parentDLFolderId
 >
 	<#if _dlFolderDepth <= dataFactory.maxDLFolderDepth>
-		<#local dlFolderModels = dataFactory.newDLFolderModels(_groupId, _parentDLFolderId)>
+		<#local dlFolderModels = dataFactory.newDLFolderModels(_groupId, _parentDLFolderId, _dlFolderDepth)>
 
 		<#list dlFolderModels as dlFolderModel>
 			${dataFactory.toInsertSQL(dlFolderModel)}
@@ -145,7 +171,7 @@
 
 				${dataFactory.toInsertSQL(dataFactory.newDDMStructureLinkModel(dlFileEntryMetadataModel))}
 
-				${csvFileWriter.write("documentLibrary", dlFileEntryModel.uuid + "," + dlFolderModel.folderId + "," + dlFileEntryModel.name + "," + dlFileEntryModel.fileEntryId + "\n")}
+				${csvFileWriter.write("documentLibrary", virtualHostModel.hostname + "," + dlFileEntryModel.uuid + "," + dlFolderModel.folderId + "," + dlFileEntryModel.name + "," + dlFileEntryModel.fileEntryId + "," + dlFileEntryModel.fileName + "," + _groupId + "\n")}
 			</#list>
 
 			<@insertDLFolder
@@ -168,6 +194,44 @@
 	<#list layoutSetModels as layoutSetModel>
 		${dataFactory.toInsertSQL(layoutSetModel)}
 	</#list>
+</#macro>
+
+<#macro insertJournalArticle
+	_journalArticleModel
+	_journalDDMStructureModel
+	_journalDDMTemplateModel
+	_insertAssetEntry
+>
+	${dataFactory.toInsertSQL(_journalArticleModel)}
+
+	<#local ddmFieldModels = dataFactory.newDDMFieldModels(_journalArticleModel) />
+
+	<#list ddmFieldModels as ddmFieldModel>
+		${dataFactory.toInsertSQL(ddmFieldModel)}
+	</#list>
+
+	<#local ddmFieldAttributeModels = dataFactory.newDDMFieldAttributeModels(_journalArticleModel, ddmFieldModels) />
+
+	<#list ddmFieldAttributeModels as ddmFieldAttributeModel>
+		${dataFactory.toInsertSQL(ddmFieldAttributeModel)}
+	</#list>
+
+	<#local journalArticleLocalizationModel = dataFactory.newJournalArticleLocalizationModel(_journalArticleModel)>
+
+	${dataFactory.toInsertSQL(journalArticleLocalizationModel)}
+
+	${dataFactory.toInsertSQL(dataFactory.newDDMTemplateLinkModel(_journalArticleModel, _journalDDMTemplateModel.templateId))}
+
+	${dataFactory.toInsertSQL(dataFactory.newDDMStorageLinkModel(_journalArticleModel, _journalDDMStructureModel.structureId))}
+
+	${dataFactory.toInsertSQL(dataFactory.newSocialActivityModel(_journalArticleModel))}
+
+	<#if _insertAssetEntry>
+		<@insertAssetEntry
+			_categoryAndTag=true
+			_entry=dataFactory.newObjectValuePair(journalArticleModel, journalArticleLocalizationModel)
+		/>
+	</#if>
 </#macro>
 
 <#macro insertLayout

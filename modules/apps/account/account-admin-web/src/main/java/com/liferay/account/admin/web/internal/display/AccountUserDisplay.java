@@ -19,7 +19,6 @@ import com.liferay.account.constants.AccountConstants;
 import com.liferay.account.model.AccountEntry;
 import com.liferay.account.model.AccountEntryUserRel;
 import com.liferay.account.model.AccountEntryUserRelModel;
-import com.liferay.account.model.AccountRole;
 import com.liferay.account.service.AccountEntryLocalServiceUtil;
 import com.liferay.account.service.AccountEntryUserRelLocalServiceUtil;
 import com.liferay.account.service.AccountRoleLocalServiceUtil;
@@ -68,7 +67,7 @@ public class AccountUserDisplay {
 		}
 		catch (ConfigurationException configurationException) {
 			if (_log.isDebugEnabled()) {
-				_log.debug(configurationException, configurationException);
+				_log.debug(configurationException);
 			}
 		}
 
@@ -118,12 +117,9 @@ public class AccountUserDisplay {
 	public String getAccountRoleNamesString(long accountEntryId, Locale locale)
 		throws PortalException {
 
-		List<AccountRole> accountRoles =
-			AccountRoleLocalServiceUtil.getAccountRoles(
-				accountEntryId, getUserId());
-
 		List<String> accountRoleNames = TransformUtil.transform(
-			accountRoles,
+			AccountRoleLocalServiceUtil.getAccountRoles(
+				accountEntryId, getUserId()),
 			accountRole -> {
 				Role role = accountRole.getRole();
 
@@ -163,11 +159,8 @@ public class AccountUserDisplay {
 	}
 
 	public String getValidDomainsString() {
-		List<AccountEntryUserRel> accountEntryUserRels =
-			_getAccountEntryUserRels(getUserId());
-
 		List<Set<String>> accountEntryDomains = Stream.of(
-			accountEntryUserRels
+			_getAccountEntryUserRels(getUserId())
 		).flatMap(
 			List::stream
 		).map(
@@ -256,10 +249,7 @@ public class AccountUserDisplay {
 	}
 
 	private String _getAccountEntryNamesStyle(long userId) {
-		List<AccountEntryUserRel> accountEntryUserRels =
-			_getAccountEntryUserRels(userId);
-
-		if (ListUtil.isEmpty(accountEntryUserRels)) {
+		if (ListUtil.isEmpty(_getAccountEntryUserRels(userId))) {
 			return "font-italic text-muted";
 		}
 

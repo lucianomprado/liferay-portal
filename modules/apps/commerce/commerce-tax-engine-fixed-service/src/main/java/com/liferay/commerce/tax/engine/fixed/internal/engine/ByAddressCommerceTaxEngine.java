@@ -59,15 +59,15 @@ public class ByAddressCommerceTaxEngine implements CommerceTaxEngine {
 			CommerceTaxCalculateRequest commerceTaxCalculateRequest)
 		throws CommerceTaxEngineException {
 
-		long commerceCountryId = 0;
-		long commerceRegionId = 0;
+		long countryId = 0;
+		long regionId = 0;
 		String zip = StringPool.BLANK;
 
 		long commerceAddressId =
 			commerceTaxCalculateRequest.getCommerceBillingAddressId();
 
-		if (isTaxAppliedToShippingAddress(
-				commerceTaxCalculateRequest.getChannelGroupId())) {
+		if (_isTaxAppliedToShippingAddress(
+				commerceTaxCalculateRequest.getCommerceChannelGroupId())) {
 
 			commerceAddressId =
 				commerceTaxCalculateRequest.getCommerceShippingAddressId();
@@ -78,8 +78,8 @@ public class ByAddressCommerceTaxEngine implements CommerceTaxEngine {
 				commerceAddressId);
 
 		if (commerceAddress != null) {
-			commerceCountryId = commerceAddress.getCommerceCountryId();
-			commerceRegionId = commerceAddress.getCommerceRegionId();
+			countryId = commerceAddress.getCountryId();
+			regionId = commerceAddress.getRegionId();
 			zip = commerceAddress.getZip();
 		}
 
@@ -87,8 +87,8 @@ public class ByAddressCommerceTaxEngine implements CommerceTaxEngine {
 			_commerceTaxFixedRateAddressRelLocalService.
 				fetchCommerceTaxFixedRateAddressRel(
 					commerceTaxCalculateRequest.getCommerceTaxMethodId(),
-					commerceTaxCalculateRequest.getTaxCategoryId(),
-					commerceCountryId, commerceRegionId, zip);
+					commerceTaxCalculateRequest.getTaxCategoryId(), countryId,
+					regionId, zip);
 
 		if (commerceTaxFixedRateAddressRel == null) {
 			return null;
@@ -97,11 +97,11 @@ public class ByAddressCommerceTaxEngine implements CommerceTaxEngine {
 		BigDecimal rate = BigDecimal.valueOf(
 			commerceTaxFixedRateAddressRel.getRate());
 
-		BigDecimal amount = commerceTaxCalculateRequest.getPrice();
-
 		BigDecimal taxValue = rate;
 
 		if (commerceTaxCalculateRequest.isPercentage()) {
+			BigDecimal amount = commerceTaxCalculateRequest.getPrice();
+
 			taxValue = amount.multiply(rate);
 
 			BigDecimal denominator = _ONE_HUNDRED;
@@ -119,20 +119,21 @@ public class ByAddressCommerceTaxEngine implements CommerceTaxEngine {
 
 	@Override
 	public String getDescription(Locale locale) {
-		ResourceBundle resourceBundle = _getResourceBundle(locale);
-
 		return LanguageUtil.get(
-			resourceBundle, "by-address-tax-rate-description");
+			_getResourceBundle(locale), "by-address-tax-rate-description");
 	}
 
 	@Override
 	public String getName(Locale locale) {
-		ResourceBundle resourceBundle = _getResourceBundle(locale);
-
-		return LanguageUtil.get(resourceBundle, KEY);
+		return LanguageUtil.get(_getResourceBundle(locale), KEY);
 	}
 
-	protected boolean isTaxAppliedToShippingAddress(long groupId) {
+	private ResourceBundle _getResourceBundle(Locale locale) {
+		return ResourceBundleUtil.getBundle(
+			"content.Language", locale, getClass());
+	}
+
+	private boolean _isTaxAppliedToShippingAddress(long groupId) {
 		try {
 			CommerceTaxByAddressTypeConfiguration
 				commerceTaxByAddressTypeConfiguration =
@@ -147,15 +148,10 @@ public class ByAddressCommerceTaxEngine implements CommerceTaxEngine {
 				taxAppliedToShippingAddress();
 		}
 		catch (PortalException portalException) {
-			_log.error(portalException, portalException);
+			_log.error(portalException);
 
 			return false;
 		}
-	}
-
-	private ResourceBundle _getResourceBundle(Locale locale) {
-		return ResourceBundleUtil.getBundle(
-			"content.Language", locale, getClass());
 	}
 
 	private static final BigDecimal _ONE_HUNDRED = BigDecimal.valueOf(100);

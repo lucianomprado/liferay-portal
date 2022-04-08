@@ -132,12 +132,14 @@ public class HttpInvoker {
 		return this;
 	}
 
-	public HttpInvoker path(String path, Object... values) {
-		for (int i = 0; (values != null) && (i < values.length); i++) {
-			path = path.replaceFirst("\\{.*?\\}", String.valueOf(values[i]));
-		}
-
+	public HttpInvoker path(String path) {
 		_path = path;
+
+		return this;
+	}
+
+	public HttpInvoker path(String name, Object value) {
+		_path = _path.replaceFirst("\\{" + name + "\\}", String.valueOf(value));
 
 		return this;
 	}
@@ -215,7 +217,7 @@ public class HttpInvoker {
 
 			methodsField.set(null, methodsFieldValue.toArray(new String[0]));
 		}
-		catch (IllegalAccessException | NoSuchFieldException e) {
+		catch (IllegalAccessException | NoSuchFieldException exception) {
 			_logger.warning("Unable to update HttpURLConnection class");
 		}
 	}
@@ -382,13 +384,6 @@ public class HttpInvoker {
 			return;
 		}
 
-		if ((_httpMethod == HttpMethod.DELETE) ||
-			(_httpMethod == HttpMethod.GET)) {
-
-			throw new IllegalArgumentException(
-				"HTTP method " + _httpMethod + " must not contain a body");
-		}
-
 		httpURLConnection.setDoOutput(true);
 
 		OutputStream outputStream = httpURLConnection.getOutputStream();
@@ -429,12 +424,12 @@ public class HttpInvoker {
 	private String _body;
 	private String _contentType;
 	private String _encodedUserNameAndPassword;
-	private Map<String, File> _files = new LinkedHashMap<>();
-	private Map<String, String> _headers = new LinkedHashMap<>();
+	private final Map<String, File> _files = new LinkedHashMap<>();
+	private final Map<String, String> _headers = new LinkedHashMap<>();
 	private HttpMethod _httpMethod = HttpMethod.GET;
 	private String _multipartBoundary;
-	private Map<String, String[]> _parameters = new LinkedHashMap<>();
-	private Map<String, String> _parts = new LinkedHashMap<>();
+	private final Map<String, String[]> _parameters = new LinkedHashMap<>();
+	private final Map<String, String> _parts = new LinkedHashMap<>();
 	private String _path;
 
 }

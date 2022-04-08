@@ -40,22 +40,22 @@ public class CommerceShippingFixedOptionRelServiceImpl
 
 	@Override
 	public CommerceShippingFixedOptionRel addCommerceShippingFixedOptionRel(
-			long userId, long groupId, long commerceShippingMethodId,
+			long groupId, long commerceShippingMethodId,
 			long commerceShippingFixedOptionId,
-			long commerceInventoryWarehouseId, long commerceCountryId,
-			long commerceRegionId, String zip, double weightFrom,
-			double weightTo, BigDecimal fixedPrice,
-			BigDecimal rateUnitWeightPrice, double ratePercentage)
+			long commerceInventoryWarehouseId, long countryId, long regionId,
+			String zip, double weightFrom, double weightTo,
+			BigDecimal fixedPrice, BigDecimal rateUnitWeightPrice,
+			double ratePercentage)
 		throws PortalException {
 
 		_checkCommerceChannel(groupId);
 
 		return commerceShippingFixedOptionRelLocalService.
 			addCommerceShippingFixedOptionRel(
-				userId, groupId, commerceShippingMethodId,
+				getUserId(), groupId, commerceShippingMethodId,
 				commerceShippingFixedOptionId, commerceInventoryWarehouseId,
-				commerceCountryId, commerceRegionId, zip, weightFrom, weightTo,
-				fixedPrice, rateUnitWeightPrice, ratePercentage);
+				countryId, regionId, zip, weightFrom, weightTo, fixedPrice,
+				rateUnitWeightPrice, ratePercentage);
 	}
 
 	/**
@@ -65,19 +65,17 @@ public class CommerceShippingFixedOptionRelServiceImpl
 	@Override
 	public CommerceShippingFixedOptionRel addCommerceShippingFixedOptionRel(
 			long commerceShippingMethodId, long commerceShippingFixedOptionId,
-			long commerceInventoryWarehouseId, long commerceCountryId,
-			long commerceRegionId, String zip, double weightFrom,
-			double weightTo, BigDecimal fixedPrice,
-			BigDecimal rateUnitWeightPrice, double ratePercentage,
-			ServiceContext serviceContext)
+			long commerceInventoryWarehouseId, long countryId, long regionId,
+			String zip, double weightFrom, double weightTo,
+			BigDecimal fixedPrice, BigDecimal rateUnitWeightPrice,
+			double ratePercentage, ServiceContext serviceContext)
 		throws PortalException {
 
 		return commerceShippingFixedOptionRelService.
 			addCommerceShippingFixedOptionRel(
-				serviceContext.getUserId(), serviceContext.getScopeGroupId(),
-				commerceShippingMethodId, commerceShippingFixedOptionId,
-				commerceInventoryWarehouseId, commerceCountryId,
-				commerceRegionId, zip, weightFrom, weightTo, fixedPrice,
+				serviceContext.getScopeGroupId(), commerceShippingMethodId,
+				commerceShippingFixedOptionId, commerceInventoryWarehouseId,
+				countryId, regionId, zip, weightFrom, weightTo, fixedPrice,
 				rateUnitWeightPrice, ratePercentage);
 	}
 
@@ -150,10 +148,10 @@ public class CommerceShippingFixedOptionRelServiceImpl
 	@Override
 	public CommerceShippingFixedOptionRel updateCommerceShippingFixedOptionRel(
 			long commerceShippingFixedOptionRelId,
-			long commerceInventoryWarehouseId, long commerceCountryId,
-			long commerceRegionId, String zip, double weightFrom,
-			double weightTo, BigDecimal fixedPrice,
-			BigDecimal rateUnitWeightPrice, double ratePercentage)
+			long commerceInventoryWarehouseId, long countryId, long regionId,
+			String zip, double weightFrom, double weightTo,
+			BigDecimal fixedPrice, BigDecimal rateUnitWeightPrice,
+			double ratePercentage)
 		throws PortalException {
 
 		CommerceShippingFixedOptionRel commerceShippingFixedOptionRel =
@@ -166,8 +164,8 @@ public class CommerceShippingFixedOptionRelServiceImpl
 		return commerceShippingFixedOptionRelLocalService.
 			updateCommerceShippingFixedOptionRel(
 				commerceShippingFixedOptionRelId, commerceInventoryWarehouseId,
-				commerceCountryId, commerceRegionId, zip, weightFrom, weightTo,
-				fixedPrice, rateUnitWeightPrice, ratePercentage);
+				countryId, regionId, zip, weightFrom, weightTo, fixedPrice,
+				rateUnitWeightPrice, ratePercentage);
 	}
 
 	private void _checkCommerceChannel(long groupId) throws PortalException {

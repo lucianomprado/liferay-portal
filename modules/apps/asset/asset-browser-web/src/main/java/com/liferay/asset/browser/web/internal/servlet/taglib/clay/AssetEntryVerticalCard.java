@@ -22,6 +22,8 @@ import com.liferay.frontend.taglib.clay.servlet.taglib.soy.VerticalCard;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.LabelItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.LabelItemListBuilder;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.service.GroupLocalServiceUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
@@ -71,12 +73,9 @@ public class AssetEntryVerticalCard implements VerticalCard {
 
 	@Override
 	public Map<String, String> getDynamicAttributes() {
-		if (_assetBrowserDisplayContext.isMultipleSelection()) {
-			return null;
-		}
-
-		if (_assetEntry.getEntryId() ==
-				_assetBrowserDisplayContext.getRefererAssetEntryId()) {
+		if (_assetBrowserDisplayContext.isMultipleSelection() ||
+			(_assetEntry.getEntryId() ==
+				_assetBrowserDisplayContext.getRefererAssetEntryId())) {
 
 			return null;
 		}
@@ -110,6 +109,9 @@ public class AssetEntryVerticalCard implements VerticalCard {
 					group.getDescriptiveName(_themeDisplay.getLocale()));
 			}
 			catch (Exception exception) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(exception);
+				}
 			}
 		}
 
@@ -127,9 +129,17 @@ public class AssetEntryVerticalCard implements VerticalCard {
 			return _assetRenderer.getThumbnailPath(_renderRequest);
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception);
+			}
 		}
 
 		return null;
+	}
+
+	@Override
+	public String getInputValue() {
+		return String.valueOf(_assetEntry.getEntryId());
 	}
 
 	@Override
@@ -161,6 +171,9 @@ public class AssetEntryVerticalCard implements VerticalCard {
 					group.getDescriptiveName(_themeDisplay.getLocale()));
 			}
 			catch (Exception exception) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(exception);
+				}
 			}
 		}
 
@@ -176,6 +189,9 @@ public class AssetEntryVerticalCard implements VerticalCard {
 	public boolean isSelectable() {
 		return _assetBrowserDisplayContext.isMultipleSelection();
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		AssetEntryVerticalCard.class);
 
 	private final AssetBrowserDisplayContext _assetBrowserDisplayContext;
 	private final AssetEntry _assetEntry;

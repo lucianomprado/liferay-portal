@@ -19,14 +19,17 @@
 <%
 String tabs3 = ParamUtil.getString(request, "tabs3", "new-publish-process");
 
-PortletURL portletURL = renderResponse.createRenderURL();
-
-portletURL.setParameter("mvcRenderCommandName", "/export_import/publish_portlet");
-portletURL.setParameter("portletResource", portletResource);
+PortletURL portletURL = PortletURLBuilder.createRenderURL(
+	renderResponse
+).setMVCRenderCommandName(
+	"/export_import/publish_portlet"
+).setPortletResource(
+	portletResource
+).buildPortletURL();
 %>
 
 <c:if test="<%= (themeDisplay.getURLPublishToLive() != null) || layout.isTypeControlPanel() %>">
-	<aui:nav-bar cssClass="navbar-collapse-absolute" markupView="lexicon">
+	<aui:nav-bar cssClass="navbar-collapse-absolute navbar-expand-md navbar-underline navigation-bar navigation-bar-light" markupView="lexicon">
 		<aui:nav cssClass="navbar-nav">
 
 			<%

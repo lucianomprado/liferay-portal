@@ -62,6 +62,7 @@ function Variants({onVariantPublish, selectedSegmentsExperienceId}) {
 		<>
 			<h4 className="mb-3 mt-4 sheet-subtitle">
 				{Liferay.Language.get('variants')}
+
 				<ClayIcon
 					className="lexicon-icon-sm ml-1 reference-mark text-warning"
 					style={{verticalAlign: 'super'}}
@@ -82,11 +83,12 @@ function Variants({onVariantPublish, selectedSegmentsExperienceId}) {
 						{Liferay.Language.get('variants-help')}
 					</p>
 					{errors.variantsError && (
-						<div className="font-weight-bold mb-3 text-danger">
+						<div className="font-weight-semi-bold mb-3 text-danger">
 							<ClayIcon
 								className="mr-2"
 								symbol="exclamation-full"
 							/>
+
 							{Liferay.Language.get(
 								'a-variant-needs-to-be-created'
 							)}

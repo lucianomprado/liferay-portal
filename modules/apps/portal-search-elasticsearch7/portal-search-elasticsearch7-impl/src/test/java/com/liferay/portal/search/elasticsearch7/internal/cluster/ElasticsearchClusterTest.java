@@ -17,6 +17,7 @@ package com.liferay.portal.search.elasticsearch7.internal.cluster;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.search.index.IndexNameBuilder;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,6 +25,8 @@ import java.util.List;
 
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 import org.mockito.Mock;
@@ -34,6 +37,11 @@ import org.mockito.MockitoAnnotations;
  * @author Artur Aquino
  */
 public class ElasticsearchClusterTest {
+
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
 
 	@Before
 	public void setUp() {
@@ -76,22 +84,10 @@ public class ElasticsearchClusterTest {
 		List<Company> companies = new ArrayList<>(companyIds.length);
 
 		for (long companyId : companyIds) {
-			companies.add(getCompany(companyId));
+			companies.add(_getCompany(companyId));
 		}
 
 		return companies;
-	}
-
-	protected Company getCompany(long companyId) {
-		Company company = Mockito.mock(Company.class);
-
-		Mockito.when(
-			company.getCompanyId()
-		).thenReturn(
-			companyId
-		);
-
-		return company;
 	}
 
 	protected String getTestIndexName(long companyId) {
@@ -104,6 +100,18 @@ public class ElasticsearchClusterTest {
 		).thenReturn(
 			companies
 		);
+	}
+
+	private Company _getCompany(long companyId) {
+		Company company = Mockito.mock(Company.class);
+
+		Mockito.when(
+			company.getCompanyId()
+		).thenReturn(
+			companyId
+		);
+
+		return company;
 	}
 
 	@Mock

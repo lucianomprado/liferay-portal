@@ -22,6 +22,7 @@ import com.liferay.depot.web.internal.servlet.taglib.util.DepotActionDropdownIte
 import com.liferay.frontend.taglib.clay.servlet.taglib.soy.BaseBaseClayCard;
 import com.liferay.frontend.taglib.clay.servlet.taglib.soy.VerticalCard;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.reflect.ReflectionUtil;
 import com.liferay.portal.kernel.dao.search.RowChecker;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -32,7 +33,6 @@ import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
-import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
@@ -40,7 +40,6 @@ import com.liferay.portal.kernel.util.WebKeys;
 import java.util.List;
 
 import javax.portlet.PortletRequest;
-import javax.portlet.PortletURL;
 
 /**
  * @author Alejandro Tardín
@@ -83,17 +82,16 @@ public class DepotEntryVerticalCard
 	@Override
 	public String getHref() {
 		try {
-			PortletURL portletURL = PortalUtil.getControlPanelPortletURL(
-				_liferayPortletRequest, _depotEntry.getGroup(),
-				DepotPortletKeys.DEPOT_ADMIN, 0, 0,
-				PortletRequest.RENDER_PHASE);
-
-			portletURL.setParameter(
-				"mvcRenderCommandName", "/depot/view_depot_dashboard");
-			portletURL.setParameter(
-				"depotEntryId", String.valueOf(_depotEntry.getDepotEntryId()));
-
-			return portletURL.toString();
+			return PortletURLBuilder.create(
+				PortalUtil.getControlPanelPortletURL(
+					_liferayPortletRequest, _depotEntry.getGroup(),
+					DepotPortletKeys.DEPOT_ADMIN, 0, 0,
+					PortletRequest.RENDER_PHASE)
+			).setMVCRenderCommandName(
+				"/depot/view_depot_dashboard"
+			).setParameter(
+				"depotEntryId", _depotEntry.getDepotEntryId()
+			).buildString();
 		}
 		catch (PortalException portalException) {
 			return ReflectionUtil.throwException(portalException);
@@ -139,11 +137,10 @@ public class DepotEntryVerticalCard
 	@Override
 	public String getTitle() {
 		try {
-			return HtmlUtil.escape(
-				_group.getDescriptiveName(_themeDisplay.getLocale()));
+			return _group.getDescriptiveName(_themeDisplay.getLocale());
 		}
 		catch (Exception exception) {
-			_log.error(exception, exception);
+			_log.error(exception);
 		}
 
 		return _group.getName(_themeDisplay.getLocale());

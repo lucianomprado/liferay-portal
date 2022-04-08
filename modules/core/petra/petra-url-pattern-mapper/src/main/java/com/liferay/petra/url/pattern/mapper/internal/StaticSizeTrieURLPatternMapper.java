@@ -176,6 +176,10 @@ public class StaticSizeTrieURLPatternMapper<T>
 			return _wildcardValues.get(_getFirstSetBitIndex(extraBitmask));
 		}
 
+		if (bestMatchBitmask == 0) {
+			return null;
+		}
+
 		return _wildcardValues.get(_getFirstSetBitIndex(bestMatchBitmask));
 	}
 
@@ -368,10 +372,10 @@ public class StaticSizeTrieURLPatternMapper<T>
 
 	private final long[][][] _extensionTrieMatrix;
 	private int _extensionURLPatternsCount;
-	private List<T> _extensionValues = new ArrayList<>(Long.SIZE);
+	private final List<T> _extensionValues = new ArrayList<>(Long.SIZE);
 	private final int _maxURLPatternLength;
 	private final long[][][] _wildCardTrieMatrix;
 	private int _wildcardURLPatternCount;
-	private List<T> _wildcardValues = new ArrayList<>(Long.SIZE);
+	private final List<T> _wildcardValues = new ArrayList<>(Long.SIZE);
 
 }

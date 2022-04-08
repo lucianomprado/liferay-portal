@@ -2,11 +2,13 @@
 <head>
 <title>DDLRecord</title>
 </head>
+
 <body>
-<table cellpadding="1" cellspacing="1" border="1">
+<table border="1" cellpadding="1" cellspacing="1">
 <thead>
 <tr><td rowspan="1" colspan="3">DDLRecord</td></tr>
 </thead>
+
 <tbody>
 <tr>
 	<td>WORKFLOW_STATUS</td>
@@ -31,6 +33,11 @@
 <tr>
 	<td>FIELD_2</td>
 	<td>//div[@class='lfr-ddm-container']/div[not(contains(@class,'hide'))][2]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>FIELD_1_VALUE</td>
+	<td>//div[@class='lfr-ddm-container']/div[not(contains(@class,'hide'))][1]//input[@value='${key_value}']</td>
 	<td></td>
 </tr>
 <tr>

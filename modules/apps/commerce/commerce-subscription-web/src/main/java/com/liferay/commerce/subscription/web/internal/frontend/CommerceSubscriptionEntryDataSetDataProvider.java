@@ -14,20 +14,23 @@
 
 package com.liferay.commerce.subscription.web.internal.frontend;
 
+import com.liferay.account.constants.AccountPortletKeys;
 import com.liferay.commerce.account.model.CommerceAccount;
 import com.liferay.commerce.constants.CommerceSubscriptionEntryConstants;
 import com.liferay.commerce.model.CommerceOrder;
 import com.liferay.commerce.model.CommerceOrderItem;
 import com.liferay.commerce.model.CommerceSubscriptionEntry;
-import com.liferay.commerce.product.display.context.util.CPRequestHelper;
+import com.liferay.commerce.product.display.context.helper.CPRequestHelper;
 import com.liferay.commerce.service.CommerceOrderItemService;
 import com.liferay.commerce.service.CommerceSubscriptionEntryService;
+import com.liferay.commerce.subscription.web.internal.frontend.constants.CommerceSubscriptionDataSetConstants;
 import com.liferay.commerce.subscription.web.internal.model.Label;
 import com.liferay.commerce.subscription.web.internal.model.Link;
 import com.liferay.commerce.subscription.web.internal.model.SubscriptionEntry;
 import com.liferay.frontend.taglib.clay.data.Filter;
 import com.liferay.frontend.taglib.clay.data.Pagination;
 import com.liferay.frontend.taglib.clay.data.set.provider.ClayDataSetDataProvider;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.portlet.PortletProvider;
@@ -37,13 +40,12 @@ import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
-import com.liferay.portal.kernel.util.Validator;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import javax.portlet.PortletURL;
+import javax.portlet.PortletRequest;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -148,25 +150,19 @@ public class CommerceSubscriptionEntryDataSetDataProvider
 			long commerceAccountId, HttpServletRequest httpServletRequest)
 		throws PortalException {
 
-		CPRequestHelper cpRequestHelper = new CPRequestHelper(
-			httpServletRequest);
-
-		ThemeDisplay themeDisplay = cpRequestHelper.getThemeDisplay();
-
-		PortletURL portletURL = PortletProviderUtil.getPortletURL(
-			httpServletRequest, themeDisplay.getScopeGroup(),
-			CommerceAccount.class.getName(), PortletProvider.Action.EDIT);
-
-		String redirect = ParamUtil.getString(
-			httpServletRequest, "currentUrl",
-			_portal.getCurrentURL(httpServletRequest));
-
-		portletURL.setParameter("mvcRenderCommandName", "editCommerceAccount");
-		portletURL.setParameter("redirect", redirect);
-		portletURL.setParameter(
-			"commerceAccountId", String.valueOf(commerceAccountId));
-
-		return portletURL.toString();
+		return PortletURLBuilder.create(
+			_portal.getControlPanelPortletURL(
+				httpServletRequest, AccountPortletKeys.ACCOUNT_ENTRIES_ADMIN,
+				PortletRequest.RENDER_PHASE)
+		).setMVCRenderCommandName(
+			"/account_admin/edit_account_entry"
+		).setRedirect(
+			ParamUtil.getString(
+				httpServletRequest, "currentUrl",
+				_portal.getCurrentURL(httpServletRequest))
+		).setParameter(
+			"accountEntryId", commerceAccountId
+		).buildString();
 	}
 
 	private String _getEditCommerceOrderURL(
@@ -178,61 +174,157 @@ public class CommerceSubscriptionEntryDataSetDataProvider
 
 		ThemeDisplay themeDisplay = cpRequestHelper.getThemeDisplay();
 
-		PortletURL portletURL = PortletProviderUtil.getPortletURL(
-			httpServletRequest, themeDisplay.getScopeGroup(),
-			CommerceOrder.class.getName(), PortletProvider.Action.MANAGE);
-
-		String redirect = ParamUtil.getString(
-			httpServletRequest, "currentUrl",
-			_portal.getCurrentURL(httpServletRequest));
-
-		portletURL.setParameter("mvcRenderCommandName", "editCommerceOrder");
-		portletURL.setParameter("redirect", redirect);
-		portletURL.setParameter(
-			"commerceOrderId", String.valueOf(commerceOrderId));
-
-		return portletURL.toString();
+		return PortletURLBuilder.create(
+			PortletProviderUtil.getPortletURL(
+				httpServletRequest, themeDisplay.getScopeGroup(),
+				CommerceOrder.class.getName(), PortletProvider.Action.MANAGE)
+		).setMVCRenderCommandName(
+			"/commerce_open_order_content/edit_commerce_order"
+		).setRedirect(
+			ParamUtil.getString(
+				httpServletRequest, "currentUrl",
+				_portal.getCurrentURL(httpServletRequest))
+		).setParameter(
+			"commerceOrderId", commerceOrderId
+		).buildString();
 	}
 
 	private Label _getSubscriptionStatus(
 		CommerceSubscriptionEntry commerceSubscriptionEntry) {
 
-		int subscriptionStatus =
-			commerceSubscriptionEntry.getSubscriptionStatus();
-
 		String subscriptionStatusLabel =
 			CommerceSubscriptionEntryConstants.getSubscriptionStatusLabel(
-				subscriptionStatus);
-
-		if (Validator.isNull(subscriptionStatusLabel)) {
-			return null;
-		}
-
+				CommerceSubscriptionEntryConstants.
+					SUBSCRIPTION_STATUS_COMPLETED);
 		String label = Label.INFO;
 
 		if (Objects.equals(
-				subscriptionStatus,
+				commerceSubscriptionEntry.getSubscriptionStatus(),
+				CommerceSubscriptionEntryConstants.
+					SUBSCRIPTION_STATUS_ACTIVE) ||
+			Objects.equals(
+				commerceSubscriptionEntry.getDeliverySubscriptionStatus(),
 				CommerceSubscriptionEntryConstants.
 					SUBSCRIPTION_STATUS_ACTIVE)) {
 
+			subscriptionStatusLabel =
+				CommerceSubscriptionEntryConstants.getSubscriptionStatusLabel(
+					CommerceSubscriptionEntryConstants.
+						SUBSCRIPTION_STATUS_ACTIVE);
 			label = Label.SUCCESS;
 		}
 		else if (Objects.equals(
-					subscriptionStatus,
+					commerceSubscriptionEntry.getSubscriptionStatus(),
 					CommerceSubscriptionEntryConstants.
-						SUBSCRIPTION_STATUS_SUSPENDED) ||
+						SUBSCRIPTION_STATUS_INACTIVE) &&
 				 Objects.equals(
-					 subscriptionStatus,
+					 commerceSubscriptionEntry.getDeliverySubscriptionStatus(),
 					 CommerceSubscriptionEntryConstants.
 						 SUBSCRIPTION_STATUS_INACTIVE)) {
 
+			subscriptionStatusLabel =
+				CommerceSubscriptionEntryConstants.getSubscriptionStatusLabel(
+					CommerceSubscriptionEntryConstants.
+						SUBSCRIPTION_STATUS_INACTIVE);
 			label = Label.WARNING;
 		}
 		else if (Objects.equals(
-					subscriptionStatus,
+					commerceSubscriptionEntry.getSubscriptionStatus(),
 					CommerceSubscriptionEntryConstants.
-						SUBSCRIPTION_STATUS_CANCELLED)) {
+						SUBSCRIPTION_STATUS_SUSPENDED) &&
+				 Objects.equals(
+					 commerceSubscriptionEntry.getDeliverySubscriptionStatus(),
+					 CommerceSubscriptionEntryConstants.
+						 SUBSCRIPTION_STATUS_SUSPENDED)) {
 
+			subscriptionStatusLabel =
+				CommerceSubscriptionEntryConstants.getSubscriptionStatusLabel(
+					CommerceSubscriptionEntryConstants.
+						SUBSCRIPTION_STATUS_SUSPENDED);
+			label = Label.WARNING;
+		}
+		else if (Objects.equals(
+					commerceSubscriptionEntry.getSubscriptionStatus(),
+					CommerceSubscriptionEntryConstants.
+						SUBSCRIPTION_STATUS_CANCELLED) &&
+				 Objects.equals(
+					 commerceSubscriptionEntry.getDeliverySubscriptionStatus(),
+					 CommerceSubscriptionEntryConstants.
+						 SUBSCRIPTION_STATUS_CANCELLED)) {
+
+			subscriptionStatusLabel =
+				CommerceSubscriptionEntryConstants.getSubscriptionStatusLabel(
+					CommerceSubscriptionEntryConstants.
+						SUBSCRIPTION_STATUS_CANCELLED);
+			label = Label.DANGER;
+		}
+		else if ((Objects.equals(
+					commerceSubscriptionEntry.getSubscriptionStatus(),
+					CommerceSubscriptionEntryConstants.
+						SUBSCRIPTION_STATUS_INACTIVE) &&
+				  Objects.equals(
+					  commerceSubscriptionEntry.getDeliverySubscriptionStatus(),
+					  CommerceSubscriptionEntryConstants.
+						  SUBSCRIPTION_STATUS_SUSPENDED)) ||
+				 (Objects.equals(
+					 commerceSubscriptionEntry.getSubscriptionStatus(),
+					 CommerceSubscriptionEntryConstants.
+						 SUBSCRIPTION_STATUS_SUSPENDED) &&
+				  Objects.equals(
+					  commerceSubscriptionEntry.getDeliverySubscriptionStatus(),
+					  CommerceSubscriptionEntryConstants.
+						  SUBSCRIPTION_STATUS_INACTIVE))) {
+
+			subscriptionStatusLabel =
+				CommerceSubscriptionEntryConstants.getSubscriptionStatusLabel(
+					CommerceSubscriptionEntryConstants.
+						SUBSCRIPTION_STATUS_SUSPENDED);
+			label = Label.WARNING;
+		}
+		else if ((Objects.equals(
+					commerceSubscriptionEntry.getSubscriptionStatus(),
+					CommerceSubscriptionEntryConstants.
+						SUBSCRIPTION_STATUS_INACTIVE) &&
+				  Objects.equals(
+					  commerceSubscriptionEntry.getDeliverySubscriptionStatus(),
+					  CommerceSubscriptionEntryConstants.
+						  SUBSCRIPTION_STATUS_CANCELLED)) ||
+				 (Objects.equals(
+					 commerceSubscriptionEntry.getSubscriptionStatus(),
+					 CommerceSubscriptionEntryConstants.
+						 SUBSCRIPTION_STATUS_CANCELLED) &&
+				  Objects.equals(
+					  commerceSubscriptionEntry.getDeliverySubscriptionStatus(),
+					  CommerceSubscriptionEntryConstants.
+						  SUBSCRIPTION_STATUS_INACTIVE))) {
+
+			subscriptionStatusLabel =
+				CommerceSubscriptionEntryConstants.getSubscriptionStatusLabel(
+					CommerceSubscriptionEntryConstants.
+						SUBSCRIPTION_STATUS_CANCELLED);
+			label = Label.DANGER;
+		}
+		else if ((Objects.equals(
+					commerceSubscriptionEntry.getSubscriptionStatus(),
+					CommerceSubscriptionEntryConstants.
+						SUBSCRIPTION_STATUS_SUSPENDED) &&
+				  Objects.equals(
+					  commerceSubscriptionEntry.getDeliverySubscriptionStatus(),
+					  CommerceSubscriptionEntryConstants.
+						  SUBSCRIPTION_STATUS_CANCELLED)) ||
+				 (Objects.equals(
+					 commerceSubscriptionEntry.getSubscriptionStatus(),
+					 CommerceSubscriptionEntryConstants.
+						 SUBSCRIPTION_STATUS_CANCELLED) &&
+				  Objects.equals(
+					  commerceSubscriptionEntry.getDeliverySubscriptionStatus(),
+					  CommerceSubscriptionEntryConstants.
+						  SUBSCRIPTION_STATUS_SUSPENDED))) {
+
+			subscriptionStatusLabel =
+				CommerceSubscriptionEntryConstants.getSubscriptionStatusLabel(
+					CommerceSubscriptionEntryConstants.
+						SUBSCRIPTION_STATUS_CANCELLED);
 			label = Label.DANGER;
 		}
 

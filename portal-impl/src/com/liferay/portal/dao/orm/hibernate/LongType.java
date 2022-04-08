@@ -90,14 +90,15 @@ public class LongType implements CompositeUserType, Serializable {
 
 	@Override
 	public Object nullSafeGet(
-			ResultSet rs, String[] names, SessionImplementor session,
+			ResultSet resultSet, String[] names, SessionImplementor session,
 			Object owner)
 		throws SQLException {
 
 		Object value = null;
 
 		try {
-			value = StandardBasicTypes.LONG.nullSafeGet(rs, names[0], session);
+			value = StandardBasicTypes.LONG.nullSafeGet(
+				resultSet, names[0], session);
 		}
 		catch (SQLException sqlException1) {
 
@@ -108,7 +109,7 @@ public class LongType implements CompositeUserType, Serializable {
 				value = Long.valueOf(
 					GetterUtil.getLong(
 						StandardBasicTypes.STRING.nullSafeGet(
-							rs, names[0], session)));
+							resultSet, names[0], session)));
 			}
 			catch (SQLException sqlException2) {
 				throw sqlException1;
@@ -124,7 +125,7 @@ public class LongType implements CompositeUserType, Serializable {
 
 	@Override
 	public void nullSafeSet(
-			PreparedStatement ps, Object target, int index,
+			PreparedStatement preparedStatement, Object target, int index,
 			SessionImplementor session)
 		throws SQLException {
 
@@ -132,7 +133,7 @@ public class LongType implements CompositeUserType, Serializable {
 			target = DEFAULT_VALUE;
 		}
 
-		ps.setLong(index, (Long)target);
+		preparedStatement.setLong(index, (Long)target);
 	}
 
 	@Override

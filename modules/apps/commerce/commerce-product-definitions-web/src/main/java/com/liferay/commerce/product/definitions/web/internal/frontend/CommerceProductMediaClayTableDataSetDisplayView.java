@@ -14,6 +14,7 @@
 
 package com.liferay.commerce.product.definitions.web.internal.frontend;
 
+import com.liferay.commerce.product.definitions.web.internal.frontend.constants.CommerceProductDataSetConstants;
 import com.liferay.frontend.taglib.clay.data.set.ClayDataSetDisplayView;
 import com.liferay.frontend.taglib.clay.data.set.view.table.BaseTableClayDataSetDisplayView;
 import com.liferay.frontend.taglib.clay.data.set.view.table.ClayTableSchema;
@@ -43,15 +44,15 @@ public class CommerceProductMediaClayTableDataSetDisplayView
 		ClayTableSchemaBuilder clayTableSchemaBuilder =
 			_clayTableSchemaBuilderFactory.create();
 
-		ClayTableSchemaField imageField =
+		ClayTableSchemaField imageClayTableSchemaField =
 			clayTableSchemaBuilder.addClayTableSchemaField("image", "");
 
-		imageField.setContentRenderer("image");
+		imageClayTableSchemaField.setContentRenderer("image");
 
-		ClayTableSchemaField titleField =
+		ClayTableSchemaField titleClayTableSchemaField =
 			clayTableSchemaBuilder.addClayTableSchemaField("title", "title");
 
-		titleField.setContentRenderer("actionLink");
+		titleClayTableSchemaField.setContentRenderer("actionLink");
 
 		clayTableSchemaBuilder.addClayTableSchemaField(
 			"extension", "extension");
@@ -61,10 +62,10 @@ public class CommerceProductMediaClayTableDataSetDisplayView
 		clayTableSchemaBuilder.addClayTableSchemaField(
 			"modifiedDate", "modified-date");
 
-		ClayTableSchemaField statusField =
+		ClayTableSchemaField statusClayTableSchemaField =
 			clayTableSchemaBuilder.addClayTableSchemaField("status", "status");
 
-		statusField.setContentRenderer("label");
+		statusClayTableSchemaField.setContentRenderer("label");
 
 		return clayTableSchemaBuilder.build();
 	}

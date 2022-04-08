@@ -24,32 +24,33 @@ import com.liferay.commerce.constants.CommerceShipmentDataSetConstants;
 import com.liferay.commerce.frontend.model.HeaderActionModel;
 import com.liferay.commerce.frontend.model.StepModel;
 import com.liferay.commerce.model.CommerceAddress;
-import com.liferay.commerce.model.CommerceCountry;
 import com.liferay.commerce.model.CommerceOrder;
-import com.liferay.commerce.model.CommerceRegion;
 import com.liferay.commerce.model.CommerceShipment;
 import com.liferay.commerce.product.model.CommerceChannel;
 import com.liferay.commerce.product.service.CommerceChannelService;
 import com.liferay.commerce.service.CommerceAddressService;
-import com.liferay.commerce.service.CommerceCountryService;
 import com.liferay.commerce.service.CommerceOrderItemService;
 import com.liferay.commerce.service.CommerceOrderLocalService;
-import com.liferay.commerce.service.CommerceRegionService;
-import com.liferay.commerce.shipment.web.internal.portlet.action.ActionHelper;
+import com.liferay.commerce.shipment.web.internal.portlet.action.helper.ActionHelper;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.CreationMenu;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.model.Country;
+import com.liferay.portal.kernel.model.Region;
 import com.liferay.portal.kernel.portlet.LiferayWindowState;
 import com.liferay.portal.kernel.search.BaseModelSearchResult;
 import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.search.QueryConfig;
 import com.liferay.portal.kernel.search.SearchContext;
+import com.liferay.portal.kernel.security.permission.resource.PortletResourcePermission;
+import com.liferay.portal.kernel.service.CountryService;
+import com.liferay.portal.kernel.service.RegionService;
 import com.liferay.portal.kernel.util.ArrayUtil;
-import com.liferay.portal.kernel.util.Constants;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.webserver.WebServerServletTokenUtil;
@@ -59,7 +60,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
-import javax.portlet.ActionRequest;
 import javax.portlet.PortletRequest;
 import javax.portlet.PortletURL;
 import javax.portlet.WindowStateException;
@@ -74,24 +74,25 @@ public class CommerceShipmentDisplayContext
 	extends BaseCommerceShipmentDisplayContext<CommerceShipment> {
 
 	public CommerceShipmentDisplayContext(
-		ActionHelper actionHelper, HttpServletRequest httpServletRequest,
+		ActionHelper actionHelper,
 		CommerceAddressFormatter commerceAddressFormatter,
 		CommerceAddressService commerceAddressService,
 		CommerceChannelService commerceChannelService,
-		CommerceCountryService commerceCountryService,
 		CommerceOrderItemService commerceOrderItemService,
 		CommerceOrderLocalService commerceOrderLocalService,
-		CommerceRegionService commerceRegionService) {
+		CountryService countryService, HttpServletRequest httpServletRequest,
+		PortletResourcePermission portletResourcePermission,
+		RegionService regionService) {
 
-		super(actionHelper, httpServletRequest);
+		super(actionHelper, httpServletRequest, portletResourcePermission);
 
 		_commerceAddressFormatter = commerceAddressFormatter;
 		_commerceAddressService = commerceAddressService;
 		_commerceChannelService = commerceChannelService;
-		_commerceCountryService = commerceCountryService;
 		_commerceOrderItemService = commerceOrderItemService;
 		_commerceOrderLocalService = commerceOrderLocalService;
-		_commerceRegionService = commerceRegionService;
+		_countryService = countryService;
+		_regionService = regionService;
 	}
 
 	public List<CommerceAccount> getCommerceAccountsWithShippableOrders()
@@ -148,13 +149,7 @@ public class CommerceShipmentDisplayContext
 	}
 
 	public List<CommerceChannel> getCommerceChannels() throws PortalException {
-		return _commerceChannelService.searchCommerceChannels(
-			cpRequestHelper.getCompanyId());
-	}
-
-	public List<CommerceCountry> getCommerceCountries() {
-		return _commerceCountryService.getCommerceCountries(
-			cpRequestHelper.getCompanyId(), true);
+		return _commerceChannelService.search(cpRequestHelper.getCompanyId());
 	}
 
 	public List<CommerceOrder> getCommerceOrders() throws PortalException {
@@ -166,9 +161,9 @@ public class CommerceShipmentDisplayContext
 		return baseModelSearchResult.getBaseModels();
 	}
 
-	public List<CommerceRegion> getCommerceRegions(long commerceCountryId) {
-		return _commerceRegionService.getCommerceRegions(
-			commerceCountryId, true);
+	public List<Country> getCountries() {
+		return _countryService.getCompanyCountries(
+			cpRequestHelper.getCompanyId(), true);
 	}
 
 	public String getDatasetView() throws PortalException {
@@ -209,12 +204,13 @@ public class CommerceShipmentDisplayContext
 
 		CommerceShipment commerceShipment = getCommerceShipment();
 
-		int[] shipmentStatuses = CommerceShipmentConstants.SHIPMENT_STATUSES;
-
 		int currentShipmentStatus = commerceShipment.getStatus();
 
 		if (currentShipmentStatus !=
 				CommerceShipmentConstants.SHIPMENT_STATUS_DELIVERED) {
+
+			int[] shipmentStatuses =
+				CommerceShipmentConstants.SHIPMENT_STATUSES;
 
 			int[] availableShipmentStatuses = new int[0];
 
@@ -236,21 +232,6 @@ public class CommerceShipmentDisplayContext
 					CommerceShipmentConstants.getShipmentTransitionLabel(
 						shipmentStatus);
 
-				PortletURL portletURL = PortalUtil.getControlPanelPortletURL(
-					httpServletRequest, CommercePortletKeys.COMMERCE_SHIPMENT,
-					PortletRequest.ACTION_PHASE);
-
-				portletURL.setParameter(
-					ActionRequest.ACTION_NAME, "editCommerceShipment");
-				portletURL.setParameter(Constants.CMD, "transition");
-				portletURL.setParameter(
-					"redirect", PortalUtil.getCurrentURL(httpServletRequest));
-				portletURL.setParameter(
-					"commerceShipmentId",
-					String.valueOf(getCommerceShipmentId()));
-				portletURL.setParameter(
-					"transitionName", String.valueOf(shipmentStatus));
-
 				String buttonClass = "btn-primary";
 
 				int availableStatusesLength = availableShipmentStatuses.length;
@@ -265,7 +246,24 @@ public class CommerceShipmentDisplayContext
 
 				headerActionModels.add(
 					new HeaderActionModel(
-						buttonClass, null, portletURL.toString(), null, label));
+						buttonClass, null,
+						PortletURLBuilder.create(
+							PortalUtil.getControlPanelPortletURL(
+								httpServletRequest,
+								CommercePortletKeys.COMMERCE_SHIPMENT,
+								PortletRequest.ACTION_PHASE)
+						).setActionName(
+							"/commerce_shipment/edit_commerce_shipment"
+						).setCMD(
+							"transition"
+						).setRedirect(
+							PortalUtil.getCurrentURL(httpServletRequest)
+						).setParameter(
+							"commerceShipmentId", getCommerceShipmentId()
+						).setParameter(
+							"transitionName", shipmentStatus
+						).buildString(),
+						null, label));
 			}
 		}
 
@@ -279,11 +277,15 @@ public class CommerceShipmentDisplayContext
 
 	@Override
 	public PortletURL getPortletURL() throws PortalException {
-		PortletURL portletURL = super.getPortletURL();
+		return PortletURLBuilder.create(
+			super.getPortletURL()
+		).setNavigation(
+			getNavigation()
+		).buildPortletURL();
+	}
 
-		portletURL.setParameter("navigation", getNavigation());
-
-		return portletURL;
+	public List<Region> getRegions(long countryId) {
+		return _regionService.getRegions(countryId, true);
 	}
 
 	public List<DropdownItem> getShipmentItemBulkActions()
@@ -314,20 +316,21 @@ public class CommerceShipmentDisplayContext
 			(commerceShipment.getStatus() ==
 				CommerceShipmentConstants.SHIPMENT_STATUS_PROCESSING)) {
 
-			PortletURL portletURL = getPortletURL();
-
-			portletURL.setParameter(
-				"redirect", PortalUtil.getCurrentURL(httpServletRequest));
-			portletURL.setParameter(
-				"commerceShipmentId",
-				String.valueOf(commerceShipment.getCommerceShipmentId()));
-			portletURL.setParameter(
-				"mvcRenderCommandName", "addCommerceShipmentItems");
-			portletURL.setWindowState(LiferayWindowState.POP_UP);
-
 			creationMenu.addDropdownItem(
 				dropdownItem -> {
-					dropdownItem.setHref(portletURL.toString());
+					dropdownItem.setHref(
+						PortletURLBuilder.create(
+							getPortletURL()
+						).setMVCRenderCommandName(
+							"/commerce_shipment/add_commerce_shipment_items"
+						).setRedirect(
+							PortalUtil.getCurrentURL(httpServletRequest)
+						).setParameter(
+							"commerceShipmentId",
+							commerceShipment.getCommerceShipmentId()
+						).setWindowState(
+							LiferayWindowState.POP_UP
+						).buildString());
 					dropdownItem.setLabel(
 						LanguageUtil.get(
 							httpServletRequest,
@@ -433,9 +436,9 @@ public class CommerceShipmentDisplayContext
 	private final CommerceAddressFormatter _commerceAddressFormatter;
 	private final CommerceAddressService _commerceAddressService;
 	private final CommerceChannelService _commerceChannelService;
-	private final CommerceCountryService _commerceCountryService;
 	private final CommerceOrderItemService _commerceOrderItemService;
 	private final CommerceOrderLocalService _commerceOrderLocalService;
-	private final CommerceRegionService _commerceRegionService;
+	private final CountryService _countryService;
+	private final RegionService _regionService;
 
 }

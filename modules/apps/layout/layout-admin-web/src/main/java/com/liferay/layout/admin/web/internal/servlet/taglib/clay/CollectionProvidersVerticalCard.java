@@ -15,8 +15,9 @@
 package com.liferay.layout.admin.web.internal.servlet.taglib.clay;
 
 import com.liferay.frontend.taglib.clay.servlet.taglib.soy.BaseVerticalCard;
-import com.liferay.info.list.provider.InfoListProvider;
+import com.liferay.info.collection.provider.InfoCollectionProvider;
 import com.liferay.info.list.provider.item.selector.criterion.InfoListProviderItemSelectorReturnType;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -25,13 +26,9 @@ import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.Validator;
 
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.portlet.PortletURL;
 import javax.portlet.RenderRequest;
 import javax.portlet.RenderResponse;
 
@@ -43,13 +40,13 @@ import javax.servlet.http.HttpServletRequest;
 public class CollectionProvidersVerticalCard extends BaseVerticalCard {
 
 	public CollectionProvidersVerticalCard(
-		long groupId, InfoListProvider<?> infoListProvider,
+		long groupId, InfoCollectionProvider<?> infoCollectionProvider,
 		RenderRequest renderRequest, RenderResponse renderResponse) {
 
 		super(null, renderRequest, null);
 
 		_groupId = groupId;
-		_infoListProvider = infoListProvider;
+		_infoCollectionProvider = infoCollectionProvider;
 		_renderResponse = renderResponse;
 
 		_httpServletRequest = PortalUtil.getHttpServletRequest(renderRequest);
@@ -66,48 +63,38 @@ public class CollectionProvidersVerticalCard extends BaseVerticalCard {
 		Map<String, String> data = new HashMap<>();
 
 		try {
-			PortletURL selectLayoutMasterLayoutURL =
-				_renderResponse.createRenderURL();
-
-			selectLayoutMasterLayoutURL.setParameter(
-				"mvcPath", "/select_layout_master_layout.jsp");
-
-			String redirect = ParamUtil.getString(
-				_httpServletRequest, "redirect");
-
-			selectLayoutMasterLayoutURL.setParameter("redirect", redirect);
-
-			selectLayoutMasterLayoutURL.setParameter(
-				"backURL", themeDisplay.getURLCurrent());
-			selectLayoutMasterLayoutURL.setParameter(
-				"groupId", String.valueOf(_groupId));
-
-			long selPlid = ParamUtil.getLong(_httpServletRequest, "selPlid");
-
-			selectLayoutMasterLayoutURL.setParameter(
-				"selPlid", String.valueOf(selPlid));
-
-			boolean privateLayout = ParamUtil.getBoolean(
-				_httpServletRequest, "privateLayout");
-
-			selectLayoutMasterLayoutURL.setParameter(
-				"privateLayout", String.valueOf(privateLayout));
-
-			selectLayoutMasterLayoutURL.setParameter(
-				"collectionPK", String.valueOf(_infoListProvider.getKey()));
-			selectLayoutMasterLayoutURL.setParameter(
-				"collectionType",
-				InfoListProviderItemSelectorReturnType.class.getName());
-
 			data.put(
 				"data-select-layout-master-layout-url",
-				selectLayoutMasterLayoutURL.toString());
+				PortletURLBuilder.createRenderURL(
+					_renderResponse
+				).setMVCPath(
+					"/select_layout_master_layout.jsp"
+				).setRedirect(
+					ParamUtil.getString(_httpServletRequest, "redirect")
+				).setBackURL(
+					themeDisplay.getURLCurrent()
+				).setParameter(
+					"collectionPK", _infoCollectionProvider.getKey()
+				).setParameter(
+					"collectionType",
+					InfoListProviderItemSelectorReturnType.class.getName()
+				).setParameter(
+					"groupId", _groupId
+				).setParameter(
+					"privateLayout",
+					ParamUtil.getBoolean(_httpServletRequest, "privateLayout")
+				).setParameter(
+					"selPlid", ParamUtil.getLong(_httpServletRequest, "selPlid")
+				).buildString());
 		}
 		catch (Exception exception) {
 			if (_log.isDebugEnabled()) {
-				_log.debug(exception, exception);
+				_log.debug(exception);
 			}
 		}
+
+		data.put("role", "button");
+		data.put("tabIndex", "0");
 
 		return data;
 	}
@@ -124,7 +111,7 @@ public class CollectionProvidersVerticalCard extends BaseVerticalCard {
 
 	@Override
 	public String getSubtitle() {
-		String className = _getClassName(_infoListProvider);
+		String className = _infoCollectionProvider.getCollectionItemClassName();
 
 		if (Validator.isNotNull(className)) {
 			return ResourceActionsUtil.getModelResource(
@@ -136,7 +123,7 @@ public class CollectionProvidersVerticalCard extends BaseVerticalCard {
 
 	@Override
 	public String getTitle() {
-		return _infoListProvider.getLabel(themeDisplay.getLocale());
+		return _infoCollectionProvider.getLabel(themeDisplay.getLocale());
 	}
 
 	@Override
@@ -144,30 +131,12 @@ public class CollectionProvidersVerticalCard extends BaseVerticalCard {
 		return true;
 	}
 
-	private String _getClassName(InfoListProvider<?> infoListProvider) {
-		Class<?> clazz = infoListProvider.getClass();
-
-		Type[] genericInterfaceTypes = clazz.getGenericInterfaces();
-
-		for (Type genericInterfaceType : genericInterfaceTypes) {
-			ParameterizedType parameterizedType =
-				(ParameterizedType)genericInterfaceType;
-
-			Class<?> typeClazz =
-				(Class<?>)parameterizedType.getActualTypeArguments()[0];
-
-			return typeClazz.getName();
-		}
-
-		return StringPool.BLANK;
-	}
-
 	private static final Log _log = LogFactoryUtil.getLog(
 		CollectionProvidersVerticalCard.class);
 
 	private final long _groupId;
 	private final HttpServletRequest _httpServletRequest;
-	private final InfoListProvider<?> _infoListProvider;
+	private final InfoCollectionProvider<?> _infoCollectionProvider;
 	private final RenderResponse _renderResponse;
 
 }

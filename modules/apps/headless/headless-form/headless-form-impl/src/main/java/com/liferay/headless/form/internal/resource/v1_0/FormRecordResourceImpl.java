@@ -30,8 +30,8 @@ import com.liferay.dynamic.data.mapping.service.DDMFormInstanceService;
 import com.liferay.dynamic.data.mapping.storage.DDMFormFieldValue;
 import com.liferay.dynamic.data.mapping.storage.DDMFormValues;
 import com.liferay.headless.form.dto.v1_0.FormRecord;
+import com.liferay.headless.form.dto.v1_0.util.FormRecordUtil;
 import com.liferay.headless.form.internal.dto.v1_0.util.DDMFormValuesUtil;
-import com.liferay.headless.form.internal.dto.v1_0.util.FormRecordUtil;
 import com.liferay.headless.form.resource.v1_0.FormRecordResource;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
@@ -61,11 +61,13 @@ import org.osgi.service.component.annotations.ServiceScope;
 /**
  * @author Javier Gamarra
  * @author Victor Oliveira
+ * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
  */
 @Component(
 	properties = "OSGI-INF/liferay/rest/v1_0/form-record.properties",
 	scope = ServiceScope.PROTOTYPE, service = FormRecordResource.class
 )
+@Deprecated
 public class FormRecordResourceImpl extends BaseFormRecordResourceImpl {
 
 	@Override
@@ -219,7 +221,7 @@ public class FormRecordResourceImpl extends BaseFormRecordResourceImpl {
 					}
 				}
 				catch (Exception exception) {
-					_log.error(exception, exception);
+					_log.error(exception);
 
 					throw new BadRequestException(exception);
 				}

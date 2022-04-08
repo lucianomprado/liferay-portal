@@ -26,18 +26,22 @@ import com.liferay.portal.kernel.model.impl.BaseModelImpl;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
+import com.liferay.portal.kernel.util.StringUtil;
 
 import java.io.Serializable;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
 
+import java.sql.Blob;
 import java.sql.Types;
 
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
@@ -66,7 +70,7 @@ public class DDMFieldModelImpl
 		{"mvccVersion", Types.BIGINT}, {"ctCollectionId", Types.BIGINT},
 		{"fieldId", Types.BIGINT}, {"companyId", Types.BIGINT},
 		{"parentFieldId", Types.BIGINT}, {"storageId", Types.BIGINT},
-		{"structureVersionId", Types.BIGINT}, {"fieldName", Types.VARCHAR},
+		{"structureVersionId", Types.BIGINT}, {"fieldName", Types.CLOB},
 		{"fieldType", Types.VARCHAR}, {"instanceId", Types.VARCHAR},
 		{"localizable", Types.BOOLEAN}, {"priority", Types.INTEGER}
 	};
@@ -82,7 +86,7 @@ public class DDMFieldModelImpl
 		TABLE_COLUMNS_MAP.put("parentFieldId", Types.BIGINT);
 		TABLE_COLUMNS_MAP.put("storageId", Types.BIGINT);
 		TABLE_COLUMNS_MAP.put("structureVersionId", Types.BIGINT);
-		TABLE_COLUMNS_MAP.put("fieldName", Types.VARCHAR);
+		TABLE_COLUMNS_MAP.put("fieldName", Types.CLOB);
 		TABLE_COLUMNS_MAP.put("fieldType", Types.VARCHAR);
 		TABLE_COLUMNS_MAP.put("instanceId", Types.VARCHAR);
 		TABLE_COLUMNS_MAP.put("localizable", Types.BOOLEAN);
@@ -90,7 +94,7 @@ public class DDMFieldModelImpl
 	}
 
 	public static final String TABLE_SQL_CREATE =
-		"create table DDMField (mvccVersion LONG default 0 not null,ctCollectionId LONG default 0 not null,fieldId LONG not null,companyId LONG,parentFieldId LONG,storageId LONG,structureVersionId LONG,fieldName VARCHAR(255) null,fieldType VARCHAR(255) null,instanceId VARCHAR(75) null,localizable BOOLEAN,priority INTEGER,primary key (fieldId, ctCollectionId))";
+		"create table DDMField (mvccVersion LONG default 0 not null,ctCollectionId LONG default 0 not null,fieldId LONG not null,companyId LONG,parentFieldId LONG,storageId LONG,structureVersionId LONG,fieldName TEXT null,fieldType VARCHAR(255) null,instanceId VARCHAR(75) null,localizable BOOLEAN,priority INTEGER,primary key (fieldId, ctCollectionId))";
 
 	public static final String TABLE_SQL_DROP = "drop table DDMField";
 
@@ -106,38 +110,38 @@ public class DDMFieldModelImpl
 	public static final String TX_MANAGER = "liferayTransactionManager";
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long COMPANYID_COLUMN_BITMASK = 1L;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long FIELDTYPE_COLUMN_BITMASK = 2L;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long INSTANCEID_COLUMN_BITMASK = 4L;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long STORAGEID_COLUMN_BITMASK = 8L;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long STRUCTUREVERSIONID_COLUMN_BITMASK = 16L;
 
 	/**
 	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-	 *		#getColumnBitmask(String)
+	 *		#getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long PRIORITY_COLUMN_BITMASK = 32L;
@@ -581,7 +585,9 @@ public class DDMFieldModelImpl
 		for (Map.Entry<String, Object> entry :
 				_columnOriginalValues.entrySet()) {
 
-			if (entry.getValue() != getColumnValue(entry.getKey())) {
+			if (!Objects.equals(
+					entry.getValue(), getColumnValue(entry.getKey()))) {
+
 				_columnBitmask |= _columnBitmasks.get(entry.getKey());
 			}
 		}
@@ -635,6 +641,37 @@ public class DDMFieldModelImpl
 		ddmFieldImpl.setPriority(getPriority());
 
 		ddmFieldImpl.resetOriginalValues();
+
+		return ddmFieldImpl;
+	}
+
+	@Override
+	public DDMField cloneWithOriginalValues() {
+		DDMFieldImpl ddmFieldImpl = new DDMFieldImpl();
+
+		ddmFieldImpl.setMvccVersion(
+			this.<Long>getColumnOriginalValue("mvccVersion"));
+		ddmFieldImpl.setCtCollectionId(
+			this.<Long>getColumnOriginalValue("ctCollectionId"));
+		ddmFieldImpl.setFieldId(this.<Long>getColumnOriginalValue("fieldId"));
+		ddmFieldImpl.setCompanyId(
+			this.<Long>getColumnOriginalValue("companyId"));
+		ddmFieldImpl.setParentFieldId(
+			this.<Long>getColumnOriginalValue("parentFieldId"));
+		ddmFieldImpl.setStorageId(
+			this.<Long>getColumnOriginalValue("storageId"));
+		ddmFieldImpl.setStructureVersionId(
+			this.<Long>getColumnOriginalValue("structureVersionId"));
+		ddmFieldImpl.setFieldName(
+			this.<String>getColumnOriginalValue("fieldName"));
+		ddmFieldImpl.setFieldType(
+			this.<String>getColumnOriginalValue("fieldType"));
+		ddmFieldImpl.setInstanceId(
+			this.<String>getColumnOriginalValue("instanceId"));
+		ddmFieldImpl.setLocalizable(
+			this.<Boolean>getColumnOriginalValue("localizable"));
+		ddmFieldImpl.setPriority(
+			this.<Integer>getColumnOriginalValue("priority"));
 
 		return ddmFieldImpl;
 	}
@@ -767,7 +804,7 @@ public class DDMFieldModelImpl
 			getAttributeGetterFunctions();
 
 		StringBundler sb = new StringBundler(
-			(4 * attributeGetterFunctions.size()) + 2);
+			(5 * attributeGetterFunctions.size()) + 2);
 
 		sb.append("{");
 
@@ -778,9 +815,26 @@ public class DDMFieldModelImpl
 			Function<DDMField, Object> attributeGetterFunction =
 				entry.getValue();
 
+			sb.append("\"");
 			sb.append(attributeName);
-			sb.append("=");
-			sb.append(attributeGetterFunction.apply((DDMField)this));
+			sb.append("\": ");
+
+			Object value = attributeGetterFunction.apply((DDMField)this);
+
+			if (value == null) {
+				sb.append("null");
+			}
+			else if (value instanceof Blob || value instanceof Date ||
+					 value instanceof Map || value instanceof String) {
+
+				sb.append(
+					"\"" + StringUtil.replace(value.toString(), "\"", "'") +
+						"\"");
+			}
+			else {
+				sb.append(value);
+			}
+
 			sb.append(", ");
 		}
 

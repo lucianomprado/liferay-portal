@@ -16,6 +16,7 @@ package com.liferay.roles.admin.web.internal.display.context;
 
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.ViewTypeItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.ViewTypeItemList;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
@@ -63,14 +64,16 @@ public class SelectRoleManagementToolbarDisplayContext {
 		_currentRoleTypeContributor =
 			RoleTypeContributorRetrieverUtil.getCurrentRoleTypeContributor(
 				renderRequest);
+		_groupId = ParamUtil.getLong(_httpServletRequest, "groupId");
+		_step = ParamUtil.getInteger(_httpServletRequest, "step", 1);
 	}
 
 	public String getClearResultsURL() {
-		PortletURL clearResultsURL = getPortletURL();
-
-		clearResultsURL.setParameter("keywords", StringPool.BLANK);
-
-		return clearResultsURL.toString();
+		return PortletURLBuilder.create(
+			getPortletURL()
+		).setKeywords(
+			StringPool.BLANK
+		).buildString();
 	}
 
 	public PortletURL getPortletURL() {
@@ -88,6 +91,9 @@ public class SelectRoleManagementToolbarDisplayContext {
 			"roleType", String.valueOf(_currentRoleTypeContributor.getType()));
 
 		portletURL.setParameter("eventName", _eventName);
+		portletURL.setParameter(
+			"groupEventName",
+			ParamUtil.getString(_httpServletRequest, "groupEventName"));
 
 		String[] keywords = ParamUtil.getStringValues(
 			_httpServletRequest, "keywords");
@@ -96,10 +102,8 @@ public class SelectRoleManagementToolbarDisplayContext {
 			portletURL.setParameter("keywords", keywords[keywords.length - 1]);
 		}
 
-		long groupId = ParamUtil.getLong(_httpServletRequest, "groupId");
-
-		if (groupId != 0) {
-			portletURL.setParameter("groupId", String.valueOf(groupId));
+		if (_groupId != 0) {
+			portletURL.setParameter("groupId", String.valueOf(_groupId));
 		}
 
 		String organizationId = ParamUtil.getString(
@@ -116,9 +120,7 @@ public class SelectRoleManagementToolbarDisplayContext {
 			portletURL.setParameter("organizationIds", organizationIds);
 		}
 
-		int step = ParamUtil.getInteger(_httpServletRequest, "step", 1);
-
-		portletURL.setParameter("step", String.valueOf(step));
+		portletURL.setParameter("step", String.valueOf(_step));
 
 		return portletURL;
 	}
@@ -147,11 +149,8 @@ public class SelectRoleManagementToolbarDisplayContext {
 		RoleSearchTerms roleSearchTerms =
 			(RoleSearchTerms)roleSearch.getSearchTerms();
 
-		List<Role> results = null;
-		int total = 0;
-
 		if (filterManageableRoles) {
-			results = RoleLocalServiceUtil.search(
+			List<Role> results = RoleLocalServiceUtil.search(
 				themeDisplay.getCompanyId(), roleSearchTerms.getKeywords(),
 				new Integer[] {_currentRoleTypeContributor.getType()},
 				QueryUtil.ALL_POS, QueryUtil.ALL_POS,
@@ -166,25 +165,25 @@ public class SelectRoleManagementToolbarDisplayContext {
 					themeDisplay.getPermissionChecker(), groupId, results);
 			}
 
-			total = results.size();
+			List<Role> filteredResults = results;
 
-			results = ListUtil.subList(
-				results, roleSearch.getStart(), roleSearch.getEnd());
+			roleSearch.setResultsAndTotal(
+				() -> ListUtil.subList(
+					filteredResults, roleSearch.getStart(),
+					roleSearch.getEnd()),
+				filteredResults.size());
 		}
 		else {
-			total = RoleLocalServiceUtil.searchCount(
-				themeDisplay.getCompanyId(), roleSearchTerms.getKeywords(),
-				new Integer[] {_currentRoleTypeContributor.getType()});
-
-			results = RoleLocalServiceUtil.search(
-				themeDisplay.getCompanyId(), roleSearchTerms.getKeywords(),
-				new Integer[] {_currentRoleTypeContributor.getType()},
-				roleSearch.getStart(), roleSearch.getEnd(),
-				roleSearch.getOrderByComparator());
+			roleSearch.setResultsAndTotal(
+				() -> RoleLocalServiceUtil.search(
+					themeDisplay.getCompanyId(), roleSearchTerms.getKeywords(),
+					new Integer[] {_currentRoleTypeContributor.getType()},
+					roleSearch.getStart(), roleSearch.getEnd(),
+					roleSearch.getOrderByComparator()),
+				RoleLocalServiceUtil.searchCount(
+					themeDisplay.getCompanyId(), roleSearchTerms.getKeywords(),
+					new Integer[] {_currentRoleTypeContributor.getType()}));
 		}
-
-		roleSearch.setResults(results);
-		roleSearch.setTotal(total);
 
 		_roleSearch = roleSearch;
 
@@ -205,12 +204,20 @@ public class SelectRoleManagementToolbarDisplayContext {
 		};
 	}
 
+	public void setGroupId(long groupId) {
+		_groupId = groupId;
+	}
+
+	public void setStep(int step) {
+		_step = step;
+	}
+
 	private User _getSelectedUser() {
 		try {
 			return PortalUtil.getSelectedUser(_httpServletRequest);
 		}
 		catch (PortalException portalException) {
-			_log.error(portalException, portalException);
+			_log.error(portalException);
 
 			return null;
 		}
@@ -221,9 +228,11 @@ public class SelectRoleManagementToolbarDisplayContext {
 
 	private final RoleTypeContributor _currentRoleTypeContributor;
 	private final String _eventName;
+	private long _groupId;
 	private final HttpServletRequest _httpServletRequest;
 	private final RenderRequest _renderRequest;
 	private final RenderResponse _renderResponse;
 	private RoleSearch _roleSearch;
+	private int _step;
 
 }

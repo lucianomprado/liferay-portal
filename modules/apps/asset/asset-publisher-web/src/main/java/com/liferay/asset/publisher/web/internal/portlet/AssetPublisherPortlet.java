@@ -15,6 +15,11 @@
 package com.liferay.asset.publisher.web.internal.portlet;
 
 import com.liferay.asset.constants.AssetWebKeys;
+import com.liferay.asset.kernel.AssetRendererFactoryRegistryUtil;
+import com.liferay.asset.kernel.model.AssetRendererFactory;
+import com.liferay.asset.kernel.model.ClassType;
+import com.liferay.asset.kernel.model.ClassTypeField;
+import com.liferay.asset.kernel.model.ClassTypeReader;
 import com.liferay.asset.list.asset.entry.provider.AssetListAssetEntryProvider;
 import com.liferay.asset.publisher.constants.AssetPublisherPortletKeys;
 import com.liferay.asset.publisher.constants.AssetPublisherWebKeys;
@@ -26,11 +31,13 @@ import com.liferay.asset.publisher.web.internal.helper.AssetPublisherWebHelper;
 import com.liferay.asset.publisher.web.internal.helper.AssetRSSHelper;
 import com.liferay.asset.publisher.web.internal.util.AssetPublisherCustomizerRegistry;
 import com.liferay.asset.util.AssetHelper;
+import com.liferay.dynamic.data.mapping.model.DDMFormField;
+import com.liferay.dynamic.data.mapping.model.DDMFormFieldOptions;
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.storage.Field;
 import com.liferay.dynamic.data.mapping.storage.Fields;
 import com.liferay.dynamic.data.mapping.util.DDMUtil;
-import com.liferay.info.list.provider.InfoListProviderTracker;
+import com.liferay.info.item.InfoItemServiceTracker;
 import com.liferay.item.selector.ItemSelector;
 import com.liferay.portal.configuration.metatype.bnd.util.ConfigurableUtil;
 import com.liferay.portal.kernel.exception.NoSuchGroupException;
@@ -49,9 +56,12 @@ import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.DateFormatFactoryUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.HttpUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.WebKeys;
+import com.liferay.segments.SegmentsEntryRetriever;
+import com.liferay.segments.context.RequestContextMapper;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -71,8 +81,10 @@ import javax.portlet.RenderRequest;
 import javax.portlet.RenderResponse;
 import javax.portlet.ResourceRequest;
 import javax.portlet.ResourceResponse;
+import javax.portlet.ResourceURL;
 
 import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletResponse;
 
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
@@ -126,21 +138,36 @@ public class AssetPublisherPortlet extends MVCPortlet {
 			ServiceContext serviceContext = ServiceContextFactory.getInstance(
 				resourceRequest);
 
-			long structureId = ParamUtil.getLong(
-				resourceRequest, "structureId");
+			String className = ParamUtil.getString(
+				resourceRequest, "className");
+			long classTypeId = ParamUtil.getLong(
+				resourceRequest, "classTypeId");
+			String fieldName = ParamUtil.getString(resourceRequest, "name");
+
+			AssetRendererFactory<?> assetRendererFactory =
+				AssetRendererFactoryRegistryUtil.
+					getAssetRendererFactoryByClassName(className);
+
+			ClassTypeReader classTypeReader =
+				assetRendererFactory.getClassTypeReader();
+
+			ClassType classType = classTypeReader.getClassType(
+				classTypeId, themeDisplay.getLocale());
+
+			ClassTypeField classTypeField = classType.getClassTypeField(
+				fieldName);
 
 			Fields fields = (Fields)serviceContext.getAttribute(
-				Fields.class.getName() + structureId);
+				Fields.class.getName() + classTypeField.getClassTypeId());
 
 			if (fields == null) {
 				String fieldsNamespace = ParamUtil.getString(
 					resourceRequest, "fieldsNamespace");
 
 				fields = DDMUtil.getFields(
-					structureId, fieldsNamespace, serviceContext);
+					classTypeField.getClassTypeId(), fieldsNamespace,
+					serviceContext);
 			}
-
-			String fieldName = ParamUtil.getString(resourceRequest, "name");
 
 			Field field = fields.get(fieldName);
 
@@ -160,40 +187,42 @@ public class AssetPublisherPortlet extends MVCPortlet {
 				return;
 			}
 
-			DDMStructure ddmStructure = field.getDDMStructure();
+			jsonObject.put(
+				"displayValue", _getDisplayFieldValue(field, themeDisplay)
+			).put(
+				"value",
+				() -> {
+					if (fieldValue instanceof Boolean) {
+						return (Boolean)fieldValue;
+					}
 
-			String type = ddmStructure.getFieldType(fieldName);
+					if (fieldValue instanceof Date) {
+						DateFormat dateFormat =
+							DateFormatFactoryUtil.getSimpleDateFormat(
+								"yyyyMM ddHHmmss");
 
-			Serializable displayValue = DDMUtil.getDisplayFieldValue(
-				themeDisplay, fieldValue, type);
+						return dateFormat.format(fieldValue);
+					}
 
-			jsonObject.put("displayValue", String.valueOf(displayValue));
+					if (fieldValue instanceof Double) {
+						return (Double)fieldValue;
+					}
 
-			if (fieldValue instanceof Boolean) {
-				jsonObject.put("value", (Boolean)fieldValue);
-			}
-			else if (fieldValue instanceof Date) {
-				DateFormat dateFormat =
-					DateFormatFactoryUtil.getSimpleDateFormat(
-						"yyyyMM ddHHmmss");
+					if (fieldValue instanceof Float) {
+						return (Float)fieldValue;
+					}
 
-				jsonObject.put("value", dateFormat.format(fieldValue));
-			}
-			else if (fieldValue instanceof Double) {
-				jsonObject.put("value", (Double)fieldValue);
-			}
-			else if (fieldValue instanceof Float) {
-				jsonObject.put("value", (Float)fieldValue);
-			}
-			else if (fieldValue instanceof Integer) {
-				jsonObject.put("value", (Integer)fieldValue);
-			}
-			else if (fieldValue instanceof Number) {
-				jsonObject.put("value", String.valueOf(fieldValue));
-			}
-			else {
-				jsonObject.put("value", (String)fieldValue);
-			}
+					if (fieldValue instanceof Integer) {
+						return (Integer)fieldValue;
+					}
+
+					if (fieldValue instanceof Number) {
+						return String.valueOf(fieldValue);
+					}
+
+					return (String)fieldValue;
+				}
+			);
 
 			writeJSON(resourceRequest, resourceResponse, jsonObject);
 		}
@@ -218,7 +247,27 @@ public class AssetPublisherPortlet extends MVCPortlet {
 					resourceRequest, resourceResponse);
 			}
 			catch (ServletException servletException) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(servletException);
+				}
 			}
+
+			return;
+		}
+
+		String currentURL = portal.getCurrentURL(resourceRequest);
+
+		String cacheability = httpUtil.getParameter(
+			currentURL, "p_p_cacheability", false);
+
+		if (cacheability.equals(ResourceURL.FULL)) {
+			HttpServletResponse httpServletResponse =
+				portal.getHttpServletResponse(resourceResponse);
+
+			String redirectURL = httpUtil.removeParameter(
+				currentURL, "p_p_cacheability");
+
+			httpServletResponse.sendRedirect(redirectURL);
 
 			return;
 		}
@@ -238,9 +287,10 @@ public class AssetPublisherPortlet extends MVCPortlet {
 					assetPublisherCustomizerRegistry.
 						getAssetPublisherCustomizer(rootPortletId),
 					assetPublisherHelper, assetPublisherWebConfiguration,
-					assetPublisherWebHelper, infoListProviderTracker,
+					assetPublisherWebHelper, infoItemServiceTracker,
 					itemSelector, resourceRequest, resourceResponse,
-					resourceRequest.getPreferences());
+					resourceRequest.getPreferences(), requestContextMapper,
+					segmentsEntryRetriever);
 
 			resourceRequest.setAttribute(
 				AssetPublisherWebKeys.ASSET_PUBLISHER_DISPLAY_CONTEXT,
@@ -336,9 +386,10 @@ public class AssetPublisherPortlet extends MVCPortlet {
 					assetPublisherCustomizerRegistry.
 						getAssetPublisherCustomizer(rootPortletId),
 					assetPublisherHelper, assetPublisherWebConfiguration,
-					assetPublisherWebHelper, infoListProviderTracker,
+					assetPublisherWebHelper, infoItemServiceTracker,
 					itemSelector, renderRequest, renderResponse,
-					renderRequest.getPreferences());
+					renderRequest.getPreferences(), requestContextMapper,
+					segmentsEntryRetriever);
 
 			renderRequest.setAttribute(
 				AssetPublisherWebKeys.ASSET_PUBLISHER_DISPLAY_CONTEXT,
@@ -393,7 +444,8 @@ public class AssetPublisherPortlet extends MVCPortlet {
 	@Reference
 	protected AssetPublisherHelper assetPublisherHelper;
 
-	protected AssetPublisherWebConfiguration assetPublisherWebConfiguration;
+	protected volatile AssetPublisherWebConfiguration
+		assetPublisherWebConfiguration;
 
 	@Reference
 	protected AssetPublisherWebHelper assetPublisherWebHelper;
@@ -402,7 +454,10 @@ public class AssetPublisherPortlet extends MVCPortlet {
 	protected AssetRSSHelper assetRSSHelper;
 
 	@Reference
-	protected InfoListProviderTracker infoListProviderTracker;
+	protected HttpUtil httpUtil;
+
+	@Reference
+	protected InfoItemServiceTracker infoItemServiceTracker;
 
 	@Reference
 	protected ItemSelector itemSelector;
@@ -414,6 +469,38 @@ public class AssetPublisherPortlet extends MVCPortlet {
 		target = "(&(release.bundle.symbolic.name=com.liferay.asset.publisher.web)(&(release.schema.version>=1.0.0)(!(release.schema.version>=2.0.0))))"
 	)
 	protected Release release;
+
+	@Reference
+	protected RequestContextMapper requestContextMapper;
+
+	@Reference
+	protected SegmentsEntryRetriever segmentsEntryRetriever;
+
+	private String _getDisplayFieldValue(Field field, ThemeDisplay themeDisplay)
+		throws Exception {
+
+		String fieldValue = String.valueOf(
+			DDMUtil.getDisplayFieldValue(
+				themeDisplay, field.getValue(themeDisplay.getLocale(), 0),
+				field.getType()));
+
+		DDMStructure ddmStructure = field.getDDMStructure();
+
+		DDMFormField ddmFormField = ddmStructure.getDDMFormField(
+			field.getName());
+
+		DDMFormFieldOptions ddmFormFieldOptions =
+			ddmFormField.getDDMFormFieldOptions();
+
+		String optionReference = ddmFormFieldOptions.getOptionReference(
+			String.valueOf(fieldValue));
+
+		if (optionReference != null) {
+			return optionReference;
+		}
+
+		return fieldValue;
+	}
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		AssetPublisherPortlet.class);

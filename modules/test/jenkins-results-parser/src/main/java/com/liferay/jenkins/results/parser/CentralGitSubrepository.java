@@ -43,8 +43,6 @@ public class CentralGitSubrepository {
 
 		_gitSubrepositoryName = _getGitSubrepositoryName();
 
-		StringBuilder sb = new StringBuilder();
-
 		Properties buildProperties = null;
 
 		try {
@@ -54,6 +52,8 @@ public class CentralGitSubrepository {
 			throw new RuntimeException(
 				"Unable to get build properties", ioException);
 		}
+
+		StringBuilder sb = new StringBuilder();
 
 		sb.append(buildProperties.getProperty("base.repository.dir"));
 		sb.append("/");
@@ -68,7 +68,8 @@ public class CentralGitSubrepository {
 		_gitSubrepositoryUpstreamBranchName = _centralUpstreamBranchName;
 		_gitSubrepositoryUsername = _getGitSubrepositoryUsername();
 
-		String tempBranchName = "temp-" + System.currentTimeMillis();
+		String tempBranchName =
+			"temp-" + JenkinsResultsParserUtil.getCurrentTimeMillis();
 
 		GitWorkingDirectory gitWorkingDirectory =
 			GitWorkingDirectoryFactory.newGitWorkingDirectory(
@@ -212,11 +213,10 @@ public class CentralGitSubrepository {
 			_gitSubrepositoryName, _gitSubrepositoryUsername, path);
 
 		for (int i = 0; i < 15; i++) {
-			JSONArray statusesJSONArray = new JSONArray(
-				JenkinsResultsParserUtil.toString(
-					JenkinsResultsParserUtil.combine(
-						url, "?page=", String.valueOf(i + 1)),
-					true));
+			JSONArray statusesJSONArray = JenkinsResultsParserUtil.toJSONArray(
+				JenkinsResultsParserUtil.combine(
+					url, "?page=", String.valueOf(i + 1)),
+				true);
 
 			if ((statusesJSONArray == null) ||
 				(statusesJSONArray.length() == 0)) {

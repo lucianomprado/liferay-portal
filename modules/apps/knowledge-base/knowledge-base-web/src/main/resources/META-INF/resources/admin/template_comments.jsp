@@ -99,7 +99,7 @@ boolean helpful = BeanParamUtil.getBoolean(kbComment, request, "helpful", true);
 					/>
 
 					<c:if test="<%= total > 0 %>">
-						<div class="separator"><!-- --></div>
+						<hr class="separator" />
 
 						<div class="kb-all-comments">
 							<%= LanguageUtil.format(request, "all-comments-x", total, false) %>
@@ -108,11 +108,8 @@ boolean helpful = BeanParamUtil.getBoolean(kbComment, request, "helpful", true);
 
 					<%
 					for (KBComment curKBComment : (List<KBComment>)searchContainer.getResults()) {
-					%>
-
-						<%
 						request.setAttribute("template_comment.jsp-kb_comment", curKBComment);
-						%>
+					%>
 
 						<liferay-util:include page="/admin/template_comment.jsp" servletContext="<%= application %>" />
 

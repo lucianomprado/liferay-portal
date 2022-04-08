@@ -16,7 +16,11 @@
 
 <%@ include file="/init.jsp" %>
 
-<div class="nav-menu sites-directory-taglib">
+<liferay-util:html-top>
+	<link href="<%= PortalUtil.getStaticResourceURL(request, application.getContextPath() + "/css/main.css") %>" rel="stylesheet" type="text/css" />
+</liferay-util:html-top>
+
+<div class="nav-menu overflow-hidden sites-directory-taglib">
 	<c:choose>
 		<c:when test="<%= sitesDirectoryDisplayContext.isHidden() %>">
 			<div class="alert alert-info">
@@ -43,11 +47,6 @@
 								>
 									<c:choose>
 										<c:when test='<%= Objects.equals(sitesDirectoryDisplayContext.getDisplayStyle(), "icon") %>'>
-
-											<%
-											row.setCssClass("entry-card lfr-asset-item");
-											%>
-
 											<liferay-ui:search-container-column-text>
 												<clay:vertical-card
 													verticalCard="<%= new GroupVerticalCard(childGroup, renderRequest) %>"

@@ -17,12 +17,14 @@ package com.liferay.journal.web.internal.servlet.taglib.clay;
 import com.liferay.frontend.taglib.clay.servlet.taglib.soy.VerticalCard;
 import com.liferay.message.boards.model.MBMessage;
 import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.BaseModel;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.model.UserConstants;
 import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
-import com.liferay.portal.kernel.util.HtmlUtil;
+import com.liferay.portal.kernel.util.HtmlParserUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.WebKeys;
 
@@ -57,6 +59,9 @@ public class JournalArticleCommentsVerticalCard implements VerticalCard {
 				return user.getPortraitURL(themeDisplay);
 			}
 			catch (Exception exception) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(exception);
+				}
 			}
 		}
 
@@ -82,13 +87,16 @@ public class JournalArticleCommentsVerticalCard implements VerticalCard {
 
 		String content = _mbMessage.getBody(translate);
 
-		return HtmlUtil.extractText(content);
+		return HtmlParserUtil.extractText(content);
 	}
 
 	@Override
 	public boolean isSelectable() {
 		return false;
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		JournalArticleCommentsVerticalCard.class);
 
 	private final HttpServletRequest _httpServletRequest;
 	private final MBMessage _mbMessage;

@@ -41,7 +41,6 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
@@ -54,8 +53,6 @@ import org.apache.commons.lang.StringEscapeUtils;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.dom4j.Element;
-
-import org.json.JSONObject;
 
 /**
  * @author Peter Yoo
@@ -72,14 +69,9 @@ public class AxisBuild extends BaseBuild {
 	}
 
 	@Override
-	public String getAppServer() {
-		Build parentBuild = getParentBuild();
-
-		return parentBuild.getAppServer();
-	}
-
-	@Override
 	public String getArchivePath() {
+		String archiveName = getArchiveName();
+
 		if (archiveName == null) {
 			System.out.println(
 				"Build URL " + getBuildURL() + " has a null archive name");
@@ -123,6 +115,11 @@ public class AxisBuild extends BaseBuild {
 		}
 	}
 
+	public String getAxisName() {
+		return JenkinsResultsParserUtil.combine(
+			getJobVariant(), "/", getAxisNumber());
+	}
+
 	public String getAxisNumber() {
 		Matcher matcher = _axisVariablePattern.matcher(getAxisVariable());
 
@@ -142,13 +139,6 @@ public class AxisBuild extends BaseBuild {
 		BatchBuild parentBatchBuild = getParentBatchBuild();
 
 		return parentBatchBuild.getBatchName();
-	}
-
-	@Override
-	public String getBrowser() {
-		Build parentBuild = getParentBuild();
-
-		return parentBuild.getBrowser();
 	}
 
 	public String getBuildDescriptionTestrayReports() {
@@ -228,11 +218,11 @@ public class AxisBuild extends BaseBuild {
 		}
 		catch (MalformedURLException malformedURLException) {
 			throw new RuntimeException(
-				"Could not encode " + buildURL, malformedURLException);
+				"Unable to encode " + buildURL, malformedURLException);
 		}
 		catch (URISyntaxException uriSyntaxException) {
 			throw new RuntimeException(
-				"Could not encode " + buildURL, uriSyntaxException);
+				"Unable to encode " + buildURL, uriSyntaxException);
 		}
 	}
 
@@ -263,13 +253,6 @@ public class AxisBuild extends BaseBuild {
 		sb.append("[\\/]*");
 
 		return sb.toString();
-	}
-
-	@Override
-	public String getDatabase() {
-		Build parentBuild = getParentBuild();
-
-		return parentBuild.getDatabase();
 	}
 
 	@Override
@@ -348,20 +331,6 @@ public class AxisBuild extends BaseBuild {
 		return invokedTime;
 	}
 
-	@Override
-	public String getJDK() {
-		Build parentBuild = getParentBuild();
-
-		return parentBuild.getJDK();
-	}
-
-	@Override
-	public String getOperatingSystem() {
-		Build parentBuild = getParentBuild();
-
-		return parentBuild.getOperatingSystem();
-	}
-
 	public BatchBuild getParentBatchBuild() {
 		Build parentBuild = getParentBuild();
 
@@ -419,23 +388,19 @@ public class AxisBuild extends BaseBuild {
 
 	@Override
 	public List<TestResult> getTestResults(String testStatus) {
-		String status = getStatus();
-
-		if (!status.equals("completed")) {
-			return Collections.emptyList();
+		if (JenkinsResultsParserUtil.isNullOrEmpty(testStatus)) {
+			return getTestResults();
 		}
 
-		JSONObject testReportJSONObject = getTestReportJSONObject(true);
+		List<TestResult> testResults = new ArrayList<>();
 
-		if (testReportJSONObject == null) {
-			System.out.println(
-				"Unable to get test results for: " + getBuildURL());
-
-			return Collections.emptyList();
+		for (TestResult testResult : getTestResults()) {
+			if (testStatus.equals(testResult.getStatus())) {
+				testResults.add(testResult);
+			}
 		}
 
-		return getTestResults(
-			this, testReportJSONObject.getJSONArray("suites"), testStatus);
+		return testResults;
 	}
 
 	@Override
@@ -548,7 +513,12 @@ public class AxisBuild extends BaseBuild {
 	protected void extractBuildURLComponents(Matcher matcher) {
 		super.extractBuildURLComponents(matcher);
 
-		axisVariable = matcher.group("axisVariable");
+		try {
+			axisVariable = matcher.group("axisVariable");
+		}
+		catch (IllegalArgumentException illegalArgumentException) {
+			axisVariable = null;
+		}
 	}
 
 	@Override
@@ -604,25 +574,28 @@ public class AxisBuild extends BaseBuild {
 
 	protected static final Pattern archiveBuildURLPattern = Pattern.compile(
 		JenkinsResultsParserUtil.combine(
-			"(", Pattern.quote("${dependencies.url}"), "|",
-			Pattern.quote(JenkinsResultsParserUtil.URL_DEPENDENCIES_FILE), "|",
-			Pattern.quote(JenkinsResultsParserUtil.URL_DEPENDENCIES_HTTP),
+			"(", Pattern.quote(Build.DEPENDENCIES_URL_TOKEN), "|",
+			Pattern.quote(JenkinsResultsParserUtil.urlDependenciesFile), "|",
+			Pattern.quote(JenkinsResultsParserUtil.urlDependenciesHttp),
 			")/*(?<archiveName>.*)/(?<master>[^/]+)/+(?<jobName>[^/]+)/",
-			"(?<axisVariable>AXIS_VARIABLE=[^,]+,[^/]+)/",
+			"(?<axisVariable>" + AxisBuild._AXIS_VARIABLE_REGEX + ")/",
 			"(?<buildNumber>\\d+)/?"));
 	protected static final MultiPattern buildURLMultiPattern = new MultiPattern(
 		JenkinsResultsParserUtil.combine(
 			"\\w+://(?<master>[^/]+)/+job/+(?<jobName>[^/]+)/",
 			"(?<buildNumber>\\d+)/",
-			"(?<axisVariable>AXIS_VARIABLE=[^,]+,[^/]+)/?"),
+			"(?<axisVariable>" + AxisBuild._AXIS_VARIABLE_REGEX + ")/?"),
 		JenkinsResultsParserUtil.combine(
 			"\\w+://(?<master>[^/]+)/+job/+(?<jobName>[^/]+)/",
-			"(?<axisVariable>AXIS_VARIABLE=[^,]+,[^/]+)/",
+			"(?<axisVariable>" + AxisBuild._AXIS_VARIABLE_REGEX + ")/",
 			"(?<buildNumber>\\d+)/?"));
 	protected static final String defaultLogBaseURL =
 		"https://testray.liferay.com/reports/production/logs";
 
 	protected String axisVariable;
+
+	private static final String _AXIS_VARIABLE_REGEX =
+		"AXIS_VARIABLE=(?<axisNumber>[^,/]+)(,[^/]+)?";
 
 	private static final FailureMessageGenerator[] _FAILURE_MESSAGE_GENERATORS =
 		{
@@ -647,6 +620,6 @@ public class AxisBuild extends BaseBuild {
 	private static final Pattern _axisStartTimestampPattern = Pattern.compile(
 		"\\s*\\[echo\\] startTime: (?<startTime>[^\\n]+)");
 	private static final Pattern _axisVariablePattern = Pattern.compile(
-		"AXIS_VARIABLE=(?<axisNumber>[^,]+),.*");
+		_AXIS_VARIABLE_REGEX);
 
 }

@@ -14,10 +14,12 @@
 
 package com.liferay.portal.events;
 
+import com.liferay.petra.reflect.ReflectionUtil;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
+import com.liferay.portal.kernel.exception.ResourceActionsException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.patcher.PatcherUtil;
@@ -31,9 +33,8 @@ import com.liferay.portal.kernel.util.PortalClassLoaderUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.version.Version;
-import com.liferay.portal.tools.DBUpgrader;
 import com.liferay.portal.upgrade.PortalUpgradeProcess;
-import com.liferay.portal.verify.VerifyException;
+import com.liferay.portal.util.PropsValues;
 
 import java.sql.Connection;
 
@@ -50,25 +51,12 @@ public class StartupHelperUtil {
 		ResourceActionLocalServiceUtil.checkResourceActions();
 
 		try (LoggingTimer loggingTimer = new LoggingTimer()) {
-			List<String> modelNames = ResourceActionsUtil.getModelNames();
-
-			for (String modelName : modelNames) {
-				List<String> actionIds =
-					ResourceActionsUtil.getModelResourceActions(modelName);
-
-				ResourceActionLocalServiceUtil.checkResourceActions(
-					modelName, actionIds, true);
-			}
-
-			List<String> portletNames = ResourceActionsUtil.getPortletNames();
-
-			for (String portletName : portletNames) {
-				List<String> actionIds =
-					ResourceActionsUtil.getPortletResourceActions(portletName);
-
-				ResourceActionLocalServiceUtil.checkResourceActions(
-					portletName, actionIds, true);
-			}
+			ResourceActionsUtil.populateModelResources(
+				StartupHelperUtil.class.getClassLoader(),
+				PropsValues.RESOURCE_ACTIONS_CONFIGS);
+		}
+		catch (ResourceActionsException resourceActionsException) {
+			ReflectionUtil.throwException(resourceActionsException);
 		}
 	}
 
@@ -80,28 +68,12 @@ public class StartupHelperUtil {
 		return _startupFinished;
 	}
 
-	/**
-	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
-	 */
-	@Deprecated
-	public static boolean isUpgraded() {
-		return _upgraded;
-	}
-
 	public static boolean isUpgrading() {
 		return _upgrading;
 	}
 
-	/**
-	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
-	 */
-	@Deprecated
-	public static boolean isVerified() {
-		return true;
-	}
-
 	public static void printPatchLevel() {
-		if (_log.isInfoEnabled() && !PatcherUtil.hasInconsistentPatchLevels()) {
+		if (_log.isInfoEnabled()) {
 			String installedPatches = StringUtil.merge(
 				PatcherUtil.getInstalledPatches(), StringPool.COMMA_AND_SPACE);
 
@@ -143,7 +115,7 @@ public class StartupHelperUtil {
 		}
 		catch (Exception exception) {
 			if (_log.isWarnEnabled()) {
-				_log.warn(exception, exception);
+				_log.warn(exception);
 			}
 		}
 	}
@@ -168,7 +140,7 @@ public class StartupHelperUtil {
 		}
 		catch (Exception exception) {
 			if (_log.isWarnEnabled()) {
-				_log.warn(exception, exception);
+				_log.warn(exception);
 			}
 		}
 	}
@@ -183,21 +155,15 @@ public class StartupHelperUtil {
 			buildNumber, upgradeProcesses);
 	}
 
-	/**
-	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
-	 */
-	@Deprecated
-	public static void verifyProcess(boolean verified) throws VerifyException {
-		DBUpgrader.verify();
-	}
-
 	public static void verifyRequiredSchemaVersion() throws Exception {
 		if (_log.isDebugEnabled()) {
 			_log.debug("Check the portal's required schema version");
 		}
 
-		if (!PortalUpgradeProcess.isInRequiredSchemaVersion(
-				DataAccess.getConnection())) {
+		try (Connection connection = DataAccess.getConnection()) {
+			if (PortalUpgradeProcess.isInRequiredSchemaVersion(connection)) {
+				return;
+			}
 
 			Version currentSchemaVersion =
 				PortalUpgradeProcess.getCurrentSchemaVersion(
@@ -222,16 +188,6 @@ public class StartupHelperUtil {
 			System.out.println(msg);
 
 			throw new RuntimeException(msg);
-		}
-
-		if (!PortalUpgradeProcess.isInLatestSchemaVersion(
-				DataAccess.getConnection())) {
-
-			if (_log.isInfoEnabled()) {
-				_log.info(
-					"Execute the upgrade tool first if you need to upgrade " +
-						"the portal to the latest schema version");
-			}
 		}
 	}
 

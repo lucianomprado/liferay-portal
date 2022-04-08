@@ -27,8 +27,9 @@ import com.liferay.fragment.renderer.FragmentRendererController;
 import com.liferay.fragment.renderer.FragmentRendererTracker;
 import com.liferay.fragment.util.configuration.FragmentEntryConfigurationParser;
 import com.liferay.frontend.token.definition.FrontendTokenDefinitionRegistry;
+import com.liferay.info.collection.provider.InfoCollectionProvider;
+import com.liferay.info.collection.provider.SingleFormVariationInfoCollectionProvider;
 import com.liferay.info.item.InfoItemServiceTracker;
-import com.liferay.info.list.provider.InfoListProvider;
 import com.liferay.info.list.provider.item.selector.criterion.InfoListProviderItemSelectorReturnType;
 import com.liferay.item.selector.ItemSelector;
 import com.liferay.item.selector.criteria.InfoListItemSelectorReturnType;
@@ -36,11 +37,12 @@ import com.liferay.layout.content.page.editor.sidebar.panel.ContentPageEditorSid
 import com.liferay.layout.content.page.editor.web.internal.configuration.FFLayoutContentPageEditorConfiguration;
 import com.liferay.layout.content.page.editor.web.internal.configuration.PageEditorConfiguration;
 import com.liferay.layout.content.page.editor.web.internal.constants.ContentPageEditorActionKeys;
+import com.liferay.layout.content.page.editor.web.internal.segments.SegmentsExperienceUtil;
 import com.liferay.layout.page.template.model.LayoutPageTemplateStructure;
 import com.liferay.layout.page.template.model.LayoutPageTemplateStructureRel;
 import com.liferay.layout.page.template.service.LayoutPageTemplateStructureLocalServiceUtil;
 import com.liferay.layout.page.template.service.LayoutPageTemplateStructureRelLocalServiceUtil;
-import com.liferay.petra.reflect.GenericUtil;
+import com.liferay.petra.sql.dsl.DSLQueryFactoryUtil;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.comment.CommentManager;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -57,31 +59,24 @@ import com.liferay.portal.kernel.portlet.PortletProvider;
 import com.liferay.portal.kernel.portlet.PortletProviderUtil;
 import com.liferay.portal.kernel.security.permission.ResourceActionsUtil;
 import com.liferay.portal.kernel.service.GroupLocalServiceUtil;
-import com.liferay.portal.kernel.service.LayoutLocalServiceUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
-import com.liferay.portal.kernel.util.HttpUtil;
-import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
-import com.liferay.portal.kernel.util.ResourceBundleUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.segments.constants.SegmentsEntryConstants;
 import com.liferay.segments.constants.SegmentsExperienceConstants;
-import com.liferay.segments.constants.SegmentsExperimentConstants;
 import com.liferay.segments.constants.SegmentsPortletKeys;
+import com.liferay.segments.manager.SegmentsExperienceManager;
 import com.liferay.segments.model.SegmentsEntry;
 import com.liferay.segments.model.SegmentsExperience;
-import com.liferay.segments.model.SegmentsExperiment;
+import com.liferay.segments.model.SegmentsExperimentRel;
+import com.liferay.segments.model.SegmentsExperimentRelTable;
 import com.liferay.segments.service.SegmentsEntryServiceUtil;
 import com.liferay.segments.service.SegmentsExperienceLocalServiceUtil;
-import com.liferay.segments.service.SegmentsExperienceServiceUtil;
-import com.liferay.segments.service.SegmentsExperimentLocalServiceUtil;
+import com.liferay.segments.service.SegmentsExperimentRelLocalServiceUtil;
 import com.liferay.staging.StagingGroupHelper;
-
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -120,6 +115,7 @@ public class ContentPageLayoutEditorDisplayContext
 		ItemSelector itemSelector,
 		PageEditorConfiguration pageEditorConfiguration,
 		PortletRequest portletRequest, RenderResponse renderResponse,
+		SegmentsExperienceManager segmentsExperienceManager,
 		StagingGroupHelper stagingGroupHelper) {
 
 		super(
@@ -129,9 +125,8 @@ public class ContentPageLayoutEditorDisplayContext
 			fragmentEntryConfigurationParser, fragmentRendererController,
 			fragmentRendererTracker, frontendTokenDefinitionRegistry,
 			httpServletRequest, infoItemServiceTracker, itemSelector,
-			pageEditorConfiguration, portletRequest, renderResponse);
-
-		_stagingGroupHelper = stagingGroupHelper;
+			pageEditorConfiguration, portletRequest, renderResponse,
+			segmentsExperienceManager, stagingGroupHelper);
 	}
 
 	@Override
@@ -157,9 +152,6 @@ public class ContentPageLayoutEditorDisplayContext
 		configContext.put(
 			"defaultSegmentsEntryId", SegmentsEntryConstants.ID_DEFAULT);
 		configContext.put(
-			"defaultSegmentsExperienceId",
-			String.valueOf(SegmentsExperienceConstants.ID_DEFAULT));
-		configContext.put(
 			"deleteSegmentsExperienceURL",
 			getFragmentEntryActionURL(
 				"/layout_content_page_editor/delete_segments_experience"));
@@ -182,13 +174,14 @@ public class ContentPageLayoutEditorDisplayContext
 			(Map<String, Object>)editorContext.get("state");
 
 		stateContext.put(
-			"availableSegmentsExperiences", _getAvailableSegmentsExperiences());
+			"availableSegmentsExperiences",
+			SegmentsExperienceUtil.getAvailableSegmentsExperiences(
+				httpServletRequest));
 		stateContext.put("layoutDataList", _getLayoutDataList());
 		stateContext.put(
-			"segmentsExperienceId", String.valueOf(getSegmentsExperienceId()));
-		stateContext.put(
 			"segmentsExperimentStatus",
-			_getSegmentsExperimentStatus(getSegmentsExperienceId()));
+			SegmentsExperienceUtil.getSegmentsExperimentStatus(
+				themeDisplay, getSegmentsExperienceId()));
 
 		Map<String, Object> permissionsContext =
 			(Map<String, Object>)stateContext.get("permissions");
@@ -209,24 +202,24 @@ public class ContentPageLayoutEditorDisplayContext
 			return _segmentsExperienceId;
 		}
 
-		_segmentsExperienceId = SegmentsExperienceConstants.ID_DEFAULT;
-
-		long selectedSegmentsExperienceId = ParamUtil.getLong(
+		_segmentsExperienceId = ParamUtil.getLong(
 			PortalUtil.getOriginalServletRequest(httpServletRequest),
 			"segmentsExperienceId", -1);
 
-		if ((selectedSegmentsExperienceId != -1) &&
-			(selectedSegmentsExperienceId !=
-				SegmentsExperienceConstants.ID_DEFAULT)) {
+		if ((_segmentsExperienceId != -1) &&
+			(_segmentsExperienceId != SegmentsExperienceConstants.ID_DEFAULT)) {
 
-			SegmentsExperience segmentsExperience =
+			_segmentsExperienceId = Optional.ofNullable(
 				SegmentsExperienceLocalServiceUtil.fetchSegmentsExperience(
-					selectedSegmentsExperienceId);
-
-			if (segmentsExperience != null) {
-				_segmentsExperienceId =
-					segmentsExperience.getSegmentsExperienceId();
-			}
+					_segmentsExperienceId)
+			).map(
+				SegmentsExperience::getSegmentsExperienceId
+			).orElseGet(
+				super::getSegmentsExperienceId
+			);
+		}
+		else {
+			_segmentsExperienceId = super.getSegmentsExperienceId();
 		}
 
 		return _segmentsExperienceId;
@@ -274,7 +267,7 @@ public class ContentPageLayoutEditorDisplayContext
 				}
 				catch (PortalException portalException) {
 					if (_log.isDebugEnabled()) {
-						_log.debug(portalException, portalException);
+						_log.debug(portalException);
 					}
 				}
 			}
@@ -354,100 +347,6 @@ public class ContentPageLayoutEditorDisplayContext
 		return availableSegmentsEntries;
 	}
 
-	private Map<String, Object> _getAvailableSegmentsExperiences()
-		throws Exception {
-
-		Map<String, Object> availableSegmentsExperiences = new HashMap<>();
-
-		Layout draftLayout = themeDisplay.getLayout();
-
-		Layout layout = LayoutLocalServiceUtil.getLayout(
-			draftLayout.getClassPK());
-
-		String layoutFullURL = PortalUtil.getLayoutFullURL(
-			layout, themeDisplay);
-
-		List<SegmentsExperience> segmentsExperiences =
-			SegmentsExperienceServiceUtil.getSegmentsExperiences(
-				getGroupId(), PortalUtil.getClassNameId(Layout.class.getName()),
-				themeDisplay.getPlid(), true);
-
-		for (SegmentsExperience segmentsExperience : segmentsExperiences) {
-			availableSegmentsExperiences.put(
-				String.valueOf(segmentsExperience.getSegmentsExperienceId()),
-				HashMapBuilder.<String, Object>put(
-					"hasLockedSegmentsExperiment",
-					segmentsExperience.hasSegmentsExperiment()
-				).put(
-					"name", segmentsExperience.getName(themeDisplay.getLocale())
-				).put(
-					"priority", segmentsExperience.getPriority()
-				).put(
-					"segmentsEntryId",
-					String.valueOf(segmentsExperience.getSegmentsEntryId())
-				).put(
-					"segmentsExperienceId",
-					String.valueOf(segmentsExperience.getSegmentsExperienceId())
-				).put(
-					"segmentsExperimentStatus",
-					_getSegmentsExperimentStatus(
-						segmentsExperience.getSegmentsExperienceId())
-				).put(
-					"segmentsExperimentURL",
-					_getSegmentsExperimentURL(
-						layoutFullURL,
-						segmentsExperience.getSegmentsExperienceId())
-				).build());
-		}
-
-		availableSegmentsExperiences.put(
-			String.valueOf(SegmentsExperienceConstants.ID_DEFAULT),
-			HashMapBuilder.<String, Object>put(
-				"hasLockedSegmentsExperiment",
-				_hasDefaultSegmentsExperienceLockedSegmentsExperiment()
-			).put(
-				"name",
-				SegmentsExperienceConstants.getDefaultSegmentsExperienceName(
-					themeDisplay.getLocale())
-			).put(
-				"priority", SegmentsExperienceConstants.PRIORITY_DEFAULT
-			).put(
-				"segmentsEntryId",
-				String.valueOf(SegmentsEntryConstants.ID_DEFAULT)
-			).put(
-				"segmentsExperienceId",
-				String.valueOf(SegmentsExperienceConstants.ID_DEFAULT)
-			).put(
-				"segmentsExperimentStatus",
-				_getSegmentsExperimentStatus(
-					SegmentsExperienceConstants.ID_DEFAULT)
-			).put(
-				"segmentsExperimentURL",
-				_getSegmentsExperimentURL(
-					layoutFullURL, SegmentsExperienceConstants.ID_DEFAULT)
-			).build());
-
-		return availableSegmentsExperiences;
-	}
-
-	private String _getClassName(InfoListProvider<?> infoListProvider) {
-		Class<?> clazz = infoListProvider.getClass();
-
-		Type[] genericInterfaceTypes = clazz.getGenericInterfaces();
-
-		for (Type genericInterfaceType : genericInterfaceTypes) {
-			ParameterizedType parameterizedType =
-				(ParameterizedType)genericInterfaceType;
-
-			Class<?> typeClazz =
-				(Class<?>)parameterizedType.getActualTypeArguments()[0];
-
-			return typeClazz.getName();
-		}
-
-		return StringPool.BLANK;
-	}
-
 	private String _getEditSegmentsEntryURL() throws Exception {
 		if (_editSegmentsEntryURL != null) {
 			return _editSegmentsEntryURL;
@@ -469,30 +368,34 @@ public class ContentPageLayoutEditorDisplayContext
 		return _editSegmentsEntryURL;
 	}
 
-	private InfoListProvider<?> _getInfoListProvider(String collectionPK) {
-		List<InfoListProvider<?>> infoListProviders =
-			(List<InfoListProvider<?>>)
+	private InfoCollectionProvider<?> _getInfoCollectionProvider(
+		String collectionPK) {
+
+		List<InfoCollectionProvider<?>> infoCollectionProviders =
+			(List<InfoCollectionProvider<?>>)
 				(List<?>)infoItemServiceTracker.getAllInfoItemServices(
-					InfoListProvider.class);
+					InfoCollectionProvider.class);
 
-		Stream<InfoListProvider<?>> stream = infoListProviders.stream();
+		Stream<InfoCollectionProvider<?>> stream =
+			infoCollectionProviders.stream();
 
-		Optional<InfoListProvider<?>> infoListProviderOptional = stream.filter(
-			infoListProvider -> Objects.equals(
-				infoListProvider.getKey(), collectionPK)
-		).findFirst();
+		Optional<InfoCollectionProvider<?>> infoCollectionProviderOptional =
+			stream.filter(
+				infoCollectionProvider -> Objects.equals(
+					infoCollectionProvider.getKey(), collectionPK)
+			).findFirst();
 
-		if (infoListProviderOptional.isPresent()) {
-			return infoListProviderOptional.get();
+		if (infoCollectionProviderOptional.isPresent()) {
+			return infoCollectionProviderOptional.get();
 		}
 
 		return null;
 	}
 
-	private String _getInfoListProviderItemTypeLabel(
-		InfoListProvider<?> infoListProvider) {
+	private String _getInfoCollectionProviderItemTypeLabel(
+		InfoCollectionProvider<?> infoCollectionProvider) {
 
-		String className = _getClassName(infoListProvider);
+		String className = infoCollectionProvider.getCollectionItemClassName();
 
 		if (Objects.equals(className, AssetEntry.class.getName())) {
 			return LanguageUtil.get(httpServletRequest, "multiple-item-types");
@@ -506,16 +409,34 @@ public class ContentPageLayoutEditorDisplayContext
 		return StringPool.BLANK;
 	}
 
-	private JSONArray _getInfoListProviderLinkedCollectionJSONArray(
-		InfoListProvider<?> infoListProvider) {
+	private JSONArray _getInfoCollectionProviderLinkedCollectionJSONArray(
+		InfoCollectionProvider<?> infoCollectionProvider) {
 
 		return JSONUtil.put(
 			JSONUtil.put(
-				"itemType", GenericUtil.getGenericClassName(infoListProvider)
+				"itemSubtype",
+				() -> {
+					if (infoCollectionProvider instanceof
+							SingleFormVariationInfoCollectionProvider) {
+
+						SingleFormVariationInfoCollectionProvider<?>
+							singleFormVariationInfoCollectionProvider =
+								(SingleFormVariationInfoCollectionProvider<?>)
+									infoCollectionProvider;
+
+						return singleFormVariationInfoCollectionProvider.
+							getFormVariationKey();
+					}
+
+					return null;
+				}
 			).put(
-				"key", infoListProvider.getKey()
+				"itemType", infoCollectionProvider.getCollectionItemClassName()
 			).put(
-				"title", infoListProvider.getLabel(LocaleUtil.getDefault())
+				"key", infoCollectionProvider.getKey()
+			).put(
+				"title",
+				infoCollectionProvider.getLabel(LocaleUtil.getDefault())
 			).put(
 				"type", InfoListProviderItemSelectorReturnType.class.getName()
 			));
@@ -569,61 +490,6 @@ public class ContentPageLayoutEditorDisplayContext
 		return _segmentsEntryId;
 	}
 
-	private Optional<SegmentsExperiment> _getSegmentsExperimentOptional(
-			long segmentsExperienceId)
-		throws Exception {
-
-		Layout draftLayout = themeDisplay.getLayout();
-
-		Layout layout = LayoutLocalServiceUtil.getLayout(
-			draftLayout.getClassPK());
-
-		return Optional.ofNullable(
-			SegmentsExperimentLocalServiceUtil.fetchSegmentsExperiment(
-				segmentsExperienceId, PortalUtil.getClassNameId(Layout.class),
-				layout.getPlid(),
-				SegmentsExperimentConstants.Status.getExclusiveStatusValues()));
-	}
-
-	private Map<String, Object> _getSegmentsExperimentStatus(
-			long segmentsExperienceId)
-		throws Exception {
-
-		Optional<SegmentsExperiment> segmentsExperimentOptional =
-			_getSegmentsExperimentOptional(segmentsExperienceId);
-
-		if (!segmentsExperimentOptional.isPresent()) {
-			return null;
-		}
-
-		SegmentsExperiment segmentsExperiment =
-			segmentsExperimentOptional.get();
-
-		SegmentsExperimentConstants.Status status =
-			SegmentsExperimentConstants.Status.valueOf(
-				segmentsExperiment.getStatus());
-
-		return HashMapBuilder.<String, Object>put(
-			"label",
-			LanguageUtil.get(
-				ResourceBundleUtil.getBundle(
-					themeDisplay.getLocale(), getClass()),
-				status.getLabel())
-		).put(
-			"value", status.getValue()
-		).build();
-	}
-
-	private String _getSegmentsExperimentURL(
-		String layoutFullURL, long segmentsExperienceId) {
-
-		HttpUtil.addParameter(
-			layoutFullURL, "p_l_back_url", themeDisplay.getURLCurrent());
-
-		return HttpUtil.addParameter(
-			layoutFullURL, "segmentsExperienceId", segmentsExperienceId);
-	}
-
 	private Map<String, Object> _getSelectedMappingTypes() throws Exception {
 		Layout layout = themeDisplay.getLayout();
 
@@ -653,16 +519,16 @@ public class ContentPageLayoutEditorDisplayContext
 				collectionType,
 				InfoListProviderItemSelectorReturnType.class.getName())) {
 
-			InfoListProvider<?> infoListProvider = _getInfoListProvider(
-				collectionPK);
+			InfoCollectionProvider<?> infoCollectionProvider =
+				_getInfoCollectionProvider(collectionPK);
 
-			if (infoListProvider != null) {
-				itemTypeLabel = _getInfoListProviderItemTypeLabel(
-					infoListProvider);
+			if (infoCollectionProvider != null) {
+				itemTypeLabel = _getInfoCollectionProviderItemTypeLabel(
+					infoCollectionProvider);
 				linkedCollectionJSONArray =
-					_getInfoListProviderLinkedCollectionJSONArray(
-						infoListProvider);
-				subtypeLabel = infoListProvider.getLabel(
+					_getInfoCollectionProviderLinkedCollectionJSONArray(
+						infoCollectionProvider);
+				subtypeLabel = infoCollectionProvider.getLabel(
 					themeDisplay.getLocale());
 			}
 
@@ -733,11 +599,11 @@ public class ContentPageLayoutEditorDisplayContext
 	private long _getStagingAwareGroupId() {
 		long groupId = getGroupId();
 
-		if (_stagingGroupHelper.isStagingGroup(groupId) &&
-			!_stagingGroupHelper.isStagedPortlet(
+		if (stagingGroupHelper.isStagingGroup(groupId) &&
+			!stagingGroupHelper.isStagedPortlet(
 				groupId, SegmentsPortletKeys.SEGMENTS)) {
 
-			Group group = _stagingGroupHelper.fetchLiveGroup(groupId);
+			Group group = stagingGroupHelper.fetchLiveGroup(groupId);
 
 			if (group != null) {
 				groupId = group.getGroupId();
@@ -747,30 +613,8 @@ public class ContentPageLayoutEditorDisplayContext
 		return groupId;
 	}
 
-	private boolean _hasDefaultSegmentsExperienceLockedSegmentsExperiment()
-		throws Exception {
-
-		Optional<SegmentsExperiment> segmentsExperimentOptional =
-			_getSegmentsExperimentOptional(
-				SegmentsExperienceConstants.ID_DEFAULT);
-
-		if (!segmentsExperimentOptional.isPresent()) {
-			return false;
-		}
-
-		SegmentsExperiment segmentsExperiment =
-			segmentsExperimentOptional.get();
-
-		List<Integer> lockedStatusValuesList = ListUtil.fromArray(
-			SegmentsExperimentConstants.Status.getLockedStatusValues());
-
-		return lockedStatusValuesList.contains(segmentsExperiment.getStatus());
-	}
-
 	private boolean _hasEditSegmentsEntryPermission() throws Exception {
-		String editSegmentsEntryURL = _getEditSegmentsEntryURL();
-
-		if (Validator.isNull(editSegmentsEntryURL)) {
+		if (Validator.isNull(_getEditSegmentsEntryURL())) {
 			return false;
 		}
 
@@ -786,7 +630,9 @@ public class ContentPageLayoutEditorDisplayContext
 
 		if (SegmentsExperienceConstants.ID_DEFAULT == segmentsExperienceId) {
 			_lockedSegmentsExperience =
-				_hasDefaultSegmentsExperienceLockedSegmentsExperiment();
+				SegmentsExperienceUtil.
+					hasDefaultSegmentsExperienceLockedSegmentsExperiment(
+						themeDisplay);
 		}
 		else {
 			SegmentsExperience segmentsExperience =
@@ -826,7 +672,39 @@ public class ContentPageLayoutEditorDisplayContext
 			return false;
 		}
 
-		return true;
+		SegmentsExperience segmentsExperience =
+			SegmentsExperienceLocalServiceUtil.fetchSegmentsExperience(
+				segmentsExperienceId);
+
+		if (segmentsExperience != null) {
+			List<SegmentsExperimentRel> segmentsExperimentRels =
+				SegmentsExperimentRelLocalServiceUtil.dslQuery(
+					DSLQueryFactoryUtil.select(
+						SegmentsExperimentRelTable.INSTANCE
+					).from(
+						SegmentsExperimentRelTable.INSTANCE
+					).where(
+						SegmentsExperimentRelTable.INSTANCE.
+							segmentsExperienceId.eq(
+								segmentsExperience.getSegmentsExperienceId())
+					));
+
+			if (segmentsExperimentRels.isEmpty()) {
+				return false;
+			}
+
+			SegmentsExperimentRel segmentsExperimentRel =
+				segmentsExperimentRels.get(0);
+
+			try {
+				return !segmentsExperimentRel.isControl();
+			}
+			catch (PortalException portalException) {
+				_log.error(portalException);
+			}
+		}
+
+		return false;
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(
@@ -837,6 +715,5 @@ public class ContentPageLayoutEditorDisplayContext
 	private Long _segmentsEntryId;
 	private Long _segmentsExperienceId;
 	private Boolean _showSegmentsExperiences;
-	private final StagingGroupHelper _stagingGroupHelper;
 
 }

@@ -14,6 +14,7 @@
 
 package com.liferay.commerce.product.definitions.web.internal.frontend;
 
+import com.liferay.commerce.product.definitions.web.internal.frontend.constants.CommerceProductDataSetConstants;
 import com.liferay.commerce.product.definitions.web.internal.model.Channel;
 import com.liferay.commerce.product.model.CPDefinition;
 import com.liferay.commerce.product.model.CommerceChannel;
@@ -58,8 +59,9 @@ public class CommerceProductChannelDataSetDataProvider
 
 		List<CommerceChannelRel> commerceChannelRels =
 			_commerceChannelRelService.getCommerceChannelRels(
-				CPDefinition.class.getName(), cpDefinitionId, null,
-				pagination.getStartPosition(), pagination.getEndPosition());
+				CPDefinition.class.getName(), cpDefinitionId,
+				filter.getKeywords(), pagination.getStartPosition(),
+				pagination.getEndPosition());
 
 		for (CommerceChannelRel commerceChannelRel : commerceChannelRels) {
 			CommerceChannel commerceChannel =
@@ -83,7 +85,7 @@ public class CommerceProductChannelDataSetDataProvider
 			httpServletRequest, "cpDefinitionId");
 
 		return _commerceChannelRelService.getCommerceChannelRelsCount(
-			CPDefinition.class.getName(), cpDefinitionId);
+			CPDefinition.class.getName(), cpDefinitionId, filter.getKeywords());
 	}
 
 	@Reference

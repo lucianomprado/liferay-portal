@@ -25,7 +25,7 @@ import com.liferay.portal.kernel.portlet.configuration.icon.BasePortletConfigura
 import com.liferay.portal.kernel.portlet.configuration.icon.PortletConfigurationIcon;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.service.RoleService;
-import com.liferay.portal.kernel.service.permission.RolePermissionUtil;
+import com.liferay.portal.kernel.service.permission.RolePermission;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
@@ -70,9 +70,7 @@ public class PermissionsPortletConfigurationIcon
 			WebKeys.THEME_DISPLAY);
 
 		try {
-			long roleId = _getRoleId(portletRequest);
-
-			Role role = _roleService.fetchRole(roleId);
+			Role role = _roleService.fetchRole(_getRoleId(portletRequest));
 
 			int[] roleTypes = {role.getType()};
 
@@ -91,7 +89,7 @@ public class PermissionsPortletConfigurationIcon
 		}
 		catch (Exception exception) {
 			if (_log.isDebugEnabled()) {
-				_log.debug(exception, exception);
+				_log.debug(exception);
 			}
 		}
 
@@ -117,7 +115,7 @@ public class PermissionsPortletConfigurationIcon
 			String roleName = role.getName();
 
 			if (!roleName.equals(RoleConstants.OWNER) &&
-				RolePermissionUtil.contains(
+				_rolePermission.contains(
 					themeDisplay.getPermissionChecker(), roleId,
 					ActionKeys.PERMISSIONS)) {
 
@@ -128,7 +126,7 @@ public class PermissionsPortletConfigurationIcon
 		}
 		catch (Exception exception) {
 			if (_log.isDebugEnabled()) {
-				_log.debug(exception, exception);
+				_log.debug(exception);
 			}
 		}
 
@@ -155,6 +153,9 @@ public class PermissionsPortletConfigurationIcon
 
 	@Reference
 	private Portal _portal;
+
+	@Reference
+	private RolePermission _rolePermission;
 
 	private RoleService _roleService;
 

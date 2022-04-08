@@ -56,15 +56,10 @@ public class RecentSitesItemSelectorViewDisplayContext
 		String groupName = super.getGroupName(group);
 
 		if (group.isStaged() && group.isStagingGroup()) {
-			StringBundler sb = new StringBundler(5);
-
-			sb.append(groupName);
-			sb.append(StringPool.SPACE);
-			sb.append(StringPool.OPEN_PARENTHESIS);
-			sb.append(LanguageUtil.get(httpServletRequest, "staging"));
-			sb.append(StringPool.CLOSE_PARENTHESIS);
-
-			groupName = sb.toString();
+			groupName = StringBundler.concat(
+				groupName, StringPool.SPACE, StringPool.OPEN_PARENTHESIS,
+				LanguageUtil.get(httpServletRequest, "staging"),
+				StringPool.CLOSE_PARENTHESIS);
 		}
 
 		return groupName;
@@ -81,12 +76,10 @@ public class RecentSitesItemSelectorViewDisplayContext
 		List<Group> results = _recentGroupManager.getRecentGroups(
 			httpServletRequest);
 
-		groupSearch.setTotal(results.size());
-
-		results = ListUtil.subList(
-			results, groupSearch.getStart(), groupSearch.getEnd());
-
-		groupSearch.setResults(results);
+		groupSearch.setResultsAndTotal(
+			() -> ListUtil.subList(
+				results, groupSearch.getStart(), groupSearch.getEnd()),
+			results.size());
 
 		return groupSearch;
 	}

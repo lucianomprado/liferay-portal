@@ -15,11 +15,20 @@
 package com.liferay.commerce.frontend.taglib.internal.servlet;
 
 import com.liferay.commerce.frontend.util.ProductHelper;
+import com.liferay.commerce.inventory.engine.CommerceInventoryEngine;
 import com.liferay.commerce.order.CommerceOrderHttpHelper;
+import com.liferay.commerce.price.CommerceProductPriceCalculation;
 import com.liferay.commerce.product.content.util.CPContentHelper;
 import com.liferay.commerce.product.service.CommerceChannelLocalService;
+import com.liferay.commerce.product.url.CPFriendlyURL;
+import com.liferay.commerce.product.util.CPCompareHelper;
+import com.liferay.commerce.product.util.CPDefinitionHelper;
+import com.liferay.commerce.product.util.CPInstanceHelper;
 import com.liferay.commerce.product.util.CPSubscriptionTypeRegistry;
+import com.liferay.commerce.service.CommerceOrderItemLocalService;
+import com.liferay.commerce.service.CommerceOrderTypeLocalService;
 import com.liferay.frontend.js.loader.modules.extender.npm.NPMResolver;
+import com.liferay.info.item.renderer.InfoItemRendererTracker;
 import com.liferay.portal.kernel.module.configuration.ConfigurationProvider;
 
 import javax.servlet.ServletContext;
@@ -38,40 +47,99 @@ import org.osgi.service.component.annotations.Reference;
 )
 public class ServletContextUtil {
 
-	public static final CommerceChannelLocalService
-		getCommerceChannelLocalService() {
-
+	public static CommerceChannelLocalService getCommerceChannelLocalService() {
 		return _servletContextUtil._getCommerceChannelLocalService();
 	}
 
-	public static final CommerceOrderHttpHelper getCommerceOrderHttpHelper() {
+	public static CommerceInventoryEngine getCommerceInventoryEngine() {
+		return _servletContextUtil._getCommerceInventoryEngine();
+	}
+
+	public static CommerceOrderHttpHelper getCommerceOrderHttpHelper() {
 		return _servletContextUtil._getCommerceOrderHttpHelper();
 	}
 
-	public static final ConfigurationProvider getConfigurationProvider() {
+	public static CommerceOrderItemLocalService
+		getCommerceOrderItemLocalService() {
+
+		return _servletContextUtil._getCommerceOrderItemLocalService();
+	}
+
+	public static CommerceOrderTypeLocalService
+		getCommerceOrderTypeLocalService() {
+
+		return _servletContextUtil._getCommerceOrderTypeLocalService();
+	}
+
+	public static CommerceProductPriceCalculation
+		getCommerceProductPriceCalculation() {
+
+		return _servletContextUtil._getCommerceProductPriceCalculation();
+	}
+
+	public static ConfigurationProvider getConfigurationProvider() {
 		return _servletContextUtil._getConfigurationProvider();
 	}
 
-	public static final CPContentHelper getCPContentHelper() {
+	public static CPCompareHelper getCPCompareHelper() {
+		return _servletContextUtil._getCPCompareHelper();
+	}
+
+	public static CPContentHelper getCPContentHelper() {
 		return _servletContextUtil._getCPContentHelper();
 	}
 
-	public static final CPSubscriptionTypeRegistry
-		getCPSubscriptionTypeRegistry() {
+	public static CPDefinitionHelper getCPDefinitionHelper() {
+		return _servletContextUtil._getCPDefinitionHelper();
+	}
 
+	public static CPFriendlyURL getCPFriendlyURL() {
+		return _servletContextUtil._getCPFriendlyURL();
+	}
+
+	public static CPInstanceHelper getCPInstanceHelper() {
+		return _servletContextUtil._getCPInstanceHelper();
+	}
+
+	public static CPSubscriptionTypeRegistry getCPSubscriptionTypeRegistry() {
 		return _servletContextUtil._getCPSubscriptionTypeRegistry();
 	}
 
-	public static final NPMResolver getNPMResolver() {
+	public static InfoItemRendererTracker getInfoItemRendererTracker() {
+		return _servletContextUtil._getInfoItemRendererTracker();
+	}
+
+	public static NPMResolver getNPMResolver() {
 		return _servletContextUtil._getNPMResolver();
 	}
 
-	public static final ProductHelper getProductHelper() {
+	public static ProductHelper getProductHelper() {
 		return _servletContextUtil._getProductHelper();
 	}
 
-	public static final ServletContext getServletContext() {
+	public static ServletContext getServletContext() {
 		return _servletContextUtil._getServletContext();
+	}
+
+	@Reference(unbind = "-")
+	public void setCommerceInventoryEngine(
+		CommerceInventoryEngine commerceInventoryEngine) {
+
+		_commerceInventoryEngine = commerceInventoryEngine;
+	}
+
+	@Reference(unbind = "-")
+	public void setCommerceOrderItemLocalService(
+		CommerceOrderItemLocalService commerceOrderItemLocalService) {
+
+		_commerceOrderItemLocalService = commerceOrderItemLocalService;
+	}
+
+	@Reference(unbind = "-")
+	public void setCommerceOrderTypeLocalService(
+		CommerceOrderTypeLocalService commerceOrderTypeLocalService) {
+
+		_commerceOrderTypeLocalService = commerceOrderTypeLocalService;
 	}
 
 	@Activate
@@ -99,10 +167,22 @@ public class ServletContextUtil {
 	}
 
 	@Reference(unbind = "-")
+	protected void setCommerceProductPriceCalculation(
+		CommerceProductPriceCalculation commerceProductPriceCalculation) {
+
+		_commerceProductPriceCalculation = commerceProductPriceCalculation;
+	}
+
+	@Reference(unbind = "-")
 	protected void setConfigurationProvider(
 		ConfigurationProvider configurationProvider) {
 
 		_configurationProvider = configurationProvider;
+	}
+
+	@Reference(unbind = "-")
+	protected void setCPCompareHelper(CPCompareHelper cpCompareHelper) {
+		_cpCompareHelper = cpCompareHelper;
 	}
 
 	@Reference(unbind = "-")
@@ -111,10 +191,34 @@ public class ServletContextUtil {
 	}
 
 	@Reference(unbind = "-")
+	protected void setCPDefinitionHelper(
+		CPDefinitionHelper cpDefinitionHelper) {
+
+		_cpDefinitionHelper = cpDefinitionHelper;
+	}
+
+	@Reference(unbind = "-")
+	protected void setCPFriendlyURL(CPFriendlyURL cpFriendlyURL) {
+		_cpFriendlyURL = cpFriendlyURL;
+	}
+
+	@Reference(unbind = "-")
+	protected void setCPInstanceHelper(CPInstanceHelper cpInstanceHelper) {
+		_cpInstanceHelper = cpInstanceHelper;
+	}
+
+	@Reference(unbind = "-")
 	protected void setCPSubscriptionTypeRegistry(
 		CPSubscriptionTypeRegistry cpSubscriptionTypeRegistry) {
 
 		_cpSubscriptionTypeRegistry = cpSubscriptionTypeRegistry;
+	}
+
+	@Reference(unbind = "-")
+	protected void setInfoItemRendererTracker(
+		InfoItemRendererTracker infoItemRendererTracker) {
+
+		_infoItemRendererTracker = infoItemRendererTracker;
 	}
 
 	@Reference(unbind = "-")
@@ -139,20 +243,58 @@ public class ServletContextUtil {
 		return _commerceChannelLocalService;
 	}
 
+	private CommerceInventoryEngine _getCommerceInventoryEngine() {
+		return _commerceInventoryEngine;
+	}
+
 	private CommerceOrderHttpHelper _getCommerceOrderHttpHelper() {
 		return _commerceOrderHttpHelper;
+	}
+
+	private CommerceOrderItemLocalService _getCommerceOrderItemLocalService() {
+		return _commerceOrderItemLocalService;
+	}
+
+	private CommerceOrderTypeLocalService _getCommerceOrderTypeLocalService() {
+		return _commerceOrderTypeLocalService;
+	}
+
+	private CommerceProductPriceCalculation
+		_getCommerceProductPriceCalculation() {
+
+		return _commerceProductPriceCalculation;
 	}
 
 	private ConfigurationProvider _getConfigurationProvider() {
 		return _configurationProvider;
 	}
 
+	private CPCompareHelper _getCPCompareHelper() {
+		return _cpCompareHelper;
+	}
+
 	private CPContentHelper _getCPContentHelper() {
 		return _cpContentHelper;
 	}
 
+	private CPDefinitionHelper _getCPDefinitionHelper() {
+		return _cpDefinitionHelper;
+	}
+
+	private CPFriendlyURL _getCPFriendlyURL() {
+		return _cpFriendlyURL;
+	}
+
+	private CPInstanceHelper _getCPInstanceHelper() {
+		return _cpInstanceHelper;
+	}
+
 	private CPSubscriptionTypeRegistry _getCPSubscriptionTypeRegistry() {
 		return _cpSubscriptionTypeRegistry;
+	}
+
+	private InfoItemRendererTracker _getInfoItemRendererTracker() {
+		return _infoItemRendererTracker;
 	}
 
 	private NPMResolver _getNPMResolver() {
@@ -170,10 +312,19 @@ public class ServletContextUtil {
 	private static ServletContextUtil _servletContextUtil;
 
 	private CommerceChannelLocalService _commerceChannelLocalService;
+	private CommerceInventoryEngine _commerceInventoryEngine;
 	private CommerceOrderHttpHelper _commerceOrderHttpHelper;
+	private CommerceOrderItemLocalService _commerceOrderItemLocalService;
+	private CommerceOrderTypeLocalService _commerceOrderTypeLocalService;
+	private CommerceProductPriceCalculation _commerceProductPriceCalculation;
 	private ConfigurationProvider _configurationProvider;
+	private CPCompareHelper _cpCompareHelper;
 	private CPContentHelper _cpContentHelper;
+	private CPDefinitionHelper _cpDefinitionHelper;
+	private CPFriendlyURL _cpFriendlyURL;
+	private CPInstanceHelper _cpInstanceHelper;
 	private CPSubscriptionTypeRegistry _cpSubscriptionTypeRegistry;
+	private InfoItemRendererTracker _infoItemRendererTracker;
 	private NPMResolver _npmResolver;
 	private ProductHelper _productHelper;
 	private ServletContext _servletContext;

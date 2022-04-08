@@ -41,7 +41,7 @@ import org.osgi.service.component.annotations.Reference;
 	enabled = false, immediate = true,
 	property = {
 		"javax.portlet.name=" + CommercePortletKeys.COMMERCE_ORDER,
-		"mvc.command.name=editCommerceVirtualOrderItem"
+		"mvc.command.name=/commerce_order/edit_commerce_virtual_order_item"
 	},
 	service = MVCActionCommand.class
 )
@@ -57,7 +57,7 @@ public class EditCommerceVirtualOrderItemMVCActionCommand
 
 		try {
 			if (cmd.equals(Constants.UPDATE)) {
-				updateCommerceVirtualOrderItem(actionRequest);
+				_updateCommerceVirtualOrderItem(actionRequest);
 			}
 		}
 		catch (Exception exception) {
@@ -88,7 +88,7 @@ public class EditCommerceVirtualOrderItemMVCActionCommand
 		}
 	}
 
-	protected void updateCommerceVirtualOrderItem(ActionRequest actionRequest)
+	private void _updateCommerceVirtualOrderItem(ActionRequest actionRequest)
 		throws Exception {
 
 		long commerceVirtualOrderItemId = ParamUtil.getLong(

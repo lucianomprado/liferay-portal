@@ -34,8 +34,6 @@ import com.liferay.util.portlet.PortletProps;
 
 import java.lang.reflect.Method;
 
-import java.net.URL;
-
 import java.util.Properties;
 
 import javax.servlet.ServletContext;
@@ -163,23 +161,6 @@ public class PluginPackageHotDeployListener extends BaseHotDeployListener {
 		}
 	}
 
-	/**
-	 * @deprecated As of Mueller (7.2.x), with no direct replacement
-	 */
-	@Deprecated
-	protected URL getPortalCacheConfigurationURL(
-		Configuration configuration, ClassLoader classLoader,
-		String configLocation) {
-
-		String cacheConfigurationLocation = configuration.get(configLocation);
-
-		if (Validator.isNull(cacheConfigurationLocation)) {
-			return null;
-		}
-
-		return classLoader.getResource(cacheConfigurationLocation);
-	}
-
 	protected void initLogger(ClassLoader classLoader) {
 		Log4JUtil.configureLog4J(
 			classLoader.getResource("META-INF/portal-log4j.xml"));
@@ -210,7 +191,7 @@ public class PluginPackageHotDeployListener extends BaseHotDeployListener {
 		}
 		catch (Exception exception) {
 			if (_log.isDebugEnabled()) {
-				_log.debug("Unable to read service.properties");
+				_log.debug("Unable to read service.properties", exception);
 			}
 
 			return;

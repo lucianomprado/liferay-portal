@@ -36,14 +36,16 @@ import com.liferay.portal.kernel.search.IndexableType;
 import com.liferay.portal.kernel.service.BaseLocalServiceImpl;
 import com.liferay.portal.kernel.service.PersistedModelLocalServiceRegistry;
 import com.liferay.portal.kernel.service.RecentLayoutBranchLocalService;
+import com.liferay.portal.kernel.service.RecentLayoutBranchLocalServiceUtil;
 import com.liferay.portal.kernel.service.persistence.BasePersistence;
-import com.liferay.portal.kernel.service.persistence.LayoutBranchPersistence;
 import com.liferay.portal.kernel.service.persistence.RecentLayoutBranchPersistence;
 import com.liferay.portal.kernel.transaction.Transactional;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.PortalUtil;
 
 import java.io.Serializable;
+
+import java.lang.reflect.Field;
 
 import java.util.List;
 
@@ -67,7 +69,7 @@ public abstract class RecentLayoutBranchLocalServiceBaseImpl
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. Use <code>RecentLayoutBranchLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>com.liferay.portal.kernel.service.RecentLayoutBranchLocalServiceUtil</code>.
+	 * Never modify or reference this class directly. Use <code>RecentLayoutBranchLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>RecentLayoutBranchLocalServiceUtil</code>.
 	 */
 
 	/**
@@ -145,6 +147,13 @@ public abstract class RecentLayoutBranchLocalServiceBaseImpl
 	@Override
 	public <T> T dslQuery(DSLQuery dslQuery) {
 		return recentLayoutBranchPersistence.dslQuery(dslQuery);
+	}
+
+	@Override
+	public int dslQueryCount(DSLQuery dslQuery) {
+		Long count = dslQuery(dslQuery);
+
+		return count.intValue();
 	}
 
 	@Override
@@ -448,58 +457,19 @@ public abstract class RecentLayoutBranchLocalServiceBaseImpl
 		this.counterLocalService = counterLocalService;
 	}
 
-	/**
-	 * Returns the layout branch local service.
-	 *
-	 * @return the layout branch local service
-	 */
-	public com.liferay.portal.kernel.service.LayoutBranchLocalService
-		getLayoutBranchLocalService() {
-
-		return layoutBranchLocalService;
-	}
-
-	/**
-	 * Sets the layout branch local service.
-	 *
-	 * @param layoutBranchLocalService the layout branch local service
-	 */
-	public void setLayoutBranchLocalService(
-		com.liferay.portal.kernel.service.LayoutBranchLocalService
-			layoutBranchLocalService) {
-
-		this.layoutBranchLocalService = layoutBranchLocalService;
-	}
-
-	/**
-	 * Returns the layout branch persistence.
-	 *
-	 * @return the layout branch persistence
-	 */
-	public LayoutBranchPersistence getLayoutBranchPersistence() {
-		return layoutBranchPersistence;
-	}
-
-	/**
-	 * Sets the layout branch persistence.
-	 *
-	 * @param layoutBranchPersistence the layout branch persistence
-	 */
-	public void setLayoutBranchPersistence(
-		LayoutBranchPersistence layoutBranchPersistence) {
-
-		this.layoutBranchPersistence = layoutBranchPersistence;
-	}
-
 	public void afterPropertiesSet() {
 		persistedModelLocalServiceRegistry.register(
 			"com.liferay.portal.kernel.model.RecentLayoutBranch",
 			recentLayoutBranchLocalService);
+
+		_setLocalServiceUtilService(recentLayoutBranchLocalService);
 	}
 
 	public void destroy() {
 		persistedModelLocalServiceRegistry.unregister(
 			"com.liferay.portal.kernel.model.RecentLayoutBranch");
+
+		_setLocalServiceUtilService(null);
 	}
 
 	/**
@@ -545,6 +515,23 @@ public abstract class RecentLayoutBranchLocalServiceBaseImpl
 		}
 	}
 
+	private void _setLocalServiceUtilService(
+		RecentLayoutBranchLocalService recentLayoutBranchLocalService) {
+
+		try {
+			Field field =
+				RecentLayoutBranchLocalServiceUtil.class.getDeclaredField(
+					"_service");
+
+			field.setAccessible(true);
+
+			field.set(null, recentLayoutBranchLocalService);
+		}
+		catch (ReflectiveOperationException reflectiveOperationException) {
+			throw new RuntimeException(reflectiveOperationException);
+		}
+	}
+
 	@BeanReference(type = RecentLayoutBranchLocalService.class)
 	protected RecentLayoutBranchLocalService recentLayoutBranchLocalService;
 
@@ -556,15 +543,6 @@ public abstract class RecentLayoutBranchLocalServiceBaseImpl
 	)
 	protected com.liferay.counter.kernel.service.CounterLocalService
 		counterLocalService;
-
-	@BeanReference(
-		type = com.liferay.portal.kernel.service.LayoutBranchLocalService.class
-	)
-	protected com.liferay.portal.kernel.service.LayoutBranchLocalService
-		layoutBranchLocalService;
-
-	@BeanReference(type = LayoutBranchPersistence.class)
-	protected LayoutBranchPersistence layoutBranchPersistence;
 
 	@BeanReference(type = PersistedModelLocalServiceRegistry.class)
 	protected PersistedModelLocalServiceRegistry

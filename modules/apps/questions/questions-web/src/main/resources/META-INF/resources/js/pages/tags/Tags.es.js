@@ -16,6 +16,7 @@ import {ClayButtonWithIcon} from '@clayui/button';
 import ClayEmptyState from '@clayui/empty-state';
 import {ClayInput, ClaySelect} from '@clayui/form';
 import ClayLoadingIndicator from '@clayui/loading-indicator';
+import {useManualQuery} from 'graphql-hooks';
 import React, {useContext, useEffect, useState} from 'react';
 import {withRouter} from 'react-router-dom';
 
@@ -23,11 +24,18 @@ import {AppContext} from '../../AppContext.es';
 import Alert from '../../components/Alert.es';
 import Link from '../../components/Link.es';
 import PaginatedList from '../../components/PaginatedList.es';
+import SubscriptionButton from '../../components/SubscriptionButton.es';
 import useQueryParams from '../../hooks/useQueryParams.es';
-import {getTags} from '../../utils/client.es';
+import {
+	getTagsOrderByDateCreatedQuery,
+	getTagsOrderByNumberOfUsagesQuery,
+	subscribeTagQuery,
+	unsubscribeTagQuery,
+} from '../../utils/client.es';
 import lang from '../../utils/lang.es';
 import {
 	dateToInternationalHuman,
+	deleteCacheKey,
 	historyPushWithSlug,
 	useDebounceCallback,
 } from '../../utils/utils.es';
@@ -52,28 +60,54 @@ export default withRouter(({history, location}) => {
 	const [searchBoxValue, setSearchBoxValue] = useState('');
 	const [loading, setLoading] = useState(true);
 	const [orderBy, setOrderBy] = useState('number-of-usages');
-	const [page, setPage] = useState(1);
-	const [pageSize, setPageSize] = useState(20);
-	const [search, setSearch] = useState('');
+	const [page, setPage] = useState(null);
+	const [pageSize, setPageSize] = useState(null);
+	const [search, setSearch] = useState(null);
 	const [tags, setTags] = useState([]);
 
+	const [tagsByDate] = useManualQuery(getTagsOrderByDateCreatedQuery, {
+		variables: {page, pageSize, search, siteKey: context.siteKey},
+	});
+
+	const [tagsByRank] = useManualQuery(getTagsOrderByNumberOfUsagesQuery, {
+		variables: {page, pageSize, search, siteKey: context.siteKey},
+	});
+
 	useEffect(() => {
-		getTags(orderBy, page, pageSize, search, context.siteKey)
-			.then(({data, loading}) => {
-				setTags(data || []);
-				setLoading(loading);
-				setSearchBoxValue(search);
-			})
-			.catch((error) => {
-				if (process.env.NODE_ENV === 'development') {
-					console.error(error);
-				}
-				setLoading(false);
-				setError({message: 'Loading Tags', title: 'Error'});
-			});
-	}, [orderBy, page, pageSize, search, context.siteKey]);
+		if (!page || !pageSize || search === null || search === undefined) {
+			return;
+		}
+
+		const fn =
+			orderBy === 'latest-created'
+				? tagsByDate().then(({data, loading}) => ({
+						data: data.keywords,
+						loading,
+				  }))
+				: tagsByRank().then(({data, loading}) => ({
+						data: data.keywordsRanked,
+						loading,
+				  }));
+		fn.then(({data, loading}) => {
+			setTags(data || []);
+			setLoading(loading);
+			setSearchBoxValue(search);
+		}).catch((_) => setError({message: 'Loading Tags', title: 'Error'}));
+	}, [
+		orderBy,
+		page,
+		pageSize,
+		search,
+		context.siteKey,
+		tagsByDate,
+		tagsByRank,
+	]);
 
 	const queryParams = useQueryParams(location);
+
+	useEffect(() => {
+		document.title = 'Tags';
+	}, []);
 
 	useEffect(() => {
 		setPage(+queryParams.get('page') || 1);
@@ -101,16 +135,16 @@ export default withRouter(({history, location}) => {
 		return url;
 	}
 
-	const changePage = (page, pageSize) => {
+	function changePage(search, page, pageSize) {
 		historyPushParser(buildURL(search, page, pageSize));
-	};
+	}
 
 	const orderByOptions = getOrderByOptions();
 
-	const [debounceCallback] = useDebounceCallback((search) => {
-		setLoading(true);
-		historyPushParser(buildURL(search, 1, pageSize));
-	}, 500);
+	const [debounceCallback] = useDebounceCallback(
+		(search) => changePage(search, 1, 20),
+		500
+	);
 
 	return (
 		<>
@@ -176,18 +210,13 @@ export default withRouter(({history, location}) => {
 									tag="span"
 								>
 									{loading && <ClayLoadingIndicator small />}
+
 									{!loading &&
 										((!!search && (
 											<ClayButtonWithIcon
 												displayType="unstyled"
 												onClick={() => {
-													historyPushParser(
-														buildURL(
-															'',
-															1,
-															pageSize
-														)
-													);
+													debounceCallback('');
 												}}
 												symbol="times-circle"
 												type="submit"
@@ -209,8 +238,12 @@ export default withRouter(({history, location}) => {
 					<PaginatedList
 						activeDelta={pageSize}
 						activePage={page}
-						changeDelta={(pageSize) => changePage(page, pageSize)}
-						changePage={(page) => changePage(page, pageSize)}
+						changeDelta={(pageSize) =>
+							changePage(search, page, pageSize)
+						}
+						changePage={(page) =>
+							changePage(search, page, pageSize)
+						}
 						data={tags}
 						emptyState={
 							<ClayEmptyState
@@ -224,23 +257,36 @@ export default withRouter(({history, location}) => {
 					>
 						{(tag) => (
 							<div
-								className="col-md-3 question-tags"
+								className="col-lg-3 question-tags"
 								key={tag.id}
 							>
-								<Link
-									title={tag.name}
-									to={`/questions/tag/${tag.name}`}
-								>
-									<div className="card card-interactive card-interactive-primary card-type-template template-card-horizontal">
-										<div className="card-body">
-											<div className="card-row">
-												<div className="autofit-col autofit-col-expand">
-													<div className="autofit-section">
-														<div className="card-title">
-															<span className="text-truncate">
-																{tag.name}
-															</span>
+								<div className="align-items-center card card-interactive card-interactive-primary card-type-template d-flex justify-content-between template-card-horizontal">
+									<div>
+										<Link
+											title={tag.name}
+											to={`/questions/tag/${tag.name}`}
+										>
+											<div className="card-body d-flex flex-column">
+												<div className="card-row">
+													<div className="autofit-row autofit-row-center autofit-row-expand">
+														<div>
+															<div className="autofit-col autofit-col-expand">
+																<div className="autofit-section">
+																	<div className="card-title">
+																		<span className="text-truncate">
+																			{
+																				tag.name
+																			}
+																		</span>
+																	</div>
+																</div>
+															</div>
 														</div>
+													</div>
+												</div>
+
+												<div className="card-row">
+													<div className="autofit-col autofit-col-expand card-subtitle">
 														{orderBy ===
 														'latest-created' ? (
 															<div>
@@ -270,9 +316,54 @@ export default withRouter(({history, location}) => {
 													</div>
 												</div>
 											</div>
-										</div>
+										</Link>
 									</div>
-								</Link>
+
+									<div className="c-pr-3">
+										{tag.actions.subscribe && (
+											<div className="autofit-col">
+												<div className="autofit-section">
+													<SubscriptionButton
+														isSubscribed={
+															tag.subscribed
+														}
+														onSubscription={() => {
+															deleteCacheKey(
+																getTagsOrderByDateCreatedQuery,
+																{
+																	page,
+																	pageSize,
+																	search,
+																	siteKey:
+																		context.siteKey,
+																}
+															);
+															deleteCacheKey(
+																getTagsOrderByNumberOfUsagesQuery,
+																{
+																	page,
+																	pageSize,
+																	search,
+																	siteKey:
+																		context.siteKey,
+																}
+															);
+														}}
+														queryVariables={{
+															keywordId: tag.id,
+														}}
+														subscribeQuery={
+															subscribeTagQuery
+														}
+														unsubscribeQuery={
+															unsubscribeTagQuery
+														}
+													/>
+												</div>
+											</div>
+										)}
+									</div>
+								</div>
 							</div>
 						)}
 					</PaginatedList>

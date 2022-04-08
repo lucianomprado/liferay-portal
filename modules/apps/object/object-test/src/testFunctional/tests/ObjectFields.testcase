@@ -1,0 +1,86 @@
+@component-name = "portal-object"
+definition {
+
+	property portal.acceptance = "true";
+	property portal.release = "true";
+	property portal.upstream = "true";
+	property testray.main.component.name = "Object";
+
+	setUp {
+		TestCase.setUpPortalInstance();
+
+		User.firstLoginPG();
+	}
+
+	tearDown {
+		var testPortalInstance = PropsUtil.get("test.portal.instance");
+
+		if ("${testPortalInstance}" == "true") {
+			PortalInstances.tearDownCP();
+		}
+		else {
+			ObjectAdmin.deleteAllCustomObjectsViaAPI();
+		}
+	}
+
+	@description = "LPS-142659 - Verify it is possible to create a Clob field"
+	@priority = "4"
+	test CanCreateClobField {
+		ObjectAdmin.addObjectViaAPI(
+			labelName = "Custom Object 206",
+			objectName = "CustomObject206",
+			pluralLabelName = "Custom Objects 206");
+
+		Navigator.openURL();
+
+		ObjectAdmin.openObjectAdmin();
+
+		ObjectPortlet.selectCustomObject(label = "Custom Object 206");
+
+		ObjectAdmin.goToFieldsTab();
+
+		ObjectAdmin.addObjectFieldViaUI(
+			fieldLabel = "Custom Field",
+			fieldType = "Long Text");
+
+		Refresh();
+
+		ObjectAdmin.assertObjectField(
+			fieldLabel = "Custom Field",
+			fieldType = "LongText");
+	}
+
+	@description = "LPS-147944 - Verify it is possible to view more than 20 picklists for the picklist drop-down"
+	@ignore = "Test Stub"
+	@priority = "4"
+	test CanViewMoreThan20Picklists {
+
+		// TODO LPS-149248 CanViewMoreThan20Picklists pending implementation
+
+	}
+
+	@description = "LPS-144902 - Verify there is a description of each Field Type"
+	@priority = "4"
+	test DescriptionForEachFieldType {
+		property osgi.module.configuration.file.names = "com.liferay.object.web.internal.configuration.FFObjectFieldBusinessTypeConfiguration.config";
+		property osgi.module.configurations = "enabled=&quot;true&quot;";
+
+		ObjectAdmin.addObjectViaAPI(
+			labelName = "Custom Object 147723",
+			objectName = "CustomObject147723",
+			pluralLabelName = "Custom Objects 147723");
+
+		ObjectAdmin.openObjectAdmin();
+
+		ObjectPortlet.selectCustomObject(label = "Custom Object 147723");
+
+		ObjectAdmin.goToFieldsTab();
+
+		LexiconEntry.gotoAdd();
+
+		Click(locator1 = "ObjectField#TYPE_FIELD");
+
+		ObjectAdmin.viewDescriptionForEachFieldType();
+	}
+
+}

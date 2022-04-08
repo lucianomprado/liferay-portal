@@ -135,9 +135,8 @@ public class LiveUsers {
 	}
 
 	public static void joinGroup(long companyId, long groupId, long[] userIds) {
-		Map<Long, Set<Long>> liveUsers = _getLiveUsers(companyId);
-
-		Set<Long> groupUsers = _getGroupUsers(liveUsers, groupId);
+		Set<Long> groupUsers = _getGroupUsers(
+			_getLiveUsers(companyId), groupId);
 
 		for (long userId : userIds) {
 			if (_getUserTrackers(companyId, userId) != null) {
@@ -147,9 +146,8 @@ public class LiveUsers {
 	}
 
 	public static void leaveGroup(long companyId, long groupId, long userId) {
-		Map<Long, Set<Long>> liveUsers = _getLiveUsers(companyId);
-
-		Set<Long> groupUsers = _getGroupUsers(liveUsers, groupId);
+		Set<Long> groupUsers = _getGroupUsers(
+			_getLiveUsers(companyId), groupId);
 
 		groupUsers.remove(userId);
 	}
@@ -157,9 +155,8 @@ public class LiveUsers {
 	public static void leaveGroup(
 		long companyId, long groupId, long[] userIds) {
 
-		Map<Long, Set<Long>> liveUsers = _getLiveUsers(companyId);
-
-		Set<Long> groupUsers = _getGroupUsers(liveUsers, groupId);
+		Set<Long> groupUsers = _getGroupUsers(
+			_getLiveUsers(companyId), groupId);
 
 		for (long userId : userIds) {
 			groupUsers.remove(userId);
@@ -257,18 +254,21 @@ public class LiveUsers {
 		}
 		catch (Exception exception) {
 			if (_log.isWarnEnabled()) {
-				_log.warn(exception.getMessage());
+				_log.warn(exception);
 			}
 		}
 
 		try {
-			HttpSession session = PortalSessionContext.get(sessionId);
+			HttpSession httpSession = PortalSessionContext.get(sessionId);
 
-			if (session != null) {
-				session.invalidate();
+			if (httpSession != null) {
+				httpSession.invalidate();
 			}
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception);
+			}
 		}
 
 		_removeUserTracker(companyId, userId, userTracker);

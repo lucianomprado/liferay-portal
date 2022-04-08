@@ -22,7 +22,6 @@
 >
 	<liferay-ui:search-container-row
 		className="com.liferay.portal.kernel.workflow.WorkflowTask"
-		cssClass="entry-display-style"
 		modelVar="workflowTask"
 		stringKey="<%= true %>"
 	>
@@ -58,7 +57,7 @@
 
 					<h4>
 						<aui:a href="<%= rowURL %>">
-							<%= workflowTaskDisplayContext.getAssetTitle(workflowTask) %>
+							<%= HtmlUtil.escape(workflowTaskDisplayContext.getAssetTitle(workflowTask)) %>
 						</aui:a>
 					</h4>
 
@@ -102,8 +101,14 @@
 					cssClass="asset-title"
 					href="<%= rowURL %>"
 					name="asset-title"
-					value="<%= workflowTaskDisplayContext.getAssetTitle(workflowTask) %>"
-				/>
+					truncate="<%= true %>"
+				>
+					<span class="lfr-portal-tooltip text-truncate-inline" title="<%= HtmlUtil.escape(workflowTaskDisplayContext.getAssetTitle(workflowTask)) %>">
+						<span class="text-truncate">
+							<%= HtmlUtil.escape(workflowTaskDisplayContext.getAssetTitle(workflowTask)) %>
+						</span>
+					</span>
+				</liferay-ui:search-container-column-text>
 
 				<liferay-ui:search-container-column-text
 					href="<%= rowURL %>"

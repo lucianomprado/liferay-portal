@@ -22,7 +22,7 @@ import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.JavaConstants;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.kernel.util.comparator.PortletConfigurationIconComparator;
-import com.liferay.taglib.servlet.PipingServletResponse;
+import com.liferay.taglib.servlet.PipingServletResponseFactory;
 import com.liferay.taglib.ui.IconMenuTag;
 import com.liferay.taglib.ui.IconTag;
 
@@ -126,7 +126,7 @@ public class IconOptionsTag extends IconTag {
 		iconMenuTag.setMessage("options");
 		iconMenuTag.setShowArrow(false);
 		iconMenuTag.setShowWhenSingleIcon(true);
-		iconMenuTag.setTriggerCssClass("icon-monospaced");
+		iconMenuTag.setTriggerCssClass("component-action");
 
 		iconMenuTag.doBodyTag(
 			pageContext, this::_processPortletConfigurationIcons);
@@ -165,7 +165,7 @@ public class IconOptionsTag extends IconTag {
 
 				boolean include = portletConfigurationIcon.include(
 					httpServletRequest,
-					PipingServletResponse.createPipingServletResponse(
+					PipingServletResponseFactory.createPipingServletResponse(
 						pageContext));
 
 				if (include) {

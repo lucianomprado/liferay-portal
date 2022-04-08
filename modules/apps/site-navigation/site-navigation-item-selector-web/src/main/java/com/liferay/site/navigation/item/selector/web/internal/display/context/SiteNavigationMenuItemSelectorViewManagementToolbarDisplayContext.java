@@ -15,6 +15,7 @@
 package com.liferay.site.navigation.item.selector.web.internal.display.context;
 
 import com.liferay.frontend.taglib.clay.servlet.taglib.display.context.SearchContainerManagementToolbarDisplayContext;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
@@ -40,15 +41,18 @@ public class SiteNavigationMenuItemSelectorViewManagementToolbarDisplayContext
 			httpServletRequest, liferayPortletRequest, liferayPortletResponse,
 			siteNavigationMenuItemSelectorViewDisplayContext.
 				getSearchContainer());
+
+		_siteNavigationMenuItemSelectorViewDisplayContext =
+			siteNavigationMenuItemSelectorViewDisplayContext;
 	}
 
 	@Override
 	public String getClearResultsURL() {
-		PortletURL clearResultsURL = getPortletURL();
-
-		clearResultsURL.setParameter("keywords", StringPool.BLANK);
-
-		return clearResultsURL.toString();
+		return PortletURLBuilder.create(
+			getPortletURL()
+		).setKeywords(
+			StringPool.BLANK
+		).buildString();
 	}
 
 	@Override
@@ -69,6 +73,12 @@ public class SiteNavigationMenuItemSelectorViewManagementToolbarDisplayContext
 	}
 
 	@Override
+	protected String getDisplayStyle() {
+		return _siteNavigationMenuItemSelectorViewDisplayContext.
+			getDisplayStyle();
+	}
+
+	@Override
 	protected String[] getDisplayViews() {
 		return new String[] {"list", "descriptive"};
 	}
@@ -82,5 +92,8 @@ public class SiteNavigationMenuItemSelectorViewManagementToolbarDisplayContext
 	protected String[] getOrderByKeys() {
 		return new String[] {"create-date", "name"};
 	}
+
+	private final SiteNavigationMenuItemSelectorViewDisplayContext
+		_siteNavigationMenuItemSelectorViewDisplayContext;
 
 }

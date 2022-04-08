@@ -15,6 +15,8 @@
 package com.liferay.headless.commerce.delivery.catalog.internal.resource.v1_0;
 
 import com.liferay.commerce.account.exception.NoSuchAccountException;
+import com.liferay.commerce.account.model.CommerceAccount;
+import com.liferay.commerce.account.service.CommerceAccountLocalService;
 import com.liferay.commerce.account.util.CommerceAccountHelper;
 import com.liferay.commerce.context.CommerceContext;
 import com.liferay.commerce.context.CommerceContextFactory;
@@ -31,6 +33,7 @@ import com.liferay.headless.commerce.delivery.catalog.dto.v1_0.Sku;
 import com.liferay.headless.commerce.delivery.catalog.internal.dto.v1_0.converter.SkuDTOConverter;
 import com.liferay.headless.commerce.delivery.catalog.internal.dto.v1_0.converter.SkuDTOConverterContext;
 import com.liferay.headless.commerce.delivery.catalog.resource.v1_0.SkuResource;
+import com.liferay.portal.kernel.change.tracking.CTAware;
 import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.vulcan.fields.NestedField;
@@ -41,8 +44,6 @@ import com.liferay.portal.vulcan.pagination.Pagination;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import javax.validation.constraints.NotNull;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -56,19 +57,16 @@ import org.osgi.service.component.annotations.ServiceScope;
 	scope = ServiceScope.PROTOTYPE,
 	service = {NestedFieldSupport.class, SkuResource.class}
 )
+@CTAware
 public class SkuResourceImpl
 	extends BaseSkuResourceImpl implements NestedFieldSupport {
 
 	@NestedField(parentClass = Product.class, value = "skus")
 	@Override
 	public Page<Sku> getChannelProductSkusPage(
-			@NotNull Long channelId,
-			@NestedFieldId("productId") @NotNull Long productId, Long accountId,
-			Pagination pagination)
+			Long channelId, @NestedFieldId("productId") Long productId,
+			Long accountId, Pagination pagination)
 		throws Exception {
-
-		CommerceChannel commerceChannel =
-			_commerceChannelLocalService.getCommerceChannel(channelId);
 
 		CPDefinition cpDefinition =
 			_cpDefinitionLocalService.fetchCPDefinitionByCProductId(productId);
@@ -76,6 +74,9 @@ public class SkuResourceImpl
 		if (cpDefinition == null) {
 			throw new NoSuchCProductException();
 		}
+
+		CommerceChannel commerceChannel =
+			_commerceChannelLocalService.getCommerceChannel(channelId);
 
 		int countUserCommerceAccounts =
 			_commerceAccountHelper.countUserCommerceAccounts(
@@ -90,6 +91,16 @@ public class SkuResourceImpl
 			long[] commerceAccountIds =
 				_commerceAccountHelper.getUserCommerceAccountIds(
 					contextUser.getUserId(), commerceChannel.getGroupId());
+
+			if (commerceAccountIds.length == 0) {
+				CommerceAccount commerceAccount =
+					_commerceAccountLocalService.getGuestCommerceAccount(
+						contextUser.getCompanyId());
+
+				commerceAccountIds = new long[] {
+					commerceAccount.getCommerceAccountId()
+				};
+			}
 
 			accountId = commerceAccountIds[0];
 		}
@@ -122,8 +133,6 @@ public class SkuResourceImpl
 		CommerceChannel commerceChannel =
 			_commerceChannelLocalService.getCommerceChannel(channelId);
 
-		List<Sku> skus = new ArrayList<>();
-
 		int countUserCommerceAccounts =
 			_commerceAccountHelper.countUserCommerceAccounts(
 				contextUser.getUserId(), commerceChannel.getGroupId());
@@ -144,10 +153,22 @@ public class SkuResourceImpl
 				_commerceAccountHelper.getUserCommerceAccountIds(
 					contextUser.getUserId(), commerceChannel.getGroupId());
 
+			if (commerceAccountIds.length == 0) {
+				CommerceAccount commerceAccount =
+					_commerceAccountLocalService.getGuestCommerceAccount(
+						contextUser.getCompanyId());
+
+				commerceAccountIds = new long[] {
+					commerceAccount.getCommerceAccountId()
+				};
+			}
+
 			commerceContext = _commerceContextFactory.create(
 				contextCompany.getCompanyId(), commerceChannel.getGroupId(),
 				contextUser.getUserId(), 0, commerceAccountIds[0]);
 		}
+
+		List<Sku> skus = new ArrayList<>();
 
 		for (CPInstance cpInstance : cpInstances) {
 			skus.add(
@@ -163,6 +184,9 @@ public class SkuResourceImpl
 
 	@Reference
 	private CommerceAccountHelper _commerceAccountHelper;
+
+	@Reference
+	private CommerceAccountLocalService _commerceAccountLocalService;
 
 	@Reference
 	private CommerceChannelLocalService _commerceChannelLocalService;

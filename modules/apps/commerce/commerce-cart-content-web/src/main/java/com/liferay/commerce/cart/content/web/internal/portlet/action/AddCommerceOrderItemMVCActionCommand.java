@@ -41,8 +41,6 @@ import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
 
-import java.io.IOException;
-
 import java.util.List;
 
 import javax.portlet.ActionRequest;
@@ -62,7 +60,7 @@ import org.osgi.service.component.annotations.Reference;
 	property = {
 		"javax.portlet.name=" + CommercePortletKeys.COMMERCE_CART_CONTENT,
 		"javax.portlet.name=" + CommercePortletKeys.COMMERCE_CART_CONTENT_MINI,
-		"mvc.command.name=addCommerceOrderItem"
+		"mvc.command.name=/commerce_cart_content/add_commerce_order_item"
 	},
 	service = MVCActionCommand.class
 )
@@ -81,8 +79,6 @@ public class AddCommerceOrderItemMVCActionCommand extends BaseMVCActionCommand {
 		HttpServletResponse httpServletResponse =
 			_portal.getHttpServletResponse(actionResponse);
 
-		long cpDefinitionId = ParamUtil.getLong(
-			actionRequest, "cpDefinitionId");
 		int quantity = ParamUtil.getInteger(actionRequest, "quantity");
 		String ddmFormValues = ParamUtil.getString(
 			actionRequest, "ddmFormValues");
@@ -90,6 +86,9 @@ public class AddCommerceOrderItemMVCActionCommand extends BaseMVCActionCommand {
 		long cpInstanceId = ParamUtil.getLong(actionRequest, "cpInstanceId");
 
 		if (cpInstanceId == 0) {
+			long cpDefinitionId = ParamUtil.getLong(
+				actionRequest, "cpDefinitionId");
+
 			CPInstance cpInstance = _cpInstanceHelper.fetchCPInstance(
 				cpDefinitionId, ddmFormValues);
 
@@ -116,19 +115,18 @@ public class AddCommerceOrderItemMVCActionCommand extends BaseMVCActionCommand {
 				CommerceOrderItem.class.getName(), httpServletRequest);
 
 			CommerceOrderItem commerceOrderItem =
-				_commerceOrderItemService.upsertCommerceOrderItem(
-					commerceOrder.getCommerceOrderId(), cpInstanceId, quantity,
-					0, ddmFormValues, commerceContext, serviceContext);
-
-			int commerceOrderItemsQuantity =
-				_commerceOrderItemService.getCommerceOrderItemsQuantity(
-					commerceOrder.getCommerceOrderId());
+				_commerceOrderItemService.addOrUpdateCommerceOrderItem(
+					commerceOrder.getCommerceOrderId(), cpInstanceId,
+					ddmFormValues, quantity, 0, commerceContext,
+					serviceContext);
 
 			jsonObject.put(
 				"commerceOrderItemId",
 				commerceOrderItem.getCommerceOrderItemId()
 			).put(
-				"commerceOrderItemsQuantity", commerceOrderItemsQuantity
+				"commerceOrderItemsQuantity",
+				_commerceOrderItemService.getCommerceOrderItemsQuantity(
+					commerceOrder.getCommerceOrderId())
 			).put(
 				"success", true
 			).put(
@@ -166,7 +164,7 @@ public class AddCommerceOrderItemMVCActionCommand extends BaseMVCActionCommand {
 			);
 		}
 		catch (Exception exception) {
-			_log.error(exception, exception);
+			_log.error(exception);
 
 			jsonObject.put(
 				"error", exception.getMessage()
@@ -179,11 +177,11 @@ public class AddCommerceOrderItemMVCActionCommand extends BaseMVCActionCommand {
 
 		httpServletResponse.setContentType(ContentTypes.APPLICATION_JSON);
 
-		writeJSON(actionResponse, jsonObject);
+		_writeJSON(actionResponse, jsonObject);
 	}
 
-	protected void writeJSON(ActionResponse actionResponse, Object object)
-		throws IOException {
+	private void _writeJSON(ActionResponse actionResponse, Object object)
+		throws Exception {
 
 		HttpServletResponse httpServletResponse =
 			_portal.getHttpServletResponse(actionResponse);

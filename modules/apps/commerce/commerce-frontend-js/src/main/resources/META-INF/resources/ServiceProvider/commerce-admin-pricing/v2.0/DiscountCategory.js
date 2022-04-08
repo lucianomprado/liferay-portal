@@ -21,10 +21,12 @@ const DISCOUNT_RULES_PATH = '/discount-categories';
 const VERSION = 'v2.0';
 
 function resolvePath(basePath = '', discountId = '', discountCategoryId = '') {
-	return `${basePath}${VERSION}${DISCOUNTS_PATH}/${discountId}/${DISCOUNT_RULES_PATH}/${discountCategoryId}`;
+	return `${basePath}${VERSION}${DISCOUNTS_PATH}/${discountId}${DISCOUNT_RULES_PATH}/${discountCategoryId}`;
 }
 
-export default (basePath) => ({
-	addDiscountCategory: (discountId, json) =>
-		AJAX.POST(resolvePath(basePath, discountId), json),
-});
+export default function DiscountCategory(basePath) {
+	return {
+		addDiscountCategory: (discountId, json) =>
+			AJAX.POST(resolvePath(basePath, discountId), json),
+	};
+}

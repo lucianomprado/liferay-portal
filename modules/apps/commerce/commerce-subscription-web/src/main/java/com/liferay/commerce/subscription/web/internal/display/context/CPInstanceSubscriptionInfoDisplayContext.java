@@ -16,9 +16,10 @@ package com.liferay.commerce.subscription.web.internal.display.context;
 
 import com.liferay.commerce.product.model.CPInstance;
 import com.liferay.commerce.product.portlet.action.ActionHelper;
-import com.liferay.commerce.product.servlet.taglib.ui.CPInstanceScreenNavigationConstants;
+import com.liferay.commerce.product.servlet.taglib.ui.constants.CPInstanceScreenNavigationConstants;
 import com.liferay.commerce.product.util.CPSubscriptionTypeJSPContributorRegistry;
 import com.liferay.commerce.product.util.CPSubscriptionTypeRegistry;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.exception.PortalException;
 
 import javax.portlet.PortletURL;
@@ -60,23 +61,23 @@ public class CPInstanceSubscriptionInfoDisplayContext
 
 	@Override
 	public PortletURL getPortletURL() throws PortalException {
-		PortletURL portletURL = liferayPortletResponse.createRenderURL();
-
-		portletURL.setParameter("mvcRenderCommandName", "editProductInstance");
-		portletURL.setParameter(
-			"cpDefinitionId", String.valueOf(getCPDefinitionId()));
-		portletURL.setParameter(
-			"cpInstanceId", String.valueOf(getCPInstanceId()));
-		portletURL.setParameter(
+		return PortletURLBuilder.createRenderURL(
+			liferayPortletResponse
+		).setMVCRenderCommandName(
+			"/cp_definitions/edit_cp_instance"
+		).setParameter(
+			"cpDefinitionId", getCPDefinitionId()
+		).setParameter(
+			"cpInstanceId", getCPInstanceId()
+		).setParameter(
 			"screenNavigationCategoryKey",
 			CPInstanceScreenNavigationConstants.
-				CATEGORY_KEY_SUBSCRIPTION_OVERRIDE);
-		portletURL.setParameter(
+				CATEGORY_KEY_SUBSCRIPTION_OVERRIDE
+		).setParameter(
 			"screenNavigationEntryKey",
 			CPInstanceScreenNavigationConstants.
-				CATEGORY_KEY_SUBSCRIPTION_OVERRIDE);
-
-		return portletURL;
+				CATEGORY_KEY_SUBSCRIPTION_OVERRIDE
+		).buildPortletURL();
 	}
 
 }

@@ -36,7 +36,9 @@ import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.security.permission.PermissionCheckerFactoryUtil;
+import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
 import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.service.LayoutLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
@@ -138,11 +140,12 @@ public class ViewInPanelJournalArticleContentDashboardItemActionProviderTest {
 							LAYOUT_DISPLAY_PAGE_OBJECT_PROVIDER);
 
 		Assert.assertEquals(
-			String.valueOf(layoutDisplayPageObjectProvider.getClassNameId()),
+			_portal.getClassName(
+				layoutDisplayPageObjectProvider.getClassNameId()),
 			_http.getParameter(
 				contentDashboardItemAction.getURL(),
 				"_com_liferay_analytics_reports_web_internal_portlet_" +
-					"AnalyticsReportsPortlet_classNameId",
+					"AnalyticsReportsPortlet_className",
 				false));
 		Assert.assertEquals(
 			String.valueOf(layoutDisplayPageObjectProvider.getClassPK()),
@@ -165,7 +168,13 @@ public class ViewInPanelJournalArticleContentDashboardItemActionProviderTest {
 	public void testGetContentDashboardItemActionWithUserWithoutEditPermission()
 		throws Exception {
 
+		PermissionChecker permissionChecker =
+			PermissionThreadLocal.getPermissionChecker();
+
 		User user = UserTestUtil.addUser();
+
+		PermissionThreadLocal.setPermissionChecker(
+			PermissionCheckerFactoryUtil.create(user));
 
 		try {
 			Assert.assertNull(
@@ -174,6 +183,8 @@ public class ViewInPanelJournalArticleContentDashboardItemActionProviderTest {
 						_journalArticle, _getHttpServletRequest(user)));
 		}
 		finally {
+			PermissionThreadLocal.setPermissionChecker(permissionChecker);
+
 			_userLocalService.deleteUser(user);
 		}
 	}
@@ -190,7 +201,13 @@ public class ViewInPanelJournalArticleContentDashboardItemActionProviderTest {
 	public void testIsShowContentDashboardItemActionWithUserWithoutEditPermission()
 		throws Exception {
 
+		PermissionChecker permissionChecker =
+			PermissionThreadLocal.getPermissionChecker();
+
 		User user = UserTestUtil.addUser();
+
+		PermissionThreadLocal.setPermissionChecker(
+			PermissionCheckerFactoryUtil.create(user));
 
 		try {
 			Assert.assertFalse(
@@ -198,6 +215,8 @@ public class ViewInPanelJournalArticleContentDashboardItemActionProviderTest {
 					_journalArticle, _getHttpServletRequest(user)));
 		}
 		finally {
+			PermissionThreadLocal.setPermissionChecker(permissionChecker);
+
 			_userLocalService.deleteUser(user);
 		}
 	}

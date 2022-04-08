@@ -24,30 +24,34 @@ import com.liferay.portal.kernel.json.JSON;
 import com.liferay.portal.kernel.model.CacheModel;
 import com.liferay.portal.kernel.model.ModelWrapper;
 import com.liferay.portal.kernel.model.Region;
+import com.liferay.portal.kernel.model.RegionLocalization;
 import com.liferay.portal.kernel.model.RegionModel;
-import com.liferay.portal.kernel.model.RegionSoap;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.model.impl.BaseModelImpl;
+import com.liferay.portal.kernel.service.RegionLocalServiceUtil;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.LocalizationUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
+import com.liferay.portal.kernel.util.StringUtil;
 
 import java.io.Serializable;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
 
+import java.sql.Blob;
 import java.sql.Types;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
@@ -75,12 +79,13 @@ public class RegionModelImpl
 
 	public static final Object[][] TABLE_COLUMNS = {
 		{"mvccVersion", Types.BIGINT}, {"uuid_", Types.VARCHAR},
-		{"regionId", Types.BIGINT}, {"companyId", Types.BIGINT},
-		{"userId", Types.BIGINT}, {"userName", Types.VARCHAR},
-		{"createDate", Types.TIMESTAMP}, {"modifiedDate", Types.TIMESTAMP},
-		{"countryId", Types.BIGINT}, {"active_", Types.BOOLEAN},
-		{"name", Types.VARCHAR}, {"position", Types.DOUBLE},
-		{"regionCode", Types.VARCHAR}, {"lastPublishDate", Types.TIMESTAMP}
+		{"defaultLanguageId", Types.VARCHAR}, {"regionId", Types.BIGINT},
+		{"companyId", Types.BIGINT}, {"userId", Types.BIGINT},
+		{"userName", Types.VARCHAR}, {"createDate", Types.TIMESTAMP},
+		{"modifiedDate", Types.TIMESTAMP}, {"countryId", Types.BIGINT},
+		{"active_", Types.BOOLEAN}, {"name", Types.VARCHAR},
+		{"position", Types.DOUBLE}, {"regionCode", Types.VARCHAR},
+		{"lastPublishDate", Types.TIMESTAMP}
 	};
 
 	public static final Map<String, Integer> TABLE_COLUMNS_MAP =
@@ -89,6 +94,7 @@ public class RegionModelImpl
 	static {
 		TABLE_COLUMNS_MAP.put("mvccVersion", Types.BIGINT);
 		TABLE_COLUMNS_MAP.put("uuid_", Types.VARCHAR);
+		TABLE_COLUMNS_MAP.put("defaultLanguageId", Types.VARCHAR);
 		TABLE_COLUMNS_MAP.put("regionId", Types.BIGINT);
 		TABLE_COLUMNS_MAP.put("companyId", Types.BIGINT);
 		TABLE_COLUMNS_MAP.put("userId", Types.BIGINT);
@@ -104,7 +110,7 @@ public class RegionModelImpl
 	}
 
 	public static final String TABLE_SQL_CREATE =
-		"create table Region (mvccVersion LONG default 0 not null,uuid_ VARCHAR(75) null,regionId LONG not null primary key,companyId LONG,userId LONG,userName VARCHAR(75) null,createDate DATE null,modifiedDate DATE null,countryId LONG,active_ BOOLEAN,name VARCHAR(75) null,position DOUBLE,regionCode VARCHAR(75) null,lastPublishDate DATE null)";
+		"create table Region (mvccVersion LONG default 0 not null,uuid_ VARCHAR(75) null,defaultLanguageId VARCHAR(75) null,regionId LONG not null primary key,companyId LONG,userId LONG,userName VARCHAR(75) null,createDate DATE null,modifiedDate DATE null,countryId LONG,active_ BOOLEAN,name VARCHAR(75) null,position DOUBLE,regionCode VARCHAR(75) null,lastPublishDate DATE null)";
 
 	public static final String TABLE_SQL_DROP = "drop table Region";
 
@@ -139,103 +145,48 @@ public class RegionModelImpl
 	public static final boolean COLUMN_BITMASK_ENABLED = true;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long ACTIVE_COLUMN_BITMASK = 1L;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long COMPANYID_COLUMN_BITMASK = 2L;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long COUNTRYID_COLUMN_BITMASK = 4L;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long REGIONCODE_COLUMN_BITMASK = 8L;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long UUID_COLUMN_BITMASK = 16L;
 
 	/**
 	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-	 *		#getColumnBitmask(String)
+	 *		#getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long NAME_COLUMN_BITMASK = 32L;
 
 	/**
 	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-	 *		#getColumnBitmask(String)
+	 *		#getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long POSITION_COLUMN_BITMASK = 64L;
-
-	/**
-	 * Converts the soap model instance into a normal model instance.
-	 *
-	 * @param soapModel the soap model instance to convert
-	 * @return the normal model instance
-	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
-	 */
-	@Deprecated
-	public static Region toModel(RegionSoap soapModel) {
-		if (soapModel == null) {
-			return null;
-		}
-
-		Region model = new RegionImpl();
-
-		model.setMvccVersion(soapModel.getMvccVersion());
-		model.setUuid(soapModel.getUuid());
-		model.setRegionId(soapModel.getRegionId());
-		model.setCompanyId(soapModel.getCompanyId());
-		model.setUserId(soapModel.getUserId());
-		model.setUserName(soapModel.getUserName());
-		model.setCreateDate(soapModel.getCreateDate());
-		model.setModifiedDate(soapModel.getModifiedDate());
-		model.setCountryId(soapModel.getCountryId());
-		model.setActive(soapModel.isActive());
-		model.setName(soapModel.getName());
-		model.setPosition(soapModel.getPosition());
-		model.setRegionCode(soapModel.getRegionCode());
-		model.setLastPublishDate(soapModel.getLastPublishDate());
-
-		return model;
-	}
-
-	/**
-	 * Converts the soap model instances into normal model instances.
-	 *
-	 * @param soapModels the soap model instances to convert
-	 * @return the normal model instances
-	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
-	 */
-	@Deprecated
-	public static List<Region> toModels(RegionSoap[] soapModels) {
-		if (soapModels == null) {
-			return null;
-		}
-
-		List<Region> models = new ArrayList<Region>(soapModels.length);
-
-		for (RegionSoap soapModel : soapModels) {
-			models.add(toModel(soapModel));
-		}
-
-		return models;
-	}
 
 	public static final long LOCK_EXPIRATION_TIME = GetterUtil.getLong(
 		com.liferay.portal.util.PropsUtil.get(
@@ -366,6 +317,11 @@ public class RegionModelImpl
 		attributeGetterFunctions.put("uuid", Region::getUuid);
 		attributeSetterBiConsumers.put(
 			"uuid", (BiConsumer<Region, String>)Region::setUuid);
+		attributeGetterFunctions.put(
+			"defaultLanguageId", Region::getDefaultLanguageId);
+		attributeSetterBiConsumers.put(
+			"defaultLanguageId",
+			(BiConsumer<Region, String>)Region::setDefaultLanguageId);
 		attributeGetterFunctions.put("regionId", Region::getRegionId);
 		attributeSetterBiConsumers.put(
 			"regionId", (BiConsumer<Region, Long>)Region::setRegionId);
@@ -411,6 +367,85 @@ public class RegionModelImpl
 			(Map)attributeSetterBiConsumers);
 	}
 
+	@Override
+	public String[] getAvailableLanguageIds() {
+		List<RegionLocalization> regionLocalizations =
+			RegionLocalServiceUtil.getRegionLocalizations(getPrimaryKey());
+
+		String[] availableLanguageIds = new String[regionLocalizations.size()];
+
+		for (int i = 0; i < availableLanguageIds.length; i++) {
+			RegionLocalization regionLocalization = regionLocalizations.get(i);
+
+			availableLanguageIds[i] = regionLocalization.getLanguageId();
+		}
+
+		return availableLanguageIds;
+	}
+
+	@Override
+	public String getTitle() {
+		return getTitle(getDefaultLanguageId(), false);
+	}
+
+	@Override
+	public String getTitle(String languageId) {
+		return getTitle(languageId, true);
+	}
+
+	@Override
+	public String getTitle(String languageId, boolean useDefault) {
+		if (useDefault) {
+			return LocalizationUtil.getLocalization(
+				new Function<String, String>() {
+
+					@Override
+					public String apply(String languageId) {
+						return _getTitle(languageId);
+					}
+
+				},
+				languageId, getDefaultLanguageId());
+		}
+
+		return _getTitle(languageId);
+	}
+
+	@Override
+	public String getTitleMapAsXML() {
+		return LocalizationUtil.getXml(
+			getLanguageIdToTitleMap(), getDefaultLanguageId(), "Title");
+	}
+
+	@Override
+	public Map<String, String> getLanguageIdToTitleMap() {
+		Map<String, String> languageIdToTitleMap =
+			new HashMap<String, String>();
+
+		List<RegionLocalization> regionLocalizations =
+			RegionLocalServiceUtil.getRegionLocalizations(getPrimaryKey());
+
+		for (RegionLocalization regionLocalization : regionLocalizations) {
+			languageIdToTitleMap.put(
+				regionLocalization.getLanguageId(),
+				regionLocalization.getTitle());
+		}
+
+		return languageIdToTitleMap;
+	}
+
+	private String _getTitle(String languageId) {
+		RegionLocalization regionLocalization =
+			RegionLocalServiceUtil.fetchRegionLocalization(
+				getPrimaryKey(), languageId);
+
+		if (regionLocalization == null) {
+			return "";
+		}
+
+		return regionLocalization.getTitle();
+	}
+
 	@JSON
 	@Override
 	public long getMvccVersion() {
@@ -453,6 +488,26 @@ public class RegionModelImpl
 	@Deprecated
 	public String getOriginalUuid() {
 		return getColumnOriginalValue("uuid_");
+	}
+
+	@JSON
+	@Override
+	public String getDefaultLanguageId() {
+		if (_defaultLanguageId == null) {
+			return "";
+		}
+		else {
+			return _defaultLanguageId;
+		}
+	}
+
+	@Override
+	public void setDefaultLanguageId(String defaultLanguageId) {
+		if (_columnOriginalValues == Collections.EMPTY_MAP) {
+			_setColumnOriginalValues();
+		}
+
+		_defaultLanguageId = defaultLanguageId;
 	}
 
 	@JSON
@@ -737,7 +792,9 @@ public class RegionModelImpl
 		for (Map.Entry<String, Object> entry :
 				_columnOriginalValues.entrySet()) {
 
-			if (entry.getValue() != getColumnValue(entry.getKey())) {
+			if (!Objects.equals(
+					entry.getValue(), getColumnValue(entry.getKey()))) {
+
 				_columnBitmask |= _columnBitmasks.get(entry.getKey());
 			}
 		}
@@ -779,6 +836,7 @@ public class RegionModelImpl
 
 		regionImpl.setMvccVersion(getMvccVersion());
 		regionImpl.setUuid(getUuid());
+		regionImpl.setDefaultLanguageId(getDefaultLanguageId());
 		regionImpl.setRegionId(getRegionId());
 		regionImpl.setCompanyId(getCompanyId());
 		regionImpl.setUserId(getUserId());
@@ -793,6 +851,35 @@ public class RegionModelImpl
 		regionImpl.setLastPublishDate(getLastPublishDate());
 
 		regionImpl.resetOriginalValues();
+
+		return regionImpl;
+	}
+
+	@Override
+	public Region cloneWithOriginalValues() {
+		RegionImpl regionImpl = new RegionImpl();
+
+		regionImpl.setMvccVersion(
+			this.<Long>getColumnOriginalValue("mvccVersion"));
+		regionImpl.setUuid(this.<String>getColumnOriginalValue("uuid_"));
+		regionImpl.setDefaultLanguageId(
+			this.<String>getColumnOriginalValue("defaultLanguageId"));
+		regionImpl.setRegionId(this.<Long>getColumnOriginalValue("regionId"));
+		regionImpl.setCompanyId(this.<Long>getColumnOriginalValue("companyId"));
+		regionImpl.setUserId(this.<Long>getColumnOriginalValue("userId"));
+		regionImpl.setUserName(this.<String>getColumnOriginalValue("userName"));
+		regionImpl.setCreateDate(
+			this.<Date>getColumnOriginalValue("createDate"));
+		regionImpl.setModifiedDate(
+			this.<Date>getColumnOriginalValue("modifiedDate"));
+		regionImpl.setCountryId(this.<Long>getColumnOriginalValue("countryId"));
+		regionImpl.setActive(this.<Boolean>getColumnOriginalValue("active_"));
+		regionImpl.setName(this.<String>getColumnOriginalValue("name"));
+		regionImpl.setPosition(this.<Double>getColumnOriginalValue("position"));
+		regionImpl.setRegionCode(
+			this.<String>getColumnOriginalValue("regionCode"));
+		regionImpl.setLastPublishDate(
+			this.<Date>getColumnOriginalValue("lastPublishDate"));
 
 		return regionImpl;
 	}
@@ -892,6 +979,14 @@ public class RegionModelImpl
 			regionCacheModel.uuid = null;
 		}
 
+		regionCacheModel.defaultLanguageId = getDefaultLanguageId();
+
+		String defaultLanguageId = regionCacheModel.defaultLanguageId;
+
+		if ((defaultLanguageId != null) && (defaultLanguageId.length() == 0)) {
+			regionCacheModel.defaultLanguageId = null;
+		}
+
 		regionCacheModel.regionId = getRegionId();
 
 		regionCacheModel.companyId = getCompanyId();
@@ -964,7 +1059,7 @@ public class RegionModelImpl
 			getAttributeGetterFunctions();
 
 		StringBundler sb = new StringBundler(
-			(4 * attributeGetterFunctions.size()) + 2);
+			(5 * attributeGetterFunctions.size()) + 2);
 
 		sb.append("{");
 
@@ -974,9 +1069,26 @@ public class RegionModelImpl
 			String attributeName = entry.getKey();
 			Function<Region, Object> attributeGetterFunction = entry.getValue();
 
+			sb.append("\"");
 			sb.append(attributeName);
-			sb.append("=");
-			sb.append(attributeGetterFunction.apply((Region)this));
+			sb.append("\": ");
+
+			Object value = attributeGetterFunction.apply((Region)this);
+
+			if (value == null) {
+				sb.append("null");
+			}
+			else if (value instanceof Blob || value instanceof Date ||
+					 value instanceof Map || value instanceof String) {
+
+				sb.append(
+					"\"" + StringUtil.replace(value.toString(), "\"", "'") +
+						"\"");
+			}
+			else {
+				sb.append(value);
+			}
+
 			sb.append(", ");
 		}
 
@@ -1028,6 +1140,7 @@ public class RegionModelImpl
 
 	private long _mvccVersion;
 	private String _uuid;
+	private String _defaultLanguageId;
 	private long _regionId;
 	private long _companyId;
 	private long _userId;
@@ -1073,6 +1186,7 @@ public class RegionModelImpl
 
 		_columnOriginalValues.put("mvccVersion", _mvccVersion);
 		_columnOriginalValues.put("uuid_", _uuid);
+		_columnOriginalValues.put("defaultLanguageId", _defaultLanguageId);
 		_columnOriginalValues.put("regionId", _regionId);
 		_columnOriginalValues.put("companyId", _companyId);
 		_columnOriginalValues.put("userId", _userId);
@@ -1113,29 +1227,31 @@ public class RegionModelImpl
 
 		columnBitmasks.put("uuid_", 2L);
 
-		columnBitmasks.put("regionId", 4L);
+		columnBitmasks.put("defaultLanguageId", 4L);
 
-		columnBitmasks.put("companyId", 8L);
+		columnBitmasks.put("regionId", 8L);
 
-		columnBitmasks.put("userId", 16L);
+		columnBitmasks.put("companyId", 16L);
 
-		columnBitmasks.put("userName", 32L);
+		columnBitmasks.put("userId", 32L);
 
-		columnBitmasks.put("createDate", 64L);
+		columnBitmasks.put("userName", 64L);
 
-		columnBitmasks.put("modifiedDate", 128L);
+		columnBitmasks.put("createDate", 128L);
 
-		columnBitmasks.put("countryId", 256L);
+		columnBitmasks.put("modifiedDate", 256L);
 
-		columnBitmasks.put("active_", 512L);
+		columnBitmasks.put("countryId", 512L);
 
-		columnBitmasks.put("name", 1024L);
+		columnBitmasks.put("active_", 1024L);
 
-		columnBitmasks.put("position", 2048L);
+		columnBitmasks.put("name", 2048L);
 
-		columnBitmasks.put("regionCode", 4096L);
+		columnBitmasks.put("position", 4096L);
 
-		columnBitmasks.put("lastPublishDate", 8192L);
+		columnBitmasks.put("regionCode", 8192L);
+
+		columnBitmasks.put("lastPublishDate", 16384L);
 
 		_columnBitmasks = Collections.unmodifiableMap(columnBitmasks);
 	}

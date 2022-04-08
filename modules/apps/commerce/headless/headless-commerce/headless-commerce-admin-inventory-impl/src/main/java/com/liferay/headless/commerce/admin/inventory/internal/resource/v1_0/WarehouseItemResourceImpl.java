@@ -38,8 +38,6 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
-import javax.validation.constraints.NotNull;
-
 import javax.ws.rs.core.Response;
 
 import org.osgi.service.component.annotations.Component;
@@ -70,17 +68,17 @@ public class WarehouseItemResourceImpl
 
 	@Override
 	public Response deleteWarehouseItemByExternalReferenceCode(
-			@NotNull String externalReferenceCode)
+			String externalReferenceCode)
 		throws Exception {
 
 		CommerceInventoryWarehouseItem commerceInventoryWarehouseItem =
 			_commerceInventoryWarehouseItemService.
-				fetchCommerceInventoryWarehouseItemByReferenceCode(
-					contextCompany.getCompanyId(), externalReferenceCode);
+				fetchCommerceInventoryWarehouseItemByExternalReferenceCode(
+					externalReferenceCode, contextCompany.getCompanyId());
 
 		if (commerceInventoryWarehouseItem == null) {
 			throw new NoSuchInventoryWarehouseItemException(
-				"Unable to find WarehouseItem with externalReferenceCode: " +
+				"Unable to find warehouse item with external reference code " +
 					externalReferenceCode);
 		}
 
@@ -106,7 +104,7 @@ public class WarehouseItemResourceImpl
 
 		if (commerceInventoryWarehouse == null) {
 			throw new NoSuchInventoryWarehouseException(
-				"Unable to find Warehouse with externalReferenceCode: " +
+				"Unable to find warehouse with external reference code " +
 					externalReferenceCode);
 		}
 
@@ -138,17 +136,17 @@ public class WarehouseItemResourceImpl
 
 	@Override
 	public WarehouseItem getWarehouseItemByExternalReferenceCode(
-			@NotNull String externalReferenceCode)
+			String externalReferenceCode)
 		throws Exception {
 
 		CommerceInventoryWarehouseItem commerceInventoryWarehouseItem =
 			_commerceInventoryWarehouseItemService.
-				fetchCommerceInventoryWarehouseItemByReferenceCode(
-					contextCompany.getCompanyId(), externalReferenceCode);
+				fetchCommerceInventoryWarehouseItemByExternalReferenceCode(
+					externalReferenceCode, contextCompany.getCompanyId());
 
 		if (commerceInventoryWarehouseItem == null) {
 			throw new NoSuchInventoryWarehouseItemException(
-				"Unable to find WarehouseItem with externalReferenceCode: " +
+				"Unable to find warehouse item with external reference code " +
 					externalReferenceCode);
 		}
 
@@ -235,17 +233,17 @@ public class WarehouseItemResourceImpl
 
 	@Override
 	public Response patchWarehouseItemByExternalReferenceCode(
-			@NotNull String externalReferenceCode, WarehouseItem warehouseItem)
+			String externalReferenceCode, WarehouseItem warehouseItem)
 		throws Exception {
 
 		CommerceInventoryWarehouseItem commerceInventoryWarehouseItem =
 			_commerceInventoryWarehouseItemService.
-				fetchCommerceInventoryWarehouseItemByReferenceCode(
-					contextCompany.getCompanyId(), externalReferenceCode);
+				fetchCommerceInventoryWarehouseItemByExternalReferenceCode(
+					externalReferenceCode, contextCompany.getCompanyId());
 
 		if (commerceInventoryWarehouseItem == null) {
 			throw new NoSuchInventoryWarehouseItemException(
-				"Unable to find WarehouseItem with externalReferenceCode: " +
+				"Unable to find warehouse item with external reference code " +
 					externalReferenceCode);
 		}
 
@@ -272,7 +270,7 @@ public class WarehouseItemResourceImpl
 
 		if (commerceInventoryWarehouse == null) {
 			throw new NoSuchInventoryWarehouseException(
-				"Unable to find Warehouse with externalReferenceCode: " +
+				"Unable to find warehouse with external reference code " +
 					externalReferenceCode);
 		}
 
@@ -281,9 +279,9 @@ public class WarehouseItemResourceImpl
 		if (warehouseItem.getExternalReferenceCode() != null) {
 			commerceInventoryWarehouseItem =
 				_commerceInventoryWarehouseItemService.
-					upsertCommerceInventoryWarehouseItem(
+					addOrUpdateCommerceInventoryWarehouseItem(
 						warehouseItem.getExternalReferenceCode(),
-						contextUser.getCompanyId(), contextUser.getUserId(),
+						contextUser.getCompanyId(),
 						commerceInventoryWarehouse.
 							getCommerceInventoryWarehouseId(),
 						warehouseItem.getSku(), warehouseItem.getQuantity());
@@ -291,8 +289,7 @@ public class WarehouseItemResourceImpl
 		else {
 			commerceInventoryWarehouseItem =
 				_commerceInventoryWarehouseItemService.
-					upsertCommerceInventoryWarehouseItem(
-						contextUser.getUserId(),
+					addOrUpdateCommerceInventoryWarehouseItem(
 						commerceInventoryWarehouse.
 							getCommerceInventoryWarehouseId(),
 						warehouseItem.getSku(), warehouseItem.getQuantity());
@@ -307,7 +304,7 @@ public class WarehouseItemResourceImpl
 
 	@Override
 	public WarehouseItem postWarehouseItemByExternalReferenceCode(
-			@NotNull String externalReferenceCode, WarehouseItem warehouseItem)
+			String externalReferenceCode, WarehouseItem warehouseItem)
 		throws Exception {
 
 		CommerceInventoryWarehouse commerceInventoryWarehouse = null;
@@ -332,8 +329,8 @@ public class WarehouseItemResourceImpl
 
 		CommerceInventoryWarehouseItem commerceInventoryWarehouseItem =
 			_commerceInventoryWarehouseItemService.
-				fetchCommerceInventoryWarehouseItemByReferenceCode(
-					contextCompany.getCompanyId(), externalReferenceCode);
+				fetchCommerceInventoryWarehouseItemByExternalReferenceCode(
+					externalReferenceCode, contextCompany.getCompanyId());
 
 		if (commerceInventoryWarehouseItem != null) {
 			throw new DuplicateCommerceInventoryWarehouseItemException(
@@ -344,7 +341,7 @@ public class WarehouseItemResourceImpl
 		commerceInventoryWarehouseItem =
 			_commerceInventoryWarehouseItemService.
 				addCommerceInventoryWarehouseItem(
-					externalReferenceCode, contextUser.getUserId(),
+					externalReferenceCode,
 					commerceInventoryWarehouse.
 						getCommerceInventoryWarehouseId(),
 					warehouseItem.getSku(), warehouseItem.getQuantity());
@@ -369,7 +366,6 @@ public class WarehouseItemResourceImpl
 			_commerceInventoryWarehouseItemService.
 				addCommerceInventoryWarehouseItem(
 					warehouseItem.getExternalReferenceCode(),
-					contextUser.getUserId(),
 					commerceInventoryWarehouse.
 						getCommerceInventoryWarehouseId(),
 					warehouseItem.getSku(), warehouseItem.getQuantity());

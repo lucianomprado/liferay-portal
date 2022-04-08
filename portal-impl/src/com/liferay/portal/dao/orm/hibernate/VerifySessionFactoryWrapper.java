@@ -32,6 +32,8 @@ import java.lang.reflect.Method;
 
 import java.sql.Connection;
 
+import java.util.function.Function;
+
 import org.hibernate.engine.SessionFactoryImplementor;
 
 import org.springframework.orm.hibernate3.HibernateTransactionManager;
@@ -101,8 +103,7 @@ public class VerifySessionFactoryWrapper implements SessionFactory {
 
 		Session session = _sessionFactoryImpl.openSession();
 
-		return (Session)ProxyUtil.newProxyInstance(
-			Session.class.getClassLoader(), new Class<?>[] {Session.class},
+		return _sessionProxyProviderFunction.apply(
 			new SessionInvocationHandler(session));
 	}
 
@@ -110,17 +111,15 @@ public class VerifySessionFactoryWrapper implements SessionFactory {
 		SessionFactoryImplementor currentSessionFactoryImplementor,
 		SessionFactoryImplementor targetSessionFactoryImplementor) {
 
-		StringBundler sb = new StringBundler(5);
-
-		sb.append("Wrong current transaction manager, current session ");
-		sb.append("factory classes metadata: ");
-		sb.append(currentSessionFactoryImplementor.getAllClassMetadata());
-		sb.append(", target session factory classes metadata: ");
-		sb.append(targetSessionFactoryImplementor.getAllClassMetadata());
-
 		_log.error(
 			"Failed session factory verification",
-			new IllegalStateException(sb.toString()));
+			new IllegalStateException(
+				StringBundler.concat(
+					"Wrong current transaction manager, current session ",
+					"factory classes metadata: ",
+					currentSessionFactoryImplementor.getAllClassMetadata(),
+					", target session factory classes metadata: ",
+					targetSessionFactoryImplementor.getAllClassMetadata())));
 	}
 
 	private boolean _verify() {
@@ -191,6 +190,10 @@ public class VerifySessionFactoryWrapper implements SessionFactory {
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		VerifySessionFactoryWrapper.class);
+
+	private static final Function<InvocationHandler, Session>
+		_sessionProxyProviderFunction = ProxyUtil.getProxyProviderFunction(
+			Session.class);
 
 	private final SessionFactoryImpl _sessionFactoryImpl;
 

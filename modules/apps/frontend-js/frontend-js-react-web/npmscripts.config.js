@@ -13,6 +13,21 @@
  */
 
 module.exports = {
-	federation: true,
-	preset: '@liferay/npm-scripts/src/presets/standard',
+	build: {
+		bundler: {
+			exclude: {
+				lodash: false,
+			},
+			ignore: ['**/legacy/config.js'],
+		},
+		exports: {
+			'classnames': 'classnames/index',
+			'formik': 'formik/dist/index',
+			'prop-types': 'prop-types/index',
+			'react': 'react/index',
+			'react-dnd': 'react-dnd/dist/cjs/index',
+			'react-dnd-html5-backend': 'react-dnd-html5-backend/dist/cjs/index',
+			'react-dom': 'react-dom/index',
+		},
+	},
 };

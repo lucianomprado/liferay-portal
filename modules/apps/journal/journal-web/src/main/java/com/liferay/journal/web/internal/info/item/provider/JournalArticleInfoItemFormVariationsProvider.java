@@ -25,6 +25,7 @@ import com.liferay.journal.model.JournalArticle;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.util.ArrayUtil;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.Portal;
 
@@ -45,30 +46,37 @@ public class JournalArticleInfoItemFormVariationsProvider
 	implements InfoItemFormVariationsProvider<JournalArticle> {
 
 	@Override
+	public InfoItemFormVariation getInfoItemFormVariation(
+		long groupId, String formVariationKey) {
+
+		DDMStructure ddmStructure = _ddmStructureLocalService.fetchStructure(
+			GetterUtil.getLong(formVariationKey));
+
+		if (ddmStructure == null) {
+			ddmStructure = _ddmStructureLocalService.fetchStructure(
+				groupId, _portal.getClassNameId(JournalArticle.class.getName()),
+				formVariationKey);
+		}
+
+		if (ddmStructure == null) {
+			return null;
+		}
+
+		return new InfoItemFormVariation(
+			groupId, String.valueOf(ddmStructure.getStructureId()),
+			InfoLocalizedValue.<String>builder(
+			).values(
+				ddmStructure.getNameMap()
+			).build());
+	}
+
+	@Override
 	public Collection<InfoItemFormVariation> getInfoItemFormVariations(
 		long groupId) {
 
-		List<InfoItemFormVariation> infoItemFormVariations = new ArrayList<>();
-
 		try {
-			long[] groupIds = _getCurrentAndAncestorSiteGroupIds(groupId);
-
-			List<DDMStructure> ddmStructures =
-				_ddmStructureLocalService.getStructures(
-					groupIds,
-					_portal.getClassNameId(JournalArticle.class.getName()));
-
-			for (DDMStructure ddmStructure : ddmStructures) {
-				infoItemFormVariations.add(
-					new InfoItemFormVariation(
-						String.valueOf(ddmStructure.getStructureId()),
-						InfoLocalizedValue.<String>builder(
-						).values(
-							ddmStructure.getNameMap()
-						).build()));
-			}
-
-			return infoItemFormVariations;
+			return getInfoItemFormVariations(
+				_getCurrentAndAncestorSiteGroupIds(groupId));
 		}
 		catch (PortalException portalException) {
 			throw new RuntimeException(
@@ -76,17 +84,44 @@ public class JournalArticleInfoItemFormVariationsProvider
 		}
 	}
 
+	@Override
+	public Collection<InfoItemFormVariation> getInfoItemFormVariations(
+		long[] groupIds) {
+
+		List<InfoItemFormVariation> infoItemFormVariations = new ArrayList<>();
+
+		List<DDMStructure> ddmStructures =
+			_ddmStructureLocalService.getStructures(
+				groupIds,
+				_portal.getClassNameId(JournalArticle.class.getName()));
+
+		for (DDMStructure ddmStructure : ddmStructures) {
+			infoItemFormVariations.add(
+				new InfoItemFormVariation(
+					ddmStructure.getGroupId(),
+					String.valueOf(ddmStructure.getStructureId()),
+					InfoLocalizedValue.<String>builder(
+					).values(
+						ddmStructure.getNameMap()
+					).build()));
+		}
+
+		return infoItemFormVariations;
+	}
+
 	private long[] _getCurrentAndAncestorSiteGroupIds(long groupId)
 		throws PortalException {
 
-		if (_depotEntryLocalService == null) {
+		DepotEntryLocalService depotEntryLocalService = _depotEntryLocalService;
+
+		if (depotEntryLocalService == null) {
 			return _portal.getCurrentAndAncestorSiteGroupIds(groupId);
 		}
 
 		return ArrayUtil.append(
 			_portal.getCurrentAndAncestorSiteGroupIds(groupId),
 			ListUtil.toLongArray(
-				_depotEntryLocalService.getGroupConnectedDepotEntries(
+				depotEntryLocalService.getGroupConnectedDepotEntries(
 					groupId, true, QueryUtil.ALL_POS, QueryUtil.ALL_POS),
 				DepotEntry::getGroupId));
 	}
@@ -98,7 +133,7 @@ public class JournalArticleInfoItemFormVariationsProvider
 		cardinality = ReferenceCardinality.OPTIONAL,
 		policyOption = ReferencePolicyOption.GREEDY
 	)
-	private DepotEntryLocalService _depotEntryLocalService;
+	private volatile DepotEntryLocalService _depotEntryLocalService;
 
 	@Reference
 	private Portal _portal;

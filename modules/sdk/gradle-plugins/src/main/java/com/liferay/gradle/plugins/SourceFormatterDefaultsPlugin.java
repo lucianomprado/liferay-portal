@@ -24,17 +24,10 @@ import com.liferay.gradle.util.Validator;
 
 import com.pswidersk.gradle.python.VenvTask;
 
-import java.io.File;
-
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-
 import org.gradle.api.Action;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
-import org.gradle.api.file.FileTree;
 import org.gradle.api.plugins.PluginContainer;
 import org.gradle.api.tasks.TaskContainer;
 import org.gradle.api.tasks.TaskProvider;
@@ -175,46 +168,38 @@ public class SourceFormatterDefaultsPlugin
 
 	private void _configurePluginPython(
 		Project project,
-		TaskProvider<FormatSourceTask> checkSourceFormattingTaskProvider,
-		TaskProvider<FormatSourceTask> formatSourceTaskProvider) {
+		final TaskProvider<FormatSourceTask> checkSourceFormattingTaskProvider,
+		final TaskProvider<FormatSourceTask> formatSourceTaskProvider) {
 
-		final TaskProvider<VenvTask> checkPythonFormattingTaskProvider =
+		TaskProvider<VenvTask> checkPythonFormattingTaskProvider =
 			GradleUtil.getTaskProvider(
 				project, PythonPlugin.CHECK_PYTHON_FORMATTING_TASK_NAME,
 				VenvTask.class);
-		final TaskProvider<VenvTask> formatPythonTaskProvider =
+		TaskProvider<VenvTask> formatPythonTaskProvider =
 			GradleUtil.getTaskProvider(
 				project, PythonPlugin.FORMAT_PYTHON_TASK_NAME, VenvTask.class);
 
-		checkSourceFormattingTaskProvider.configure(
-			new Action<FormatSourceTask>() {
+		checkPythonFormattingTaskProvider.configure(
+			new Action<VenvTask>() {
 
 				@Override
-				public void execute(
-					FormatSourceTask checkSourceFormattingFormatSourceTask) {
+				public void execute(VenvTask checkPythonFormattingTask) {
+					checkPythonFormattingTask.finalizedBy(
+						checkSourceFormattingTaskProvider);
 
-					if (_hasPythonFiles(
-							project,
-							checkSourceFormattingFormatSourceTask.
-								getBaseDir())) {
-
-						checkSourceFormattingFormatSourceTask.finalizedBy(
-							checkPythonFormattingTaskProvider);
-					}
+					checkPythonFormattingTask.setEnabled(false);
 				}
 
 			});
 
-		formatSourceTaskProvider.configure(
-			new Action<FormatSourceTask>() {
+		formatPythonTaskProvider.configure(
+			new Action<VenvTask>() {
 
 				@Override
-				public void execute(FormatSourceTask formatSourceTask) {
-					if (_hasPythonFiles(
-							project, formatSourceTask.getBaseDir())) {
+				public void execute(VenvTask formatPythonTask) {
+					formatPythonTask.finalizedBy(formatSourceTaskProvider);
 
-						formatSourceTask.finalizedBy(formatPythonTaskProvider);
-					}
+					formatPythonTask.setEnabled(false);
 				}
 
 			});
@@ -222,6 +207,75 @@ public class SourceFormatterDefaultsPlugin
 
 	private void _configureTaskFormatSource(FormatSourceTask formatSourceTask) {
 		Project project = formatSourceTask.getProject();
+
+		String autoFix = GradleUtil.getProperty(
+			project, "source.auto.fix", (String)null);
+
+		if (Validator.isNotNull(autoFix)) {
+			formatSourceTask.setAutoFix(Boolean.parseBoolean(autoFix));
+		}
+
+		String baseDirName = GradleUtil.getProperty(
+			project, "source.base.dir", (String)null);
+
+		if (Validator.isNotNull(baseDirName)) {
+			formatSourceTask.setBaseDirName(baseDirName);
+		}
+
+		String checkCategoryNames = GradleUtil.getProperty(
+			project, "source.check.category.names", (String)null);
+
+		if (Validator.isNotNull(checkCategoryNames)) {
+			formatSourceTask.setCheckCategoryNames(
+				checkCategoryNames.split(","));
+		}
+
+		String checkNames = GradleUtil.getProperty(
+			project, "source.check.names", (String)null);
+
+		if (Validator.isNotNull(checkNames)) {
+			formatSourceTask.setCheckNames(checkNames.split(","));
+		}
+
+		String failOnAutoFix = GradleUtil.getProperty(
+			project, "source.fail.on.auto.fix", (String)null);
+
+		if (Validator.isNotNull(failOnAutoFix)) {
+			formatSourceTask.setFailOnAutoFix(
+				Boolean.parseBoolean(failOnAutoFix));
+		}
+
+		String failOnHasWarning = GradleUtil.getProperty(
+			project, "source.fail.on.has.warning", (String)null);
+
+		if (Validator.isNotNull(failOnHasWarning)) {
+			formatSourceTask.setFailOnHasWarning(
+				Boolean.parseBoolean(failOnHasWarning));
+		}
+
+		String formatCurrentBranch = GradleUtil.getProperty(
+			project, "format.current.branch", (String)null);
+
+		if (Validator.isNotNull(formatCurrentBranch)) {
+			formatSourceTask.setFormatCurrentBranch(
+				Boolean.parseBoolean(formatCurrentBranch));
+		}
+
+		String formatLatestAuthor = GradleUtil.getProperty(
+			project, "format.latest.author", (String)null);
+
+		if (Validator.isNotNull(formatLatestAuthor)) {
+			formatSourceTask.setFormatLatestAuthor(
+				Boolean.parseBoolean(formatLatestAuthor));
+		}
+
+		String formatLocalChanges = GradleUtil.getProperty(
+			project, "format.local.changes", (String)null);
+
+		if (Validator.isNotNull(formatLocalChanges)) {
+			formatSourceTask.setFormatLocalChanges(
+				Boolean.parseBoolean(formatLocalChanges));
+		}
 
 		String gitWorkingBranchName = GradleUtil.getProperty(
 			project, "git.working.branch.name", (String)null);
@@ -245,6 +299,13 @@ public class SourceFormatterDefaultsPlugin
 			formatSourceTask.setMaxLineLength(Integer.parseInt(maxLineLength));
 		}
 
+		String printErrors = GradleUtil.getProperty(
+			project, "source.print.errors", (String)null);
+
+		if (Validator.isNotNull(printErrors)) {
+			formatSourceTask.setPrintErrors(Boolean.parseBoolean(printErrors));
+		}
+
 		String processorThreadCount = GradleUtil.getProperty(
 			project, "source.formatter.processor.thread.count", (String)null);
 
@@ -261,36 +322,27 @@ public class SourceFormatterDefaultsPlugin
 				Boolean.parseBoolean(showDebugInformation));
 		}
 
-		String showDocumentation = GradleUtil.getProperty(
-			project, "source.formatter.show.documentation", (String)null);
+		String sourceFileNames = GradleUtil.getProperty(
+			project, "source.files", (String)null);
 
-		if (Validator.isNotNull(showDocumentation)) {
-			formatSourceTask.setShowDocumentation(
-				Boolean.parseBoolean(showDocumentation));
+		if (Validator.isNotNull(sourceFileNames)) {
+			formatSourceTask.setFileNames(sourceFileNames.split(","));
 		}
 
-		String showStatusUpdates = GradleUtil.getProperty(
-			project, "source.formatter.show.status.updates", (String)null);
+		String sourceFileExtensions = GradleUtil.getProperty(
+			project, "source.file.extensions", (String)null);
 
-		if (Validator.isNotNull(showStatusUpdates)) {
-			formatSourceTask.setShowStatusUpdates(
-				Boolean.parseBoolean(showStatusUpdates));
-		}
-	}
-
-	private boolean _hasPythonFiles(Project project, File baseDir) {
-		Map<String, Object> args = new HashMap<>();
-
-		args.put("dir", baseDir);
-		args.put("includes", Arrays.asList("**/*.py", "**/*.pyi"));
-
-		FileTree fileTree = project.fileTree(args);
-
-		if (fileTree.isEmpty()) {
-			return false;
+		if (Validator.isNotNull(sourceFileExtensions)) {
+			formatSourceTask.setFileExtensions(sourceFileExtensions.split(","));
 		}
 
-		return true;
+		String validateCommitMessages = GradleUtil.getProperty(
+			project, "validate.commit.message", (String)null);
+
+		if (Validator.isNotNull(validateCommitMessages)) {
+			formatSourceTask.setValidateCommitMessages(
+				Boolean.parseBoolean(validateCommitMessages));
+		}
 	}
 
 	private static final String _PORTAL_TOOL_NAME =

@@ -61,7 +61,7 @@ public class ElasticsearchConnection {
 			_preConnectElasticsearchConnectionConsumer.accept(this);
 		}
 
-		_restHighLevelClient = createRestHighLevelClient();
+		_restHighLevelClient = _createRestHighLevelClient();
 	}
 
 	public String getConnectionId() {
@@ -120,6 +120,10 @@ public class ElasticsearchConnection {
 			preConnectElasticsearchConnectionConsumer;
 	}
 
+	public void setProxyConfig(ProxyConfig proxyConfig) {
+		_proxyConfig = proxyConfig;
+	}
+
 	public void setTruststorePassword(String truststorePassword) {
 		_truststorePassword = truststorePassword;
 	}
@@ -136,7 +140,7 @@ public class ElasticsearchConnection {
 		_userName = userName;
 	}
 
-	protected RestHighLevelClient createRestHighLevelClient() {
+	private RestHighLevelClient _createRestHighLevelClient() {
 		return RestHighLevelClientFactory.builder(
 		).authenticationEnabled(
 			_authenticationEnabled
@@ -148,6 +152,8 @@ public class ElasticsearchConnection {
 			_password
 		).truststorePassword(
 			_truststorePassword
+		).proxyConfig(
+			_proxyConfig
 		).truststorePath(
 			_truststorePath
 		).truststoreType(
@@ -170,6 +176,7 @@ public class ElasticsearchConnection {
 	private Runnable _postCloseRunnable;
 	private Consumer<ElasticsearchConnection>
 		_preConnectElasticsearchConnectionConsumer;
+	private ProxyConfig _proxyConfig;
 	private RestHighLevelClient _restHighLevelClient;
 	private String _truststorePassword;
 	private String _truststorePath;

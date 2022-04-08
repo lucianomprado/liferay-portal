@@ -53,14 +53,61 @@ import org.osgi.service.component.annotations.Reference;
 	enabled = false, immediate = true,
 	property = {
 		"javax.portlet.name=" + CPPortletKeys.COMMERCE_CHANNELS,
-		"mvc.command.name=editCommerceNotificationTemplate"
+		"mvc.command.name=/commerce_channels/edit_commerce_notification_template"
 	},
 	service = MVCActionCommand.class
 )
 public class EditCommerceNotificationTemplateMVCActionCommand
 	extends BaseMVCActionCommand {
 
-	protected void deleteCommerceNotificationTemplates(
+	@Override
+	protected void doProcessAction(
+			ActionRequest actionRequest, ActionResponse actionResponse)
+		throws Exception {
+
+		String cmd = ParamUtil.getString(actionRequest, Constants.CMD);
+
+		try {
+			if (cmd.equals(Constants.DELETE)) {
+				_deleteCommerceNotificationTemplates(actionRequest);
+			}
+			else if (cmd.equals(Constants.ADD) ||
+					 cmd.equals(Constants.UPDATE)) {
+
+				_updateCommerceNotificationTemplate(actionRequest);
+			}
+		}
+		catch (Exception exception) {
+			if (exception instanceof NoSuchNotificationTemplateException ||
+				exception instanceof PrincipalException) {
+
+				SessionErrors.add(actionRequest, exception.getClass());
+
+				actionResponse.setRenderParameter("mvcPath", "/error.jsp");
+			}
+			else if (exception instanceof
+						CommerceNotificationTemplateFromException ||
+					 exception instanceof
+						 CommerceNotificationTemplateNameException ||
+					 exception instanceof
+						 CommerceNotificationTemplateTypeException) {
+
+				hideDefaultErrorMessage(actionRequest);
+				hideDefaultSuccessMessage(actionRequest);
+
+				SessionErrors.add(actionRequest, exception.getClass());
+
+				actionResponse.setRenderParameter(
+					"mvcRenderCommandName",
+					"/commerce_channels/edit_commerce_notification_template");
+			}
+			else {
+				throw exception;
+			}
+		}
+	}
+
+	private void _deleteCommerceNotificationTemplates(
 			ActionRequest actionRequest)
 		throws PortalException {
 
@@ -90,58 +137,9 @@ public class EditCommerceNotificationTemplateMVCActionCommand
 		}
 	}
 
-	@Override
-	protected void doProcessAction(
-			ActionRequest actionRequest, ActionResponse actionResponse)
-		throws Exception {
-
-		String cmd = ParamUtil.getString(actionRequest, Constants.CMD);
-
-		try {
-			if (cmd.equals(Constants.DELETE)) {
-				deleteCommerceNotificationTemplates(actionRequest);
-			}
-			else if (cmd.equals(Constants.ADD) ||
-					 cmd.equals(Constants.UPDATE)) {
-
-				updateCommerceNotificationTemplate(actionRequest);
-			}
-		}
-		catch (Exception exception) {
-			if (exception instanceof NoSuchNotificationTemplateException ||
-				exception instanceof PrincipalException) {
-
-				SessionErrors.add(actionRequest, exception.getClass());
-
-				actionResponse.setRenderParameter("mvcPath", "/error.jsp");
-			}
-			else if (exception instanceof
-						CommerceNotificationTemplateFromException ||
-					 exception instanceof
-						 CommerceNotificationTemplateNameException ||
-					 exception instanceof
-						 CommerceNotificationTemplateTypeException) {
-
-				hideDefaultErrorMessage(actionRequest);
-				hideDefaultSuccessMessage(actionRequest);
-
-				SessionErrors.add(actionRequest, exception.getClass());
-
-				actionResponse.setRenderParameter(
-					"mvcRenderCommandName", "editCommerceNotificationTemplate");
-			}
-			else {
-				throw exception;
-			}
-		}
-	}
-
-	protected CommerceNotificationTemplate updateCommerceNotificationTemplate(
+	private CommerceNotificationTemplate _updateCommerceNotificationTemplate(
 			ActionRequest actionRequest)
 		throws PortalException {
-
-		long commerceChannelId = ParamUtil.getLong(
-			actionRequest, "commerceChannelId");
 
 		long commerceNotificationTemplateId = ParamUtil.getLong(
 			actionRequest, "commerceNotificationTemplateId");
@@ -167,13 +165,15 @@ public class EditCommerceNotificationTemplateMVCActionCommand
 		CommerceNotificationTemplate commerceNotificationTemplate = null;
 
 		if (commerceNotificationTemplateId <= 0) {
+			long commerceChannelId = ParamUtil.getLong(
+				actionRequest, "commerceChannelId");
+
 			CommerceChannel commerceChannel =
 				_commerceChannelService.getCommerceChannel(commerceChannelId);
 
 			commerceNotificationTemplate =
 				_commerceNotificationTemplateService.
 					addCommerceNotificationTemplate(
-						_portal.getUserId(actionRequest),
 						commerceChannel.getGroupId(), name, description, from,
 						fromNameMap, to, cc, bcc, type, enabled, subjectMap,
 						bodyMap, serviceContext);

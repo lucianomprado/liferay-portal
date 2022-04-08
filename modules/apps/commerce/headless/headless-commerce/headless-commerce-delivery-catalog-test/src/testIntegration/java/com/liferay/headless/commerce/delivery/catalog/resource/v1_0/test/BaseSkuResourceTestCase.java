@@ -33,7 +33,6 @@ import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
-import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Group;
@@ -50,7 +49,6 @@ import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.vulcan.resource.EntityModelResource;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 
 import java.text.DateFormat;
@@ -198,19 +196,17 @@ public abstract class BaseSkuResourceTestCase {
 
 	@Test
 	public void testGetChannelProductSkusPage() throws Exception {
-		Page<Sku> page = skuResource.getChannelProductSkusPage(
-			testGetChannelProductSkusPage_getChannelId(),
-			testGetChannelProductSkusPage_getProductId(), null,
-			Pagination.of(1, 2));
-
-		Assert.assertEquals(0, page.getTotalCount());
-
 		Long channelId = testGetChannelProductSkusPage_getChannelId();
 		Long irrelevantChannelId =
 			testGetChannelProductSkusPage_getIrrelevantChannelId();
 		Long productId = testGetChannelProductSkusPage_getProductId();
 		Long irrelevantProductId =
 			testGetChannelProductSkusPage_getIrrelevantProductId();
+
+		Page<Sku> page = skuResource.getChannelProductSkusPage(
+			channelId, productId, null, Pagination.of(1, 10));
+
+		Assert.assertEquals(0, page.getTotalCount());
 
 		if ((irrelevantChannelId != null) && (irrelevantProductId != null)) {
 			Sku irrelevantSku = testGetChannelProductSkusPage_addSku(
@@ -235,7 +231,7 @@ public abstract class BaseSkuResourceTestCase {
 			channelId, productId, randomSku());
 
 		page = skuResource.getChannelProductSkusPage(
-			channelId, productId, null, Pagination.of(1, 2));
+			channelId, productId, null, Pagination.of(1, 10));
 
 		Assert.assertEquals(2, page.getTotalCount());
 
@@ -318,6 +314,20 @@ public abstract class BaseSkuResourceTestCase {
 	protected Sku testGraphQLSku_addSku() throws Exception {
 		throw new UnsupportedOperationException(
 			"This method needs to be implemented");
+	}
+
+	protected void assertContains(Sku sku, List<Sku> skus) {
+		boolean contains = false;
+
+		for (Sku item : skus) {
+			if (equals(sku, item)) {
+				contains = true;
+
+				break;
+			}
+		}
+
+		Assert.assertTrue(skus + " does not contain " + sku, contains);
 	}
 
 	protected void assertHttpResponseStatusCode(
@@ -551,8 +561,8 @@ public abstract class BaseSkuResourceTestCase {
 	protected List<GraphQLField> getGraphQLFields() throws Exception {
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
-		for (Field field :
-				ReflectionUtil.getDeclaredFields(
+		for (java.lang.reflect.Field field :
+				getDeclaredFields(
 					com.liferay.headless.commerce.delivery.catalog.dto.v1_0.Sku.
 						class)) {
 
@@ -568,12 +578,13 @@ public abstract class BaseSkuResourceTestCase {
 		return graphQLFields;
 	}
 
-	protected List<GraphQLField> getGraphQLFields(Field... fields)
+	protected List<GraphQLField> getGraphQLFields(
+			java.lang.reflect.Field... fields)
 		throws Exception {
 
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
-		for (Field field : fields) {
+		for (java.lang.reflect.Field field : fields) {
 			com.liferay.portal.vulcan.graphql.annotation.GraphQLField
 				vulcanGraphQLField = field.getAnnotation(
 					com.liferay.portal.vulcan.graphql.annotation.GraphQLField.
@@ -587,7 +598,7 @@ public abstract class BaseSkuResourceTestCase {
 				}
 
 				List<GraphQLField> childrenGraphQLFields = getGraphQLFields(
-					ReflectionUtil.getDeclaredFields(clazz));
+					getDeclaredFields(clazz));
 
 				graphQLFields.add(
 					new GraphQLField(field.getName(), childrenGraphQLFields));
@@ -823,6 +834,19 @@ public abstract class BaseSkuResourceTestCase {
 		return false;
 	}
 
+	protected java.lang.reflect.Field[] getDeclaredFields(Class clazz)
+		throws Exception {
+
+		Stream<java.lang.reflect.Field> stream = Stream.of(
+			ReflectionUtil.getDeclaredFields(clazz));
+
+		return stream.filter(
+			field -> !field.isSynthetic()
+		).toArray(
+			java.lang.reflect.Field[]::new
+		);
+	}
+
 	protected java.util.Collection<EntityField> getEntityFields()
 		throws Exception {
 
@@ -884,8 +908,9 @@ public abstract class BaseSkuResourceTestCase {
 		}
 
 		if (entityFieldName.equals("depth")) {
-			throw new IllegalArgumentException(
-				"Invalid entity field " + entityFieldName);
+			sb.append(String.valueOf(sku.getDepth()));
+
+			return sb.toString();
 		}
 
 		if (entityFieldName.equals("displayDate")) {
@@ -959,8 +984,9 @@ public abstract class BaseSkuResourceTestCase {
 		}
 
 		if (entityFieldName.equals("height")) {
-			throw new IllegalArgumentException(
-				"Invalid entity field " + entityFieldName);
+			sb.append(String.valueOf(sku.getHeight()));
+
+			return sb.toString();
 		}
 
 		if (entityFieldName.equals("id")) {
@@ -977,13 +1003,15 @@ public abstract class BaseSkuResourceTestCase {
 		}
 
 		if (entityFieldName.equals("maxOrderQuantity")) {
-			throw new IllegalArgumentException(
-				"Invalid entity field " + entityFieldName);
+			sb.append(String.valueOf(sku.getMaxOrderQuantity()));
+
+			return sb.toString();
 		}
 
 		if (entityFieldName.equals("minOrderQuantity")) {
-			throw new IllegalArgumentException(
-				"Invalid entity field " + entityFieldName);
+			sb.append(String.valueOf(sku.getMinOrderQuantity()));
+
+			return sb.toString();
 		}
 
 		if (entityFieldName.equals("neverExpire")) {
@@ -1020,13 +1048,15 @@ public abstract class BaseSkuResourceTestCase {
 		}
 
 		if (entityFieldName.equals("weight")) {
-			throw new IllegalArgumentException(
-				"Invalid entity field " + entityFieldName);
+			sb.append(String.valueOf(sku.getWeight()));
+
+			return sb.toString();
 		}
 
 		if (entityFieldName.equals("width")) {
-			throw new IllegalArgumentException(
-				"Invalid entity field " + entityFieldName);
+			sb.append(String.valueOf(sku.getWidth()));
+
+			return sb.toString();
 		}
 
 		throw new IllegalArgumentException(
@@ -1147,12 +1177,12 @@ public abstract class BaseSkuResourceTestCase {
 						_parameterMap.entrySet()) {
 
 					sb.append(entry.getKey());
-					sb.append(":");
+					sb.append(": ");
 					sb.append(entry.getValue());
-					sb.append(",");
+					sb.append(", ");
 				}
 
-				sb.setLength(sb.length() - 1);
+				sb.setLength(sb.length() - 2);
 
 				sb.append(")");
 			}
@@ -1162,10 +1192,10 @@ public abstract class BaseSkuResourceTestCase {
 
 				for (GraphQLField graphQLField : _graphQLFields) {
 					sb.append(graphQLField.toString());
-					sb.append(",");
+					sb.append(", ");
 				}
 
-				sb.setLength(sb.length() - 1);
+				sb.setLength(sb.length() - 2);
 
 				sb.append("}");
 			}
@@ -1179,8 +1209,8 @@ public abstract class BaseSkuResourceTestCase {
 
 	}
 
-	private static final Log _log = LogFactoryUtil.getLog(
-		BaseSkuResourceTestCase.class);
+	private static final com.liferay.portal.kernel.log.Log _log =
+		LogFactoryUtil.getLog(BaseSkuResourceTestCase.class);
 
 	private static BeanUtilsBean _beanUtilsBean = new BeanUtilsBean() {
 

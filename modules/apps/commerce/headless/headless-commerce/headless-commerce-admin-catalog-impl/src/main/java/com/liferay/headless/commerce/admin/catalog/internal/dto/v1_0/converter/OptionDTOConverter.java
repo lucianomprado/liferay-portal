@@ -29,7 +29,7 @@ import org.osgi.service.component.annotations.Reference;
  */
 @Component(
 	enabled = false,
-	property = "model.class.name=com.liferay.commerce.product.model.CPOption",
+	property = "dto.class.name=com.liferay.commerce.product.model.CPOption",
 	service = {DTOConverter.class, OptionDTOConverter.class}
 )
 public class OptionDTOConverter implements DTOConverter<CPOption, Option> {
@@ -48,6 +48,7 @@ public class OptionDTOConverter implements DTOConverter<CPOption, Option> {
 
 		return new Option() {
 			{
+				actions = dtoConverterContext.getActions();
 				description = LanguageUtils.getLanguageIdMap(
 					cpOption.getDescriptionMap());
 				externalReferenceCode = cpOption.getExternalReferenceCode();

@@ -33,6 +33,7 @@ page import="com.liferay.asset.auto.tagger.configuration.AssetAutoTaggerConfigur
 page import="com.liferay.depot.application.DepotApplication" %><%@
 page import="com.liferay.depot.exception.DepotEntryGroupRelToGroupException" %><%@
 page import="com.liferay.depot.exception.DepotEntryNameException" %><%@
+page import="com.liferay.depot.exception.DepotEntryStagedException" %><%@
 page import="com.liferay.depot.model.DepotEntry" %><%@
 page import="com.liferay.depot.model.DepotEntryGroupRel" %><%@
 page import="com.liferay.depot.web.internal.constants.DepotAdminWebKeys" %><%@
@@ -51,6 +52,7 @@ page import="com.liferay.depot.web.internal.display.context.DepotAdminSitesDispl
 page import="com.liferay.depot.web.internal.display.context.DepotAdminViewDepotDashboardDisplayContext" %><%@
 page import="com.liferay.depot.web.internal.display.context.DepotApplicationDisplayContext" %><%@
 page import="com.liferay.depot.web.internal.util.DepotLanguageUtil" %><%@
+page import="com.liferay.document.library.kernel.exception.RequiredFileEntryTypeException" %><%@
 page import="com.liferay.petra.string.StringPool" %><%@
 page import="com.liferay.portal.kernel.exception.DuplicateGroupException" %><%@
 page import="com.liferay.portal.kernel.exception.GroupKeyException" %><%@
@@ -81,10 +83,15 @@ page import="com.liferay.sharing.configuration.SharingConfiguration" %>
 page import="java.util.Collections" %><%@
 page import="java.util.List" %>
 
-<%@ page import="javax.portlet.ActionRequest" %>
+<%@ page import="javax.portlet.ActionRequest" %><%@
+page import="javax.portlet.PortletURL" %>
 
 <liferay-frontend:defineObjects />
 
 <liferay-theme:defineObjects />
 
 <portlet:defineObjects />
+
+<%
+portletDisplay.setShowExportImportIcon(false);
+%>

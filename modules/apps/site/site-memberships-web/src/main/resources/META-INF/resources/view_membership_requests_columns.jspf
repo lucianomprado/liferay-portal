@@ -32,11 +32,15 @@ if (membershipRequestReplierUser != null) {
 	}
 }
 
-PortletURL previewURL = renderResponse.createRenderURL();
-
-previewURL.setParameter("mvcPath", "/preview_membership_request.jsp");
-previewURL.setParameter("redirect", currentURL);
-previewURL.setParameter("membershipRequestId", String.valueOf(membershipRequest.getMembershipRequestId()));
+PortletURL previewURL = PortletURLBuilder.createRenderURL(
+	renderResponse
+).setMVCPath(
+	"/preview_membership_request.jsp"
+).setRedirect(
+	currentURL
+).setParameter(
+	"membershipRequestId", membershipRequest.getMembershipRequestId()
+).buildPortletURL();
 %>
 
 <c:choose>
@@ -82,11 +86,6 @@ previewURL.setParameter("membershipRequestId", String.valueOf(membershipRequest.
 		</liferay-ui:search-container-column-text>
 	</c:when>
 	<c:when test='<%= displayStyle.equals("icon") %>'>
-
-		<%
-		row.setCssClass("entry-card lfr-asset-item");
-		%>
-
 		<liferay-ui:search-container-column-text>
 			<clay:user-card
 				userCard="<%= new ViewMembershipRequestsUserCard(membershipRequest, membershipRequestUser, renderRequest, renderResponse) %>"

@@ -14,8 +14,8 @@
 
 package com.liferay.portal.kernel.servlet.taglib.aui;
 
+import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
-import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 
@@ -38,6 +38,26 @@ public class TagInvocationData implements Serializable {
 
 	public TagInvocationData(StringBundler contentSB, String require) {
 		_contentSB.append(contentSB);
+
+		_initModulesAndVariableAliases(require);
+	}
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 *             #TagInvocationData(StringBundler, String)}
+	 */
+	@Deprecated
+	public TagInvocationData(
+		com.liferay.portal.kernel.util.StringBundler contentSB,
+		String require) {
+
+		StringBundler sb = new StringBundler();
+
+		for (int i = 0; i < contentSB.index(); i++) {
+			sb.append(contentSB.stringAt(0));
+		}
+
+		_contentSB.append(sb);
 
 		_initModulesAndVariableAliases(require);
 	}

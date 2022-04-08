@@ -26,8 +26,11 @@ import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.model.Country;
 import com.liferay.portal.kernel.model.CountryLocalization;
 import com.liferay.portal.kernel.model.PersistedModel;
+import com.liferay.portal.kernel.model.SystemEventConstants;
+import com.liferay.portal.kernel.search.BaseModelSearchResult;
 import com.liferay.portal.kernel.search.Indexable;
 import com.liferay.portal.kernel.search.IndexableType;
+import com.liferay.portal.kernel.systemevent.SystemEvent;
 import com.liferay.portal.kernel.transaction.Isolation;
 import com.liferay.portal.kernel.transaction.Propagation;
 import com.liferay.portal.kernel.transaction.Transactional;
@@ -81,7 +84,7 @@ public interface CountryLocalService
 			String a2, String a3, boolean active, boolean billingAllowed,
 			String idd, String name, String number, double position,
 			boolean shippingAllowed, boolean subjectToVAT, boolean zipRequired,
-			Map<String, String> titleMap, ServiceContext serviceContext)
+			ServiceContext serviceContext)
 		throws PortalException;
 
 	/**
@@ -99,7 +102,7 @@ public interface CountryLocalService
 	public PersistedModel createPersistedModel(Serializable primaryKeyObj)
 		throws PortalException;
 
-	public void deleteCompanyCountries(long companyId);
+	public void deleteCompanyCountries(long companyId) throws PortalException;
 
 	/**
 	 * Deletes the country from the database. Also notifies the appropriate model listeners.
@@ -110,9 +113,11 @@ public interface CountryLocalService
 	 *
 	 * @param country the country
 	 * @return the country that was removed
+	 * @throws PortalException
 	 */
 	@Indexable(type = IndexableType.DELETE)
-	public Country deleteCountry(Country country);
+	@SystemEvent(type = SystemEventConstants.TYPE_DELETE)
+	public Country deleteCountry(Country country) throws PortalException;
 
 	/**
 	 * Deletes the country with the primary key from the database. Also notifies the appropriate model listeners.
@@ -137,6 +142,9 @@ public interface CountryLocalService
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public <T> T dslQuery(DSLQuery dslQuery);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public int dslQueryCount(DSLQuery dslQuery);
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public DynamicQuery dynamicQuery();
@@ -207,6 +215,18 @@ public interface CountryLocalService
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public Country fetchCountry(long countryId);
 
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public Country fetchCountryByA2(long companyId, String a2);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public Country fetchCountryByA3(long companyId, String a3);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public Country fetchCountryByName(long companyId, String name);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public Country fetchCountryByNumber(long companyId, String number);
+
 	/**
 	 * Returns the country with the matching UUID and company.
 	 *
@@ -228,7 +248,23 @@ public interface CountryLocalService
 	public List<Country> getCompanyCountries(long companyId);
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public List<Country> getCompanyCountries(long companyId, boolean active);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public List<Country> getCompanyCountries(
+		long companyId, boolean active, int start, int end,
+		OrderByComparator<Country> orderByComparator);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public List<Country> getCompanyCountries(
+		long companyId, int start, int end,
+		OrderByComparator<Country> orderByComparator);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public int getCompanyCountriesCount(long companyId);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public int getCompanyCountriesCount(long companyId, boolean active);
 
 	/**
 	 * Returns a range of all the countries.
@@ -261,6 +297,22 @@ public interface CountryLocalService
 	 */
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public Country getCountry(long countryId) throws PortalException;
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public Country getCountryByA2(long companyId, String a2)
+		throws PortalException;
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public Country getCountryByA3(long companyId, String a3)
+		throws PortalException;
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public Country getCountryByName(long companyId, String name)
+		throws PortalException;
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public Country getCountryByNumber(long companyId, String number)
+		throws PortalException;
 
 	/**
 	 * Returns the country with the matching UUID and company.
@@ -304,6 +356,15 @@ public interface CountryLocalService
 	public PersistedModel getPersistedModel(Serializable primaryKeyObj)
 		throws PortalException;
 
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public BaseModelSearchResult<Country> searchCountries(
+			long companyId, Boolean active, String keywords, int start, int end,
+			OrderByComparator<Country> orderByComparator)
+		throws PortalException;
+
+	public Country updateActive(long countryId, boolean active)
+		throws PortalException;
+
 	/**
 	 * Updates the country in the database or adds it if it does not yet exist. Also notifies the appropriate model listeners.
 	 *
@@ -317,12 +378,22 @@ public interface CountryLocalService
 	@Indexable(type = IndexableType.REINDEX)
 	public Country updateCountry(Country country);
 
+	public Country updateCountry(
+			long countryId, String a2, String a3, boolean active,
+			boolean billingAllowed, String idd, String name, String number,
+			double position, boolean shippingAllowed, boolean subjectToVAT)
+		throws PortalException;
+
 	public CountryLocalization updateCountryLocalization(
 			Country country, String languageId, String title)
 		throws PortalException;
 
 	public List<CountryLocalization> updateCountryLocalizations(
 			Country country, Map<String, String> titleMap)
+		throws PortalException;
+
+	public Country updateGroupFilterEnabled(
+			long countryId, boolean groupFilterEnabled)
 		throws PortalException;
 
 }

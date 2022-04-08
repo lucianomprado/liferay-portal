@@ -19,7 +19,6 @@ import com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery;
 import com.liferay.portal.kernel.dao.orm.Property;
 import com.liferay.portal.kernel.dao.orm.PropertyFactoryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.service.GroupLocalService;
@@ -27,9 +26,12 @@ import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.Validator;
 
 /**
- * @author Gergely Mathe
- * @author Balázs Sáfrány-Kovalik
+ * @author     Gergely Mathe
+ * @author     Balázs Sáfrány-Kovalik
+ * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+ *             BaseStagingGroupTypeSettingsUpgradeProcess}
  */
+@Deprecated
 public class BaseUpgradeStagingGroupTypeSettings extends UpgradeProcess {
 
 	public BaseUpgradeStagingGroupTypeSettings(
@@ -49,9 +51,8 @@ public class BaseUpgradeStagingGroupTypeSettings extends UpgradeProcess {
 	}
 
 	protected void updateStagedPortletNames() throws PortalException {
-		for (Company company : _companyLocalService.getCompanies()) {
-			updateStagedPortletNames(company.getCompanyId());
-		}
+		_companyLocalService.forEachCompanyId(
+			companyId -> updateStagedPortletNames(companyId));
 	}
 
 	protected void updateStagedPortletNames(Long companyId)

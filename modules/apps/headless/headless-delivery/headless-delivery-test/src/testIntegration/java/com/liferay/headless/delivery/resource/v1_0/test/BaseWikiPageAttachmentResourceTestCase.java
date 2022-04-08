@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.util.ISO8601DateFormat;
 
+import com.liferay.headless.delivery.client.dto.v1_0.Field;
 import com.liferay.headless.delivery.client.dto.v1_0.WikiPageAttachment;
 import com.liferay.headless.delivery.client.http.HttpInvoker;
 import com.liferay.headless.delivery.client.pagination.Page;
@@ -33,7 +34,6 @@ import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
-import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Group;
@@ -46,15 +46,12 @@ import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.odata.entity.EntityField;
 import com.liferay.portal.odata.entity.EntityModel;
-import com.liferay.portal.test.log.CaptureAppender;
-import com.liferay.portal.test.log.Log4JLoggerTestUtil;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.vulcan.resource.EntityModelResource;
 
 import java.io.File;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 
 import java.text.DateFormat;
@@ -73,7 +70,6 @@ import javax.annotation.Generated;
 import javax.ws.rs.core.MultivaluedHashMap;
 
 import org.apache.commons.beanutils.BeanUtilsBean;
-import org.apache.log4j.Level;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -238,7 +234,7 @@ public abstract class BaseWikiPageAttachmentResourceTestCase {
 	@Test
 	public void testGraphQLDeleteWikiPageAttachment() throws Exception {
 		WikiPageAttachment wikiPageAttachment =
-			testGraphQLWikiPageAttachment_addWikiPageAttachment();
+			testGraphQLDeleteWikiPageAttachment_addWikiPageAttachment();
 
 		Assert.assertTrue(
 			JSONUtil.getValueAsBoolean(
@@ -253,28 +249,28 @@ public abstract class BaseWikiPageAttachmentResourceTestCase {
 							}
 						})),
 				"JSONObject/data", "Object/deleteWikiPageAttachment"));
+		JSONArray errorsJSONArray = JSONUtil.getValueAsJSONArray(
+			invokeGraphQLQuery(
+				new GraphQLField(
+					"wikiPageAttachment",
+					new HashMap<String, Object>() {
+						{
+							put(
+								"wikiPageAttachmentId",
+								wikiPageAttachment.getId());
+						}
+					},
+					new GraphQLField("id"))),
+			"JSONArray/errors");
 
-		try (CaptureAppender captureAppender =
-				Log4JLoggerTestUtil.configureLog4JLogger(
-					"graphql.execution.SimpleDataFetcherExceptionHandler",
-					Level.WARN)) {
+		Assert.assertTrue(errorsJSONArray.length() > 0);
+	}
 
-			JSONArray errorsJSONArray = JSONUtil.getValueAsJSONArray(
-				invokeGraphQLQuery(
-					new GraphQLField(
-						"wikiPageAttachment",
-						new HashMap<String, Object>() {
-							{
-								put(
-									"wikiPageAttachmentId",
-									wikiPageAttachment.getId());
-							}
-						},
-						new GraphQLField("id"))),
-				"JSONArray/errors");
+	protected WikiPageAttachment
+			testGraphQLDeleteWikiPageAttachment_addWikiPageAttachment()
+		throws Exception {
 
-			Assert.assertTrue(errorsJSONArray.length() > 0);
-		}
+		return testGraphQLWikiPageAttachment_addWikiPageAttachment();
 	}
 
 	@Test
@@ -301,7 +297,7 @@ public abstract class BaseWikiPageAttachmentResourceTestCase {
 	@Test
 	public void testGraphQLGetWikiPageAttachment() throws Exception {
 		WikiPageAttachment wikiPageAttachment =
-			testGraphQLWikiPageAttachment_addWikiPageAttachment();
+			testGraphQLGetWikiPageAttachment_addWikiPageAttachment();
 
 		Assert.assertTrue(
 			equals(
@@ -344,20 +340,27 @@ public abstract class BaseWikiPageAttachmentResourceTestCase {
 				"Object/code"));
 	}
 
+	protected WikiPageAttachment
+			testGraphQLGetWikiPageAttachment_addWikiPageAttachment()
+		throws Exception {
+
+		return testGraphQLWikiPageAttachment_addWikiPageAttachment();
+	}
+
 	@Test
 	public void testGetWikiPageWikiPageAttachmentsPage() throws Exception {
-		Page<WikiPageAttachment> page =
-			wikiPageAttachmentResource.getWikiPageWikiPageAttachmentsPage(
-				testGetWikiPageWikiPageAttachmentsPage_getWikiPageId());
-
-		Assert.assertEquals(0, page.getTotalCount());
-
 		Long wikiPageId =
 			testGetWikiPageWikiPageAttachmentsPage_getWikiPageId();
 		Long irrelevantWikiPageId =
 			testGetWikiPageWikiPageAttachmentsPage_getIrrelevantWikiPageId();
 
-		if ((irrelevantWikiPageId != null)) {
+		Page<WikiPageAttachment> page =
+			wikiPageAttachmentResource.getWikiPageWikiPageAttachmentsPage(
+				wikiPageId);
+
+		Assert.assertEquals(0, page.getTotalCount());
+
+		if (irrelevantWikiPageId != null) {
 			WikiPageAttachment irrelevantWikiPageAttachment =
 				testGetWikiPageWikiPageAttachmentsPage_addWikiPageAttachment(
 					irrelevantWikiPageId, randomIrrelevantWikiPageAttachment());
@@ -456,6 +459,25 @@ public abstract class BaseWikiPageAttachmentResourceTestCase {
 
 		throw new UnsupportedOperationException(
 			"This method needs to be implemented");
+	}
+
+	protected void assertContains(
+		WikiPageAttachment wikiPageAttachment,
+		List<WikiPageAttachment> wikiPageAttachments) {
+
+		boolean contains = false;
+
+		for (WikiPageAttachment item : wikiPageAttachments) {
+			if (equals(wikiPageAttachment, item)) {
+				contains = true;
+
+				break;
+			}
+		}
+
+		Assert.assertTrue(
+			wikiPageAttachments + " does not contain " + wikiPageAttachment,
+			contains);
 	}
 
 	protected void assertHttpResponseStatusCode(
@@ -621,8 +643,8 @@ public abstract class BaseWikiPageAttachmentResourceTestCase {
 	protected List<GraphQLField> getGraphQLFields() throws Exception {
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
-		for (Field field :
-				ReflectionUtil.getDeclaredFields(
+		for (java.lang.reflect.Field field :
+				getDeclaredFields(
 					com.liferay.headless.delivery.dto.v1_0.WikiPageAttachment.
 						class)) {
 
@@ -638,12 +660,13 @@ public abstract class BaseWikiPageAttachmentResourceTestCase {
 		return graphQLFields;
 	}
 
-	protected List<GraphQLField> getGraphQLFields(Field... fields)
+	protected List<GraphQLField> getGraphQLFields(
+			java.lang.reflect.Field... fields)
 		throws Exception {
 
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
-		for (Field field : fields) {
+		for (java.lang.reflect.Field field : fields) {
 			com.liferay.portal.vulcan.graphql.annotation.GraphQLField
 				vulcanGraphQLField = field.getAnnotation(
 					com.liferay.portal.vulcan.graphql.annotation.GraphQLField.
@@ -657,7 +680,7 @@ public abstract class BaseWikiPageAttachmentResourceTestCase {
 				}
 
 				List<GraphQLField> childrenGraphQLFields = getGraphQLFields(
-					ReflectionUtil.getDeclaredFields(clazz));
+					getDeclaredFields(clazz));
 
 				graphQLFields.add(
 					new GraphQLField(field.getName(), childrenGraphQLFields));
@@ -791,6 +814,19 @@ public abstract class BaseWikiPageAttachmentResourceTestCase {
 		}
 
 		return false;
+	}
+
+	protected java.lang.reflect.Field[] getDeclaredFields(Class clazz)
+		throws Exception {
+
+		Stream<java.lang.reflect.Field> stream = Stream.of(
+			ReflectionUtil.getDeclaredFields(clazz));
+
+		return stream.filter(
+			field -> !field.isSynthetic()
+		).toArray(
+			java.lang.reflect.Field[]::new
+		);
 	}
 
 	protected java.util.Collection<EntityField> getEntityFields()
@@ -1017,12 +1053,12 @@ public abstract class BaseWikiPageAttachmentResourceTestCase {
 						_parameterMap.entrySet()) {
 
 					sb.append(entry.getKey());
-					sb.append(":");
+					sb.append(": ");
 					sb.append(entry.getValue());
-					sb.append(",");
+					sb.append(", ");
 				}
 
-				sb.setLength(sb.length() - 1);
+				sb.setLength(sb.length() - 2);
 
 				sb.append(")");
 			}
@@ -1032,10 +1068,10 @@ public abstract class BaseWikiPageAttachmentResourceTestCase {
 
 				for (GraphQLField graphQLField : _graphQLFields) {
 					sb.append(graphQLField.toString());
-					sb.append(",");
+					sb.append(", ");
 				}
 
-				sb.setLength(sb.length() - 1);
+				sb.setLength(sb.length() - 2);
 
 				sb.append("}");
 			}
@@ -1049,8 +1085,8 @@ public abstract class BaseWikiPageAttachmentResourceTestCase {
 
 	}
 
-	private static final Log _log = LogFactoryUtil.getLog(
-		BaseWikiPageAttachmentResourceTestCase.class);
+	private static final com.liferay.portal.kernel.log.Log _log =
+		LogFactoryUtil.getLog(BaseWikiPageAttachmentResourceTestCase.class);
 
 	private static BeanUtilsBean _beanUtilsBean = new BeanUtilsBean() {
 

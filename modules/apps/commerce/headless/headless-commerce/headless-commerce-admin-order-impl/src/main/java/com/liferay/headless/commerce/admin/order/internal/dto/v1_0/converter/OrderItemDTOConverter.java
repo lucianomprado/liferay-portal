@@ -17,17 +17,16 @@ package com.liferay.headless.commerce.admin.order.internal.dto.v1_0.converter;
 import com.liferay.commerce.model.CommerceOrder;
 import com.liferay.commerce.model.CommerceOrderItem;
 import com.liferay.commerce.product.model.CPInstance;
+import com.liferay.commerce.product.model.CPMeasurementUnit;
+import com.liferay.commerce.product.service.CPMeasurementUnitService;
 import com.liferay.commerce.service.CommerceOrderItemService;
+import com.liferay.commerce.util.CommerceOrderItemQuantityFormatter;
 import com.liferay.expando.kernel.model.ExpandoBridge;
 import com.liferay.headless.commerce.admin.order.dto.v1_0.OrderItem;
-import com.liferay.headless.commerce.admin.order.dto.v1_0.ShippingAddress;
 import com.liferay.headless.commerce.core.util.LanguageUtils;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.vulcan.dto.converter.DTOConverter;
 import com.liferay.portal.vulcan.dto.converter.DTOConverterContext;
-import com.liferay.portal.vulcan.dto.converter.DefaultDTOConverterContext;
-
-import java.util.Locale;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -37,7 +36,7 @@ import org.osgi.service.component.annotations.Reference;
  */
 @Component(
 	enabled = false,
-	property = "model.class.name=com.liferay.commerce.model.CommerceOrderItem",
+	property = "dto.class.name=com.liferay.commerce.model.CommerceOrderItem",
 	service = {DTOConverter.class, OrderItemDTOConverter.class}
 )
 public class OrderItemDTOConverter
@@ -64,6 +63,7 @@ public class OrderItemDTOConverter
 			{
 				bookedQuantityId = commerceOrderItem.getBookedQuantityId();
 				customFields = expandoBridge.getAttributes();
+				decimalQuantity = commerceOrderItem.getDecimalQuantity();
 				deliveryGroup = commerceOrderItem.getDeliveryGroup();
 				discountAmount = commerceOrderItem.getDiscountAmount();
 				discountPercentageLevel1 =
@@ -93,9 +93,12 @@ public class OrderItemDTOConverter
 				finalPrice = commerceOrderItem.getFinalPrice();
 				finalPriceWithTaxAmount =
 					commerceOrderItem.getFinalPriceWithTaxAmount();
+				formattedQuantity = _commerceOrderItemQuantityFormatter.format(
+					commerceOrderItem, dtoConverterContext.getLocale());
 				id = commerceOrderItem.getCommerceOrderItemId();
 				name = LanguageUtils.getLanguageIdMap(
 					commerceOrderItem.getNameMap());
+				options = commerceOrderItem.getJson();
 				orderExternalReferenceCode =
 					commerceOrder.getExternalReferenceCode();
 				orderId = commerceOrder.getCommerceOrderId();
@@ -107,9 +110,6 @@ public class OrderItemDTOConverter
 				requestedDeliveryDate =
 					commerceOrderItem.getRequestedDeliveryDate();
 				shippedQuantity = commerceOrderItem.getShippedQuantity();
-				shippingAddress = _getShippingAddress(
-					dtoConverterContext.getLocale(),
-					commerceOrderItem.getShippingAddressId());
 				shippingAddressId = commerceOrderItem.getShippingAddressId();
 				sku = commerceOrderItem.getSku();
 				skuExternalReferenceCode = _getSkuExternalReferenceCode(
@@ -119,20 +119,21 @@ public class OrderItemDTOConverter
 				unitPrice = commerceOrderItem.getUnitPrice();
 				unitPriceWithTaxAmount =
 					commerceOrderItem.getUnitPriceWithTaxAmount();
+
+				setUnitOfMeasure(
+					() -> {
+						if (commerceOrderItem.getCPMeasurementUnitId() <= 0) {
+							return StringPool.BLANK;
+						}
+
+						CPMeasurementUnit cpMeasurementUnit =
+							_cpMeasurementUnitService.getCPMeasurementUnit(
+								commerceOrderItem.getCPMeasurementUnitId());
+
+						return cpMeasurementUnit.getKey();
+					});
 			}
 		};
-	}
-
-	private ShippingAddress _getShippingAddress(
-			Locale locale, long shippingAddressId)
-		throws Exception {
-
-		if (shippingAddressId <= 0) {
-			return new ShippingAddress();
-		}
-
-		return _shippingAddressDTOConverter.toDTO(
-			new DefaultDTOConverterContext(shippingAddressId, locale));
 	}
 
 	private String _getSkuExternalReferenceCode(CPInstance cpInstance) {
@@ -152,9 +153,13 @@ public class OrderItemDTOConverter
 	}
 
 	@Reference
+	private CommerceOrderItemQuantityFormatter
+		_commerceOrderItemQuantityFormatter;
+
+	@Reference
 	private CommerceOrderItemService _commerceOrderItemService;
 
 	@Reference
-	private ShippingAddressDTOConverter _shippingAddressDTOConverter;
+	private CPMeasurementUnitService _cpMeasurementUnitService;
 
 }

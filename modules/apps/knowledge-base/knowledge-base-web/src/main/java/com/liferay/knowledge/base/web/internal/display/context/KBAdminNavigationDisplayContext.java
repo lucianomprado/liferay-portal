@@ -15,21 +15,22 @@
 package com.liferay.knowledge.base.web.internal.display.context;
 
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.NavigationItem;
+import com.liferay.frontend.taglib.clay.servlet.taglib.util.NavigationItemBuilder;
 import com.liferay.knowledge.base.constants.KBActionKeys;
 import com.liferay.knowledge.base.web.internal.security.permission.resource.AdminPermission;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
 import com.liferay.portal.kernel.service.permission.PortletPermissionUtil;
 import com.liferay.portal.kernel.theme.PortletDisplay;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
+import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.WebKeys;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import javax.portlet.PortletURL;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -47,22 +48,20 @@ public class KBAdminNavigationDisplayContext {
 	}
 
 	public List<NavigationItem> getInfoPanelNavigationItems() {
-		ThemeDisplay themeDisplay =
-			(ThemeDisplay)_httpServletRequest.getAttribute(
-				WebKeys.THEME_DISPLAY);
+		return ListUtil.fromArray(
+			NavigationItemBuilder.setActive(
+				true
+			).setHref(
+				() -> {
+					ThemeDisplay themeDisplay =
+						(ThemeDisplay)_httpServletRequest.getAttribute(
+							WebKeys.THEME_DISPLAY);
 
-		List<NavigationItem> navigationItems = new ArrayList<>();
-
-		NavigationItem navigationItem = new NavigationItem();
-
-		navigationItem.setActive(true);
-		navigationItem.setHref(themeDisplay.getURLCurrent());
-		navigationItem.setLabel(
-			LanguageUtil.get(_httpServletRequest, "details"));
-
-		navigationItems.add(navigationItem);
-
-		return navigationItems;
+					return themeDisplay.getURLCurrent();
+				}
+			).setLabel(
+				LanguageUtil.get(_httpServletRequest, "details")
+			).build());
 	}
 
 	public List<NavigationItem> getNavigationItems() throws PortalException {
@@ -80,8 +79,6 @@ public class KBAdminNavigationDisplayContext {
 				themeDisplay.getPermissionChecker(), themeDisplay.getPlid(),
 				portletDisplay.getId(), KBActionKeys.VIEW)) {
 
-			NavigationItem kbObjectsNavigationItem = new NavigationItem();
-
 			boolean active = false;
 
 			if (!mvcPath.equals("/admin/view_suggestions.jsp") &&
@@ -90,19 +87,18 @@ public class KBAdminNavigationDisplayContext {
 				active = true;
 			}
 
-			kbObjectsNavigationItem.setActive(active);
-
-			PortletURL viewKBObjectsURL =
-				_liferayPortletResponse.createRenderURL();
-
-			viewKBObjectsURL.setParameter("mvcPath", "/admin/view.jsp");
-
-			kbObjectsNavigationItem.setHref(viewKBObjectsURL.toString());
-
-			kbObjectsNavigationItem.setLabel(
-				LanguageUtil.get(_httpServletRequest, "articles"));
-
-			navigationItems.add(kbObjectsNavigationItem);
+			navigationItems.add(
+				NavigationItemBuilder.setActive(
+					active
+				).setHref(
+					PortletURLBuilder.createRenderURL(
+						_liferayPortletResponse
+					).setMVCPath(
+						"/admin/view.jsp"
+					).buildString()
+				).setLabel(
+					LanguageUtil.get(_httpServletRequest, "articles")
+				).build());
 		}
 
 		if (AdminPermission.contains(
@@ -110,28 +106,24 @@ public class KBAdminNavigationDisplayContext {
 				themeDisplay.getScopeGroupId(),
 				KBActionKeys.VIEW_KB_TEMPLATES)) {
 
-			NavigationItem kbTemplatesNavigationItem = new NavigationItem();
-
 			boolean active = false;
 
 			if (mvcPath.equals("/admin/view_templates.jsp")) {
 				active = true;
 			}
 
-			kbTemplatesNavigationItem.setActive(active);
-
-			PortletURL viewKBTemplatesURL =
-				_liferayPortletResponse.createRenderURL();
-
-			viewKBTemplatesURL.setParameter(
-				"mvcPath", "/admin/view_templates.jsp");
-
-			kbTemplatesNavigationItem.setHref(viewKBTemplatesURL.toString());
-
-			kbTemplatesNavigationItem.setLabel(
-				LanguageUtil.get(_httpServletRequest, "templates"));
-
-			navigationItems.add(kbTemplatesNavigationItem);
+			navigationItems.add(
+				NavigationItemBuilder.setActive(
+					active
+				).setHref(
+					PortletURLBuilder.createRenderURL(
+						_liferayPortletResponse
+					).setMVCPath(
+						"/admin/view_templates.jsp"
+					).buildString()
+				).setLabel(
+					LanguageUtil.get(_httpServletRequest, "templates")
+				).build());
 		}
 
 		if (AdminPermission.contains(
@@ -139,28 +131,24 @@ public class KBAdminNavigationDisplayContext {
 				themeDisplay.getScopeGroupId(),
 				KBActionKeys.VIEW_SUGGESTIONS)) {
 
-			NavigationItem kbSuggestionsNavigationItem = new NavigationItem();
-
 			boolean active = false;
 
 			if (mvcPath.equals("/admin/view_suggestions.jsp")) {
 				active = true;
 			}
 
-			kbSuggestionsNavigationItem.setActive(active);
-
-			PortletURL viewKBTemplatesURL =
-				_liferayPortletResponse.createRenderURL();
-
-			viewKBTemplatesURL.setParameter(
-				"mvcPath", "/admin/view_suggestions.jsp");
-
-			kbSuggestionsNavigationItem.setHref(viewKBTemplatesURL.toString());
-
-			kbSuggestionsNavigationItem.setLabel(
-				LanguageUtil.get(_httpServletRequest, "suggestions"));
-
-			navigationItems.add(kbSuggestionsNavigationItem);
+			navigationItems.add(
+				NavigationItemBuilder.setActive(
+					active
+				).setHref(
+					PortletURLBuilder.createRenderURL(
+						_liferayPortletResponse
+					).setMVCPath(
+						"/admin/view_suggestions.jsp"
+					).buildString()
+				).setLabel(
+					LanguageUtil.get(_httpServletRequest, "suggestions")
+				).build());
 		}
 
 		return navigationItems;

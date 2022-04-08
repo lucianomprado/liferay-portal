@@ -14,7 +14,6 @@
 
 package com.liferay.commerce.internal.price;
 
-import com.liferay.commerce.account.model.CommerceAccount;
 import com.liferay.commerce.context.CommerceContext;
 import com.liferay.commerce.currency.model.CommerceCurrency;
 import com.liferay.commerce.currency.model.CommerceMoney;
@@ -24,6 +23,7 @@ import com.liferay.commerce.discount.CommerceDiscountCalculation;
 import com.liferay.commerce.discount.CommerceDiscountValue;
 import com.liferay.commerce.discount.application.strategy.CommerceDiscountApplicationStrategy;
 import com.liferay.commerce.internal.util.CommercePriceConverterUtil;
+import com.liferay.commerce.model.CommerceOrder;
 import com.liferay.commerce.price.CommerceProductPrice;
 import com.liferay.commerce.price.CommerceProductPriceImpl;
 import com.liferay.commerce.price.CommerceProductPriceRequest;
@@ -46,6 +46,7 @@ import com.liferay.commerce.product.service.CPInstanceLocalService;
 import com.liferay.commerce.product.service.CommerceChannelLocalService;
 import com.liferay.commerce.tax.CommerceTaxCalculation;
 import com.liferay.commerce.util.CommerceBigDecimalUtil;
+import com.liferay.commerce.util.CommerceUtil;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
@@ -329,11 +330,9 @@ public class CommerceProductPriceCalculationV2Impl
 			boolean secure, CommerceContext commerceContext)
 		throws PortalException {
 
-		long commercePromoPriceListId = _getCommercePromoPriceListId(
-			cpInstanceId, commerceContext);
-
 		return _getPromoPrice(
-			commercePromoPriceListId, cpInstanceId, quantity, commerceContext);
+			_getCommercePromoPriceListId(cpInstanceId, commerceContext),
+			cpInstanceId, quantity, commerceContext);
 	}
 
 	@Override
@@ -418,11 +417,9 @@ public class CommerceProductPriceCalculationV2Impl
 			boolean secure, CommerceContext commerceContext)
 		throws PortalException {
 
-		long commercePriceListId = _getCommercePriceListId(
-			cpInstanceId, commerceContext);
-
 		return _getUnitPrice(
-			commercePriceListId, cpInstanceId, quantity, commerceContext);
+			_getCommercePriceListId(cpInstanceId, commerceContext),
+			cpInstanceId, quantity, commerceContext);
 	}
 
 	private CommerceDiscountValue _calculateCommerceDiscountValue(
@@ -461,8 +458,7 @@ public class CommerceProductPriceCalculationV2Impl
 	}
 
 	private BigDecimal _getBasePrice(
-			long cpInstanceId, CommerceCurrency commerceCurrency,
-			String commercePriceListType)
+			long cpInstanceId, CommerceCurrency commerceCurrency, String type)
 		throws PortalException {
 
 		CPInstance cpInstance = cpInstanceLocalService.getCPInstance(
@@ -471,7 +467,7 @@ public class CommerceProductPriceCalculationV2Impl
 		CommercePriceList commercePriceList =
 			_commercePriceListLocalService.
 				fetchCatalogBaseCommercePriceListByType(
-					cpInstance.getGroupId(), commercePriceListType);
+					cpInstance.getGroupId(), type);
 
 		if (commercePriceList == null) {
 			return BigDecimal.ZERO;
@@ -480,7 +476,7 @@ public class CommerceProductPriceCalculationV2Impl
 		CommercePriceEntry commercePriceEntry =
 			_commercePriceEntryLocalService.fetchCommercePriceEntry(
 				commercePriceList.getCommercePriceListId(),
-				cpInstance.getCPInstanceUuid());
+				cpInstance.getCPInstanceUuid(), false);
 
 		if (commercePriceEntry == null) {
 			return BigDecimal.ZERO;
@@ -677,7 +673,7 @@ public class CommerceProductPriceCalculationV2Impl
 				commercePrice =
 					_commercePriceModifierHelper.applyCommercePriceModifier(
 						commercePriceListId, cpInstance.getCPDefinitionId(),
-						commercePriceEntry.getPriceMoney(
+						commercePriceEntry.getPriceCommerceMoney(
 							commerceCurrency.getCommerceCurrencyId()));
 			}
 
@@ -701,7 +697,7 @@ public class CommerceProductPriceCalculationV2Impl
 
 				return _commercePriceModifierHelper.applyCommercePriceModifier(
 					commercePriceListId, cpInstance.getCPDefinitionId(),
-					commerceTierPriceEntry.getPriceMoney(
+					commerceTierPriceEntry.getPriceCommerceMoney(
 						commerceCurrency.getCommerceCurrencyId()));
 			}
 
@@ -718,8 +714,6 @@ public class CommerceProductPriceCalculationV2Impl
 				commerceMoneyFactory.create(commerceCurrency, commercePrice));
 		}
 
-		int totalTierCounter = 0;
-
 		List<CommerceTierPriceEntry> commerceTierPriceEntries =
 			_commerceTierPriceEntryLocalService.findCommerceTierPriceEntries(
 				commercePriceEntry.getCommercePriceEntryId(), quantity);
@@ -732,6 +726,8 @@ public class CommerceProductPriceCalculationV2Impl
 
 		CommerceTierPriceEntry commerceTierPriceEntry1 =
 			commerceTierPriceEntries.get(0);
+
+		int totalTierCounter = 0;
 
 		int tierCounter =
 			commerceTierPriceEntry1.getMinQuantity() - totalTierCounter - 1;
@@ -805,36 +801,36 @@ public class CommerceProductPriceCalculationV2Impl
 	}
 
 	private CommercePriceList _getCommercePriceList(
-			long cpInstanceId, CommerceContext commerceContext,
-			String commercePriceListType)
+			long cpInstanceId, CommerceContext commerceContext, String type)
 		throws PortalException {
 
-		CPInstance cpInstance = cpInstanceLocalService.getCPInstance(
-			cpInstanceId);
-
-		CommerceAccount commerceAccount = commerceContext.getCommerceAccount();
-
-		long commerceAccountId = 0;
-
-		if (commerceAccount != null) {
-			commerceAccountId = commerceAccount.getCommerceAccountId();
-		}
-
 		CommercePriceListDiscovery commercePriceListDiscovery =
-			_getCommercePriceListDiscovery(commercePriceListType);
+			_getCommercePriceListDiscovery(type);
 
 		if (commercePriceListDiscovery == null) {
 			return null;
 		}
 
+		CPInstance cpInstance = cpInstanceLocalService.getCPInstance(
+			cpInstanceId);
+
+		CommerceOrder commerceOrder = commerceContext.getCommerceOrder();
+
+		long commerceOrderTypeId = 0;
+
+		if (commerceOrder != null) {
+			commerceOrderTypeId = commerceOrder.getCommerceOrderTypeId();
+		}
+
 		return commercePriceListDiscovery.getCommercePriceList(
-			cpInstance.getGroupId(), commerceAccountId,
-			commerceContext.getCommerceChannelId(),
-			cpInstance.getCPInstanceUuid(), commercePriceListType);
+			cpInstance.getGroupId(),
+			CommerceUtil.getCommerceAccountId(commerceContext),
+			commerceContext.getCommerceChannelId(), commerceOrderTypeId,
+			cpInstance.getCPInstanceUuid(), type);
 	}
 
 	private CommercePriceListDiscovery _getCommercePriceListDiscovery(
-			String commercePriceListType)
+			String type)
 		throws PortalException {
 
 		CommercePricingConfiguration commercePricingConfiguration =
@@ -843,15 +839,11 @@ public class CommerceProductPriceCalculationV2Impl
 
 		String discoveryMethod = CommercePricingConstants.ORDER_BY_HIERARCHY;
 
-		if (commercePriceListType.equals(
-				CommercePriceListConstants.TYPE_PRICE_LIST)) {
-
+		if (type.equals(CommercePriceListConstants.TYPE_PRICE_LIST)) {
 			discoveryMethod =
 				commercePricingConfiguration.commercePriceListDiscovery();
 		}
-		else if (commercePriceListType.equals(
-					CommercePriceListConstants.TYPE_PROMOTION)) {
-
+		else if (type.equals(CommercePriceListConstants.TYPE_PROMOTION)) {
 			discoveryMethod =
 				commercePricingConfiguration.commercePromotionDiscovery();
 		}

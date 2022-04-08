@@ -35,7 +35,6 @@ import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
-import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Group;
@@ -49,15 +48,11 @@ import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.odata.entity.EntityField;
 import com.liferay.portal.odata.entity.EntityModel;
 import com.liferay.portal.search.test.util.SearchTestRule;
-import com.liferay.portal.test.log.CaptureAppender;
-import com.liferay.portal.test.log.Log4JLoggerTestUtil;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.vulcan.resource.EntityModelResource;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 
 import java.text.DateFormat;
 
@@ -79,7 +74,6 @@ import javax.ws.rs.core.MultivaluedHashMap;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.BeanUtilsBean;
 import org.apache.commons.lang.time.DateUtils;
-import org.apache.log4j.Level;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -215,20 +209,19 @@ public abstract class BasePriceModifierResourceTestCase {
 	public void testGetPriceListByExternalReferenceCodePriceModifiersPage()
 		throws Exception {
 
-		Page<PriceModifier> page =
-			priceModifierResource.
-				getPriceListByExternalReferenceCodePriceModifiersPage(
-					testGetPriceListByExternalReferenceCodePriceModifiersPage_getExternalReferenceCode(),
-					Pagination.of(1, 2));
-
-		Assert.assertEquals(0, page.getTotalCount());
-
 		String externalReferenceCode =
 			testGetPriceListByExternalReferenceCodePriceModifiersPage_getExternalReferenceCode();
 		String irrelevantExternalReferenceCode =
 			testGetPriceListByExternalReferenceCodePriceModifiersPage_getIrrelevantExternalReferenceCode();
 
-		if ((irrelevantExternalReferenceCode != null)) {
+		Page<PriceModifier> page =
+			priceModifierResource.
+				getPriceListByExternalReferenceCodePriceModifiersPage(
+					externalReferenceCode, Pagination.of(1, 10));
+
+		Assert.assertEquals(0, page.getTotalCount());
+
+		if (irrelevantExternalReferenceCode != null) {
 			PriceModifier irrelevantPriceModifier =
 				testGetPriceListByExternalReferenceCodePriceModifiersPage_addPriceModifier(
 					irrelevantExternalReferenceCode,
@@ -258,7 +251,7 @@ public abstract class BasePriceModifierResourceTestCase {
 		page =
 			priceModifierResource.
 				getPriceListByExternalReferenceCodePriceModifiersPage(
-					externalReferenceCode, Pagination.of(1, 2));
+					externalReferenceCode, Pagination.of(1, 10));
 
 		Assert.assertEquals(2, page.getTotalCount());
 
@@ -361,23 +354,6 @@ public abstract class BasePriceModifierResourceTestCase {
 
 		assertEquals(randomPriceModifier, postPriceModifier);
 		assertValid(postPriceModifier);
-
-		randomPriceModifier = randomPriceModifier();
-
-		assertHttpResponseStatusCode(
-			404,
-			priceModifierResource.
-				getPriceModifierByExternalReferenceCodeHttpResponse(
-					randomPriceModifier.getExternalReferenceCode()));
-
-		testPostPriceListByExternalReferenceCodePriceModifier_addPriceModifier(
-			randomPriceModifier);
-
-		assertHttpResponseStatusCode(
-			200,
-			priceModifierResource.
-				getPriceModifierByExternalReferenceCodeHttpResponse(
-					randomPriceModifier.getExternalReferenceCode()));
 	}
 
 	protected PriceModifier
@@ -391,18 +367,17 @@ public abstract class BasePriceModifierResourceTestCase {
 
 	@Test
 	public void testGetPriceListIdPriceModifiersPage() throws Exception {
-		Page<PriceModifier> page =
-			priceModifierResource.getPriceListIdPriceModifiersPage(
-				testGetPriceListIdPriceModifiersPage_getId(),
-				RandomTestUtil.randomString(), null, Pagination.of(1, 2), null);
-
-		Assert.assertEquals(0, page.getTotalCount());
-
 		Long id = testGetPriceListIdPriceModifiersPage_getId();
 		Long irrelevantId =
 			testGetPriceListIdPriceModifiersPage_getIrrelevantId();
 
-		if ((irrelevantId != null)) {
+		Page<PriceModifier> page =
+			priceModifierResource.getPriceListIdPriceModifiersPage(
+				id, null, null, Pagination.of(1, 10), null);
+
+		Assert.assertEquals(0, page.getTotalCount());
+
+		if (irrelevantId != null) {
 			PriceModifier irrelevantPriceModifier =
 				testGetPriceListIdPriceModifiersPage_addPriceModifier(
 					irrelevantId, randomIrrelevantPriceModifier());
@@ -427,7 +402,7 @@ public abstract class BasePriceModifierResourceTestCase {
 				id, randomPriceModifier());
 
 		page = priceModifierResource.getPriceListIdPriceModifiersPage(
-			id, null, null, Pagination.of(1, 2), null);
+			id, null, null, Pagination.of(1, 10), null);
 
 		Assert.assertEquals(2, page.getTotalCount());
 
@@ -464,6 +439,41 @@ public abstract class BasePriceModifierResourceTestCase {
 				priceModifierResource.getPriceListIdPriceModifiersPage(
 					id, null,
 					getFilterString(entityField, "between", priceModifier1),
+					Pagination.of(1, 2), null);
+
+			assertEquals(
+				Collections.singletonList(priceModifier1),
+				(List<PriceModifier>)page.getItems());
+		}
+	}
+
+	@Test
+	public void testGetPriceListIdPriceModifiersPageWithFilterDoubleEquals()
+		throws Exception {
+
+		List<EntityField> entityFields = getEntityFields(
+			EntityField.Type.DOUBLE);
+
+		if (entityFields.isEmpty()) {
+			return;
+		}
+
+		Long id = testGetPriceListIdPriceModifiersPage_getId();
+
+		PriceModifier priceModifier1 =
+			testGetPriceListIdPriceModifiersPage_addPriceModifier(
+				id, randomPriceModifier());
+
+		@SuppressWarnings("PMD.UnusedLocalVariable")
+		PriceModifier priceModifier2 =
+			testGetPriceListIdPriceModifiersPage_addPriceModifier(
+				id, randomPriceModifier());
+
+		for (EntityField entityField : entityFields) {
+			Page<PriceModifier> page =
+				priceModifierResource.getPriceListIdPriceModifiersPage(
+					id, null,
+					getFilterString(entityField, "eq", priceModifier1),
 					Pagination.of(1, 2), null);
 
 			assertEquals(
@@ -570,6 +580,20 @@ public abstract class BasePriceModifierResourceTestCase {
 	}
 
 	@Test
+	public void testGetPriceListIdPriceModifiersPageWithSortDouble()
+		throws Exception {
+
+		testGetPriceListIdPriceModifiersPageWithSort(
+			EntityField.Type.DOUBLE,
+			(entityField, priceModifier1, priceModifier2) -> {
+				BeanUtils.setProperty(
+					priceModifier1, entityField.getName(), 0.1);
+				BeanUtils.setProperty(
+					priceModifier2, entityField.getName(), 0.5);
+			});
+	}
+
+	@Test
 	public void testGetPriceListIdPriceModifiersPageWithSortInteger()
 		throws Exception {
 
@@ -592,7 +616,7 @@ public abstract class BasePriceModifierResourceTestCase {
 
 				String entityFieldName = entityField.getName();
 
-				Method method = clazz.getMethod(
+				java.lang.reflect.Method method = clazz.getMethod(
 					"get" + StringUtil.upperCaseFirstLetter(entityFieldName));
 
 				Class<?> returnType = method.getReturnType();
@@ -716,22 +740,6 @@ public abstract class BasePriceModifierResourceTestCase {
 
 		assertEquals(randomPriceModifier, postPriceModifier);
 		assertValid(postPriceModifier);
-
-		randomPriceModifier = randomPriceModifier();
-
-		assertHttpResponseStatusCode(
-			404,
-			priceModifierResource.
-				getPriceModifierByExternalReferenceCodeHttpResponse(
-					randomPriceModifier.getExternalReferenceCode()));
-
-		testPostPriceListIdPriceModifier_addPriceModifier(randomPriceModifier);
-
-		assertHttpResponseStatusCode(
-			200,
-			priceModifierResource.
-				getPriceModifierByExternalReferenceCodeHttpResponse(
-					randomPriceModifier.getExternalReferenceCode()));
 	}
 
 	protected PriceModifier testPostPriceListIdPriceModifier_addPriceModifier(
@@ -803,7 +811,7 @@ public abstract class BasePriceModifierResourceTestCase {
 		throws Exception {
 
 		PriceModifier priceModifier =
-			testGraphQLPriceModifier_addPriceModifier();
+			testGraphQLGetPriceModifierByExternalReferenceCode_addPriceModifier();
 
 		Assert.assertTrue(
 			equals(
@@ -853,6 +861,13 @@ public abstract class BasePriceModifierResourceTestCase {
 				"Object/code"));
 	}
 
+	protected PriceModifier
+			testGraphQLGetPriceModifierByExternalReferenceCode_addPriceModifier()
+		throws Exception {
+
+		return testGraphQLPriceModifier_addPriceModifier();
+	}
+
 	@Test
 	public void testPatchPriceModifierByExternalReferenceCode()
 		throws Exception {
@@ -892,7 +907,7 @@ public abstract class BasePriceModifierResourceTestCase {
 	@Test
 	public void testGraphQLDeletePriceModifier() throws Exception {
 		PriceModifier priceModifier =
-			testGraphQLPriceModifier_addPriceModifier();
+			testGraphQLDeletePriceModifier_addPriceModifier();
 
 		Assert.assertTrue(
 			JSONUtil.getValueAsBoolean(
@@ -905,26 +920,25 @@ public abstract class BasePriceModifierResourceTestCase {
 							}
 						})),
 				"JSONObject/data", "Object/deletePriceModifier"));
+		JSONArray errorsJSONArray = JSONUtil.getValueAsJSONArray(
+			invokeGraphQLQuery(
+				new GraphQLField(
+					"priceModifier",
+					new HashMap<String, Object>() {
+						{
+							put("id", priceModifier.getId());
+						}
+					},
+					new GraphQLField("id"))),
+			"JSONArray/errors");
 
-		try (CaptureAppender captureAppender =
-				Log4JLoggerTestUtil.configureLog4JLogger(
-					"graphql.execution.SimpleDataFetcherExceptionHandler",
-					Level.WARN)) {
+		Assert.assertTrue(errorsJSONArray.length() > 0);
+	}
 
-			JSONArray errorsJSONArray = JSONUtil.getValueAsJSONArray(
-				invokeGraphQLQuery(
-					new GraphQLField(
-						"priceModifier",
-						new HashMap<String, Object>() {
-							{
-								put("id", priceModifier.getId());
-							}
-						},
-						new GraphQLField("id"))),
-				"JSONArray/errors");
+	protected PriceModifier testGraphQLDeletePriceModifier_addPriceModifier()
+		throws Exception {
 
-			Assert.assertTrue(errorsJSONArray.length() > 0);
-		}
+		return testGraphQLPriceModifier_addPriceModifier();
 	}
 
 	@Test
@@ -949,7 +963,7 @@ public abstract class BasePriceModifierResourceTestCase {
 	@Test
 	public void testGraphQLGetPriceModifier() throws Exception {
 		PriceModifier priceModifier =
-			testGraphQLPriceModifier_addPriceModifier();
+			testGraphQLGetPriceModifier_addPriceModifier();
 
 		Assert.assertTrue(
 			equals(
@@ -988,6 +1002,12 @@ public abstract class BasePriceModifierResourceTestCase {
 				"Object/code"));
 	}
 
+	protected PriceModifier testGraphQLGetPriceModifier_addPriceModifier()
+		throws Exception {
+
+		return testGraphQLPriceModifier_addPriceModifier();
+	}
+
 	@Test
 	public void testPatchPriceModifier() throws Exception {
 		Assert.assertTrue(false);
@@ -1001,6 +1021,23 @@ public abstract class BasePriceModifierResourceTestCase {
 
 		throw new UnsupportedOperationException(
 			"This method needs to be implemented");
+	}
+
+	protected void assertContains(
+		PriceModifier priceModifier, List<PriceModifier> priceModifiers) {
+
+		boolean contains = false;
+
+		for (PriceModifier item : priceModifiers) {
+			if (equals(priceModifier, item)) {
+				contains = true;
+
+				break;
+			}
+		}
+
+		Assert.assertTrue(
+			priceModifiers + " does not contain " + priceModifier, contains);
 	}
 
 	protected void assertHttpResponseStatusCode(
@@ -1237,8 +1274,8 @@ public abstract class BasePriceModifierResourceTestCase {
 	protected List<GraphQLField> getGraphQLFields() throws Exception {
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
-		for (Field field :
-				ReflectionUtil.getDeclaredFields(
+		for (java.lang.reflect.Field field :
+				getDeclaredFields(
 					com.liferay.headless.commerce.admin.pricing.dto.v2_0.
 						PriceModifier.class)) {
 
@@ -1254,12 +1291,13 @@ public abstract class BasePriceModifierResourceTestCase {
 		return graphQLFields;
 	}
 
-	protected List<GraphQLField> getGraphQLFields(Field... fields)
+	protected List<GraphQLField> getGraphQLFields(
+			java.lang.reflect.Field... fields)
 		throws Exception {
 
 		List<GraphQLField> graphQLFields = new ArrayList<>();
 
-		for (Field field : fields) {
+		for (java.lang.reflect.Field field : fields) {
 			com.liferay.portal.vulcan.graphql.annotation.GraphQLField
 				vulcanGraphQLField = field.getAnnotation(
 					com.liferay.portal.vulcan.graphql.annotation.GraphQLField.
@@ -1273,7 +1311,7 @@ public abstract class BasePriceModifierResourceTestCase {
 				}
 
 				List<GraphQLField> childrenGraphQLFields = getGraphQLFields(
-					ReflectionUtil.getDeclaredFields(clazz));
+					getDeclaredFields(clazz));
 
 				graphQLFields.add(
 					new GraphQLField(field.getName(), childrenGraphQLFields));
@@ -1527,6 +1565,19 @@ public abstract class BasePriceModifierResourceTestCase {
 		return false;
 	}
 
+	protected java.lang.reflect.Field[] getDeclaredFields(Class clazz)
+		throws Exception {
+
+		Stream<java.lang.reflect.Field> stream = Stream.of(
+			ReflectionUtil.getDeclaredFields(clazz));
+
+		return stream.filter(
+			field -> !field.isSynthetic()
+		).toArray(
+			java.lang.reflect.Field[]::new
+		);
+	}
+
 	protected java.util.Collection<EntityField> getEntityFields()
 		throws Exception {
 
@@ -1716,8 +1767,9 @@ public abstract class BasePriceModifierResourceTestCase {
 		}
 
 		if (entityFieldName.equals("priority")) {
-			throw new IllegalArgumentException(
-				"Invalid entity field " + entityFieldName);
+			sb.append(String.valueOf(priceModifier.getPriority()));
+
+			return sb.toString();
 		}
 
 		if (entityFieldName.equals("target")) {
@@ -1853,12 +1905,12 @@ public abstract class BasePriceModifierResourceTestCase {
 						_parameterMap.entrySet()) {
 
 					sb.append(entry.getKey());
-					sb.append(":");
+					sb.append(": ");
 					sb.append(entry.getValue());
-					sb.append(",");
+					sb.append(", ");
 				}
 
-				sb.setLength(sb.length() - 1);
+				sb.setLength(sb.length() - 2);
 
 				sb.append(")");
 			}
@@ -1868,10 +1920,10 @@ public abstract class BasePriceModifierResourceTestCase {
 
 				for (GraphQLField graphQLField : _graphQLFields) {
 					sb.append(graphQLField.toString());
-					sb.append(",");
+					sb.append(", ");
 				}
 
-				sb.setLength(sb.length() - 1);
+				sb.setLength(sb.length() - 2);
 
 				sb.append("}");
 			}
@@ -1885,8 +1937,8 @@ public abstract class BasePriceModifierResourceTestCase {
 
 	}
 
-	private static final Log _log = LogFactoryUtil.getLog(
-		BasePriceModifierResourceTestCase.class);
+	private static final com.liferay.portal.kernel.log.Log _log =
+		LogFactoryUtil.getLog(BasePriceModifierResourceTestCase.class);
 
 	private static BeanUtilsBean _beanUtilsBean = new BeanUtilsBean() {
 

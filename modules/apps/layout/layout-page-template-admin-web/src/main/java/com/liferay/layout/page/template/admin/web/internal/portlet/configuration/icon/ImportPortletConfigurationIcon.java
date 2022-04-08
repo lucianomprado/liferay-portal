@@ -17,11 +17,9 @@ package com.liferay.layout.page.template.admin.web.internal.portlet.configuratio
 import com.liferay.layout.page.template.admin.constants.LayoutPageTemplateAdminPortletKeys;
 import com.liferay.layout.page.template.constants.LayoutPageTemplateActionKeys;
 import com.liferay.layout.page.template.constants.LayoutPageTemplateConstants;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringBundler;
-import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.language.LanguageUtil;
-import com.liferay.portal.kernel.log.Log;
-import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.portlet.LiferayWindowState;
 import com.liferay.portal.kernel.portlet.configuration.icon.BasePortletConfigurationIcon;
@@ -33,8 +31,6 @@ import com.liferay.portal.kernel.util.WebKeys;
 
 import javax.portlet.PortletRequest;
 import javax.portlet.PortletResponse;
-import javax.portlet.PortletURL;
-import javax.portlet.WindowStateException;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -60,33 +56,21 @@ public class ImportPortletConfigurationIcon
 	public String getOnClick(
 		PortletRequest portletRequest, PortletResponse portletResponse) {
 
-		try {
-			PortletURL portletURL = _portal.getControlPanelPortletURL(
-				portletRequest,
-				LayoutPageTemplateAdminPortletKeys.LAYOUT_PAGE_TEMPLATES,
-				PortletRequest.RENDER_PHASE);
-
-			portletURL.setParameter("mvcPath", "/view_import.jsp");
-			portletURL.setWindowState(LiferayWindowState.POP_UP);
-
-			StringBundler sb = new StringBundler(6);
-
-			sb.append("Liferay.Util.openModal({onClose: function(event){");
-			sb.append("window.location.reload();}, title: '");
-			sb.append(getMessage(portletRequest));
-			sb.append("', url: '");
-			sb.append(portletURL.toString());
-			sb.append("'});");
-
-			return sb.toString();
-		}
-		catch (WindowStateException windowStateException) {
-			if (_log.isDebugEnabled()) {
-				_log.debug(windowStateException, windowStateException);
-			}
-		}
-
-		return StringPool.BLANK;
+		return StringBundler.concat(
+			"Liferay.Util.openModal({onClose: function(event){",
+			"window.location.reload();}, title: '", getMessage(portletRequest),
+			"', url: '",
+			PortletURLBuilder.create(
+				_portal.getControlPanelPortletURL(
+					portletRequest,
+					LayoutPageTemplateAdminPortletKeys.LAYOUT_PAGE_TEMPLATES,
+					PortletRequest.RENDER_PHASE)
+			).setMVCPath(
+				"/view_import.jsp"
+			).setWindowState(
+				LiferayWindowState.POP_UP
+			).buildString(),
+			"'});");
 	}
 
 	@Override
@@ -117,9 +101,6 @@ public class ImportPortletConfigurationIcon
 
 		return false;
 	}
-
-	private static final Log _log = LogFactoryUtil.getLog(
-		ImportPortletConfigurationIcon.class);
 
 	@Reference
 	private Portal _portal;

@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import com.liferay.petra.function.UnsafeSupplier;
 import com.liferay.petra.string.StringBundler;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.vulcan.graphql.annotation.GraphQLField;
 import com.liferay.portal.vulcan.graphql.annotation.GraphQLName;
 import com.liferay.portal.vulcan.util.ObjectMapperUtil;
@@ -51,6 +52,11 @@ public class DataLayoutRenderingContext implements Serializable {
 
 	public static DataLayoutRenderingContext toDTO(String json) {
 		return ObjectMapperUtil.readValue(
+			DataLayoutRenderingContext.class, json);
+	}
+
+	public static DataLayoutRenderingContext unsafeToDTO(String json) {
+		return ObjectMapperUtil.unsafeReadValue(
 			DataLayoutRenderingContext.class, json);
 	}
 
@@ -196,6 +202,62 @@ public class DataLayoutRenderingContext implements Serializable {
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected Boolean readOnly;
 
+	@Schema
+	public Long getScopeGroupId() {
+		return scopeGroupId;
+	}
+
+	public void setScopeGroupId(Long scopeGroupId) {
+		this.scopeGroupId = scopeGroupId;
+	}
+
+	@JsonIgnore
+	public void setScopeGroupId(
+		UnsafeSupplier<Long, Exception> scopeGroupIdUnsafeSupplier) {
+
+		try {
+			scopeGroupId = scopeGroupIdUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected Long scopeGroupId;
+
+	@Schema
+	public Long getSiteGroupId() {
+		return siteGroupId;
+	}
+
+	public void setSiteGroupId(Long siteGroupId) {
+		this.siteGroupId = siteGroupId;
+	}
+
+	@JsonIgnore
+	public void setSiteGroupId(
+		UnsafeSupplier<Long, Exception> siteGroupIdUnsafeSupplier) {
+
+		try {
+			siteGroupId = siteGroupIdUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected Long siteGroupId;
+
 	@Override
 	public boolean equals(Object object) {
 		if (this == object) {
@@ -287,21 +349,42 @@ public class DataLayoutRenderingContext implements Serializable {
 			sb.append(readOnly);
 		}
 
+		if (scopeGroupId != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"scopeGroupId\": ");
+
+			sb.append(scopeGroupId);
+		}
+
+		if (siteGroupId != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"siteGroupId\": ");
+
+			sb.append(siteGroupId);
+		}
+
 		sb.append("}");
 
 		return sb.toString();
 	}
 
 	@Schema(
+		accessMode = Schema.AccessMode.READ_ONLY,
 		defaultValue = "com.liferay.data.engine.rest.dto.v2_0.DataLayoutRenderingContext",
 		name = "x-class-name"
 	)
 	public String xClassName;
 
 	private static String _escape(Object object) {
-		String string = String.valueOf(object);
-
-		return string.replaceAll("\"", "\\\\\"");
+		return StringUtil.replace(
+			String.valueOf(object), _JSON_ESCAPE_STRINGS[0],
+			_JSON_ESCAPE_STRINGS[1]);
 	}
 
 	private static boolean _isArray(Object value) {
@@ -327,8 +410,8 @@ public class DataLayoutRenderingContext implements Serializable {
 			Map.Entry<String, ?> entry = iterator.next();
 
 			sb.append("\"");
-			sb.append(entry.getKey());
-			sb.append("\":");
+			sb.append(_escape(entry.getKey()));
+			sb.append("\": ");
 
 			Object value = entry.getValue();
 
@@ -359,7 +442,7 @@ public class DataLayoutRenderingContext implements Serializable {
 			}
 			else if (value instanceof String) {
 				sb.append("\"");
-				sb.append(value);
+				sb.append(_escape(value));
 				sb.append("\"");
 			}
 			else {
@@ -367,7 +450,7 @@ public class DataLayoutRenderingContext implements Serializable {
 			}
 
 			if (iterator.hasNext()) {
-				sb.append(",");
+				sb.append(", ");
 			}
 		}
 
@@ -375,5 +458,10 @@ public class DataLayoutRenderingContext implements Serializable {
 
 		return sb.toString();
 	}
+
+	private static final String[][] _JSON_ESCAPE_STRINGS = {
+		{"\\", "\"", "\b", "\f", "\n", "\r", "\t"},
+		{"\\\\", "\\\"", "\\b", "\\f", "\\n", "\\r", "\\t"}
+	};
 
 }

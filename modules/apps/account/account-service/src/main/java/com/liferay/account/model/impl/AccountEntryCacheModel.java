@@ -77,7 +77,7 @@ public class AccountEntryCacheModel
 
 	@Override
 	public String toString() {
-		StringBundler sb = new StringBundler(37);
+		StringBundler sb = new StringBundler(47);
 
 		sb.append("{mvccVersion=");
 		sb.append(mvccVersion);
@@ -97,6 +97,12 @@ public class AccountEntryCacheModel
 		sb.append(modifiedDate);
 		sb.append(", defaultBillingAddressId=");
 		sb.append(defaultBillingAddressId);
+		sb.append(", defaultCPaymentMethodKey=");
+		sb.append(defaultCPaymentMethodKey);
+		sb.append(", defaultDeliveryCTermEntryId=");
+		sb.append(defaultDeliveryCTermEntryId);
+		sb.append(", defaultPaymentCTermEntryId=");
+		sb.append(defaultPaymentCTermEntryId);
 		sb.append(", defaultShippingAddressId=");
 		sb.append(defaultShippingAddressId);
 		sb.append(", parentAccountEntryId=");
@@ -105,10 +111,14 @@ public class AccountEntryCacheModel
 		sb.append(description);
 		sb.append(", domains=");
 		sb.append(domains);
+		sb.append(", emailAddress=");
+		sb.append(emailAddress);
 		sb.append(", logoId=");
 		sb.append(logoId);
 		sb.append(", name=");
 		sb.append(name);
+		sb.append(", taxExemptionCode=");
+		sb.append(taxExemptionCode);
 		sb.append(", taxIdNumber=");
 		sb.append(taxIdNumber);
 		sb.append(", type=");
@@ -159,6 +169,19 @@ public class AccountEntryCacheModel
 		}
 
 		accountEntryImpl.setDefaultBillingAddressId(defaultBillingAddressId);
+
+		if (defaultCPaymentMethodKey == null) {
+			accountEntryImpl.setDefaultCPaymentMethodKey("");
+		}
+		else {
+			accountEntryImpl.setDefaultCPaymentMethodKey(
+				defaultCPaymentMethodKey);
+		}
+
+		accountEntryImpl.setDefaultDeliveryCTermEntryId(
+			defaultDeliveryCTermEntryId);
+		accountEntryImpl.setDefaultPaymentCTermEntryId(
+			defaultPaymentCTermEntryId);
 		accountEntryImpl.setDefaultShippingAddressId(defaultShippingAddressId);
 		accountEntryImpl.setParentAccountEntryId(parentAccountEntryId);
 
@@ -176,6 +199,13 @@ public class AccountEntryCacheModel
 			accountEntryImpl.setDomains(domains);
 		}
 
+		if (emailAddress == null) {
+			accountEntryImpl.setEmailAddress("");
+		}
+		else {
+			accountEntryImpl.setEmailAddress(emailAddress);
+		}
+
 		accountEntryImpl.setLogoId(logoId);
 
 		if (name == null) {
@@ -183,6 +213,13 @@ public class AccountEntryCacheModel
 		}
 		else {
 			accountEntryImpl.setName(name);
+		}
+
+		if (taxExemptionCode == null) {
+			accountEntryImpl.setTaxExemptionCode("");
+		}
+		else {
+			accountEntryImpl.setTaxExemptionCode(taxExemptionCode);
 		}
 
 		if (taxIdNumber == null) {
@@ -221,15 +258,22 @@ public class AccountEntryCacheModel
 		modifiedDate = objectInput.readLong();
 
 		defaultBillingAddressId = objectInput.readLong();
+		defaultCPaymentMethodKey = objectInput.readUTF();
+
+		defaultDeliveryCTermEntryId = objectInput.readLong();
+
+		defaultPaymentCTermEntryId = objectInput.readLong();
 
 		defaultShippingAddressId = objectInput.readLong();
 
 		parentAccountEntryId = objectInput.readLong();
 		description = objectInput.readUTF();
 		domains = objectInput.readUTF();
+		emailAddress = objectInput.readUTF();
 
 		logoId = objectInput.readLong();
 		name = objectInput.readUTF();
+		taxExemptionCode = objectInput.readUTF();
 		taxIdNumber = objectInput.readUTF();
 		type = objectInput.readUTF();
 
@@ -265,6 +309,17 @@ public class AccountEntryCacheModel
 
 		objectOutput.writeLong(defaultBillingAddressId);
 
+		if (defaultCPaymentMethodKey == null) {
+			objectOutput.writeUTF("");
+		}
+		else {
+			objectOutput.writeUTF(defaultCPaymentMethodKey);
+		}
+
+		objectOutput.writeLong(defaultDeliveryCTermEntryId);
+
+		objectOutput.writeLong(defaultPaymentCTermEntryId);
+
 		objectOutput.writeLong(defaultShippingAddressId);
 
 		objectOutput.writeLong(parentAccountEntryId);
@@ -283,6 +338,13 @@ public class AccountEntryCacheModel
 			objectOutput.writeUTF(domains);
 		}
 
+		if (emailAddress == null) {
+			objectOutput.writeUTF("");
+		}
+		else {
+			objectOutput.writeUTF(emailAddress);
+		}
+
 		objectOutput.writeLong(logoId);
 
 		if (name == null) {
@@ -290,6 +352,13 @@ public class AccountEntryCacheModel
 		}
 		else {
 			objectOutput.writeUTF(name);
+		}
+
+		if (taxExemptionCode == null) {
+			objectOutput.writeUTF("");
+		}
+		else {
+			objectOutput.writeUTF(taxExemptionCode);
 		}
 
 		if (taxIdNumber == null) {
@@ -318,12 +387,17 @@ public class AccountEntryCacheModel
 	public long createDate;
 	public long modifiedDate;
 	public long defaultBillingAddressId;
+	public String defaultCPaymentMethodKey;
+	public long defaultDeliveryCTermEntryId;
+	public long defaultPaymentCTermEntryId;
 	public long defaultShippingAddressId;
 	public long parentAccountEntryId;
 	public String description;
 	public String domains;
+	public String emailAddress;
 	public long logoId;
 	public String name;
+	public String taxExemptionCode;
 	public String taxIdNumber;
 	public String type;
 	public int status;

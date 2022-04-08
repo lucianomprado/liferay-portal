@@ -931,6 +931,10 @@ public class SafePortalLDAPImpl implements SafePortalLDAP {
 			}
 		}
 		catch (OperationNotSupportedException operationNotSupportedException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(operationNotSupportedException);
+			}
+
 			if (enumeration != null) {
 				enumeration.close();
 			}
@@ -1089,16 +1093,8 @@ public class SafePortalLDAPImpl implements SafePortalLDAP {
 			end += systemLDAPConfiguration.rangeSize();
 		}
 
-		StringBundler sb = new StringBundler(6);
-
-		sb.append(originalAttributeId);
-		sb.append(StringPool.SEMICOLON);
-		sb.append("range=");
-		sb.append(start);
-		sb.append(StringPool.DASH);
-		sb.append(end);
-
-		return sb.toString();
+		return StringBundler.concat(
+			originalAttributeId, ";range=", start, StringPool.DASH, end);
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(

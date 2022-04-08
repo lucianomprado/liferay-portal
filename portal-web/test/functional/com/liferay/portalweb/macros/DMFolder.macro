@@ -37,7 +37,7 @@ definition {
 			Navigator.openSiteURL(siteName = "${siteName}");
 
 			ProductMenu.gotoPortlet(
-				category = "Content &amp; Data",
+				category = "Content & Data",
 				portlet = "Documents and Media",
 				site = "${siteName}");
 		}
@@ -46,7 +46,12 @@ definition {
 	}
 
 	macro addPG {
-		Portlet.clickPortletPlusIconPG(portletName = "Documents and Media");
+		if (isSet(contentPage)) {
+			LexiconEntry.gotoAdd();
+		}
+		else {
+			Portlet.clickPortletPlusIconPG(portletName = "Documents and Media");
+		}
 
 		AssertClick.assertTextClickAt(
 			key_menuItem = "Folder",
@@ -65,6 +70,13 @@ definition {
 			Select(
 				locator1 = "Select#PERMISSIONS",
 				value1 = "${viewableBy}");
+
+			if (isSet(permissionDefinitionKeyList)) {
+				PermissionsInline.addOrRemoveEntryPermissionsFromAllRoles(
+					addOrRemoveViewPermission = "${addOrRemoveViewPermission}",
+					key_roleTitle = "${roleTitle}",
+					permissionDefinitionKeyList = "${permissionDefinitionKeyList}");
+			}
 		}
 
 		Button.clickSave();
@@ -116,7 +128,9 @@ definition {
 	}
 
 	macro configureWorkflowCP {
-		DMFolder.gotoEditCP(folderName = "${dmFolderName}");
+		LexiconEntry.gotoEntryMenuItem(
+			menuItem = "Edit",
+			rowEntry = "${dmFolderName}");
 
 		if (IsElementNotPresent.isNotVisible(locator1 = "Radio#WORKFLOW_PARENT_FOLDER")) {
 			Click(locator1 = "DocumentsAndMediaEditFolder#WORKFLOW_DOCUMENT_TYPE_RESTRICTIONS_TOGGLE");
@@ -164,10 +178,8 @@ definition {
 				locator1 = "Select#WORKFLOW_DEFAULT",
 				value1 = "${workflowDefinition}");
 
-			Button.clickSave();
+			PortletEntry.save();
 		}
-
-		Alert.viewSuccessMessage();
 	}
 
 	macro deleteCP {
@@ -296,38 +308,60 @@ definition {
 
 		AssertElementPresent(locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_FOLDER_TITLE");
 
-		AssertElementPresent(locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_FOLDER_TITLE");
-
 		Click(
 			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_VERTICAL_ELLIPSIS",
 			value1 = "${dmFolderName2}");
 
 		MenuItem.click(menuItem = "Move");
 
-		SelectFrame(locator1 = "DocumentsAndMediaSelectFolder#SELECT_FOLDER_IFRAME");
+		SelectFrame.selectFrameNoLoading(locator1 = "DocumentsAndMediaSelectFolder#SELECT_FOLDER_IFRAME");
 
-		var key_dmFolderName = "${dmFolderName1}";
+		if ("${moveSubfolder}" == "true") {
+			AssertClick(
+				key_breadcrumbName = "Home",
+				locator1 = "BreadcrumbPortlet#BREADCRUMB_FOLDER",
+				value1 = "Home");
 
-		AssertClick(
-			locator1 = "DocumentsAndMediaSelectFolder#SELECT_BUTTON",
-			value1 = "Select");
+			AssertClick(
+				key_text = "Select This Folder",
+				locator1 = "Button#ANY",
+				value1 = "Select This Folder");
 
-		SelectFrame(locator1 = "relative=top");
+			SelectFrame(locator1 = "relative=top");
 
-		Alert.viewSuccessMessage();
+			if ("${moveFailure}" == "true") {
+				AssertTextEquals.assertPartialText(
+					locator1 = "Message#ERROR",
+					value1 = "Error:The folder you selected already has an entry with this name. Please select a different folder.");
+			}
+			else {
+				Alert.viewSuccessMessage();
+			}
+		}
+		else {
+			var key_dmFolderName = "${dmFolderName1}";
 
-		AssertElementNotPresent(
-			key_dmFolderName = "${dmFolderName2}",
-			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_FOLDER_TITLE");
+			AssertClick(
+				locator1 = "DocumentsAndMediaSelectFolder#SELECT_BUTTON",
+				value1 = "Select");
 
-		Click(
-			key_dmFolderName = "${dmFolderName1}",
-			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_FOLDER_TITLE",
-			value1 = "${dmFolderName1}");
+			SelectFrame(locator1 = "relative=top");
 
-		AssertElementPresent(
-			key_dmFolderName = "${dmFolderName2}",
-			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_FOLDER_TITLE");
+			Alert.viewSuccessMessage();
+
+			AssertElementNotPresent(
+				key_dmFolderName = "${dmFolderName2}",
+				locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_FOLDER_TITLE");
+
+			Click(
+				key_dmFolderName = "${dmFolderName1}",
+				locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_FOLDER_TITLE",
+				value1 = "${dmFolderName1}");
+
+			AssertElementPresent(
+				key_dmFolderName = "${dmFolderName2}",
+				locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_FOLDER_TITLE");
+		}
 	}
 
 	macro moveToRecycleBinCP {
@@ -374,29 +408,21 @@ definition {
 		Navigator.openURL();
 
 		ProductMenu.gotoPortlet(
-			category = "Content &amp; Data",
+			category = "Content & Data",
 			portlet = "Documents and Media",
 			site = "${site}");
 
 		if (IsElementNotPresent(locator1 = "Message#EMPTY_INFO")) {
-			Check(locator1 = "DocumentsAndMedia#TOOLBAR_SELECT_ALL_CHECKBOX");
+			Click.clickNoMouseOverNoWaitForVisible(locator1 = "DocumentsAndMedia#TOOLBAR_SELECT_ALL_CHECKBOX");
 
-			AssertClick.waitForDMHomeAssertTextEqualsClick(
-				locator1 = "DocumentsAndMedia#TOOLBAR_ACTIONS",
-				value1 = "Actions");
+			Click(locator1 = "DocumentsAndMedia#TOOLBAR_ACTIONS");
 
 			MenuItem.viewPresent(menuItem = "Move to Recycle Bin");
 
 			PortletEntry.clickMoveToRecycleBin();
 		}
 
-		Navigator.openURL();
-
-		ProductMenu.gotoPortlet(
-			category = "Recycle Bin",
-			portlet = "Recycle Bin");
-
-		RecycleBin.emptyCP();
+		JSONRecycleBin.emptyRecycleBin();
 	}
 
 	macro tearDownPGViaMG {
@@ -412,19 +438,13 @@ definition {
 			VerifyElementPresent(locator1 = "Message#SUCCESS");
 		}
 
-		Navigator.openURL();
-
-		ProductMenu.gotoPortlet(
-			category = "Recycle Bin",
-			portlet = "Recycle Bin");
-
-		RecycleBin.emptyCP();
+		JSONRecycleBin.emptyRecycleBin();
 	}
 
 	macro viewCP {
 		var key_dmFolderName = "${dmFolderName}";
 
-		if (IsElementPresent(locator1 = "Icon#CURRENT_DISPLAY_STYLE_ACTIVE", key_displayStyle = "list")) {
+		if (IsElementPresent(key_displayStyle = "list", locator1 = "Icon#CURRENT_DISPLAY_STYLE_ACTIVE")) {
 			AssertElementPresent(locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_FOLDER_ICON");
 
 			AssertTextEquals(
@@ -476,6 +496,12 @@ definition {
 		MenuItem.click(menuItem = "Permissions");
 
 		IFrame.selectPermissionsFrame();
+	}
+
+	macro viewNoSubscribe {
+		Click(locator1 = "Icon#INFO");
+
+		AssertElementNotPresent(locator1 = "Icon#SUBSCRIBE");
 	}
 
 	macro viewPG {

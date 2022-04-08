@@ -14,6 +14,7 @@
 
 package com.liferay.frontend.taglib.clay.servlet.taglib;
 
+import com.liferay.frontend.taglib.clay.internal.servlet.taglib.util.DropdownItemListUtil;
 import com.liferay.frontend.taglib.clay.servlet.taglib.soy.VerticalCard;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.LabelItem;
@@ -41,10 +42,6 @@ public class VerticalCardTag extends BaseCardTag {
 
 		if (getIcon() == null) {
 			setIcon("documents-and-media");
-		}
-
-		if (getStickerIcon() == null) {
-			setStickerIcon("document-default");
 		}
 
 		return super.doStartTag();
@@ -239,11 +236,18 @@ public class VerticalCardTag extends BaseCardTag {
 		if (_showSticker == null) {
 			VerticalCard verticalCard = getVerticalCard();
 
-			if (verticalCard != null) {
+			if ((verticalCard != null) &&
+				(verticalCard.isStickerShown() != null)) {
+
 				return verticalCard.isStickerShown();
 			}
+			else if (Validator.isNotNull(getStickerIcon()) ||
+					 Validator.isNotNull(getStickerImageSrc())) {
 
-			return true;
+				return true;
+			}
+
+			return false;
 		}
 
 		return _showSticker;
@@ -618,7 +622,7 @@ public class VerticalCardTag extends BaseCardTag {
 
 		List<DropdownItem> actionDropdownItems = getActionDropdownItems();
 
-		if (!ListUtil.isEmpty(actionDropdownItems)) {
+		if (!DropdownItemListUtil.isEmpty(actionDropdownItems)) {
 			jspWriter.write("<div class=\"autofit-col\">");
 
 			DropdownActionsTag dropdownActionsTag = new DropdownActionsTag();

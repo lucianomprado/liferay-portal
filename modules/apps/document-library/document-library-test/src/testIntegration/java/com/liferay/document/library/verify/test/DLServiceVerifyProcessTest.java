@@ -38,6 +38,7 @@ import com.liferay.dynamic.data.mapping.kernel.DDMFormField;
 import com.liferay.dynamic.data.mapping.kernel.DDMFormFieldValue;
 import com.liferay.dynamic.data.mapping.kernel.DDMFormValues;
 import com.liferay.dynamic.data.mapping.kernel.UnlocalizedValue;
+import com.liferay.dynamic.data.mapping.model.DDMFormFieldType;
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.service.DDMStructureLocalServiceUtil;
 import com.liferay.dynamic.data.mapping.test.util.DDMFormTestUtil;
@@ -194,14 +195,11 @@ public class DLServiceVerifyProcessTest extends BaseVerifyProcessTestCase {
 	public void testDLFileEntryTreePathWithDLFileEntryInTrash()
 		throws Exception {
 
-		ServiceContext serviceContext =
-			ServiceContextTestUtil.getServiceContext(
-				_group.getGroupId(), TestPropsValues.getUserId());
-
 		Folder parentFolder = DLAppServiceUtil.addFolder(
 			_group.getGroupId(), DLFolderConstants.DEFAULT_PARENT_FOLDER_ID,
 			RandomTestUtil.randomString(), RandomTestUtil.randomString(),
-			serviceContext);
+			ServiceContextTestUtil.getServiceContext(
+				_group.getGroupId(), TestPropsValues.getUserId()));
 
 		FileEntry fileEntry = addFileEntry(parentFolder.getFolderId());
 
@@ -449,23 +447,22 @@ public class DLServiceVerifyProcessTest extends BaseVerifyProcessTestCase {
 			TestDataConstants.TEST_BYTE_ARRAY);
 
 		return DLFileEntryLocalServiceUtil.addFileEntry(
-			TestPropsValues.getUserId(), _group.getGroupId(),
+			null, TestPropsValues.getUserId(), _group.getGroupId(),
 			_group.getGroupId(), DLFolderConstants.DEFAULT_PARENT_FOLDER_ID,
 			RandomTestUtil.randomString(), null, RandomTestUtil.randomString(),
-			null, null, dlFileEntryType.getFileEntryTypeId(), ddmFormValuesMap,
-			null, byteArrayInputStream, byteArrayInputStream.available(),
+			RandomTestUtil.randomString(), null, null,
+			dlFileEntryType.getFileEntryTypeId(), ddmFormValuesMap, null,
+			byteArrayInputStream, byteArrayInputStream.available(), null, null,
 			serviceContext);
 	}
 
 	protected FileEntry addFileEntry(long folderId) throws Exception {
-		ServiceContext serviceContext =
-			ServiceContextTestUtil.getServiceContext(
-				_group.getGroupId(), TestPropsValues.getUserId());
-
 		return DLAppLocalServiceUtil.addFileEntry(
-			TestPropsValues.getUserId(), _group.getGroupId(), folderId,
+			null, TestPropsValues.getUserId(), _group.getGroupId(), folderId,
 			RandomTestUtil.randomString() + ".txt", ContentTypes.TEXT_PLAIN,
-			TestDataConstants.TEST_BYTE_ARRAY, serviceContext);
+			TestDataConstants.TEST_BYTE_ARRAY, null, null,
+			ServiceContextTestUtil.getServiceContext(
+				_group.getGroupId(), TestPropsValues.getUserId()));
 	}
 
 	protected Map<String, DDMFormValues> getDDMFormValuesMap(
@@ -483,7 +480,7 @@ public class DLServiceVerifyProcessTest extends BaseVerifyProcessTestCase {
 				ddmForm.setDefaultLocale(currentLocale);
 
 				DDMFormField ddmFormField = new DDMFormField(
-					"date_an", "ddm-date");
+					"date_an", DDMFormFieldType.DATE);
 
 				ddmFormField.setDataType("date");
 

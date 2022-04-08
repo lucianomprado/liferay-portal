@@ -1,39 +1,24 @@
 {
 	"dependencies": {
-		"@clayui/alert": "3.5.0",
-		"@clayui/autocomplete": "3.2.1",
-		"@clayui/badge": "3.2.0",
-		"@clayui/button": "3.5.0",
-		"@clayui/card": "3.6.1",
-		"@clayui/drop-down": "3.8.1",
-		"@clayui/form": "3.13.0",
-		"@clayui/icon": "3.1.0",
-		"@clayui/label": "3.4.0",
-		"@clayui/link": "3.2.0",
-		"@clayui/list": "3.4.2",
-		"@clayui/loading-indicator": "3.2.0",
-		"@clayui/modal": "3.8.1",
-		"@clayui/multi-select": "3.8.1",
-		"@clayui/pagination-bar": "3.2.1",
-		"@clayui/panel": "3.3.1",
-		"@clayui/shared": "3.3.1",
-		"@clayui/sticker": "3.3.0",
-		"@clayui/table": "3.1.0",
-		"@clayui/tooltip": "3.4.1",
-		"classnames": "2.2.6",
-		"frontend-js-react-web": "*",
-		"moment": "^2.22.2",
-		"prop-types": "15.7.2",
-		"react": "16.12.0",
-		"react-dom": "16.12.0"
 	},
 	"devDependencies": {
-		"clay-css": "^2.16.2"
+		"clay-css": "^2.16.2",
+		"faker": "^5.1.0"
 	},
 	"jest": {
+		"collectCoverageFrom": [
+			"!<rootDir>/node_modules/",
+			"<rootDir>/src/**/components/**/*.js",
+			"<rootDir>/src/**/ServiceProvider/composeAPI.js",
+			"<rootDir>/src/**/utilities/**/*.js",
+			"!<rootDir>/src/**/constants.js",
+			"!<rootDir>/src/**/entry.js"
+		],
 		"testPathIgnorePatterns": [
-			"<rootDir>/test/dev/",
-			"<rootDir>/test/utilities"
+			"<rootDir>/test/components/AddToCart",
+			"<rootDir>/test/components/MiniCart",
+			"<rootDir>/test/components/QuantitySelector",
+			"<rootDir>/test/utils/"
 		]
 	},
 	"main": "index.js",
@@ -42,9 +27,10 @@
 	"scripts": {
 		"build": "liferay-npm-scripts build",
 		"checkFormat": "liferay-npm-scripts check",
+		"coverage": "liferay-npm-scripts test --coverage --silent --verbose",
 		"format": "liferay-npm-scripts format",
 		"test": "liferay-npm-scripts test",
 		"watch": "liferay-npm-scripts webpack --watch"
 	},
-	"version": "4.0.0"
+	"version": "4.0.46"
 }

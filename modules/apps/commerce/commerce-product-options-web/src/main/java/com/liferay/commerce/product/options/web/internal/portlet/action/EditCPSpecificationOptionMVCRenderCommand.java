@@ -39,7 +39,7 @@ import org.osgi.service.component.annotations.Reference;
 	enabled = false, immediate = true,
 	property = {
 		"javax.portlet.name=" + CPPortletKeys.CP_SPECIFICATION_OPTIONS,
-		"mvc.command.name=editProductSpecificationOption"
+		"mvc.command.name=/cp_specification_options/edit_cp_specification_option"
 	},
 	service = MVCRenderCommand.class
 )
@@ -52,7 +52,7 @@ public class EditCPSpecificationOptionMVCRenderCommand
 		throws PortletException {
 
 		try {
-			setCPSpecificationOptionRequestAttribute(renderRequest);
+			_setCPSpecificationOptionRequestAttribute(renderRequest);
 		}
 		catch (Exception exception) {
 			if (exception instanceof NoSuchCPSpecificationOptionException ||
@@ -66,10 +66,10 @@ public class EditCPSpecificationOptionMVCRenderCommand
 			throw new PortletException(exception);
 		}
 
-		return "/edit_specification_option.jsp";
+		return "/edit_cp_specification_option.jsp";
 	}
 
-	protected void setCPSpecificationOptionRequestAttribute(
+	private void _setCPSpecificationOptionRequestAttribute(
 			RenderRequest renderRequest)
 		throws PortalException {
 

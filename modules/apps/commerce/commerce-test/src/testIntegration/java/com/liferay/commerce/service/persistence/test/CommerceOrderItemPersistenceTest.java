@@ -27,6 +27,7 @@ import com.liferay.portal.kernel.dao.orm.ProjectionFactoryUtil;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.dao.orm.RestrictionsFactoryUtil;
 import com.liferay.portal.kernel.dao.orm.Session;
+import com.liferay.portal.kernel.test.AssertUtils;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
@@ -127,6 +128,8 @@ public class CommerceOrderItemPersistenceTest {
 
 		CommerceOrderItem newCommerceOrderItem = _persistence.create(pk);
 
+		newCommerceOrderItem.setMvccVersion(RandomTestUtil.nextLong());
+
 		newCommerceOrderItem.setExternalReferenceCode(
 			RandomTestUtil.randomString());
 
@@ -142,37 +145,41 @@ public class CommerceOrderItemPersistenceTest {
 
 		newCommerceOrderItem.setModifiedDate(RandomTestUtil.nextDate());
 
+		newCommerceOrderItem.setBookedQuantityId(RandomTestUtil.nextLong());
+
 		newCommerceOrderItem.setCommerceOrderId(RandomTestUtil.nextLong());
 
 		newCommerceOrderItem.setCommercePriceListId(RandomTestUtil.nextLong());
 
-		newCommerceOrderItem.setCProductId(RandomTestUtil.nextLong());
-
 		newCommerceOrderItem.setCPInstanceId(RandomTestUtil.nextLong());
+
+		newCommerceOrderItem.setCPMeasurementUnitId(RandomTestUtil.nextLong());
+
+		newCommerceOrderItem.setCProductId(RandomTestUtil.nextLong());
 
 		newCommerceOrderItem.setParentCommerceOrderItemId(
 			RandomTestUtil.nextLong());
 
-		newCommerceOrderItem.setQuantity(RandomTestUtil.nextInt());
-
-		newCommerceOrderItem.setShippedQuantity(RandomTestUtil.nextInt());
-
-		newCommerceOrderItem.setJson(RandomTestUtil.randomString());
-
-		newCommerceOrderItem.setName(RandomTestUtil.randomString());
-
-		newCommerceOrderItem.setSku(RandomTestUtil.randomString());
-
-		newCommerceOrderItem.setUnitPrice(
+		newCommerceOrderItem.setDecimalQuantity(
 			new BigDecimal(RandomTestUtil.nextDouble()));
 
-		newCommerceOrderItem.setPromoPrice(
-			new BigDecimal(RandomTestUtil.nextDouble()));
+		newCommerceOrderItem.setDeliveryGroup(RandomTestUtil.randomString());
+
+		newCommerceOrderItem.setDeliveryMaxSubscriptionCycles(
+			RandomTestUtil.nextLong());
+
+		newCommerceOrderItem.setDeliverySubscriptionLength(
+			RandomTestUtil.nextInt());
+
+		newCommerceOrderItem.setDeliverySubscriptionType(
+			RandomTestUtil.randomString());
+
+		newCommerceOrderItem.setDeliverySubscriptionTypeSettings(
+			RandomTestUtil.randomString());
+
+		newCommerceOrderItem.setDepth(RandomTestUtil.nextDouble());
 
 		newCommerceOrderItem.setDiscountAmount(
-			new BigDecimal(RandomTestUtil.nextDouble()));
-
-		newCommerceOrderItem.setFinalPrice(
 			new BigDecimal(RandomTestUtil.nextDouble()));
 
 		newCommerceOrderItem.setDiscountPercentageLevel1(
@@ -187,18 +194,6 @@ public class CommerceOrderItemPersistenceTest {
 		newCommerceOrderItem.setDiscountPercentageLevel4(
 			new BigDecimal(RandomTestUtil.nextDouble()));
 
-		newCommerceOrderItem.setUnitPriceWithTaxAmount(
-			new BigDecimal(RandomTestUtil.nextDouble()));
-
-		newCommerceOrderItem.setPromoPriceWithTaxAmount(
-			new BigDecimal(RandomTestUtil.nextDouble()));
-
-		newCommerceOrderItem.setDiscountWithTaxAmount(
-			new BigDecimal(RandomTestUtil.nextDouble()));
-
-		newCommerceOrderItem.setFinalPriceWithTaxAmount(
-			new BigDecimal(RandomTestUtil.nextDouble()));
-
 		newCommerceOrderItem.setDiscountPercentageLevel1WithTaxAmount(
 			new BigDecimal(RandomTestUtil.nextDouble()));
 
@@ -211,27 +206,81 @@ public class CommerceOrderItemPersistenceTest {
 		newCommerceOrderItem.setDiscountPercentageLevel4WithTaxAmount(
 			new BigDecimal(RandomTestUtil.nextDouble()));
 
-		newCommerceOrderItem.setSubscription(RandomTestUtil.randomBoolean());
+		newCommerceOrderItem.setDiscountWithTaxAmount(
+			new BigDecimal(RandomTestUtil.nextDouble()));
 
-		newCommerceOrderItem.setDeliveryGroup(RandomTestUtil.randomString());
+		newCommerceOrderItem.setFinalPrice(
+			new BigDecimal(RandomTestUtil.nextDouble()));
 
-		newCommerceOrderItem.setShippingAddressId(RandomTestUtil.nextLong());
+		newCommerceOrderItem.setFinalPriceWithTaxAmount(
+			new BigDecimal(RandomTestUtil.nextDouble()));
+
+		newCommerceOrderItem.setFreeShipping(RandomTestUtil.randomBoolean());
+
+		newCommerceOrderItem.setHeight(RandomTestUtil.nextDouble());
+
+		newCommerceOrderItem.setJson(RandomTestUtil.randomString());
+
+		newCommerceOrderItem.setManuallyAdjusted(
+			RandomTestUtil.randomBoolean());
+
+		newCommerceOrderItem.setMaxSubscriptionCycles(
+			RandomTestUtil.nextLong());
+
+		newCommerceOrderItem.setName(RandomTestUtil.randomString());
 
 		newCommerceOrderItem.setPrintedNote(RandomTestUtil.randomString());
+
+		newCommerceOrderItem.setPromoPrice(
+			new BigDecimal(RandomTestUtil.nextDouble()));
+
+		newCommerceOrderItem.setPromoPriceWithTaxAmount(
+			new BigDecimal(RandomTestUtil.nextDouble()));
+
+		newCommerceOrderItem.setQuantity(RandomTestUtil.nextInt());
 
 		newCommerceOrderItem.setRequestedDeliveryDate(
 			RandomTestUtil.nextDate());
 
-		newCommerceOrderItem.setBookedQuantityId(RandomTestUtil.nextLong());
+		newCommerceOrderItem.setShippingAddressId(RandomTestUtil.nextLong());
 
-		newCommerceOrderItem.setManuallyAdjusted(
-			RandomTestUtil.randomBoolean());
+		newCommerceOrderItem.setShipSeparately(RandomTestUtil.randomBoolean());
+
+		newCommerceOrderItem.setShippable(RandomTestUtil.randomBoolean());
+
+		newCommerceOrderItem.setShippedQuantity(RandomTestUtil.nextInt());
+
+		newCommerceOrderItem.setShippingExtraPrice(RandomTestUtil.nextDouble());
+
+		newCommerceOrderItem.setSku(RandomTestUtil.randomString());
+
+		newCommerceOrderItem.setSubscription(RandomTestUtil.randomBoolean());
+
+		newCommerceOrderItem.setSubscriptionLength(RandomTestUtil.nextInt());
+
+		newCommerceOrderItem.setSubscriptionType(RandomTestUtil.randomString());
+
+		newCommerceOrderItem.setSubscriptionTypeSettings(
+			RandomTestUtil.randomString());
+
+		newCommerceOrderItem.setUnitPrice(
+			new BigDecimal(RandomTestUtil.nextDouble()));
+
+		newCommerceOrderItem.setUnitPriceWithTaxAmount(
+			new BigDecimal(RandomTestUtil.nextDouble()));
+
+		newCommerceOrderItem.setWeight(RandomTestUtil.nextDouble());
+
+		newCommerceOrderItem.setWidth(RandomTestUtil.nextDouble());
 
 		_commerceOrderItems.add(_persistence.update(newCommerceOrderItem));
 
 		CommerceOrderItem existingCommerceOrderItem =
 			_persistence.findByPrimaryKey(newCommerceOrderItem.getPrimaryKey());
 
+		Assert.assertEquals(
+			existingCommerceOrderItem.getMvccVersion(),
+			newCommerceOrderItem.getMvccVersion());
 		Assert.assertEquals(
 			existingCommerceOrderItem.getExternalReferenceCode(),
 			newCommerceOrderItem.getExternalReferenceCode());
@@ -257,46 +306,50 @@ public class CommerceOrderItemPersistenceTest {
 			Time.getShortTimestamp(existingCommerceOrderItem.getModifiedDate()),
 			Time.getShortTimestamp(newCommerceOrderItem.getModifiedDate()));
 		Assert.assertEquals(
+			existingCommerceOrderItem.getBookedQuantityId(),
+			newCommerceOrderItem.getBookedQuantityId());
+		Assert.assertEquals(
 			existingCommerceOrderItem.getCommerceOrderId(),
 			newCommerceOrderItem.getCommerceOrderId());
 		Assert.assertEquals(
 			existingCommerceOrderItem.getCommercePriceListId(),
 			newCommerceOrderItem.getCommercePriceListId());
 		Assert.assertEquals(
-			existingCommerceOrderItem.getCProductId(),
-			newCommerceOrderItem.getCProductId());
-		Assert.assertEquals(
 			existingCommerceOrderItem.getCPInstanceId(),
 			newCommerceOrderItem.getCPInstanceId());
+		Assert.assertEquals(
+			existingCommerceOrderItem.getCPMeasurementUnitId(),
+			newCommerceOrderItem.getCPMeasurementUnitId());
+		Assert.assertEquals(
+			existingCommerceOrderItem.getCProductId(),
+			newCommerceOrderItem.getCProductId());
 		Assert.assertEquals(
 			existingCommerceOrderItem.getParentCommerceOrderItemId(),
 			newCommerceOrderItem.getParentCommerceOrderItemId());
 		Assert.assertEquals(
-			existingCommerceOrderItem.getQuantity(),
-			newCommerceOrderItem.getQuantity());
+			existingCommerceOrderItem.getDecimalQuantity(),
+			newCommerceOrderItem.getDecimalQuantity());
 		Assert.assertEquals(
-			existingCommerceOrderItem.getShippedQuantity(),
-			newCommerceOrderItem.getShippedQuantity());
+			existingCommerceOrderItem.getDeliveryGroup(),
+			newCommerceOrderItem.getDeliveryGroup());
 		Assert.assertEquals(
-			existingCommerceOrderItem.getJson(),
-			newCommerceOrderItem.getJson());
+			existingCommerceOrderItem.getDeliveryMaxSubscriptionCycles(),
+			newCommerceOrderItem.getDeliveryMaxSubscriptionCycles());
 		Assert.assertEquals(
-			existingCommerceOrderItem.getName(),
-			newCommerceOrderItem.getName());
+			existingCommerceOrderItem.getDeliverySubscriptionLength(),
+			newCommerceOrderItem.getDeliverySubscriptionLength());
 		Assert.assertEquals(
-			existingCommerceOrderItem.getSku(), newCommerceOrderItem.getSku());
+			existingCommerceOrderItem.getDeliverySubscriptionType(),
+			newCommerceOrderItem.getDeliverySubscriptionType());
 		Assert.assertEquals(
-			existingCommerceOrderItem.getUnitPrice(),
-			newCommerceOrderItem.getUnitPrice());
-		Assert.assertEquals(
-			existingCommerceOrderItem.getPromoPrice(),
-			newCommerceOrderItem.getPromoPrice());
+			existingCommerceOrderItem.getDeliverySubscriptionTypeSettings(),
+			newCommerceOrderItem.getDeliverySubscriptionTypeSettings());
+		AssertUtils.assertEquals(
+			existingCommerceOrderItem.getDepth(),
+			newCommerceOrderItem.getDepth());
 		Assert.assertEquals(
 			existingCommerceOrderItem.getDiscountAmount(),
 			newCommerceOrderItem.getDiscountAmount());
-		Assert.assertEquals(
-			existingCommerceOrderItem.getFinalPrice(),
-			newCommerceOrderItem.getFinalPrice());
 		Assert.assertEquals(
 			existingCommerceOrderItem.getDiscountPercentageLevel1(),
 			newCommerceOrderItem.getDiscountPercentageLevel1());
@@ -309,18 +362,6 @@ public class CommerceOrderItemPersistenceTest {
 		Assert.assertEquals(
 			existingCommerceOrderItem.getDiscountPercentageLevel4(),
 			newCommerceOrderItem.getDiscountPercentageLevel4());
-		Assert.assertEquals(
-			existingCommerceOrderItem.getUnitPriceWithTaxAmount(),
-			newCommerceOrderItem.getUnitPriceWithTaxAmount());
-		Assert.assertEquals(
-			existingCommerceOrderItem.getPromoPriceWithTaxAmount(),
-			newCommerceOrderItem.getPromoPriceWithTaxAmount());
-		Assert.assertEquals(
-			existingCommerceOrderItem.getDiscountWithTaxAmount(),
-			newCommerceOrderItem.getDiscountWithTaxAmount());
-		Assert.assertEquals(
-			existingCommerceOrderItem.getFinalPriceWithTaxAmount(),
-			newCommerceOrderItem.getFinalPriceWithTaxAmount());
 		Assert.assertEquals(
 			existingCommerceOrderItem.
 				getDiscountPercentageLevel1WithTaxAmount(),
@@ -338,28 +379,97 @@ public class CommerceOrderItemPersistenceTest {
 				getDiscountPercentageLevel4WithTaxAmount(),
 			newCommerceOrderItem.getDiscountPercentageLevel4WithTaxAmount());
 		Assert.assertEquals(
-			existingCommerceOrderItem.isSubscription(),
-			newCommerceOrderItem.isSubscription());
+			existingCommerceOrderItem.getDiscountWithTaxAmount(),
+			newCommerceOrderItem.getDiscountWithTaxAmount());
 		Assert.assertEquals(
-			existingCommerceOrderItem.getDeliveryGroup(),
-			newCommerceOrderItem.getDeliveryGroup());
+			existingCommerceOrderItem.getFinalPrice(),
+			newCommerceOrderItem.getFinalPrice());
 		Assert.assertEquals(
-			existingCommerceOrderItem.getShippingAddressId(),
-			newCommerceOrderItem.getShippingAddressId());
+			existingCommerceOrderItem.getFinalPriceWithTaxAmount(),
+			newCommerceOrderItem.getFinalPriceWithTaxAmount());
+		Assert.assertEquals(
+			existingCommerceOrderItem.isFreeShipping(),
+			newCommerceOrderItem.isFreeShipping());
+		AssertUtils.assertEquals(
+			existingCommerceOrderItem.getHeight(),
+			newCommerceOrderItem.getHeight());
+		Assert.assertEquals(
+			existingCommerceOrderItem.getJson(),
+			newCommerceOrderItem.getJson());
+		Assert.assertEquals(
+			existingCommerceOrderItem.isManuallyAdjusted(),
+			newCommerceOrderItem.isManuallyAdjusted());
+		Assert.assertEquals(
+			existingCommerceOrderItem.getMaxSubscriptionCycles(),
+			newCommerceOrderItem.getMaxSubscriptionCycles());
+		Assert.assertEquals(
+			existingCommerceOrderItem.getName(),
+			newCommerceOrderItem.getName());
 		Assert.assertEquals(
 			existingCommerceOrderItem.getPrintedNote(),
 			newCommerceOrderItem.getPrintedNote());
+		Assert.assertEquals(
+			existingCommerceOrderItem.getPromoPrice(),
+			newCommerceOrderItem.getPromoPrice());
+		Assert.assertEquals(
+			existingCommerceOrderItem.getPromoPriceWithTaxAmount(),
+			newCommerceOrderItem.getPromoPriceWithTaxAmount());
+		Assert.assertEquals(
+			existingCommerceOrderItem.getQuantity(),
+			newCommerceOrderItem.getQuantity());
 		Assert.assertEquals(
 			Time.getShortTimestamp(
 				existingCommerceOrderItem.getRequestedDeliveryDate()),
 			Time.getShortTimestamp(
 				newCommerceOrderItem.getRequestedDeliveryDate()));
 		Assert.assertEquals(
-			existingCommerceOrderItem.getBookedQuantityId(),
-			newCommerceOrderItem.getBookedQuantityId());
+			existingCommerceOrderItem.getShippingAddressId(),
+			newCommerceOrderItem.getShippingAddressId());
 		Assert.assertEquals(
-			existingCommerceOrderItem.isManuallyAdjusted(),
-			newCommerceOrderItem.isManuallyAdjusted());
+			existingCommerceOrderItem.isShipSeparately(),
+			newCommerceOrderItem.isShipSeparately());
+		Assert.assertEquals(
+			existingCommerceOrderItem.isShippable(),
+			newCommerceOrderItem.isShippable());
+		Assert.assertEquals(
+			existingCommerceOrderItem.getShippedQuantity(),
+			newCommerceOrderItem.getShippedQuantity());
+		AssertUtils.assertEquals(
+			existingCommerceOrderItem.getShippingExtraPrice(),
+			newCommerceOrderItem.getShippingExtraPrice());
+		Assert.assertEquals(
+			existingCommerceOrderItem.getSku(), newCommerceOrderItem.getSku());
+		Assert.assertEquals(
+			existingCommerceOrderItem.isSubscription(),
+			newCommerceOrderItem.isSubscription());
+		Assert.assertEquals(
+			existingCommerceOrderItem.getSubscriptionLength(),
+			newCommerceOrderItem.getSubscriptionLength());
+		Assert.assertEquals(
+			existingCommerceOrderItem.getSubscriptionType(),
+			newCommerceOrderItem.getSubscriptionType());
+		Assert.assertEquals(
+			existingCommerceOrderItem.getSubscriptionTypeSettings(),
+			newCommerceOrderItem.getSubscriptionTypeSettings());
+		Assert.assertEquals(
+			existingCommerceOrderItem.getUnitPrice(),
+			newCommerceOrderItem.getUnitPrice());
+		Assert.assertEquals(
+			existingCommerceOrderItem.getUnitPriceWithTaxAmount(),
+			newCommerceOrderItem.getUnitPriceWithTaxAmount());
+		AssertUtils.assertEquals(
+			existingCommerceOrderItem.getWeight(),
+			newCommerceOrderItem.getWeight());
+		AssertUtils.assertEquals(
+			existingCommerceOrderItem.getWidth(),
+			newCommerceOrderItem.getWidth());
+	}
+
+	@Test
+	public void testCountByBookedQuantityId() throws Exception {
+		_persistence.countByBookedQuantityId(RandomTestUtil.nextLong());
+
+		_persistence.countByBookedQuantityId(0L);
 	}
 
 	@Test
@@ -370,17 +480,17 @@ public class CommerceOrderItemPersistenceTest {
 	}
 
 	@Test
-	public void testCountByCProductId() throws Exception {
-		_persistence.countByCProductId(RandomTestUtil.nextLong());
-
-		_persistence.countByCProductId(0L);
-	}
-
-	@Test
 	public void testCountByCPInstanceId() throws Exception {
 		_persistence.countByCPInstanceId(RandomTestUtil.nextLong());
 
 		_persistence.countByCPInstanceId(0L);
+	}
+
+	@Test
+	public void testCountByCProductId() throws Exception {
+		_persistence.countByCProductId(RandomTestUtil.nextLong());
+
+		_persistence.countByCProductId(0L);
 	}
 
 	@Test
@@ -392,18 +502,11 @@ public class CommerceOrderItemPersistenceTest {
 	}
 
 	@Test
-	public void testCountByBookedQuantityId() throws Exception {
-		_persistence.countByBookedQuantityId(RandomTestUtil.nextLong());
-
-		_persistence.countByBookedQuantityId(0L);
-	}
-
-	@Test
-	public void testCountByC_I() throws Exception {
-		_persistence.countByC_I(
+	public void testCountByC_CPI() throws Exception {
+		_persistence.countByC_CPI(
 			RandomTestUtil.nextLong(), RandomTestUtil.nextLong());
 
-		_persistence.countByC_I(0L, 0L);
+		_persistence.countByC_CPI(0L, 0L);
 	}
 
 	@Test
@@ -448,25 +551,34 @@ public class CommerceOrderItemPersistenceTest {
 
 	protected OrderByComparator<CommerceOrderItem> getOrderByComparator() {
 		return OrderByComparatorFactoryUtil.create(
-			"CommerceOrderItem", "externalReferenceCode", true,
-			"commerceOrderItemId", true, "groupId", true, "companyId", true,
-			"userId", true, "userName", true, "createDate", true,
-			"modifiedDate", true, "commerceOrderId", true,
-			"commercePriceListId", true, "CProductId", true, "CPInstanceId",
-			true, "parentCommerceOrderItemId", true, "quantity", true,
-			"shippedQuantity", true, "name", true, "sku", true, "unitPrice",
-			true, "promoPrice", true, "discountAmount", true, "finalPrice",
-			true, "discountPercentageLevel1", true, "discountPercentageLevel2",
-			true, "discountPercentageLevel3", true, "discountPercentageLevel4",
-			true, "unitPriceWithTaxAmount", true, "promoPriceWithTaxAmount",
-			true, "discountWithTaxAmount", true, "finalPriceWithTaxAmount",
-			true, "discountPercentageLevel1WithTaxAmount", true,
+			"CommerceOrderItem", "mvccVersion", true, "externalReferenceCode",
+			true, "commerceOrderItemId", true, "groupId", true, "companyId",
+			true, "userId", true, "userName", true, "createDate", true,
+			"modifiedDate", true, "bookedQuantityId", true, "commerceOrderId",
+			true, "commercePriceListId", true, "CPInstanceId", true,
+			"CPMeasurementUnitId", true, "CProductId", true,
+			"parentCommerceOrderItemId", true, "decimalQuantity", true,
+			"deliveryGroup", true, "deliveryMaxSubscriptionCycles", true,
+			"deliverySubscriptionLength", true, "deliverySubscriptionType",
+			true, "deliverySubscriptionTypeSettings", true, "depth", true,
+			"discountAmount", true, "discountPercentageLevel1", true,
+			"discountPercentageLevel2", true, "discountPercentageLevel3", true,
+			"discountPercentageLevel4", true,
+			"discountPercentageLevel1WithTaxAmount", true,
 			"discountPercentageLevel2WithTaxAmount", true,
 			"discountPercentageLevel3WithTaxAmount", true,
-			"discountPercentageLevel4WithTaxAmount", true, "subscription", true,
-			"deliveryGroup", true, "shippingAddressId", true, "printedNote",
-			true, "requestedDeliveryDate", true, "bookedQuantityId", true,
-			"manuallyAdjusted", true);
+			"discountPercentageLevel4WithTaxAmount", true,
+			"discountWithTaxAmount", true, "finalPrice", true,
+			"finalPriceWithTaxAmount", true, "freeShipping", true, "height",
+			true, "manuallyAdjusted", true, "maxSubscriptionCycles", true,
+			"name", true, "printedNote", true, "promoPrice", true,
+			"promoPriceWithTaxAmount", true, "quantity", true,
+			"requestedDeliveryDate", true, "shippingAddressId", true,
+			"shipSeparately", true, "shippable", true, "shippedQuantity", true,
+			"shippingExtraPrice", true, "sku", true, "subscription", true,
+			"subscriptionLength", true, "subscriptionType", true,
+			"subscriptionTypeSettings", true, "unitPrice", true,
+			"unitPriceWithTaxAmount", true, "weight", true, "width", true);
 	}
 
 	@Test
@@ -765,6 +877,8 @@ public class CommerceOrderItemPersistenceTest {
 
 		CommerceOrderItem commerceOrderItem = _persistence.create(pk);
 
+		commerceOrderItem.setMvccVersion(RandomTestUtil.nextLong());
+
 		commerceOrderItem.setExternalReferenceCode(
 			RandomTestUtil.randomString());
 
@@ -780,37 +894,41 @@ public class CommerceOrderItemPersistenceTest {
 
 		commerceOrderItem.setModifiedDate(RandomTestUtil.nextDate());
 
+		commerceOrderItem.setBookedQuantityId(RandomTestUtil.nextLong());
+
 		commerceOrderItem.setCommerceOrderId(RandomTestUtil.nextLong());
 
 		commerceOrderItem.setCommercePriceListId(RandomTestUtil.nextLong());
 
-		commerceOrderItem.setCProductId(RandomTestUtil.nextLong());
-
 		commerceOrderItem.setCPInstanceId(RandomTestUtil.nextLong());
+
+		commerceOrderItem.setCPMeasurementUnitId(RandomTestUtil.nextLong());
+
+		commerceOrderItem.setCProductId(RandomTestUtil.nextLong());
 
 		commerceOrderItem.setParentCommerceOrderItemId(
 			RandomTestUtil.nextLong());
 
-		commerceOrderItem.setQuantity(RandomTestUtil.nextInt());
-
-		commerceOrderItem.setShippedQuantity(RandomTestUtil.nextInt());
-
-		commerceOrderItem.setJson(RandomTestUtil.randomString());
-
-		commerceOrderItem.setName(RandomTestUtil.randomString());
-
-		commerceOrderItem.setSku(RandomTestUtil.randomString());
-
-		commerceOrderItem.setUnitPrice(
+		commerceOrderItem.setDecimalQuantity(
 			new BigDecimal(RandomTestUtil.nextDouble()));
 
-		commerceOrderItem.setPromoPrice(
-			new BigDecimal(RandomTestUtil.nextDouble()));
+		commerceOrderItem.setDeliveryGroup(RandomTestUtil.randomString());
+
+		commerceOrderItem.setDeliveryMaxSubscriptionCycles(
+			RandomTestUtil.nextLong());
+
+		commerceOrderItem.setDeliverySubscriptionLength(
+			RandomTestUtil.nextInt());
+
+		commerceOrderItem.setDeliverySubscriptionType(
+			RandomTestUtil.randomString());
+
+		commerceOrderItem.setDeliverySubscriptionTypeSettings(
+			RandomTestUtil.randomString());
+
+		commerceOrderItem.setDepth(RandomTestUtil.nextDouble());
 
 		commerceOrderItem.setDiscountAmount(
-			new BigDecimal(RandomTestUtil.nextDouble()));
-
-		commerceOrderItem.setFinalPrice(
 			new BigDecimal(RandomTestUtil.nextDouble()));
 
 		commerceOrderItem.setDiscountPercentageLevel1(
@@ -825,18 +943,6 @@ public class CommerceOrderItemPersistenceTest {
 		commerceOrderItem.setDiscountPercentageLevel4(
 			new BigDecimal(RandomTestUtil.nextDouble()));
 
-		commerceOrderItem.setUnitPriceWithTaxAmount(
-			new BigDecimal(RandomTestUtil.nextDouble()));
-
-		commerceOrderItem.setPromoPriceWithTaxAmount(
-			new BigDecimal(RandomTestUtil.nextDouble()));
-
-		commerceOrderItem.setDiscountWithTaxAmount(
-			new BigDecimal(RandomTestUtil.nextDouble()));
-
-		commerceOrderItem.setFinalPriceWithTaxAmount(
-			new BigDecimal(RandomTestUtil.nextDouble()));
-
 		commerceOrderItem.setDiscountPercentageLevel1WithTaxAmount(
 			new BigDecimal(RandomTestUtil.nextDouble()));
 
@@ -849,19 +955,69 @@ public class CommerceOrderItemPersistenceTest {
 		commerceOrderItem.setDiscountPercentageLevel4WithTaxAmount(
 			new BigDecimal(RandomTestUtil.nextDouble()));
 
-		commerceOrderItem.setSubscription(RandomTestUtil.randomBoolean());
+		commerceOrderItem.setDiscountWithTaxAmount(
+			new BigDecimal(RandomTestUtil.nextDouble()));
 
-		commerceOrderItem.setDeliveryGroup(RandomTestUtil.randomString());
+		commerceOrderItem.setFinalPrice(
+			new BigDecimal(RandomTestUtil.nextDouble()));
 
-		commerceOrderItem.setShippingAddressId(RandomTestUtil.nextLong());
+		commerceOrderItem.setFinalPriceWithTaxAmount(
+			new BigDecimal(RandomTestUtil.nextDouble()));
+
+		commerceOrderItem.setFreeShipping(RandomTestUtil.randomBoolean());
+
+		commerceOrderItem.setHeight(RandomTestUtil.nextDouble());
+
+		commerceOrderItem.setJson(RandomTestUtil.randomString());
+
+		commerceOrderItem.setManuallyAdjusted(RandomTestUtil.randomBoolean());
+
+		commerceOrderItem.setMaxSubscriptionCycles(RandomTestUtil.nextLong());
+
+		commerceOrderItem.setName(RandomTestUtil.randomString());
 
 		commerceOrderItem.setPrintedNote(RandomTestUtil.randomString());
 
+		commerceOrderItem.setPromoPrice(
+			new BigDecimal(RandomTestUtil.nextDouble()));
+
+		commerceOrderItem.setPromoPriceWithTaxAmount(
+			new BigDecimal(RandomTestUtil.nextDouble()));
+
+		commerceOrderItem.setQuantity(RandomTestUtil.nextInt());
+
 		commerceOrderItem.setRequestedDeliveryDate(RandomTestUtil.nextDate());
 
-		commerceOrderItem.setBookedQuantityId(RandomTestUtil.nextLong());
+		commerceOrderItem.setShippingAddressId(RandomTestUtil.nextLong());
 
-		commerceOrderItem.setManuallyAdjusted(RandomTestUtil.randomBoolean());
+		commerceOrderItem.setShipSeparately(RandomTestUtil.randomBoolean());
+
+		commerceOrderItem.setShippable(RandomTestUtil.randomBoolean());
+
+		commerceOrderItem.setShippedQuantity(RandomTestUtil.nextInt());
+
+		commerceOrderItem.setShippingExtraPrice(RandomTestUtil.nextDouble());
+
+		commerceOrderItem.setSku(RandomTestUtil.randomString());
+
+		commerceOrderItem.setSubscription(RandomTestUtil.randomBoolean());
+
+		commerceOrderItem.setSubscriptionLength(RandomTestUtil.nextInt());
+
+		commerceOrderItem.setSubscriptionType(RandomTestUtil.randomString());
+
+		commerceOrderItem.setSubscriptionTypeSettings(
+			RandomTestUtil.randomString());
+
+		commerceOrderItem.setUnitPrice(
+			new BigDecimal(RandomTestUtil.nextDouble()));
+
+		commerceOrderItem.setUnitPriceWithTaxAmount(
+			new BigDecimal(RandomTestUtil.nextDouble()));
+
+		commerceOrderItem.setWeight(RandomTestUtil.nextDouble());
+
+		commerceOrderItem.setWidth(RandomTestUtil.nextDouble());
 
 		_commerceOrderItems.add(_persistence.update(commerceOrderItem));
 

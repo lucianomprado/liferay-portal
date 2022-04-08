@@ -20,8 +20,8 @@
 SelectRolesDisplayContext selectRolesDisplayContext = new SelectRolesDisplayContext(request, renderRequest, renderResponse);
 %>
 
-<clay:management-toolbar-v2
-	displayContext="<%= new SelectRolesManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, selectRolesDisplayContext) %>"
+<clay:management-toolbar
+	managementToolbarDisplayContext="<%= new SelectRolesManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, selectRolesDisplayContext) %>"
 />
 
 <aui:form cssClass="container-fluid container-fluid-max-xl portlet-site-memberships-assign-roles" name="fm">
@@ -44,11 +44,6 @@ SelectRolesDisplayContext selectRolesDisplayContext = new SelectRolesDisplayCont
 
 			<c:choose>
 				<c:when test='<%= Objects.equals(selectRolesDisplayContext.getDisplayStyle(), "icon") %>'>
-
-					<%
-					row.setCssClass("entry-card lfr-asset-item");
-					%>
-
 					<liferay-ui:search-container-column-text>
 						<clay:vertical-card
 							verticalCard="<%= new SelectRoleVerticalCard(role, renderRequest) %>"
@@ -105,10 +100,3 @@ SelectRolesDisplayContext selectRolesDisplayContext = new SelectRolesDisplayCont
 		/>
 	</liferay-ui:search-container>
 </aui:form>
-
-<aui:script>
-	Liferay.Util.selectEntityHandler(
-		'#<portlet:namespace />fm',
-		'<%= HtmlUtil.escapeJS(selectRolesDisplayContext.getEventName()) %>'
-	);
-</aui:script>

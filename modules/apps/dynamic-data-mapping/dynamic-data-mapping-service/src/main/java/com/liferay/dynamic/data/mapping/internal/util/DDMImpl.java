@@ -16,6 +16,7 @@ package com.liferay.dynamic.data.mapping.internal.util;
 
 import com.liferay.document.library.kernel.service.DLAppLocalService;
 import com.liferay.document.library.util.DLURLHelper;
+import com.liferay.dynamic.data.mapping.form.field.type.constants.DDMFormFieldTypeConstants;
 import com.liferay.dynamic.data.mapping.io.DDMFormDeserializer;
 import com.liferay.dynamic.data.mapping.io.DDMFormDeserializerDeserializeRequest;
 import com.liferay.dynamic.data.mapping.io.DDMFormDeserializerDeserializeResponse;
@@ -31,6 +32,7 @@ import com.liferay.dynamic.data.mapping.io.DDMFormValuesSerializerSerializeRespo
 import com.liferay.dynamic.data.mapping.model.DDMForm;
 import com.liferay.dynamic.data.mapping.model.DDMFormField;
 import com.liferay.dynamic.data.mapping.model.DDMFormFieldOptions;
+import com.liferay.dynamic.data.mapping.model.DDMFormFieldType;
 import com.liferay.dynamic.data.mapping.model.DDMFormLayout;
 import com.liferay.dynamic.data.mapping.model.DDMFormLayoutColumn;
 import com.liferay.dynamic.data.mapping.model.DDMFormLayoutPage;
@@ -62,7 +64,6 @@ import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Image;
-import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.service.ImageLocalService;
 import com.liferay.portal.kernel.service.LayoutLocalService;
@@ -115,26 +116,6 @@ import org.osgi.service.component.annotations.Reference;
  */
 @Component(immediate = true, service = DDM.class)
 public class DDMImpl implements DDM {
-
-	public static final String FIELDS_DISPLAY_NAME = "_fieldsDisplay";
-
-	public static final String INSTANCE_SEPARATOR = "_INSTANCE_";
-
-	public static final String TYPE_CHECKBOX = "checkbox";
-
-	public static final String TYPE_DDM_DATE = "ddm-date";
-
-	public static final String TYPE_DDM_DOCUMENTLIBRARY = "ddm-documentlibrary";
-
-	public static final String TYPE_DDM_IMAGE = "ddm-image";
-
-	public static final String TYPE_DDM_LINK_TO_PAGE = "ddm-link-to-page";
-
-	public static final String TYPE_DDM_TEXT_HTML = "ddm-text-html";
-
-	public static final String TYPE_RADIO = "radio";
-
-	public static final String TYPE_SELECT = "select";
 
 	@Override
 	public DDMForm getDDMForm(long classNameId, long classPK)
@@ -277,11 +258,11 @@ public class DDMImpl implements DDM {
 
 		DDMFormLayoutPage ddmFormLayoutPage = new DDMFormLayoutPage();
 
-		ddmFormLayoutPage.setTitle(getDefaultDDMFormPageTitle(defaultLocale));
+		ddmFormLayoutPage.setTitle(_getDefaultDDMFormPageTitle(defaultLocale));
 
 		for (DDMFormField ddmFormField : ddmForm.getDDMFormFields()) {
 			ddmFormLayoutPage.addDDMFormLayoutRow(
-				getDefaultDDMFormLayoutRow(ddmFormField));
+				_getDefaultDDMFormLayoutRow(ddmFormField));
 		}
 
 		ddmFormLayout.addDDMFormLayoutPage(ddmFormLayoutPage);
@@ -294,21 +275,22 @@ public class DDMImpl implements DDM {
 			ThemeDisplay themeDisplay, Serializable fieldValue, String type)
 		throws Exception {
 
-		if (type.equals(DDMImpl.TYPE_DDM_DATE)) {
+		if (type.equals(DDMFormFieldType.DATE)) {
 			fieldValue = DateUtil.formatDate(
 				"yyyy-MM-dd", fieldValue.toString(), themeDisplay.getLocale());
 		}
-		else if (type.equals(DDMImpl.TYPE_CHECKBOX)) {
+		else if (type.equals(DDMFormFieldType.CHECKBOX)) {
 			Boolean valueBoolean = (Boolean)fieldValue;
 
 			if (valueBoolean) {
-				fieldValue = LanguageUtil.get(themeDisplay.getLocale(), "yes");
+				fieldValue = LanguageUtil.get(themeDisplay.getLocale(), "true");
 			}
 			else {
-				fieldValue = LanguageUtil.get(themeDisplay.getLocale(), "no");
+				fieldValue = LanguageUtil.get(
+					themeDisplay.getLocale(), "false");
 			}
 		}
-		else if (type.equals(DDMImpl.TYPE_DDM_DOCUMENTLIBRARY)) {
+		else if (type.equals(DDMFormFieldType.DOCUMENT_LIBRARY)) {
 			if (Validator.isNull(fieldValue)) {
 				return StringPool.BLANK;
 			}
@@ -328,7 +310,7 @@ public class DDMImpl implements DDM {
 				fileEntry, fileEntry.getFileVersion(), null, StringPool.BLANK,
 				false, true);
 		}
-		else if (type.equals(DDMImpl.TYPE_DDM_LINK_TO_PAGE)) {
+		else if (type.equals(DDMFormFieldType.LINK_TO_PAGE)) {
 			if (Validator.isNull(fieldValue)) {
 				return StringPool.BLANK;
 			}
@@ -342,12 +324,11 @@ public class DDMImpl implements DDM {
 			boolean privateLayout = jsonObject.getBoolean("privateLayout");
 			long layoutId = jsonObject.getLong("layoutId");
 
-			Layout layout = _layoutLocalService.getLayout(
-				groupId, privateLayout, layoutId);
-
-			fieldValue = _portal.getLayoutFriendlyURL(layout, themeDisplay);
+			fieldValue = _portal.getLayoutFriendlyURL(
+				_layoutLocalService.getLayout(groupId, privateLayout, layoutId),
+				themeDisplay);
 		}
-		else if (type.equals(DDMImpl.TYPE_SELECT)) {
+		else if (type.equals(DDMFormFieldType.SELECT)) {
 			String valueString = String.valueOf(fieldValue);
 
 			JSONArray jsonArray = JSONFactoryUtil.createJSONArray(valueString);
@@ -388,7 +369,7 @@ public class DDMImpl implements DDM {
 			ServiceContext serviceContext)
 		throws PortalException {
 
-		DDMStructure ddmStructure = getDDMStructure(
+		DDMStructure ddmStructure = _getDDMStructure(
 			ddmStructureId, ddmTemplateId);
 
 		Set<String> fieldNames = ddmStructure.getFieldNames();
@@ -418,10 +399,10 @@ public class DDMImpl implements DDM {
 				continue;
 			}
 
-			List<Serializable> fieldValues = getFieldValues(
+			List<Serializable> fieldValues = _getFieldValues(
 				ddmStructure, fieldName, fieldNamespace, serviceContext);
 
-			if ((fieldValues == null) || fieldValues.isEmpty()) {
+			if (ListUtil.isEmpty(fieldValues)) {
 				continue;
 			}
 
@@ -477,7 +458,7 @@ public class DDMImpl implements DDM {
 
 			fieldValue = dateFormat.format(valueDate);
 		}
-		else if (type.equals(DDMImpl.TYPE_SELECT)) {
+		else if (type.equals(DDMFormFieldType.SELECT)) {
 			String valueString = (String)fieldValue;
 
 			JSONArray jsonArray = JSONFactoryUtil.createJSONArray(valueString);
@@ -576,7 +557,7 @@ public class DDMImpl implements DDM {
 			existingField.setDefaultLocale(newField.getDefaultLocale());
 
 			Map<Locale, List<Serializable>> mergedFieldValuesMap =
-				getMergedFieldValuesMap(
+				_getMergedFieldValuesMap(
 					newField, newFieldsDisplayValues, existingField,
 					existingFieldsDisplayValues);
 
@@ -601,132 +582,10 @@ public class DDMImpl implements DDM {
 		ddmFormCopy.addAvailableLocale(newDefaultLocale);
 		ddmFormCopy.setDefaultLocale(newDefaultLocale);
 
-		updateDDMFormFieldsDefaultLocale(
+		_updateDDMFormFieldsDefaultLocale(
 			ddmFormCopy.getDDMFormFields(), newDefaultLocale);
 
 		return ddmFormCopy;
-	}
-
-	protected void addDDMFormFieldLocalizedProperties(
-		JSONObject jsonObject, DDMFormField ddmFormField, Locale locale,
-		Locale defaultLocale) {
-
-		addDDMFormFieldLocalizedProperty(
-			jsonObject, "label", ddmFormField.getLabel(), locale, defaultLocale,
-			ddmFormField.getType());
-		addDDMFormFieldLocalizedProperty(
-			jsonObject, "predefinedValue", ddmFormField.getPredefinedValue(),
-			locale, defaultLocale, ddmFormField.getType());
-		addDDMFormFieldLocalizedProperty(
-			jsonObject, "tip", ddmFormField.getTip(), locale, defaultLocale,
-			ddmFormField.getType());
-	}
-
-	protected void addDDMFormFieldLocalizedProperty(
-		JSONObject jsonObject, String propertyName,
-		LocalizedValue localizedValue, Locale locale, Locale defaultLocale,
-		String type) {
-
-		String propertyValue = localizedValue.getString(locale);
-
-		if (Validator.isNull(propertyValue)) {
-			propertyValue = localizedValue.getString(defaultLocale);
-		}
-
-		if (type.equals(DDMImpl.TYPE_SELECT) &&
-			propertyName.equals("predefinedValue")) {
-
-			try {
-				jsonObject.put(
-					propertyName,
-					JSONFactoryUtil.createJSONArray(propertyValue));
-			}
-			catch (Exception exception) {
-			}
-
-			return;
-		}
-
-		jsonObject.put(propertyName, propertyValue);
-	}
-
-	protected void addDDMFormFieldOptions(
-		JSONObject jsonObject, DDMFormField ddmFormField,
-		Set<Locale> availableLocales, Locale defaultLocale) {
-
-		String type = ddmFormField.getType();
-
-		if (!(type.equals(DDMImpl.TYPE_RADIO) ||
-			  type.equals(DDMImpl.TYPE_SELECT))) {
-
-			return;
-		}
-
-		String fieldName = ddmFormField.getName();
-
-		JSONArray jsonArray = JSONFactoryUtil.createJSONArray();
-
-		DDMFormFieldOptions ddmFormFieldOptions =
-			ddmFormField.getDDMFormFieldOptions();
-
-		for (String optionValue : ddmFormFieldOptions.getOptionsValues()) {
-			String name = fieldName.concat(StringUtil.randomString());
-
-			JSONObject optionJSONObject = JSONUtil.put(
-				"id", name
-			).put(
-				"name", name
-			).put(
-				"type", "option"
-			).put(
-				"value", optionValue
-			);
-
-			addDDMFormFieldLocalizedProperty(
-				optionJSONObject, "label",
-				ddmFormFieldOptions.getOptionLabels(optionValue), defaultLocale,
-				defaultLocale, "option");
-
-			JSONObject localizationMapJSONObject =
-				JSONFactoryUtil.createJSONObject();
-
-			for (Locale availableLocale : availableLocales) {
-				JSONObject localeMapJSONObject =
-					JSONFactoryUtil.createJSONObject();
-
-				addDDMFormFieldLocalizedProperty(
-					localeMapJSONObject, "label",
-					ddmFormFieldOptions.getOptionLabels(optionValue),
-					availableLocale, defaultLocale, "option");
-
-				localizationMapJSONObject.put(
-					LocaleUtil.toLanguageId(availableLocale),
-					localeMapJSONObject);
-			}
-
-			optionJSONObject.put("localizationMap", localizationMapJSONObject);
-
-			jsonArray.put(optionJSONObject);
-		}
-
-		jsonObject.put("options", jsonArray);
-	}
-
-	protected int countFieldRepetition(
-		String[] fieldsDisplayValues, String fieldName) {
-
-		int count = 0;
-
-		for (String fieldsDisplayValue : fieldsDisplayValues) {
-			String prefix = StringUtil.extractFirst(
-				fieldsDisplayValue, INSTANCE_SEPARATOR);
-
-			if (prefix.equals(fieldName)) {
-				count++;
-			}
-		}
-
-		return count;
 	}
 
 	protected Field createField(
@@ -783,7 +642,7 @@ public class DDMImpl implements DDM {
 			}
 			catch (PortalException portalException) {
 				if (_log.isWarnEnabled()) {
-					_log.warn(portalException, portalException);
+					_log.warn(portalException);
 				}
 			}
 		}
@@ -822,10 +681,10 @@ public class DDMImpl implements DDM {
 				"type", ddmFormField.getType()
 			);
 
-			addDDMFormFieldLocalizedProperties(
+			_addDDMFormFieldLocalizedProperties(
 				jsonObject, ddmFormField, defaultLocale, defaultLocale);
 
-			addDDMFormFieldOptions(
+			_addDDMFormFieldOptions(
 				jsonObject, ddmFormField, availableLocales, defaultLocale);
 
 			JSONObject localizationMapJSONObject =
@@ -835,7 +694,7 @@ public class DDMImpl implements DDM {
 				JSONObject localeMapJSONObject =
 					JSONFactoryUtil.createJSONObject();
 
-				addDDMFormFieldLocalizedProperties(
+				_addDDMFormFieldLocalizedProperties(
 					localeMapJSONObject, ddmFormField, availableLocale,
 					defaultLocale);
 
@@ -853,114 +712,19 @@ public class DDMImpl implements DDM {
 				"localizationMap", localizationMapJSONObject
 			);
 
+			if (Objects.equals(
+					ddmFormField.getType(),
+					DDMFormFieldTypeConstants.DDM_IMAGE)) {
+
+				jsonObject.put(
+					"requiredDescription",
+					ddmFormField.getProperty("requiredDescription"));
+			}
+
 			ddmFormFieldsJSONArray.put(jsonObject);
 		}
 
 		return ddmFormFieldsJSONArray;
-	}
-
-	protected DDMStructure getDDMStructure(
-			long ddmStructureId, long ddmTemplateId)
-		throws PortalException {
-
-		DDMStructure ddmStructure = DDMStructureLocalServiceUtil.getStructure(
-			ddmStructureId);
-
-		DDMTemplate ddmTemplate = DDMTemplateLocalServiceUtil.fetchDDMTemplate(
-			ddmTemplateId);
-
-		if (ddmTemplate != null) {
-
-			// Clone ddmStructure to make sure changes are never persisted
-
-			ddmStructure = (DDMStructure)ddmStructure.clone();
-
-			ddmStructure.setDefinition(ddmTemplate.getScript());
-		}
-
-		return ddmStructure;
-	}
-
-	protected DDMFormLayoutRow getDefaultDDMFormLayoutRow(
-		DDMFormField ddmFormField) {
-
-		DDMFormLayoutRow ddmFormLayoutRow = new DDMFormLayoutRow();
-
-		ddmFormLayoutRow.addDDMFormLayoutColumn(
-			new DDMFormLayoutColumn(
-				DDMFormLayoutColumn.FULL, ddmFormField.getName()));
-
-		return ddmFormLayoutRow;
-	}
-
-	protected LocalizedValue getDefaultDDMFormPageTitle(Locale defaultLocale) {
-		LocalizedValue title = new LocalizedValue(defaultLocale);
-
-		title.addString(defaultLocale, StringPool.BLANK);
-
-		return title;
-	}
-
-	protected int getExistingFieldValueIndex(
-		String[] newFieldsDisplayValues, String[] existingFieldsDisplayValues,
-		String fieldName, int index) {
-
-		String instanceId = getFieldIntanceId(
-			newFieldsDisplayValues, fieldName, index);
-
-		return getFieldValueIndex(
-			existingFieldsDisplayValues, fieldName, instanceId);
-	}
-
-	protected String getFieldIntanceId(
-		String[] fieldsDisplayValues, String fieldName, int index) {
-
-		String prefix = fieldName.concat(INSTANCE_SEPARATOR);
-
-		for (String fieldsDisplayValue : fieldsDisplayValues) {
-			if (fieldsDisplayValue.startsWith(prefix)) {
-				index--;
-
-				if (index < 0) {
-					return StringUtil.extractLast(
-						fieldsDisplayValue, DDMImpl.INSTANCE_SEPARATOR);
-				}
-			}
-		}
-
-		return null;
-	}
-
-	protected List<String> getFieldNames(
-		String fieldNamespace, String fieldName,
-		ServiceContext serviceContext) {
-
-		String[] fieldsDisplayValues = StringUtil.split(
-			(String)serviceContext.getAttribute(
-				fieldNamespace + FIELDS_DISPLAY_NAME));
-
-		List<String> privateFieldNames = ListUtil.fromArray(
-			FIELDS_DISPLAY_NAME);
-
-		List<String> fieldNames = new ArrayList<>();
-
-		if ((fieldsDisplayValues.length == 0) ||
-			privateFieldNames.contains(fieldName)) {
-
-			fieldNames.add(fieldNamespace + fieldName);
-		}
-		else {
-			for (String namespacedFieldName : fieldsDisplayValues) {
-				String fieldNameValue = StringUtil.extractFirst(
-					namespacedFieldName, INSTANCE_SEPARATOR);
-
-				if (fieldNameValue.equals(fieldName)) {
-					fieldNames.add(fieldNamespace + namespacedFieldName);
-				}
-			}
-		}
-
-		return fieldNames;
 	}
 
 	protected Fields getFields(
@@ -975,270 +739,6 @@ public class DDMImpl implements DDM {
 
 		return _ddmFormValuesToFieldsConverter.convert(
 			ddmStructure, ddmFormValues);
-	}
-
-	protected int getFieldValueIndex(
-		String[] fieldsDisplayValues, String fieldName, String instanceId) {
-
-		if (Validator.isNull(instanceId)) {
-			return -1;
-		}
-
-		int offset = 0;
-
-		String prefix = fieldName.concat(INSTANCE_SEPARATOR);
-
-		for (String fieldsDisplayValue : fieldsDisplayValues) {
-			if (fieldsDisplayValue.startsWith(prefix)) {
-				String fieldIstanceId = StringUtil.extractLast(
-					fieldsDisplayValue, DDMImpl.INSTANCE_SEPARATOR);
-
-				if (fieldIstanceId.equals(instanceId)) {
-					return offset;
-				}
-
-				offset++;
-			}
-		}
-
-		return -1;
-	}
-
-	protected List<Serializable> getFieldValues(
-			DDMStructure ddmStructure, String fieldName, String fieldNamespace,
-			ServiceContext serviceContext)
-		throws PortalException {
-
-		DDMFormField ddmFormField = ddmStructure.getDDMFormField(fieldName);
-
-		String fieldDataType = ddmFormField.getDataType();
-		String fieldType = ddmFormField.getType();
-
-		LocalizedValue predefinedValue = ddmFormField.getPredefinedValue();
-
-		List<String> fieldNames = getFieldNames(
-			fieldNamespace, fieldName, serviceContext);
-
-		List<Serializable> fieldValues = new ArrayList<>(fieldNames.size());
-
-		for (String fieldNameValue : fieldNames) {
-			Serializable fieldValue = serviceContext.getAttribute(
-				fieldNameValue);
-
-			if (Validator.isNull(fieldValue)) {
-				fieldValue = predefinedValue.getString(
-					serviceContext.getLocale());
-			}
-
-			if (fieldType.equals(DDMImpl.TYPE_CHECKBOX) &&
-				Validator.isNull(fieldValue)) {
-
-				fieldValue = "false";
-			}
-			else if (fieldDataType.equals(FieldConstants.DATE)) {
-				Date fieldValueDate = null;
-
-				if (Validator.isNull(fieldValue)) {
-					int fieldValueMonth = GetterUtil.getInteger(
-						serviceContext.getAttribute(fieldNameValue + "Month"));
-					int fieldValueDay = GetterUtil.getInteger(
-						serviceContext.getAttribute(fieldNameValue + "Day"));
-					int fieldValueYear = GetterUtil.getInteger(
-						serviceContext.getAttribute(fieldNameValue + "Year"));
-
-					fieldValueDate = _portal.getDate(
-						fieldValueMonth, fieldValueDay, fieldValueYear,
-						TimeZoneUtil.getTimeZone("UTC"), null);
-				}
-				else {
-					try {
-						fieldValueDate = DateUtil.parseDate(
-							String.valueOf(fieldValue),
-							serviceContext.getLocale());
-					}
-					catch (ParseException parseException) {
-						_log.error("Unable to parse date " + fieldValue);
-					}
-				}
-
-				if (fieldValueDate != null) {
-					fieldValue = String.valueOf(fieldValueDate.getTime());
-				}
-			}
-			else if (fieldDataType.equals(FieldConstants.IMAGE) &&
-					 Validator.isNull(fieldValue)) {
-
-				HttpServletRequest httpServletRequest =
-					serviceContext.getRequest();
-
-				if (httpServletRequest instanceof UploadRequest) {
-					String imageFieldValue = getImageFieldValue(
-						(UploadRequest)httpServletRequest, fieldNameValue);
-
-					if (Validator.isNotNull(imageFieldValue)) {
-						fieldValue = imageFieldValue;
-					}
-				}
-			}
-
-			if (Validator.isNull(fieldValue)) {
-				return null;
-			}
-
-			if (DDMImpl.TYPE_SELECT.equals(fieldType)) {
-				String predefinedValueString = predefinedValue.getString(
-					serviceContext.getLocale());
-
-				if (!fieldValue.equals(predefinedValueString) &&
-					(fieldValue instanceof String)) {
-
-					fieldValue = new String[] {String.valueOf(fieldValue)};
-
-					fieldValue = JSONFactoryUtil.serialize(fieldValue);
-				}
-			}
-
-			Serializable fieldValueSerializable =
-				FieldConstants.getSerializable(
-					fieldDataType, GetterUtil.getString(fieldValue));
-
-			fieldValues.add(fieldValueSerializable);
-		}
-
-		return fieldValues;
-	}
-
-	protected List<Serializable> getFieldValues(Field field, Locale locale) {
-		Map<Locale, List<Serializable>> fieldValuesMap = field.getValuesMap();
-
-		return fieldValuesMap.get(locale);
-	}
-
-	protected byte[] getImageBytes(
-			UploadRequest uploadRequest, String fieldNameValue)
-		throws Exception {
-
-		byte[] bytes = FileUtil.getBytes(
-			uploadRequest.getFile(fieldNameValue + "File"));
-
-		if (ArrayUtil.isNotEmpty(bytes)) {
-			return bytes;
-		}
-
-		String url = uploadRequest.getParameter(fieldNameValue + "URL");
-
-		long imageId = GetterUtil.getLong(
-			_http.getParameter(url, "img_id", false));
-
-		Image image = _imageLocalService.fetchImage(imageId);
-
-		if (image == null) {
-			return null;
-		}
-
-		return image.getTextObj();
-	}
-
-	protected String getImageFieldValue(
-		UploadRequest uploadRequest, String fieldNameValue) {
-
-		try {
-			byte[] bytes = getImageBytes(uploadRequest, fieldNameValue);
-
-			if (ArrayUtil.isNotEmpty(bytes)) {
-				JSONObject jsonObject = JSONUtil.put(
-					"alt", uploadRequest.getParameter(fieldNameValue + "Alt")
-				).put(
-					"data", UnicodeFormatter.bytesToHex(bytes)
-				);
-
-				return jsonObject.toString();
-			}
-		}
-		catch (Exception exception) {
-		}
-
-		return StringPool.BLANK;
-	}
-
-	protected Set<Locale> getMergedAvailableLocales(
-		Set<Locale> newFieldAvailableLocales,
-		Set<Locale> existingFieldAvailableLocales) {
-
-		Set<Locale> mergedAvailableLocales = new HashSet<>();
-
-		mergedAvailableLocales.addAll(newFieldAvailableLocales);
-		mergedAvailableLocales.addAll(existingFieldAvailableLocales);
-
-		return mergedAvailableLocales;
-	}
-
-	protected List<Serializable> getMergedFieldValues(
-		String fieldName, List<Serializable> newFieldValues,
-		String[] newFieldsDisplayValues, List<Serializable> existingFieldValues,
-		String[] existingFieldsDisplayValues,
-		List<Serializable> defaultFieldValues) {
-
-		if (existingFieldValues == null) {
-			return newFieldValues;
-		}
-
-		List<Serializable> mergedLocaleValues = new ArrayList<>();
-
-		int repetition = countFieldRepetition(
-			newFieldsDisplayValues, fieldName);
-
-		for (int i = 0; i < repetition; i++) {
-			int existingFieldValueIndex = getExistingFieldValueIndex(
-				newFieldsDisplayValues, existingFieldsDisplayValues, fieldName,
-				i);
-
-			if (existingFieldValueIndex == -1) {
-				mergedLocaleValues.add(i, defaultFieldValues.get(i));
-			}
-			else {
-				if (newFieldValues != null) {
-					mergedLocaleValues.add(i, newFieldValues.get(i));
-				}
-				else {
-					Serializable existingValue = existingFieldValues.get(
-						existingFieldValueIndex);
-
-					mergedLocaleValues.add(i, existingValue);
-				}
-			}
-		}
-
-		return mergedLocaleValues;
-	}
-
-	protected Map<Locale, List<Serializable>> getMergedFieldValuesMap(
-		Field newField, String[] newFieldsDisplayValues, Field existingField,
-		String[] existingFieldsDisplayValues) {
-
-		Set<Locale> availableLocales = getMergedAvailableLocales(
-			newField.getAvailableLocales(),
-			existingField.getAvailableLocales());
-
-		for (Locale locale : availableLocales) {
-			List<Serializable> newFieldValues = getFieldValues(
-				newField, locale);
-
-			List<Serializable> existingFieldValues = getFieldValues(
-				existingField, locale);
-
-			List<Serializable> defaultFieldValues = getFieldValues(
-				newField, newField.getDefaultLocale());
-
-			List<Serializable> mergedLocaleValues = getMergedFieldValues(
-				newField.getName(), newFieldValues, newFieldsDisplayValues,
-				existingFieldValues, existingFieldsDisplayValues,
-				defaultFieldValues);
-
-			existingField.setValues(locale, mergedLocaleValues);
-		}
-
-		return existingField.getValuesMap();
 	}
 
 	@Reference(unbind = "-")
@@ -1278,46 +778,543 @@ public class DDMImpl implements DDM {
 		return StringUtil.split(value);
 	}
 
-	protected void updateDDMFormFieldDefaultLocale(
+	private void _addDDMFormFieldLocalizedProperties(
+		JSONObject jsonObject, DDMFormField ddmFormField, Locale locale,
+		Locale defaultLocale) {
+
+		_addDDMFormFieldLocalizedProperty(
+			jsonObject, "label", ddmFormField.getLabel(), locale, defaultLocale,
+			ddmFormField.getType());
+		_addDDMFormFieldLocalizedProperty(
+			jsonObject, "predefinedValue", ddmFormField.getPredefinedValue(),
+			locale, defaultLocale, ddmFormField.getType());
+		_addDDMFormFieldLocalizedProperty(
+			jsonObject, "tip", ddmFormField.getTip(), locale, defaultLocale,
+			ddmFormField.getType());
+	}
+
+	private void _addDDMFormFieldLocalizedProperty(
+		JSONObject jsonObject, String propertyName,
+		LocalizedValue localizedValue, Locale locale, Locale defaultLocale,
+		String type) {
+
+		String propertyValue = localizedValue.getString(locale);
+
+		if (Validator.isNull(propertyValue)) {
+			propertyValue = localizedValue.getString(defaultLocale);
+		}
+
+		if (type.equals(DDMFormFieldType.SELECT) &&
+			propertyName.equals("predefinedValue")) {
+
+			try {
+				jsonObject.put(
+					propertyName,
+					JSONFactoryUtil.createJSONArray(propertyValue));
+			}
+			catch (Exception exception) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(exception);
+				}
+			}
+
+			return;
+		}
+
+		jsonObject.put(propertyName, propertyValue);
+	}
+
+	private void _addDDMFormFieldOptions(
+		JSONObject jsonObject, DDMFormField ddmFormField,
+		Set<Locale> availableLocales, Locale defaultLocale) {
+
+		String type = ddmFormField.getType();
+
+		if (!(type.equals(DDMFormFieldType.RADIO) ||
+			  type.equals(DDMFormFieldType.SELECT))) {
+
+			return;
+		}
+
+		String fieldName = ddmFormField.getName();
+
+		JSONArray jsonArray = JSONFactoryUtil.createJSONArray();
+
+		DDMFormFieldOptions ddmFormFieldOptions =
+			ddmFormField.getDDMFormFieldOptions();
+
+		for (String optionValue : ddmFormFieldOptions.getOptionsValues()) {
+			String name = fieldName.concat(StringUtil.randomString());
+
+			JSONObject optionJSONObject = JSONUtil.put(
+				"id", name
+			).put(
+				"name", name
+			).put(
+				"type", "option"
+			).put(
+				"value", optionValue
+			);
+
+			_addDDMFormFieldLocalizedProperty(
+				optionJSONObject, "label",
+				ddmFormFieldOptions.getOptionLabels(optionValue), defaultLocale,
+				defaultLocale, "option");
+
+			JSONObject localizationMapJSONObject =
+				JSONFactoryUtil.createJSONObject();
+
+			for (Locale availableLocale : availableLocales) {
+				JSONObject localeMapJSONObject =
+					JSONFactoryUtil.createJSONObject();
+
+				_addDDMFormFieldLocalizedProperty(
+					localeMapJSONObject, "label",
+					ddmFormFieldOptions.getOptionLabels(optionValue),
+					availableLocale, defaultLocale, "option");
+
+				localizationMapJSONObject.put(
+					LocaleUtil.toLanguageId(availableLocale),
+					localeMapJSONObject);
+			}
+
+			optionJSONObject.put("localizationMap", localizationMapJSONObject);
+
+			jsonArray.put(optionJSONObject);
+		}
+
+		jsonObject.put("options", jsonArray);
+	}
+
+	private int _countFieldRepetition(
+		String[] fieldsDisplayValues, String fieldName) {
+
+		int count = 0;
+
+		for (String fieldsDisplayValue : fieldsDisplayValues) {
+			String prefix = StringUtil.extractFirst(
+				fieldsDisplayValue, INSTANCE_SEPARATOR);
+
+			if (prefix.equals(fieldName)) {
+				count++;
+			}
+		}
+
+		return count;
+	}
+
+	private DDMStructure _getDDMStructure(
+			long ddmStructureId, long ddmTemplateId)
+		throws PortalException {
+
+		DDMStructure ddmStructure = DDMStructureLocalServiceUtil.getStructure(
+			ddmStructureId);
+
+		DDMTemplate ddmTemplate = DDMTemplateLocalServiceUtil.fetchDDMTemplate(
+			ddmTemplateId);
+
+		if (ddmTemplate != null) {
+
+			// Clone ddmStructure to make sure changes are never persisted
+
+			ddmStructure = (DDMStructure)ddmStructure.clone();
+
+			ddmStructure.setDefinition(ddmTemplate.getScript());
+		}
+
+		return ddmStructure;
+	}
+
+	private DDMFormLayoutRow _getDefaultDDMFormLayoutRow(
+		DDMFormField ddmFormField) {
+
+		DDMFormLayoutRow ddmFormLayoutRow = new DDMFormLayoutRow();
+
+		ddmFormLayoutRow.addDDMFormLayoutColumn(
+			new DDMFormLayoutColumn(
+				DDMFormLayoutColumn.FULL, ddmFormField.getName()));
+
+		return ddmFormLayoutRow;
+	}
+
+	private LocalizedValue _getDefaultDDMFormPageTitle(Locale defaultLocale) {
+		LocalizedValue title = new LocalizedValue(defaultLocale);
+
+		title.addString(defaultLocale, StringPool.BLANK);
+
+		return title;
+	}
+
+	private int _getExistingFieldValueIndex(
+		String[] newFieldsDisplayValues, String[] existingFieldsDisplayValues,
+		String fieldName, int index) {
+
+		String instanceId = _getFieldIntanceId(
+			newFieldsDisplayValues, fieldName, index);
+
+		return _getFieldValueIndex(
+			existingFieldsDisplayValues, fieldName, instanceId);
+	}
+
+	private String _getFieldIntanceId(
+		String[] fieldsDisplayValues, String fieldName, int index) {
+
+		String prefix = fieldName.concat(INSTANCE_SEPARATOR);
+
+		for (String fieldsDisplayValue : fieldsDisplayValues) {
+			if (fieldsDisplayValue.startsWith(prefix)) {
+				index--;
+
+				if (index < 0) {
+					return StringUtil.extractLast(
+						fieldsDisplayValue, DDMImpl.INSTANCE_SEPARATOR);
+				}
+			}
+		}
+
+		return null;
+	}
+
+	private List<String> _getFieldNames(
+		String fieldNamespace, String fieldName,
+		ServiceContext serviceContext) {
+
+		String[] fieldsDisplayValues = StringUtil.split(
+			(String)serviceContext.getAttribute(
+				fieldNamespace + FIELDS_DISPLAY_NAME));
+
+		List<String> privateFieldNames = ListUtil.fromArray(
+			FIELDS_DISPLAY_NAME);
+
+		List<String> fieldNames = new ArrayList<>();
+
+		if ((fieldsDisplayValues.length == 0) ||
+			privateFieldNames.contains(fieldName)) {
+
+			fieldNames.add(fieldNamespace + fieldName);
+		}
+		else {
+			for (String namespacedFieldName : fieldsDisplayValues) {
+				String fieldNameValue = StringUtil.extractFirst(
+					namespacedFieldName, INSTANCE_SEPARATOR);
+
+				if (fieldNameValue.equals(fieldName)) {
+					fieldNames.add(fieldNamespace + namespacedFieldName);
+				}
+			}
+		}
+
+		return fieldNames;
+	}
+
+	private int _getFieldValueIndex(
+		String[] fieldsDisplayValues, String fieldName, String instanceId) {
+
+		if (Validator.isNull(instanceId)) {
+			return -1;
+		}
+
+		int offset = 0;
+
+		String prefix = fieldName.concat(INSTANCE_SEPARATOR);
+
+		for (String fieldsDisplayValue : fieldsDisplayValues) {
+			if (fieldsDisplayValue.startsWith(prefix)) {
+				String fieldIstanceId = StringUtil.extractLast(
+					fieldsDisplayValue, DDMImpl.INSTANCE_SEPARATOR);
+
+				if (fieldIstanceId.equals(instanceId)) {
+					return offset;
+				}
+
+				offset++;
+			}
+		}
+
+		return -1;
+	}
+
+	private List<Serializable> _getFieldValues(
+			DDMStructure ddmStructure, String fieldName, String fieldNamespace,
+			ServiceContext serviceContext)
+		throws PortalException {
+
+		DDMFormField ddmFormField = ddmStructure.getDDMFormField(fieldName);
+
+		String fieldDataType = ddmFormField.getDataType();
+		String fieldType = ddmFormField.getType();
+
+		LocalizedValue predefinedValue = ddmFormField.getPredefinedValue();
+
+		List<String> fieldNames = _getFieldNames(
+			fieldNamespace, fieldName, serviceContext);
+
+		List<Serializable> fieldValues = new ArrayList<>(fieldNames.size());
+
+		for (String fieldNameValue : fieldNames) {
+			Serializable fieldValue = serviceContext.getAttribute(
+				fieldNameValue);
+
+			if (Validator.isNull(fieldValue)) {
+				fieldValue = predefinedValue.getString(
+					serviceContext.getLocale());
+			}
+
+			if (fieldType.equals(DDMFormFieldType.CHECKBOX) &&
+				Validator.isNull(fieldValue)) {
+
+				fieldValue = "false";
+			}
+			else if (fieldDataType.equals(FieldConstants.DATE)) {
+				Date fieldValueDate = null;
+
+				if (Validator.isNull(fieldValue)) {
+					int fieldValueMonth = GetterUtil.getInteger(
+						serviceContext.getAttribute(fieldNameValue + "Month"));
+					int fieldValueDay = GetterUtil.getInteger(
+						serviceContext.getAttribute(fieldNameValue + "Day"));
+					int fieldValueYear = GetterUtil.getInteger(
+						serviceContext.getAttribute(fieldNameValue + "Year"));
+
+					fieldValueDate = _portal.getDate(
+						fieldValueMonth, fieldValueDay, fieldValueYear,
+						TimeZoneUtil.getTimeZone("UTC"), null);
+				}
+				else {
+					try {
+						fieldValueDate = DateUtil.parseDate(
+							String.valueOf(fieldValue),
+							serviceContext.getLocale());
+					}
+					catch (ParseException parseException) {
+						_log.error(
+							"Unable to parse date " + fieldValue,
+							parseException);
+					}
+				}
+
+				if (fieldValueDate != null) {
+					fieldValue = String.valueOf(fieldValueDate.getTime());
+				}
+			}
+			else if (fieldDataType.equals(FieldConstants.IMAGE) &&
+					 Validator.isNull(fieldValue)) {
+
+				HttpServletRequest httpServletRequest =
+					serviceContext.getRequest();
+
+				if (httpServletRequest instanceof UploadRequest) {
+					String imageFieldValue = _getImageFieldValue(
+						(UploadRequest)httpServletRequest, fieldNameValue);
+
+					if (Validator.isNotNull(imageFieldValue)) {
+						fieldValue = imageFieldValue;
+					}
+				}
+			}
+
+			if (Validator.isNull(fieldValue)) {
+				return null;
+			}
+
+			if (DDMFormFieldType.SELECT.equals(fieldType)) {
+				String predefinedValueString = predefinedValue.getString(
+					serviceContext.getLocale());
+
+				if (!fieldValue.equals(predefinedValueString) &&
+					(fieldValue instanceof String)) {
+
+					fieldValue = new String[] {String.valueOf(fieldValue)};
+
+					fieldValue = JSONFactoryUtil.serialize(fieldValue);
+				}
+			}
+
+			Serializable fieldValueSerializable =
+				FieldConstants.getSerializable(
+					fieldDataType, GetterUtil.getString(fieldValue));
+
+			fieldValues.add(fieldValueSerializable);
+		}
+
+		return fieldValues;
+	}
+
+	private List<Serializable> _getFieldValues(Field field, Locale locale) {
+		Map<Locale, List<Serializable>> fieldValuesMap = field.getValuesMap();
+
+		return fieldValuesMap.get(locale);
+	}
+
+	private byte[] _getImageBytes(
+			UploadRequest uploadRequest, String fieldNameValue)
+		throws Exception {
+
+		byte[] bytes = FileUtil.getBytes(
+			uploadRequest.getFile(fieldNameValue + "File"));
+
+		if (ArrayUtil.isNotEmpty(bytes)) {
+			return bytes;
+		}
+
+		String url = uploadRequest.getParameter(fieldNameValue + "URL");
+
+		long imageId = GetterUtil.getLong(
+			_http.getParameter(url, "img_id", false));
+
+		Image image = _imageLocalService.fetchImage(imageId);
+
+		if (image == null) {
+			return null;
+		}
+
+		return image.getTextObj();
+	}
+
+	private String _getImageFieldValue(
+		UploadRequest uploadRequest, String fieldNameValue) {
+
+		try {
+			byte[] bytes = _getImageBytes(uploadRequest, fieldNameValue);
+
+			if (ArrayUtil.isNotEmpty(bytes)) {
+				return JSONUtil.put(
+					"alt", uploadRequest.getParameter(fieldNameValue + "Alt")
+				).put(
+					"data", UnicodeFormatter.bytesToHex(bytes)
+				).toString();
+			}
+		}
+		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception);
+			}
+		}
+
+		return StringPool.BLANK;
+	}
+
+	private Set<Locale> _getMergedAvailableLocales(
+		Set<Locale> newFieldAvailableLocales,
+		Set<Locale> existingFieldAvailableLocales) {
+
+		Set<Locale> mergedAvailableLocales = new HashSet<>();
+
+		mergedAvailableLocales.addAll(newFieldAvailableLocales);
+		mergedAvailableLocales.addAll(existingFieldAvailableLocales);
+
+		return mergedAvailableLocales;
+	}
+
+	private List<Serializable> _getMergedFieldValues(
+		String fieldName, List<Serializable> newFieldValues,
+		String[] newFieldsDisplayValues, List<Serializable> existingFieldValues,
+		String[] existingFieldsDisplayValues,
+		List<Serializable> defaultFieldValues) {
+
+		if (existingFieldValues == null) {
+			return newFieldValues;
+		}
+
+		List<Serializable> mergedLocaleValues = new ArrayList<>();
+
+		int repetition = _countFieldRepetition(
+			newFieldsDisplayValues, fieldName);
+
+		for (int i = 0; i < repetition; i++) {
+			int existingFieldValueIndex = _getExistingFieldValueIndex(
+				newFieldsDisplayValues, existingFieldsDisplayValues, fieldName,
+				i);
+
+			if (existingFieldValueIndex == -1) {
+				mergedLocaleValues.add(i, defaultFieldValues.get(i));
+			}
+			else {
+				if (newFieldValues != null) {
+					mergedLocaleValues.add(i, newFieldValues.get(i));
+				}
+				else {
+					Serializable existingValue = existingFieldValues.get(
+						existingFieldValueIndex);
+
+					mergedLocaleValues.add(i, existingValue);
+				}
+			}
+		}
+
+		return mergedLocaleValues;
+	}
+
+	private Map<Locale, List<Serializable>> _getMergedFieldValuesMap(
+		Field newField, String[] newFieldsDisplayValues, Field existingField,
+		String[] existingFieldsDisplayValues) {
+
+		Set<Locale> availableLocales = _getMergedAvailableLocales(
+			newField.getAvailableLocales(),
+			existingField.getAvailableLocales());
+
+		for (Locale locale : availableLocales) {
+			List<Serializable> newFieldValues = _getFieldValues(
+				newField, locale);
+
+			List<Serializable> existingFieldValues = _getFieldValues(
+				existingField, locale);
+
+			List<Serializable> defaultFieldValues = _getFieldValues(
+				newField, newField.getDefaultLocale());
+
+			List<Serializable> mergedLocaleValues = _getMergedFieldValues(
+				newField.getName(), newFieldValues, newFieldsDisplayValues,
+				existingFieldValues, existingFieldsDisplayValues,
+				defaultFieldValues);
+
+			existingField.setValues(locale, mergedLocaleValues);
+		}
+
+		return existingField.getValuesMap();
+	}
+
+	private void _updateDDMFormFieldDefaultLocale(
 		DDMFormField ddmFormField, Locale newDefaultLocale) {
 
-		updateDDMFormFieldOptionsDefaultLocale(
+		_updateDDMFormFieldOptionsDefaultLocale(
 			ddmFormField.getDDMFormFieldOptions(), newDefaultLocale);
 
-		updateLocalizedValueDefaultLocale(
+		_updateLocalizedValueDefaultLocale(
 			ddmFormField.getLabel(), newDefaultLocale);
-		updateLocalizedValueDefaultLocale(
+		_updateLocalizedValueDefaultLocale(
 			ddmFormField.getPredefinedValue(), newDefaultLocale);
-		updateLocalizedValueDefaultLocale(
+		_updateLocalizedValueDefaultLocale(
 			ddmFormField.getStyle(), newDefaultLocale);
-		updateLocalizedValueDefaultLocale(
+		_updateLocalizedValueDefaultLocale(
 			ddmFormField.getTip(), newDefaultLocale);
 	}
 
-	protected void updateDDMFormFieldOptionsDefaultLocale(
+	private void _updateDDMFormFieldOptionsDefaultLocale(
 		DDMFormFieldOptions ddmFormFieldOptions, Locale newDefaultLocale) {
 
 		Map<String, LocalizedValue> options = ddmFormFieldOptions.getOptions();
 
 		for (LocalizedValue localizedValue : options.values()) {
-			updateLocalizedValueDefaultLocale(localizedValue, newDefaultLocale);
+			_updateLocalizedValueDefaultLocale(
+				localizedValue, newDefaultLocale);
 		}
 
 		ddmFormFieldOptions.setDefaultLocale(newDefaultLocale);
 	}
 
-	protected void updateDDMFormFieldsDefaultLocale(
+	private void _updateDDMFormFieldsDefaultLocale(
 		List<DDMFormField> ddmFormFields, Locale newDefaultLocale) {
 
 		for (DDMFormField ddmFormField : ddmFormFields) {
-			updateDDMFormFieldDefaultLocale(ddmFormField, newDefaultLocale);
+			_updateDDMFormFieldDefaultLocale(ddmFormField, newDefaultLocale);
 
-			updateDDMFormFieldsDefaultLocale(
+			_updateDDMFormFieldsDefaultLocale(
 				ddmFormField.getNestedDDMFormFields(), newDefaultLocale);
 		}
 	}
 
-	protected void updateLocalizedValueDefaultLocale(
+	private void _updateLocalizedValueDefaultLocale(
 		LocalizedValue localizedValue, Locale newDefaultLocale) {
 
 		Set<Locale> availableLocales = localizedValue.getAvailableLocales();

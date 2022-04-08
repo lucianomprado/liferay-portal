@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 
 /**
@@ -345,11 +346,13 @@ public class MapUtil {
 
 		V value = map.get(key);
 
-		if (value != null) {
-			return value;
+		if ((value == null) ||
+			((value instanceof String) && Validator.isBlank((String)value))) {
+
+			return map.get(fallbackKey);
 		}
 
-		return map.get(fallbackKey);
+		return value;
 	}
 
 	public static boolean isEmpty(Map<?, ?> map) {
@@ -362,6 +365,15 @@ public class MapUtil {
 
 	public static boolean isNotEmpty(Map<?, ?> map) {
 		return !isEmpty(map);
+	}
+
+	public static <K, V> void isNotEmptyForEach(
+		Map<? extends K, ? extends V> map,
+		BiConsumer<? super K, ? super V> biConsumer) {
+
+		if (!isEmpty(map)) {
+			map.forEach(biConsumer);
+		}
 	}
 
 	public static <K, V> void merge(
@@ -436,7 +448,7 @@ public class MapUtil {
 						map.put(kvp[0], constructor.newInstance(kvp[1]));
 					}
 					catch (Exception exception) {
-						_log.error(exception.getMessage(), exception);
+						_log.error(exception);
 					}
 				}
 			}

@@ -18,13 +18,19 @@ import aQute.bnd.annotation.metatype.Configurable;
 
 import com.liferay.petra.reflect.ReflectionUtil;
 import com.liferay.petra.string.CharPool;
+import com.liferay.portal.configuration.persistence.ConfigurationOverridePropertiesUtil;
+import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.kernel.util.HashMapDictionary;
 import com.liferay.portal.kernel.util.StringUtil;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
+import java.util.ArrayList;
 import java.util.Dictionary;
+import java.util.Enumeration;
+import java.util.List;
 import java.util.Map;
 
 import org.objectweb.asm.ClassWriter;
@@ -42,14 +48,18 @@ public class ConfigurableUtil {
 		Class<T> clazz, Dictionary<?, ?> properties) {
 
 		return _createConfigurableSnapshot(
-			clazz, Configurable.createConfigurable(clazz, properties));
+			clazz,
+			Configurable.createConfigurable(
+				clazz, _overrideDictionary(clazz, properties)));
 	}
 
 	public static <T> T createConfigurable(
 		Class<T> clazz, Map<?, ?> properties) {
 
 		return _createConfigurableSnapshot(
-			clazz, Configurable.createConfigurable(clazz, properties));
+			clazz,
+			Configurable.createConfigurable(
+				clazz, _overrideMap(clazz, properties)));
 	}
 
 	private static <T> T _createConfigurableSnapshot(
@@ -106,11 +116,17 @@ public class ConfigurableUtil {
 			snapshotClassBinaryName, null, objectClassBinaryName,
 			new String[] {_getClassBinaryName(interfaceClass.getName())});
 
-		Method[] declaredMethods = interfaceClass.getDeclaredMethods();
+		List<Method> nonsyntheticDeclaredMethods = new ArrayList<>();
+
+		for (Method method : interfaceClass.getDeclaredMethods()) {
+			if (!method.isSynthetic()) {
+				nonsyntheticDeclaredMethods.add(method);
+			}
+		}
 
 		// Fields
 
-		for (Method method : declaredMethods) {
+		for (Method method : nonsyntheticDeclaredMethods) {
 			FieldVisitor fieldVisitor = classWriter.visitField(
 				Opcodes.ACC_PRIVATE + Opcodes.ACC_FINAL, method.getName(),
 				Type.getDescriptor(method.getReturnType()), null, null);
@@ -133,7 +149,7 @@ public class ConfigurableUtil {
 			Opcodes.INVOKESPECIAL, objectClassBinaryName, "<init>", "()V",
 			false);
 
-		for (Method method : declaredMethods) {
+		for (Method method : nonsyntheticDeclaredMethods) {
 			Class<?> returnType = method.getReturnType();
 
 			constructorMethodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
@@ -159,7 +175,7 @@ public class ConfigurableUtil {
 
 		// Methods
 
-		for (Method method : declaredMethods) {
+		for (Method method : nonsyntheticDeclaredMethods) {
 			String methodName = method.getName();
 			Class<?> returnType = method.getReturnType();
 
@@ -200,6 +216,52 @@ public class ConfigurableUtil {
 	private static String _getClassBinaryName(String className) {
 		return StringUtil.replace(
 			className, CharPool.PERIOD, CharPool.FORWARD_SLASH);
+	}
+
+	private static Dictionary<?, ?> _overrideDictionary(
+		Class<?> clazz, Dictionary<?, ?> properties) {
+
+		Map<String, Object> overrideProperties =
+			ConfigurationOverridePropertiesUtil.getOverrideProperties(
+				clazz.getName());
+
+		if (overrideProperties == null) {
+			return properties;
+		}
+
+		Dictionary<Object, Object> overrideDictionary =
+			new HashMapDictionary<>();
+
+		Enumeration<?> enumeration = properties.keys();
+
+		while (enumeration.hasMoreElements()) {
+			Object key = enumeration.nextElement();
+
+			overrideDictionary.put(key, properties.get(key));
+		}
+
+		overrideProperties.forEach(
+			(key, value) -> overrideDictionary.put(key, value));
+
+		return overrideDictionary;
+	}
+
+	private static Map<?, ?> _overrideMap(
+		Class<?> clazz, Map<?, ?> properties) {
+
+		Map<String, Object> overrideProperties =
+			ConfigurationOverridePropertiesUtil.getOverrideProperties(
+				clazz.getName());
+
+		if (overrideProperties == null) {
+			return properties;
+		}
+
+		return HashMapBuilder.create(
+			(Map)properties
+		).putAll(
+			overrideProperties
+		).build();
 	}
 
 	private static final Method _defineClassMethod;

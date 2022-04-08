@@ -14,6 +14,8 @@
 
 package com.liferay.portal.vulcan.batch.engine;
 
+import com.liferay.petra.function.UnsafeBiConsumer;
+import com.liferay.petra.function.UnsafeConsumer;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.search.Sort;
@@ -28,9 +30,12 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import org.osgi.annotation.versioning.ProviderType;
+
 /**
  * @author Javier Gamarra
  */
+@ProviderType
 public interface VulcanBatchEngineTaskItemDelegate<T> {
 
 	public void create(
@@ -48,6 +53,10 @@ public interface VulcanBatchEngineTaskItemDelegate<T> {
 			Filter filter, Pagination pagination, Sort[] sorts,
 			Map<String, Serializable> parameters, String search)
 		throws Exception;
+
+	public void setContextBatchUnsafeConsumer(
+		UnsafeBiConsumer<Collection<T>, UnsafeConsumer<T, Exception>, Exception>
+			contextBatchUnsafeConsumer);
 
 	public void setContextCompany(Company contextCompany);
 

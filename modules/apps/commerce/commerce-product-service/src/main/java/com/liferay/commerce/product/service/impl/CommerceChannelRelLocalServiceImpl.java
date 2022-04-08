@@ -36,15 +36,17 @@ public class CommerceChannelRelLocalServiceImpl
 			ServiceContext serviceContext)
 		throws PortalException {
 
-		User user = userLocalService.getUser(serviceContext.getUserId());
-
 		long classNameId = classNameLocalService.getClassNameId(className);
 
-		if (commerceChannelRelPersistence.fetchByC_C_C(
-				classNameId, classPK, commerceChannelId) != null) {
+		CommerceChannelRel existingCommerceChannelRel =
+			commerceChannelRelPersistence.fetchByC_C_C(
+				classNameId, classPK, commerceChannelId);
 
+		if (existingCommerceChannelRel != null) {
 			throw new DuplicateCommerceChannelRelException();
 		}
+
+		User user = userLocalService.getUser(serviceContext.getUserId());
 
 		long commerceChannelRelId = counterLocalService.increment();
 

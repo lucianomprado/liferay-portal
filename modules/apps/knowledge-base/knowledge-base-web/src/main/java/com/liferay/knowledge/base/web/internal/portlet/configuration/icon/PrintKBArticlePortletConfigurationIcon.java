@@ -16,9 +16,12 @@ package com.liferay.knowledge.base.web.internal.portlet.configuration.icon;
 
 import com.liferay.knowledge.base.constants.KBPortletKeys;
 import com.liferay.knowledge.base.model.KBArticle;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.portlet.LiferayWindowState;
 import com.liferay.portal.kernel.portlet.configuration.icon.PortletConfigurationIcon;
 import com.liferay.portal.kernel.util.Constants;
@@ -60,11 +63,13 @@ public class PrintKBArticlePortletConfigurationIcon
 
 			sb.append("window.open('");
 
-			PortletURL portletURL = _portal.getControlPanelPortletURL(
-				portletRequest, KBPortletKeys.KNOWLEDGE_BASE_ADMIN,
-				PortletRequest.RENDER_PHASE);
-
-			portletURL.setParameter("mvcPath", "/admin/print_article.jsp");
+			PortletURL portletURL = PortletURLBuilder.create(
+				_portal.getControlPanelPortletURL(
+					portletRequest, KBPortletKeys.KNOWLEDGE_BASE_ADMIN,
+					PortletRequest.RENDER_PHASE)
+			).setMVCPath(
+				"/admin/print_article.jsp"
+			).buildPortletURL();
 
 			KBArticle kbArticle = getKBArticle(portletRequest);
 
@@ -87,6 +92,9 @@ public class PrintKBArticlePortletConfigurationIcon
 			return sb.toString();
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception);
+			}
 		}
 
 		return StringPool.BLANK;
@@ -108,6 +116,9 @@ public class PrintKBArticlePortletConfigurationIcon
 	public boolean isShow(PortletRequest portletRequest) {
 		return true;
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		PrintKBArticlePortletConfigurationIcon.class);
 
 	@Reference
 	private Portal _portal;

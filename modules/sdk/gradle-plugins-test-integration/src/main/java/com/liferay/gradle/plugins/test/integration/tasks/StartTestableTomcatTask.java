@@ -68,16 +68,14 @@ public class StartTestableTomcatTask extends StartAppServerTask {
 
 	@Override
 	protected void waitForStarted(
-		StartedProcess startedProcess, final OutputStream outputStream) {
+		StartedProcess startedProcess, OutputStream outputStream) {
 
 		waitFor(
 			new Callable<Boolean>() {
 
 				@Override
 				public Boolean call() throws Exception {
-					String output = outputStream.toString();
-
-					if (output.contains("Server startup in")) {
+					if (isReachable()) {
 						return true;
 					}
 
@@ -90,14 +88,14 @@ public class StartTestableTomcatTask extends StartAppServerTask {
 	}
 
 	private void _deleteLiferayHome() {
-		Project project = getProject();
-
 		File liferayHome = getLiferayHome();
 
 		if (liferayHome == null) {
 			throw new InvalidUserDataException(
 				"No value has been specified for property 'liferayHome'");
 		}
+
+		Project project = getProject();
 
 		project.delete(
 			new File(liferayHome, "data"), new File(liferayHome, "logs"),

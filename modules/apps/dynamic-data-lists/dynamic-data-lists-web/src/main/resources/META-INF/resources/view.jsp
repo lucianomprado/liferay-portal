@@ -29,7 +29,7 @@ String displayStyle = ddlDisplayContext.getDisplayStyle();
 <clay:container-fluid
 	id='<%= liferayPortletResponse.getNamespace() + "formContainer" %>'
 >
-	<aui:form action="<%= portletURL.toString() %>" method="post" name="fm">
+	<aui:form action="<%= portletURL %>" method="post" name="fm">
 		<aui:input name="redirect" type="hidden" value="<%= portletURL.toString() %>" />
 		<aui:input name="recordSetIds" type="hidden" />
 
@@ -45,7 +45,6 @@ String displayStyle = ddlDisplayContext.getDisplayStyle();
 
 			<liferay-ui:search-container-row
 				className="com.liferay.dynamic.data.lists.model.DDLRecordSet"
-				cssClass="entry-display-style"
 				keyProperty="recordSetId"
 				modelVar="recordSet"
 			>

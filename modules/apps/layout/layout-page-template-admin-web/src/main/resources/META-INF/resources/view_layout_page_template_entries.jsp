@@ -22,8 +22,9 @@ LayoutPageTemplateDisplayContext layoutPageTemplateDisplayContext = new LayoutPa
 LayoutPageTemplateManagementToolbarDisplayContext layoutPageTemplateManagementToolbarDisplayContext = new LayoutPageTemplateManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, layoutPageTemplateDisplayContext);
 %>
 
-<clay:management-toolbar-v2
-	displayContext="<%= layoutPageTemplateManagementToolbarDisplayContext %>"
+<clay:management-toolbar
+	managementToolbarDisplayContext="<%= layoutPageTemplateManagementToolbarDisplayContext %>"
+	propsTransformer="js/propsTransformers/LayoutPageTemplateEntryManagementToolbarPropsTransformer"
 />
 
 <portlet:actionURL name="/layout_page_template_admin/delete_layout_page_template_entry" var="deleteLayoutPageTemplateEntryURL">
@@ -44,8 +45,6 @@ LayoutPageTemplateManagementToolbarDisplayContext layoutPageTemplateManagementTo
 		>
 
 			<%
-			row.setCssClass("entry-card lfr-asset-item " + row.getCssClass());
-
 			row.setData(
 				HashMapBuilder.<String, Object>put(
 					"actions", layoutPageTemplateManagementToolbarDisplayContext.getAvailableActions(layoutPageTemplateEntry)
@@ -75,8 +74,3 @@ LayoutPageTemplateManagementToolbarDisplayContext layoutPageTemplateManagementTo
 	<aui:input name="layoutPageTemplateEntryId" type="hidden" />
 	<aui:input name="fileEntryId" type="hidden" />
 </aui:form>
-
-<liferay-frontend:component
-	componentId="<%= layoutPageTemplateManagementToolbarDisplayContext.getDefaultEventHandler() %>"
-	module="js/LayoutPageTemplateEntryManagementToolbarDefaultEventHandler.es"
-/>

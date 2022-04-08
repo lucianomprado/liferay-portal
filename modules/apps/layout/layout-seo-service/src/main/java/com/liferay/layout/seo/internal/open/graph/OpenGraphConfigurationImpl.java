@@ -15,6 +15,7 @@
 package com.liferay.layout.seo.internal.open.graph;
 
 import com.liferay.layout.seo.internal.configuration.LayoutSEOCompanyConfiguration;
+import com.liferay.layout.seo.internal.configuration.LayoutSEOGroupConfiguration;
 import com.liferay.layout.seo.model.LayoutSEOSite;
 import com.liferay.layout.seo.open.graph.OpenGraphConfiguration;
 import com.liferay.layout.seo.service.LayoutSEOSiteLocalService;
@@ -34,7 +35,9 @@ import org.osgi.service.component.annotations.Reference;
 public class OpenGraphConfigurationImpl implements OpenGraphConfiguration {
 
 	@Override
-	public boolean isOpenGraphEnabled(Company company) throws PortalException {
+	public boolean isLayoutTranslatedLanguagesEnabled(Company company)
+		throws PortalException {
+
 		LayoutSEOCompanyConfiguration layoutSEOCompanyConfiguration =
 			_configurationProvider.getCompanyConfiguration(
 				LayoutSEOCompanyConfiguration.class, company.getCompanyId());
@@ -43,7 +46,37 @@ public class OpenGraphConfigurationImpl implements OpenGraphConfiguration {
 			return false;
 		}
 
-		return true;
+		return layoutSEOCompanyConfiguration.enableLayoutTranslatedLanguages();
+	}
+
+	@Override
+	public boolean isLayoutTranslatedLanguagesEnabled(Group group)
+		throws PortalException {
+
+		if (!isOpenGraphEnabled(group)) {
+			return false;
+		}
+
+		if (isLayoutTranslatedLanguagesEnabled(
+				_companyLocalService.getCompany(group.getCompanyId()))) {
+
+			return true;
+		}
+
+		LayoutSEOGroupConfiguration layoutSEOGroupConfiguration =
+			_configurationProvider.getGroupConfiguration(
+				LayoutSEOGroupConfiguration.class, group.getGroupId());
+
+		return layoutSEOGroupConfiguration.enableLayoutTranslatedLanguages();
+	}
+
+	@Override
+	public boolean isOpenGraphEnabled(Company company) throws PortalException {
+		LayoutSEOCompanyConfiguration layoutSEOCompanyConfiguration =
+			_configurationProvider.getCompanyConfiguration(
+				LayoutSEOCompanyConfiguration.class, company.getCompanyId());
+
+		return layoutSEOCompanyConfiguration.enableOpenGraph();
 	}
 
 	@Override

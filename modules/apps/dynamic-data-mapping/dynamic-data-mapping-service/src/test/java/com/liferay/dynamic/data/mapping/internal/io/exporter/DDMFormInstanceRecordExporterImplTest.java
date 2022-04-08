@@ -41,15 +41,16 @@ import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.util.FastDateFormatFactoryUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.Html;
-import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.LinkedHashMapBuilder;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 import com.liferay.portal.util.FastDateFormatFactoryImpl;
 
 import java.text.Format;
@@ -63,6 +64,8 @@ import java.util.Map;
 
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -80,11 +83,15 @@ import org.powermock.api.mockito.PowerMockito;
 @RunWith(MockitoJUnitRunner.class)
 public class DDMFormInstanceRecordExporterImplTest extends PowerMockito {
 
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
+
 	@Before
 	public void setUp() throws Exception {
-		setUpFastDateFormatFactoryUtil();
-		setUpHtmlUtil();
-		setUpLanguageUtil();
+		_setUpFastDateFormatFactoryUtil();
+		_setUpLanguageUtil();
 	}
 
 	@Test
@@ -265,40 +272,38 @@ public class DDMFormInstanceRecordExporterImplTest extends PowerMockito {
 
 		localizedValue1.addString(locale, "Campo 1");
 
-		LocalizedValue localizedValue2 = new LocalizedValue();
-
-		localizedValue2.addString(locale, "Campo 2");
-
-		Map<String, DDMFormField> ddmFormFieldMap =
-			HashMapBuilder.<String, DDMFormField>put(
-				"field1",
-				() -> {
-					DDMFormField ddmFormField1 = new DDMFormField(
-						"field1", "text");
-
-					ddmFormField1.setFieldReference("reference1");
-
-					ddmFormField1.setLabel(localizedValue1);
-
-					return ddmFormField1;
-				}
-			).put(
-				"field2",
-				() -> {
-					DDMFormField ddmFormField2 = new DDMFormField(
-						"field2", "text");
-
-					ddmFormField2.setFieldReference("reference2");
-
-					ddmFormField2.setLabel(localizedValue2);
-
-					return ddmFormField2;
-				}
-			).build();
-
 		Map<String, String> ddmFormFieldsLabel =
 			ddmFormInstanceRecordExporterImpl.getDDMFormFieldsLabel(
-				ddmFormFieldMap, locale);
+				HashMapBuilder.<String, DDMFormField>put(
+					"field1",
+					() -> {
+						DDMFormField ddmFormField1 = new DDMFormField(
+							"field1", "text");
+
+						ddmFormField1.setFieldReference("reference1");
+
+						ddmFormField1.setLabel(localizedValue1);
+
+						return ddmFormField1;
+					}
+				).put(
+					"field2",
+					() -> {
+						DDMFormField ddmFormField2 = new DDMFormField(
+							"field2", "text");
+
+						ddmFormField2.setFieldReference("reference2");
+
+						LocalizedValue localizedValue2 = new LocalizedValue();
+
+						localizedValue2.addString(locale, "Campo 2");
+
+						ddmFormField2.setLabel(localizedValue2);
+
+						return ddmFormField2;
+					}
+				).build(),
+				locale);
 
 		Assert.assertEquals("Autor", ddmFormFieldsLabel.get("author"));
 		Assert.assertEquals("Idioma", ddmFormFieldsLabel.get("languageId"));
@@ -324,17 +329,13 @@ public class DDMFormInstanceRecordExporterImplTest extends PowerMockito {
 
 		ddmFormField.setFieldReference("reference1");
 
-		List<DDMFormFieldValue> ddmFormFieldValues = new ArrayList<>();
-
 		DDMFormFieldValue ddmFormFieldValue =
 			DDMFormValuesTestUtil.createDDMFormFieldValueWithReference(
 				"field1", "reference1", new UnlocalizedValue("value1"));
 
-		ddmFormFieldValues.add(ddmFormFieldValue);
-
 		Map<String, List<DDMFormFieldValue>> ddmFormFieldValueMap =
 			HashMapBuilder.<String, List<DDMFormFieldValue>>put(
-				"reference1", ddmFormFieldValues
+				"reference1", ListUtil.fromArray(ddmFormFieldValue)
 			).build();
 
 		Locale locale = new Locale("pt", "BR");
@@ -352,8 +353,11 @@ public class DDMFormInstanceRecordExporterImplTest extends PowerMockito {
 			"value1"
 		);
 
+		ReflectionTestUtil.setFieldValue(
+			ddmFormInstanceRecordExporterImpl, "_html", _html);
+
 		when(
-			_html.extractText("value1")
+			_html.unescape("value1")
 		).thenReturn(
 			"value1"
 		);
@@ -378,7 +382,7 @@ public class DDMFormInstanceRecordExporterImplTest extends PowerMockito {
 
 		Mockito.verify(
 			_html, Mockito.times(1)
-		).extractText(
+		).unescape(
 			"value1"
 		);
 	}
@@ -644,11 +648,10 @@ public class DDMFormInstanceRecordExporterImplTest extends PowerMockito {
 			"approvado"
 		);
 
-		String statusMessage =
+		Assert.assertEquals(
+			"approvado",
 			ddmFormInstanceRecordExporterImpl.getStatusMessage(
-				WorkflowConstants.STATUS_APPROVED, locale);
-
-		Assert.assertEquals("approvado", statusMessage);
+				WorkflowConstants.STATUS_APPROVED, locale));
 
 		Mockito.verify(
 			_language, Mockito.times(1)
@@ -758,7 +761,7 @@ public class DDMFormInstanceRecordExporterImplTest extends PowerMockito {
 		);
 	}
 
-	protected void setUpFastDateFormatFactoryUtil() {
+	private void _setUpFastDateFormatFactoryUtil() {
 		FastDateFormatFactoryUtil fastDateFormatFactoryUtil =
 			new FastDateFormatFactoryUtil();
 
@@ -766,13 +769,7 @@ public class DDMFormInstanceRecordExporterImplTest extends PowerMockito {
 			new FastDateFormatFactoryImpl());
 	}
 
-	protected void setUpHtmlUtil() {
-		HtmlUtil htmlUtil = new HtmlUtil();
-
-		htmlUtil.setHtml(_html);
-	}
-
-	protected void setUpLanguageUtil() {
+	private void _setUpLanguageUtil() {
 		LanguageUtil languageUtil = new LanguageUtil();
 
 		languageUtil.setLanguage(_language);

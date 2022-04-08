@@ -20,7 +20,6 @@ import com.liferay.asset.kernel.model.AssetVocabulary;
 import com.liferay.asset.kernel.service.AssetCategoryLocalServiceUtil;
 import com.liferay.asset.kernel.service.AssetVocabularyLocalServiceUtil;
 import com.liferay.exportimport.changeset.constants.ChangesetPortletKeys;
-import com.liferay.exportimport.configuration.ExportImportServiceConfiguration;
 import com.liferay.exportimport.kernel.configuration.ExportImportConfigurationParameterMapFactoryUtil;
 import com.liferay.exportimport.kernel.lar.ExportImportDateUtil;
 import com.liferay.exportimport.kernel.lar.ExportImportHelperUtil;
@@ -60,8 +59,8 @@ import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.test.util.UserTestUtil;
-import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
@@ -74,6 +73,7 @@ import com.liferay.portal.kernel.zip.ZipReaderFactoryUtil;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
 import com.liferay.portal.util.PropsValues;
+import com.liferay.staging.configuration.StagingConfiguration;
 
 import java.io.File;
 import java.io.Serializable;
@@ -81,11 +81,13 @@ import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Dictionary;
 import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -127,7 +129,7 @@ public class StagingImplTest {
 	public void testGetRemoteLayout() throws Exception {
 		enableRemoteStaging(false);
 
-		Layout remoteStagingGroupLayout = LayoutTestUtil.addLayout(
+		Layout remoteStagingGroupLayout = LayoutTestUtil.addTypePortletLayout(
 			_remoteStagingGroup);
 
 		Map<String, String[]> parameters =
@@ -156,7 +158,7 @@ public class StagingImplTest {
 	public void testHasRemoteLayout() throws Exception {
 		enableRemoteStaging(false);
 
-		Layout remoteStagingGroupLayout = LayoutTestUtil.addLayout(
+		Layout remoteStagingGroupLayout = LayoutTestUtil.addTypePortletLayout(
 			_remoteStagingGroup);
 
 		Assert.assertFalse(
@@ -182,31 +184,18 @@ public class StagingImplTest {
 
 	@Test
 	public void testInitialPublication() throws Exception {
-		long companyId = _group.getCompanyId();
-
-		ExportImportServiceConfiguration exportImportServiceConfiguration =
-			ConfigurationProviderUtil.getCompanyConfiguration(
-				ExportImportServiceConfiguration.class, companyId);
-
-		boolean stagingDeleteTempLarOnSuccess =
-			exportImportServiceConfiguration.stagingDeleteTempLarOnSuccess();
-
-		Dictionary<String, Object> properties = new Hashtable<>();
-
-		properties.put("stagingDeleteTempLarOnSuccess", false);
-
-		ConfigurationProviderUtil.saveCompanyConfiguration(
-			ExportImportServiceConfiguration.class, companyId, properties);
-
 		try {
+			ConfigurationProviderUtil.saveCompanyConfiguration(
+				StagingConfiguration.class, _group.getCompanyId(),
+				HashMapDictionaryBuilder.<String, Object>put(
+					"stagingDeleteTempLAROnSuccess", false
+				).build());
+
 			doTestInitialPublication();
 		}
 		finally {
-			properties.put(
-				"stagingDeleteTempLarOnSuccess", stagingDeleteTempLarOnSuccess);
-
-			ConfigurationProviderUtil.saveCompanyConfiguration(
-				ExportImportServiceConfiguration.class, companyId, properties);
+			ConfigurationProviderUtil.deleteCompanyConfiguration(
+				StagingConfiguration.class, _group.getCompanyId());
 		}
 	}
 
@@ -313,8 +302,8 @@ public class StagingImplTest {
 	}
 
 	protected void doTestInitialPublication() throws Exception {
-		LayoutTestUtil.addLayout(_group);
-		LayoutTestUtil.addLayout(_group, true);
+		LayoutTestUtil.addTypePortletLayout(_group);
+		LayoutTestUtil.addTypePortletLayout(_group, true);
 
 		JournalTestUtil.addArticle(
 			_group.getGroupId(), RandomTestUtil.randomString(),
@@ -340,13 +329,18 @@ public class StagingImplTest {
 
 		String includePattern = String.valueOf(_group.getGroupId()) + "*.lar";
 
-		String[] larFileNames = FileUtil.find(
-			SystemProperties.get(SystemProperties.TMP_DIR), includePattern,
-			null);
+		List<String> larFileNames = new ArrayList<>();
 
-		Arrays.sort(larFileNames);
+		try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(
+				Paths.get(SystemProperties.get(SystemProperties.TMP_DIR)),
+				includePattern)) {
 
-		File larFile = new File(larFileNames[larFileNames.length - 1]);
+			directoryStream.forEach(path -> larFileNames.add(path.toString()));
+		}
+
+		larFileNames.sort(null);
+
+		File larFile = new File(larFileNames.get(larFileNames.size() - 1));
 
 		PortletDataContext portletDataContext =
 			PortletDataContextFactoryUtil.createImportPortletDataContext(
@@ -462,8 +456,8 @@ public class StagingImplTest {
 
 		// Layouts
 
-		LayoutTestUtil.addLayout(_group);
-		LayoutTestUtil.addLayout(_group);
+		LayoutTestUtil.addTypePortletLayout(_group);
+		LayoutTestUtil.addTypePortletLayout(_group);
 
 		// Create content
 

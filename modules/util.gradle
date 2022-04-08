@@ -12,7 +12,6 @@ buildscript {
 	apply from: file("build-buildscript.gradle"), to: buildscript
 }
 
-apply plugin: "com.liferay.python"
 apply plugin: "com.liferay.source.formatter"
 apply plugin: "com.liferay.source.formatter.defaults"
 
@@ -253,7 +252,6 @@ set DEFAULT_JVM_OPTS=%DEFAULT_JVM_OPTS% "-Dgradle.user.home=%APP_HOME%\\.gradle"
 tasks.withType(FormatSourceTask) {
 	baseDirName = "../"
 	group = "formatting"
-	showStatusUpdates = true
 }
 
 _createSetUpLibTasks(libDependenciesMap)

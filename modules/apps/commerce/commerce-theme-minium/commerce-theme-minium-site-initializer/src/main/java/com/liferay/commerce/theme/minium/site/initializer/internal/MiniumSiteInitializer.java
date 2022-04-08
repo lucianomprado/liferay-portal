@@ -14,6 +14,8 @@
 
 package com.liferay.commerce.theme.minium.site.initializer.internal;
 
+import com.liferay.account.settings.AccountEntryGroupSettings;
+import com.liferay.commerce.account.configuration.CommerceAccountGroupServiceConfiguration;
 import com.liferay.commerce.account.constants.CommerceAccountConstants;
 import com.liferay.commerce.account.util.CommerceAccountRoleHelper;
 import com.liferay.commerce.currency.model.CommerceCurrency;
@@ -40,22 +42,22 @@ import com.liferay.commerce.media.CommerceCatalogDefaultImage;
 import com.liferay.commerce.model.CommerceShippingEngine;
 import com.liferay.commerce.model.CommerceShippingMethod;
 import com.liferay.commerce.price.list.constants.CommercePriceListConstants;
+import com.liferay.commerce.product.constants.CommerceChannelConstants;
 import com.liferay.commerce.product.importer.CPFileImporter;
 import com.liferay.commerce.product.model.CPDefinition;
 import com.liferay.commerce.product.model.CPOption;
 import com.liferay.commerce.product.model.CommerceCatalog;
 import com.liferay.commerce.product.model.CommerceChannel;
-import com.liferay.commerce.product.model.CommerceChannelConstants;
 import com.liferay.commerce.product.service.CPDefinitionLinkLocalService;
 import com.liferay.commerce.product.service.CPDefinitionLocalService;
 import com.liferay.commerce.product.service.CPMeasurementUnitLocalService;
 import com.liferay.commerce.product.service.CommerceCatalogLocalService;
 import com.liferay.commerce.product.service.CommerceChannelLocalService;
-import com.liferay.commerce.service.CommerceCountryLocalService;
 import com.liferay.commerce.service.CommerceShippingMethodLocalService;
 import com.liferay.commerce.shipping.engine.fixed.service.CommerceShippingFixedOptionLocalService;
 import com.liferay.commerce.theme.minium.SiteInitializerDependencyResolver;
 import com.liferay.commerce.theme.minium.SiteInitializerDependencyResolverThreadLocal;
+import com.liferay.commerce.util.AccountEntryAllowedTypesUtil;
 import com.liferay.commerce.util.CommerceShippingEngineRegistry;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -176,26 +178,31 @@ public class MiniumSiteInitializer implements SiteInitializer {
 				_siteInitializerDependencyResolver =
 					siteInitializerDependencyResolver;
 			}
+			else {
+				_siteInitializerDependencyResolver =
+					_defaultSiteInitializerDependencyResolver;
+			}
 
-			ServiceContext serviceContext = getServiceContext(groupId);
+			ServiceContext serviceContext = _getServiceContext(groupId);
 
 			_cpFileImporter.updateLookAndFeel(
 				_MINIUM_THEME_ID, true, serviceContext);
 			_cpFileImporter.updateLookAndFeel(
 				_MINIUM_THEME_ID, false, serviceContext);
 
-			updateLogo(serviceContext);
+			_updateLogo(serviceContext);
 
-			CommerceCatalog commerceCatalog = createCatalog(serviceContext);
+			CommerceCatalog commerceCatalog = _createCatalog(serviceContext);
 
 			long catalogGroupId = commerceCatalog.getGroupId();
 
-			CommerceChannel commerceChannel = createChannel(
+			CommerceChannel commerceChannel = _createChannel(
 				commerceCatalog, serviceContext);
 
-			createRoles(serviceContext, commerceChannel.getCommerceChannelId());
+			_createRoles(
+				serviceContext, commerceChannel.getCommerceChannelId());
 
-			configureB2BSite(commerceChannel.getGroupId(), serviceContext);
+			_configureB2BSite(commerceChannel.getGroupId(), serviceContext);
 
 			_miniumLayoutsInitializer.initialize(serviceContext);
 
@@ -244,7 +251,7 @@ public class MiniumSiteInitializer implements SiteInitializer {
 
 			_importPortletSettings(serviceContext);
 
-			setCommerceShippingMethod(
+			_setCommerceShippingMethod(
 				commerceChannel.getGroupId(), "fixed", serviceContext);
 
 			int catalogCPDefinitionsCount =
@@ -252,20 +259,20 @@ public class MiniumSiteInitializer implements SiteInitializer {
 					catalogGroupId, WorkflowConstants.STATUS_ANY);
 
 			if (catalogCPDefinitionsCount > 0) {
-				setDefaultCatalogImage(catalogGroupId, serviceContext);
+				_setDefaultCatalogImage(catalogGroupId, serviceContext);
 			}
 			else {
 				_commerceCatalogLocalService.deleteCommerceCatalog(
 					commerceCatalog);
 			}
 
-			setThemeSettings(serviceContext);
+			_setThemeSettings(serviceContext);
 		}
 		catch (InitializationException initializationException) {
 			throw initializationException;
 		}
 		catch (Exception exception) {
-			_log.error(exception, exception);
+			_log.error(exception);
 
 			throw new InitializationException(exception);
 		}
@@ -292,7 +299,12 @@ public class MiniumSiteInitializer implements SiteInitializer {
 		init();
 	}
 
-	protected void configureB2BSite(long groupId, ServiceContext serviceContext)
+	@Deactivate
+	protected void deactivate() {
+		_cpDefinitions = null;
+	}
+
+	private void _configureB2BSite(long groupId, ServiceContext serviceContext)
 		throws Exception {
 
 		Group group = _groupLocalService.getGroup(groupId);
@@ -304,7 +316,6 @@ public class MiniumSiteInitializer implements SiteInitializer {
 
 		_groupLocalService.updateGroup(group);
 
-		_commerceCountryLocalService.importDefaultCountries(serviceContext);
 		_commerceCurrencyLocalService.importDefaultValues(serviceContext);
 		_cpMeasurementUnitLocalService.importDefaultValues(serviceContext);
 
@@ -322,9 +333,12 @@ public class MiniumSiteInitializer implements SiteInitializer {
 			String.valueOf(CommerceAccountConstants.SITE_TYPE_B2B));
 
 		modifiableSettings.store();
+
+		_accountEntryGroupSettings.setAllowedTypes(
+			serviceContext.getScopeGroupId(), _getAllowedTypes(groupId));
 	}
 
-	protected CommerceCatalog createCatalog(ServiceContext serviceContext)
+	private CommerceCatalog _createCatalog(ServiceContext serviceContext)
 		throws Exception {
 
 		Group group = serviceContext.getScopeGroup();
@@ -334,47 +348,78 @@ public class MiniumSiteInitializer implements SiteInitializer {
 				serviceContext.getCompanyId());
 
 		return _commerceCatalogLocalService.addCommerceCatalog(
-			group.getName(serviceContext.getLanguageId()),
+			StringPool.BLANK, group.getName(serviceContext.getLanguageId()),
 			commerceCurrency.getCode(), serviceContext.getLanguageId(),
-			StringPool.BLANK, serviceContext);
+			serviceContext);
 	}
 
-	protected CommerceChannel createChannel(
+	private CommerceChannel _createChannel(
 			CommerceCatalog commerceCatalog, ServiceContext serviceContext)
 		throws Exception {
 
 		Group group = serviceContext.getScopeGroup();
 
 		return _commerceChannelLocalService.addCommerceChannel(
-			group.getGroupId(),
+			StringPool.BLANK, group.getGroupId(),
 			group.getName(serviceContext.getLanguageId()) + " Portal",
 			CommerceChannelConstants.CHANNEL_TYPE_SITE, null,
-			commerceCatalog.getCommerceCurrencyCode(), StringPool.BLANK,
-			serviceContext);
+			commerceCatalog.getCommerceCurrencyCode(), serviceContext);
 	}
 
-	protected void createRoles(
+	private void _createRoles(
 			ServiceContext serviceContext, long commerceChannelId)
 		throws Exception {
 
-		JSONArray jsonArray = _getJSONArray("roles.json");
+		_cpFileImporter.createRoles(
+			_getJSONArray("roles.json"), serviceContext);
 
-		_cpFileImporter.createRoles(jsonArray, serviceContext);
-
-		updateUserRole(serviceContext);
-		updateOperationManagerRole(serviceContext, commerceChannelId);
+		_updateUserRole(serviceContext);
+		_updateOperationManagerRole(serviceContext, commerceChannelId);
 	}
 
-	@Deactivate
-	protected void deactivate() {
-		_cpDefinitions = null;
+	private String[] _getAllowedTypes(long commerceChannelGroupId)
+		throws Exception {
+
+		CommerceAccountGroupServiceConfiguration
+			commerceAccountGroupServiceConfiguration =
+				_configurationProvider.getConfiguration(
+					CommerceAccountGroupServiceConfiguration.class,
+					new GroupServiceSettingsLocator(
+						commerceChannelGroupId,
+						CommerceAccountConstants.SERVICE_NAME));
+
+		return AccountEntryAllowedTypesUtil.getAllowedTypes(
+			commerceAccountGroupServiceConfiguration.commerceSiteType());
 	}
 
-	protected CPDefinition getCPDefinitionByName(String name) {
+	private CPDefinition _getCPDefinitionByName(String name) {
 		return _cpDefinitions.get(name);
 	}
 
-	protected ServiceContext getServiceContext(long groupId)
+	private long[] _getCProductIds(JSONArray jsonArray) {
+		List<Long> cProductIdsList = new ArrayList<>();
+
+		for (int i = 0; i < jsonArray.length(); i++) {
+			CPDefinition cpDefinitionEntry = _getCPDefinitionByName(
+				jsonArray.getString(i));
+
+			cProductIdsList.add(cpDefinitionEntry.getCProductId());
+		}
+
+		return ArrayUtil.toLongArray(cProductIdsList);
+	}
+
+	private JSONArray _getJSONArray(String name) throws Exception {
+		return _jsonFactory.createJSONArray(
+			_siteInitializerDependencyResolver.getJSON(name));
+	}
+
+	private JSONObject _getJSONObject(String name) throws Exception {
+		return _jsonFactory.createJSONObject(
+			_siteInitializerDependencyResolver.getJSON(name));
+	}
+
+	private ServiceContext _getServiceContext(long groupId)
 		throws PortalException {
 
 		User user = _userLocalService.getUser(PrincipalThreadLocal.getUserId());
@@ -395,187 +440,6 @@ public class MiniumSiteInitializer implements SiteInitializer {
 		return serviceContext;
 	}
 
-	protected void setCommerceShippingMethod(
-			long groupId, String shippingMethod, ServiceContext serviceContext)
-		throws PortalException {
-
-		Locale locale = serviceContext.getLocale();
-
-		CommerceShippingEngine commerceShippingEngine =
-			_commerceShippingEngineRegistry.getCommerceShippingEngine(
-				shippingMethod);
-
-		CommerceShippingMethod commerceShippingMethod =
-			_commerceShippingMethodLocalService.addCommerceShippingMethod(
-				serviceContext.getUserId(), groupId,
-				HashMapBuilder.put(
-					locale, commerceShippingEngine.getName(locale)
-				).build(),
-				HashMapBuilder.put(
-					locale, commerceShippingEngine.getDescription(locale)
-				).build(),
-				null, shippingMethod, 0, true);
-
-		setCommerceShippingOption(
-			commerceShippingMethod, "Standard Delivery", StringPool.BLANK,
-			BigDecimal.valueOf(15), serviceContext);
-
-		setCommerceShippingOption(
-			commerceShippingMethod, "Expedited Delivery", StringPool.BLANK,
-			BigDecimal.valueOf(25), serviceContext);
-	}
-
-	protected void setCommerceShippingOption(
-			CommerceShippingMethod commerceShippingMethod, String name,
-			String description, BigDecimal price, ServiceContext serviceContext)
-		throws PortalException {
-
-		_commerceShippingFixedOptionLocalService.addCommerceShippingFixedOption(
-			serviceContext.getUserId(), commerceShippingMethod.getGroupId(),
-			commerceShippingMethod.getCommerceShippingMethodId(),
-			HashMapBuilder.put(
-				serviceContext.getLocale(), name
-			).build(),
-			HashMapBuilder.put(
-				serviceContext.getLocale(), description
-			).build(),
-			price, 0);
-	}
-
-	protected void setDefaultCatalogImage(
-			long catalogGroupId, ServiceContext serviceContext)
-		throws Exception {
-
-		ClassLoader classLoader =
-			_siteInitializerDependencyResolver.getImageClassLoader();
-
-		InputStream inputStream = classLoader.getResourceAsStream(
-			_siteInitializerDependencyResolver.getImageDependencyPath() +
-				"Minium_ProductImage_Default.png");
-
-		File file = null;
-
-		try {
-			file = FileUtil.createTempFile(inputStream);
-
-			String mimeType = MimeTypesUtil.getContentType(file);
-
-			FileEntry fileEntry = TempFileEntryUtil.addTempFileEntry(
-				catalogGroupId, serviceContext.getUserId(),
-				MiniumSiteInitializer.class.getName(), file.getName(), file,
-				mimeType);
-
-			_commerceCatalogDefaultImage.updateDefaultCatalogFileEntryId(
-				catalogGroupId, fileEntry.getFileEntryId());
-		}
-		finally {
-			if (file != null) {
-				FileUtil.delete(file);
-			}
-		}
-	}
-
-	protected void setThemeSettings(ServiceContext serviceContext)
-		throws Exception {
-
-		JSONObject themeSettingsJSONObject = _getJSONObject(
-			"theme-settings.json");
-
-		Iterator<String> iterator = themeSettingsJSONObject.keys();
-
-		while (iterator.hasNext()) {
-			String key = iterator.next();
-
-			String value = themeSettingsJSONObject.getString(key);
-
-			updateThemeSetting(key, value, serviceContext);
-		}
-	}
-
-	protected void updateLogo(ServiceContext serviceContext) throws Exception {
-		ClassLoader classLoader =
-			_siteInitializerDependencyResolver.getImageClassLoader();
-
-		InputStream inputStream = classLoader.getResourceAsStream(
-			_siteInitializerDependencyResolver.getImageDependencyPath() +
-				"minium_logo.png");
-
-		File file = FileUtil.createTempFile(inputStream);
-
-		_cpFileImporter.updateLogo(file, true, true, serviceContext);
-		_cpFileImporter.updateLogo(file, false, true, serviceContext);
-	}
-
-	protected void updateOperationManagerRole(
-			ServiceContext serviceContext, long commerceChannelId)
-		throws PortalException {
-
-		ModelPermissions modelPermissions = ModelPermissionsFactory.create(
-			HashMapBuilder.put(
-				"Operations Manager", new String[] {"VIEW"}
-			).build(),
-			null);
-
-		_resourcePermissionLocalService.addModelResourcePermissions(
-			serviceContext.getCompanyId(), serviceContext.getScopeGroupId(),
-			serviceContext.getUserId(), CommerceChannel.class.getName(),
-			String.valueOf(commerceChannelId), modelPermissions);
-	}
-
-	protected void updateThemeSetting(
-		String key, String value, ServiceContext serviceContext) {
-
-		Theme theme = _themeLocalService.fetchTheme(
-			serviceContext.getCompanyId(), _MINIUM_THEME_ID);
-
-		if (theme == null) {
-			return;
-		}
-
-		Map<String, ThemeSetting> configurableSettings =
-			theme.getConfigurableSettings();
-
-		ThemeSetting themeSetting = configurableSettings.get(key);
-
-		themeSetting.setValue(value);
-	}
-
-	protected void updateUserRole(ServiceContext serviceContext)
-		throws PortalException {
-
-		Role role = _roleLocalService.fetchRole(
-			serviceContext.getCompanyId(), "User");
-
-		_resourcePermissionLocalService.addResourcePermission(
-			serviceContext.getCompanyId(), "com.liferay.commerce.product",
-			ResourceConstants.SCOPE_GROUP_TEMPLATE,
-			String.valueOf(GroupConstants.DEFAULT_PARENT_GROUP_ID),
-			role.getRoleId(), "VIEW_PRICE");
-	}
-
-	private long[] _getCProductIds(JSONArray jsonArray) {
-		List<Long> cProductIdsList = new ArrayList<>();
-
-		for (int i = 0; i < jsonArray.length(); i++) {
-			CPDefinition cpDefinitionEntry = getCPDefinitionByName(
-				jsonArray.getString(i));
-
-			cProductIdsList.add(cpDefinitionEntry.getCProductId());
-		}
-
-		return ArrayUtil.toLongArray(cProductIdsList);
-	}
-
-	private JSONArray _getJSONArray(String name) throws Exception {
-		return _jsonFactory.createJSONArray(
-			_siteInitializerDependencyResolver.getJSON(name));
-	}
-
-	private JSONObject _getJSONObject(String name) throws Exception {
-		return _jsonFactory.createJSONObject(
-			_siteInitializerDependencyResolver.getJSON(name));
-	}
-
 	private void _importAssetCategories(ServiceContext serviceContext)
 		throws Exception {
 
@@ -588,10 +452,9 @@ public class MiniumSiteInitializer implements SiteInitializer {
 		Company company = _companyLocalService.getCompany(
 			serviceContext.getCompanyId());
 
-		JSONArray jsonArray = _getJSONArray("categories.json");
-
 		_assetCategoriesImporter.importAssetCategories(
-			jsonArray, group.getName(serviceContext.getLocale()),
+			_getJSONArray("categories.json"),
+			group.getName(serviceContext.getLocale()),
 			_siteInitializerDependencyResolver.getImageClassLoader(),
 			_siteInitializerDependencyResolver.getImageDependencyPath(),
 			company.getGroupId(), serviceContext.getUserId());
@@ -628,10 +491,9 @@ public class MiniumSiteInitializer implements SiteInitializer {
 			_log.info("Importing Blogs Entries...");
 		}
 
-		JSONArray jsonArray = _getJSONArray("blogs.json");
-
 		_blogsImporter.importBlogsEntries(
-			jsonArray, _siteInitializerDependencyResolver.getImageClassLoader(),
+			_getJSONArray("blogs.json"),
+			_siteInitializerDependencyResolver.getImageClassLoader(),
 			_siteInitializerDependencyResolver.getImageDependencyPath(),
 			serviceContext.getScopeGroupId(), serviceContext.getUserId());
 
@@ -647,10 +509,9 @@ public class MiniumSiteInitializer implements SiteInitializer {
 			_log.info("Importing Commerce Accounts...");
 		}
 
-		JSONArray jsonArray = _getJSONArray("accounts.json");
-
 		_commerceAccountsImporter.importCommerceAccounts(
-			jsonArray, _siteInitializerDependencyResolver.getImageClassLoader(),
+			_getJSONArray("accounts.json"),
+			_siteInitializerDependencyResolver.getImageClassLoader(),
 			_siteInitializerDependencyResolver.getDependenciesPath(),
 			serviceContext.getScopeGroupId(), serviceContext.getUserId());
 
@@ -666,10 +527,8 @@ public class MiniumSiteInitializer implements SiteInitializer {
 			_log.info("Importing Commerce Discounts...");
 		}
 
-		JSONArray jsonArray = _getJSONArray("discounts.json");
-
 		_commerceDiscountsImporter.importCommerceDiscounts(
-			jsonArray, serviceContext.getScopeGroupId(),
+			_getJSONArray("discounts.json"), serviceContext.getScopeGroupId(),
 			serviceContext.getUserId());
 
 		if (_log.isInfoEnabled()) {
@@ -681,12 +540,10 @@ public class MiniumSiteInitializer implements SiteInitializer {
 			ServiceContext serviceContext)
 		throws Exception {
 
-		JSONArray jsonArray = _getJSONArray("warehouses.json");
-
 		return _commerceInventoryWarehousesImporter.
 			importCommerceInventoryWarehouses(
-				jsonArray, serviceContext.getScopeGroupId(),
-				serviceContext.getUserId());
+				_getJSONArray("warehouses.json"),
+				serviceContext.getScopeGroupId(), serviceContext.getUserId());
 	}
 
 	private void _importCommerceOrganizations(ServiceContext serviceContext)
@@ -696,11 +553,9 @@ public class MiniumSiteInitializer implements SiteInitializer {
 			_log.info("Importing organizations...");
 		}
 
-		JSONArray jsonArray = _getJSONArray("organizations.json");
-
 		_organizationImporter.importOrganizations(
-			jsonArray, serviceContext.getScopeGroupId(),
-			serviceContext.getUserId());
+			_getJSONArray("organizations.json"),
+			serviceContext.getScopeGroupId(), serviceContext.getUserId());
 
 		if (_log.isInfoEnabled()) {
 			_log.info("Organizations successfully imported");
@@ -715,10 +570,9 @@ public class MiniumSiteInitializer implements SiteInitializer {
 			_log.info("Importing commerce price entries...");
 		}
 
-		JSONArray jsonArray = _getJSONArray("price-entries.json");
-
 		_commercePriceEntriesImporter.importCommercePriceEntries(
-			jsonArray, catalogGroupId, serviceContext.getUserId());
+			_getJSONArray("price-entries.json"), catalogGroupId,
+			serviceContext.getUserId());
 
 		if (_log.isInfoEnabled()) {
 			_log.info("Commerce price entries successfully imported");
@@ -733,11 +587,9 @@ public class MiniumSiteInitializer implements SiteInitializer {
 			_log.info("Importing commerce price lists...");
 		}
 
-		JSONArray jsonArray = _getJSONArray("price-lists.json");
-
 		_commercePriceListsImporter.importCommercePriceLists(
-			catalogGroupId, jsonArray, serviceContext.getScopeGroupId(),
-			serviceContext.getUserId());
+			catalogGroupId, _getJSONArray("price-lists.json"),
+			serviceContext.getScopeGroupId(), serviceContext.getUserId());
 
 		if (_log.isInfoEnabled()) {
 			_log.info("Commerce price lists successfully imported");
@@ -751,10 +603,9 @@ public class MiniumSiteInitializer implements SiteInitializer {
 			_log.info("Importing Commerce Users...");
 		}
 
-		JSONArray jsonArray = _getJSONArray("users.json");
-
 		_commerceUsersImporter.importCommerceUsers(
-			jsonArray, _siteInitializerDependencyResolver.getImageClassLoader(),
+			_getJSONArray("users.json"),
+			_siteInitializerDependencyResolver.getImageClassLoader(),
 			_siteInitializerDependencyResolver.getImageDependencyPath(),
 			serviceContext.getScopeGroupId(), serviceContext.getUserId());
 
@@ -772,6 +623,22 @@ public class MiniumSiteInitializer implements SiteInitializer {
 		Group group = serviceContext.getScopeGroup();
 
 		JSONArray jsonArray = _getJSONArray("products.json");
+
+		if (_siteInitializerDependencyResolver != null) {
+			for (int i = 0; i < jsonArray.length(); i++) {
+				JSONObject jsonObject = jsonArray.getJSONObject(i);
+
+				String externalReferenceCode = jsonObject.getString(
+					"externalReferenceCode");
+
+				String newExternalReferenceCode =
+					externalReferenceCode +
+						_siteInitializerDependencyResolver.getKey();
+
+				jsonObject.put(
+					"externalReferenceCode", newExternalReferenceCode);
+			}
+		}
 
 		long[] commerceInventoryWarehouseIds = ListUtil.toLongArray(
 			commerceInventoryWarehouses,
@@ -794,10 +661,9 @@ public class MiniumSiteInitializer implements SiteInitializer {
 			_log.info("Importing commerce product option categories...");
 		}
 
-		JSONArray jsonArray = _getJSONArray("option-categories.json");
-
 		_cpOptionCategoriesImporter.importCPOptionCategories(
-			jsonArray, catalogGroupId, serviceContext.getUserId());
+			_getJSONArray("option-categories.json"), catalogGroupId,
+			serviceContext.getUserId());
 
 		if (_log.isInfoEnabled()) {
 			_log.info(
@@ -809,10 +675,9 @@ public class MiniumSiteInitializer implements SiteInitializer {
 			long catalogGroupId, ServiceContext serviceContext)
 		throws Exception {
 
-		JSONArray jsonArray = _getJSONArray("options.json");
-
 		return _cpOptionsImporter.importCPOptions(
-			jsonArray, catalogGroupId, serviceContext.getUserId());
+			_getJSONArray("options.json"), catalogGroupId,
+			serviceContext.getUserId());
 	}
 
 	private void _importCPSpecificationOptions(
@@ -823,10 +688,9 @@ public class MiniumSiteInitializer implements SiteInitializer {
 			_log.info("Importing commerce product specification options...");
 		}
 
-		JSONArray jsonArray = _getJSONArray("specification-options.json");
-
 		_cpSpecificationOptionsImporter.importCPSpecificationOptions(
-			jsonArray, catalogGroupId, serviceContext.getUserId());
+			_getJSONArray("specification-options.json"), catalogGroupId,
+			serviceContext.getUserId());
 
 		if (_log.isInfoEnabled()) {
 			_log.info(
@@ -841,10 +705,8 @@ public class MiniumSiteInitializer implements SiteInitializer {
 			_log.info("Importing DDM Forms...");
 		}
 
-		JSONArray jsonArray = _getJSONArray("forms.json");
-
 		_ddmFormImporter.importDDMForms(
-			jsonArray, serviceContext.getScopeGroupId(),
+			_getJSONArray("forms.json"), serviceContext.getScopeGroupId(),
 			serviceContext.getUserId());
 
 		if (_log.isInfoEnabled()) {
@@ -859,10 +721,8 @@ public class MiniumSiteInitializer implements SiteInitializer {
 			_log.info("Importing DL File Entries...");
 		}
 
-		JSONArray jsonArray = _getJSONArray("dl-file-entries.json");
-
 		_dlImporter.importDocuments(
-			jsonArray,
+			_getJSONArray("dl-file-entries.json"),
 			_siteInitializerDependencyResolver.getDocumentsClassLoader(),
 			_siteInitializerDependencyResolver.getDocumentsDependencyPath(),
 			serviceContext.getScopeGroupId(), serviceContext.getUserId());
@@ -879,10 +739,8 @@ public class MiniumSiteInitializer implements SiteInitializer {
 			_log.info("Importing Journal Articles...");
 		}
 
-		JSONArray jsonArray = _getJSONArray("journal-articles.json");
-
 		_cpFileImporter.createJournalArticles(
-			jsonArray,
+			_getJSONArray("journal-articles.json"),
 			_siteInitializerDependencyResolver.getDocumentsClassLoader(),
 			_siteInitializerDependencyResolver.getDependenciesPath() +
 				"journal_articles/",
@@ -900,10 +758,8 @@ public class MiniumSiteInitializer implements SiteInitializer {
 			_log.info("Importing KB Articles...");
 		}
 
-		JSONArray jsonArray = _getJSONArray("kb-articles.json");
-
 		_kbArticleImporter.importKBArticles(
-			jsonArray, serviceContext.getScopeGroupId(),
+			_getJSONArray("kb-articles.json"), serviceContext.getScopeGroupId(),
 			serviceContext.getUserId());
 
 		if (_log.isInfoEnabled()) {
@@ -921,10 +777,8 @@ public class MiniumSiteInitializer implements SiteInitializer {
 		Company company = _companyLocalService.getCompany(
 			serviceContext.getCompanyId());
 
-		JSONArray jsonArray = _getJSONArray("portlet-settings.json");
-
 		_portletSettingsImporter.importPortletSettings(
-			jsonArray,
+			_getJSONArray("portlet-settings.json"),
 			_siteInitializerDependencyResolver.getDisplayTemplatesClassLoader(),
 			_siteInitializerDependencyResolver.
 				getDisplayTemplatesDependencyPath(),
@@ -952,7 +806,7 @@ public class MiniumSiteInitializer implements SiteInitializer {
 
 			String name = productJSONObject.getString("Name");
 
-			CPDefinition cpDefinition = getCPDefinitionByName(name);
+			CPDefinition cpDefinition = _getCPDefinitionByName(name);
 
 			_cpDefinitionLinkLocalService.updateCPDefinitionLinkCProductIds(
 				cpDefinition.getCPDefinitionId(),
@@ -975,9 +829,7 @@ public class MiniumSiteInitializer implements SiteInitializer {
 				cpDefinition);
 		}
 
-		JSONArray jsonArray = _getJSONArray("products.json");
-
-		_importRelatedProducts(jsonArray, serviceContext);
+		_importRelatedProducts(_getJSONArray("products.json"), serviceContext);
 
 		if (_log.isInfoEnabled()) {
 			_log.info("Related products successfully imported");
@@ -990,10 +842,8 @@ public class MiniumSiteInitializer implements SiteInitializer {
 		Company company = _companyLocalService.getCompany(
 			serviceContext.getCompanyId());
 
-		JSONArray jsonArray = _getJSONArray("theme-portlet-settings.json");
-
 		_portletSettingsImporter.importPortletSettings(
-			jsonArray,
+			_getJSONArray("theme-portlet-settings.json"),
 			_siteInitializerDependencyResolver.getDisplayTemplatesClassLoader(),
 			_siteInitializerDependencyResolver.
 				getDisplayTemplatesDependencyPath(),
@@ -1001,10 +851,172 @@ public class MiniumSiteInitializer implements SiteInitializer {
 			serviceContext.getUserId());
 	}
 
+	private void _setCommerceShippingMethod(
+			long groupId, String shippingMethod, ServiceContext serviceContext)
+		throws PortalException {
+
+		Locale locale = serviceContext.getLocale();
+
+		CommerceShippingEngine commerceShippingEngine =
+			_commerceShippingEngineRegistry.getCommerceShippingEngine(
+				shippingMethod);
+
+		CommerceShippingMethod commerceShippingMethod =
+			_commerceShippingMethodLocalService.addCommerceShippingMethod(
+				serviceContext.getUserId(), groupId,
+				HashMapBuilder.put(
+					locale, commerceShippingEngine.getName(locale)
+				).build(),
+				HashMapBuilder.put(
+					locale, commerceShippingEngine.getDescription(locale)
+				).build(),
+				null, shippingMethod, 0, true);
+
+		_setCommerceShippingOption(
+			commerceShippingMethod, "Standard Delivery", StringPool.BLANK,
+			BigDecimal.valueOf(15), serviceContext);
+
+		_setCommerceShippingOption(
+			commerceShippingMethod, "Expedited Delivery", StringPool.BLANK,
+			BigDecimal.valueOf(25), serviceContext);
+	}
+
+	private void _setCommerceShippingOption(
+			CommerceShippingMethod commerceShippingMethod, String name,
+			String description, BigDecimal price, ServiceContext serviceContext)
+		throws PortalException {
+
+		_commerceShippingFixedOptionLocalService.addCommerceShippingFixedOption(
+			serviceContext.getUserId(), commerceShippingMethod.getGroupId(),
+			commerceShippingMethod.getCommerceShippingMethodId(), price,
+			HashMapBuilder.put(
+				serviceContext.getLocale(), description
+			).build(),
+			null,
+			HashMapBuilder.put(
+				serviceContext.getLocale(), name
+			).build(),
+			0);
+	}
+
+	private void _setDefaultCatalogImage(
+			long catalogGroupId, ServiceContext serviceContext)
+		throws Exception {
+
+		ClassLoader classLoader =
+			_siteInitializerDependencyResolver.getImageClassLoader();
+
+		InputStream inputStream = classLoader.getResourceAsStream(
+			_siteInitializerDependencyResolver.getImageDependencyPath() +
+				"Minium_ProductImage_Default.png");
+
+		File file = null;
+
+		try {
+			file = FileUtil.createTempFile(inputStream);
+
+			String mimeType = MimeTypesUtil.getContentType(file);
+
+			FileEntry fileEntry = TempFileEntryUtil.addTempFileEntry(
+				catalogGroupId, serviceContext.getUserId(),
+				MiniumSiteInitializer.class.getName(), file.getName(), file,
+				mimeType);
+
+			_commerceCatalogDefaultImage.updateDefaultCatalogFileEntryId(
+				catalogGroupId, fileEntry.getFileEntryId());
+		}
+		finally {
+			if (file != null) {
+				FileUtil.delete(file);
+			}
+		}
+	}
+
+	private void _setThemeSettings(ServiceContext serviceContext)
+		throws Exception {
+
+		JSONObject themeSettingsJSONObject = _getJSONObject(
+			"theme-settings.json");
+
+		Iterator<String> iterator = themeSettingsJSONObject.keys();
+
+		while (iterator.hasNext()) {
+			String key = iterator.next();
+
+			String value = themeSettingsJSONObject.getString(key);
+
+			_updateThemeSetting(key, value, serviceContext);
+		}
+	}
+
+	private void _updateLogo(ServiceContext serviceContext) throws Exception {
+		ClassLoader classLoader =
+			_siteInitializerDependencyResolver.getImageClassLoader();
+
+		InputStream inputStream = classLoader.getResourceAsStream(
+			_siteInitializerDependencyResolver.getImageDependencyPath() +
+				"minium_logo.png");
+
+		File file = FileUtil.createTempFile(inputStream);
+
+		_cpFileImporter.updateLogo(file, true, true, serviceContext);
+		_cpFileImporter.updateLogo(file, false, true, serviceContext);
+	}
+
+	private void _updateOperationManagerRole(
+			ServiceContext serviceContext, long commerceChannelId)
+		throws Exception {
+
+		ModelPermissions modelPermissions = ModelPermissionsFactory.create(
+			HashMapBuilder.put(
+				"Operations Manager", new String[] {"VIEW"}
+			).build(),
+			null);
+
+		_resourcePermissionLocalService.addModelResourcePermissions(
+			serviceContext.getCompanyId(), serviceContext.getScopeGroupId(),
+			serviceContext.getUserId(), CommerceChannel.class.getName(),
+			String.valueOf(commerceChannelId), modelPermissions);
+	}
+
+	private void _updateThemeSetting(
+		String key, String value, ServiceContext serviceContext) {
+
+		Theme theme = _themeLocalService.fetchTheme(
+			serviceContext.getCompanyId(), _MINIUM_THEME_ID);
+
+		if (theme == null) {
+			return;
+		}
+
+		Map<String, ThemeSetting> configurableSettings =
+			theme.getConfigurableSettings();
+
+		ThemeSetting themeSetting = configurableSettings.get(key);
+
+		themeSetting.setValue(value);
+	}
+
+	private void _updateUserRole(ServiceContext serviceContext)
+		throws Exception {
+
+		Role role = _roleLocalService.fetchRole(
+			serviceContext.getCompanyId(), "User");
+
+		_resourcePermissionLocalService.addResourcePermission(
+			serviceContext.getCompanyId(), "com.liferay.commerce.product",
+			ResourceConstants.SCOPE_GROUP_TEMPLATE,
+			String.valueOf(GroupConstants.DEFAULT_PARENT_GROUP_ID),
+			role.getRoleId(), "VIEW_PRICE");
+	}
+
 	private static final String _MINIUM_THEME_ID = "minium_WAR_miniumtheme";
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		MiniumSiteInitializer.class);
+
+	@Reference
+	private AccountEntryGroupSettings _accountEntryGroupSettings;
 
 	@Reference
 	private AssetCategoriesImporter _assetCategoriesImporter;
@@ -1026,9 +1038,6 @@ public class MiniumSiteInitializer implements SiteInitializer {
 
 	@Reference
 	private CommerceChannelLocalService _commerceChannelLocalService;
-
-	@Reference
-	private CommerceCountryLocalService _commerceCountryLocalService;
 
 	@Reference
 	private CommerceCurrencyLocalService _commerceCurrencyLocalService;
@@ -1095,6 +1104,12 @@ public class MiniumSiteInitializer implements SiteInitializer {
 	@Reference
 	private DDMFormImporter _ddmFormImporter;
 
+	@Reference(
+		target = "(site.initializer.key=" + MiniumSiteInitializer.KEY + ")"
+	)
+	private SiteInitializerDependencyResolver
+		_defaultSiteInitializerDependencyResolver;
+
 	@Reference
 	private DLImporter _dlImporter;
 
@@ -1130,9 +1145,6 @@ public class MiniumSiteInitializer implements SiteInitializer {
 	@Reference
 	private SettingsFactory _settingsFactory;
 
-	@Reference(
-		target = "(site.initializer.key=" + MiniumSiteInitializer.KEY + ")"
-	)
 	private SiteInitializerDependencyResolver
 		_siteInitializerDependencyResolver;
 

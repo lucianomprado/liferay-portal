@@ -44,9 +44,6 @@ import java.util.List;
  */
 public class CommerceOrderImpl extends CommerceOrderBaseImpl {
 
-	public CommerceOrderImpl() {
-	}
-
 	@Override
 	public CommerceAddress getBillingAddress() throws PortalException {
 		long billingAddressId = getBillingAddressId();
@@ -194,9 +191,11 @@ public class CommerceOrderImpl extends CommerceOrderBaseImpl {
 
 	@Override
 	public boolean isEmpty() {
-		if (CommerceOrderItemLocalServiceUtil.getCommerceOrderItemsCount(
-				getCommerceOrderId()) > 0) {
+		int count =
+			CommerceOrderItemLocalServiceUtil.getCommerceOrderItemsCount(
+				getCommerceOrderId());
 
+		if (count > 0) {
 			return false;
 		}
 

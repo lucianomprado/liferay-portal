@@ -16,6 +16,8 @@ create index IX_20E66853 on JournalArticle (groupId, classNameId, DDMTemplateKey
 create index IX_E748358 on JournalArticle (groupId, classNameId, classPK, ctCollectionId);
 create index IX_6CA45D20 on JournalArticle (groupId, classNameId, layoutUuid[$COLUMN_LENGTH:75$], ctCollectionId);
 create index IX_1ED664C3 on JournalArticle (groupId, ctCollectionId);
+create index IX_DB98B996 on JournalArticle (groupId, externalReferenceCode[$COLUMN_LENGTH:75$], ctCollectionId);
+create index IX_D9F0782E on JournalArticle (groupId, externalReferenceCode[$COLUMN_LENGTH:75$], version, ctCollectionId);
 create index IX_8868DCD0 on JournalArticle (groupId, folderId, classNameId, status, ctCollectionId);
 create index IX_74060760 on JournalArticle (groupId, folderId, ctCollectionId);
 create index IX_D36D9846 on JournalArticle (groupId, folderId, status, ctCollectionId);
@@ -37,6 +39,7 @@ create unique index IX_4D5E99B9 on JournalArticle (uuid_[$COLUMN_LENGTH:75$], gr
 
 create index IX_E69312A1 on JournalArticleLocalization (articlePK, ctCollectionId);
 create unique index IX_5593D868 on JournalArticleLocalization (articlePK, languageId[$COLUMN_LENGTH:75$], ctCollectionId);
+create index IX_F1F3A975 on JournalArticleLocalization (companyId, articlePK, ctCollectionId);
 create index IX_429AC23C on JournalArticleLocalization (ctCollectionId);
 
 create index IX_B332E3F1 on JournalArticleResource (ctCollectionId);

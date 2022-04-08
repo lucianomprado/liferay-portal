@@ -15,17 +15,26 @@
 package com.liferay.oauth2.provider.jsonws.internal.servlet.filters.authverifier;
 
 import com.liferay.portal.kernel.security.access.control.AccessControlThreadLocal;
+import com.liferay.portal.kernel.security.auth.verifier.AuthVerifierConfiguration;
 import com.liferay.portal.kernel.servlet.HttpHeaders;
+import com.liferay.portal.kernel.util.HashMapDictionary;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.servlet.filters.authverifier.AuthVerifierFilter;
+
+import java.util.Map;
+import java.util.Properties;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceRegistration;
+import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
 
 /**
  * @author Tomas Polesovsky
@@ -34,9 +43,7 @@ import org.osgi.service.component.annotations.Component;
 	immediate = true,
 	property = {
 		"before-filter=Auto Login Filter", "dispatcher=FORWARD",
-		"dispatcher=REQUEST",
-		"init.param.auth.verifier.OAuth2JSONWSAuthVerifier.urls.includes=/*",
-		"servlet-context-name=",
+		"dispatcher=REQUEST", "servlet-context-name=",
 		"servlet-filter-name=OAuth2 Web Server Servlet Auth Verifier Filter",
 		"url-pattern=/c/portal/fragment/*",
 		"url-pattern=/c/portal/layout_page_template/*",
@@ -55,15 +62,41 @@ public class OAuth2WebServerServletAuthVerifierFilter
 		String authorization = httpServletRequest.getHeader(
 			HttpHeaders.AUTHORIZATION);
 
-		if (Validator.isBlank(authorization)) {
-			return false;
-		}
+		if (Validator.isBlank(authorization) ||
+			!StringUtil.startsWith(authorization, "Bearer")) {
 
-		if (!StringUtil.startsWith(authorization, "Bearer")) {
 			return false;
 		}
 
 		return super.isFilterEnabled(httpServletRequest, httpServletResponse);
+	}
+
+	@Activate
+	protected void activate(
+		BundleContext bundleContext, Map<String, Object> propertiesMap) {
+
+		AuthVerifierConfiguration authVerifierConfiguration =
+			new AuthVerifierConfiguration();
+
+		authVerifierConfiguration.setAuthVerifierClassName(
+			"OAuth2JSONWSAuthVerifier");
+
+		Properties properties = new Properties();
+
+		properties.put(
+			"urls.includes",
+			StringUtil.merge((Object[])propertiesMap.get("url-pattern"), ","));
+
+		authVerifierConfiguration.setProperties(properties);
+
+		_serviceRegistration = bundleContext.registerService(
+			AuthVerifierConfiguration.class, authVerifierConfiguration,
+			new HashMapDictionary<>());
+	}
+
+	@Deactivate
+	protected void deactivate() {
+		_serviceRegistration.unregister();
 	}
 
 	@Override
@@ -84,5 +117,7 @@ public class OAuth2WebServerServletAuthVerifierFilter
 			AccessControlThreadLocal.setRemoteAccess(remoteAccess);
 		}
 	}
+
+	private ServiceRegistration<AuthVerifierConfiguration> _serviceRegistration;
 
 }

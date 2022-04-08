@@ -39,13 +39,13 @@ public class CommerceOrderNoteLocalServiceImpl
 		throws PortalException {
 
 		return addCommerceOrderNote(
-			commerceOrderId, content, restricted, null, serviceContext);
+			null, commerceOrderId, content, restricted, serviceContext);
 	}
 
 	@Override
 	public CommerceOrderNote addCommerceOrderNote(
-			long commerceOrderId, String content, boolean restricted,
-			String externalReferenceCode, ServiceContext serviceContext)
+			String externalReferenceCode, long commerceOrderId, String content,
+			boolean restricted, ServiceContext serviceContext)
 		throws PortalException {
 
 		CommerceOrder commerceOrder =
@@ -59,13 +59,14 @@ public class CommerceOrderNoteLocalServiceImpl
 		}
 
 		validateExternalReferenceCode(
-			serviceContext.getCompanyId(), externalReferenceCode);
+			externalReferenceCode, serviceContext.getCompanyId());
 
 		long commerceOrderNoteId = counterLocalService.increment();
 
 		CommerceOrderNote commerceOrderNote =
 			commerceOrderNotePersistence.create(commerceOrderNoteId);
 
+		commerceOrderNote.setExternalReferenceCode(externalReferenceCode);
 		commerceOrderNote.setGroupId(commerceOrder.getGroupId());
 		commerceOrderNote.setCompanyId(user.getCompanyId());
 		commerceOrderNote.setUserId(user.getUserId());
@@ -74,9 +75,41 @@ public class CommerceOrderNoteLocalServiceImpl
 			commerceOrder.getCommerceOrderId());
 		commerceOrderNote.setContent(content);
 		commerceOrderNote.setRestricted(restricted);
-		commerceOrderNote.setExternalReferenceCode(externalReferenceCode);
 
 		return commerceOrderNotePersistence.update(commerceOrderNote);
+	}
+
+	@Override
+	public CommerceOrderNote addOrUpdateCommerceOrderNote(
+			String externalReferenceCode, long commerceOrderNoteId,
+			long commerceOrderId, String content, boolean restricted,
+			ServiceContext serviceContext)
+		throws PortalException {
+
+		if (Validator.isBlank(externalReferenceCode)) {
+			externalReferenceCode = null;
+		}
+
+		CommerceOrderNote commerceOrderNote;
+
+		if (commerceOrderNoteId > 0) {
+			commerceOrderNote = getCommerceOrderNote(commerceOrderNoteId);
+		}
+		else {
+			commerceOrderNote = commerceOrderNotePersistence.fetchByC_ERC(
+				serviceContext.getCompanyId(), externalReferenceCode);
+		}
+
+		if (commerceOrderNote != null) {
+			return updateCommerceOrderNote(
+				externalReferenceCode,
+				commerceOrderNote.getCommerceOrderNoteId(), content,
+				restricted);
+		}
+
+		return addCommerceOrderNote(
+			externalReferenceCode, commerceOrderId, content, restricted,
+			serviceContext);
 	}
 
 	@Override
@@ -86,7 +119,7 @@ public class CommerceOrderNoteLocalServiceImpl
 
 	@Override
 	public CommerceOrderNote fetchByExternalReferenceCode(
-		long companyId, String externalReferenceCode) {
+		String externalReferenceCode, long companyId) {
 
 		if (Validator.isBlank(externalReferenceCode)) {
 			return null;
@@ -132,22 +165,19 @@ public class CommerceOrderNoteLocalServiceImpl
 		throws PortalException {
 
 		return updateCommerceOrderNote(
-			commerceOrderNoteId, content, restricted, null);
+			null, commerceOrderNoteId, content, restricted);
 	}
 
 	@Override
 	public CommerceOrderNote updateCommerceOrderNote(
-			long commerceOrderNoteId, String content, boolean restricted,
-			String externalReferenceCode)
+			String externalReferenceCode, long commerceOrderNoteId,
+			String content, boolean restricted)
 		throws PortalException {
 
 		CommerceOrderNote commerceOrderNote =
 			commerceOrderNotePersistence.findByPrimaryKey(commerceOrderNoteId);
 
 		validate(content);
-
-		commerceOrderNote.setContent(content);
-		commerceOrderNote.setRestricted(restricted);
 
 		if (Validator.isNull(commerceOrderNote.getExternalReferenceCode())) {
 			if (Validator.isBlank(externalReferenceCode)) {
@@ -157,39 +187,10 @@ public class CommerceOrderNoteLocalServiceImpl
 			commerceOrderNote.setExternalReferenceCode(externalReferenceCode);
 		}
 
+		commerceOrderNote.setContent(content);
+		commerceOrderNote.setRestricted(restricted);
+
 		return commerceOrderNotePersistence.update(commerceOrderNote);
-	}
-
-	@Override
-	public CommerceOrderNote upsertCommerceOrderNote(
-			long commerceOrderNoteId, long commerceOrderId, String content,
-			boolean restricted, String externalReferenceCode,
-			ServiceContext serviceContext)
-		throws PortalException {
-
-		if (Validator.isBlank(externalReferenceCode)) {
-			externalReferenceCode = null;
-		}
-
-		CommerceOrderNote commerceOrderNote;
-
-		if (commerceOrderNoteId > 0) {
-			commerceOrderNote = getCommerceOrderNote(commerceOrderNoteId);
-		}
-		else {
-			commerceOrderNote = commerceOrderNotePersistence.fetchByC_ERC(
-				serviceContext.getCompanyId(), externalReferenceCode);
-		}
-
-		if (commerceOrderNote != null) {
-			return updateCommerceOrderNote(
-				commerceOrderNote.getCommerceOrderNoteId(), content, restricted,
-				externalReferenceCode);
-		}
-
-		return addCommerceOrderNote(
-			commerceOrderId, content, restricted, externalReferenceCode,
-			serviceContext);
 	}
 
 	protected void validate(String content) throws PortalException {
@@ -199,7 +200,7 @@ public class CommerceOrderNoteLocalServiceImpl
 	}
 
 	protected void validateExternalReferenceCode(
-			long companyId, String externalReferenceCode)
+			String externalReferenceCode, long companyId)
 		throws PortalException {
 
 		if (Validator.isNull(externalReferenceCode)) {

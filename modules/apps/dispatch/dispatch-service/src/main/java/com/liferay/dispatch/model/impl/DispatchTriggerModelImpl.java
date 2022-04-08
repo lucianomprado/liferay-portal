@@ -16,7 +16,6 @@ package com.liferay.dispatch.model.impl;
 
 import com.liferay.dispatch.model.DispatchTrigger;
 import com.liferay.dispatch.model.DispatchTriggerModel;
-import com.liferay.dispatch.model.DispatchTriggerSoap;
 import com.liferay.expando.kernel.model.ExpandoBridge;
 import com.liferay.expando.kernel.util.ExpandoBridgeFactoryUtil;
 import com.liferay.petra.string.StringBundler;
@@ -32,21 +31,22 @@ import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.util.DateUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
+import com.liferay.portal.kernel.util.StringUtil;
 
 import java.io.Serializable;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
 
+import java.sql.Blob;
 import java.sql.Types;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
@@ -73,15 +73,16 @@ public class DispatchTriggerModelImpl
 	public static final String TABLE_NAME = "DispatchTrigger";
 
 	public static final Object[][] TABLE_COLUMNS = {
-		{"mvccVersion", Types.BIGINT}, {"dispatchTriggerId", Types.BIGINT},
-		{"companyId", Types.BIGINT}, {"userId", Types.BIGINT},
-		{"userName", Types.VARCHAR}, {"createDate", Types.TIMESTAMP},
-		{"modifiedDate", Types.TIMESTAMP}, {"active_", Types.BOOLEAN},
-		{"cronExpression", Types.VARCHAR}, {"endDate", Types.TIMESTAMP},
+		{"mvccVersion", Types.BIGINT}, {"externalReferenceCode", Types.VARCHAR},
+		{"dispatchTriggerId", Types.BIGINT}, {"companyId", Types.BIGINT},
+		{"userId", Types.BIGINT}, {"userName", Types.VARCHAR},
+		{"createDate", Types.TIMESTAMP}, {"modifiedDate", Types.TIMESTAMP},
+		{"active_", Types.BOOLEAN}, {"cronExpression", Types.VARCHAR},
+		{"dispatchTaskClusterMode", Types.INTEGER},
+		{"dispatchTaskExecutorType", Types.VARCHAR},
+		{"dispatchTaskSettings", Types.CLOB}, {"endDate", Types.TIMESTAMP},
 		{"name", Types.VARCHAR}, {"overlapAllowed", Types.BOOLEAN},
-		{"startDate", Types.TIMESTAMP}, {"system_", Types.BOOLEAN},
-		{"taskClusterMode", Types.INTEGER}, {"taskExecutorType", Types.VARCHAR},
-		{"taskSettings", Types.CLOB}
+		{"startDate", Types.TIMESTAMP}, {"system_", Types.BOOLEAN}
 	};
 
 	public static final Map<String, Integer> TABLE_COLUMNS_MAP =
@@ -89,6 +90,7 @@ public class DispatchTriggerModelImpl
 
 	static {
 		TABLE_COLUMNS_MAP.put("mvccVersion", Types.BIGINT);
+		TABLE_COLUMNS_MAP.put("externalReferenceCode", Types.VARCHAR);
 		TABLE_COLUMNS_MAP.put("dispatchTriggerId", Types.BIGINT);
 		TABLE_COLUMNS_MAP.put("companyId", Types.BIGINT);
 		TABLE_COLUMNS_MAP.put("userId", Types.BIGINT);
@@ -97,18 +99,18 @@ public class DispatchTriggerModelImpl
 		TABLE_COLUMNS_MAP.put("modifiedDate", Types.TIMESTAMP);
 		TABLE_COLUMNS_MAP.put("active_", Types.BOOLEAN);
 		TABLE_COLUMNS_MAP.put("cronExpression", Types.VARCHAR);
+		TABLE_COLUMNS_MAP.put("dispatchTaskClusterMode", Types.INTEGER);
+		TABLE_COLUMNS_MAP.put("dispatchTaskExecutorType", Types.VARCHAR);
+		TABLE_COLUMNS_MAP.put("dispatchTaskSettings", Types.CLOB);
 		TABLE_COLUMNS_MAP.put("endDate", Types.TIMESTAMP);
 		TABLE_COLUMNS_MAP.put("name", Types.VARCHAR);
 		TABLE_COLUMNS_MAP.put("overlapAllowed", Types.BOOLEAN);
 		TABLE_COLUMNS_MAP.put("startDate", Types.TIMESTAMP);
 		TABLE_COLUMNS_MAP.put("system_", Types.BOOLEAN);
-		TABLE_COLUMNS_MAP.put("taskClusterMode", Types.INTEGER);
-		TABLE_COLUMNS_MAP.put("taskExecutorType", Types.VARCHAR);
-		TABLE_COLUMNS_MAP.put("taskSettings", Types.CLOB);
 	}
 
 	public static final String TABLE_SQL_CREATE =
-		"create table DispatchTrigger (mvccVersion LONG default 0 not null,dispatchTriggerId LONG not null primary key,companyId LONG,userId LONG,userName VARCHAR(75) null,createDate DATE null,modifiedDate DATE null,active_ BOOLEAN,cronExpression VARCHAR(75) null,endDate DATE null,name VARCHAR(75) null,overlapAllowed BOOLEAN,startDate DATE null,system_ BOOLEAN,taskClusterMode INTEGER,taskExecutorType VARCHAR(75) null,taskSettings TEXT null)";
+		"create table DispatchTrigger (mvccVersion LONG default 0 not null,externalReferenceCode VARCHAR(75) null,dispatchTriggerId LONG not null primary key,companyId LONG,userId LONG,userName VARCHAR(75) null,createDate DATE null,modifiedDate DATE null,active_ BOOLEAN,cronExpression VARCHAR(75) null,dispatchTaskClusterMode INTEGER,dispatchTaskExecutorType VARCHAR(75) null,dispatchTaskSettings TEXT null,endDate DATE null,name VARCHAR(75) null,overlapAllowed BOOLEAN,startDate DATE null,system_ BOOLEAN)";
 
 	public static final String TABLE_SQL_DROP = "drop table DispatchTrigger";
 
@@ -125,47 +127,53 @@ public class DispatchTriggerModelImpl
 	public static final String TX_MANAGER = "liferayTransactionManager";
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long ACTIVE_COLUMN_BITMASK = 1L;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long COMPANYID_COLUMN_BITMASK = 2L;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
-	public static final long NAME_COLUMN_BITMASK = 4L;
+	public static final long DISPATCHTASKCLUSTERMODE_COLUMN_BITMASK = 4L;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
-	public static final long TASKCLUSTERMODE_COLUMN_BITMASK = 8L;
+	public static final long DISPATCHTASKEXECUTORTYPE_COLUMN_BITMASK = 8L;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
-	public static final long TASKEXECUTORTYPE_COLUMN_BITMASK = 16L;
+	public static final long EXTERNALREFERENCECODE_COLUMN_BITMASK = 16L;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
-	public static final long USERID_COLUMN_BITMASK = 32L;
+	public static final long NAME_COLUMN_BITMASK = 32L;
+
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
+	 */
+	@Deprecated
+	public static final long USERID_COLUMN_BITMASK = 64L;
 
 	/**
 	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-	 *		#getColumnBitmask(String)
+	 *		#getColumnBitmask(String)}
 	 */
 	@Deprecated
-	public static final long MODIFIEDDATE_COLUMN_BITMASK = 64L;
+	public static final long MODIFIEDDATE_COLUMN_BITMASK = 128L;
 
 	/**
 	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
@@ -179,67 +187,6 @@ public class DispatchTriggerModelImpl
 	 */
 	@Deprecated
 	public static void setFinderCacheEnabled(boolean finderCacheEnabled) {
-	}
-
-	/**
-	 * Converts the soap model instance into a normal model instance.
-	 *
-	 * @param soapModel the soap model instance to convert
-	 * @return the normal model instance
-	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
-	 */
-	@Deprecated
-	public static DispatchTrigger toModel(DispatchTriggerSoap soapModel) {
-		if (soapModel == null) {
-			return null;
-		}
-
-		DispatchTrigger model = new DispatchTriggerImpl();
-
-		model.setMvccVersion(soapModel.getMvccVersion());
-		model.setDispatchTriggerId(soapModel.getDispatchTriggerId());
-		model.setCompanyId(soapModel.getCompanyId());
-		model.setUserId(soapModel.getUserId());
-		model.setUserName(soapModel.getUserName());
-		model.setCreateDate(soapModel.getCreateDate());
-		model.setModifiedDate(soapModel.getModifiedDate());
-		model.setActive(soapModel.isActive());
-		model.setCronExpression(soapModel.getCronExpression());
-		model.setEndDate(soapModel.getEndDate());
-		model.setName(soapModel.getName());
-		model.setOverlapAllowed(soapModel.isOverlapAllowed());
-		model.setStartDate(soapModel.getStartDate());
-		model.setSystem(soapModel.isSystem());
-		model.setTaskClusterMode(soapModel.getTaskClusterMode());
-		model.setTaskExecutorType(soapModel.getTaskExecutorType());
-		model.setTaskSettings(soapModel.getTaskSettings());
-
-		return model;
-	}
-
-	/**
-	 * Converts the soap model instances into normal model instances.
-	 *
-	 * @param soapModels the soap model instances to convert
-	 * @return the normal model instances
-	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
-	 */
-	@Deprecated
-	public static List<DispatchTrigger> toModels(
-		DispatchTriggerSoap[] soapModels) {
-
-		if (soapModels == null) {
-			return null;
-		}
-
-		List<DispatchTrigger> models = new ArrayList<DispatchTrigger>(
-			soapModels.length);
-
-		for (DispatchTriggerSoap soapModel : soapModels) {
-			models.add(toModel(soapModel));
-		}
-
-		return models;
 	}
 
 	public DispatchTriggerModelImpl() {
@@ -373,6 +320,12 @@ public class DispatchTriggerModelImpl
 			"mvccVersion",
 			(BiConsumer<DispatchTrigger, Long>)DispatchTrigger::setMvccVersion);
 		attributeGetterFunctions.put(
+			"externalReferenceCode", DispatchTrigger::getExternalReferenceCode);
+		attributeSetterBiConsumers.put(
+			"externalReferenceCode",
+			(BiConsumer<DispatchTrigger, String>)
+				DispatchTrigger::setExternalReferenceCode);
+		attributeGetterFunctions.put(
 			"dispatchTriggerId", DispatchTrigger::getDispatchTriggerId);
 		attributeSetterBiConsumers.put(
 			"dispatchTriggerId",
@@ -412,6 +365,26 @@ public class DispatchTriggerModelImpl
 			"cronExpression",
 			(BiConsumer<DispatchTrigger, String>)
 				DispatchTrigger::setCronExpression);
+		attributeGetterFunctions.put(
+			"dispatchTaskClusterMode",
+			DispatchTrigger::getDispatchTaskClusterMode);
+		attributeSetterBiConsumers.put(
+			"dispatchTaskClusterMode",
+			(BiConsumer<DispatchTrigger, Integer>)
+				DispatchTrigger::setDispatchTaskClusterMode);
+		attributeGetterFunctions.put(
+			"dispatchTaskExecutorType",
+			DispatchTrigger::getDispatchTaskExecutorType);
+		attributeSetterBiConsumers.put(
+			"dispatchTaskExecutorType",
+			(BiConsumer<DispatchTrigger, String>)
+				DispatchTrigger::setDispatchTaskExecutorType);
+		attributeGetterFunctions.put(
+			"dispatchTaskSettings", DispatchTrigger::getDispatchTaskSettings);
+		attributeSetterBiConsumers.put(
+			"dispatchTaskSettings",
+			(BiConsumer<DispatchTrigger, String>)
+				DispatchTrigger::setDispatchTaskSettings);
 		attributeGetterFunctions.put("endDate", DispatchTrigger::getEndDate);
 		attributeSetterBiConsumers.put(
 			"endDate",
@@ -435,24 +408,6 @@ public class DispatchTriggerModelImpl
 		attributeSetterBiConsumers.put(
 			"system",
 			(BiConsumer<DispatchTrigger, Boolean>)DispatchTrigger::setSystem);
-		attributeGetterFunctions.put(
-			"taskClusterMode", DispatchTrigger::getTaskClusterMode);
-		attributeSetterBiConsumers.put(
-			"taskClusterMode",
-			(BiConsumer<DispatchTrigger, Integer>)
-				DispatchTrigger::setTaskClusterMode);
-		attributeGetterFunctions.put(
-			"taskExecutorType", DispatchTrigger::getTaskExecutorType);
-		attributeSetterBiConsumers.put(
-			"taskExecutorType",
-			(BiConsumer<DispatchTrigger, String>)
-				DispatchTrigger::setTaskExecutorType);
-		attributeGetterFunctions.put(
-			"taskSettings", DispatchTrigger::getTaskSettings);
-		attributeSetterBiConsumers.put(
-			"taskSettings",
-			(BiConsumer<DispatchTrigger, String>)
-				DispatchTrigger::setTaskSettings);
 
 		_attributeGetterFunctions = Collections.unmodifiableMap(
 			attributeGetterFunctions);
@@ -473,6 +428,35 @@ public class DispatchTriggerModelImpl
 		}
 
 		_mvccVersion = mvccVersion;
+	}
+
+	@JSON
+	@Override
+	public String getExternalReferenceCode() {
+		if (_externalReferenceCode == null) {
+			return "";
+		}
+		else {
+			return _externalReferenceCode;
+		}
+	}
+
+	@Override
+	public void setExternalReferenceCode(String externalReferenceCode) {
+		if (_columnOriginalValues == Collections.EMPTY_MAP) {
+			_setColumnOriginalValues();
+		}
+
+		_externalReferenceCode = externalReferenceCode;
+	}
+
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *             #getColumnOriginalValue(String)}
+	 */
+	@Deprecated
+	public String getOriginalExternalReferenceCode() {
+		return getColumnOriginalValue("externalReferenceCode");
 	}
 
 	@JSON
@@ -664,6 +648,80 @@ public class DispatchTriggerModelImpl
 
 	@JSON
 	@Override
+	public int getDispatchTaskClusterMode() {
+		return _dispatchTaskClusterMode;
+	}
+
+	@Override
+	public void setDispatchTaskClusterMode(int dispatchTaskClusterMode) {
+		if (_columnOriginalValues == Collections.EMPTY_MAP) {
+			_setColumnOriginalValues();
+		}
+
+		_dispatchTaskClusterMode = dispatchTaskClusterMode;
+	}
+
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *             #getColumnOriginalValue(String)}
+	 */
+	@Deprecated
+	public int getOriginalDispatchTaskClusterMode() {
+		return GetterUtil.getInteger(
+			this.<Integer>getColumnOriginalValue("dispatchTaskClusterMode"));
+	}
+
+	@JSON
+	@Override
+	public String getDispatchTaskExecutorType() {
+		if (_dispatchTaskExecutorType == null) {
+			return "";
+		}
+		else {
+			return _dispatchTaskExecutorType;
+		}
+	}
+
+	@Override
+	public void setDispatchTaskExecutorType(String dispatchTaskExecutorType) {
+		if (_columnOriginalValues == Collections.EMPTY_MAP) {
+			_setColumnOriginalValues();
+		}
+
+		_dispatchTaskExecutorType = dispatchTaskExecutorType;
+	}
+
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *             #getColumnOriginalValue(String)}
+	 */
+	@Deprecated
+	public String getOriginalDispatchTaskExecutorType() {
+		return getColumnOriginalValue("dispatchTaskExecutorType");
+	}
+
+	@JSON
+	@Override
+	public String getDispatchTaskSettings() {
+		if (_dispatchTaskSettings == null) {
+			return "";
+		}
+		else {
+			return _dispatchTaskSettings;
+		}
+	}
+
+	@Override
+	public void setDispatchTaskSettings(String dispatchTaskSettings) {
+		if (_columnOriginalValues == Collections.EMPTY_MAP) {
+			_setColumnOriginalValues();
+		}
+
+		_dispatchTaskSettings = dispatchTaskSettings;
+	}
+
+	@JSON
+	@Override
 	public Date getEndDate() {
 		return _endDate;
 	}
@@ -763,80 +821,6 @@ public class DispatchTriggerModelImpl
 		_system = system;
 	}
 
-	@JSON
-	@Override
-	public int getTaskClusterMode() {
-		return _taskClusterMode;
-	}
-
-	@Override
-	public void setTaskClusterMode(int taskClusterMode) {
-		if (_columnOriginalValues == Collections.EMPTY_MAP) {
-			_setColumnOriginalValues();
-		}
-
-		_taskClusterMode = taskClusterMode;
-	}
-
-	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-	 *             #getColumnOriginalValue(String)}
-	 */
-	@Deprecated
-	public int getOriginalTaskClusterMode() {
-		return GetterUtil.getInteger(
-			this.<Integer>getColumnOriginalValue("taskClusterMode"));
-	}
-
-	@JSON
-	@Override
-	public String getTaskExecutorType() {
-		if (_taskExecutorType == null) {
-			return "";
-		}
-		else {
-			return _taskExecutorType;
-		}
-	}
-
-	@Override
-	public void setTaskExecutorType(String taskExecutorType) {
-		if (_columnOriginalValues == Collections.EMPTY_MAP) {
-			_setColumnOriginalValues();
-		}
-
-		_taskExecutorType = taskExecutorType;
-	}
-
-	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-	 *             #getColumnOriginalValue(String)}
-	 */
-	@Deprecated
-	public String getOriginalTaskExecutorType() {
-		return getColumnOriginalValue("taskExecutorType");
-	}
-
-	@JSON
-	@Override
-	public String getTaskSettings() {
-		if (_taskSettings == null) {
-			return "";
-		}
-		else {
-			return _taskSettings;
-		}
-	}
-
-	@Override
-	public void setTaskSettings(String taskSettings) {
-		if (_columnOriginalValues == Collections.EMPTY_MAP) {
-			_setColumnOriginalValues();
-		}
-
-		_taskSettings = taskSettings;
-	}
-
 	public long getColumnBitmask() {
 		if (_columnBitmask > 0) {
 			return _columnBitmask;
@@ -851,7 +835,9 @@ public class DispatchTriggerModelImpl
 		for (Map.Entry<String, Object> entry :
 				_columnOriginalValues.entrySet()) {
 
-			if (entry.getValue() != getColumnValue(entry.getKey())) {
+			if (!Objects.equals(
+					entry.getValue(), getColumnValue(entry.getKey()))) {
+
 				_columnBitmask |= _columnBitmasks.get(entry.getKey());
 			}
 		}
@@ -892,6 +878,8 @@ public class DispatchTriggerModelImpl
 		DispatchTriggerImpl dispatchTriggerImpl = new DispatchTriggerImpl();
 
 		dispatchTriggerImpl.setMvccVersion(getMvccVersion());
+		dispatchTriggerImpl.setExternalReferenceCode(
+			getExternalReferenceCode());
 		dispatchTriggerImpl.setDispatchTriggerId(getDispatchTriggerId());
 		dispatchTriggerImpl.setCompanyId(getCompanyId());
 		dispatchTriggerImpl.setUserId(getUserId());
@@ -900,16 +888,62 @@ public class DispatchTriggerModelImpl
 		dispatchTriggerImpl.setModifiedDate(getModifiedDate());
 		dispatchTriggerImpl.setActive(isActive());
 		dispatchTriggerImpl.setCronExpression(getCronExpression());
+		dispatchTriggerImpl.setDispatchTaskClusterMode(
+			getDispatchTaskClusterMode());
+		dispatchTriggerImpl.setDispatchTaskExecutorType(
+			getDispatchTaskExecutorType());
+		dispatchTriggerImpl.setDispatchTaskSettings(getDispatchTaskSettings());
 		dispatchTriggerImpl.setEndDate(getEndDate());
 		dispatchTriggerImpl.setName(getName());
 		dispatchTriggerImpl.setOverlapAllowed(isOverlapAllowed());
 		dispatchTriggerImpl.setStartDate(getStartDate());
 		dispatchTriggerImpl.setSystem(isSystem());
-		dispatchTriggerImpl.setTaskClusterMode(getTaskClusterMode());
-		dispatchTriggerImpl.setTaskExecutorType(getTaskExecutorType());
-		dispatchTriggerImpl.setTaskSettings(getTaskSettings());
 
 		dispatchTriggerImpl.resetOriginalValues();
+
+		return dispatchTriggerImpl;
+	}
+
+	@Override
+	public DispatchTrigger cloneWithOriginalValues() {
+		DispatchTriggerImpl dispatchTriggerImpl = new DispatchTriggerImpl();
+
+		dispatchTriggerImpl.setMvccVersion(
+			this.<Long>getColumnOriginalValue("mvccVersion"));
+		dispatchTriggerImpl.setExternalReferenceCode(
+			this.<String>getColumnOriginalValue("externalReferenceCode"));
+		dispatchTriggerImpl.setDispatchTriggerId(
+			this.<Long>getColumnOriginalValue("dispatchTriggerId"));
+		dispatchTriggerImpl.setCompanyId(
+			this.<Long>getColumnOriginalValue("companyId"));
+		dispatchTriggerImpl.setUserId(
+			this.<Long>getColumnOriginalValue("userId"));
+		dispatchTriggerImpl.setUserName(
+			this.<String>getColumnOriginalValue("userName"));
+		dispatchTriggerImpl.setCreateDate(
+			this.<Date>getColumnOriginalValue("createDate"));
+		dispatchTriggerImpl.setModifiedDate(
+			this.<Date>getColumnOriginalValue("modifiedDate"));
+		dispatchTriggerImpl.setActive(
+			this.<Boolean>getColumnOriginalValue("active_"));
+		dispatchTriggerImpl.setCronExpression(
+			this.<String>getColumnOriginalValue("cronExpression"));
+		dispatchTriggerImpl.setDispatchTaskClusterMode(
+			this.<Integer>getColumnOriginalValue("dispatchTaskClusterMode"));
+		dispatchTriggerImpl.setDispatchTaskExecutorType(
+			this.<String>getColumnOriginalValue("dispatchTaskExecutorType"));
+		dispatchTriggerImpl.setDispatchTaskSettings(
+			this.<String>getColumnOriginalValue("dispatchTaskSettings"));
+		dispatchTriggerImpl.setEndDate(
+			this.<Date>getColumnOriginalValue("endDate"));
+		dispatchTriggerImpl.setName(
+			this.<String>getColumnOriginalValue("name"));
+		dispatchTriggerImpl.setOverlapAllowed(
+			this.<Boolean>getColumnOriginalValue("overlapAllowed"));
+		dispatchTriggerImpl.setStartDate(
+			this.<Date>getColumnOriginalValue("startDate"));
+		dispatchTriggerImpl.setSystem(
+			this.<Boolean>getColumnOriginalValue("system_"));
 
 		return dispatchTriggerImpl;
 	}
@@ -991,6 +1025,18 @@ public class DispatchTriggerModelImpl
 
 		dispatchTriggerCacheModel.mvccVersion = getMvccVersion();
 
+		dispatchTriggerCacheModel.externalReferenceCode =
+			getExternalReferenceCode();
+
+		String externalReferenceCode =
+			dispatchTriggerCacheModel.externalReferenceCode;
+
+		if ((externalReferenceCode != null) &&
+			(externalReferenceCode.length() == 0)) {
+
+			dispatchTriggerCacheModel.externalReferenceCode = null;
+		}
+
 		dispatchTriggerCacheModel.dispatchTriggerId = getDispatchTriggerId();
 
 		dispatchTriggerCacheModel.companyId = getCompanyId();
@@ -1033,6 +1079,33 @@ public class DispatchTriggerModelImpl
 			dispatchTriggerCacheModel.cronExpression = null;
 		}
 
+		dispatchTriggerCacheModel.dispatchTaskClusterMode =
+			getDispatchTaskClusterMode();
+
+		dispatchTriggerCacheModel.dispatchTaskExecutorType =
+			getDispatchTaskExecutorType();
+
+		String dispatchTaskExecutorType =
+			dispatchTriggerCacheModel.dispatchTaskExecutorType;
+
+		if ((dispatchTaskExecutorType != null) &&
+			(dispatchTaskExecutorType.length() == 0)) {
+
+			dispatchTriggerCacheModel.dispatchTaskExecutorType = null;
+		}
+
+		dispatchTriggerCacheModel.dispatchTaskSettings =
+			getDispatchTaskSettings();
+
+		String dispatchTaskSettings =
+			dispatchTriggerCacheModel.dispatchTaskSettings;
+
+		if ((dispatchTaskSettings != null) &&
+			(dispatchTaskSettings.length() == 0)) {
+
+			dispatchTriggerCacheModel.dispatchTaskSettings = null;
+		}
+
 		Date endDate = getEndDate();
 
 		if (endDate != null) {
@@ -1063,24 +1136,6 @@ public class DispatchTriggerModelImpl
 
 		dispatchTriggerCacheModel.system = isSystem();
 
-		dispatchTriggerCacheModel.taskClusterMode = getTaskClusterMode();
-
-		dispatchTriggerCacheModel.taskExecutorType = getTaskExecutorType();
-
-		String taskExecutorType = dispatchTriggerCacheModel.taskExecutorType;
-
-		if ((taskExecutorType != null) && (taskExecutorType.length() == 0)) {
-			dispatchTriggerCacheModel.taskExecutorType = null;
-		}
-
-		dispatchTriggerCacheModel.taskSettings = getTaskSettings();
-
-		String taskSettings = dispatchTriggerCacheModel.taskSettings;
-
-		if ((taskSettings != null) && (taskSettings.length() == 0)) {
-			dispatchTriggerCacheModel.taskSettings = null;
-		}
-
 		return dispatchTriggerCacheModel;
 	}
 
@@ -1090,7 +1145,7 @@ public class DispatchTriggerModelImpl
 			attributeGetterFunctions = getAttributeGetterFunctions();
 
 		StringBundler sb = new StringBundler(
-			(4 * attributeGetterFunctions.size()) + 2);
+			(5 * attributeGetterFunctions.size()) + 2);
 
 		sb.append("{");
 
@@ -1101,9 +1156,26 @@ public class DispatchTriggerModelImpl
 			Function<DispatchTrigger, Object> attributeGetterFunction =
 				entry.getValue();
 
+			sb.append("\"");
 			sb.append(attributeName);
-			sb.append("=");
-			sb.append(attributeGetterFunction.apply((DispatchTrigger)this));
+			sb.append("\": ");
+
+			Object value = attributeGetterFunction.apply((DispatchTrigger)this);
+
+			if (value == null) {
+				sb.append("null");
+			}
+			else if (value instanceof Blob || value instanceof Date ||
+					 value instanceof Map || value instanceof String) {
+
+				sb.append(
+					"\"" + StringUtil.replace(value.toString(), "\"", "'") +
+						"\"");
+			}
+			else {
+				sb.append(value);
+			}
+
 			sb.append(", ");
 		}
 
@@ -1155,6 +1227,7 @@ public class DispatchTriggerModelImpl
 	}
 
 	private long _mvccVersion;
+	private String _externalReferenceCode;
 	private long _dispatchTriggerId;
 	private long _companyId;
 	private long _userId;
@@ -1164,14 +1237,14 @@ public class DispatchTriggerModelImpl
 	private boolean _setModifiedDate;
 	private boolean _active;
 	private String _cronExpression;
+	private int _dispatchTaskClusterMode;
+	private String _dispatchTaskExecutorType;
+	private String _dispatchTaskSettings;
 	private Date _endDate;
 	private String _name;
 	private boolean _overlapAllowed;
 	private Date _startDate;
 	private boolean _system;
-	private int _taskClusterMode;
-	private String _taskExecutorType;
-	private String _taskSettings;
 
 	public <T> T getColumnValue(String columnName) {
 		columnName = _attributeNames.getOrDefault(columnName, columnName);
@@ -1203,6 +1276,8 @@ public class DispatchTriggerModelImpl
 		_columnOriginalValues = new HashMap<String, Object>();
 
 		_columnOriginalValues.put("mvccVersion", _mvccVersion);
+		_columnOriginalValues.put(
+			"externalReferenceCode", _externalReferenceCode);
 		_columnOriginalValues.put("dispatchTriggerId", _dispatchTriggerId);
 		_columnOriginalValues.put("companyId", _companyId);
 		_columnOriginalValues.put("userId", _userId);
@@ -1211,14 +1286,17 @@ public class DispatchTriggerModelImpl
 		_columnOriginalValues.put("modifiedDate", _modifiedDate);
 		_columnOriginalValues.put("active_", _active);
 		_columnOriginalValues.put("cronExpression", _cronExpression);
+		_columnOriginalValues.put(
+			"dispatchTaskClusterMode", _dispatchTaskClusterMode);
+		_columnOriginalValues.put(
+			"dispatchTaskExecutorType", _dispatchTaskExecutorType);
+		_columnOriginalValues.put(
+			"dispatchTaskSettings", _dispatchTaskSettings);
 		_columnOriginalValues.put("endDate", _endDate);
 		_columnOriginalValues.put("name", _name);
 		_columnOriginalValues.put("overlapAllowed", _overlapAllowed);
 		_columnOriginalValues.put("startDate", _startDate);
 		_columnOriginalValues.put("system_", _system);
-		_columnOriginalValues.put("taskClusterMode", _taskClusterMode);
-		_columnOriginalValues.put("taskExecutorType", _taskExecutorType);
-		_columnOriginalValues.put("taskSettings", _taskSettings);
 	}
 
 	private static final Map<String, String> _attributeNames;
@@ -1245,37 +1323,39 @@ public class DispatchTriggerModelImpl
 
 		columnBitmasks.put("mvccVersion", 1L);
 
-		columnBitmasks.put("dispatchTriggerId", 2L);
+		columnBitmasks.put("externalReferenceCode", 2L);
 
-		columnBitmasks.put("companyId", 4L);
+		columnBitmasks.put("dispatchTriggerId", 4L);
 
-		columnBitmasks.put("userId", 8L);
+		columnBitmasks.put("companyId", 8L);
 
-		columnBitmasks.put("userName", 16L);
+		columnBitmasks.put("userId", 16L);
 
-		columnBitmasks.put("createDate", 32L);
+		columnBitmasks.put("userName", 32L);
 
-		columnBitmasks.put("modifiedDate", 64L);
+		columnBitmasks.put("createDate", 64L);
 
-		columnBitmasks.put("active_", 128L);
+		columnBitmasks.put("modifiedDate", 128L);
 
-		columnBitmasks.put("cronExpression", 256L);
+		columnBitmasks.put("active_", 256L);
 
-		columnBitmasks.put("endDate", 512L);
+		columnBitmasks.put("cronExpression", 512L);
 
-		columnBitmasks.put("name", 1024L);
+		columnBitmasks.put("dispatchTaskClusterMode", 1024L);
 
-		columnBitmasks.put("overlapAllowed", 2048L);
+		columnBitmasks.put("dispatchTaskExecutorType", 2048L);
 
-		columnBitmasks.put("startDate", 4096L);
+		columnBitmasks.put("dispatchTaskSettings", 4096L);
 
-		columnBitmasks.put("system_", 8192L);
+		columnBitmasks.put("endDate", 8192L);
 
-		columnBitmasks.put("taskClusterMode", 16384L);
+		columnBitmasks.put("name", 16384L);
 
-		columnBitmasks.put("taskExecutorType", 32768L);
+		columnBitmasks.put("overlapAllowed", 32768L);
 
-		columnBitmasks.put("taskSettings", 65536L);
+		columnBitmasks.put("startDate", 65536L);
+
+		columnBitmasks.put("system_", 131072L);
 
 		_columnBitmasks = Collections.unmodifiableMap(columnBitmasks);
 	}

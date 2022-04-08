@@ -28,14 +28,8 @@ SelectLayoutCollectionDisplayContext selectLayoutCollectionDisplayContext = (Sel
 	>
 		<liferay-ui:search-container-row
 			className="com.liferay.asset.list.model.AssetListEntry"
-			cssClass="entry"
 			modelVar="assetListEntry"
 		>
-
-			<%
-			row.setCssClass("entry-card entry-display-style lfr-asset-item " + row.getCssClass());
-			%>
-
 			<liferay-ui:search-container-column-text>
 				<clay:vertical-card
 					verticalCard="<%= new CollectionsVerticalCard(assetListEntry, selectLayoutCollectionDisplayContext.getSelGroupId(), renderRequest, renderResponse) %>"
@@ -59,7 +53,7 @@ SelectLayoutCollectionDisplayContext selectLayoutCollectionDisplayContext = (Sel
 		collections,
 		'click',
 		'.select-collection-action-option',
-		function (event) {}
+		(event) => {}
 	);
 
 	function handleDestroyPortlet() {

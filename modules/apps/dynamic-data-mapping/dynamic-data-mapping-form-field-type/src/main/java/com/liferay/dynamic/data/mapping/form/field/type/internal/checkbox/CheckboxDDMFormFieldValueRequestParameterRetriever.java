@@ -15,6 +15,8 @@
 package com.liferay.dynamic.data.mapping.form.field.type.internal.checkbox;
 
 import com.liferay.dynamic.data.mapping.form.field.type.DDMFormFieldValueRequestParameterRetriever;
+import com.liferay.dynamic.data.mapping.form.field.type.constants.DDMFormFieldTypeConstants;
+import com.liferay.dynamic.data.mapping.form.field.type.internal.util.DDMFormFieldTypeUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 
 import javax.servlet.http.HttpServletRequest;
@@ -25,7 +27,8 @@ import org.osgi.service.component.annotations.Component;
  * @author Marcellus Tavares
  */
 @Component(
-	immediate = true, property = "ddm.form.field.type.name=checkbox",
+	immediate = true,
+	property = "ddm.form.field.type.name=" + DDMFormFieldTypeConstants.CHECKBOX,
 	service = DDMFormFieldValueRequestParameterRetriever.class
 )
 public class CheckboxDDMFormFieldValueRequestParameterRetriever
@@ -40,10 +43,13 @@ public class CheckboxDDMFormFieldValueRequestParameterRetriever
 			ddmFormFieldParameterName);
 
 		if (parameterValue == null) {
-			return defaultDDMFormFieldParameterValue;
+			return DDMFormFieldTypeUtil.getValue(
+				defaultDDMFormFieldParameterValue);
 		}
 
-		return String.valueOf(GetterUtil.getBoolean(parameterValue));
+		return String.valueOf(
+			GetterUtil.getBoolean(
+				DDMFormFieldTypeUtil.getValue(parameterValue)));
 	}
 
 }

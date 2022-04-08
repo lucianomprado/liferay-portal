@@ -239,10 +239,10 @@ public class Query {
 	/**
 	 * Invoke this method with the command line:
 	 *
-	 * curl -H 'Content-Type: text/plain; charset=utf-8' -X 'POST' 'http://localhost:8080/o/graphql' -d $'{"query": "query {dataDefinitionDataDefinitionFieldLink(dataDefinitionId: ___, fieldName: ___){items {__}, page, pageSize, totalCount}}"}' -u 'test@liferay.com:test'
+	 * curl -H 'Content-Type: text/plain; charset=utf-8' -X 'POST' 'http://localhost:8080/o/graphql' -d $'{"query": "query {dataDefinitionDataDefinitionFieldLinks(dataDefinitionId: ___, fieldName: ___){items {__}, page, pageSize, totalCount}}"}' -u 'test@liferay.com:test'
 	 */
 	@GraphQLField
-	public DataDefinitionFieldLinkPage dataDefinitionDataDefinitionFieldLink(
+	public DataDefinitionFieldLinkPage dataDefinitionDataDefinitionFieldLinks(
 			@GraphQLName("dataDefinitionId") Long dataDefinitionId,
 			@GraphQLName("fieldName") String fieldName)
 		throws Exception {
@@ -252,7 +252,7 @@ public class Query {
 			this::_populateResourceContext,
 			dataDefinitionFieldLinkResource -> new DataDefinitionFieldLinkPage(
 				dataDefinitionFieldLinkResource.
-					getDataDefinitionDataDefinitionFieldLinkPage(
+					getDataDefinitionDataDefinitionFieldLinksPage(
 						dataDefinitionId, fieldName)));
 	}
 
@@ -282,7 +282,7 @@ public class Query {
 	/**
 	 * Invoke this method with the command line:
 	 *
-	 * curl -H 'Content-Type: text/plain; charset=utf-8' -X 'POST' 'http://localhost:8080/o/graphql' -d $'{"query": "query {dataLayout(dataLayoutId: ___){contentType, dataDefinitionId, dataLayoutKey, dataLayoutPages, dataRules, dateCreated, dateModified, description, id, name, paginationMode, siteId, userId}}"}' -u 'test@liferay.com:test'
+	 * curl -H 'Content-Type: text/plain; charset=utf-8' -X 'POST' 'http://localhost:8080/o/graphql' -d $'{"query": "query {dataLayout(dataLayoutId: ___){contentType, dataDefinitionId, dataLayoutFields, dataLayoutKey, dataLayoutPages, dataRules, dateCreated, dateModified, description, id, name, paginationMode, siteId, userId}}"}' -u 'test@liferay.com:test'
 	 */
 	@GraphQLField
 	public DataLayout dataLayout(@GraphQLName("dataLayoutId") Long dataLayoutId)
@@ -298,7 +298,7 @@ public class Query {
 	/**
 	 * Invoke this method with the command line:
 	 *
-	 * curl -H 'Content-Type: text/plain; charset=utf-8' -X 'POST' 'http://localhost:8080/o/graphql' -d $'{"query": "query {dataLayoutByContentTypeByDataLayoutKey(contentType: ___, dataLayoutKey: ___, siteKey: ___){contentType, dataDefinitionId, dataLayoutKey, dataLayoutPages, dataRules, dateCreated, dateModified, description, id, name, paginationMode, siteId, userId}}"}' -u 'test@liferay.com:test'
+	 * curl -H 'Content-Type: text/plain; charset=utf-8' -X 'POST' 'http://localhost:8080/o/graphql' -d $'{"query": "query {dataLayoutByContentTypeByDataLayoutKey(contentType: ___, dataLayoutKey: ___, siteKey: ___){contentType, dataDefinitionId, dataLayoutFields, dataLayoutKey, dataLayoutPages, dataRules, dateCreated, dateModified, description, id, name, paginationMode, siteId, userId}}"}' -u 'test@liferay.com:test'
 	 */
 	@GraphQLField
 	public DataLayout dataLayoutByContentTypeByDataLayoutKey(
@@ -593,6 +593,34 @@ public class Query {
 	}
 
 	@GraphQLTypeExtension(DataDefinition.class)
+	public class GetDataDefinitionDataDefinitionFieldLinksPageTypeExtension {
+
+		public GetDataDefinitionDataDefinitionFieldLinksPageTypeExtension(
+			DataDefinition dataDefinition) {
+
+			_dataDefinition = dataDefinition;
+		}
+
+		@GraphQLField
+		public DataDefinitionFieldLinkPage dataDefinitionFieldLinks(
+				@GraphQLName("fieldName") String fieldName)
+			throws Exception {
+
+			return _applyComponentServiceObjects(
+				_dataDefinitionFieldLinkResourceComponentServiceObjects,
+				Query.this::_populateResourceContext,
+				dataDefinitionFieldLinkResource ->
+					new DataDefinitionFieldLinkPage(
+						dataDefinitionFieldLinkResource.
+							getDataDefinitionDataDefinitionFieldLinksPage(
+								_dataDefinition.getId(), fieldName)));
+		}
+
+		private DataDefinition _dataDefinition;
+
+	}
+
+	@GraphQLTypeExtension(DataDefinition.class)
 	public class GetDataDefinitionDataRecordCollectionTypeExtension {
 
 		public GetDataDefinitionDataRecordCollectionTypeExtension(
@@ -662,34 +690,6 @@ public class Query {
 		}
 
 		private DataRecordCollection _dataRecordCollection;
-
-	}
-
-	@GraphQLTypeExtension(DataDefinition.class)
-	public class GetDataDefinitionDataDefinitionFieldLinkPageTypeExtension {
-
-		public GetDataDefinitionDataDefinitionFieldLinkPageTypeExtension(
-			DataDefinition dataDefinition) {
-
-			_dataDefinition = dataDefinition;
-		}
-
-		@GraphQLField
-		public DataDefinitionFieldLinkPage dataDefinitionFieldLink(
-				@GraphQLName("fieldName") String fieldName)
-			throws Exception {
-
-			return _applyComponentServiceObjects(
-				_dataDefinitionFieldLinkResourceComponentServiceObjects,
-				Query.this::_populateResourceContext,
-				dataDefinitionFieldLinkResource ->
-					new DataDefinitionFieldLinkPage(
-						dataDefinitionFieldLinkResource.
-							getDataDefinitionDataDefinitionFieldLinkPage(
-								_dataDefinition.getId(), fieldName)));
-		}
-
-		private DataDefinition _dataDefinition;
 
 	}
 

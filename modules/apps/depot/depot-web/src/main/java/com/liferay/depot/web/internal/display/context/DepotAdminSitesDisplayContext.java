@@ -106,16 +106,21 @@ public class DepotAdminSitesDisplayContext {
 			}
 		).add(
 			dropdownItem -> {
-				ActionURL disconnectSiteActionURL =
-					DepotEntryURLUtil.getDisconnectSiteActionURL(
-						depotEntryGroupRel.getDepotEntryGroupRelId(),
-						_currentURL.toString(), _liferayPortletResponse);
-
 				dropdownItem.setData(
 					HashMapBuilder.<String, Object>put(
 						"action", "disconnect"
 					).put(
-						"url", disconnectSiteActionURL.toString()
+						"url",
+						() -> {
+							ActionURL disconnectSiteActionURL =
+								DepotEntryURLUtil.getDisconnectSiteActionURL(
+									depotEntryGroupRel.
+										getDepotEntryGroupRelId(),
+									_currentURL.toString(),
+									_liferayPortletResponse);
+
+							return disconnectSiteActionURL.toString();
+						}
 					).build());
 
 				dropdownItem.setDisabled(
@@ -130,10 +135,8 @@ public class DepotAdminSitesDisplayContext {
 	}
 
 	public List<DepotEntryGroupRel> getDepotEntryGroupRels() {
-		DepotEntry depotEntry = _getDepotEntry();
-
 		return DepotEntryGroupRelLocalServiceUtil.getDepotEntryGroupRels(
-			depotEntry);
+			_getDepotEntry());
 	}
 
 	public PortletURL getItemSelectorURL() {

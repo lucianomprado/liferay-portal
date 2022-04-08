@@ -29,6 +29,7 @@ import com.liferay.commerce.product.model.CPOption;
 import com.liferay.commerce.product.model.CPOptionValue;
 import com.liferay.commerce.product.service.base.CPDefinitionOptionValueRelLocalServiceBaseImpl;
 import com.liferay.expando.kernel.model.ExpandoBridge;
+import com.liferay.expando.kernel.service.ExpandoRowLocalService;
 import com.liferay.portal.kernel.dao.orm.Criterion;
 import com.liferay.portal.kernel.dao.orm.DynamicQuery;
 import com.liferay.portal.kernel.dao.orm.OrderFactoryUtil;
@@ -54,12 +55,13 @@ import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.security.auth.PrincipalThreadLocal;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.systemevent.SystemEvent;
-import com.liferay.portal.kernel.util.FriendlyURLNormalizerUtil;
+import com.liferay.portal.kernel.util.FriendlyURLNormalizer;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.LinkedHashMapBuilder;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.spring.extender.service.ServiceReference;
 import com.liferay.taglib.util.CustomAttributesUtil;
 
 import java.io.Serializable;
@@ -104,7 +106,7 @@ public class CPDefinitionOptionValueRelLocalServiceImpl
 
 		User user = userLocalService.getUser(serviceContext.getUserId());
 
-		key = FriendlyURLNormalizerUtil.normalize(key);
+		key = _friendlyURLNormalizer.normalize(key);
 
 		validate(0, cpDefinitionOptionRelId, key);
 
@@ -199,7 +201,7 @@ public class CPDefinitionOptionValueRelLocalServiceImpl
 
 		// Expando
 
-		expandoRowLocalService.deleteRows(
+		_expandoRowLocalService.deleteRows(
 			cpDefinitionOptionValueRel.getCPDefinitionOptionValueRelId());
 
 		cpInstanceLocalService.inactivateCPDefinitionOptionValueRelCPInstances(
@@ -284,10 +286,14 @@ public class CPDefinitionOptionValueRelLocalServiceImpl
 			for (CPInstanceOptionValueRel cpInstanceOptionValueRel :
 					cpInstanceOptionValueRels) {
 
-				if (cpDefinitionOptionValueRel.
-						getCPDefinitionOptionValueRelId() ==
-							cpInstanceOptionValueRel.
-								getCPDefinitionOptionValueRelId()) {
+				long cpDefinitionOptionValueRelId1 =
+					cpDefinitionOptionValueRel.
+						getCPDefinitionOptionValueRelId();
+				long cpDefinitionOptionValueRelId2 =
+					cpInstanceOptionValueRel.getCPDefinitionOptionValueRelId();
+
+				if (cpDefinitionOptionValueRelId1 ==
+						cpDefinitionOptionValueRelId2) {
 
 					filteredCPDefinitionOptionValueRels.add(
 						cpDefinitionOptionValueRel);
@@ -418,9 +424,10 @@ public class CPDefinitionOptionValueRelLocalServiceImpl
 	public boolean hasPreselectedCPDefinitionOptionValueRel(
 		long cpDefinitionOptionRelId) {
 
-		if (cpDefinitionOptionValueRelPersistence.countByCDORI_P(
-				cpDefinitionOptionRelId, true) == 0) {
+		int count = cpDefinitionOptionValueRelPersistence.countByCDORI_P(
+			cpDefinitionOptionRelId, true);
 
+		if (count == 0) {
 			return false;
 		}
 
@@ -511,6 +518,22 @@ public class CPDefinitionOptionValueRelLocalServiceImpl
 		}
 	}
 
+	/**
+	 * @param      companyId
+	 * @param      groupId
+	 * @param      cpDefinitionOptionRelId
+	 * @param      keywords
+	 * @param      start
+	 * @param      end
+	 * @param      sort
+	 * @return
+	 *
+	 * @throws     PortalException
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 * 			   #searchCPDefinitionOptionValueRels(long, long, long, String,
+	 * 			   int, int, Sort[])}
+	 */
+	@Deprecated
 	@Override
 	public BaseModelSearchResult<CPDefinitionOptionValueRel>
 			searchCPDefinitionOptionValueRels(
@@ -518,11 +541,36 @@ public class CPDefinitionOptionValueRelLocalServiceImpl
 				String keywords, int start, int end, Sort sort)
 		throws PortalException {
 
+		return searchCPDefinitionOptionValueRels(
+			companyId, groupId, cpDefinitionOptionRelId, keywords, start, end,
+			new Sort[] {sort});
+	}
+
+	@Override
+	public BaseModelSearchResult<CPDefinitionOptionValueRel>
+			searchCPDefinitionOptionValueRels(
+				long companyId, long groupId, long cpDefinitionOptionRelId,
+				String keywords, int start, int end, Sort[] sorts)
+		throws PortalException {
+
 		SearchContext searchContext = buildSearchContext(
 			companyId, groupId, cpDefinitionOptionRelId, keywords, start, end,
-			sort);
+			sorts);
 
 		return searchCPOptions(searchContext);
+	}
+
+	@Override
+	public int searchCPDefinitionOptionValueRelsCount(
+			long companyId, long groupId, long cpDefinitionOptionRelId,
+			String keywords)
+		throws PortalException {
+
+		SearchContext searchContext = buildSearchContext(
+			companyId, groupId, cpDefinitionOptionRelId, keywords,
+			QueryUtil.ALL_POS, QueryUtil.ALL_POS, null);
+
+		return searchCPOptionsCount(searchContext);
 	}
 
 	/**
@@ -570,7 +618,7 @@ public class CPDefinitionOptionValueRelLocalServiceImpl
 			cpDefinitionOptionValueRelPersistence.findByPrimaryKey(
 				cpDefinitionOptionValueRelId);
 
-		key = FriendlyURLNormalizerUtil.normalize(key);
+		key = _friendlyURLNormalizer.normalize(key);
 
 		validate(
 			cpDefinitionOptionValueRel.getCPDefinitionOptionValueRelId(),
@@ -602,8 +650,9 @@ public class CPDefinitionOptionValueRelLocalServiceImpl
 		cpDefinitionOptionValueRel.setKey(key);
 		cpDefinitionOptionValueRel.setExpandoBridgeAttributes(serviceContext);
 
-		_updateCPDefinitionOptionValueRelCPInstance(
-			cpDefinitionOptionValueRel, cpInstanceId);
+		cpDefinitionOptionValueRel =
+			_updateCPDefinitionOptionValueRelCPInstance(
+				cpDefinitionOptionValueRel, cpInstanceId);
 
 		if (cpDefinitionOptionRel.isPriceTypeStatic()) {
 			cpDefinitionOptionValueRel.setPrice(price);
@@ -621,10 +670,8 @@ public class CPDefinitionOptionValueRelLocalServiceImpl
 
 		if (preselected) {
 			cpDefinitionOptionValueRel =
-				updateCPDefinitionOptionValueRelPreselected(
-					cpDefinitionOptionValueRel.
-						getCPDefinitionOptionValueRelId(),
-					preselected);
+				_updateCPDefinitionOptionValueRelPreselected(
+					cpDefinitionOptionValueRel, preselected);
 		}
 
 		// Commerce product definition
@@ -669,37 +716,17 @@ public class CPDefinitionOptionValueRelLocalServiceImpl
 			cpDefinitionOptionValueRelPersistence.fetchByPrimaryKey(
 				cpDefinitionOptionValueRelId);
 
-		if (!preselected) {
-			cpDefinitionOptionValueRel.setPreselected(false);
-
-			return cpDefinitionOptionValueRelPersistence.update(
-				cpDefinitionOptionValueRel);
-		}
-
-		CPDefinitionOptionValueRel curPreselectedCPDefinitionOptionValueRel =
-			fetchPreselectedCPDefinitionOptionValueRel(
-				cpDefinitionOptionValueRel.getCPDefinitionOptionRelId());
-
-		if (curPreselectedCPDefinitionOptionValueRel != null) {
-			curPreselectedCPDefinitionOptionValueRel.setPreselected(false);
-
-			cpDefinitionOptionValueRelPersistence.update(
-				curPreselectedCPDefinitionOptionValueRel);
-		}
-
-		cpDefinitionOptionValueRel.setPreselected(true);
-
-		return cpDefinitionOptionValueRelPersistence.update(
-			cpDefinitionOptionValueRel);
+		return _updateCPDefinitionOptionValueRelPreselected(
+			cpDefinitionOptionValueRel, preselected);
 	}
 
 	protected SearchContext buildSearchContext(
 		long companyId, long groupId, long cpDefinitionOptionRelId,
-		String keywords, int start, int end, Sort sort) {
+		String keywords, int start, int end, Sort[] sorts) {
 
 		SearchContext searchContext = new SearchContext();
 
-		Map<String, Serializable> attributes =
+		searchContext.setAttributes(
 			HashMapBuilder.<String, Serializable>put(
 				_FIELD_KEY, keywords
 			).put(
@@ -715,9 +742,7 @@ public class CPDefinitionOptionValueRelLocalServiceImpl
 				LinkedHashMapBuilder.<String, Object>put(
 					"keywords", keywords
 				).build()
-			).build();
-
-		searchContext.setAttributes(attributes);
+			).build());
 
 		searchContext.setCompanyId(companyId);
 		searchContext.setEnd(end);
@@ -727,8 +752,8 @@ public class CPDefinitionOptionValueRelLocalServiceImpl
 			searchContext.setKeywords(keywords);
 		}
 
-		if (sort != null) {
-			searchContext.setSorts(sort);
+		if (sorts != null) {
+			searchContext.setSorts(sorts);
 		}
 
 		searchContext.setStart(start);
@@ -813,6 +838,16 @@ public class CPDefinitionOptionValueRelLocalServiceImpl
 			"Unable to fix the search index after 10 attempts");
 	}
 
+	protected int searchCPOptionsCount(SearchContext searchContext)
+		throws PortalException {
+
+		Indexer<CPDefinitionOptionValueRel> indexer =
+			IndexerRegistryUtil.nullSafeGetIndexer(
+				CPDefinitionOptionValueRel.class);
+
+		return GetterUtil.getInteger(indexer.searchCount(searchContext));
+	}
+
 	protected void validate(
 			long cpDefinitionOptionValueRelId, long cpDefinitionOptionRelId,
 			String key)
@@ -866,16 +901,17 @@ public class CPDefinitionOptionValueRelLocalServiceImpl
 		}
 	}
 
-	private void _updateCPDefinitionOptionValueRelCPInstance(
-			CPDefinitionOptionValueRel cpDefinitionOptionValueRel,
-			long cpInstanceId)
+	private CPDefinitionOptionValueRel
+			_updateCPDefinitionOptionValueRelCPInstance(
+				CPDefinitionOptionValueRel cpDefinitionOptionValueRel,
+				long cpInstanceId)
 		throws PortalException {
 
 		if (cpInstanceId <= 0) {
 			cpDefinitionOptionValueRel.setCPInstanceUuid(null);
 			cpDefinitionOptionValueRel.setCProductId(0);
 
-			return;
+			return cpDefinitionOptionValueRel;
 		}
 
 		CPInstance cpInstance = cpInstanceLocalService.getCPInstance(
@@ -887,6 +923,37 @@ public class CPDefinitionOptionValueRelLocalServiceImpl
 		CPDefinition cpDefinition = cpInstance.getCPDefinition();
 
 		cpDefinitionOptionValueRel.setCProductId(cpDefinition.getCProductId());
+
+		return cpDefinitionOptionValueRel;
+	}
+
+	private CPDefinitionOptionValueRel
+		_updateCPDefinitionOptionValueRelPreselected(
+			CPDefinitionOptionValueRel cpDefinitionOptionValueRel,
+			boolean preselected) {
+
+		if (!preselected) {
+			cpDefinitionOptionValueRel.setPreselected(false);
+
+			return cpDefinitionOptionValueRelPersistence.update(
+				cpDefinitionOptionValueRel);
+		}
+
+		CPDefinitionOptionValueRel curPreselectedCPDefinitionOptionValueRel =
+			fetchPreselectedCPDefinitionOptionValueRel(
+				cpDefinitionOptionValueRel.getCPDefinitionOptionRelId());
+
+		if (curPreselectedCPDefinitionOptionValueRel != null) {
+			curPreselectedCPDefinitionOptionValueRel.setPreselected(false);
+
+			cpDefinitionOptionValueRelPersistence.update(
+				curPreselectedCPDefinitionOptionValueRel);
+		}
+
+		cpDefinitionOptionValueRel.setPreselected(true);
+
+		return cpDefinitionOptionValueRelPersistence.update(
+			cpDefinitionOptionValueRel);
 	}
 
 	private void _validateLinkedCPDefinitionOptionValueRel(
@@ -993,5 +1060,11 @@ public class CPDefinitionOptionValueRelLocalServiceImpl
 	private static final String[] _SELECTED_FIELD_NAMES = {
 		Field.ENTRY_CLASS_PK, Field.COMPANY_ID, Field.GROUP_ID, Field.UID
 	};
+
+	@ServiceReference(type = ExpandoRowLocalService.class)
+	private ExpandoRowLocalService _expandoRowLocalService;
+
+	@ServiceReference(type = FriendlyURLNormalizer.class)
+	private FriendlyURLNormalizer _friendlyURLNormalizer;
 
 }

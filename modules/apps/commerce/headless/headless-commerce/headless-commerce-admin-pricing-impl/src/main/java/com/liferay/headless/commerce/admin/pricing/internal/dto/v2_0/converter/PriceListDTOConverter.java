@@ -29,9 +29,6 @@ import com.liferay.portal.language.LanguageResources;
 import com.liferay.portal.vulcan.dto.converter.DTOConverter;
 import com.liferay.portal.vulcan.dto.converter.DTOConverterContext;
 
-import java.util.Locale;
-import java.util.ResourceBundle;
-
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
@@ -40,7 +37,7 @@ import org.osgi.service.component.annotations.Reference;
  */
 @Component(
 	enabled = false,
-	property = "model.class.name=com.liferay.commerce.price.list.model.CommercePriceList",
+	property = "dto.class.name=com.liferay.commerce.price.list.model.CommercePriceList",
 	service = {DTOConverter.class, PriceListDTOConverter.class}
 )
 public class PriceListDTOConverter
@@ -65,13 +62,9 @@ public class PriceListDTOConverter
 		String priceListStatusLabel = WorkflowConstants.getStatusLabel(
 			commercePriceList.getStatus());
 
-		Locale locale = dtoConverterContext.getLocale();
-
-		ResourceBundle resourceBundle = LanguageResources.getResourceBundle(
-			locale);
-
 		String priceListStatusLabelI18n = LanguageUtil.get(
-			resourceBundle,
+			LanguageResources.getResourceBundle(
+				dtoConverterContext.getLocale()),
 			WorkflowConstants.getStatusLabel(commercePriceList.getStatus()));
 
 		ExpandoBridge expandoBridge = commercePriceList.getExpandoBridge();
@@ -99,7 +92,7 @@ public class PriceListDTOConverter
 					commercePriceList.getParentCommercePriceListId();
 				priority = commercePriceList.getPriority();
 				type = Type.create(commercePriceList.getType());
-				workflowStatusInfo = _getWorkflowStatusInfo(
+				workflowStatusInfo = _toStatus(
 					commercePriceList.getStatus(), priceListStatusLabel,
 					priceListStatusLabelI18n);
 			}
@@ -134,7 +127,7 @@ public class PriceListDTOConverter
 		return commerceCatalog.getName();
 	}
 
-	private Status _getWorkflowStatusInfo(
+	private Status _toStatus(
 		int statusCode, String priceListStatusLabel,
 		String priceListStatusLabelI18n) {
 

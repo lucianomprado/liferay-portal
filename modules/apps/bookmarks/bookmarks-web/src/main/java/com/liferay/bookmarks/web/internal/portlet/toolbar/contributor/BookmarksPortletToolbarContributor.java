@@ -23,6 +23,7 @@ import com.liferay.bookmarks.exception.NoSuchFolderException;
 import com.liferay.bookmarks.model.BookmarksFolder;
 import com.liferay.bookmarks.service.BookmarksFolderService;
 import com.liferay.document.library.kernel.model.DLFolderConstants;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.bean.BeanParamUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.LanguageUtil;
@@ -49,7 +50,6 @@ import java.util.List;
 
 import javax.portlet.PortletRequest;
 import javax.portlet.PortletResponse;
-import javax.portlet.PortletURL;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -72,14 +72,44 @@ import org.osgi.service.component.annotations.Reference;
 public class BookmarksPortletToolbarContributor
 	extends BasePortletToolbarContributor {
 
-	protected void addPortletTitleAddBookmarkMenuItem(
+	@Override
+	protected List<MenuItem> getPortletTitleMenuItems(
+		PortletRequest portletRequest, PortletResponse portletResponse) {
+
+		ThemeDisplay themeDisplay = (ThemeDisplay)portletRequest.getAttribute(
+			WebKeys.THEME_DISPLAY);
+
+		BookmarksFolder folder = _getFolder(themeDisplay, portletRequest);
+
+		List<MenuItem> menuItems = new ArrayList<>();
+
+		try {
+			_addPortletTitleAddFolderMenuItem(
+				menuItems, folder, themeDisplay, portletRequest);
+		}
+		catch (PortalException portalException) {
+			_log.error("Unable to add folder menu item", portalException);
+		}
+
+		try {
+			_addPortletTitleAddBookmarkMenuItem(
+				menuItems, folder, themeDisplay, portletRequest);
+		}
+		catch (PortalException portalException) {
+			_log.error("Unable to add bookmark menu item", portalException);
+		}
+
+		return menuItems;
+	}
+
+	private void _addPortletTitleAddBookmarkMenuItem(
 			List<MenuItem> menuItems, BookmarksFolder folder,
 			ThemeDisplay themeDisplay, PortletRequest portletRequest)
 		throws PortalException {
 
 		long folderId = _getFolderId(folder);
 
-		if (!containsPermission(
+		if (!_containsPermission(
 				themeDisplay.getPermissionChecker(),
 				themeDisplay.getScopeGroupId(), folderId,
 				ActionKeys.ADD_ENTRY)) {
@@ -93,35 +123,38 @@ public class BookmarksPortletToolbarContributor
 			LanguageUtil.get(
 				_portal.getHttpServletRequest(portletRequest), "bookmark"));
 
-		PortletURL portletURL = _portal.getControlPanelPortletURL(
-			portletRequest, themeDisplay.getScopeGroup(),
-			BookmarksPortletKeys.BOOKMARKS_ADMIN, 0, 0,
-			PortletRequest.RENDER_PHASE);
+		urlMenuItem.setURL(
+			PortletURLBuilder.create(
+				_portal.getControlPanelPortletURL(
+					portletRequest, themeDisplay.getScopeGroup(),
+					BookmarksPortletKeys.BOOKMARKS_ADMIN, 0, 0,
+					PortletRequest.RENDER_PHASE)
+			).setMVCRenderCommandName(
+				"/bookmarks/edit_entry"
+			).setRedirect(
+				_portal.getCurrentURL(portletRequest)
+			).setPortletResource(
+				() -> {
+					PortletDisplay portletDisplay =
+						themeDisplay.getPortletDisplay();
 
-		portletURL.setParameter(
-			"mvcRenderCommandName", "/bookmarks/edit_entry");
-		portletURL.setParameter(
-			"redirect", _portal.getCurrentURL(portletRequest));
-
-		PortletDisplay portletDisplay = themeDisplay.getPortletDisplay();
-
-		portletURL.setParameter("portletResource", portletDisplay.getId());
-
-		portletURL.setParameter("folderId", String.valueOf(folderId));
-
-		urlMenuItem.setURL(portletURL.toString());
+					return portletDisplay.getId();
+				}
+			).setParameter(
+				"folderId", folderId
+			).buildString());
 
 		menuItems.add(urlMenuItem);
 	}
 
-	protected void addPortletTitleAddFolderMenuItem(
+	private void _addPortletTitleAddFolderMenuItem(
 			List<MenuItem> menuItems, BookmarksFolder folder,
 			ThemeDisplay themeDisplay, PortletRequest portletRequest)
 		throws PortalException {
 
 		long folderId = _getFolderId(folder);
 
-		if (!containsPermission(
+		if (!_containsPermission(
 				themeDisplay.getPermissionChecker(),
 				themeDisplay.getScopeGroupId(), folderId,
 				ActionKeys.ADD_FOLDER)) {
@@ -135,28 +168,31 @@ public class BookmarksPortletToolbarContributor
 			LanguageUtil.get(
 				_portal.getHttpServletRequest(portletRequest), "folder"));
 
-		PortletURL portletURL = _portal.getControlPanelPortletURL(
-			portletRequest, themeDisplay.getScopeGroup(),
-			BookmarksPortletKeys.BOOKMARKS_ADMIN, 0, 0,
-			PortletRequest.RENDER_PHASE);
+		urlMenuItem.setURL(
+			PortletURLBuilder.create(
+				_portal.getControlPanelPortletURL(
+					portletRequest, themeDisplay.getScopeGroup(),
+					BookmarksPortletKeys.BOOKMARKS_ADMIN, 0, 0,
+					PortletRequest.RENDER_PHASE)
+			).setMVCRenderCommandName(
+				"/bookmarks/edit_folder"
+			).setRedirect(
+				_portal.getCurrentURL(portletRequest)
+			).setPortletResource(
+				() -> {
+					PortletDisplay portletDisplay =
+						themeDisplay.getPortletDisplay();
 
-		portletURL.setParameter(
-			"mvcRenderCommandName", "/bookmarks/edit_folder");
-		portletURL.setParameter(
-			"redirect", _portal.getCurrentURL(portletRequest));
-
-		PortletDisplay portletDisplay = themeDisplay.getPortletDisplay();
-
-		portletURL.setParameter("portletResource", portletDisplay.getId());
-
-		portletURL.setParameter("parentFolderId", String.valueOf(folderId));
-
-		urlMenuItem.setURL(portletURL.toString());
+					return portletDisplay.getId();
+				}
+			).setParameter(
+				"parentFolderId", folderId
+			).buildString());
 
 		menuItems.add(urlMenuItem);
 	}
 
-	protected boolean containsPermission(
+	private boolean _containsPermission(
 		PermissionChecker permissionChecker, long groupId, long folderId,
 		String actionId) {
 
@@ -170,41 +206,11 @@ public class BookmarksPortletToolbarContributor
 			// LPS-52675
 
 			if (_log.isDebugEnabled()) {
-				_log.debug(portalException, portalException);
+				_log.debug(portalException);
 			}
 
 			return false;
 		}
-	}
-
-	@Override
-	protected List<MenuItem> getPortletTitleMenuItems(
-		PortletRequest portletRequest, PortletResponse portletResponse) {
-
-		ThemeDisplay themeDisplay = (ThemeDisplay)portletRequest.getAttribute(
-			WebKeys.THEME_DISPLAY);
-
-		BookmarksFolder folder = _getFolder(themeDisplay, portletRequest);
-
-		List<MenuItem> menuItems = new ArrayList<>();
-
-		try {
-			addPortletTitleAddFolderMenuItem(
-				menuItems, folder, themeDisplay, portletRequest);
-		}
-		catch (PortalException portalException) {
-			_log.error("Unable to add folder menu item", portalException);
-		}
-
-		try {
-			addPortletTitleAddBookmarkMenuItem(
-				menuItems, folder, themeDisplay, portletRequest);
-		}
-		catch (PortalException portalException) {
-			_log.error("Unable to add bookmark menu item", portalException);
-		}
-
-		return menuItems;
 	}
 
 	private BookmarksFolder _getFolder(
@@ -246,10 +252,14 @@ public class BookmarksPortletToolbarContributor
 				folder = _bookmarksFolderService.getFolder(folderId);
 			}
 			catch (NoSuchFolderException noSuchFolderException) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(noSuchFolderException);
+				}
+
 				folder = null;
 			}
 			catch (PortalException portalException) {
-				_log.error(portalException, portalException);
+				_log.error(portalException);
 			}
 		}
 

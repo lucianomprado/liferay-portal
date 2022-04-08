@@ -20,6 +20,7 @@ import com.liferay.asset.kernel.model.AssetCategoryConstants;
 import com.liferay.asset.kernel.model.AssetVocabulary;
 import com.liferay.asset.kernel.service.AssetCategoryServiceUtil;
 import com.liferay.asset.kernel.service.AssetVocabularyLocalServiceUtil;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
@@ -48,10 +49,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import javax.portlet.PortletRequest;
-import javax.portlet.PortletURL;
 import javax.portlet.RenderRequest;
 import javax.portlet.RenderResponse;
 
@@ -89,27 +90,31 @@ public class AssetCategoriesSelectorDisplayContext {
 				themeDisplay.getPermissionChecker(),
 				assetVocabulary.getGroupId(),
 				AssetCategoryConstants.DEFAULT_PARENT_CATEGORY_ID,
-				ActionKeys.ADD_CATEGORY)) {
+				ActionKeys.ADD_CATEGORY) ||
+			!Objects.equals(
+				assetVocabulary.getGroupId(), themeDisplay.getScopeGroupId())) {
 
 			return null;
 		}
 
-		PortletURL addCategoryURL = PortletURLFactoryUtil.create(
-			_renderRequest,
-			AssetCategoriesAdminPortletKeys.ASSET_CATEGORIES_ADMIN,
-			PortletRequest.RENDER_PHASE);
-
-		addCategoryURL.setParameter("mvcPath", "/edit_category.jsp");
-		addCategoryURL.setParameter("redirect", themeDisplay.getURLCurrent());
-		addCategoryURL.setParameter(
-			"groupId", String.valueOf(assetVocabulary.getGroupId()));
-		addCategoryURL.setParameter(
-			"vocabularyId", String.valueOf(vocabularyIds[0]));
-		addCategoryURL.setParameter("itemSelectorEventName", getEventName());
-
-		addCategoryURL.setWindowState(LiferayWindowState.POP_UP);
-
-		return addCategoryURL.toString();
+		return PortletURLBuilder.create(
+			PortletURLFactoryUtil.create(
+				_renderRequest,
+				AssetCategoriesAdminPortletKeys.ASSET_CATEGORIES_ADMIN,
+				PortletRequest.RENDER_PHASE)
+		).setMVCPath(
+			"/edit_category.jsp"
+		).setRedirect(
+			themeDisplay.getURLCurrent()
+		).setParameter(
+			"groupId", assetVocabulary.getGroupId()
+		).setParameter(
+			"itemSelectorEventName", getEventName()
+		).setParameter(
+			"vocabularyId", vocabularyIds[0]
+		).setWindowState(
+			LiferayWindowState.POP_UP
+		).buildString();
 	}
 
 	public JSONArray getCategoriesJSONArray() throws Exception {
@@ -161,6 +166,8 @@ public class AssetCategoriesSelectorDisplayContext {
 			"namespace", _renderResponse.getNamespace()
 		).put(
 			"nodes", getCategoriesJSONArray()
+		).put(
+			"selectedCategoryIds", getSelectedCategoryIds()
 		).build();
 	}
 
@@ -313,32 +320,39 @@ public class AssetCategoriesSelectorDisplayContext {
 				null);
 
 		for (AssetCategory category : categories) {
-			JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
+			jsonArray.put(
+				JSONUtil.put(
+					"children",
+					() -> {
+						JSONArray childrenJSONArray = _getCategoriesJSONArray(
+							vocabularyId, category.getCategoryId());
 
-			JSONArray childrenJSONArray = _getCategoriesJSONArray(
-				vocabularyId, category.getCategoryId());
+						if (childrenJSONArray.length() > 0) {
+							return childrenJSONArray;
+						}
 
-			if (childrenJSONArray.length() > 0) {
-				jsonObject.put("children", childrenJSONArray);
-			}
+						return null;
+					}
+				).put(
+					"icon", "categories"
+				).put(
+					"id", category.getCategoryId()
+				).put(
+					"name", category.getTitle(themeDisplay.getLocale())
+				).put(
+					"nodePath", category.getPath(themeDisplay.getLocale(), true)
+				).put(
+					"selected",
+					() -> {
+						if (getSelectedCategoryIds().contains(
+								String.valueOf(category.getCategoryId()))) {
 
-			jsonObject.put(
-				"icon", "categories"
-			).put(
-				"id", category.getCategoryId()
-			).put(
-				"name", category.getTitle(themeDisplay.getLocale())
-			).put(
-				"nodePath", category.getPath(themeDisplay.getLocale(), true)
-			);
+							return true;
+						}
 
-			if (getSelectedCategoryIds().contains(
-					String.valueOf(category.getCategoryId()))) {
-
-				jsonObject.put("selected", true);
-			}
-
-			jsonArray.put(jsonObject);
+						return null;
+					}
+				));
 		}
 
 		return jsonArray;

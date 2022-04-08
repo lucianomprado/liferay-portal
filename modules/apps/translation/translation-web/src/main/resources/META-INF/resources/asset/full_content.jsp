@@ -43,7 +43,7 @@ ViewTranslationDisplayContext viewTranslationDisplayContext = (ViewTranslationDi
 
 				<span class="ml-1"> <%= sourceLanguageIdTitle %> </span>
 
-				<div class="separator"><!-- --></div>
+				<hr class="separator" />
 			</clay:col>
 
 			<clay:col
@@ -60,7 +60,7 @@ ViewTranslationDisplayContext viewTranslationDisplayContext = (ViewTranslationDi
 
 				<span class="ml-1"> <%= targetLanguageIdTitle %> </span>
 
-				<div class="separator"><!-- --></div>
+				<hr class="separator" />
 			</clay:col>
 		</clay:row>
 
@@ -73,10 +73,9 @@ ViewTranslationDisplayContext viewTranslationDisplayContext = (ViewTranslationDi
 			}
 
 			String infoFieldSetLabel = viewTranslationDisplayContext.getInfoFieldSetLabel(infoFieldSetEntry, locale);
-
-			if (Validator.isNotNull(infoFieldSetLabel)) {
 		%>
 
+			<c:if test="<%= Validator.isNotNull(infoFieldSetLabel) %>">
 				<clay:row>
 					<clay:col
 						md="6"
@@ -94,10 +93,9 @@ ViewTranslationDisplayContext viewTranslationDisplayContext = (ViewTranslationDi
 						</div>
 					</clay:col>
 				</clay:row>
+			</c:if>
 
 			<%
-			}
-
 			for (InfoField<TextInfoFieldType> infoField : infoFields) {
 				boolean html = viewTranslationDisplayContext.getBooleanValue(infoField, TextInfoFieldType.HTML);
 				String label = viewTranslationDisplayContext.getInfoFieldLabel(infoField);

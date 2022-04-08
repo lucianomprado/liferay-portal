@@ -16,10 +16,15 @@ package com.liferay.portal.servlet.filters.strip;
 
 import com.liferay.portal.cache.key.HashCodeHexStringCacheKeyGenerator;
 import com.liferay.portal.kernel.cache.key.CacheKeyGeneratorUtil;
-import com.liferay.portal.kernel.test.CaptureHandler;
-import com.liferay.portal.kernel.test.JDKLoggerTestUtil;
+import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.minifier.MinifierUtil;
+import com.liferay.portal.test.log.LogCapture;
+import com.liferay.portal.test.log.LogEntry;
+import com.liferay.portal.test.log.LoggerTestUtil;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 import com.liferay.portal.tools.ToolDependencies;
+import com.liferay.portal.util.PropsUtil;
 
 import java.io.StringWriter;
 
@@ -27,10 +32,12 @@ import java.nio.CharBuffer;
 
 import java.util.List;
 import java.util.logging.Level;
-import java.util.logging.LogRecord;
 
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 /**
@@ -38,6 +45,11 @@ import org.junit.Test;
  * @author Miguel Pastor
  */
 public class StripFilterTest {
+
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
 
 	@BeforeClass
 	public static void setUpClass() {
@@ -48,6 +60,17 @@ public class StripFilterTest {
 
 		cacheKeyGeneratorUtil.setDefaultCacheKeyGenerator(
 			new HashCodeHexStringCacheKeyGenerator());
+
+		_minifierEnabled = GetterUtil.getBoolean(
+			PropsUtil.get(PropsKeys.MINIFIER_ENABLED));
+
+		PropsUtil.set(PropsKeys.MINIFIER_ENABLED, "true");
+	}
+
+	@AfterClass
+	public static void tearDownClass() {
+		PropsUtil.set(
+			PropsKeys.MINIFIER_ENABLED, String.valueOf(_minifierEnabled));
 	}
 
 	@Test
@@ -107,20 +130,19 @@ public class StripFilterTest {
 
 		StringWriter stringWriter = new StringWriter();
 
-		try (CaptureHandler captureHandler =
-				JDKLoggerTestUtil.configureJDKLogger(
-					StripFilter.class.getName(), Level.WARNING)) {
+		try (LogCapture logCapture = LoggerTestUtil.configureJDKLogger(
+				StripFilter.class.getName(), Level.WARNING)) {
 
 			stripFilter.processCSS(
 				null, null, charBuffer, stringWriter, styleOpenTag);
 
-			List<LogRecord> logRecords = captureHandler.getLogRecords();
+			List<LogEntry> logEntries = logCapture.getLogEntries();
 
-			Assert.assertEquals(logRecords.toString(), 1, logRecords.size());
+			Assert.assertEquals(logEntries.toString(), 1, logEntries.size());
 
-			LogRecord logRecord = logRecords.get(0);
+			LogEntry logEntry = logEntries.get(0);
 
-			Assert.assertEquals("Missing </style>", logRecord.getMessage());
+			Assert.assertEquals("Missing </style>", logEntry.getMessage());
 		}
 
 		Assert.assertEquals(
@@ -201,20 +223,19 @@ public class StripFilterTest {
 
 		StringWriter stringWriter = new StringWriter();
 
-		try (CaptureHandler captureHandler =
-				JDKLoggerTestUtil.configureJDKLogger(
-					StripFilter.class.getName(), Level.WARNING)) {
+		try (LogCapture logCapture = LoggerTestUtil.configureJDKLogger(
+				StripFilter.class.getName(), Level.WARNING)) {
 
 			stripFilter.processJavaScript(
 				"test.js", charBuffer, stringWriter, "script".toCharArray());
 
-			List<LogRecord> logRecords = captureHandler.getLogRecords();
+			List<LogEntry> logEntries = logCapture.getLogEntries();
 
-			Assert.assertEquals(logRecords.toString(), 1, logRecords.size());
+			Assert.assertEquals(logEntries.toString(), 1, logEntries.size());
 
-			LogRecord logRecord = logRecords.get(0);
+			LogEntry logEntry = logEntries.get(0);
 
-			Assert.assertEquals("Missing </script>", logRecord.getMessage());
+			Assert.assertEquals("Missing </script>", logEntry.getMessage());
 
 			Assert.assertEquals("script>", stringWriter.toString());
 		}
@@ -244,19 +265,18 @@ public class StripFilterTest {
 
 		StringWriter stringWriter = new StringWriter();
 
-		try (CaptureHandler captureHandler =
-				JDKLoggerTestUtil.configureJDKLogger(
-					StripFilter.class.getName(), Level.WARNING)) {
+		try (LogCapture logCapture = LoggerTestUtil.configureJDKLogger(
+				StripFilter.class.getName(), Level.WARNING)) {
 
 			stripFilter.processPre(charBuffer, stringWriter);
 
-			List<LogRecord> logRecords = captureHandler.getLogRecords();
+			List<LogEntry> logEntries = logCapture.getLogEntries();
 
-			Assert.assertEquals(logRecords.toString(), 1, logRecords.size());
+			Assert.assertEquals(logEntries.toString(), 1, logEntries.size());
 
-			LogRecord logRecord = logRecords.get(0);
+			LogEntry logEntry = logEntries.get(0);
 
-			Assert.assertEquals("Missing </pre>", logRecord.getMessage());
+			Assert.assertEquals("Missing </pre>", logEntry.getMessage());
 
 			Assert.assertEquals("pre", stringWriter.toString());
 			Assert.assertEquals(3, charBuffer.position());
@@ -297,19 +317,18 @@ public class StripFilterTest {
 
 		StringWriter stringWriter = new StringWriter();
 
-		try (CaptureHandler captureHandler =
-				JDKLoggerTestUtil.configureJDKLogger(
-					StripFilter.class.getName(), Level.WARNING)) {
+		try (LogCapture logCapture = LoggerTestUtil.configureJDKLogger(
+				StripFilter.class.getName(), Level.WARNING)) {
 
 			stripFilter.processTextArea(charBuffer, stringWriter);
 
-			List<LogRecord> logRecords = captureHandler.getLogRecords();
+			List<LogEntry> logEntries = logCapture.getLogEntries();
 
-			Assert.assertEquals(logRecords.toString(), 1, logRecords.size());
+			Assert.assertEquals(logEntries.toString(), 1, logEntries.size());
 
-			LogRecord logRecord = logRecords.get(0);
+			LogEntry logEntry = logEntries.get(0);
 
-			Assert.assertEquals("Missing </textArea>", logRecord.getMessage());
+			Assert.assertEquals("Missing </textArea>", logEntry.getMessage());
 
 			Assert.assertEquals("textarea ", stringWriter.toString());
 			Assert.assertEquals(9, charBuffer.position());
@@ -418,5 +437,7 @@ public class StripFilterTest {
 
 		Assert.assertEquals(4, charBuffer.position());
 	}
+
+	private static boolean _minifierEnabled;
 
 }

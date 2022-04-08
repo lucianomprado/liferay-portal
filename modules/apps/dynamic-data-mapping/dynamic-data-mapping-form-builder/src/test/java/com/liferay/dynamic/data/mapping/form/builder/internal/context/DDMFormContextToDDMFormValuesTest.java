@@ -16,6 +16,7 @@ package com.liferay.dynamic.data.mapping.form.builder.internal.context;
 
 import com.liferay.dynamic.data.mapping.form.builder.context.DDMFormContextDeserializerRequest;
 import com.liferay.dynamic.data.mapping.model.DDMForm;
+import com.liferay.dynamic.data.mapping.model.DDMFormField;
 import com.liferay.dynamic.data.mapping.model.LocalizedValue;
 import com.liferay.dynamic.data.mapping.model.Value;
 import com.liferay.dynamic.data.mapping.storage.DDMFormFieldValue;
@@ -25,14 +26,13 @@ import com.liferay.dynamic.data.mapping.test.util.DDMFormValuesTestUtil;
 import com.liferay.portal.json.JSONArrayImpl;
 import com.liferay.portal.json.JSONFactoryImpl;
 import com.liferay.portal.json.JSONObjectImpl;
-import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
-import java.io.IOException;
 import java.io.InputStream;
 
 import java.util.ArrayList;
@@ -43,6 +43,8 @@ import java.util.Set;
 
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -57,17 +59,20 @@ import org.powermock.api.mockito.PowerMockito;
 @RunWith(MockitoJUnitRunner.class)
 public class DDMFormContextToDDMFormValuesTest extends PowerMockito {
 
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
+
 	@Before
 	public void setUp() throws Exception {
-		setUpDDMFormContextToDDMFormValues();
-		setUpLanguageUtil();
+		_setUpDDMFormContextToDDMFormValues();
+		_setUpLanguageUtil();
 	}
 
 	@Test
 	public void testDeserializeWithLanguageDifferentThanSiteDefault()
 		throws Exception {
-
-		String serializedDDMFormValues = read("ddm-form-values.json");
 
 		DDMForm ddmForm = DDMFormTestUtil.createDDMForm();
 
@@ -80,7 +85,7 @@ public class DDMFormContextToDDMFormValuesTest extends PowerMockito {
 
 		DDMFormContextDeserializerRequest ddmFormContextDeserializerRequest =
 			DDMFormContextDeserializerRequest.with(
-				ddmForm, serializedDDMFormValues);
+				ddmForm, _read("ddm-form-values.json"));
 
 		ddmFormContextDeserializerRequest.addProperty(
 			"currentLocale", LocaleUtil.BRAZIL);
@@ -102,46 +107,48 @@ public class DDMFormContextToDDMFormValuesTest extends PowerMockito {
 
 	@Test
 	public void testGetDDMFormFieldValues() throws Exception {
-		String json = read("ddm-form-values-pages-only.json");
+		List<DDMFormFieldValue> expectedDDMFormFieldValues = new ArrayList<>(2);
 
-		JSONArray jsonArray = new JSONArrayImpl(json);
+		expectedDDMFormFieldValues.add(
+			DDMFormValuesTestUtil.createDDMFormFieldValue(
+				"eBvF8zup", "TextField1",
+				_createLocalizedValue(LocaleUtil.BRAZIL, "Texto 1")));
+
+		DDMFormFieldValue ddmFormFieldValue =
+			DDMFormValuesTestUtil.createDDMFormFieldValue(
+				"6VYYLvfJ", "TextField2",
+				_createLocalizedValue(LocaleUtil.BRAZIL, "Texto 2"));
+
+		ddmFormFieldValue.addNestedDDMFormFieldValue(
+			DDMFormValuesTestUtil.createDDMFormFieldValue(
+				"ZgQVb8b7", "TextField3",
+				_createLocalizedValue(LocaleUtil.BRAZIL, "Texto 3")));
+
+		expectedDDMFormFieldValues.add(ddmFormFieldValue);
 
 		DDMForm ddmForm = DDMFormTestUtil.createDDMForm();
 
 		ddmForm.addDDMFormField(
 			DDMFormTestUtil.createTextDDMFormField(
 				"TextField1", true, false, false));
-		ddmForm.addDDMFormField(
+
+		DDMFormField ddmFormField = DDMFormTestUtil.createTextDDMFormField(
+			"TextField2", true, false, false);
+
+		ddmFormField.addNestedDDMFormField(
 			DDMFormTestUtil.createTextDDMFormField(
-				"TextField2", true, false, false));
+				"TextField3", true, false, false));
 
-		List<DDMFormFieldValue> ddmFormFieldValues1 = new ArrayList<>(2);
+		ddmForm.addDDMFormField(ddmFormField);
 
-		LocalizedValue value1 = new LocalizedValue();
-
-		value1.addString(LocaleUtil.BRAZIL, "Texto 1");
-
-		DDMFormFieldValue ddmFormFieldValue1 =
-			DDMFormValuesTestUtil.createDDMFormFieldValue(
-				"eBvF8zup", "TextField1", value1);
-
-		LocalizedValue value2 = new LocalizedValue();
-
-		value2.addString(LocaleUtil.BRAZIL, "Texto 2");
-
-		DDMFormFieldValue ddmFormFieldValue2 =
-			DDMFormValuesTestUtil.createDDMFormFieldValue(
-				"6VYYLvfJ", "TextField2", value2);
-
-		ddmFormFieldValues1.add(ddmFormFieldValue1);
-		ddmFormFieldValues1.add(ddmFormFieldValue2);
-
-		List<DDMFormFieldValue> ddmFormFieldValues2 =
+		List<DDMFormFieldValue> actualDDMFormFieldValues =
 			_ddmFormContextToDDMFormValues.getDDMFormFieldValues(
-				jsonArray, ddmForm);
+				new JSONArrayImpl(_read("ddm-form-values-pages-only.json")),
+				ddmForm);
 
 		Assert.assertTrue(
-			Objects.equals(ddmFormFieldValues1, ddmFormFieldValues2));
+			Objects.equals(
+				expectedDDMFormFieldValues, actualDDMFormFieldValues));
 	}
 
 	@Test
@@ -166,7 +173,15 @@ public class DDMFormContextToDDMFormValuesTest extends PowerMockito {
 		Assert.assertTrue(Objects.equals(value1, value2));
 	}
 
-	protected String read(String fileName) throws IOException {
+	private LocalizedValue _createLocalizedValue(Locale locale, String value) {
+		LocalizedValue localizedValue = new LocalizedValue();
+
+		localizedValue.addString(locale, value);
+
+		return localizedValue;
+	}
+
+	private String _read(String fileName) throws Exception {
 		Class<?> clazz = getClass();
 
 		InputStream inputStream = clazz.getResourceAsStream(
@@ -175,7 +190,7 @@ public class DDMFormContextToDDMFormValuesTest extends PowerMockito {
 		return StringUtil.read(inputStream);
 	}
 
-	protected void setUpDDMFormContextToDDMFormValues() throws Exception {
+	private void _setUpDDMFormContextToDDMFormValues() throws Exception {
 		_ddmFormContextToDDMFormValues = new DDMFormContextToDDMFormValues();
 
 		field(
@@ -185,7 +200,7 @@ public class DDMFormContextToDDMFormValuesTest extends PowerMockito {
 		);
 	}
 
-	protected void setUpLanguageUtil() {
+	private void _setUpLanguageUtil() {
 		LanguageUtil languageUtil = new LanguageUtil();
 
 		languageUtil.setLanguage(_language);

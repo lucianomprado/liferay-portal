@@ -73,10 +73,12 @@ public class CommerceShippableOrderItemsDataSetDataProvider
 				pagination.getStartPosition(), pagination.getEndPosition());
 
 		for (CommerceOrderItem commerceOrderItem : commerceOrderItems) {
-			CommerceOrder commerceOrder = commerceOrderItem.getCommerceOrder();
+			if (!commerceOrderItem.getShippable()) {
+				continue;
+			}
 
 			String iconName = _getAddressMatchIcon(
-				commerceShipment, commerceOrder);
+				commerceShipment, commerceOrderItem.getCommerceOrder());
 
 			Icon icon = null;
 

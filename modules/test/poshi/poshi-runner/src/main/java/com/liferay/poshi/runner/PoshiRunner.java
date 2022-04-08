@@ -14,6 +14,7 @@
 
 package com.liferay.poshi.runner;
 
+import com.liferay.data.guard.connector.client.DataGuardClient;
 import com.liferay.poshi.core.PoshiContext;
 import com.liferay.poshi.core.PoshiGetterUtil;
 import com.liferay.poshi.core.PoshiStackTraceUtil;
@@ -34,10 +35,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.dom4j.Element;
 
@@ -103,7 +102,7 @@ public class PoshiRunner {
 		List<String> testNames = Arrays.asList(
 			PropsValues.TEST_NAME.split("\\s*,\\s*"));
 
-		PoshiContext.readFiles(_getTestClassFileIncludes(testNames));
+		PoshiContext.readFiles();
 
 		for (String testName : testNames) {
 			PoshiValidation.validate(testName);
@@ -171,6 +170,14 @@ public class PoshiRunner {
 		FileUtil.delete(new File(PropsValues.OUTPUT_DIR_NAME));
 
 		try {
+			if (PropsValues.LIFERAY_DATA_GUARD_ENABLED) {
+				_dataGuardClient = new DataGuardClient();
+
+				_dataGuardClient.connect();
+
+				_dataGuardId = _dataGuardClient.startCapture();
+			}
+
 			SummaryLogger.startRunning();
 
 			SeleniumUtil.startSelenium();
@@ -196,7 +203,7 @@ public class PoshiRunner {
 	}
 
 	@After
-	public void tearDown() throws Exception {
+	public void tearDown() throws Throwable {
 		LiferaySeleniumUtil.writePoshiWarnings();
 
 		SummaryLogger.createSummaryReport();
@@ -222,6 +229,25 @@ public class PoshiRunner {
 
 			SeleniumUtil.stopSelenium();
 		}
+
+		if (!PropsValues.LIFERAY_DATA_GUARD_ENABLED) {
+			return;
+		}
+
+		try {
+			_dataGuardClient.endCapture(
+				_dataGuardId, _testNamespacedClassCommandName);
+		}
+		catch (Throwable throwable) {
+			System.out.println(throwable.getMessage());
+
+			throwable.printStackTrace();
+
+			throw throwable;
+		}
+		finally {
+			_dataGuardClient.close();
+		}
 	}
 
 	@Test
@@ -246,21 +272,6 @@ public class PoshiRunner {
 
 	@Rule
 	public RetryTestRule retryTestRule = new RetryTestRule();
-
-	private static String[] _getTestClassFileIncludes(List<String> testNames) {
-		Set<String> testClassFileGlobsSet = new HashSet<>();
-
-		for (String testName : testNames) {
-			String testClassName =
-				PoshiGetterUtil.getClassNameFromNamespacedClassCommandName(
-					testName);
-
-			testClassFileGlobsSet.add("**/" + testClassName + ".prose");
-			testClassFileGlobsSet.add("**/" + testClassName + ".testcase");
-		}
-
-		return testClassFileGlobsSet.toArray(new String[0]);
-	}
 
 	private void _runCommand() throws Exception {
 		_poshiLogger.logNamespacedClassCommandName(
@@ -317,6 +328,8 @@ public class PoshiRunner {
 		_runNamespacedClassCommandName(_testNamespacedClassName + "#tear-down");
 	}
 
+	private static DataGuardClient _dataGuardClient;
+	private static long _dataGuardId;
 	private static int _jvmRetryCount;
 	private static final Map<String, List<String>> _testResults =
 		new HashMap<>();
@@ -408,19 +421,13 @@ public class PoshiRunner {
 
 					for (Throwable throwable2 : throwables) {
 						if (validRetryThrowableClass.equals(
-								throwable2.getClass())) {
+								throwable2.getClass()) &&
+							((validRetryThrowableShortMessage == null) ||
+							 validRetryThrowableShortMessage.isEmpty() ||
+							 validRetryThrowableShortMessage.equals(
+								 _getShortMessage(throwable2)))) {
 
-							if ((validRetryThrowableShortMessage == null) ||
-								validRetryThrowableShortMessage.isEmpty()) {
-
-								return true;
-							}
-
-							if (validRetryThrowableShortMessage.equals(
-									_getShortMessage(throwable2))) {
-
-								return true;
-							}
+							return true;
 						}
 					}
 				}
@@ -444,13 +451,9 @@ public class PoshiRunner {
 			}
 
 			private boolean _isTestcaseRetryable() {
-				if (_testcaseRetryCount >=
-						PropsValues.TEST_TESTCASE_MAX_RETRIES) {
-
-					return false;
-				}
-
-				if (PropsValues.TEST_SKIP_TEAR_DOWN ||
+				if ((_testcaseRetryCount >=
+						PropsValues.TEST_TESTCASE_MAX_RETRIES) ||
+					PropsValues.TEST_SKIP_TEAR_DOWN ||
 					(PropsValues.TEST_TESTCASE_MAX_RETRIES == 0)) {
 
 					return false;

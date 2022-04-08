@@ -32,7 +32,6 @@ import com.liferay.dynamic.data.mapping.kernel.NoSuchStructureException;
 import com.liferay.dynamic.data.mapping.kernel.StructureDefinitionException;
 import com.liferay.dynamic.data.mapping.kernel.StructureDuplicateElementException;
 import com.liferay.dynamic.data.mapping.kernel.StructureNameException;
-import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.portlet.bridges.mvc.BaseTransactionalMVCActionCommand;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCActionCommand;
 import com.liferay.portal.kernel.security.auth.PrincipalException;
@@ -41,6 +40,7 @@ import com.liferay.portal.kernel.service.ServiceContextFactory;
 import com.liferay.portal.kernel.servlet.SessionErrors;
 import com.liferay.portal.kernel.servlet.SessionMessages;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
+import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.Constants;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocalizationUtil;
@@ -51,12 +51,12 @@ import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 
-import java.util.Collections;
 import java.util.Locale;
 import java.util.Map;
 
 import javax.portlet.ActionRequest;
 import javax.portlet.ActionResponse;
+import javax.portlet.PortletException;
 import javax.portlet.PortletRequest;
 
 import org.osgi.service.component.annotations.Component;
@@ -78,85 +78,116 @@ public class EditFileEntryTypeMVCActionCommand
 	extends BaseTransactionalMVCActionCommand {
 
 	@Override
+	public boolean processAction(
+			ActionRequest actionRequest, ActionResponse actionResponse)
+		throws PortletException {
+
+		try {
+			return super.processAction(actionRequest, actionResponse);
+		}
+		catch (PortletException portletException) {
+			Throwable throwable = portletException.getCause();
+
+			if (throwable instanceof DataDefinitionValidationException ||
+				throwable instanceof DuplicateFileEntryTypeException ||
+				throwable instanceof NoSuchMetadataSetException ||
+				throwable instanceof RequiredStructureException ||
+				throwable instanceof StructureDefinitionException ||
+				throwable instanceof StructureDuplicateElementException ||
+				throwable instanceof StructureNameException) {
+
+				SessionErrors.add(
+					actionRequest, throwable.getClass(), throwable);
+			}
+			else if (throwable instanceof RequiredFileEntryTypeException) {
+				SessionErrors.add(actionRequest, throwable.getClass());
+
+				actionResponse.setRenderParameter(
+					"navigation", "file_entry_types");
+			}
+			else if (throwable instanceof NoSuchFileEntryTypeException ||
+					 throwable instanceof NoSuchStructureException ||
+					 throwable instanceof PrincipalException) {
+
+				SessionErrors.add(actionRequest, throwable.getClass());
+
+				actionResponse.setRenderParameter(
+					"mvcPath", "/document_library/error.jsp");
+			}
+			else {
+				throw portletException;
+			}
+		}
+
+		return false;
+	}
+
+	@Override
 	protected void doTransactionalCommand(
 			ActionRequest actionRequest, ActionResponse actionResponse)
 		throws Exception {
 
 		String cmd = ParamUtil.getString(actionRequest, Constants.CMD);
 
-		try {
-			if (cmd.equals(Constants.ADD)) {
-				_addFileEntryType(actionRequest);
-			}
-			else if (cmd.equals(Constants.UPDATE)) {
-				_updateFileEntryType(actionRequest);
-			}
-			else if (cmd.equals(Constants.DELETE)) {
-				_deleteFileEntryType(actionRequest);
-			}
-			else if (cmd.equals(Constants.SUBSCRIBE)) {
-				_subscribeFileEntryType(actionRequest);
-			}
-			else if (cmd.equals(Constants.UNSUBSCRIBE)) {
-				_unsubscribeFileEntryType(actionRequest);
-			}
-
-			if (SessionErrors.isEmpty(actionRequest)) {
-				SessionMessages.add(
-					actionRequest,
-					_portal.getPortletId(actionRequest) +
-						SessionMessages.KEY_SUFFIX_REFRESH_PORTLET,
-					DLPortletKeys.DOCUMENT_LIBRARY);
-
-				String redirect = _portal.escapeRedirect(
-					ParamUtil.getString(actionRequest, "redirect"));
-
-				if (Validator.isNotNull(redirect)) {
-					actionResponse.sendRedirect(redirect);
-				}
-			}
+		if (cmd.equals(Constants.ADD)) {
+			_addFileEntryType(actionRequest);
 		}
-		catch (DataDefinitionValidationException |
-			   DuplicateFileEntryTypeException | NoSuchMetadataSetException |
-			   RequiredStructureException | StructureDefinitionException |
-			   StructureDuplicateElementException | StructureNameException
-				   exception) {
-
-			SessionErrors.add(actionRequest, exception.getClass());
+		else if (cmd.equals(Constants.UPDATE)) {
+			_updateFileEntryType(actionRequest);
 		}
-		catch (RequiredFileEntryTypeException requiredFileEntryTypeException) {
-			SessionErrors.add(
-				actionRequest, requiredFileEntryTypeException.getClass());
-
-			actionResponse.setRenderParameter("navigation", "file_entry_types");
+		else if (cmd.equals(Constants.DELETE)) {
+			_deleteFileEntryType(actionRequest);
 		}
-		catch (NoSuchFileEntryTypeException | NoSuchStructureException |
-			   PrincipalException exception) {
+		else if (cmd.equals(Constants.SUBSCRIBE)) {
+			_subscribeFileEntryType(actionRequest);
+		}
+		else if (cmd.equals(Constants.UNSUBSCRIBE)) {
+			_unsubscribeFileEntryType(actionRequest);
+		}
 
-			SessionErrors.add(actionRequest, exception.getClass());
+		if (SessionErrors.isEmpty(actionRequest)) {
+			SessionMessages.add(
+				actionRequest,
+				_portal.getPortletId(actionRequest) +
+					SessionMessages.KEY_SUFFIX_REFRESH_PORTLET,
+				DLPortletKeys.DOCUMENT_LIBRARY);
 
-			actionResponse.setRenderParameter(
-				"mvcPath", "/document_library/error.jsp");
+			String redirect = _portal.escapeRedirect(
+				ParamUtil.getString(actionRequest, "redirect"));
+
+			if (Validator.isNotNull(redirect)) {
+				actionResponse.sendRedirect(redirect);
+			}
 		}
 	}
 
 	private void _addFileEntryType(ActionRequest actionRequest)
 		throws Exception {
 
-		ThemeDisplay themeDisplay = (ThemeDisplay)actionRequest.getAttribute(
-			WebKeys.THEME_DISPLAY);
-
-		DataDefinitionResource dataDefinitionResource =
-			DataDefinitionResource.builder(
-			).user(
-				themeDisplay.getUser()
-			).build();
+		DataDefinitionResource.Builder dataDefinitionResourceBuilder =
+			_dataDefinitionResourceFactory.create();
 
 		DataDefinition dataDefinition = DataDefinition.toDTO(
 			ParamUtil.getString(actionRequest, "dataDefinition"));
+		long[] ddmStructureIds = _getLongArray(
+			actionRequest, "ddmStructuresSearchContainerPrimaryKeys");
+
+		if (ArrayUtil.isEmpty(dataDefinition.getDataDefinitionFields()) &&
+			ArrayUtil.isEmpty(ddmStructureIds)) {
+
+			throw new DataDefinitionValidationException.MustSetFields();
+		}
+
+		ThemeDisplay themeDisplay = (ThemeDisplay)actionRequest.getAttribute(
+			WebKeys.THEME_DISPLAY);
 
 		dataDefinition.setDefaultDataLayout(
 			DataLayout.toDTO(ParamUtil.getString(actionRequest, "dataLayout")));
+
+		DataDefinitionResource dataDefinitionResource =
+			dataDefinitionResourceBuilder.user(
+				themeDisplay.getUser()
+			).build();
 
 		dataDefinition =
 			dataDefinitionResource.postSiteDataDefinitionByContentType(
@@ -177,9 +208,6 @@ public class EditFileEntryTypeMVCActionCommand
 				themeDisplay.getScopeGroupId(), dataDefinition.getId(), null,
 				nameMap, descriptionMap, serviceContext);
 
-		long[] ddmStructureIds = _getLongArray(
-			actionRequest, "ddmStructuresSearchContainerPrimaryKeys");
-
 		_dlFileEntryTypeLocalService.addDDMStructureLinks(
 			fileEntryType.getFileEntryTypeId(),
 			SetUtil.fromArray(ddmStructureIds));
@@ -198,9 +226,11 @@ public class EditFileEntryTypeMVCActionCommand
 			DLFileEntryType fileEntryType =
 				_dlFileEntryTypeService.getFileEntryType(fileEntryTypeId);
 
+			DataDefinitionResource.Builder dataDefinitionResourceBuilder =
+				_dataDefinitionResourceFactory.create();
+
 			DataDefinitionResource dataDefinitionResource =
-				DataDefinitionResource.builder(
-				).user(
+				dataDefinitionResourceBuilder.user(
 					themeDisplay.getUser()
 				).build();
 
@@ -208,9 +238,6 @@ public class EditFileEntryTypeMVCActionCommand
 				fileEntryType.getDataDefinitionId());
 
 			_dlFileEntryTypeService.deleteFileEntryType(fileEntryTypeId);
-
-			_dlFileEntryTypeLocalService.updateDDMStructureLinks(
-				fileEntryTypeId, Collections.emptySet());
 		}
 		catch (RequiredStructureException requiredStructureException) {
 			throw new RequiredFileEntryTypeException(
@@ -229,7 +256,7 @@ public class EditFileEntryTypeMVCActionCommand
 	}
 
 	private void _subscribeFileEntryType(ActionRequest actionRequest)
-		throws PortalException {
+		throws Exception {
 
 		ThemeDisplay themeDisplay = (ThemeDisplay)actionRequest.getAttribute(
 			WebKeys.THEME_DISPLAY);
@@ -242,7 +269,7 @@ public class EditFileEntryTypeMVCActionCommand
 	}
 
 	private void _unsubscribeFileEntryType(ActionRequest actionRequest)
-		throws PortalException {
+		throws Exception {
 
 		ThemeDisplay themeDisplay = (ThemeDisplay)actionRequest.getAttribute(
 			WebKeys.THEME_DISPLAY);
@@ -257,23 +284,34 @@ public class EditFileEntryTypeMVCActionCommand
 	private void _updateFileEntryType(ActionRequest actionRequest)
 		throws Exception {
 
+		DataDefinitionResource.Builder dataDefinitionResourceBuilder =
+			_dataDefinitionResourceFactory.create();
+
+		DataDefinition dataDefinition = DataDefinition.toDTO(
+			ParamUtil.getString(actionRequest, "dataDefinition"));
+
+		long[] ddmStructureIds = _getLongArray(
+			actionRequest, "ddmStructuresSearchContainerPrimaryKeys");
+
+		if (ArrayUtil.isEmpty(dataDefinition.getDataDefinitionFields()) &&
+			ArrayUtil.isEmpty(ddmStructureIds)) {
+
+			throw new DataDefinitionValidationException.MustSetFields();
+		}
+
 		ThemeDisplay themeDisplay = (ThemeDisplay)actionRequest.getAttribute(
 			WebKeys.THEME_DISPLAY);
 
 		long fileEntryTypeId = ParamUtil.getLong(
 			actionRequest, "fileEntryTypeId");
 
-		DataDefinitionResource dataDefinitionResource =
-			DataDefinitionResource.builder(
-			).user(
-				themeDisplay.getUser()
-			).build();
-
-		DataDefinition dataDefinition = DataDefinition.toDTO(
-			ParamUtil.getString(actionRequest, "dataDefinition"));
-
 		dataDefinition.setDefaultDataLayout(
 			DataLayout.toDTO(ParamUtil.getString(actionRequest, "dataLayout")));
+
+		DataDefinitionResource dataDefinitionResource =
+			dataDefinitionResourceBuilder.user(
+				themeDisplay.getUser()
+			).build();
 
 		dataDefinitionResource.putDataDefinition(
 			ParamUtil.getLong(actionRequest, "dataDefinitionId"),
@@ -288,14 +326,14 @@ public class EditFileEntryTypeMVCActionCommand
 		_dlFileEntryTypeService.updateFileEntryType(
 			fileEntryTypeId, nameMap, descriptionMap);
 
-		long[] ddmStructureIds = _getLongArray(
-			actionRequest, "ddmStructuresSearchContainerPrimaryKeys");
-
 		if (ddmStructureIds != null) {
 			_dlFileEntryTypeLocalService.updateDDMStructureLinks(
 				fileEntryTypeId, SetUtil.fromArray(ddmStructureIds));
 		}
 	}
+
+	@Reference
+	private DataDefinitionResource.Factory _dataDefinitionResourceFactory;
 
 	@Reference
 	private DLAppService _dlAppService;

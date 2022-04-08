@@ -20,7 +20,7 @@
 
 <%
 if (searchResultCssClass == null) {
-	searchResultCssClass = "display-style-icon list-unstyled row";
+	searchResultCssClass = "card-page card-page-equal-height";
 }
 
 request.setAttribute(WebKeys.SEARCH_CONTAINER_RESULT_ROW_CHECKER, rowChecker);
@@ -42,13 +42,19 @@ for (int i = 0; i < resultRowSplitterEntries.size(); i++) {
 	List<com.liferay.portal.kernel.dao.search.ResultRow> curResultRows = resultRowSplitterEntry.getResultRows();
 %>
 
-	<c:if test="<%= Validator.isNotNull(resultRowSplitterEntry.getTitle()) %>">
-		<div class="c-m-0 c-px-0 card-section-header">
-			<liferay-ui:message key="<%= resultRowSplitterEntry.getTitle() %>" />
-		</div>
-	</c:if>
-
-	<ul class="<%= searchResultCssClass %>" data-qa-id="rows<%= i %>">
+	<dl class="<%= searchResultCssClass %>" data-qa-id="rows<%= i %>">
+		<c:choose>
+			<c:when test="<%= Validator.isNotNull(resultRowSplitterEntry.getTitle()) %>">
+				<dt class="card-section-header container-fluid">
+					<liferay-ui:message key="<%= resultRowSplitterEntry.getTitle() %>" />
+				</dt>
+			</c:when>
+			<c:otherwise>
+				<dt class="sr-only">
+					<%= PortalUtil.getPortletTitle(portletRequest) %>
+				</dt>
+			</c:otherwise>
+		</c:choose>
 
 		<%
 		for (int j = 0; j < curResultRows.size(); j++) {
@@ -89,13 +95,18 @@ for (int i = 0; i < resultRowSplitterEntries.size(); i++) {
 			request.setAttribute("liferay-ui:search-container-row:rowId", id.concat(StringPool.UNDERLINE.concat(row.getRowId())));
 
 			Map<String, Object> data = row.getData();
+			String rowCssClass = row.getCssClass();
 
 			if (data == null) {
 				data = new HashMap<String, Object>();
 			}
+
+			if (Validator.isNull(rowCssClass)) {
+				rowCssClass = "card-page-item card-page-item-asset";
+			}
 		%>
 
-			<li class="<%= GetterUtil.getString(row.getClassName()) %> <%= row.getCssClass() %> <%= rowIsChecked ? "active" : StringPool.BLANK %>" data-qa-id="row" <%= AUIUtil.buildData(data) %>>
+			<dd class="<%= GetterUtil.getString(row.getClassName()) %> <%= rowCssClass %> <%= rowIsChecked ? "active" : StringPool.BLANK %>" data-qa-id="row" <%= AUIUtil.buildData(data) %>>
 
 				<%
 				for (int k = 0; k < entries.size(); k++) {
@@ -104,17 +115,12 @@ for (int i = 0; i < resultRowSplitterEntries.size(); i++) {
 					entry.setIndex(k);
 
 					request.setAttribute(WebKeys.SEARCH_CONTAINER_RESULT_ROW_ENTRY, entry);
-				%>
 
-					<%
 					entry.print(pageContext.getOut(), request, response);
-					%>
-
-				<%
 				}
 				%>
 
-			</li>
+			</dd>
 
 		<%
 			request.removeAttribute(WebKeys.SEARCH_CONTAINER_RESULT_ROW);
@@ -125,14 +131,14 @@ for (int i = 0; i < resultRowSplitterEntries.size(); i++) {
 		%>
 
 		<c:if test="<%= i == (resultRowSplitterEntries.size() - 1) %>">
-			<li></li>
+			<dd></dd>
 		</c:if>
-	</ul>
+	</dl>
 
 <%
 }
 
-String rowHtmlTag = "li";
+String rowHtmlTag = "dd";
 %>
 
 <%@ include file="/html/taglib/ui/search_iterator/lexicon/bottom.jspf" %>

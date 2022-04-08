@@ -14,12 +14,14 @@
 
 package com.liferay.commerce.product.definitions.web.internal.frontend;
 
+import com.liferay.commerce.account.constants.CommerceAccountConstants;
 import com.liferay.commerce.frontend.model.ImageField;
 import com.liferay.commerce.frontend.model.LabelField;
 import com.liferay.commerce.media.CommerceMediaResolverUtil;
+import com.liferay.commerce.product.constants.CPAttachmentFileEntryConstants;
+import com.liferay.commerce.product.definitions.web.internal.frontend.constants.CommerceProductDataSetConstants;
 import com.liferay.commerce.product.definitions.web.internal.model.ProductMedia;
 import com.liferay.commerce.product.model.CPAttachmentFileEntry;
-import com.liferay.commerce.product.model.CPAttachmentFileEntryConstants;
 import com.liferay.commerce.product.model.CPDefinition;
 import com.liferay.commerce.product.service.CPAttachmentFileEntryService;
 import com.liferay.frontend.taglib.clay.data.Filter;
@@ -72,7 +74,7 @@ public class CommerceProductImageDataSetDataProvider
 		List<CPAttachmentFileEntry> cpAttachmentFileEntries =
 			_cpAttachmentFileEntryService.getCPAttachmentFileEntries(
 				_portal.getClassNameId(CPDefinition.class), cpDefinitionId,
-				CPAttachmentFileEntryConstants.TYPE_IMAGE,
+				filter.getKeywords(), CPAttachmentFileEntryConstants.TYPE_IMAGE,
 				WorkflowConstants.STATUS_ANY, pagination.getStartPosition(),
 				pagination.getEndPosition());
 
@@ -85,7 +87,13 @@ public class CommerceProductImageDataSetDataProvider
 			String title = cpAttachmentFileEntry.getTitle(
 				LanguageUtil.getLanguageId(locale));
 
-			FileEntry fileEntry = cpAttachmentFileEntry.getFileEntry();
+			String extension = StringPool.BLANK;
+
+			FileEntry fileEntry = cpAttachmentFileEntry.fetchFileEntry();
+
+			if (fileEntry != null) {
+				extension = HtmlUtil.escape(fileEntry.getExtension());
+			}
 
 			Date modifiedDate = cpAttachmentFileEntry.getModifiedDate();
 
@@ -106,11 +114,10 @@ public class CommerceProductImageDataSetDataProvider
 					cpAttachmentFileEntryId,
 					new ImageField(
 						title, "rounded", "lg",
-						CommerceMediaResolverUtil.getThumbnailUrl(
+						CommerceMediaResolverUtil.getThumbnailURL(
+							CommerceAccountConstants.ACCOUNT_ID_ADMIN,
 							cpAttachmentFileEntryId)),
-					HtmlUtil.escape(title),
-					HtmlUtil.escape(fileEntry.getExtension()),
-					cpAttachmentFileEntry.getPriority(),
+					title, extension, cpAttachmentFileEntry.getPriority(),
 					LanguageUtil.format(
 						httpServletRequest, "x-ago", modifiedDateDescription,
 						false),
@@ -135,7 +142,7 @@ public class CommerceProductImageDataSetDataProvider
 
 		return _cpAttachmentFileEntryService.getCPAttachmentFileEntriesCount(
 			_portal.getClassNameId(CPDefinition.class), cpDefinitionId,
-			CPAttachmentFileEntryConstants.TYPE_IMAGE,
+			filter.getKeywords(), CPAttachmentFileEntryConstants.TYPE_IMAGE,
 			WorkflowConstants.STATUS_ANY);
 	}
 

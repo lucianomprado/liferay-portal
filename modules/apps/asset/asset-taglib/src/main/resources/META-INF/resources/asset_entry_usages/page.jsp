@@ -39,54 +39,66 @@ AssetEntryUsagesDisplayContext assetEntryUsagesDisplayContext = new AssetEntryUs
 
 						<ul class="nav nav-stacked">
 							<li class="nav-item">
-
-								<%
-								PortletURL allNavigationURL = assetEntryUsagesDisplayContext.getPortletURL();
-
-								allNavigationURL.setParameter("navigation", "all");
-								allNavigationURL.setParameter("resetCur", Boolean.TRUE.toString());
-								%>
-
-								<a class="nav-link <%= Objects.equals(assetEntryUsagesDisplayContext.getNavigation(), "all") ? "active" : StringPool.BLANK %>" href="<%= allNavigationURL.toString() %>">
+								<a
+									class="nav-link <%= Objects.equals(assetEntryUsagesDisplayContext.getNavigation(), "all") ? "active" : StringPool.BLANK %>"
+									href="<%=
+										PortletURLBuilder.create(
+											assetEntryUsagesDisplayContext.getPortletURL()
+										).setNavigation(
+											"all"
+										).setParameter(
+											"resetCur", true
+										).buildString()
+									%>"
+								>
 									<liferay-ui:message arguments="<%= assetEntryUsagesDisplayContext.getAllUsageCount() %>" key="all-x" />
 								</a>
 							</li>
 							<li class="nav-item">
-
-								<%
-								PortletURL pagesNavigationURL = assetEntryUsagesDisplayContext.getPortletURL();
-
-								pagesNavigationURL.setParameter("navigation", "pages");
-								pagesNavigationURL.setParameter("resetCur", Boolean.TRUE.toString());
-								%>
-
-								<a class="nav-link <%= Objects.equals(assetEntryUsagesDisplayContext.getNavigation(), "pages") ? "active" : StringPool.BLANK %>" href="<%= pagesNavigationURL.toString() %>">
+								<a
+									class="nav-link <%= Objects.equals(assetEntryUsagesDisplayContext.getNavigation(), "pages") ? "active" : StringPool.BLANK %>"
+									href="<%=
+										PortletURLBuilder.create(
+											assetEntryUsagesDisplayContext.getPortletURL()
+										).setNavigation(
+											"pages"
+										).setParameter(
+											"resetCur", true
+										).buildString()
+									%>"
+								>
 									<liferay-ui:message arguments="<%= assetEntryUsagesDisplayContext.getPagesUsageCount() %>" key="pages-x" />
 								</a>
 							</li>
 							<li class="nav-item">
-
-								<%
-								PortletURL pageTemplatesNavigationURL = assetEntryUsagesDisplayContext.getPortletURL();
-
-								pageTemplatesNavigationURL.setParameter("navigation", "page-templates");
-								pageTemplatesNavigationURL.setParameter("resetCur", Boolean.TRUE.toString());
-								%>
-
-								<a class="nav-link <%= Objects.equals(assetEntryUsagesDisplayContext.getNavigation(), "page-templates") ? "active" : StringPool.BLANK %>" href="<%= pageTemplatesNavigationURL.toString() %>">
+								<a
+									class="nav-link <%= Objects.equals(assetEntryUsagesDisplayContext.getNavigation(), "page-templates") ? "active" : StringPool.BLANK %>"
+									href="<%=
+										PortletURLBuilder.create(
+											assetEntryUsagesDisplayContext.getPortletURL()
+										).setNavigation(
+											"page-templates"
+										).setParameter(
+											"resetCur", true
+										).buildString()
+									%>"
+								>
 									<liferay-ui:message arguments="<%= assetEntryUsagesDisplayContext.getPageTemplatesUsageCount() %>" key="page-templates-x" />
 								</a>
 							</li>
 							<li class="nav-item">
-
-								<%
-								PortletURL displayPagesNavigationURL = assetEntryUsagesDisplayContext.getPortletURL();
-
-								displayPagesNavigationURL.setParameter("navigation", "display-page-templates");
-								displayPagesNavigationURL.setParameter("resetCur", Boolean.TRUE.toString());
-								%>
-
-								<a class="nav-link <%= Objects.equals(assetEntryUsagesDisplayContext.getNavigation(), "display-page-templates") ? "active" : StringPool.BLANK %>" href="<%= displayPagesNavigationURL.toString() %>">
+								<a
+									class="nav-link <%= Objects.equals(assetEntryUsagesDisplayContext.getNavigation(), "display-page-templates") ? "active" : StringPool.BLANK %>"
+									href="<%=
+										PortletURLBuilder.create(
+											assetEntryUsagesDisplayContext.getPortletURL()
+										).setNavigation(
+											"display-page-templates"
+										).setParameter(
+											"resetCur", true
+										).buildString()
+									%>"
+								>
 									<liferay-ui:message arguments="<%= assetEntryUsagesDisplayContext.getDisplayPagesUsageCount() %>" key="display-page-templates-x" />
 								</a>
 							</li>
@@ -119,8 +131,8 @@ AssetEntryUsagesDisplayContext assetEntryUsagesDisplayContext = new AssetEntryUs
 					</c:choose>
 				</h3>
 
-				<clay:management-toolbar-v2
-					displayContext="<%= new AssetEntryUsagesManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, assetEntryUsagesDisplayContext.getSearchContainer()) %>"
+				<clay:management-toolbar
+					managementToolbarDisplayContext="<%= new AssetEntryUsagesManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, assetEntryUsagesDisplayContext.getSearchContainer()) %>"
 				/>
 
 				<liferay-ui:search-container

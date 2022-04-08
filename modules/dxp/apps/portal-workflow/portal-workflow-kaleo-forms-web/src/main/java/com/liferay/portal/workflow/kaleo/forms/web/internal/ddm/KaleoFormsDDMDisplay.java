@@ -21,6 +21,7 @@ import com.liferay.dynamic.data.mapping.storage.StorageType;
 import com.liferay.dynamic.data.mapping.util.BaseDDMDisplay;
 import com.liferay.dynamic.data.mapping.util.DDMDisplay;
 import com.liferay.dynamic.data.mapping.util.DDMNavigationHelper;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
@@ -68,9 +69,9 @@ public class KaleoFormsDDMDisplay extends BaseDDMDisplay {
 		if (ddmNavigationHelper.isNavigationStartsOnSelectTemplate(
 				liferayPortletRequest)) {
 
-			return getSelectTemplateURL(
-				liferayPortletRequest, liferayPortletResponse, classNameId,
-				classPK, resourceClassNameId);
+			return _getSelectTemplateURL(
+				liferayPortletRequest, classNameId, classPK,
+				resourceClassNameId);
 		}
 
 		return super.getEditTemplateBackURL(
@@ -163,22 +164,26 @@ public class KaleoFormsDDMDisplay extends BaseDDMDisplay {
 		return LanguageUtil.get(getResourceBundle(locale), "forms");
 	}
 
-	protected String getSelectTemplateURL(
-			LiferayPortletRequest liferayPortletRequest,
-			LiferayPortletResponse liferayPortletResponse, long classNameId,
+	private String _getSelectTemplateURL(
+			LiferayPortletRequest liferayPortletRequest, long classNameId,
 			long classPK, long resourceClassNameId)
 		throws Exception {
 
 		String portletId = PortletProviderUtil.getPortletId(
 			DDMStructure.class.getName(), PortletProvider.Action.VIEW);
 
-		PortletURL portletURL = _portal.getControlPanelPortletURL(
-			liferayPortletRequest, portletId, PortletRequest.RENDER_PHASE);
-
-		portletURL.setParameter("mvcPath", "/select_template.jsp");
-		portletURL.setParameter("classNameId", String.valueOf(classNameId));
-		portletURL.setParameter("classPK", String.valueOf(classPK));
-		portletURL.setParameter("eventName", "selectStructure");
+		PortletURL portletURL = PortletURLBuilder.create(
+			_portal.getControlPanelPortletURL(
+				liferayPortletRequest, portletId, PortletRequest.RENDER_PHASE)
+		).setMVCPath(
+			"/select_template.jsp"
+		).setParameter(
+			"classNameId", classNameId
+		).setParameter(
+			"classPK", classPK
+		).setParameter(
+			"eventName", "selectStructure"
+		).buildPortletURL();
 
 		String mode = ParamUtil.getString(liferayPortletRequest, "mode");
 

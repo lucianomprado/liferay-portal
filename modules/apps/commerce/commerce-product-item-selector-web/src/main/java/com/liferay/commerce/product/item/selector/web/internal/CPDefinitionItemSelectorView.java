@@ -14,6 +14,7 @@
 
 package com.liferay.commerce.product.item.selector.web.internal;
 
+import com.liferay.commerce.product.constants.CPField;
 import com.liferay.commerce.product.item.selector.criterion.CPDefinitionItemSelectorCriterion;
 import com.liferay.commerce.product.item.selector.web.internal.display.context.CPDefinitionItemSelectorViewDisplayContext;
 import com.liferay.commerce.product.service.CPDefinitionService;
@@ -82,11 +83,18 @@ public class CPDefinitionItemSelectorView
 		HttpServletRequest httpServletRequest =
 			(HttpServletRequest)servletRequest;
 
-		long cpDefinitionId = ParamUtil.getLong(
-			httpServletRequest, "cpDefinitionId");
+		long commerceChannelGroupId = ParamUtil.getLong(
+			httpServletRequest, CPField.COMMERCE_CHANNEL_GROUP_ID);
 
 		httpServletRequest.setAttribute(
-			"cpDefinitionId", String.valueOf(cpDefinitionId));
+			CPField.COMMERCE_CHANNEL_GROUP_ID,
+			String.valueOf(commerceChannelGroupId));
+
+		long cpDefinitionId = ParamUtil.getLong(
+			httpServletRequest, CPField.CP_DEFINITION_ID);
+
+		httpServletRequest.setAttribute(
+			CPField.CP_DEFINITION_ID, String.valueOf(cpDefinitionId));
 
 		CPDefinitionItemSelectorViewDisplayContext
 			cpDefinitionItemSelectorViewDisplayContext =
@@ -109,10 +117,7 @@ public class CPDefinitionItemSelectorView
 
 	private static final List<ItemSelectorReturnType>
 		_supportedItemSelectorReturnTypes = Collections.unmodifiableList(
-			ListUtil.fromArray(
-				new ItemSelectorReturnType[] {
-					new UUIDItemSelectorReturnType()
-				}));
+			ListUtil.fromArray(new UUIDItemSelectorReturnType()));
 
 	@Reference
 	private CPDefinitionService _cpDefinitionService;

@@ -35,4 +35,8 @@ public interface OpenIdConnectProvider<S, T> {
 
 	public String getScopes();
 
+	public default int getTokenConnectionTimeout() {
+		return 500;
+	}
+
 }

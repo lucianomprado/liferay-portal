@@ -12,36 +12,37 @@
  * details.
  */
 
-export const ADD_TO_ORDER = 'refreshCartUsingData';
 export const AUTOCOMPLETE_VALUE_UPDATED = 'autocomplete-updated';
 export const CART_PRODUCT_QUANTITY_CHANGED = 'quantity-changed-from-cart';
-export const CHANGE_ACCOUNT = 'accountSelected';
-export const CHANGE_ORDER = 'orderSelected';
 export const CLOSE_MODAL = 'close-modal';
 export const CLOSE_SIDE_PANEL = 'close-side-panel';
 export const CP_INSTANCE_CHANGED = 'product-instance-changed';
+export const CURRENT_ACCOUNT_UPDATED = 'current-account-updated';
+export const CURRENT_ORDER_UPDATED = 'current-order-updated';
 export const CURRENT_PRODUCT_STATUS_CHANGED = 'current-product-status-changed';
 export const CURRENT_PRODUCT_UPDATED = 'current-product-updated';
-export const DATASET_ACTION_PERFORMED = 'data-set-action-performed';
-export const DATASET_DISPLAY_UPDATED = 'data-set-display-updated';
+export const DATASET_ACTION_PERFORMED = 'dataset-action-performed';
+export const DATASET_DISPLAY_UPDATED = 'dataset-display-updated';
 export const IFRAME_LOADED = 'iframe-loaded';
 export const IS_LOADING_MODAL = 'is-loading-modal';
+export const ITEM_REMOVED_FROM_COMPARE = 'item-removed-from-compare';
 export const OPEN_MODAL = 'open-modal';
 export const OPEN_SIDE_PANEL = 'open-side-panel';
+export const PRODUCT_COMPARISON_TOGGLED = 'product-comparison-toggled';
 export const PRODUCT_OPTIONS_CHANGED = 'product-options-changed';
-export const PRODUCT_REMOVED = 'productRemovedFromCart';
+export const PRODUCT_REMOVED_FROM_CART = 'product-removed-from-cart';
 export const SIDE_PANEL_CLOSED = 'side-panel-closed';
-export const UPDATE_DATASET_DISPLAY = 'update-data-set-display';
+export const TOGGLE_ITEM_IN_PRODUCT_COMPARISON = 'toggle-item-in-compare';
+export const UPDATE_DATASET_DISPLAY = 'update-dataset-display';
 
 export default {
-	ADD_TO_ORDER,
 	AUTOCOMPLETE_VALUE_UPDATED,
 	CART_PRODUCT_QUANTITY_CHANGED,
-	CHANGE_ACCOUNT,
-	CHANGE_ORDER,
 	CLOSE_MODAL,
 	CLOSE_SIDE_PANEL,
 	CP_INSTANCE_CHANGED,
+	CURRENT_ACCOUNT_UPDATED,
+	CURRENT_ORDER_UPDATED,
 	CURRENT_PRODUCT_STATUS_CHANGED,
 	CURRENT_PRODUCT_UPDATED,
 	DATASET_ACTION_PERFORMED,
@@ -50,8 +51,10 @@ export default {
 	IS_LOADING_MODAL,
 	OPEN_MODAL,
 	OPEN_SIDE_PANEL,
+	PRODUCT_COMPARISON_TOGGLED,
 	PRODUCT_OPTIONS_CHANGED,
-	PRODUCT_REMOVED,
+	PRODUCT_REMOVED_FROM_CART,
 	SIDE_PANEL_CLOSED,
+	TOGGLE_ITEM_IN_PRODUCT_COMPARISON,
 	UPDATE_DATASET_DISPLAY,
 };

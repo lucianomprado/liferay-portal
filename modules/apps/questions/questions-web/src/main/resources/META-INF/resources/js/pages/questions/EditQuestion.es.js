@@ -12,20 +12,19 @@
  * details.
  */
 
-import {useMutation, useQuery} from '@apollo/client';
 import ClayButton from '@clayui/button';
 import ClayForm, {ClayInput} from '@clayui/form';
 import ClayIcon from '@clayui/icon';
-import React, {useContext, useState} from 'react';
+import {useMutation, useQuery} from 'graphql-hooks';
+import React, {useContext, useEffect, useRef, useState} from 'react';
 import {withRouter} from 'react-router-dom';
 
 import {AppContext} from '../../AppContext.es';
+import DefaultQuestionsEditor from '../../components/DefaultQuestionsEditor.es';
 import Link from '../../components/Link.es';
-import QuestionsEditor from '../../components/QuestionsEditor';
 import TagSelector from '../../components/TagSelector.es';
-import TextLengthValidation from '../../components/TextLengthValidation.es';
 import {getThreadContentQuery, updateThreadQuery} from '../../utils/client.es';
-import {getContextLink, stripHTML} from '../../utils/utils.es';
+import {getContextLink} from '../../utils/utils.es';
 
 export default withRouter(
 	({
@@ -36,20 +35,31 @@ export default withRouter(
 	}) => {
 		const context = useContext(AppContext);
 
-		const [articleBody, setArticleBody] = useState('');
+		const editorRef = useRef('');
+		const [hasEnoughContent, setHasEnoughContent] = useState(false);
+
 		const [headline, setHeadline] = useState('');
 		const [id, setId] = useState('');
 		const [tags, setTags] = useState([]);
 		const [tagsLoaded, setTagsLoaded] = useState(true);
 
-		useQuery(getThreadContentQuery, {
-			onCompleted({messageBoardThreadByFriendlyUrlPath}) {
-				setArticleBody(messageBoardThreadByFriendlyUrlPath.articleBody);
-				setHeadline(messageBoardThreadByFriendlyUrlPath.headline);
-				setId(messageBoardThreadByFriendlyUrlPath.id);
-				if (messageBoardThreadByFriendlyUrlPath.keywords) {
+		const {data = {}} = useQuery(getThreadContentQuery, {
+			variables: {
+				friendlyUrlPath: questionId,
+				siteKey: context.siteKey,
+			},
+		});
+
+		useEffect(() => {
+			if (data.messageBoardThreadByFriendlyUrlPath) {
+				editorRef.current.setContent(
+					data.messageBoardThreadByFriendlyUrlPath.articleBody
+				);
+				setHeadline(data.messageBoardThreadByFriendlyUrlPath.headline);
+				setId(data.messageBoardThreadByFriendlyUrlPath.id);
+				if (data.messageBoardThreadByFriendlyUrlPath.keywords) {
 					setTags(
-						messageBoardThreadByFriendlyUrlPath.keywords.map(
+						data.messageBoardThreadByFriendlyUrlPath.keywords.map(
 							(keyword) => ({
 								label: keyword,
 								value: keyword,
@@ -57,140 +67,110 @@ export default withRouter(
 						)
 					);
 				}
-			},
-			variables: {
-				friendlyUrlPath: questionId,
-				siteKey: context.siteKey,
-			},
-		});
+			}
+		}, [data]);
 
-		const [updateThread] = useMutation(updateThreadQuery, {
-			context: getContextLink(`${sectionTitle}/${questionId}`),
-			onCompleted() {
-				history.goBack();
-			},
-			update(proxy) {
-				proxy.evict(`MessageBoardThread:${id}`);
-				proxy.gc();
-			},
-		});
+		const [updateThread] = useMutation(updateThreadQuery);
 
 		return (
 			<section className="c-mt-5 questions-section questions-section-edit">
-				<div className="questions-container">
-					<div className="row">
-						<div className="c-mx-auto col-xl-10">
-							<h1>{Liferay.Language.get('edit-question')}</h1>
+				<div className="questions-container row">
+					<div className="c-mx-auto col-xl-10">
+						<h1>{Liferay.Language.get('edit-question')}</h1>
 
-							<ClayForm>
-								<ClayForm.Group className="c-mt-4">
-									<label htmlFor="basicInput">
-										{Liferay.Language.get('title')}
+						<ClayForm>
+							<ClayForm.Group className="c-mt-4">
+								<label htmlFor="basicInput">
+									{Liferay.Language.get('title')}
 
-										<span className="c-ml-2 reference-mark">
-											<ClayIcon symbol="asterisk" />
-										</span>
-									</label>
+									<span className="c-ml-2 reference-mark">
+										<ClayIcon symbol="asterisk" />
+									</span>
+								</label>
 
-									<ClayInput
-										onChange={(event) =>
-											setHeadline(event.target.value)
-										}
-										placeholder={Liferay.Language.get(
-											'what-is-your-question'
-										)}
-										required
-										type="text"
-										value={headline}
-									/>
-
-									<ClayForm.FeedbackGroup>
-										<ClayForm.FeedbackItem>
-											<span className="small text-secondary">
-												{Liferay.Language.get(
-													'be-specific-and-imagine-you-are-asking-a-question-to-another-person'
-												)}
-											</span>
-										</ClayForm.FeedbackItem>
-									</ClayForm.FeedbackGroup>
-								</ClayForm.Group>
-
-								<ClayForm.Group className="c-mt-4">
-									<label htmlFor="basicInput">
-										{Liferay.Language.get('body')}
-
-										<span className="c-ml-2 reference-mark">
-											<ClayIcon symbol="asterisk" />
-										</span>
-									</label>
-
-									<QuestionsEditor
-										contents={articleBody}
-										onChange={(event) => {
-											setArticleBody(
-												event.editor.getData()
-											);
-										}}
-									/>
-
-									<ClayForm.FeedbackGroup>
-										<ClayForm.FeedbackItem>
-											<span className="small text-secondary">
-												{Liferay.Language.get(
-													'include-all-the-information-someone-would-need-to-answer-your-question'
-												)}
-											</span>
-											<TextLengthValidation
-												text={articleBody}
-											/>
-										</ClayForm.FeedbackItem>
-									</ClayForm.FeedbackGroup>
-								</ClayForm.Group>
-
-								<ClayForm.Group className="c-mt-4">
-									<TagSelector
-										tags={tags}
-										tagsChange={(tags) => setTags(tags)}
-										tagsLoaded={setTagsLoaded}
-									/>
-								</ClayForm.Group>
-							</ClayForm>
-
-							<div className="c-mt-4 d-flex flex-column-reverse flex-sm-row">
-								<ClayButton
-									className="c-mt-4 c-mt-sm-0"
-									disabled={
-										!articleBody ||
-										!headline ||
-										!tagsLoaded ||
-										stripHTML(articleBody).length < 15
+								<ClayInput
+									onChange={(event) =>
+										setHeadline(event.target.value)
 									}
-									displayType="primary"
-									onClick={() => {
-										updateThread({
+									placeholder={Liferay.Language.get(
+										'what-is-your-question'
+									)}
+									required
+									type="text"
+									value={headline}
+								/>
+
+								<ClayForm.FeedbackGroup>
+									<ClayForm.FeedbackItem>
+										<span className="small text-secondary">
+											{Liferay.Language.get(
+												'be-specific-and-imagine-you-are-asking-a-question-to-another-person'
+											)}
+										</span>
+									</ClayForm.FeedbackItem>
+								</ClayForm.FeedbackGroup>
+							</ClayForm.Group>
+
+							<DefaultQuestionsEditor
+								additionalInformation={Liferay.Language.get(
+									'include-all-the-information-someone-would-need-to-answer-your-question'
+								)}
+								label={Liferay.Language.get('body')}
+								onContentLengthValid={setHasEnoughContent}
+								ref={editorRef}
+							/>
+
+							<ClayForm.Group className="c-mt-4">
+								<TagSelector
+									tags={tags}
+									tagsChange={(tags) => setTags(tags)}
+									tagsLoaded={setTagsLoaded}
+								/>
+							</ClayForm.Group>
+						</ClayForm>
+
+						<div className="c-mt-4 d-flex flex-column-reverse flex-sm-row">
+							<ClayButton
+								className="c-mt-4 c-mt-sm-0"
+								disabled={
+									hasEnoughContent || !headline || !tagsLoaded
+								}
+								displayType="primary"
+								onClick={() => {
+									updateThread(
+										{
 											variables: {
-												articleBody,
+												articleBody: editorRef.current.getContent(),
 												headline,
 												keywords: tags.map(
 													(tag) => tag.value
 												),
 												messageBoardThreadId: id,
 											},
-										});
-									}}
-								>
-									{Liferay.Language.get(
-										'update-your-question'
-									)}
-								</ClayButton>
+										},
+										{
+											fetchOptionsOverrides: getContextLink(
+												`${sectionTitle}/${questionId}`
+											),
+										}
+									).then(() => history.goBack());
+								}}
+							>
+								{context.trustedUser
+									? Liferay.Language.get(
+											'update-your-question'
+									  )
+									: Liferay.Language.get(
+											'submit-for-publication'
+									  )}
+							</ClayButton>
 
-								<Link
-									className="btn btn-secondary c-ml-sm-3"
-									to={`/questions/${sectionTitle}/${questionId}`}
-								>
-									{Liferay.Language.get('cancel')}
-								</Link>
-							</div>
+							<Link
+								className="btn btn-secondary c-ml-sm-3"
+								to={`/questions/${sectionTitle}/${questionId}`}
+							>
+								{Liferay.Language.get('cancel')}
+							</Link>
 						</div>
 					</div>
 				</div>

@@ -1,4 +1,4 @@
-@component-name = "portal-collaboration"
+@component-name = "portal-lima"
 definition {
 
 	property custom.properties = "default.layout.template.id=1_column";
@@ -18,7 +18,7 @@ definition {
 			category = "Site Builder",
 			portlet = "Pages");
 
-		SitePages.addPublicPage(
+		PagesAdmin.addPublicPage(
 			pageName = "My Subscriptions Page",
 			sitePageType = "Widget Page");
 
@@ -34,31 +34,36 @@ definition {
 			PortalInstances.tearDownCP();
 		}
 		else {
-			Page.tearDownCP();
+			PagesAdmin.tearDownCP();
 		}
 	}
 
-	test SubscribeAndUnsubscribetoBookmarksRootFolder {
+	test SubscribeAndUnsubscribetoDMFolder {
 		ProductMenu.gotoPortlet(
 			category = "Site Builder",
 			portlet = "Pages");
 
-		SitePages.addPublicPage(
-			pageName = "Bookmarks Page",
+		PagesAdmin.addPublicPage(
+			pageName = "Test Page",
 			sitePageType = "Widget Page");
 
-		Navigator.gotoPage(pageName = "Bookmarks Page");
+		Navigator.gotoPage(pageName = "Test Page");
 
-		Portlet.addPG(portletName = "Bookmarks");
+		Portlet.addPG(portletName = "Documents and Media");
+
+		DMDocument.enableActionsMenuOnPortlet();
+
+		DMFolder.addPG(
+			dmFolderDescription = "DM Folder Description",
+			dmFolderName = "DM Folder");
 
 		Subscriptions.subscribeViaInfoPanelPG();
 
 		Navigator.gotoPage(pageName = "My Subscriptions Page");
 
 		Subscriptions.viewSubscription(
-			assetName = "Bookmarks Folder",
 			assetTitle = "Home",
-			assetType = "Bookmarks Folder");
+			assetType = "Documents Folder");
 
 		Subscriptions.unsubscribeViaMySubscriptions(rowNumber = "1");
 
@@ -66,7 +71,7 @@ definition {
 
 		Subscriptions.viewDefaultPG();
 
-		Navigator.gotoPage(pageName = "Bookmarks Page");
+		Navigator.gotoPage(pageName = "Test Page");
 
 		Subscriptions.viewUnsubscribedViaInfoPanel();
 	}

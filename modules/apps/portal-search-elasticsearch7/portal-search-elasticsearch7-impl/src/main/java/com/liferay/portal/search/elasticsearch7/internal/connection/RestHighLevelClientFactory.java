@@ -53,11 +53,11 @@ public class RestHighLevelClientFactory {
 
 	public RestHighLevelClient newRestHighLevelClient() {
 		RestClientBuilder restClientBuilder = RestClient.builder(
-			getHttpHosts()
+			_getHttpHosts()
 		).setHttpClientConfigCallback(
-			this::customizeHttpClient
+			this::_customizeHttpClient
 		).setRequestConfigCallback(
-			this::customizeRequestConfig
+			this::_customizeRequestConfig
 		);
 
 		return ClassLoaderUtil.getWithContextClassLoader(
@@ -96,6 +96,12 @@ public class RestHighLevelClientFactory {
 			return this;
 		}
 
+		public Builder proxyConfig(ProxyConfig proxyConfig) {
+			_restHighLevelClientFactory._proxyConfig = proxyConfig;
+
+			return this;
+		}
+
 		public Builder truststorePassword(String truststorePassword) {
 			_restHighLevelClientFactory._truststorePassword =
 				truststorePassword;
@@ -126,9 +132,35 @@ public class RestHighLevelClientFactory {
 
 	}
 
-	protected CredentialsProvider createCredentialsProvider() {
+	private RestHighLevelClientFactory() {
+	}
+
+	private RestHighLevelClientFactory(
+		RestHighLevelClientFactory restHighLevelClientFactory) {
+
+		_authenticationEnabled =
+			restHighLevelClientFactory._authenticationEnabled;
+		_httpSSLEnabled = restHighLevelClientFactory._httpSSLEnabled;
+		_networkHostAddresses =
+			restHighLevelClientFactory._networkHostAddresses;
+		_password = restHighLevelClientFactory._password;
+		_truststorePassword = restHighLevelClientFactory._truststorePassword;
+		_truststorePath = restHighLevelClientFactory._truststorePath;
+		_truststoreType = restHighLevelClientFactory._truststoreType;
+		_proxyConfig = restHighLevelClientFactory._proxyConfig;
+		_userName = restHighLevelClientFactory._userName;
+	}
+
+	private CredentialsProvider _createCredentialsProvider() {
 		CredentialsProvider credentialsProvider =
 			new BasicCredentialsProvider();
+
+		if (_proxyConfig.shouldApplyCredentials()) {
+			credentialsProvider.setCredentials(
+				new AuthScope(_proxyConfig.getHost(), _proxyConfig.getPort()),
+				new UsernamePasswordCredentials(
+					_proxyConfig.getUserName(), _proxyConfig.getPassword()));
+		}
 
 		credentialsProvider.setCredentials(
 			AuthScope.ANY,
@@ -137,7 +169,7 @@ public class RestHighLevelClientFactory {
 		return credentialsProvider;
 	}
 
-	protected SSLContext createSSLContext() {
+	private SSLContext _createSSLContext() {
 		try {
 			Path path = Paths.get(_truststorePath);
 
@@ -160,28 +192,34 @@ public class RestHighLevelClientFactory {
 		}
 	}
 
-	protected HttpAsyncClientBuilder customizeHttpClient(
+	private HttpAsyncClientBuilder _customizeHttpClient(
 		HttpAsyncClientBuilder httpAsyncClientBuilder) {
 
 		if (_authenticationEnabled) {
 			httpAsyncClientBuilder.setDefaultCredentialsProvider(
-				createCredentialsProvider());
+				_createCredentialsProvider());
 		}
 
 		if (_httpSSLEnabled) {
-			httpAsyncClientBuilder.setSSLContext(createSSLContext());
+			httpAsyncClientBuilder.setSSLContext(_createSSLContext());
+		}
+
+		if ((_proxyConfig != null) && _proxyConfig.shouldApplyConfig()) {
+			httpAsyncClientBuilder.setProxy(
+				new HttpHost(
+					_proxyConfig.getHost(), _proxyConfig.getPort(), "http"));
 		}
 
 		return httpAsyncClientBuilder;
 	}
 
-	protected RequestConfig.Builder customizeRequestConfig(
+	private RequestConfig.Builder _customizeRequestConfig(
 		RequestConfig.Builder requestConfigBuilder) {
 
 		return requestConfigBuilder.setSocketTimeout(120000);
 	}
 
-	protected HttpHost[] getHttpHosts() {
+	private HttpHost[] _getHttpHosts() {
 		return Stream.of(
 			_networkHostAddresses
 		).map(
@@ -191,28 +229,11 @@ public class RestHighLevelClientFactory {
 		);
 	}
 
-	private RestHighLevelClientFactory() {
-	}
-
-	private RestHighLevelClientFactory(
-		RestHighLevelClientFactory restHighLevelClientFactory) {
-
-		_authenticationEnabled =
-			restHighLevelClientFactory._authenticationEnabled;
-		_httpSSLEnabled = restHighLevelClientFactory._httpSSLEnabled;
-		_networkHostAddresses =
-			restHighLevelClientFactory._networkHostAddresses;
-		_password = restHighLevelClientFactory._password;
-		_truststorePassword = restHighLevelClientFactory._truststorePassword;
-		_truststorePath = restHighLevelClientFactory._truststorePath;
-		_truststoreType = restHighLevelClientFactory._truststoreType;
-		_userName = restHighLevelClientFactory._userName;
-	}
-
 	private boolean _authenticationEnabled;
 	private boolean _httpSSLEnabled;
 	private String[] _networkHostAddresses;
 	private String _password;
+	private ProxyConfig _proxyConfig;
 	private String _truststorePassword;
 	private String _truststorePath;
 	private String _truststoreType;

@@ -26,12 +26,14 @@ import com.liferay.portal.kernel.model.impl.BaseModelImpl;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
+import com.liferay.portal.kernel.util.StringUtil;
 
 import java.io.Serializable;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
 
+import java.sql.Blob;
 import java.sql.Types;
 
 import java.util.Collections;
@@ -39,6 +41,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
@@ -107,38 +110,38 @@ public class AMImageEntryModelImpl
 	public static final String TX_MANAGER = "liferayTransactionManager";
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long COMPANYID_COLUMN_BITMASK = 1L;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long CONFIGURATIONUUID_COLUMN_BITMASK = 2L;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long FILEVERSIONID_COLUMN_BITMASK = 4L;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long GROUPID_COLUMN_BITMASK = 8L;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long UUID_COLUMN_BITMASK = 16L;
 
 	/**
 	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-	 *		#getColumnBitmask(String)
+	 *		#getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long AMIMAGEENTRYID_COLUMN_BITMASK = 32L;
@@ -563,7 +566,9 @@ public class AMImageEntryModelImpl
 		for (Map.Entry<String, Object> entry :
 				_columnOriginalValues.entrySet()) {
 
-			if (entry.getValue() != getColumnValue(entry.getKey())) {
+			if (!Objects.equals(
+					entry.getValue(), getColumnValue(entry.getKey()))) {
+
 				_columnBitmask |= _columnBitmasks.get(entry.getKey());
 			}
 		}
@@ -616,6 +621,34 @@ public class AMImageEntryModelImpl
 		amImageEntryImpl.setSize(getSize());
 
 		amImageEntryImpl.resetOriginalValues();
+
+		return amImageEntryImpl;
+	}
+
+	@Override
+	public AMImageEntry cloneWithOriginalValues() {
+		AMImageEntryImpl amImageEntryImpl = new AMImageEntryImpl();
+
+		amImageEntryImpl.setUuid(this.<String>getColumnOriginalValue("uuid_"));
+		amImageEntryImpl.setAmImageEntryId(
+			this.<Long>getColumnOriginalValue("amImageEntryId"));
+		amImageEntryImpl.setGroupId(
+			this.<Long>getColumnOriginalValue("groupId"));
+		amImageEntryImpl.setCompanyId(
+			this.<Long>getColumnOriginalValue("companyId"));
+		amImageEntryImpl.setCreateDate(
+			this.<Date>getColumnOriginalValue("createDate"));
+		amImageEntryImpl.setConfigurationUuid(
+			this.<String>getColumnOriginalValue("configurationUuid"));
+		amImageEntryImpl.setFileVersionId(
+			this.<Long>getColumnOriginalValue("fileVersionId"));
+		amImageEntryImpl.setMimeType(
+			this.<String>getColumnOriginalValue("mimeType"));
+		amImageEntryImpl.setHeight(
+			this.<Integer>getColumnOriginalValue("height"));
+		amImageEntryImpl.setWidth(
+			this.<Integer>getColumnOriginalValue("width"));
+		amImageEntryImpl.setSize(this.<Long>getColumnOriginalValue("size_"));
 
 		return amImageEntryImpl;
 	}
@@ -748,7 +781,7 @@ public class AMImageEntryModelImpl
 			getAttributeGetterFunctions();
 
 		StringBundler sb = new StringBundler(
-			(4 * attributeGetterFunctions.size()) + 2);
+			(5 * attributeGetterFunctions.size()) + 2);
 
 		sb.append("{");
 
@@ -759,9 +792,26 @@ public class AMImageEntryModelImpl
 			Function<AMImageEntry, Object> attributeGetterFunction =
 				entry.getValue();
 
+			sb.append("\"");
 			sb.append(attributeName);
-			sb.append("=");
-			sb.append(attributeGetterFunction.apply((AMImageEntry)this));
+			sb.append("\": ");
+
+			Object value = attributeGetterFunction.apply((AMImageEntry)this);
+
+			if (value == null) {
+				sb.append("null");
+			}
+			else if (value instanceof Blob || value instanceof Date ||
+					 value instanceof Map || value instanceof String) {
+
+				sb.append(
+					"\"" + StringUtil.replace(value.toString(), "\"", "'") +
+						"\"");
+			}
+			else {
+				sb.append(value);
+			}
+
 			sb.append(", ");
 		}
 

@@ -1,0 +1,23 @@
+definition {
+
+	macro addLanguage {
+		Click(locator1 = "Modal#PLUS");
+
+		Click(
+			key_locale = "${key_locale}",
+			locator1 = "Translation#DROPDOWN_MENU_ITEM");
+	}
+
+	macro deleteLanguage {
+		Click(locator1 = "ManageTranslations#LIST_ITEM_DELETE_LANGUAGE_BUTTON");
+
+		Click(locator1 = "Button#DONE");
+	}
+
+	macro searchLanguage {
+		Type.type(
+			locator1 = "ManageTranslations#SEARCH_FIELD",
+			value1 = "${key_language}");
+	}
+
+}

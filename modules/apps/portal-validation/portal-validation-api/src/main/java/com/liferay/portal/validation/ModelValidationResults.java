@@ -42,10 +42,9 @@ public class ModelValidationResults {
 	}
 
 	public String getExceptionsString() {
-		StringBundler sb = new StringBundler(3);
+		StringBundler sb = new StringBundler((_exceptions.size() * 4) + 2);
 
-		sb.append("Exceptions: ");
-		sb.append(StringPool.OPEN_CURLY_BRACE);
+		sb.append("Exceptions: {");
 
 		for (Map.Entry<String, Throwable> exception : _exceptions.entrySet()) {
 			sb.append("Message: ");
@@ -64,10 +63,9 @@ public class ModelValidationResults {
 	}
 
 	public String getFieldsString() {
-		StringBundler sb = new StringBundler(3);
+		StringBundler sb = new StringBundler((_fields.size() * 4) + 2);
 
-		sb.append("Fields: ");
-		sb.append(StringPool.OPEN_CURLY_BRACE);
+		sb.append("Fields: {");
 
 		for (Map.Entry<String, Object> field : _fields.entrySet()) {
 			sb.append("Field: ");
@@ -159,8 +157,8 @@ public class ModelValidationResults {
 
 	private static final int _WARNING = 2;
 
-	private Map<String, Throwable> _exceptions = new HashMap<>();
-	private Map<String, Object> _fields = new HashMap<>();
+	private final Map<String, Throwable> _exceptions = new HashMap<>();
+	private final Map<String, Object> _fields = new HashMap<>();
 	private final int _outcome;
 
 	private static class Builder {

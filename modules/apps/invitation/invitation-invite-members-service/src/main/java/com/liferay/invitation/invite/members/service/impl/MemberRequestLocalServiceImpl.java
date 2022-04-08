@@ -38,7 +38,9 @@ import com.liferay.portal.kernel.notifications.NotificationEventFactoryUtil;
 import com.liferay.portal.kernel.notifications.UserNotificationManagerUtil;
 import com.liferay.portal.kernel.portlet.PortletProvider;
 import com.liferay.portal.kernel.portlet.PortletProviderUtil;
+import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.service.UserGroupRoleLocalService;
 import com.liferay.portal.kernel.service.UserNotificationEventLocalService;
 import com.liferay.portal.kernel.service.WorkflowDefinitionLinkLocalService;
 import com.liferay.portal.kernel.util.Http;
@@ -92,11 +94,11 @@ public class MemberRequestLocalServiceImpl
 			// LPS-52675
 
 			if (_log.isDebugEnabled()) {
-				_log.debug(noSuchUserException, noSuchUserException);
+				_log.debug(noSuchUserException);
 			}
 		}
 
-		Date now = new Date();
+		Date date = new Date();
 
 		long memberRequestId = counterLocalService.increment();
 
@@ -107,8 +109,8 @@ public class MemberRequestLocalServiceImpl
 		memberRequest.setCompanyId(user.getCompanyId());
 		memberRequest.setUserId(userId);
 		memberRequest.setUserName(user.getFullName());
-		memberRequest.setCreateDate(now);
-		memberRequest.setModifiedDate(now);
+		memberRequest.setCreateDate(date);
+		memberRequest.setModifiedDate(date);
 		memberRequest.setKey(PortalUUIDUtil.generate());
 		memberRequest.setReceiverUserId(receiverUserId);
 		memberRequest.setInvitedRoleId(invitedRoleId);
@@ -242,7 +244,7 @@ public class MemberRequestLocalServiceImpl
 				new long[] {memberRequest.getReceiverUserId()});
 
 			if (memberRequest.getInvitedRoleId() > 0) {
-				userGroupRoleLocalService.addUserGroupRoles(
+				_userGroupRoleLocalService.addUserGroupRoles(
 					new long[] {memberRequest.getReceiverUserId()},
 					memberRequest.getGroupId(),
 					memberRequest.getInvitedRoleId());
@@ -355,7 +357,7 @@ public class MemberRequestLocalServiceImpl
 
 		long companyId = memberRequest.getCompanyId();
 
-		Group group = groupLocalService.getGroup(memberRequest.getGroupId());
+		Group group = _groupLocalService.getGroup(memberRequest.getGroupId());
 
 		User user = userLocalService.getUser(memberRequest.getUserId());
 
@@ -478,10 +480,16 @@ public class MemberRequestLocalServiceImpl
 		MemberRequestLocalServiceImpl.class);
 
 	@Reference
+	private GroupLocalService _groupLocalService;
+
+	@Reference
 	private Http _http;
 
 	@Reference
 	private MailService _mailService;
+
+	@Reference
+	private UserGroupRoleLocalService _userGroupRoleLocalService;
 
 	@Reference
 	private UserNotificationEventLocalService

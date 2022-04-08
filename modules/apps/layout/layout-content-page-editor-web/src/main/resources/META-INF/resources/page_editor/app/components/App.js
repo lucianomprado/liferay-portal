@@ -12,28 +12,45 @@
  * details.
  */
 
+import {ReactPortal} from '@liferay/frontend-js-react-web';
 import PropTypes from 'prop-types';
-import React, {useEffect} from 'react';
+import React, {useEffect, useMemo} from 'react';
 
 import {StyleBookContextProvider} from '../../plugins/page-design-options/hooks/useStyleBook';
 import {INIT} from '../actions/types';
+import {LAYOUT_TYPES} from '../config/constants/layoutTypes';
 import {config} from '../config/index';
+import {CollectionActiveItemContextProvider} from '../contexts/CollectionActiveItemContext';
+import {ControlsProvider} from '../contexts/ControlsContext';
+import {DisplayPagePreviewItemContextProvider} from '../contexts/DisplayPagePreviewItemContext';
+import {EditableProcessorContextProvider} from '../contexts/EditableProcessorContext';
+import {GlobalContextProvider} from '../contexts/GlobalContext';
+import {StoreContextProvider, useSelector} from '../contexts/StoreContext';
+import {StyleErrorsContextProvider} from '../contexts/StyleErrorsContext';
+import {WidgetsContextProvider} from '../contexts/WidgetsContext';
 import {reducer} from '../reducers/index';
 import selectLanguageId from '../selectors/selectLanguageId';
-import {StoreContextProvider, useSelector} from '../store/index';
-import {DragAndDropContextProvider} from '../utils/dragAndDrop/useDragAndDrop';
-import {CollectionActiveItemContextProvider} from './CollectionActiveItemContext';
-import {ControlsProvider} from './Controls';
+import selectSegmentsExperienceId from '../selectors/selectSegmentsExperienceId';
+import {DragAndDropContextProvider} from '../utils/drag-and-drop/useDragAndDrop';
+import {DisplayPagePreviewItemSelector} from './DisplayPagePreviewItemSelector';
 import DragPreview from './DragPreview';
 import LayoutViewport from './LayoutViewport';
 import ShortcutManager from './ShortcutManager';
 import Sidebar from './Sidebar';
 import Toolbar from './Toolbar';
 import URLParser from './URLParser';
+import CommonStylesManager from './topper/CommonStylesManager';
 
 const DEFAULT_SESSION_LENGTH = 60 * 1000;
 
 export default function App({state}) {
+	const displayPagePreviewItemSelectorWrapper = useMemo(
+		() =>
+			config.layoutType === LAYOUT_TYPES.display &&
+			document.getElementById('infoItemSelectorContainer'),
+		[]
+	);
+
 	const initialState = reducer(state, {type: INIT});
 
 	useEffect(() => {
@@ -51,19 +68,52 @@ export default function App({state}) {
 
 	return (
 		<StoreContextProvider initialState={initialState} reducer={reducer}>
+			<BackURL />
+
 			<LanguageDirection />
+
 			<URLParser />
+
 			<ControlsProvider>
 				<CollectionActiveItemContextProvider>
 					<DragAndDropContextProvider>
-						<DragPreview />
-						<Toolbar />
-						<LayoutViewport />
-						<ShortcutManager />
+						<EditableProcessorContextProvider>
+							<DisplayPagePreviewItemContextProvider>
+								<WidgetsContextProvider>
+									{displayPagePreviewItemSelectorWrapper ? (
+										<ReactPortal
+											container={
+												displayPagePreviewItemSelectorWrapper
+											}
+										>
+											<DisplayPagePreviewItemSelector
+												dark
+											/>
+										</ReactPortal>
+									) : null}
 
-						<StyleBookContextProvider>
-							<Sidebar />
-						</StyleBookContextProvider>
+									<DragPreview />
+
+									<StyleErrorsContextProvider>
+										<Toolbar />
+
+										<ShortcutManager />
+
+										<GlobalContextProvider>
+											{config.featureFlagLps132571 ? (
+												<CommonStylesManager />
+											) : null}
+
+											<LayoutViewport />
+
+											<StyleBookContextProvider>
+												<Sidebar />
+											</StyleBookContextProvider>
+										</GlobalContextProvider>
+									</StyleErrorsContextProvider>
+								</WidgetsContextProvider>
+							</DisplayPagePreviewItemContextProvider>
+						</EditableProcessorContextProvider>
 					</DragAndDropContextProvider>
 				</CollectionActiveItemContextProvider>
 			</ControlsProvider>
@@ -75,11 +125,53 @@ App.propTypes = {
 	state: PropTypes.object.isRequired,
 };
 
+const BackURL = () => {
+	const [backLinkElement, backLinkURL] = useMemo(() => {
+		const backLinkElement = document.querySelector('.lfr-back-link');
+
+		try {
+			return [backLinkElement, new URL(backLinkElement?.href)];
+		}
+		catch (error) {
+			return [];
+		}
+	}, []);
+
+	const segmentsExperienceId = useSelector(selectSegmentsExperienceId);
+
+	useEffect(() => {
+		if (backLinkElement && backLinkURL && segmentsExperienceId) {
+			backLinkURL.searchParams.set(
+				'segmentsExperienceId',
+				segmentsExperienceId
+			);
+			backLinkElement.href = backLinkURL.toString();
+
+			const currentURL = new URL(window.location.href);
+
+			if (currentURL.searchParams.has('p_l_back_url')) {
+				currentURL.searchParams.set(
+					'p_l_back_url',
+					backLinkURL.toString()
+				);
+
+				window.history.replaceState(
+					null,
+					document.title,
+					currentURL.toString()
+				);
+			}
+		}
+	}, [backLinkElement, backLinkURL, segmentsExperienceId]);
+
+	return null;
+};
+
 const LanguageDirection = () => {
 	const languageId = useSelector(selectLanguageId);
 
 	useEffect(() => {
-		const currentLanguageDirection = config.languageDirection[languageId];
+		const currentLanguageDirection = Liferay.Language.direction[languageId];
 		const wrapper = document.getElementById('wrapper');
 
 		if (wrapper) {

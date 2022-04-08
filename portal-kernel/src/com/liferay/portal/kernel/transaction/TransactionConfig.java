@@ -138,29 +138,20 @@ public class TransactionConfig {
 		return _readOnly;
 	}
 
+	public boolean isStrictReadOnly() {
+		return _strictReadOnly;
+	}
+
 	@Override
 	public String toString() {
-		StringBundler sb = new StringBundler(17);
-
-		sb.append("{isolation=");
-		sb.append(_isolation);
-		sb.append(", noRollbackForClassNames=");
-		sb.append(Arrays.toString(_noRollbackForClassNames));
-		sb.append(", noRollbackForClasses=");
-		sb.append(Arrays.toString(_noRollbackForClasses));
-		sb.append(", propagation=");
-		sb.append(_propagation);
-		sb.append(", readOnly=");
-		sb.append(_readOnly);
-		sb.append(", rollbackForClassNames=");
-		sb.append(Arrays.toString(_rollbackForClassNames));
-		sb.append(", rollbackForClasses=");
-		sb.append(Arrays.toString(_rollbackForClasses));
-		sb.append(", timeout=");
-		sb.append(_timeout);
-		sb.append(StringPool.CLOSE_CURLY_BRACE);
-
-		return sb.toString();
+		return StringBundler.concat(
+			"{isolation=", _isolation, ", noRollbackForClassNames=",
+			Arrays.toString(_noRollbackForClassNames),
+			", noRollbackForClasses=", Arrays.toString(_noRollbackForClasses),
+			", propagation=", _propagation, ", readOnly=", _readOnly,
+			", rollbackForClassNames=", Arrays.toString(_rollbackForClassNames),
+			", rollbackForClasses=", Arrays.toString(_rollbackForClasses),
+			", timeout=", _timeout, StringPool.CLOSE_CURLY_BRACE);
 	}
 
 	public static class Builder {
@@ -217,6 +208,16 @@ public class TransactionConfig {
 			return this;
 		}
 
+		public Builder setStrictReadOnly(boolean strictReadOnly) {
+			if (strictReadOnly) {
+				_readOnly = true;
+			}
+
+			_strictReadOnly = strictReadOnly;
+
+			return this;
+		}
+
 		public Builder setTimeout(int timeout) {
 			_timeout = timeout;
 
@@ -232,6 +233,7 @@ public class TransactionConfig {
 		private boolean _readOnly;
 		private Class<?>[] _rollbackForClasses = _EMPTY_CLASS_ARRAY;
 		private String[] _rollbackForClassNames = StringPool.EMPTY_ARRAY;
+		private boolean _strictReadOnly;
 		private int _timeout = TransactionDefinition.TIMEOUT_DEFAULT;
 
 	}
@@ -277,6 +279,7 @@ public class TransactionConfig {
 		_readOnly = builder._readOnly;
 		_rollbackForClassNames = builder._rollbackForClassNames;
 		_rollbackForClasses = builder._rollbackForClasses;
+		_strictReadOnly = builder._strictReadOnly;
 		_timeout = builder._timeout;
 	}
 
@@ -287,6 +290,7 @@ public class TransactionConfig {
 	private final boolean _readOnly;
 	private final Class<?>[] _rollbackForClasses;
 	private final String[] _rollbackForClassNames;
+	private final boolean _strictReadOnly;
 	private final int _timeout;
 
 }

@@ -2,8 +2,8 @@
 definition {
 
 	property portal.release = "true";
-	property portal.upstream = "quarantine";
-	property testray.main.component.name = "Commerce";
+	property portal.upstream = "true";
+	property testray.main.component.name = "Shopping Experience";
 
 	setUp {
 		TestCase.setUpPortalInstance();
@@ -11,31 +11,24 @@ definition {
 		User.firstLoginPG();
 
 		CommerceConfiguration.commerceStoreFrontSetUp();
-
-		CommerceNavigator.gotoPortlet(
-			category = "Configuration",
-			panel = "Control Panel",
-			portlet = "Search");
-
-		SearchAdministration.executeSearchActions(actionsDescription = "Reindex all search indexes.");
 	}
 
 	tearDown {
-		var testPortalInstance = PropsUtil.get("test.portal.instance");
+		Navigator.openURL();
 
-		if ("${testPortalInstance}" == "true") {
-			PortalInstances.tearDownCP();
-		}
-		else {
-			CommerceConfiguration.commerceAdminTearDown();
-
+		if (IsElementPresent(locator1 = "UserBar#USER_AVATAR_IMAGE")) {
 			User.logoutPG();
 		}
+
+		User.firstLoginPG();
+
+		CommerceConfiguration.commerceAdminTearDown();
+
+		User.logoutPG();
 	}
 
 	test ViewStoreFrontSimpleProduct {
 		property portal.acceptance = "quarantine";
-		property test.name.skip.portal.instance = "CommerceFrontStore#ViewStoreFrontSimpleProduct";
 
 		CommerceNavigator.gotoPortlet(
 			category = "Product Management",
@@ -48,15 +41,17 @@ definition {
 		CPCommerceCatalog.newOptionsEntry(
 			optionDescription = "Option Description",
 			optionFieldType = "Select from List",
-			optionName = "Color",
-			optionValuesList = "Black,Blue,White",
-			valuePriority = "1");
+			optionName = "Color");
+
+		Button.clickSave();
+
+		CPCommerceCatalog.addOptionValues(optionValuesList = "Black:1,Blue:2,White:3");
 
 		echo("Creating new Product...");
 
 		CommerceNavigator.gotoPortlet(
 			category = "Product Management",
-			portlet = "Options");
+			portlet = "Products");
 
 		CPCommerceCatalog.newProductsEntry(
 			productName = "Simple T-Shirt",
@@ -80,15 +75,18 @@ definition {
 
 		CommerceEntry.gotoMenuTab(menuTab = "Media");
 
-		CommerceProductImages.addProductImages(optionValuesList = "Black,Blue,White");
+		CommerceProductImages.addProductImages(
+			imageTitles = "Black,Blue,White",
+			optionValues = "Black,Blue,White");
 
 		echo("Asserting all the attributes are correctly shown in Front Store...");
 
 		CommerceNavigator.gotoFrontStoreProductPage(productName = "Simple T-Shirt");
 
 		FrontStore.viewProductDetail(
-			FSOptionValuesList = "Black:10.0,Blue:20.0,White:30.0",
-			FSProductName = "Simple T-Shirt");
+			fsOptionName = "Color",
+			fsOptionValuesList = "Black:10.0,Blue:20.0,White:30.0",
+			fsProductName = "Simple T-Shirt");
 	}
 
 }

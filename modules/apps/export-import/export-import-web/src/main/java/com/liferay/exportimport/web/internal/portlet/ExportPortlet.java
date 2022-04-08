@@ -15,7 +15,10 @@
 package com.liferay.exportimport.web.internal.portlet;
 
 import com.liferay.exportimport.constants.ExportImportPortletKeys;
+import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCPortlet;
+import com.liferay.portal.kernel.theme.ThemeDisplay;
+import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.trash.TrashHelper;
 import com.liferay.trash.util.TrashWebKeys;
 
@@ -49,9 +52,9 @@ import org.osgi.service.component.annotations.Reference;
 		"javax.portlet.display-name=Export Import",
 		"javax.portlet.expiration-cache=0",
 		"javax.portlet.init-param.mvc-action-command-package-prefix=com.liferay.exportimport.web.portlet.action",
-		"javax.portlet.init-param.mvc-command-names-default-views=/export_import/export_layouts_view",
+		"javax.portlet.init-param.mvc-command-names-default-views=/export_import/view_export_layouts",
 		"javax.portlet.init-param.template-path=/META-INF/resources/",
-		"javax.portlet.init-param.view-template=/export/view.jsp",
+		"javax.portlet.init-param.view-template=/export/view_export_layouts.jsp",
 		"javax.portlet.name=" + ExportImportPortletKeys.EXPORT,
 		"javax.portlet.resource-bundle=content.Language",
 		"javax.portlet.security-role-ref=administrator"
@@ -64,6 +67,22 @@ public class ExportPortlet extends MVCPortlet {
 	public void render(
 			RenderRequest renderRequest, RenderResponse renderResponse)
 		throws IOException, PortletException {
+
+		ThemeDisplay themeDisplay = (ThemeDisplay)renderRequest.getAttribute(
+			WebKeys.THEME_DISPLAY);
+
+		Group group = themeDisplay.getSiteGroup();
+
+		if ((group.hasPrivateLayouts() && !group.hasPublicLayouts()) ||
+			group.isLayoutSetPrototype()) {
+
+			renderRequest.setAttribute(
+				WebKeys.PRIVATE_LAYOUT, Boolean.TRUE.toString());
+		}
+		else {
+			renderRequest.setAttribute(
+				WebKeys.PRIVATE_LAYOUT, Boolean.FALSE.toString());
+		}
 
 		renderRequest.setAttribute(TrashWebKeys.TRASH_HELPER, _trashHelper);
 

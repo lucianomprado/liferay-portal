@@ -2,6 +2,7 @@ let content = null;
 let videoContainer = null;
 let errorMessage = null;
 let loadingIndicator = null;
+let videoMask = null;
 
 const height = configuration.videoHeight
 	? configuration.videoHeight.replace('px', '')
@@ -11,6 +12,11 @@ const width = configuration.videoWidth
 	: configuration.videoWidth;
 
 function resize() {
+	const scrollPosition = {
+		left: window.scrollX,
+		top: window.scrollY,
+	};
+
 	content.style.height = '';
 	content.style.width = '';
 
@@ -24,6 +30,8 @@ function resize() {
 
 			content.style.height = contentHeight + 'px';
 			content.style.width = contentWidth + 'px';
+
+			window.scrollTo(scrollPosition);
 		}
 		catch (error) {
 			window.removeEventListener('resize', resize);
@@ -35,6 +43,10 @@ function showVideo() {
 	videoContainer.removeAttribute('aria-hidden');
 	errorMessage.parentElement.removeChild(errorMessage);
 	loadingIndicator.parentElement.removeChild(loadingIndicator);
+
+	if (!document.body.classList.contains('has-edit-mode-menu')) {
+		videoMask.parentElement.removeChild(videoMask);
+	}
 
 	window.addEventListener('resize', resize);
 
@@ -169,12 +181,13 @@ function main() {
 	videoContainer = content.querySelector('.video-container');
 	errorMessage = content.querySelector('.error-message');
 	loadingIndicator = content.querySelector('.loading-animation');
+	videoMask = content.querySelector('.video-mask');
 
 	window.removeEventListener('resize', resize);
 
 	try {
 		let matched = false;
-		const url = new URL(configuration.url);
+		const url = new URL(configuration.url, window.location.origin);
 		const providers = [youtubeProvider, rawProvider];
 
 		for (let i = 0; i < providers.length && !matched; i++) {

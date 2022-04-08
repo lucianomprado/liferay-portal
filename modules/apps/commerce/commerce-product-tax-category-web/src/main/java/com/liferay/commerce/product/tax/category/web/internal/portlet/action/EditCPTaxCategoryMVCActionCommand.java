@@ -47,13 +47,54 @@ import org.osgi.service.component.annotations.Reference;
 	enabled = false, immediate = true,
 	property = {
 		"javax.portlet.name=" + CPPortletKeys.CP_TAX_CATEGORY,
-		"mvc.command.name=editCPTaxCategory"
+		"mvc.command.name=/cp_tax_category/edit_cp_tax_category"
 	},
 	service = MVCActionCommand.class
 )
 public class EditCPTaxCategoryMVCActionCommand extends BaseMVCActionCommand {
 
-	protected void deleteCPTaxCategories(ActionRequest actionRequest)
+	@Override
+	protected void doProcessAction(
+			ActionRequest actionRequest, ActionResponse actionResponse)
+		throws Exception {
+
+		String cmd = ParamUtil.getString(actionRequest, Constants.CMD);
+
+		try {
+			if (cmd.equals(Constants.DELETE)) {
+				_deleteCPTaxCategories(actionRequest);
+			}
+			else if (cmd.equals(Constants.ADD) ||
+					 cmd.equals(Constants.UPDATE)) {
+
+				_updateCPTaxCategory(actionRequest);
+			}
+		}
+		catch (Exception exception) {
+			if (exception instanceof NoSuchCPTaxCategoryException ||
+				exception instanceof PrincipalException) {
+
+				SessionErrors.add(actionRequest, exception.getClass());
+
+				actionResponse.setRenderParameter("mvcPath", "/error.jsp");
+			}
+			else if (exception instanceof CPTaxCategoryNameException) {
+				hideDefaultErrorMessage(actionRequest);
+				hideDefaultSuccessMessage(actionRequest);
+
+				SessionErrors.add(actionRequest, exception.getClass());
+
+				actionResponse.setRenderParameter(
+					"mvcRenderCommandName",
+					"/cp_tax_category/edit_cp_tax_category");
+			}
+			else {
+				throw exception;
+			}
+		}
+	}
+
+	private void _deleteCPTaxCategories(ActionRequest actionRequest)
 		throws PortalException {
 
 		long[] deleteCPTaxCategoryIds = null;
@@ -75,47 +116,7 @@ public class EditCPTaxCategoryMVCActionCommand extends BaseMVCActionCommand {
 		}
 	}
 
-	@Override
-	protected void doProcessAction(
-			ActionRequest actionRequest, ActionResponse actionResponse)
-		throws Exception {
-
-		String cmd = ParamUtil.getString(actionRequest, Constants.CMD);
-
-		try {
-			if (cmd.equals(Constants.DELETE)) {
-				deleteCPTaxCategories(actionRequest);
-			}
-			else if (cmd.equals(Constants.ADD) ||
-					 cmd.equals(Constants.UPDATE)) {
-
-				updateCPTaxCategory(actionRequest);
-			}
-		}
-		catch (Exception exception) {
-			if (exception instanceof NoSuchCPTaxCategoryException ||
-				exception instanceof PrincipalException) {
-
-				SessionErrors.add(actionRequest, exception.getClass());
-
-				actionResponse.setRenderParameter("mvcPath", "/error.jsp");
-			}
-			else if (exception instanceof CPTaxCategoryNameException) {
-				hideDefaultErrorMessage(actionRequest);
-				hideDefaultSuccessMessage(actionRequest);
-
-				SessionErrors.add(actionRequest, exception.getClass());
-
-				actionResponse.setRenderParameter(
-					"mvcRenderCommandName", "editCPTaxCategory");
-			}
-			else {
-				throw exception;
-			}
-		}
-	}
-
-	protected void updateCPTaxCategory(ActionRequest actionRequest)
+	private void _updateCPTaxCategory(ActionRequest actionRequest)
 		throws PortalException {
 
 		long cpTaxCategoryId = ParamUtil.getLong(

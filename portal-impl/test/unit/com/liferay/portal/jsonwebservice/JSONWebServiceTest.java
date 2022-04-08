@@ -16,6 +16,8 @@ package com.liferay.portal.jsonwebservice;
 
 import com.liferay.portal.kernel.jsonwebservice.JSONWebServiceAction;
 import com.liferay.portal.kernel.jsonwebservice.NoSuchJSONWebServiceException;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.service.LayoutLocalService;
 import com.liferay.portal.kernel.service.LayoutLocalServiceUtil;
 import com.liferay.portal.kernel.service.ServiceContext;
@@ -108,6 +110,9 @@ public class JSONWebServiceTest extends BaseJSONWebServiceTestCase {
 			Assert.fail();
 		}
 		catch (NoSuchJSONWebServiceException noSuchJSONWebServiceException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(noSuchJSONWebServiceException);
+			}
 		}
 
 		mockHttpServletRequest = createHttpRequest(
@@ -453,6 +458,9 @@ public class JSONWebServiceTest extends BaseJSONWebServiceTestCase {
 			Assert.fail();
 		}
 		catch (NoSuchJSONWebServiceException noSuchJSONWebServiceException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(noSuchJSONWebServiceException);
+			}
 		}
 
 		mockHttpServletRequest = createHttpRequest("/foo/hello");
@@ -478,6 +486,9 @@ public class JSONWebServiceTest extends BaseJSONWebServiceTestCase {
 			Assert.fail();
 		}
 		catch (NoSuchJSONWebServiceException noSuchJSONWebServiceException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(noSuchJSONWebServiceException);
+			}
 		}
 
 		mockHttpServletRequest = createHttpRequest("/camelfoo/cool-new-world");
@@ -561,5 +572,33 @@ public class JSONWebServiceTest extends BaseJSONWebServiceTestCase {
 		Assert.assertEquals(
 			"2012, 1/3, en/2, 173/3", jsonWebServiceAction.invoke());
 	}
+
+	@Test
+	public void testTypeConversionDate() throws Exception {
+		MockHttpServletRequest mockHttpServletRequest1 = createHttpRequest(
+			"/foo/date");
+
+		mockHttpServletRequest1.setParameter("date", "2021-05-09");
+
+		JSONWebServiceAction jsonWebServiceAction1 = lookupJSONWebServiceAction(
+			mockHttpServletRequest1);
+
+		Assert.assertEquals(
+			"Sun May 09 00:00:00 GMT 2021", jsonWebServiceAction1.invoke());
+
+		MockHttpServletRequest mockHttpServletRequest2 = createHttpRequest(
+			"/foo/date");
+
+		mockHttpServletRequest2.setParameter("date", "2021-5-9");
+
+		JSONWebServiceAction jsonWebServiceAction2 = lookupJSONWebServiceAction(
+			mockHttpServletRequest2);
+
+		Assert.assertEquals(
+			"Sun May 09 00:00:00 GMT 2021", jsonWebServiceAction2.invoke());
+	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		JSONWebServiceTest.class);
 
 }

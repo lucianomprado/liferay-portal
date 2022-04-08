@@ -12,11 +12,13 @@
  * details.
  */
 
+/* eslint-disable @liferay/no-get-data-attribute */
+
 if (!CKEDITOR.plugins.get('videoembed')) {
 	const REGEX_HTTP = /^https?/;
 
 	CKEDITOR.DEFAULT_LFR_EMBED_WIDGET_TPL =
-		'<div data-embed-url="{url}" class="embed-responsive embed-responsive-16by9"><div data-embed-id="{url}">{content}</div><div class="embed-help-message">{helpMessageIcon}<span> {helpMessage}</span></div></div><br>';
+		'<div data-embed-url="{url}" class="embed-responsive embed-responsive-16by9">{content}<div class="embed-help-message">{helpMessageIcon}<span> {helpMessage}</span></div></div><br>';
 
 	/**
 	 * Enum for supported embed alignments
@@ -182,8 +184,8 @@ if (!CKEDITOR.plugins.get('videoembed')) {
 		return result;
 	};
 
-	const resizeElement = function (el, width, height) {
-		const wrapperElement = el.parentElement;
+	const resizeElement = function (element, width, height) {
+		const wrapperElement = element.parentElement;
 
 		if (wrapperElement && width > 0 && height > 0) {
 			wrapperElement.setAttribute('style', `width:${width}px;`);
@@ -522,7 +524,6 @@ if (!CKEDITOR.plugins.get('videoembed')) {
 					);
 
 					const doc = instance.wrapper.getDocument();
-					doc.appendStyleSheet('/o/frontend-css-web/main.css');
 
 					function mouseDownListener(event) {
 						const result = getSelectedElement(editor);
@@ -740,7 +741,11 @@ if (!CKEDITOR.plugins.get('videoembed')) {
 		},
 
 		onOkVideoHtml(editor, html, url) {
-			const embedContent = this._generateEmbedContent(editor, url, html);
+			const embedContent = this._generateEmbedContent(
+				editor,
+				url,
+				`<div data-embed-id="${url}">${html}</div>`
+			);
 
 			editor.insertHtml(embedContent);
 		},

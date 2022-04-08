@@ -121,7 +121,7 @@ currentURLObj.setParameter("historyKey", liferayPortletResponse.getNamespace() +
 
 		searchContainerContentBox.delegate(
 			'click',
-			function (event) {
+			(event) => {
 				var link = event.currentTarget;
 
 				var rowId = link.attr('data-rowId');
@@ -156,7 +156,7 @@ currentURLObj.setParameter("historyKey", liferayPortletResponse.getNamespace() +
 			'.modify-link'
 		);
 
-		A.one('#<portlet:namespace />openUserGroupsLink').on('click', function (event) {
+		A.one('#<portlet:namespace />openUserGroupsLink').on('click', (event) => {
 			Liferay.Util.openSelectionModal({
 				onSelect: function (selectedItem) {
 					var A = AUI();
@@ -192,10 +192,13 @@ currentURLObj.setParameter("historyKey", liferayPortletResponse.getNamespace() +
 				title: '<liferay-ui:message arguments="user-group" key="select-x" />',
 
 				<%
-				PortletURL selectUserGroupURL = PortletProviderUtil.getPortletURL(request, UserGroup.class.getName(), PortletProvider.Action.BROWSE);
-
-				selectUserGroupURL.setParameter("p_u_i_d", (selUser == null) ? "0" : String.valueOf(selUser.getUserId()));
-				selectUserGroupURL.setWindowState(LiferayWindowState.POP_UP);
+				PortletURL selectUserGroupURL = PortletURLBuilder.create(
+					PortletProviderUtil.getPortletURL(request, UserGroup.class.getName(), PortletProvider.Action.BROWSE)
+				).setParameter(
+					"p_u_i_d", (selUser == null) ? "0" : String.valueOf(selUser.getUserId())
+				).setWindowState(
+					LiferayWindowState.POP_UP
+				).buildPortletURL();
 				%>
 
 				url: '<%= selectUserGroupURL.toString() %>',

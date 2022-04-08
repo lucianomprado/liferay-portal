@@ -18,6 +18,7 @@
 
 <%
 String subscriptionTitle = ParamUtil.getString(request, "subscriptionTitle");
+
 long userId = ParamUtil.getLong(request, "userId");
 
 User unsubscribedUser = UserLocalServiceUtil.getUser(userId);
@@ -62,7 +63,7 @@ if (manageSubscriptionsURL != null) {
 			</h4>
 
 			<a href="<%= manageSubscriptionsURL.toString() %>">
-				<liferay-ui:message key="manage-your-subcriptions" />
+				<liferay-ui:message key="manage-your-subscriptions" />
 			</a>
 		</p>
 	</c:if>

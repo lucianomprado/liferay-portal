@@ -19,6 +19,7 @@ import com.liferay.analytics.settings.web.internal.constants.AnalyticsSettingsWe
 import com.liferay.analytics.settings.web.internal.search.GroupChecker;
 import com.liferay.analytics.settings.web.internal.search.GroupSearch;
 import com.liferay.analytics.settings.web.internal.util.AnalyticsSettingsUtil;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
@@ -28,13 +29,13 @@ import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Organization;
+import com.liferay.portal.kernel.portlet.SearchOrderByUtil;
 import com.liferay.portal.kernel.service.GroupServiceUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.LinkedHashMapBuilder;
 import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
-import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
@@ -93,46 +94,33 @@ public class GroupDisplayContext {
 
 		groupSearch.setOrderByCol(_getOrderByCol());
 		groupSearch.setOrderByType(getOrderByType());
+		groupSearch.setResultsAndTotal(
+			() -> {
+				List<Group> groups = Collections.emptyList();
 
-		List<Group> groups = Collections.emptyList();
+				try {
+					groups = GroupServiceUtil.search(
+						_getCompanyId(), _getClassNameIds(), _getKeywords(),
+						_getGroupParams(), groupSearch.getStart(),
+						groupSearch.getEnd(),
+						new GroupNameComparator(_isOrderByAscending()));
+				}
+				catch (PortalException portalException) {
+					_log.error(portalException);
+				}
 
-		try {
-			groups = GroupServiceUtil.search(
+				_fetchChannelNames(groups);
+
+				return groups;
+			},
+			GroupServiceUtil.searchCount(
 				_getCompanyId(), _getClassNameIds(), _getKeywords(),
-				_getGroupParams(), groupSearch.getStart(), groupSearch.getEnd(),
-				new GroupNameComparator(_isOrderByAscending()));
-		}
-		catch (PortalException portalException) {
-			_log.error(portalException, portalException);
-		}
-
-		groupSearch.setResults(groups);
-
-		if (StringUtil.equalsIgnoreCase(
-				_mvcRenderCommandName,
-				"/analytics_settings/edit_synced_sites")) {
-
-			groupSearch.setRowChecker(
-				new GroupChecker(
-					_renderResponse, null,
-					SetUtil.fromArray(_analyticsConfiguration.syncedGroupIds()),
-					_mvcRenderCommandName));
-		}
-		else {
-			_fetchChannelNames(groups);
-
-			groupSearch.setRowChecker(
-				new GroupChecker(
-					_renderResponse,
-					ParamUtil.getString(_renderRequest, "channelId"),
-					_getDisabledGroupIds(), _mvcRenderCommandName));
-		}
-
-		int total = GroupServiceUtil.searchCount(
-			_getCompanyId(), _getClassNameIds(), _getKeywords(),
-			_getGroupParams());
-
-		groupSearch.setTotal(total);
+				_getGroupParams()));
+		groupSearch.setRowChecker(
+			new GroupChecker(
+				_renderResponse,
+				ParamUtil.getString(_renderRequest, "channelId"),
+				_getDisabledGroupIds(), _mvcRenderCommandName));
 
 		return groupSearch;
 	}
@@ -142,16 +130,19 @@ public class GroupDisplayContext {
 			return _orderByType;
 		}
 
-		_orderByType = ParamUtil.getString(
-			_renderRequest, "orderByType", "asc");
+		_orderByType = SearchOrderByUtil.getOrderByType(
+			_renderRequest, AnalyticsSettingsWebKeys.ANALYTICS_CONFIGURATION,
+			"group-order-by-type", "asc");
 
 		return _orderByType;
 	}
 
 	public PortletURL getPortletURL() {
-		PortletURL portletURL = _renderResponse.createRenderURL();
-
-		portletURL.setParameter("mvcRenderCommandName", _mvcRenderCommandName);
+		PortletURL portletURL = PortletURLBuilder.createRenderURL(
+			_renderResponse
+		).setMVCRenderCommandName(
+			_mvcRenderCommandName
+		).buildPortletURL();
 
 		if (StringUtil.equalsIgnoreCase(
 				_mvcRenderCommandName, "/analytics_settings/edit_channel")) {
@@ -193,7 +184,7 @@ public class GroupDisplayContext {
 			HttpResponse httpResponse = AnalyticsSettingsUtil.doPost(
 				JSONUtil.put(
 					"dataSourceId",
-					AnalyticsSettingsUtil.getAsahFaroBackendDataSourceId(
+					AnalyticsSettingsUtil.getDataSourceId(
 						themeDisplay.getCompanyId())
 				).put(
 					"groupIds", groupIds
@@ -217,7 +208,7 @@ public class GroupDisplayContext {
 			}
 		}
 		catch (Exception exception) {
-			_log.error(exception, exception);
+			_log.error(exception);
 		}
 	}
 
@@ -272,8 +263,9 @@ public class GroupDisplayContext {
 			return _orderByCol;
 		}
 
-		_orderByCol = ParamUtil.getString(
-			_renderRequest, "orderByCol", "site-name");
+		_orderByCol = SearchOrderByUtil.getOrderByCol(
+			_renderRequest, AnalyticsSettingsWebKeys.ANALYTICS_CONFIGURATION,
+			"group-order-by-col", "site-name");
 
 		return _orderByCol;
 	}

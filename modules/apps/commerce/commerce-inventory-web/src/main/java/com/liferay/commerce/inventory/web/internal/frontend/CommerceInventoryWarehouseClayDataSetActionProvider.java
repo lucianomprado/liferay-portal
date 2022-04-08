@@ -14,21 +14,25 @@
 
 package com.liferay.commerce.inventory.web.internal.frontend;
 
-import static com.liferay.portal.kernel.security.permission.PermissionThreadLocal.getPermissionChecker;
-
 import com.liferay.commerce.inventory.constants.CommerceInventoryActionKeys;
+import com.liferay.commerce.inventory.model.CommerceInventoryWarehouse;
+import com.liferay.commerce.inventory.web.internal.frontend.constants.CommerceInventoryDataSetConstants;
 import com.liferay.commerce.inventory.web.internal.model.Warehouse;
 import com.liferay.commerce.product.constants.CPPortletKeys;
 import com.liferay.frontend.taglib.clay.data.set.ClayDataSetActionProvider;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemListBuilder;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.portlet.LiferayWindowState;
 import com.liferay.portal.kernel.portlet.PortletURLFactoryUtil;
-import com.liferay.portal.kernel.service.permission.PortalPermissionUtil;
+import com.liferay.portal.kernel.security.auth.PrincipalException;
+import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
+import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
+import com.liferay.portal.kernel.security.permission.resource.PortletResourcePermission;
 import com.liferay.portal.kernel.theme.PortletDisplay;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.Constants;
@@ -38,7 +42,6 @@ import com.liferay.portal.kernel.util.WebKeys;
 
 import java.util.List;
 
-import javax.portlet.ActionRequest;
 import javax.portlet.PortletRequest;
 import javax.portlet.PortletURL;
 import javax.portlet.WindowStateException;
@@ -68,9 +71,7 @@ public class CommerceInventoryWarehouseClayDataSetActionProvider
 		Warehouse warehouse = (Warehouse)model;
 
 		return DropdownItemListBuilder.add(
-			() -> PortalPermissionUtil.contains(
-				getPermissionChecker(),
-				CommerceInventoryActionKeys.MANAGE_INVENTORY),
+			() -> _hasPermission(),
 			dropdownItem -> {
 				dropdownItem.setHref(
 					_getWarehouseEditURL(
@@ -81,9 +82,7 @@ public class CommerceInventoryWarehouseClayDataSetActionProvider
 				dropdownItem.setTarget("sidePanel");
 			}
 		).add(
-			() -> PortalPermissionUtil.contains(
-				getPermissionChecker(),
-				CommerceInventoryActionKeys.MANAGE_INVENTORY),
+			() -> _hasPermission(),
 			dropdownItem -> {
 				dropdownItem.setHref(
 					_getWarehouseDeleteURL(
@@ -99,23 +98,21 @@ public class CommerceInventoryWarehouseClayDataSetActionProvider
 		long commerceInventoryWarehouseItemId,
 		HttpServletRequest httpServletRequest) {
 
-		PortletURL portletURL = _portal.getControlPanelPortletURL(
-			_portal.getOriginalServletRequest(httpServletRequest),
-			CPPortletKeys.COMMERCE_INVENTORY, PortletRequest.ACTION_PHASE);
-
-		String redirect = ParamUtil.getString(
-			httpServletRequest, "currentUrl",
-			_portal.getCurrentURL(httpServletRequest));
-
-		portletURL.setParameter(
-			ActionRequest.ACTION_NAME, "editCommerceInventoryWarehouseItem");
-		portletURL.setParameter(Constants.CMD, Constants.DELETE);
-		portletURL.setParameter("redirect", redirect);
-		portletURL.setParameter(
-			"commerceInventoryWarehouseItemId",
-			String.valueOf(commerceInventoryWarehouseItemId));
-
-		return portletURL.toString();
+		return PortletURLBuilder.create(
+			_portal.getControlPanelPortletURL(
+				_portal.getOriginalServletRequest(httpServletRequest),
+				CPPortletKeys.COMMERCE_INVENTORY, PortletRequest.ACTION_PHASE)
+		).setActionName(
+			"/commerce_inventory/edit_commerce_inventory_warehouse_item"
+		).setCMD(
+			Constants.DELETE
+		).setRedirect(
+			ParamUtil.getString(
+				httpServletRequest, "currentUrl",
+				_portal.getCurrentURL(httpServletRequest))
+		).setParameter(
+			"commerceInventoryWarehouseItemId", commerceInventoryWarehouseItemId
+		).buildString();
 	}
 
 	private String _getWarehouseEditURL(
@@ -128,29 +125,46 @@ public class CommerceInventoryWarehouseClayDataSetActionProvider
 
 		PortletDisplay portletDisplay = themeDisplay.getPortletDisplay();
 
-		PortletURL portletURL = PortletURLFactoryUtil.create(
-			themeDisplay.getRequest(), portletDisplay.getId(),
-			themeDisplay.getPlid(), PortletRequest.RENDER_PHASE);
-
-		portletURL.setParameter(
-			"mvcRenderCommandName", "editCommerceInventoryWarehouseItem");
-		portletURL.setParameter("redirect", themeDisplay.getURLCurrent());
-		portletURL.setParameter(
-			"commerceInventoryWarehouseItemId",
-			String.valueOf(commerceInventoryWarehouseItemId));
+		PortletURL portletURL = PortletURLBuilder.create(
+			PortletURLFactoryUtil.create(
+				themeDisplay.getRequest(), portletDisplay.getId(),
+				themeDisplay.getPlid(), PortletRequest.RENDER_PHASE)
+		).setMVCRenderCommandName(
+			"/commerce_inventory/edit_commerce_inventory_warehouse_item"
+		).setRedirect(
+			themeDisplay.getURLCurrent()
+		).setParameter(
+			"commerceInventoryWarehouseItemId", commerceInventoryWarehouseItemId
+		).buildPortletURL();
 
 		try {
 			portletURL.setWindowState(LiferayWindowState.POP_UP);
 		}
 		catch (WindowStateException windowStateException) {
-			_log.error(windowStateException, windowStateException);
+			_log.error(windowStateException);
 		}
 
 		return portletURL.toString();
 	}
 
+	private boolean _hasPermission() throws PrincipalException {
+		PortletResourcePermission portletResourcePermission =
+			_commerceInventoryWarehouseModelResourcePermission.
+				getPortletResourcePermission();
+
+		return portletResourcePermission.contains(
+			PermissionThreadLocal.getPermissionChecker(), null,
+			CommerceInventoryActionKeys.MANAGE_INVENTORY);
+	}
+
 	private static final Log _log = LogFactoryUtil.getLog(
 		CommerceInventoryWarehouseClayDataSetActionProvider.class);
+
+	@Reference(
+		target = "(model.class.name=com.liferay.commerce.inventory.model.CommerceInventoryWarehouse)"
+	)
+	private ModelResourcePermission<CommerceInventoryWarehouse>
+		_commerceInventoryWarehouseModelResourcePermission;
 
 	@Reference
 	private Portal _portal;

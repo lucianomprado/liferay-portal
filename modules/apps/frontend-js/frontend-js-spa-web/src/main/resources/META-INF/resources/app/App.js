@@ -12,10 +12,8 @@
  * details.
  */
 
-import {debounce, delegate} from 'frontend-js-web';
+import {EventEmitter, EventHandler, debounce, delegate} from 'frontend-js-web';
 
-import EventEmitter from '../events/EventEmitter';
-import EventHandler from '../events/EventHandler';
 import Route from '../route/Route';
 import Screen from '../screen/Screen';
 import Surface from '../surface/Surface';
@@ -27,7 +25,6 @@ import {
 	getUrlPathWithoutHash,
 	getUrlPathWithoutHashAndSearch,
 	isCurrentBrowserPath,
-	log,
 	removePathTrailingSlash,
 	setReferrer,
 } from '../util/utils';
@@ -42,7 +39,7 @@ class App extends EventEmitter {
 	/**
 	 * App class that handle routes and screens lifecycle.
 	 */
-	constructor() {
+	constructor(config) {
 		super();
 
 		/**
@@ -105,8 +102,9 @@ class App extends EventEmitter {
 		 * @default form[enctype="multipart/form-data"]:not([data-senna-off])
 		 * @protected
 		 */
-		this.formSelector =
-			'form[enctype="multipart/form-data"]:not([data-senna-off])';
+		this.formSelector = config?.navigationExceptionSelectors
+			? `form${config.navigationExceptionSelectors}`
+			: 'form[enctype="multipart/form-data"]:not([data-senna-off])';
 
 		/**
 		 * When enabled, the route matching ignores query string from the path.
@@ -122,7 +120,9 @@ class App extends EventEmitter {
 		 * @default a:not([data-senna-off])
 		 * @protected
 		 */
-		this.linkSelector = 'a:not([data-senna-off]):not([target="_blank"])';
+		this.linkSelector = config?.navigationExceptionSelectors
+			? `a${config.navigationExceptionSelectors}`
+			: 'a:not([data-senna-off]):not([target="_blank"])';
 
 		/**
 		 * Holds the loading css class.
@@ -359,26 +359,20 @@ class App extends EventEmitter {
 			const path = getUrlPath(url);
 
 			if (!this.isLinkSameOrigin_(uri.host)) {
-				log('Offsite link clicked');
-
 				return false;
 			}
 
 			if (!this.isSameBasePath_(path)) {
-				log("Link clicked outside app's base path");
-
 				return false;
 			}
 
 			// Prevents navigation if it's a hash change on the same url.
 
-			if (uri.hash && isCurrentBrowserPath(path)) {
+			if ((uri.hash || url.endsWith('#')) && isCurrentBrowserPath(path)) {
 				return false;
 			}
 
 			if (!this.findRoute(path)) {
-				log('No route for ' + path);
-
 				return false;
 			}
 
@@ -416,8 +410,6 @@ class App extends EventEmitter {
 	 */
 	createScreenInstance(path, route) {
 		if (!this.pendingNavigate && path === this.activePath) {
-			log('Already at destination, refresh navigation');
-
 			return this.activeScreen;
 		}
 		/* jshint newcap: false */
@@ -433,7 +425,6 @@ class App extends EventEmitter {
 			else {
 				screen = handler(route) || new Screen();
 			}
-			log('Create screen for [' + path + '] [' + screen + ']');
 		}
 
 		return screen;
@@ -473,8 +464,6 @@ class App extends EventEmitter {
 		if (!route) {
 			return Promise.reject(new Error('No route for ' + path));
 		}
-
-		log('Navigate to [' + path + ']');
 
 		this.stopPendingNavigate_();
 		this.isNavigationPending = true;
@@ -563,7 +552,6 @@ class App extends EventEmitter {
 		this.pendingNavigate = null;
 		Liferay.SPA.__capturedFormElement__ = null;
 		Liferay.SPA.__capturedFormButtonElement__ = null;
-		log('Navigation done');
 	}
 
 	/**
@@ -678,7 +666,6 @@ class App extends EventEmitter {
 	 * @protected
 	 */
 	handleNavigateError_(path, nextScreen, error) {
-		log('Navigation error for [' + nextScreen + '] (' + error.stack + ')');
 		this.emit('navigationError', {
 			error,
 			nextScreen,
@@ -824,7 +811,7 @@ class App extends EventEmitter {
 		try {
 			this.navigate(getUrlPath(href), false, event);
 		}
-		catch (err) {
+		catch (error) {
 
 			// Do not prevent link navigation in case some synchronous error occurs
 
@@ -1012,8 +999,6 @@ class App extends EventEmitter {
 				this.pendingNavigate.path === event.path ||
 				this.navigationStrategy === NavigationStrategy.SCHEDULE_LAST
 			) {
-				log('Waiting...');
-
 				return;
 			}
 		}
@@ -1054,10 +1039,6 @@ class App extends EventEmitter {
 			event.shiftKey ||
 			event.button
 		) {
-			log(
-				'Navigate aborted, invalid mouse button or modifier key pressed.'
-			);
-
 			return;
 		}
 		this.maybeNavigate_(event.delegateTarget.href, event);
@@ -1072,8 +1053,6 @@ class App extends EventEmitter {
 	onDocSubmitDelegate_(event) {
 		var form = event.delegateTarget;
 		if (form.method === 'get') {
-			log('GET method not supported');
-
 			return;
 		}
 		event.capturedFormElement = form;
@@ -1163,7 +1142,6 @@ class App extends EventEmitter {
 		}
 
 		if (state.senna) {
-			log('History navigation to [' + state.path + ']');
 			this.popstateScrollTop = state.scrollTop;
 			this.popstateScrollLeft = state.scrollLeft;
 			if (!this.nativeScrollRestorationSupported) {
@@ -1256,8 +1234,6 @@ class App extends EventEmitter {
 			return Promise.reject(new Error('No route for ' + path));
 		}
 
-		log('Prefetching [' + path + ']');
-
 		var nextScreen = this.createScreenInstance(path, route);
 
 		return nextScreen
@@ -1322,16 +1298,6 @@ class App extends EventEmitter {
 		Object.keys(surfaces).forEach((id) => {
 			var surfaceContent = nextScreen.getSurfaceContent(id, params);
 			surfaces[id].addContent(nextScreen.getId(), surfaceContent);
-			log(
-				'Screen [' +
-					nextScreen.getId() +
-					'] add content to surface ' +
-					'[' +
-					surfaces[id] +
-					'] [' +
-					(surfaceContent ? '...' : 'empty') +
-					']'
-			);
 		});
 	}
 
@@ -1476,7 +1442,7 @@ class App extends EventEmitter {
 	stopPendingNavigate_() {
 		if (this.pendingNavigate) {
 
-			//this.pendingNavigate.cancel('Cancel pending navigation');
+			// this.pendingNavigate.cancel('Cancel pending navigation');
 
 		}
 		this.pendingNavigate = null;

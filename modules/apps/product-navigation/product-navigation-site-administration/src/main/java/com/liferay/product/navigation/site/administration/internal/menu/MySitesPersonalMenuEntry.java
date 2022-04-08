@@ -17,8 +17,9 @@ package com.liferay.product.navigation.site.administration.internal.menu;
 import com.liferay.item.selector.ItemSelector;
 import com.liferay.item.selector.ItemSelectorCriterion;
 import com.liferay.item.selector.criteria.URLItemSelectorReturnType;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Organization;
@@ -64,13 +65,11 @@ public class MySitesPersonalMenuEntry implements PersonalMenuEntry {
 
 	@Override
 	public String getLabel(Locale locale) {
-		return LanguageUtil.get(locale, "my-sites");
+		return _language.get(locale, "my-sites");
 	}
 
 	@Override
-	public String getPortletURL(HttpServletRequest httpServletRequest)
-		throws PortalException {
-
+	public String getPortletURL(HttpServletRequest httpServletRequest) {
 		String namespace = AUIUtil.getNamespace(httpServletRequest);
 
 		String eventName = namespace + "selectSite";
@@ -85,21 +84,13 @@ public class MySitesPersonalMenuEntry implements PersonalMenuEntry {
 			RequestBackedPortletURLFactoryUtil.create(httpServletRequest),
 			eventName, itemSelectorCriterion);
 
-		StringBuilder sb = new StringBuilder(11);
-
-		sb.append("javascript:Liferay.Util.openSelectionModal({id: '");
-		sb.append(namespace);
-		sb.append("selectSite', onSelect: function(selectedItem) ");
-		sb.append("{Liferay.Util.navigate(selectedItem.url);}");
-		sb.append(", selectEventName: '");
-		sb.append(eventName);
-		sb.append("', title: '");
-		sb.append(LanguageUtil.get(httpServletRequest, "select-site"));
-		sb.append("', url:'");
-		sb.append(HtmlUtil.escapeJS(itemSelectorURL.toString()));
-		sb.append("'});");
-
-		return sb.toString();
+		return StringBundler.concat(
+			"javascript:Liferay.Util.openSelectionModal({id: '", namespace,
+			"selectSite', onSelect: function(selectedItem) ",
+			"{Liferay.Util.navigate(selectedItem.url);}",
+			", selectEventName: '", eventName, "', title: '",
+			_language.get(httpServletRequest, "select-site"), "', url:'",
+			HtmlUtil.escapeJS(itemSelectorURL.toString()), "'});");
 	}
 
 	@Override
@@ -130,21 +121,16 @@ public class MySitesPersonalMenuEntry implements PersonalMenuEntry {
 		return false;
 	}
 
-	@Reference(unbind = "-")
-	public void setItemSelector(ItemSelector itemSelector) {
-		_itemSelector = itemSelector;
-	}
-
-	@Reference(unbind = "-")
-	public void setRecentGroupManager(RecentGroupManager recentGroupManager) {
-		_recentGroupManager = recentGroupManager;
-	}
-
+	@Reference
 	private ItemSelector _itemSelector;
+
+	@Reference
+	private Language _language;
 
 	@Reference
 	private Portal _portal;
 
+	@Reference
 	private RecentGroupManager _recentGroupManager;
 
 }

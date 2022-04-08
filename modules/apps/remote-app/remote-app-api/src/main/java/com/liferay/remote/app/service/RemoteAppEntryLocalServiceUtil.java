@@ -14,9 +14,17 @@
 
 package com.liferay.remote.app.service;
 
-import org.osgi.framework.Bundle;
-import org.osgi.framework.FrameworkUtil;
-import org.osgi.util.tracker.ServiceTracker;
+import com.liferay.petra.sql.dsl.query.DSLQuery;
+import com.liferay.portal.kernel.dao.orm.DynamicQuery;
+import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.model.PersistedModel;
+import com.liferay.portal.kernel.util.OrderByComparator;
+import com.liferay.remote.app.model.RemoteAppEntry;
+
+import java.io.Serializable;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * Provides the local service utility for RemoteAppEntry. This utility wraps
@@ -37,14 +45,48 @@ public class RemoteAppEntryLocalServiceUtil {
 	 *
 	 * Never modify this class directly. Add custom service methods to <code>com.liferay.remote.app.service.impl.RemoteAppEntryLocalServiceImpl</code> and rerun ServiceBuilder to regenerate this class.
 	 */
-	public static com.liferay.remote.app.model.RemoteAppEntry addRemoteAppEntry(
-			long userId, java.util.Map<java.util.Locale, String> nameMap,
-			String url,
-			com.liferay.portal.kernel.service.ServiceContext serviceContext)
-		throws com.liferay.portal.kernel.exception.PortalException {
+	public static RemoteAppEntry addCustomElementRemoteAppEntry(
+			String externalReferenceCode, long userId,
+			String customElementCSSURLs, String customElementHTMLElementName,
+			String customElementURLs, boolean customElementUseESM,
+			String description, String friendlyURLMapping, boolean instanceable,
+			Map<java.util.Locale, String> nameMap, String portletCategoryName,
+			String properties, String sourceCodeURL)
+		throws PortalException {
 
-		return getService().addRemoteAppEntry(
-			userId, nameMap, url, serviceContext);
+		return getService().addCustomElementRemoteAppEntry(
+			externalReferenceCode, userId, customElementCSSURLs,
+			customElementHTMLElementName, customElementURLs,
+			customElementUseESM, description, friendlyURLMapping, instanceable,
+			nameMap, portletCategoryName, properties, sourceCodeURL);
+	}
+
+	public static RemoteAppEntry addIFrameRemoteAppEntry(
+			long userId, String description, String friendlyURLMapping,
+			String iFrameURL, boolean instanceable,
+			Map<java.util.Locale, String> nameMap, String portletCategoryName,
+			String properties, String sourceCodeURL)
+		throws PortalException {
+
+		return getService().addIFrameRemoteAppEntry(
+			userId, description, friendlyURLMapping, iFrameURL, instanceable,
+			nameMap, portletCategoryName, properties, sourceCodeURL);
+	}
+
+	public static RemoteAppEntry addOrUpdateCustomElementRemoteAppEntry(
+			String externalReferenceCode, long userId,
+			String customElementCSSURLs, String customElementHTMLElementName,
+			String customElementURLs, boolean customElementUseESM,
+			String description, String friendlyURLMapping, boolean instanceable,
+			Map<java.util.Locale, String> nameMap, String portletCategoryName,
+			String properties, String sourceCodeURL)
+		throws PortalException {
+
+		return getService().addOrUpdateCustomElementRemoteAppEntry(
+			externalReferenceCode, userId, customElementCSSURLs,
+			customElementHTMLElementName, customElementURLs,
+			customElementUseESM, description, friendlyURLMapping, instanceable,
+			nameMap, portletCategoryName, properties, sourceCodeURL);
 	}
 
 	/**
@@ -57,8 +99,8 @@ public class RemoteAppEntryLocalServiceUtil {
 	 * @param remoteAppEntry the remote app entry
 	 * @return the remote app entry that was added
 	 */
-	public static com.liferay.remote.app.model.RemoteAppEntry addRemoteAppEntry(
-		com.liferay.remote.app.model.RemoteAppEntry remoteAppEntry) {
+	public static RemoteAppEntry addRemoteAppEntry(
+		RemoteAppEntry remoteAppEntry) {
 
 		return getService().addRemoteAppEntry(remoteAppEntry);
 	}
@@ -66,9 +108,9 @@ public class RemoteAppEntryLocalServiceUtil {
 	/**
 	 * @throws PortalException
 	 */
-	public static com.liferay.portal.kernel.model.PersistedModel
-			createPersistedModel(java.io.Serializable primaryKeyObj)
-		throws com.liferay.portal.kernel.exception.PortalException {
+	public static PersistedModel createPersistedModel(
+			Serializable primaryKeyObj)
+		throws PortalException {
 
 		return getService().createPersistedModel(primaryKeyObj);
 	}
@@ -79,19 +121,16 @@ public class RemoteAppEntryLocalServiceUtil {
 	 * @param remoteAppEntryId the primary key for the new remote app entry
 	 * @return the new remote app entry
 	 */
-	public static com.liferay.remote.app.model.RemoteAppEntry
-		createRemoteAppEntry(long remoteAppEntryId) {
-
+	public static RemoteAppEntry createRemoteAppEntry(long remoteAppEntryId) {
 		return getService().createRemoteAppEntry(remoteAppEntryId);
 	}
 
 	/**
 	 * @throws PortalException
 	 */
-	public static com.liferay.portal.kernel.model.PersistedModel
-			deletePersistedModel(
-				com.liferay.portal.kernel.model.PersistedModel persistedModel)
-		throws com.liferay.portal.kernel.exception.PortalException {
+	public static PersistedModel deletePersistedModel(
+			PersistedModel persistedModel)
+		throws PortalException {
 
 		return getService().deletePersistedModel(persistedModel);
 	}
@@ -107,9 +146,8 @@ public class RemoteAppEntryLocalServiceUtil {
 	 * @return the remote app entry that was removed
 	 * @throws PortalException if a remote app entry with the primary key could not be found
 	 */
-	public static com.liferay.remote.app.model.RemoteAppEntry
-			deleteRemoteAppEntry(long remoteAppEntryId)
-		throws com.liferay.portal.kernel.exception.PortalException {
+	public static RemoteAppEntry deleteRemoteAppEntry(long remoteAppEntryId)
+		throws PortalException {
 
 		return getService().deleteRemoteAppEntry(remoteAppEntryId);
 	}
@@ -123,23 +161,28 @@ public class RemoteAppEntryLocalServiceUtil {
 	 *
 	 * @param remoteAppEntry the remote app entry
 	 * @return the remote app entry that was removed
+	 * @throws PortalException
 	 */
-	public static com.liferay.remote.app.model.RemoteAppEntry
-		deleteRemoteAppEntry(
-			com.liferay.remote.app.model.RemoteAppEntry remoteAppEntry) {
+	public static RemoteAppEntry deleteRemoteAppEntry(
+			RemoteAppEntry remoteAppEntry)
+		throws PortalException {
 
 		return getService().deleteRemoteAppEntry(remoteAppEntry);
 	}
 
-	public static <T> T dslQuery(
-		com.liferay.petra.sql.dsl.query.DSLQuery dslQuery) {
+	public static void deployRemoteAppEntry(RemoteAppEntry remoteAppEntry) {
+		getService().deployRemoteAppEntry(remoteAppEntry);
+	}
 
+	public static <T> T dslQuery(DSLQuery dslQuery) {
 		return getService().dslQuery(dslQuery);
 	}
 
-	public static com.liferay.portal.kernel.dao.orm.DynamicQuery
-		dynamicQuery() {
+	public static int dslQueryCount(DSLQuery dslQuery) {
+		return getService().dslQueryCount(dslQuery);
+	}
 
+	public static DynamicQuery dynamicQuery() {
 		return getService().dynamicQuery();
 	}
 
@@ -149,9 +192,7 @@ public class RemoteAppEntryLocalServiceUtil {
 	 * @param dynamicQuery the dynamic query
 	 * @return the matching rows
 	 */
-	public static <T> java.util.List<T> dynamicQuery(
-		com.liferay.portal.kernel.dao.orm.DynamicQuery dynamicQuery) {
-
+	public static <T> List<T> dynamicQuery(DynamicQuery dynamicQuery) {
 		return getService().dynamicQuery(dynamicQuery);
 	}
 
@@ -167,9 +208,8 @@ public class RemoteAppEntryLocalServiceUtil {
 	 * @param end the upper bound of the range of model instances (not inclusive)
 	 * @return the range of matching rows
 	 */
-	public static <T> java.util.List<T> dynamicQuery(
-		com.liferay.portal.kernel.dao.orm.DynamicQuery dynamicQuery, int start,
-		int end) {
+	public static <T> List<T> dynamicQuery(
+		DynamicQuery dynamicQuery, int start, int end) {
 
 		return getService().dynamicQuery(dynamicQuery, start, end);
 	}
@@ -187,10 +227,9 @@ public class RemoteAppEntryLocalServiceUtil {
 	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
 	 * @return the ordered range of matching rows
 	 */
-	public static <T> java.util.List<T> dynamicQuery(
-		com.liferay.portal.kernel.dao.orm.DynamicQuery dynamicQuery, int start,
-		int end,
-		com.liferay.portal.kernel.util.OrderByComparator<T> orderByComparator) {
+	public static <T> List<T> dynamicQuery(
+		DynamicQuery dynamicQuery, int start, int end,
+		OrderByComparator<T> orderByComparator) {
 
 		return getService().dynamicQuery(
 			dynamicQuery, start, end, orderByComparator);
@@ -202,9 +241,7 @@ public class RemoteAppEntryLocalServiceUtil {
 	 * @param dynamicQuery the dynamic query
 	 * @return the number of rows matching the dynamic query
 	 */
-	public static long dynamicQueryCount(
-		com.liferay.portal.kernel.dao.orm.DynamicQuery dynamicQuery) {
-
+	public static long dynamicQueryCount(DynamicQuery dynamicQuery) {
 		return getService().dynamicQueryCount(dynamicQuery);
 	}
 
@@ -216,16 +253,39 @@ public class RemoteAppEntryLocalServiceUtil {
 	 * @return the number of rows matching the dynamic query
 	 */
 	public static long dynamicQueryCount(
-		com.liferay.portal.kernel.dao.orm.DynamicQuery dynamicQuery,
+		DynamicQuery dynamicQuery,
 		com.liferay.portal.kernel.dao.orm.Projection projection) {
 
 		return getService().dynamicQueryCount(dynamicQuery, projection);
 	}
 
-	public static com.liferay.remote.app.model.RemoteAppEntry
-		fetchRemoteAppEntry(long remoteAppEntryId) {
-
+	public static RemoteAppEntry fetchRemoteAppEntry(long remoteAppEntryId) {
 		return getService().fetchRemoteAppEntry(remoteAppEntryId);
+	}
+
+	/**
+	 * Returns the remote app entry with the matching external reference code and company.
+	 *
+	 * @param companyId the primary key of the company
+	 * @param externalReferenceCode the remote app entry's external reference code
+	 * @return the matching remote app entry, or <code>null</code> if a matching remote app entry could not be found
+	 */
+	public static RemoteAppEntry fetchRemoteAppEntryByExternalReferenceCode(
+		long companyId, String externalReferenceCode) {
+
+		return getService().fetchRemoteAppEntryByExternalReferenceCode(
+			companyId, externalReferenceCode);
+	}
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link #fetchRemoteAppEntryByExternalReferenceCode(long, String)}
+	 */
+	@Deprecated
+	public static RemoteAppEntry fetchRemoteAppEntryByReferenceCode(
+		long companyId, String externalReferenceCode) {
+
+		return getService().fetchRemoteAppEntryByReferenceCode(
+			companyId, externalReferenceCode);
 	}
 
 	/**
@@ -235,8 +295,8 @@ public class RemoteAppEntryLocalServiceUtil {
 	 * @param companyId the primary key of the company
 	 * @return the matching remote app entry, or <code>null</code> if a matching remote app entry could not be found
 	 */
-	public static com.liferay.remote.app.model.RemoteAppEntry
-		fetchRemoteAppEntryByUuidAndCompanyId(String uuid, long companyId) {
+	public static RemoteAppEntry fetchRemoteAppEntryByUuidAndCompanyId(
+		String uuid, long companyId) {
 
 		return getService().fetchRemoteAppEntryByUuidAndCompanyId(
 			uuid, companyId);
@@ -275,9 +335,8 @@ public class RemoteAppEntryLocalServiceUtil {
 	/**
 	 * @throws PortalException
 	 */
-	public static com.liferay.portal.kernel.model.PersistedModel
-			getPersistedModel(java.io.Serializable primaryKeyObj)
-		throws com.liferay.portal.kernel.exception.PortalException {
+	public static PersistedModel getPersistedModel(Serializable primaryKeyObj)
+		throws PortalException {
 
 		return getService().getPersistedModel(primaryKeyObj);
 	}
@@ -293,9 +352,7 @@ public class RemoteAppEntryLocalServiceUtil {
 	 * @param end the upper bound of the range of remote app entries (not inclusive)
 	 * @return the range of remote app entries
 	 */
-	public static java.util.List<com.liferay.remote.app.model.RemoteAppEntry>
-		getRemoteAppEntries(int start, int end) {
-
+	public static List<RemoteAppEntry> getRemoteAppEntries(int start, int end) {
 		return getService().getRemoteAppEntries(start, end);
 	}
 
@@ -315,11 +372,26 @@ public class RemoteAppEntryLocalServiceUtil {
 	 * @return the remote app entry
 	 * @throws PortalException if a remote app entry with the primary key could not be found
 	 */
-	public static com.liferay.remote.app.model.RemoteAppEntry getRemoteAppEntry(
-			long remoteAppEntryId)
-		throws com.liferay.portal.kernel.exception.PortalException {
+	public static RemoteAppEntry getRemoteAppEntry(long remoteAppEntryId)
+		throws PortalException {
 
 		return getService().getRemoteAppEntry(remoteAppEntryId);
+	}
+
+	/**
+	 * Returns the remote app entry with the matching external reference code and company.
+	 *
+	 * @param companyId the primary key of the company
+	 * @param externalReferenceCode the remote app entry's external reference code
+	 * @return the matching remote app entry
+	 * @throws PortalException if a matching remote app entry could not be found
+	 */
+	public static RemoteAppEntry getRemoteAppEntryByExternalReferenceCode(
+			long companyId, String externalReferenceCode)
+		throws PortalException {
+
+		return getService().getRemoteAppEntryByExternalReferenceCode(
+			companyId, externalReferenceCode);
 	}
 
 	/**
@@ -330,40 +402,57 @@ public class RemoteAppEntryLocalServiceUtil {
 	 * @return the matching remote app entry
 	 * @throws PortalException if a matching remote app entry could not be found
 	 */
-	public static com.liferay.remote.app.model.RemoteAppEntry
-			getRemoteAppEntryByUuidAndCompanyId(String uuid, long companyId)
-		throws com.liferay.portal.kernel.exception.PortalException {
+	public static RemoteAppEntry getRemoteAppEntryByUuidAndCompanyId(
+			String uuid, long companyId)
+		throws PortalException {
 
 		return getService().getRemoteAppEntryByUuidAndCompanyId(
 			uuid, companyId);
 	}
 
-	public static java.util.List<com.liferay.remote.app.model.RemoteAppEntry>
-			searchRemoteAppEntries(
-				long companyId, String keywords, int start, int end,
-				com.liferay.portal.kernel.search.Sort sort)
-		throws com.liferay.portal.kernel.exception.PortalException {
+	public static List<RemoteAppEntry> search(
+			long companyId, String keywords, int start, int end,
+			com.liferay.portal.kernel.search.Sort sort)
+		throws PortalException {
 
-		return getService().searchRemoteAppEntries(
-			companyId, keywords, start, end, sort);
+		return getService().search(companyId, keywords, start, end, sort);
 	}
 
-	public static int searchRemoteAppEntriesCount(
-			long companyId, String keywords)
-		throws com.liferay.portal.kernel.exception.PortalException {
+	public static int searchCount(long companyId, String keywords)
+		throws PortalException {
 
-		return getService().searchRemoteAppEntriesCount(companyId, keywords);
+		return getService().searchCount(companyId, keywords);
 	}
 
-	public static com.liferay.remote.app.model.RemoteAppEntry
-			updateRemoteAppEntry(
-				long remoteAppEntryId,
-				java.util.Map<java.util.Locale, String> nameMap, String url,
-				com.liferay.portal.kernel.service.ServiceContext serviceContext)
-		throws com.liferay.portal.kernel.exception.PortalException {
+	public static void undeployRemoteAppEntry(RemoteAppEntry remoteAppEntry) {
+		getService().undeployRemoteAppEntry(remoteAppEntry);
+	}
 
-		return getService().updateRemoteAppEntry(
-			remoteAppEntryId, nameMap, url, serviceContext);
+	public static RemoteAppEntry updateCustomElementRemoteAppEntry(
+			long userId, long remoteAppEntryId, String customElementCSSURLs,
+			String customElementHTMLElementName, String customElementURLs,
+			boolean customElementUseESM, String description,
+			String friendlyURLMapping, Map<java.util.Locale, String> nameMap,
+			String portletCategoryName, String properties, String sourceCodeURL)
+		throws PortalException {
+
+		return getService().updateCustomElementRemoteAppEntry(
+			userId, remoteAppEntryId, customElementCSSURLs,
+			customElementHTMLElementName, customElementURLs,
+			customElementUseESM, description, friendlyURLMapping, nameMap,
+			portletCategoryName, properties, sourceCodeURL);
+	}
+
+	public static RemoteAppEntry updateIFrameRemoteAppEntry(
+			long userId, long remoteAppEntryId, String description,
+			String friendlyURLMapping, String iFrameURL,
+			Map<java.util.Locale, String> nameMap, String portletCategoryName,
+			String properties, String sourceCodeURL)
+		throws PortalException {
+
+		return getService().updateIFrameRemoteAppEntry(
+			userId, remoteAppEntryId, description, friendlyURLMapping,
+			iFrameURL, nameMap, portletCategoryName, properties, sourceCodeURL);
 	}
 
 	/**
@@ -376,35 +465,23 @@ public class RemoteAppEntryLocalServiceUtil {
 	 * @param remoteAppEntry the remote app entry
 	 * @return the remote app entry that was updated
 	 */
-	public static com.liferay.remote.app.model.RemoteAppEntry
-		updateRemoteAppEntry(
-			com.liferay.remote.app.model.RemoteAppEntry remoteAppEntry) {
+	public static RemoteAppEntry updateRemoteAppEntry(
+		RemoteAppEntry remoteAppEntry) {
 
 		return getService().updateRemoteAppEntry(remoteAppEntry);
 	}
 
+	public static RemoteAppEntry updateStatus(
+			long userId, long remoteAppEntryId, int status)
+		throws PortalException {
+
+		return getService().updateStatus(userId, remoteAppEntryId, status);
+	}
+
 	public static RemoteAppEntryLocalService getService() {
-		return _serviceTracker.getService();
+		return _service;
 	}
 
-	private static ServiceTracker
-		<RemoteAppEntryLocalService, RemoteAppEntryLocalService>
-			_serviceTracker;
-
-	static {
-		Bundle bundle = FrameworkUtil.getBundle(
-			RemoteAppEntryLocalService.class);
-
-		ServiceTracker<RemoteAppEntryLocalService, RemoteAppEntryLocalService>
-			serviceTracker =
-				new ServiceTracker
-					<RemoteAppEntryLocalService, RemoteAppEntryLocalService>(
-						bundle.getBundleContext(),
-						RemoteAppEntryLocalService.class, null);
-
-		serviceTracker.open();
-
-		_serviceTracker = serviceTracker;
-	}
+	private static volatile RemoteAppEntryLocalService _service;
 
 }

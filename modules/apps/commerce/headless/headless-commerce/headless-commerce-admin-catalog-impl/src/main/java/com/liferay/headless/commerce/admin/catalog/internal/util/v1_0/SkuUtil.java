@@ -24,11 +24,11 @@ import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
-import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.util.CalendarFactoryUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.Validator;
 
 import java.math.BigDecimal;
 
@@ -40,10 +40,56 @@ import java.util.Map;
  */
 public class SkuUtil {
 
-	public static CPInstance upsertCPInstance(
+	public static CPInstance addOrUpdateCPInstance(
 			CPInstanceService cpInstanceService, Sku sku,
 			CPDefinition cpDefinition, ServiceContext serviceContext)
 		throws PortalException {
+
+		long replacementCProductId = 0;
+		String replacementCPInstanceUuid = null;
+
+		if (GetterUtil.getBoolean(sku.getDiscontinued())) {
+			CPInstance discontinuedCPInstance = null;
+
+			if (Validator.isNotNull(
+					sku.getReplacementSkuExternalReferenceCode())) {
+
+				discontinuedCPInstance =
+					cpInstanceService.fetchByExternalReferenceCode(
+						sku.getReplacementSkuExternalReferenceCode(),
+						cpDefinition.getCompanyId());
+			}
+
+			long replacementSkuId = GetterUtil.getLong(
+				sku.getReplacementSkuId());
+
+			if ((discontinuedCPInstance == null) && (replacementSkuId > 0)) {
+				discontinuedCPInstance = cpInstanceService.fetchCPInstance(
+					replacementSkuId);
+			}
+
+			if (discontinuedCPInstance != null) {
+				CPDefinition discontinuedCPDefinition =
+					discontinuedCPInstance.getCPDefinition();
+
+				replacementCProductId =
+					discontinuedCPDefinition.getCProductId();
+
+				replacementCPInstanceUuid =
+					discontinuedCPInstance.getCPInstanceUuid();
+			}
+		}
+
+		Calendar discontinuedCalendar = CalendarFactoryUtil.getCalendar(
+			serviceContext.getTimeZone());
+
+		if (sku.getDiscontinuedDate() != null) {
+			discontinuedCalendar = DateConfigUtil.convertDateToCalendar(
+				sku.getDiscontinuedDate());
+		}
+
+		DateConfig discontinuedDateConfig = new DateConfig(
+			discontinuedCalendar);
 
 		Calendar displayCalendar = CalendarFactoryUtil.getCalendar(
 			serviceContext.getTimeZone());
@@ -67,9 +113,10 @@ public class SkuUtil {
 
 		DateConfig expirationDateConfig = new DateConfig(expirationCalendar);
 
-		return cpInstanceService.upsertCPInstance(
-			cpDefinition.getCPDefinitionId(), cpDefinition.getGroupId(),
-			sku.getSku(), sku.getGtin(), sku.getManufacturerPartNumber(),
+		return cpInstanceService.addOrUpdateCPInstance(
+			sku.getExternalReferenceCode(), cpDefinition.getCPDefinitionId(),
+			cpDefinition.getGroupId(), sku.getSku(), sku.getGtin(),
+			sku.getManufacturerPartNumber(),
 			GetterUtil.get(sku.getPurchasable(), false), _getOptions(sku),
 			GetterUtil.get(sku.getWidth(), 0.0),
 			GetterUtil.get(sku.getHeight(), 0.0),
@@ -79,14 +126,16 @@ public class SkuUtil {
 			(BigDecimal)GetterUtil.get(sku.getPromoPrice(), BigDecimal.ZERO),
 			(BigDecimal)GetterUtil.get(sku.getCost(), BigDecimal.ZERO),
 			GetterUtil.get(sku.getPublished(), false),
-			sku.getExternalReferenceCode(), displayDateConfig.getMonth(),
-			displayDateConfig.getDay(), displayDateConfig.getYear(),
-			displayDateConfig.getHour(), displayDateConfig.getMinute(),
-			expirationDateConfig.getMonth(), expirationDateConfig.getDay(),
-			expirationDateConfig.getYear(), expirationDateConfig.getHour(),
-			expirationDateConfig.getMinute(),
+			displayDateConfig.getMonth(), displayDateConfig.getDay(),
+			displayDateConfig.getYear(), displayDateConfig.getHour(),
+			displayDateConfig.getMinute(), expirationDateConfig.getMonth(),
+			expirationDateConfig.getDay(), expirationDateConfig.getYear(),
+			expirationDateConfig.getHour(), expirationDateConfig.getMinute(),
 			GetterUtil.get(sku.getNeverExpire(), false), sku.getUnspsc(),
-			serviceContext);
+			GetterUtil.get(sku.getDiscontinued(), false),
+			replacementCPInstanceUuid, replacementCProductId,
+			discontinuedDateConfig.getMonth(), discontinuedDateConfig.getDay(),
+			discontinuedDateConfig.getYear(), serviceContext);
 	}
 
 	private static String _getOptions(Sku sku) {
@@ -99,13 +148,12 @@ public class SkuUtil {
 		JSONArray jsonArray = JSONFactoryUtil.createJSONArray();
 
 		for (Map.Entry<String, String> entry : options.entrySet()) {
-			JSONObject jsonObject = JSONUtil.put("key", entry.getKey());
-
-			JSONArray valueJSONArray = JSONFactoryUtil.createJSONArray();
-
-			jsonObject.put("value", valueJSONArray.put(entry.getValue()));
-
-			jsonArray.put(jsonObject);
+			jsonArray.put(
+				JSONUtil.put(
+					"key", entry.getKey()
+				).put(
+					"value", JSONUtil.put(entry.getValue())
+				));
 		}
 
 		return jsonArray.toString();

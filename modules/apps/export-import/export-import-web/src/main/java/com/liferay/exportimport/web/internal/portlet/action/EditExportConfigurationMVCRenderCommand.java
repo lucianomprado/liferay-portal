@@ -31,11 +31,11 @@ import org.osgi.service.component.annotations.Component;
 	service = MVCRenderCommand.class
 )
 public class EditExportConfigurationMVCRenderCommand
-	extends GetGroupMVCRenderCommand {
+	extends BaseGroupMVCRenderCommand {
 
 	@Override
 	protected String getPath() {
-		return "/export/export_templates/edit_template.jsp";
+		return "/export/export_templates/edit_export_configuration.jsp";
 	}
 
 }

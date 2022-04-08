@@ -33,6 +33,7 @@ CommerceOrderPrice commerceOrderPrice = commerceCartContentTotalDisplayContext.g
 
 if (commerceOrderPrice != null) {
 	subtotalCommerceMoney = commerceOrderPrice.getSubtotal();
+
 	subtotalCommerceDiscountValue = commerceOrderPrice.getSubtotalDiscountValue();
 
 	if (subtotalCommerceDiscountValue != null) {
@@ -41,6 +42,7 @@ if (commerceOrderPrice != null) {
 
 	taxValueCommerceMoney = commerceOrderPrice.getTaxValue();
 	totalOrderCommerceMoney = commerceOrderPrice.getTotal();
+
 	totalCommerceDiscountValue = commerceOrderPrice.getTotalDiscountValue();
 
 	if (totalCommerceDiscountValue != null) {
@@ -49,6 +51,7 @@ if (commerceOrderPrice != null) {
 
 	if (priceDisplayType.equals(CommercePricingConstants.TAX_INCLUDED_IN_PRICE)) {
 		subtotalCommerceMoney = commerceOrderPrice.getSubtotalWithTaxAmount();
+
 		subtotalCommerceDiscountValue = commerceOrderPrice.getSubtotalDiscountValueWithTaxAmount();
 
 		if (subtotalCommerceDiscountValue != null) {
@@ -56,6 +59,7 @@ if (commerceOrderPrice != null) {
 		}
 
 		totalOrderCommerceMoney = commerceOrderPrice.getTotalWithTaxAmount();
+
 		totalCommerceDiscountValue = commerceOrderPrice.getTotalDiscountValueWithTaxAmount();
 
 		if (totalCommerceDiscountValue != null) {
@@ -92,7 +96,7 @@ SearchContainer<CommerceOrderItem> commerceOrderItemSearchContainer = commerceCa
 				</c:if>
 
 				<div class="col-auto">
-					<h3 class="h4"><liferay-ui:message key="subtotalCommerceMoney" /></h3>
+					<h3 class="h4"><liferay-ui:message key="subtotal" /></h3>
 				</div>
 
 				<div class="col text-right">
@@ -145,9 +149,7 @@ SearchContainer<CommerceOrderItem> commerceOrderItemSearchContainer = commerceCa
 		<aui:button cssClass="btn-lg" disabled="<%= !commerceCartContentTotalDisplayContext.isValidCommerceOrder() %>" href="<%= checkoutPortletURL.toString() %>" value="checkout" />
 	</aui:button-row>
 
-	<aui:script>
-		Liferay.after('commerce:productAddedToCart', function (event) {
-			Liferay.Portlet.refresh('#p_p_id<portlet:namespace />');
-		});
-	</aui:script>
+	<liferay-frontend:component
+		module="js/cart_total/view"
+	/>
 </liferay-ddm:template-renderer>

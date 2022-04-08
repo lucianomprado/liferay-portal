@@ -15,9 +15,25 @@
 const toggle = fragmentElement.querySelector('.dropdown-fragment-toggle');
 const toggleEditable = toggle.querySelector('[data-lfr-editable-id]');
 const menu = fragmentElement.querySelector('.dropdown-fragment-menu');
+const withinMasterLayout = fragmentElement.parentElement.classList.contains(
+	'page-editor__fragment-content--master'
+);
 const editMode = document.body.classList.contains('has-edit-mode-menu');
 
 let alignMenuInterval;
+
+function menuHasChildren() {
+	const contentElement = editMode
+		? menu.querySelector('lfr-drop-zone')
+		: menu;
+
+	return (
+		contentElement &&
+		Array.from(contentElement.firstElementChild.children).filter(
+			(child) => child.tagName !== 'STYLE'
+		).length > 0
+	);
+}
 
 function alignMenu() {
 	const toggleRect = toggle.getBoundingClientRect();
@@ -42,6 +58,10 @@ function alignMenu() {
 }
 
 function toggleMenu() {
+	if (!menuHasChildren()) {
+		return;
+	}
+
 	if (isShown()) {
 		menu.style.display = 'none';
 
@@ -121,7 +141,7 @@ function handleWindowEvent() {
 }
 
 function main() {
-	if (configuration.keepOpen && editMode) {
+	if (configuration.keepOpen && editMode && !withinMasterLayout) {
 		toggleMenu();
 	}
 	else if (configuration.displayOnHover) {

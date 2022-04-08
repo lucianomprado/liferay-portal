@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<!DOCTYPE routes PUBLIC "-//Liferay//DTD Friendly URL Routes 7.0.0//EN" "http://www.liferay.com/dtd/liferay-friendly-url-routes_7_0_0.dtd">
+<!DOCTYPE routes PUBLIC "-//Liferay//DTD Friendly URL Routes 7.4.0//EN" "http://www.liferay.com/dtd/liferay-friendly-url-routes_7_4_0.dtd">
 
 <routes>
 	<route>
@@ -25,6 +25,11 @@
 	<route>
 		<pattern>/vocabulary/{vocabularyId:\d+}/edit</pattern>
 		<implicit-parameter name="mvcPath">/edit_vocabulary.jsp</implicit-parameter>
+		<implicit-parameter name="p_p_state">maximized</implicit-parameter>
+	</route>
+	<route>
+		<pattern>/vocabulary/{vocabularyId:\d+}/set_category_display_page_template</pattern>
+		<implicit-parameter name="mvcPath">/set_category_display_page_template.jsp</implicit-parameter>
 		<implicit-parameter name="p_p_state">maximized</implicit-parameter>
 	</route>
 	<route>

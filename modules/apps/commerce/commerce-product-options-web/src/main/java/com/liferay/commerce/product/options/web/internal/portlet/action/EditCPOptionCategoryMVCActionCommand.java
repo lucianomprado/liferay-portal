@@ -46,13 +46,54 @@ import org.osgi.service.component.annotations.Reference;
 	enabled = false, immediate = true,
 	property = {
 		"javax.portlet.name=" + CPPortletKeys.CP_SPECIFICATION_OPTIONS,
-		"mvc.command.name=editProductOptionCategory"
+		"mvc.command.name=/cp_specification_options/edit_cp_option_category"
 	},
 	service = MVCActionCommand.class
 )
 public class EditCPOptionCategoryMVCActionCommand extends BaseMVCActionCommand {
 
-	protected void deleteCPOptionCategories(ActionRequest actionRequest)
+	@Override
+	protected void doProcessAction(
+			ActionRequest actionRequest, ActionResponse actionResponse)
+		throws Exception {
+
+		String cmd = ParamUtil.getString(actionRequest, Constants.CMD);
+
+		try {
+			if (cmd.equals(Constants.DELETE)) {
+				_deleteCPOptionCategories(actionRequest);
+			}
+			else if (cmd.equals(Constants.ADD) ||
+					 cmd.equals(Constants.UPDATE)) {
+
+				_updateCPOptionCategory(actionRequest);
+			}
+		}
+		catch (Exception exception) {
+			if (exception instanceof NoSuchCPOptionCategoryException ||
+				exception instanceof PrincipalException) {
+
+				SessionErrors.add(actionRequest, exception.getClass());
+
+				actionResponse.setRenderParameter("mvcPath", "/error.jsp");
+			}
+			else if (exception instanceof CPOptionCategoryKeyException) {
+				hideDefaultErrorMessage(actionRequest);
+				hideDefaultSuccessMessage(actionRequest);
+
+				SessionErrors.add(actionRequest, exception.getClass());
+
+				actionResponse.setRenderParameter(
+					"mvcRenderCommandName",
+					"/cp_specification_options/edit_cp_option_category");
+			}
+			else {
+				throw exception;
+			}
+		}
+	}
+
+	private void _deleteCPOptionCategories(ActionRequest actionRequest)
 		throws Exception {
 
 		long[] deleteCPOptionCategoryIds = null;
@@ -75,47 +116,7 @@ public class EditCPOptionCategoryMVCActionCommand extends BaseMVCActionCommand {
 		}
 	}
 
-	@Override
-	protected void doProcessAction(
-			ActionRequest actionRequest, ActionResponse actionResponse)
-		throws Exception {
-
-		String cmd = ParamUtil.getString(actionRequest, Constants.CMD);
-
-		try {
-			if (cmd.equals(Constants.DELETE)) {
-				deleteCPOptionCategories(actionRequest);
-			}
-			else if (cmd.equals(Constants.ADD) ||
-					 cmd.equals(Constants.UPDATE)) {
-
-				updateCPOptionCategory(actionRequest);
-			}
-		}
-		catch (Exception exception) {
-			if (exception instanceof NoSuchCPOptionCategoryException ||
-				exception instanceof PrincipalException) {
-
-				SessionErrors.add(actionRequest, exception.getClass());
-
-				actionResponse.setRenderParameter("mvcPath", "/error.jsp");
-			}
-			else if (exception instanceof CPOptionCategoryKeyException) {
-				hideDefaultErrorMessage(actionRequest);
-				hideDefaultSuccessMessage(actionRequest);
-
-				SessionErrors.add(actionRequest, exception.getClass());
-
-				actionResponse.setRenderParameter(
-					"mvcRenderCommandName", "editProductOptionCategory");
-			}
-			else {
-				throw exception;
-			}
-		}
-	}
-
-	protected CPOptionCategory updateCPOptionCategory(
+	private CPOptionCategory _updateCPOptionCategory(
 			ActionRequest actionRequest)
 		throws Exception {
 
@@ -129,14 +130,14 @@ public class EditCPOptionCategoryMVCActionCommand extends BaseMVCActionCommand {
 		double priority = ParamUtil.getDouble(actionRequest, "priority");
 		String key = ParamUtil.getString(actionRequest, "key");
 
-		ServiceContext serviceContext = ServiceContextFactory.getInstance(
-			CPOptionCategory.class.getName(), actionRequest);
-
 		CPOptionCategory cpOptionCategory = null;
 
 		if (cpOptionCategoryId <= 0) {
 
 			// Add commerce product option category
+
+			ServiceContext serviceContext = ServiceContextFactory.getInstance(
+				CPOptionCategory.class.getName(), actionRequest);
 
 			cpOptionCategory = _cpOptionCategoryService.addCPOptionCategory(
 				titleMap, descriptionMap, priority, key, serviceContext);

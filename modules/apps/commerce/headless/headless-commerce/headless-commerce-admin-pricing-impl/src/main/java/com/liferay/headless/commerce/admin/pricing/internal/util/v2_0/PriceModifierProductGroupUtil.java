@@ -55,16 +55,19 @@ public class PriceModifierProductGroupUtil {
 		else {
 			commercePricingClass =
 				commercePricingClassService.fetchByExternalReferenceCode(
-					serviceContext.getCompanyId(),
 					priceModifierProductGroup.
-						getProductGroupExternalReferenceCode());
+						getProductGroupExternalReferenceCode(),
+					serviceContext.getCompanyId());
 
 			if (commercePricingClass == null) {
+				String productGroupExternalReferenceCode =
+					priceModifierProductGroup.
+						getProductGroupExternalReferenceCode();
+
 				throw new NoSuchPricingClassException(
 					"Unable to find Product Group with " +
 						"externalReferenceCode: " +
-							priceModifierProductGroup.
-								getProductGroupExternalReferenceCode());
+							productGroupExternalReferenceCode);
 			}
 		}
 

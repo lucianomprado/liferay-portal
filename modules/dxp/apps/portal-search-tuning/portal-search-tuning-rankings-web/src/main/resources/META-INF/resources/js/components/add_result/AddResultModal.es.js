@@ -17,9 +17,8 @@ import ClayLayout from '@clayui/layout';
 import ClayLoadingIndicator from '@clayui/loading-indicator';
 import ClayModal from '@clayui/modal';
 import {ClayPaginationBarWithBasicItems} from '@clayui/pagination-bar';
-import {ClayTooltipProvider} from '@clayui/tooltip';
+import {usePrevious} from '@liferay/frontend-js-react-web';
 import getCN from 'classnames';
-import {usePrevious} from 'frontend-js-react-web';
 import PropTypes from 'prop-types';
 import React, {useContext, useEffect, useState} from 'react';
 
@@ -437,12 +436,10 @@ function AddResultModal({
 							'modal-title-help-icon'
 						)}
 					>
-						<ClayTooltipProvider>
-							<ClayIcon
-								symbol="question-circle-full"
-								title={Liferay.Language.get('add-results-help')}
-							/>
-						</ClayTooltipProvider>
+						<ClayIcon
+							symbol="question-circle-full"
+							title={Liferay.Language.get('add-results-help')}
+						/>
 					</span>
 				</ClayModal.Header>
 

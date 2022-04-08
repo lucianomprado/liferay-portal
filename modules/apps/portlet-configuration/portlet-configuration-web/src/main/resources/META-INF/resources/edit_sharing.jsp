@@ -17,17 +17,9 @@
 <%@ include file="/init.jsp" %>
 
 <%
-String redirect = ParamUtil.getString(request, "redirect");
 String returnToFullPageURL = ParamUtil.getString(request, "returnToFullPageURL");
 
 Portlet portlet = PortletLocalServiceUtil.getPortletById(company.getCompanyId(), portletResource);
-
-PortletURL portletURL = renderResponse.createRenderURL();
-
-portletURL.setParameter("mvcPath", "/edit_sharing.jsp");
-portletURL.setParameter("redirect", redirect);
-portletURL.setParameter("returnToFullPageURL", returnToFullPageURL);
-portletURL.setParameter("portletResource", portletResource);
 
 String widgetURL = PortalUtil.getWidgetURL(portlet, themeDisplay);
 %>
@@ -73,7 +65,7 @@ String widgetURL = PortalUtil.getWidgetURL(portlet, themeDisplay);
 						<textarea class="field form-control lfr-textarea" id="<portlet:namespace />widgetScript" onClick="this.select();" readonly="true"><%= HtmlUtil.escape(textAreaContent) %></textarea>
 					</aui:field-wrapper>
 
-					<aui:input label='<%= LanguageUtil.format(request, "allow-users-to-add-x-to-any-website", HtmlUtil.escape(portletDisplay.getTitle()), false) %>' name="widgetShowAddAppLink" type="toggle-switch" value='<%= GetterUtil.getBoolean(portletPreferences.getValue("lfrWidgetShowAddAppLink", null), PropsValues.THEME_PORTLET_SHARING_DEFAULT) %>' />
+					<aui:input inlineLabel="right" label='<%= LanguageUtil.format(request, "allow-users-to-add-x-to-any-website", HtmlUtil.escape(portletDisplay.getTitle()), false) %>' labelCssClass="simple-toggle-switch" name="widgetShowAddAppLink" type="toggle-switch" value='<%= GetterUtil.getBoolean(portletPreferences.getValue("lfrWidgetShowAddAppLink", null), PropsValues.THEME_PORTLET_SHARING_DEFAULT) %>' />
 				</liferay-frontend:fieldset>
 
 				<liferay-frontend:fieldset
@@ -110,7 +102,7 @@ String widgetURL = PortalUtil.getWidgetURL(portlet, themeDisplay);
 
 						<aui:input name="callbackURL" type="resource" value="<%= widgetURL %>" />
 
-						<aui:input label='<%= LanguageUtil.format(request, "allow-users-to-add-x-to-facebook", HtmlUtil.escape(portletDisplay.getTitle()), false) %>' name="facebookShowAddAppLink" type="toggle-switch" value='<%= GetterUtil.getBoolean(portletPreferences.getValue("lfrFacebookShowAddAppLink", null), true) %>' />
+						<aui:input inlineLabel="right" label='<%= LanguageUtil.format(request, "allow-users-to-add-x-to-facebook", HtmlUtil.escape(portletDisplay.getTitle()), false) %>' labelCssClass="simple-toggle-switch" name="facebookShowAddAppLink" type="toggle-switch" value='<%= GetterUtil.getBoolean(portletPreferences.getValue("lfrFacebookShowAddAppLink", null), true) %>' />
 					</c:if>
 				</liferay-frontend:fieldset>
 
@@ -125,7 +117,7 @@ String widgetURL = PortalUtil.getWidgetURL(portlet, themeDisplay);
 
 					<aui:input name="opensocialGadgetURL" type="resource" value="<%= PortalUtil.getGoogleGadgetURL(portlet, themeDisplay) %>" />
 
-					<aui:input label='<%= LanguageUtil.format(request, "allow-users-to-add-x-to-an-open-social-platform", HtmlUtil.escape(portletDisplay.getTitle()), false) %>' name="iGoogleShowAddAppLink" type="toggle-switch" value='<%= PrefsParamUtil.getBoolean(portletPreferences, request, "lfrIgoogleShowAddAppLink") %>' />
+					<aui:input inlineLabel="right" label='<%= LanguageUtil.format(request, "allow-users-to-add-x-to-an-open-social-platform", HtmlUtil.escape(portletDisplay.getTitle()), false) %>' labelCssClass="simple-toggle-switch" name="iGoogleShowAddAppLink" type="toggle-switch" value='<%= PrefsParamUtil.getBoolean(portletPreferences, request, "lfrIgoogleShowAddAppLink") %>' />
 				</liferay-frontend:fieldset>
 
 				<liferay-frontend:fieldset
@@ -139,7 +131,7 @@ String widgetURL = PortalUtil.getWidgetURL(portlet, themeDisplay);
 
 					<aui:input name="netvibesWidgetURL" type="resource" value="<%= PortalUtil.getNetvibesURL(portlet, themeDisplay) %>" />
 
-					<aui:input label='<%= LanguageUtil.format(request, "allow-users-to-add-x-to-netvibes-pages", HtmlUtil.escape(portletDisplay.getTitle()), false) %>' name="netvibesShowAddAppLink" type="toggle-switch" value='<%= PrefsParamUtil.getBoolean(portletPreferences, request, "lfrNetvibesShowAddAppLink") %>' />
+					<aui:input inlineLabel="right" label='<%= LanguageUtil.format(request, "allow-users-to-add-x-to-netvibes-pages", HtmlUtil.escape(portletDisplay.getTitle()), false) %>' labelCssClass="simple-toggle-switch" name="netvibesShowAddAppLink" type="toggle-switch" value='<%= PrefsParamUtil.getBoolean(portletPreferences, request, "lfrNetvibesShowAddAppLink") %>' />
 				</liferay-frontend:fieldset>
 			</liferay-frontend:fieldset-group>
 		</liferay-frontend:edit-form-body>

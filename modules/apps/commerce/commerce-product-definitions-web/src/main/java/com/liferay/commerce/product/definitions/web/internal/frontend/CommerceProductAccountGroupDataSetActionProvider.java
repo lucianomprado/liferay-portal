@@ -17,6 +17,7 @@ package com.liferay.commerce.product.definitions.web.internal.frontend;
 import com.liferay.commerce.account.model.CommerceAccountGroupRel;
 import com.liferay.commerce.account.service.CommerceAccountGroupRelService;
 import com.liferay.commerce.product.constants.CPPortletKeys;
+import com.liferay.commerce.product.definitions.web.internal.frontend.constants.CommerceProductDataSetConstants;
 import com.liferay.commerce.product.definitions.web.internal.model.AccountGroup;
 import com.liferay.commerce.product.definitions.web.internal.security.permission.resource.CommerceCatalogPermission;
 import com.liferay.commerce.product.model.CPDefinition;
@@ -24,17 +25,16 @@ import com.liferay.commerce.product.service.CPDefinitionService;
 import com.liferay.frontend.taglib.clay.data.set.ClayDataSetActionProvider;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemListBuilder;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
-import com.liferay.portal.kernel.util.Constants;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
 
 import java.util.List;
 
-import javax.portlet.ActionRequest;
 import javax.portlet.PortletRequest;
 import javax.portlet.PortletURL;
 
@@ -88,27 +88,24 @@ public class CommerceProductAccountGroupDataSetActionProvider
 		CommerceAccountGroupRel commerceAccountGroupRel,
 		HttpServletRequest httpServletRequest) {
 
-		PortletURL portletURL = _portal.getControlPanelPortletURL(
-			httpServletRequest, CPPortletKeys.CP_DEFINITIONS,
-			PortletRequest.ACTION_PHASE);
-
-		String redirect = ParamUtil.getString(
-			httpServletRequest, "currentUrl",
-			_portal.getCurrentURL(httpServletRequest));
-
-		portletURL.setParameter(
-			ActionRequest.ACTION_NAME, "editProductDefinition");
-		portletURL.setParameter(Constants.CMD, "deleteAccountGroup");
-		portletURL.setParameter("redirect", redirect);
-		portletURL.setParameter(
+		return PortletURLBuilder.create(
+			_portal.getControlPanelPortletURL(
+				httpServletRequest, CPPortletKeys.CP_DEFINITIONS,
+				PortletRequest.ACTION_PHASE)
+		).setActionName(
+			"/cp_definitions/edit_cp_definition"
+		).setCMD(
+			"deleteAccountGroup"
+		).setRedirect(
+			ParamUtil.getString(
+				httpServletRequest, "currentUrl",
+				_portal.getCurrentURL(httpServletRequest))
+		).setParameter(
 			"commerceAccountGroupRelId",
-			String.valueOf(
-				commerceAccountGroupRel.getCommerceAccountGroupRelId()));
-		portletURL.setParameter(
-			"cpDefinitionId",
-			String.valueOf(commerceAccountGroupRel.getClassPK()));
-
-		return portletURL;
+			commerceAccountGroupRel.getCommerceAccountGroupRelId()
+		).setParameter(
+			"cpDefinitionId", commerceAccountGroupRel.getClassPK()
+		).buildPortletURL();
 	}
 
 	@Reference

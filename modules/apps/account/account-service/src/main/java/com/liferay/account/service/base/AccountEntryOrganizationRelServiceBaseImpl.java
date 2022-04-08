@@ -16,8 +16,8 @@ package com.liferay.account.service.base;
 
 import com.liferay.account.model.AccountEntryOrganizationRel;
 import com.liferay.account.service.AccountEntryOrganizationRelService;
+import com.liferay.account.service.AccountEntryOrganizationRelServiceUtil;
 import com.liferay.account.service.persistence.AccountEntryOrganizationRelPersistence;
-import com.liferay.account.service.persistence.AccountEntryPersistence;
 import com.liferay.portal.aop.AopService;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
@@ -28,8 +28,11 @@ import com.liferay.portal.kernel.module.framework.service.IdentifiableOSGiServic
 import com.liferay.portal.kernel.service.BaseServiceImpl;
 import com.liferay.portal.kernel.util.PortalUtil;
 
+import java.lang.reflect.Field;
+
 import javax.sql.DataSource;
 
+import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 
 /**
@@ -51,8 +54,13 @@ public abstract class AccountEntryOrganizationRelServiceBaseImpl
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. Use <code>AccountEntryOrganizationRelService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>com.liferay.account.service.AccountEntryOrganizationRelServiceUtil</code>.
+	 * Never modify or reference this class directly. Use <code>AccountEntryOrganizationRelService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>AccountEntryOrganizationRelServiceUtil</code>.
 	 */
+	@Deactivate
+	protected void deactivate() {
+		_setServiceUtilService(null);
+	}
+
 	@Override
 	public Class<?>[] getAopInterfaces() {
 		return new Class<?>[] {
@@ -65,6 +73,8 @@ public abstract class AccountEntryOrganizationRelServiceBaseImpl
 	public void setAopProxy(Object aopProxy) {
 		accountEntryOrganizationRelService =
 			(AccountEntryOrganizationRelService)aopProxy;
+
+		_setServiceUtilService(accountEntryOrganizationRelService);
 	}
 
 	/**
@@ -110,6 +120,23 @@ public abstract class AccountEntryOrganizationRelServiceBaseImpl
 		}
 	}
 
+	private void _setServiceUtilService(
+		AccountEntryOrganizationRelService accountEntryOrganizationRelService) {
+
+		try {
+			Field field =
+				AccountEntryOrganizationRelServiceUtil.class.getDeclaredField(
+					"_service");
+
+			field.setAccessible(true);
+
+			field.set(null, accountEntryOrganizationRelService);
+		}
+		catch (ReflectiveOperationException reflectiveOperationException) {
+			throw new RuntimeException(reflectiveOperationException);
+		}
+	}
+
 	@Reference
 	protected
 		com.liferay.account.service.AccountEntryOrganizationRelLocalService
@@ -123,18 +150,7 @@ public abstract class AccountEntryOrganizationRelServiceBaseImpl
 		accountEntryOrganizationRelPersistence;
 
 	@Reference
-	protected AccountEntryPersistence accountEntryPersistence;
-
-	@Reference
 	protected com.liferay.counter.kernel.service.CounterLocalService
 		counterLocalService;
-
-	@Reference
-	protected com.liferay.portal.kernel.service.OrganizationLocalService
-		organizationLocalService;
-
-	@Reference
-	protected com.liferay.portal.kernel.service.OrganizationService
-		organizationService;
 
 }

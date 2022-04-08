@@ -109,8 +109,6 @@ public class PortalRequestProcessor {
 
 		// auth.public.path.
 
-		_publicPaths = new HashSet<>();
-
 		_publicPaths.add(_PATH_C);
 		_publicPaths.add(_PATH_PORTAL_API_JSONWS);
 		_publicPaths.add(_PATH_PORTAL_J_LOGIN);
@@ -265,13 +263,13 @@ public class PortalRequestProcessor {
 	}
 
 	private String _getLastPath(HttpServletRequest httpServletRequest) {
-		HttpSession session = httpServletRequest.getSession();
+		HttpSession httpSession = httpServletRequest.getSession();
 
 		ThemeDisplay themeDisplay =
 			(ThemeDisplay)httpServletRequest.getAttribute(
 				WebKeys.THEME_DISPLAY);
 
-		Boolean httpsInitial = (Boolean)session.getAttribute(
+		Boolean httpsInitial = (Boolean)httpSession.getAttribute(
 			WebKeys.HTTPS_INITIAL);
 
 		String portalURL = null;
@@ -286,7 +284,7 @@ public class PortalRequestProcessor {
 			portalURL = PortalUtil.getPortalURL(httpServletRequest);
 		}
 
-		StringBundler sb = new StringBundler(7);
+		StringBundler sb = new StringBundler(5);
 
 		sb.append(portalURL);
 		sb.append(themeDisplay.getPathMain());
@@ -299,16 +297,15 @@ public class PortalRequestProcessor {
 				// forward to the user's default layout to prevent a lagging
 				// loop
 
-				sb.append(StringPool.QUESTION);
-				sb.append("p_l_id");
-				sb.append(StringPool.EQUAL);
+				sb.append("?p_l_id=");
 				sb.append(LayoutConstants.DEFAULT_PLID);
 			}
 
 			return sb.toString();
 		}
 
-		LastPath lastPath = (LastPath)session.getAttribute(WebKeys.LAST_PATH);
+		LastPath lastPath = (LastPath)httpSession.getAttribute(
+			WebKeys.LAST_PATH);
 
 		if (lastPath == null) {
 			return sb.toString();
@@ -330,14 +327,9 @@ public class PortalRequestProcessor {
 			}
 		}
 
-		StringBundler lastPathSB = new StringBundler(4);
-
-		lastPathSB.append(portalURL);
-		lastPathSB.append(lastPath.getContextPath());
-		lastPathSB.append(lastPath.getPath());
-		lastPathSB.append(parameters);
-
-		return lastPathSB.toString();
+		return StringBundler.concat(
+			portalURL, lastPath.getContextPath(), lastPath.getPath(),
+			parameters);
 	}
 
 	private void _internalModuleRelativeForward(
@@ -390,12 +382,8 @@ public class PortalRequestProcessor {
 		httpServletResponse.setContentType("text/html; charset=UTF-8");
 
 		if (!_processRoles(
-				httpServletRequest, httpServletResponse, actionMapping)) {
-
-			return;
-		}
-
-		if (!_processForward(
+				httpServletRequest, httpServletResponse, actionMapping) ||
+			!_processForward(
 				httpServletRequest, httpServletResponse, actionMapping)) {
 
 			return;
@@ -440,23 +428,23 @@ public class PortalRequestProcessor {
 	}
 
 	private void _processLocale(HttpServletRequest httpServletRequest) {
-		HttpSession session = httpServletRequest.getSession();
+		HttpSession httpSession = httpServletRequest.getSession();
 
-		if (session.getAttribute(WebKeys.LOCALE) != null) {
+		if (httpSession.getAttribute(WebKeys.LOCALE) != null) {
 			return;
 		}
 
 		Locale locale = httpServletRequest.getLocale();
 
 		if (locale != null) {
-			session.setAttribute(WebKeys.LOCALE, locale);
+			httpSession.setAttribute(WebKeys.LOCALE, locale);
 		}
 	}
 
 	private String _processPath(HttpServletRequest httpServletRequest) {
 		String path = _findPath(httpServletRequest);
 
-		HttpSession session = httpServletRequest.getSession();
+		HttpSession httpSession = httpServletRequest.getSession();
 
 		ThemeDisplay themeDisplay =
 			(ThemeDisplay)httpServletRequest.getAttribute(
@@ -465,7 +453,7 @@ public class PortalRequestProcessor {
 		// Current users
 
 		UserTracker userTracker = LiveUsers.getUserTracker(
-			themeDisplay.getCompanyId(), session.getId());
+			themeDisplay.getCompanyId(), httpSession.getId());
 
 		if ((userTracker != null) && !path.equals(_PATH_C) &&
 			!path.contains(_PATH_J_SECURITY_CHECK) &&
@@ -481,7 +469,7 @@ public class PortalRequestProcessor {
 				}
 			}
 			catch (Exception exception) {
-				_log.error(exception, exception);
+				_log.error(exception);
 			}
 
 			String fullPathWithoutQueryString = fullPath;
@@ -525,6 +513,9 @@ public class PortalRequestProcessor {
 			user = PortalUtil.getUser(httpServletRequest);
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception);
+			}
 		}
 
 		// Last path
@@ -559,7 +550,13 @@ public class PortalRequestProcessor {
 							httpServletRequest.getParameterMap()));
 				}
 
-				session.setAttribute(WebKeys.LAST_PATH, lastPath);
+				String lastPathPath = lastPath.getPath();
+
+				// Ignore files that end with .map. See LPS-141963.
+
+				if (!lastPathPath.endsWith(".map")) {
+					httpSession.setAttribute(WebKeys.LAST_PATH, lastPath);
+				}
 			}
 		}
 
@@ -617,7 +614,8 @@ public class PortalRequestProcessor {
 
 		if (user != null) {
 			if (!user.isActive()) {
-				SessionErrors.add(session, UserActiveException.class.getName());
+				SessionErrors.add(
+					httpSession, UserActiveException.class.getName());
 
 				return _PATH_PORTAL_ERROR;
 			}
@@ -663,7 +661,7 @@ public class PortalRequestProcessor {
 						}
 					}
 					catch (Exception exception) {
-						_log.error(exception, exception);
+						_log.error(exception);
 
 						return _PATH_PORTAL_UPDATE_PASSWORD;
 					}
@@ -689,7 +687,7 @@ public class PortalRequestProcessor {
 
 			// Users must sign in
 
-			SessionErrors.add(session, PrincipalException.class.getName());
+			SessionErrors.add(httpSession, PrincipalException.class.getName());
 
 			return _PATH_PORTAL_LOGIN;
 		}
@@ -697,7 +695,7 @@ public class PortalRequestProcessor {
 		// Authenticated users must have access to at least one layout
 
 		if (SessionErrors.contains(
-				session, LayoutPermissionException.class.getName())) {
+				httpSession, LayoutPermissionException.class.getName())) {
 
 			return _PATH_PORTAL_ERROR;
 		}
@@ -725,6 +723,9 @@ public class PortalRequestProcessor {
 			user = PortalUtil.getUser(httpServletRequest);
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception);
+			}
 		}
 
 		if ((user != null) && _isPortletPath(path)) {
@@ -788,6 +789,10 @@ public class PortalRequestProcessor {
 				}
 			}
 			catch (Exception exception) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(exception);
+				}
+
 				SessionErrors.add(
 					httpServletRequest, PrincipalException.class.getName());
 
@@ -881,7 +886,7 @@ public class PortalRequestProcessor {
 	private final Map<String, Definition> _definitions;
 	private final Set<String> _lastPaths;
 	private final ModuleConfig _moduleConfig;
-	private final Set<String> _publicPaths;
+	private final Set<String> _publicPaths = new HashSet<>();
 	private final ServletContext _servletContext;
 	private final Set<String> _trackerIgnorePaths;
 

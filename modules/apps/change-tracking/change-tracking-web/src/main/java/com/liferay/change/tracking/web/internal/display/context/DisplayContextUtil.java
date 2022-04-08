@@ -14,10 +14,11 @@
 
 package com.liferay.change.tracking.web.internal.display.context;
 
-import com.liferay.change.tracking.model.CTEntryTable;
 import com.liferay.change.tracking.web.internal.display.CTDisplayRendererRegistry;
 import com.liferay.petra.sql.dsl.DSLQueryFactoryUtil;
+import com.liferay.petra.sql.dsl.Table;
 import com.liferay.petra.sql.dsl.expression.Predicate;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
@@ -55,8 +56,9 @@ public class DisplayContextUtil {
 	}
 
 	public static JSONObject getUserInfoJSONObject(
-		Predicate predicate, ThemeDisplay themeDisplay,
-		UserLocalService userLocalService) {
+		Predicate innerJoinPredicate, Table<?> innerJoinTable,
+		ThemeDisplay themeDisplay, UserLocalService userLocalService,
+		Predicate wherePredicate) {
 
 		JSONObject userInfoJSONObject = JSONFactoryUtil.createJSONObject();
 
@@ -66,28 +68,30 @@ public class DisplayContextUtil {
 			).from(
 				UserTable.INSTANCE
 			).innerJoinON(
-				CTEntryTable.INSTANCE,
-				CTEntryTable.INSTANCE.userId.eq(UserTable.INSTANCE.userId)
+				innerJoinTable, innerJoinPredicate
 			).where(
-				predicate
+				wherePredicate
 			));
 
 		for (User user : users) {
-			JSONObject userJSONObject = JSONUtil.put(
-				"userName", user.getFullName());
+			String portraitURL = StringPool.BLANK;
 
-			if (user.getPortraitId() != 0) {
+			if (user.getPortraitId() > 0) {
 				try {
-					userJSONObject.put(
-						"portraitURL", user.getPortraitURL(themeDisplay));
+					portraitURL = user.getPortraitURL(themeDisplay);
 				}
 				catch (PortalException portalException) {
-					_log.error(portalException, portalException);
+					_log.error(portalException);
 				}
 			}
 
 			userInfoJSONObject.put(
-				String.valueOf(user.getUserId()), userJSONObject);
+				String.valueOf(user.getUserId()),
+				JSONUtil.put(
+					"portraitURL", portraitURL
+				).put(
+					"userName", user.getFullName()
+				));
 		}
 
 		return userInfoJSONObject;

@@ -13,7 +13,7 @@ definition {
 	macro clickCard {
 		WaitForLiferayEvent.initializeLiferayEventLog();
 
-		Click.waitForMenuToggleJSClick(
+		Click.mouseDownMouseUp(
 			key_card = "${card}",
 			locator1 = "Card#CARD");
 	}
@@ -71,13 +71,20 @@ definition {
 		AssertElementPresent(
 			key_card = "${card}",
 			key_index = "${index}",
-			locator1 = "Card#CARD_ITEM");
+			locator1 = "Card#CARD_PAGE_ITEM");
 	}
 
 	macro viewCardPresent {
 		AssertVisible(
 			key_card = "${card}",
 			locator1 = "Card#CARD");
+	}
+
+	macro viewCardSticker {
+		AssertVisible(
+			key_card = "${card}",
+			key_icon = "${icon}",
+			locator1 = "Card#CARD_STICKER");
 	}
 
 	macro viewCardSubtitle {
@@ -100,12 +107,6 @@ definition {
 			value1 = "${card}");
 	}
 
-	macro viewMarkAsDefault {
-		AssertVisible(
-			key_card = "${card}",
-			locator1 = "Card#CARD_STICKER");
-	}
-
 	macro viewMenuItemNotPresent {
 		Click(
 			key_card = "${card}",
@@ -114,6 +115,12 @@ definition {
 		AssertElementNotPresent(
 			key_menuItem = "${item}",
 			locator1 = "MenuItem#ANY_MENU_ITEM");
+	}
+
+	macro viewNoCardThumbnail {
+		AssertElementNotPresent(
+			key_card = "${card}",
+			locator1 = "Card#CARD_THUMBNAIL");
 	}
 
 }

@@ -15,6 +15,10 @@
 package com.liferay.dynamic.data.mapping.form.field.type.internal.document.library;
 
 import com.liferay.dynamic.data.mapping.form.field.type.DDMFormFieldValueRequestParameterRetriever;
+import com.liferay.dynamic.data.mapping.form.field.type.constants.DDMFormFieldTypeConstants;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.util.Validator;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -24,7 +28,8 @@ import org.osgi.service.component.annotations.Component;
  * @author Pedro Queiroz
  */
 @Component(
-	immediate = true, property = "ddm.form.field.type.name=document_library",
+	immediate = true,
+	property = "ddm.form.field.type.name=" + DDMFormFieldTypeConstants.DOCUMENT_LIBRARY,
 	service = DDMFormFieldValueRequestParameterRetriever.class
 )
 public class DocumentLibraryDDMFormFieldValueRequestParameterRetriever
@@ -35,7 +40,18 @@ public class DocumentLibraryDDMFormFieldValueRequestParameterRetriever
 		HttpServletRequest httpServletRequest, String ddmFormFieldParameterName,
 		String defaultDDMFormFieldParameterValue) {
 
-		return httpServletRequest.getParameter(ddmFormFieldParameterName);
+		String parameterValue = httpServletRequest.getParameter(
+			ddmFormFieldParameterName);
+
+		if (!Validator.isBlank(parameterValue)) {
+			parameterValue = String.valueOf(
+				getJSONObject(_log, parameterValue));
+		}
+
+		return parameterValue;
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		DocumentLibraryDDMFormFieldValueRequestParameterRetriever.class);
 
 }

@@ -28,6 +28,7 @@ import com.liferay.item.selector.ItemSelector;
 import com.liferay.item.selector.ItemSelectorCriterion;
 import com.liferay.item.selector.criteria.FileEntryItemSelectorReturnType;
 import com.liferay.item.selector.criteria.upload.criterion.UploadItemSelectorCriterion;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
@@ -39,7 +40,6 @@ import com.liferay.portal.kernel.util.WebKeys;
 
 import java.util.List;
 
-import javax.portlet.ActionRequest;
 import javax.portlet.PortletURL;
 
 import javax.servlet.http.HttpServletRequest;
@@ -81,21 +81,16 @@ public class FragmentCollectionResourcesManagementToolbarDisplayContext
 			dropdownItem -> {
 				dropdownItem.putData(
 					"action", "deleteSelectedFragmentCollectionResources");
-
-				PortletURL deleteFragmentCollectionResourcesURL =
-					liferayPortletResponse.createActionURL();
-
-				deleteFragmentCollectionResourcesURL.setParameter(
-					ActionRequest.ACTION_NAME,
-					"/fragment/delete_fragment_collection_resources");
-				deleteFragmentCollectionResourcesURL.setParameter(
-					"redirect", _themeDisplay.getURLCurrent());
-
 				dropdownItem.putData(
 					"deleteFragmentCollectionResourcesURL",
-					deleteFragmentCollectionResourcesURL.toString());
-
-				dropdownItem.setIcon("times-circle");
+					PortletURLBuilder.createActionURL(
+						liferayPortletResponse
+					).setActionName(
+						"/fragment/delete_fragment_collection_resources"
+					).setRedirect(
+						_themeDisplay.getURLCurrent()
+					).buildString());
+				dropdownItem.setIcon("trash");
 				dropdownItem.setLabel(
 					LanguageUtil.get(httpServletRequest, "delete"));
 				dropdownItem.setQuickAction(true);
@@ -121,9 +116,8 @@ public class FragmentCollectionResourcesManagementToolbarDisplayContext
 	}
 
 	@Override
-	public String getDefaultEventHandler() {
-		return "FRAGMENT_COLLECTION_RESOURCES_MANAGEMENT_TOOLBAR_DEFAULT_" +
-			"EVENT_HANDLER";
+	public String getSortingURL() {
+		return null;
 	}
 
 	@Override
@@ -140,15 +134,14 @@ public class FragmentCollectionResourcesManagementToolbarDisplayContext
 	}
 
 	private String _getItemSelectorURL() {
-		PortletURL uploadURL = liferayPortletResponse.createActionURL();
-
-		uploadURL.setParameter(
-			ActionRequest.ACTION_NAME,
-			"/fragment/upload_fragment_collection_resource");
-
 		ItemSelectorCriterion itemSelectorCriterion =
 			new UploadItemSelectorCriterion(
-				FragmentPortletKeys.FRAGMENT, uploadURL.toString(),
+				FragmentPortletKeys.FRAGMENT,
+				PortletURLBuilder.createActionURL(
+					liferayPortletResponse
+				).setActionName(
+					"/fragment/upload_fragment_collection_resource"
+				).buildString(),
 				LanguageUtil.get(_themeDisplay.getLocale(), "resources"),
 				UploadServletRequestConfigurationHelperUtil.getMaxSize(),
 				_fragmentPortletConfiguration.thumbnailExtensions());

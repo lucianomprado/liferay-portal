@@ -35,6 +35,7 @@ import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.kernel.workflow.WorkflowDefinitionManager;
 import com.liferay.portal.kernel.workflow.WorkflowException;
+import com.liferay.portal.workflow.kaleo.designer.web.internal.util.KaleoDesignerUtil;
 import com.liferay.portal.workflow.kaleo.model.KaleoDefinitionVersion;
 import com.liferay.portal.workflow.kaleo.service.KaleoDefinitionVersionLocalService;
 
@@ -65,14 +66,14 @@ public abstract class BaseKaleoDesignerMVCActionCommand
 
 			addSuccessMessage(actionRequest, actionResponse);
 
-			setCloseRedirect(actionRequest);
+			_setCloseRedirect(actionRequest);
 
 			sendRedirect(actionRequest, actionResponse);
 
 			return SessionErrors.isEmpty(actionRequest);
 		}
 		catch (WorkflowException workflowException) {
-			Throwable rootThrowable = getRootThrowable(workflowException);
+			Throwable rootThrowable = _getRootThrowable(workflowException);
 
 			if (_log.isWarnEnabled()) {
 				_log.warn(rootThrowable, rootThrowable);
@@ -86,35 +87,14 @@ public abstract class BaseKaleoDesignerMVCActionCommand
 			return false;
 		}
 		catch (PortletException portletException) {
-			_log.error(portletException, portletException);
+			_log.error(portletException);
 
 			throw portletException;
 		}
 		catch (Exception exception) {
-			_log.error(exception, exception);
+			_log.error(exception);
 
 			throw new PortletException(exception);
-		}
-	}
-
-	protected void addDefaultTitle(
-		ActionRequest actionRequest, Map<Locale, String> titleMap) {
-
-		ThemeDisplay themeDisplay = (ThemeDisplay)actionRequest.getAttribute(
-			WebKeys.THEME_DISPLAY);
-
-		String title = titleMap.get(themeDisplay.getLocale());
-
-		if (titleMap.isEmpty() || Validator.isNull(title)) {
-			title = ParamUtil.getString(
-				actionRequest, "defaultDuplicationTitle");
-
-			if (Validator.isNull(title)) {
-				title = LanguageUtil.get(
-					getResourceBundle(actionRequest), "untitled-workflow");
-			}
-
-			titleMap.put(themeDisplay.getLocale(), title);
 		}
 	}
 
@@ -135,22 +115,6 @@ public abstract class BaseKaleoDesignerMVCActionCommand
 			themeDisplay.getLocale(), getClass());
 	}
 
-	protected Throwable getRootThrowable(Throwable throwable) {
-		if ((throwable.getCause() == null) ||
-			(!(throwable.getCause() instanceof IllegalArgumentException) &&
-			 !(throwable.getCause() instanceof NoSuchRoleException) &&
-			 !(throwable.getCause() instanceof
-				 PrincipalException.MustBeCompanyAdmin) &&
-			 !(throwable.getCause() instanceof
-				 PrincipalException.MustBeOmniadmin) &&
-			 !(throwable.getCause() instanceof WorkflowException))) {
-
-			return throwable;
-		}
-
-		return getRootThrowable(throwable.getCause());
-	}
-
 	protected String getSuccessMessage(ActionRequest actionRequest) {
 		return LanguageUtil.get(
 			getResourceBundle(actionRequest), "workflow-updated-successfully");
@@ -161,10 +125,8 @@ public abstract class BaseKaleoDesignerMVCActionCommand
 		throws WorkflowException {
 
 		if (titleMap == null) {
-			return null;
+			return StringPool.BLANK;
 		}
-
-		addDefaultTitle(actionRequest, titleMap);
 
 		String value = StringPool.BLANK;
 
@@ -185,21 +147,6 @@ public abstract class BaseKaleoDesignerMVCActionCommand
 		return value;
 	}
 
-	protected void setCloseRedirect(ActionRequest actionRequest) {
-		String closeRedirect = ParamUtil.getString(
-			actionRequest, "closeRedirect");
-
-		if (Validator.isNull(closeRedirect)) {
-			return;
-		}
-
-		SessionMessages.add(
-			actionRequest,
-			portal.getPortletId(actionRequest) +
-				SessionMessages.KEY_SUFFIX_CLOSE_REDIRECT,
-			closeRedirect);
-	}
-
 	protected void setRedirectAttribute(
 			ActionRequest actionRequest,
 			KaleoDefinitionVersion kaleoDefinitionVersion)
@@ -211,8 +158,7 @@ public abstract class BaseKaleoDesignerMVCActionCommand
 		LiferayPortletURL portletURL = PortletURLFactoryUtil.create(
 			actionRequest, themeDisplay.getPpid(), PortletRequest.RENDER_PHASE);
 
-		portletURL.setParameter(
-			"mvcPath", "/designer/edit_kaleo_definition_version.jsp");
+		portletURL.setParameter("mvcPath", KaleoDesignerUtil.getEditJspPath());
 
 		String redirect = ParamUtil.getString(actionRequest, "redirect");
 
@@ -242,6 +188,37 @@ public abstract class BaseKaleoDesignerMVCActionCommand
 
 	@Reference
 	protected WorkflowDefinitionManager workflowDefinitionManager;
+
+	private Throwable _getRootThrowable(Throwable throwable) {
+		if ((throwable.getCause() == null) ||
+			(!(throwable.getCause() instanceof IllegalArgumentException) &&
+			 !(throwable.getCause() instanceof NoSuchRoleException) &&
+			 !(throwable.getCause() instanceof
+				 PrincipalException.MustBeCompanyAdmin) &&
+			 !(throwable.getCause() instanceof
+				 PrincipalException.MustBeOmniadmin) &&
+			 !(throwable.getCause() instanceof WorkflowException))) {
+
+			return throwable;
+		}
+
+		return _getRootThrowable(throwable.getCause());
+	}
+
+	private void _setCloseRedirect(ActionRequest actionRequest) {
+		String closeRedirect = ParamUtil.getString(
+			actionRequest, "closeRedirect");
+
+		if (Validator.isNull(closeRedirect)) {
+			return;
+		}
+
+		SessionMessages.add(
+			actionRequest,
+			portal.getPortletId(actionRequest) +
+				SessionMessages.KEY_SUFFIX_CLOSE_REDIRECT,
+			closeRedirect);
+	}
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		BaseKaleoDesignerMVCActionCommand.class);

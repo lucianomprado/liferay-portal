@@ -12,26 +12,76 @@
  * details.
  */
 
+import ClayAlert from '@clayui/alert';
 import ClayButton from '@clayui/button';
 import ClayDropDown, {Align} from '@clayui/drop-down';
-import React, {useState} from 'react';
+import React, {useContext, useEffect, useRef, useState} from 'react';
 
 import FrontendTokenSet from './FrontendTokenSet';
-import Toolbar from './Toolbar';
+import {StyleBookContext} from './StyleBookContext';
 import {config} from './config';
 
 export default function Sidebar() {
+	const {frontendTokensValues = {}} = useContext(StyleBookContext);
+	const sidebarRef = useRef();
+
+	useEffect(() => {
+		if (sidebarRef.current) {
+			Object.values(frontendTokensValues).forEach(
+				({cssVariableMapping, value}) => {
+					sidebarRef.current.style.setProperty(
+						`--${cssVariableMapping}`,
+						value
+					);
+				}
+			);
+		}
+	}, [frontendTokensValues]);
+
 	return (
-		<div className="style-book-editor__sidebar">
-			<Toolbar />
-			{config.frontendTokenDefinition.frontendTokenCategories && (
-				<SidebarContent />
-			)}
+		<div className="style-book-editor__sidebar" ref={sidebarRef}>
+			<div className="style-book-editor__sidebar-content">
+				<ThemeInformation />
+
+				{config.frontendTokenDefinition.frontendTokenCategories ? (
+					<FrontendTokenCategories />
+				) : (
+					<ClayAlert className="m-3" displayType="info">
+						{Liferay.Language.get(
+							'this-theme-does-not-include-a-token-definition'
+						)}
+					</ClayAlert>
+				)}
+			</div>
 		</div>
 	);
 }
 
-function SidebarContent() {
+function ThemeInformation() {
+	return (
+		<div className="pb-3">
+			<p className="small text-secondary">
+				{config.showPrivateLayouts
+					? Liferay.Language.get(
+							'this-token-definition-belongs-to-the-theme-set-for-public-pages'
+					  )
+					: Liferay.Language.get(
+							'this-token-definition-belongs-to-the-theme-set-for-pages'
+					  )}
+			</p>
+
+			<p className="mb-0 small">
+				<span className="font-weight-semi-bold">
+					{`${Liferay.Language.get('theme')}: `}
+				</span>
+
+				{config.themeName}
+			</p>
+		</div>
+	);
+}
+
+function FrontendTokenCategories() {
 	const frontendTokenCategories =
 		config.frontendTokenDefinition.frontendTokenCategories;
 	const [active, setActive] = useState(false);
@@ -40,11 +90,17 @@ function SidebarContent() {
 	);
 
 	return (
-		<div className="style-book-editor__sidebar-content">
+		<>
 			{selectedCategory && (
 				<ClayDropDown
 					active={active}
 					alignmentPosition={Align.BottomLeft}
+					className="mb-4"
+					menuElementAttrs={{
+						containerProps: {
+							className: 'cadmin',
+						},
+					}}
 					onActiveChange={setActive}
 					trigger={
 						<ClayButton
@@ -78,15 +134,15 @@ function SidebarContent() {
 			)}
 
 			{selectedCategory?.frontendTokenSets.map(
-				({frontendTokens, label, name}) => (
+				({frontendTokens, label, name}, index) => (
 					<FrontendTokenSet
 						frontendTokens={frontendTokens}
 						key={name}
 						label={label}
-						name={name}
+						open={index === 0}
 					/>
 				)
 			)}
-		</div>
+		</>
 	);
 }

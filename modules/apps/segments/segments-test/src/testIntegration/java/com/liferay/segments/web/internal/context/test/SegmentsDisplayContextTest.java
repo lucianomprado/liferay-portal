@@ -15,6 +15,7 @@
 package com.liferay.segments.web.internal.context.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.configuration.test.util.ConfigurationTemporarySwapper;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.portlet.bridges.mvc.constants.MVCRenderConstants;
@@ -27,23 +28,16 @@ import com.liferay.portal.kernel.test.portlet.MockLiferayPortletURL;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
-import com.liferay.portal.kernel.util.HashMapDictionary;
+import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portal.kernel.util.LocaleUtil;
-import com.liferay.portal.kernel.util.ProxyUtil;
-import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
-import com.liferay.registry.Registry;
-import com.liferay.registry.RegistryUtil;
-import com.liferay.registry.ServiceTracker;
+import com.liferay.portlet.test.MockLiferayPortletContext;
 
 import java.util.Dictionary;
-import java.util.Objects;
 
 import javax.portlet.Portlet;
-import javax.portlet.PortletContext;
-import javax.portlet.PortletRequestDispatcher;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -52,6 +46,11 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.FrameworkUtil;
+import org.osgi.util.tracker.ServiceTracker;
 
 /**
  * @author Cristina González
@@ -69,16 +68,17 @@ public class SegmentsDisplayContextTest {
 		_company = _companyLocalService.getCompany(
 			TestPropsValues.getCompanyId());
 
-		Registry registry = RegistryUtil.getRegistry();
+		Bundle bundle = FrameworkUtil.getBundle(
+			SegmentsDisplayContextTest.class);
 
-		com.liferay.petra.string.StringBundler sb =
-			new com.liferay.petra.string.StringBundler(3);
+		BundleContext bundleContext = bundle.getBundleContext();
 
-		sb.append("(component.name=");
-		sb.append("com.liferay.segments.web.internal.portlet.SegmentsPortlet)");
-
-		_serviceTracker = registry.trackServices(
-			registry.getFilter(sb.toString()));
+		_serviceTracker = new ServiceTracker<>(
+			bundleContext,
+			bundleContext.createFilter(
+				"(component.name=com.liferay.segments.web.internal.portlet." +
+					"SegmentsPortlet)"),
+			null);
 
 		_serviceTracker.open();
 	}
@@ -90,9 +90,10 @@ public class SegmentsDisplayContextTest {
 
 	@Test
 	public void testIsRoleSegmentationDisabled() throws Exception {
-		Dictionary<String, Object> dictionary = new HashMapDictionary<>();
-
-		dictionary.put("roleSegmentationEnabled", false);
+		Dictionary<String, Object> dictionary =
+			HashMapDictionaryBuilder.<String, Object>put(
+				"roleSegmentationEnabled", false
+			).build();
 
 		try (ConfigurationTemporarySwapper configurationTemporarySwapper =
 				new ConfigurationTemporarySwapper(
@@ -105,9 +106,10 @@ public class SegmentsDisplayContextTest {
 
 	@Test
 	public void testIsRoleSegmentationEnabled() throws Exception {
-		Dictionary<String, Object> dictionary = new HashMapDictionary<>();
-
-		dictionary.put("roleSegmentationEnabled", true);
+		Dictionary<String, Object> dictionary =
+			HashMapDictionaryBuilder.<String, Object>put(
+				"roleSegmentationEnabled", true
+			).build();
 
 		try (ConfigurationTemporarySwapper configurationTemporarySwapper =
 				new ConfigurationTemporarySwapper(
@@ -141,27 +143,7 @@ public class SegmentsDisplayContextTest {
 		mockLiferayPortletRenderRequest.setAttribute(
 			MVCRenderConstants.
 				PORTLET_CONTEXT_OVERRIDE_REQUEST_ATTIBUTE_NAME_PREFIX + path,
-			ProxyUtil.newProxyInstance(
-				PortletContext.class.getClassLoader(),
-				new Class<?>[] {PortletContext.class},
-				(PortletContextProxy, portletContextMethod,
-				 portletContextArgs) -> {
-
-					if (Objects.equals(
-							portletContextMethod.getName(),
-							"getRequestDispatcher") &&
-						Objects.equals(portletContextArgs[0], path)) {
-
-						return ProxyUtil.newProxyInstance(
-							PortletRequestDispatcher.class.getClassLoader(),
-							new Class<?>[] {PortletRequestDispatcher.class},
-							(portletRequestDispatcherProxy,
-							 portletRequestDispatcherMethod,
-							 portletRequestDispatcherArgs) -> null);
-					}
-
-					throw new UnsupportedOperationException();
-				}));
+			new MockLiferayPortletContext(path));
 
 		mockLiferayPortletRenderRequest.setAttribute(
 			WebKeys.THEME_DISPLAY, _getThemeDisplay());

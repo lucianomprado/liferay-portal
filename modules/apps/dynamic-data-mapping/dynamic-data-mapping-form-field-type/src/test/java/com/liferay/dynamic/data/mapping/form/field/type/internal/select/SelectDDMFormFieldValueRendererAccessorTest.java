@@ -25,12 +25,12 @@ import com.liferay.dynamic.data.mapping.test.util.DDMFormValuesTestUtil;
 import com.liferay.portal.json.JSONFactoryImpl;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactory;
-import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
-import com.liferay.portal.util.HtmlImpl;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import org.junit.Assert;
-import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 /**
@@ -38,10 +38,10 @@ import org.junit.Test;
  */
 public class SelectDDMFormFieldValueRendererAccessorTest {
 
-	@Before
-	public void setUp() {
-		_setUpHtmlUtil();
-	}
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
 
 	@Test
 	public void testRenderMultipleValues() throws Exception {
@@ -54,17 +54,15 @@ public class SelectDDMFormFieldValueRendererAccessorTest {
 
 		int numberOfOptions = 2;
 
-		DDMFormFieldOptions ddmFormFieldOptions = createDDMFormFieldOptions(
-			numberOfOptions);
-
-		ddmFormField.setDDMFormFieldOptions(ddmFormFieldOptions);
+		ddmFormField.setDDMFormFieldOptions(
+			createDDMFormFieldOptions(numberOfOptions));
 
 		ddmForm.addDDMFormField(ddmFormField);
 
 		DDMFormValues ddmFormValues = DDMFormValuesTestUtil.createDDMFormValues(
 			ddmForm);
 
-		JSONArray optionsValuesJSONArray = createOptionsValuesJSONArray(
+		JSONArray optionsValuesJSONArray = _createOptionsValuesJSONArray(
 			numberOfOptions);
 
 		DDMFormFieldValue ddmFormFieldValue =
@@ -75,7 +73,7 @@ public class SelectDDMFormFieldValueRendererAccessorTest {
 		ddmFormValues.addDDMFormFieldValue(ddmFormFieldValue);
 
 		SelectDDMFormFieldValueRenderer selectDDMFormFieldValueRenderer =
-			createSelectDDMFormFieldValueRenderer();
+			_createSelectDDMFormFieldValueRenderer();
 
 		Assert.assertEquals(
 			"option 1, option 2",
@@ -94,17 +92,15 @@ public class SelectDDMFormFieldValueRendererAccessorTest {
 
 		int numberOfOptions = 1;
 
-		DDMFormFieldOptions ddmFormFieldOptions = createDDMFormFieldOptions(
-			numberOfOptions);
-
-		ddmFormField.setDDMFormFieldOptions(ddmFormFieldOptions);
+		ddmFormField.setDDMFormFieldOptions(
+			createDDMFormFieldOptions(numberOfOptions));
 
 		ddmForm.addDDMFormField(ddmFormField);
 
 		DDMFormValues ddmFormValues = DDMFormValuesTestUtil.createDDMFormValues(
 			ddmForm);
 
-		JSONArray optionsValuesJSONArray = createOptionsValuesJSONArray(
+		JSONArray optionsValuesJSONArray = _createOptionsValuesJSONArray(
 			numberOfOptions);
 
 		DDMFormFieldValue ddmFormFieldValue =
@@ -115,7 +111,7 @@ public class SelectDDMFormFieldValueRendererAccessorTest {
 		ddmFormValues.addDDMFormFieldValue(ddmFormFieldValue);
 
 		SelectDDMFormFieldValueRenderer selectDDMFormFieldValueRenderer =
-			createSelectDDMFormFieldValueRenderer();
+			_createSelectDDMFormFieldValueRenderer();
 
 		Assert.assertEquals(
 			"option 1",
@@ -136,7 +132,7 @@ public class SelectDDMFormFieldValueRendererAccessorTest {
 		return ddmFormFieldOptions;
 	}
 
-	protected JSONArray createOptionsValuesJSONArray(int numberOfOptions) {
+	private JSONArray _createOptionsValuesJSONArray(int numberOfOptions) {
 		JSONArray jsonArray = _jsonFactory.createJSONArray();
 
 		for (int i = 1; i <= numberOfOptions; i++) {
@@ -146,8 +142,8 @@ public class SelectDDMFormFieldValueRendererAccessorTest {
 		return jsonArray;
 	}
 
-	protected SelectDDMFormFieldValueAccessor
-		createSelectDDMFormFieldValueAccessor() {
+	private SelectDDMFormFieldValueAccessor
+		_createSelectDDMFormFieldValueAccessor() {
 
 		SelectDDMFormFieldValueAccessor selectDDMFormFieldValueAccessor =
 			new SelectDDMFormFieldValueAccessor();
@@ -157,23 +153,17 @@ public class SelectDDMFormFieldValueRendererAccessorTest {
 		return selectDDMFormFieldValueAccessor;
 	}
 
-	protected SelectDDMFormFieldValueRenderer
-			createSelectDDMFormFieldValueRenderer()
+	private SelectDDMFormFieldValueRenderer
+			_createSelectDDMFormFieldValueRenderer()
 		throws Exception {
 
 		SelectDDMFormFieldValueRenderer selectDDMFormFieldValueRenderer =
 			new SelectDDMFormFieldValueRenderer();
 
 		selectDDMFormFieldValueRenderer.selectDDMFormFieldValueAccessor =
-			createSelectDDMFormFieldValueAccessor();
+			_createSelectDDMFormFieldValueAccessor();
 
 		return selectDDMFormFieldValueRenderer;
-	}
-
-	private void _setUpHtmlUtil() {
-		HtmlUtil htmlUtil = new HtmlUtil();
-
-		htmlUtil.setHtml(new HtmlImpl());
 	}
 
 	private final JSONFactory _jsonFactory = new JSONFactoryImpl();

@@ -21,17 +21,21 @@ GroupDisplayContextHelper groupDisplayContextHelper = new GroupDisplayContextHel
 
 liveGroup = groupDisplayContextHelper.getLiveGroup();
 liveGroupId = groupDisplayContextHelper.getLiveGroupId();
+
 UnicodeProperties liveGroupTypeSettings = liveGroup.getTypeSettingsProperties();
 
 LayoutSet privateLayoutSet = LayoutSetLocalServiceUtil.getLayoutSet(liveGroup.getGroupId(), true);
 LayoutSet publicLayoutSet = LayoutSetLocalServiceUtil.getLayoutSet(liveGroup.getGroupId(), false);
 
 boolean liveGroupRemoteStaging = liveGroup.hasRemoteStagingGroup() && PropsValues.STAGING_LIVE_GROUP_REMOTE_STAGING_ENABLED;
+
 boolean stagedLocally = liveGroup.isStaged() && !liveGroup.isStagedRemotely();
+
 boolean stagedRemotely = liveGroup.isStaged() && !stagedLocally;
 
 if (stagedLocally) {
 	stagingGroup = liveGroup.getStagingGroup();
+
 	stagingGroupId = stagingGroup.getGroupId();
 }
 
@@ -43,7 +47,7 @@ BackgroundTask lastCompletedInitialPublicationBackgroundTask = BackgroundTaskMan
 		<%@ include file="/staging_configuration_exceptions.jspf" %>
 
 		<clay:container-fluid
-			cssClass="main-content-body"
+			cssClass="main-content-body mt-4"
 		>
 			<liferay-ui:breadcrumb
 				showLayout="<%= false %>"
@@ -118,7 +122,7 @@ BackgroundTask lastCompletedInitialPublicationBackgroundTask = BackgroundTaskMan
 							) {
 								var delegate = delegateModule.default;
 
-								delegate(stagingTypes, 'click', 'input', function (event) {
+								delegate(stagingTypes, 'click', 'input', (event) => {
 									var value = event.target.closest('input').value;
 
 									if (value != '<%= StagingConstants.TYPE_LOCAL_STAGING %>') {
@@ -189,8 +193,12 @@ BackgroundTask lastCompletedInitialPublicationBackgroundTask = BackgroundTaskMan
 				'input[name=<portlet:namespace />stagingType]:checked'
 			);
 
-			if (selectedStagingTypeInput) {
+			if (forceDisable || selectedStagingTypeInput) {
 				var currentValue = selectedStagingTypeInput.value;
+
+				if (forceDisable) {
+					currentValue = <%= StagingConstants.TYPE_NOT_STAGED %>;
+				}
 
 				if (currentValue != oldValue) {
 					ok = false;
@@ -221,6 +229,9 @@ BackgroundTask lastCompletedInitialPublicationBackgroundTask = BackgroundTaskMan
 		if (ok) {
 			if (forceDisable) {
 				form.elements['<portlet:namespace />forceDisable'].value = true;
+				form.elements[
+					'<portlet:namespace />stagingType'
+				].value = <%= StagingConstants.TYPE_NOT_STAGED %>;
 			}
 
 			submitForm(form);
@@ -236,8 +247,8 @@ BackgroundTask lastCompletedInitialPublicationBackgroundTask = BackgroundTaskMan
 		);
 
 		if (selectAllCheckbox) {
-			selectAllCheckbox.addEventListener('change', function () {
-				Array.prototype.forEach.call(allCheckboxes, function (checkbox) {
+			selectAllCheckbox.addEventListener('change', () => {
+				Array.prototype.forEach.call(allCheckboxes, (checkbox) => {
 					checkbox.checked = selectAllCheckbox.checked;
 				});
 			});

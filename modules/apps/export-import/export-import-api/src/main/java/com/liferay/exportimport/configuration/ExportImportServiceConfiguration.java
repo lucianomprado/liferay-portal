@@ -29,12 +29,19 @@ import org.osgi.annotation.versioning.ProviderType;
 	scope = ExtendedObjectClassDefinition.Scope.COMPANY
 )
 @Meta.OCD(
+	description = "export-import-service-configuration-description",
 	id = "com.liferay.exportimport.configuration.ExportImportServiceConfiguration",
 	localization = "content/Language",
 	name = "export-import-service-configuration-name"
 )
 @ProviderType
 public interface ExportImportServiceConfiguration {
+
+	@Meta.AD(
+		deflt = "false", description = "include-all-asset-links-help",
+		name = "include-all-asset-links", required = false
+	)
+	public boolean includeAllAssetLinks();
 
 	@Meta.AD(
 		deflt = "false",
@@ -72,24 +79,5 @@ public interface ExportImportServiceConfiguration {
 		name = "validate-missing-references", required = false
 	)
 	public boolean validateMissingReferences();
-
-	@Meta.AD(
-		deflt = "true", description = "staging-delete-temp-lar-on-failure-help",
-		name = "staging-delete-temp-lar-on-failure", required = false
-	)
-	public boolean stagingDeleteTempLarOnFailure();
-
-	@Meta.AD(
-		deflt = "true", description = "staging-delete-temp-lar-on-success-help",
-		name = "staging-delete-temp-lar-on-success", required = false
-	)
-	public boolean stagingDeleteTempLarOnSuccess();
-
-	@Meta.AD(
-		deflt = "false",
-		description = "staging-use-virtual-host-of-the-remote-site-help",
-		name = "staging-use-virtual-host-of-the-remote-site", required = false
-	)
-	public boolean stagingUseVirtualHostForRemoteSite();
 
 }

@@ -15,8 +15,10 @@
 package com.liferay.document.library.web.internal.display.context;
 
 import com.liferay.document.library.kernel.versioning.VersioningStrategy;
-import com.liferay.document.library.web.internal.display.context.util.DLRequestHelper;
+import com.liferay.document.library.web.internal.display.context.helper.DLRequestHelper;
 import com.liferay.document.library.web.internal.helper.DLTrashHelper;
+import com.liferay.item.selector.ItemSelector;
+import com.liferay.trash.TrashHelper;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -36,12 +38,16 @@ public class DLAdminDisplayContextProvider {
 		HttpServletRequest httpServletRequest,
 		HttpServletResponse httpServletResponse) {
 
+		httpServletRequest.setAttribute(
+			ItemSelector.class.getName(), _itemSelector);
+
 		DLRequestHelper dlRequestHelper = new DLRequestHelper(
 			httpServletRequest);
 
 		return new DLAdminDisplayContext(
 			httpServletRequest, dlRequestHelper.getLiferayPortletRequest(),
-			dlRequestHelper.getLiferayPortletResponse(), _versioningStrategy);
+			dlRequestHelper.getLiferayPortletResponse(), _versioningStrategy,
+			_trashHelper);
 	}
 
 	public DLAdminManagementToolbarDisplayContext
@@ -61,6 +67,12 @@ public class DLAdminDisplayContextProvider {
 
 	@Reference
 	private DLTrashHelper _dlTrashHelper;
+
+	@Reference
+	private ItemSelector _itemSelector;
+
+	@Reference
+	private TrashHelper _trashHelper;
 
 	@Reference(
 		policy = ReferencePolicy.DYNAMIC,

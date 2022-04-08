@@ -60,9 +60,18 @@ public class OpenAPIUtil {
 
 	public static String formatSingular(String s) {
 		if (s.endsWith("ases")) {
+
+			// bases to base
+
 			s = s.substring(0, s.length() - 1);
 		}
-		else if (s.endsWith("ses")) {
+		else if (s.endsWith("auses")) {
+
+			// clauses to clause
+
+			s = s.substring(0, s.length() - 1);
+		}
+		else if (s.endsWith("ses") || s.endsWith("xes")) {
 			s = s.substring(0, s.length() - 2);
 		}
 		else if (s.endsWith("ies")) {
@@ -76,10 +85,10 @@ public class OpenAPIUtil {
 	}
 
 	public static Map<String, Schema> getAllExternalSchemas(
-			Map<String, Schema> allSchemas, OpenAPIYAML openAPIYAML)
+			OpenAPIYAML openAPIYAML)
 		throws Exception {
 
-		Map<String, Schema> allExternalSchemas = new HashMap<>(allSchemas);
+		Map<String, Schema> allExternalSchemas = new HashMap<>();
 
 		Map<String, Schema> externalSchemas =
 			OpenAPIParserUtil.getExternalSchemas(openAPIYAML);
@@ -153,13 +162,6 @@ public class OpenAPIUtil {
 		}
 
 		return allExternalSchemas;
-	}
-
-	public static Map<String, Schema> getAllExternalSchemas(
-			OpenAPIYAML openAPIYAML)
-		throws Exception {
-
-		return getAllExternalSchemas(getAllSchemas(openAPIYAML), openAPIYAML);
 	}
 
 	public static Map<String, Schema> getAllSchemas(OpenAPIYAML openAPIYAML) {

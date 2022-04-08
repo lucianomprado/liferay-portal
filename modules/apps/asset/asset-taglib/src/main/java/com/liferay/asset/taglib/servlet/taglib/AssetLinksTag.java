@@ -22,6 +22,7 @@ import com.liferay.asset.kernel.model.AssetRendererFactory;
 import com.liferay.asset.kernel.service.AssetEntryLocalServiceUtil;
 import com.liferay.asset.kernel.service.AssetLinkLocalServiceUtil;
 import com.liferay.asset.taglib.internal.servlet.ServletContextUtil;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.log.Log;
@@ -102,7 +103,7 @@ public class AssetLinksTag extends IncludeTag {
 	public void setPageContext(PageContext pageContext) {
 		super.setPageContext(pageContext);
 
-		servletContext = ServletContextUtil.getServletContext();
+		setServletContext(ServletContextUtil.getServletContext());
 	}
 
 	public void setPortletURL(PortletURL portletURL) {
@@ -150,7 +151,7 @@ public class AssetLinksTag extends IncludeTag {
 				// LPS-52675
 
 				if (_log.isDebugEnabled()) {
-					_log.debug(systemException, systemException);
+					_log.debug(systemException);
 				}
 			}
 		}
@@ -167,6 +168,9 @@ public class AssetLinksTag extends IncludeTag {
 			assetLinkEntries = _getAssetLinkEntries();
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception);
+			}
 		}
 
 		if (ListUtil.isEmpty(assetLinkEntries)) {
@@ -180,17 +184,22 @@ public class AssetLinksTag extends IncludeTag {
 	}
 
 	private List<Tuple> _getAssetLinkEntries() throws Exception {
-		ThemeDisplay themeDisplay = (ThemeDisplay)request.getAttribute(
-			WebKeys.THEME_DISPLAY);
+		HttpServletRequest httpServletRequest = getRequest();
 
-		PortletRequest portletRequest = (PortletRequest)request.getAttribute(
-			JavaConstants.JAVAX_PORTLET_REQUEST);
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)httpServletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
+
+		PortletRequest portletRequest =
+			(PortletRequest)httpServletRequest.getAttribute(
+				JavaConstants.JAVAX_PORTLET_REQUEST);
 
 		LiferayPortletRequest liferayPortletRequest =
 			PortalUtil.getLiferayPortletRequest(portletRequest);
 
-		PortletResponse portletResponse = (PortletResponse)request.getAttribute(
-			JavaConstants.JAVAX_PORTLET_RESPONSE);
+		PortletResponse portletResponse =
+			(PortletResponse)httpServletRequest.getAttribute(
+				JavaConstants.JAVAX_PORTLET_RESPONSE);
 
 		LiferayPortletResponse liferayPortletResponse =
 			PortalUtil.getLiferayPortletResponse(portletResponse);
@@ -239,12 +248,8 @@ public class AssetLinksTag extends IncludeTag {
 					assetLinkEntry.getClassPK());
 
 			if (!assetRenderer.hasViewPermission(
-					themeDisplay.getPermissionChecker())) {
-
-				continue;
-			}
-
-			if (!(assetLinkEntry.isVisible() ||
+					themeDisplay.getPermissionChecker()) ||
+				!(assetLinkEntry.isVisible() ||
 				  (assetRenderer.getStatus() ==
 					  WorkflowConstants.STATUS_SCHEDULED))) {
 
@@ -286,12 +291,15 @@ public class AssetLinksTag extends IncludeTag {
 				_portletURL, liferayPortletResponse);
 		}
 		else {
-			viewAssetURL = PortletProviderUtil.getPortletURL(
-				request, assetRenderer.getClassName(),
-				PortletProvider.Action.VIEW);
-
-			viewAssetURL.setParameter("redirect", themeDisplay.getURLCurrent());
-			viewAssetURL.setWindowState(WindowState.MAXIMIZED);
+			viewAssetURL = PortletURLBuilder.create(
+				PortletProviderUtil.getPortletURL(
+					getRequest(), assetRenderer.getClassName(),
+					PortletProvider.Action.VIEW)
+			).setRedirect(
+				themeDisplay.getURLCurrent()
+			).setWindowState(
+				WindowState.MAXIMIZED
+			).buildPortletURL();
 		}
 
 		viewAssetURL.setParameter(

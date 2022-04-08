@@ -17,6 +17,7 @@ package com.liferay.commerce.item.selector.web.internal.display.context;
 import com.liferay.commerce.product.model.CommerceChannel;
 import com.liferay.commerce.product.service.CommerceChannelLocalService;
 import com.liferay.frontend.taglib.servlet.taglib.ManagementBarFilterItem;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -27,14 +28,12 @@ import com.liferay.portal.kernel.portlet.PortletURLUtil;
 import com.liferay.portal.kernel.service.ClassNameLocalServiceUtil;
 import com.liferay.portal.kernel.service.GroupService;
 import com.liferay.portal.kernel.util.LinkedHashMapBuilder;
-import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
 import com.liferay.portal.kernel.util.comparator.GroupNameComparator;
 
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.ResourceBundle;
 
 import javax.portlet.PortletException;
@@ -80,11 +79,11 @@ public class SimpleSiteItemSelectorViewDisplayContext
 
 	@Override
 	public PortletURL getPortletURL() {
-		PortletURL portletURL = super.getPortletURL();
-
-		portletURL.setParameter("siteGroupId", String.valueOf(getGroupId()));
-
-		return portletURL;
+		return PortletURLBuilder.create(
+			super.getPortletURL()
+		).setParameter(
+			"siteGroupId", getGroupId()
+		).buildPortletURL();
 	}
 
 	@Override
@@ -116,46 +115,44 @@ public class SimpleSiteItemSelectorViewDisplayContext
 			cpRequestHelper.getRenderRequest(), getPortletURL(), null,
 			emptyResultsMessage);
 
-		String orderByCol = getOrderByCol();
+		searchContainer.setOrderByCol(getOrderByCol());
 
-		String orderByType = getOrderByType();
+		boolean orderByAsc = false;
 
-		OrderByComparator<Group> orderByComparator = new GroupNameComparator(
-			orderByType.equals("asc"));
+		if (Objects.equals(getOrderByType(), "asc")) {
+			orderByAsc = true;
+		}
 
-		searchContainer.setOrderByCol(orderByCol);
-		searchContainer.setOrderByComparator(orderByComparator);
-		searchContainer.setOrderByType(orderByType);
+		searchContainer.setOrderByComparator(
+			new GroupNameComparator(orderByAsc));
+		searchContainer.setOrderByType(getOrderByType());
+		searchContainer.setResultsAndTotal(
+			() -> _groupService.search(
+				cpRequestHelper.getCompanyId(),
+				new long[] {
+					ClassNameLocalServiceUtil.getClassNameId(Group.class),
+					ClassNameLocalServiceUtil.getClassNameId(Organization.class)
+				},
+				null,
+				LinkedHashMapBuilder.<String, Object>put(
+					"active", true
+				).put(
+					"site", true
+				).build(),
+				searchContainer.getStart(), searchContainer.getEnd(), null),
+			_groupService.searchCount(
+				cpRequestHelper.getCompanyId(), null, null, new String[0]));
 		searchContainer.setSearch(_search);
-
-		LinkedHashMap<String, Object> params =
-			LinkedHashMapBuilder.<String, Object>put(
-				"active", true
-			).put(
-				"site", true
-			).build();
-
-		int total = _groupService.searchCount(
-			cpRequestHelper.getCompanyId(), null, null, new String[0]);
-		List<Group> groups = _groupService.search(
-			cpRequestHelper.getCompanyId(),
-			new long[] {
-				ClassNameLocalServiceUtil.getClassNameId(Group.class),
-				ClassNameLocalServiceUtil.getClassNameId(Organization.class)
-			},
-			null, params, searchContainer.getStart(), searchContainer.getEnd(),
-			null);
-
-		searchContainer.setTotal(total);
-		searchContainer.setResults(groups);
 
 		return searchContainer;
 	}
 
 	public boolean isSiteAvailable(long siteGroupId) {
-		if (_commerceChannelLocalService.fetchCommerceChannelBySiteGroupId(
-				siteGroupId) == null) {
+		CommerceChannel commerceChannel =
+			_commerceChannelLocalService.fetchCommerceChannelBySiteGroupId(
+				siteGroupId);
 
+		if (commerceChannel == null) {
 			return true;
 		}
 
@@ -172,13 +169,14 @@ public class SimpleSiteItemSelectorViewDisplayContext
 			active = true;
 		}
 
-		PortletURL portletURL = PortletURLUtil.clone(
-			getPortletURL(), cpRequestHelper.getRenderResponse());
-
-		portletURL.setParameter("siteGroupId", String.valueOf(siteGroupId));
-
 		return new ManagementBarFilterItem(
-			active, String.valueOf(siteGroupId), label, portletURL.toString());
+			active, String.valueOf(siteGroupId), label,
+			PortletURLBuilder.create(
+				PortletURLUtil.clone(
+					getPortletURL(), cpRequestHelper.getRenderResponse())
+			).setParameter(
+				"siteGroupId", siteGroupId
+			).buildString());
 	}
 
 	private final CommerceChannelLocalService _commerceChannelLocalService;

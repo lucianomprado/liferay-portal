@@ -35,6 +35,7 @@ import com.liferay.frontend.taglib.clay.data.set.view.table.ClayTableSchemaBuild
 import com.liferay.frontend.taglib.clay.data.set.view.table.ClayTableSchemaField;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemListBuilder;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.LanguageUtil;
@@ -52,7 +53,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import javax.portlet.ActionRequest;
 import javax.portlet.PortletRequest;
 import javax.portlet.PortletURL;
 
@@ -87,17 +87,17 @@ public class CommerceNotificationTemplateClayTable
 		ClayTableSchemaBuilder clayTableSchemaBuilder =
 			_clayTableSchemaBuilderFactory.create();
 
-		ClayTableSchemaField nameField =
+		ClayTableSchemaField nameClayTableSchemaField =
 			clayTableSchemaBuilder.addClayTableSchemaField("name", "name");
 
-		nameField.setContentRenderer("actionLink");
+		nameClayTableSchemaField.setContentRenderer("actionLink");
 
 		clayTableSchemaBuilder.addClayTableSchemaField("type", "type");
 
-		ClayTableSchemaField enabledField =
+		ClayTableSchemaField enabledClayTableSchemaField =
 			clayTableSchemaBuilder.addClayTableSchemaField("enabled", "status");
 
-		enabledField.setContentRenderer("label");
+		enabledClayTableSchemaField.setContentRenderer("label");
 
 		return clayTableSchemaBuilder.build();
 	}
@@ -111,19 +111,21 @@ public class CommerceNotificationTemplateClayTable
 
 		return DropdownItemListBuilder.add(
 			dropdownItem -> {
-				PortletURL portletURL = PortletProviderUtil.getPortletURL(
-					httpServletRequest, CommerceChannel.class.getName(),
-					PortletProvider.Action.MANAGE);
-
-				portletURL.setWindowState(LiferayWindowState.POP_UP);
+				PortletURL portletURL = PortletURLBuilder.create(
+					PortletProviderUtil.getPortletURL(
+						httpServletRequest, CommerceChannel.class.getName(),
+						PortletProvider.Action.MANAGE)
+				).setWindowState(
+					LiferayWindowState.POP_UP
+				).buildPortletURL();
 
 				long commerceChannelId = ParamUtil.getLong(
 					httpServletRequest, "commerceChannelId");
 
 				dropdownItem.setHref(
 					portletURL, "mvcRenderCommandName",
-					"editCommerceNotificationTemplate", "commerceChannelId",
-					String.valueOf(commerceChannelId),
+					"/commerce_channels/edit_commerce_notification_template",
+					"commerceChannelId", String.valueOf(commerceChannelId),
 					"commerceNotificationTemplateId",
 					String.valueOf(
 						notificationTemplate.getNotificationTemplateId()));
@@ -134,25 +136,24 @@ public class CommerceNotificationTemplateClayTable
 			}
 		).add(
 			dropdownItem -> {
-				PortletURL deletePortletURL = _portal.getControlPanelPortletURL(
-					httpServletRequest, CPPortletKeys.COMMERCE_CHANNELS,
-					PortletRequest.ACTION_PHASE);
+				dropdownItem.setHref(
+					PortletURLBuilder.create(
+						_portal.getControlPanelPortletURL(
+							httpServletRequest, CPPortletKeys.COMMERCE_CHANNELS,
+							PortletRequest.ACTION_PHASE)
+					).setActionName(
+						"/commerce_channels/edit_commerce_notification_template"
+					).setCMD(
+						Constants.DELETE
+					).setRedirect(
+						ParamUtil.getString(
+							httpServletRequest, "currentUrl",
+							_portal.getCurrentURL(httpServletRequest))
+					).setParameter(
+						"commerceNotificationTemplateId",
+						notificationTemplate.getNotificationTemplateId()
+					).buildPortletURL());
 
-				String redirect = ParamUtil.getString(
-					httpServletRequest, "currentUrl",
-					_portal.getCurrentURL(httpServletRequest));
-
-				deletePortletURL.setParameter(
-					ActionRequest.ACTION_NAME,
-					"editCommerceNotificationTemplate");
-				deletePortletURL.setParameter(Constants.CMD, Constants.DELETE);
-				deletePortletURL.setParameter("redirect", redirect);
-				deletePortletURL.setParameter(
-					"commerceNotificationTemplateId",
-					String.valueOf(
-						notificationTemplate.getNotificationTemplateId()));
-
-				dropdownItem.setHref(deletePortletURL);
 				dropdownItem.setLabel(
 					LanguageUtil.get(httpServletRequest, "delete"));
 			}

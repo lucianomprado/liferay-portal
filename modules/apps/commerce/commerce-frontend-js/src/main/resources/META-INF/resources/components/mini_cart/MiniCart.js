@@ -18,9 +18,8 @@ import React, {useCallback, useEffect, useState} from 'react';
 
 import ServiceProvider from '../../ServiceProvider/index';
 import {
-	ADD_TO_ORDER,
-	CHANGE_ACCOUNT,
-	CHANGE_ORDER,
+	CURRENT_ACCOUNT_UPDATED,
+	CURRENT_ORDER_UPDATED,
 } from '../../utilities/eventsDefinitions';
 import {showErrorNotification} from '../../utilities/notifications';
 import MiniCartContext from './MiniCartContext';
@@ -43,7 +42,9 @@ import {
 } from './util/constants';
 import {regenerateOrderDetailURL, summaryDataMapper} from './util/index';
 import {DEFAULT_LABELS} from './util/labels';
-import {DEFAULT_VIEWS, resolveCartViews} from './util/views';
+import {resolveCartViews} from './util/views';
+
+const CartResource = ServiceProvider.DeliveryCartAPI('v1');
 
 function MiniCart({
 	cartActionURLs,
@@ -54,89 +55,102 @@ function MiniCart({
 	labels,
 	onAddToCart,
 	orderId,
-	spritemap,
+	productURLSeparator,
 	summaryDataMapper,
 	toggleable,
 }) {
-	const CartResource = ServiceProvider.DeliveryCartAPI('v1');
-
 	const [isOpen, setIsOpen] = useState(!toggleable);
 	const [isUpdating, setIsUpdating] = useState(false);
-	const [cartState, updateCartState] = useState({itemsQuantity});
 	const [actionURLs, setActionURLs] = useState(cartActionURLs);
 	const [CartViews, setCartViews] = useState({});
+	const [cartState, setCartState] = useState({
+		id: orderId,
+		summary: {itemsQuantity},
+	});
 
 	const closeCart = () => setIsOpen(false);
 	const openCart = () => setIsOpen(true);
-	const resetCartState = useCallback(() => updateCartState({}), [
-		updateCartState,
-	]);
 
-	// eslint-disable-next-line react-hooks/exhaustive-deps
-	const updateCartModel = ({orderId: cartId}) =>
-		CartResource.getCartByIdWithItems(cartId)
-			.then((model) => {
-				if (orderId !== cartId) {
-					const {orderUUID} = model,
-						{checkoutURL, orderDetailURL} = actionURLs;
+	const resetCartState = useCallback(
+		({accountId = 0}) =>
+			setCartState({
+				accountId,
+				id: 0,
+				summary: {itemsQuantity: 0},
+			}),
+		[setCartState]
+	);
 
-					setActionURLs({
-						checkoutURL,
-						orderDetailURL: regenerateOrderDetailURL(
-							orderDetailURL,
-							orderUUID
-						),
-					});
-				}
+	const updateCartModel = useCallback(
+		async ({order}) => {
+			try {
+				const updatedCart = order.orderUUID
+					? order
+					: await CartResource.getCartByIdWithItems(order.id);
 
-				updateCartState({...cartState, ...model});
-				onAddToCart(actionURLs, cartState);
-			})
-			.catch(showErrorNotification);
+				let latestActionURLs;
+				let latestCartState;
+
+				setActionURLs((currentURLs) => {
+					const orderDetailURL = currentURLs.orderDetailURL;
+
+					latestActionURLs = {
+						...currentURLs,
+						orderDetailURL: !orderDetailURL
+							? regenerateOrderDetailURL(
+									updatedCart.orderUUID,
+									currentURLs.siteDefaultURL
+							  )
+							: new URL(orderDetailURL),
+					};
+
+					return latestActionURLs;
+				});
+
+				setCartState((currentState) => {
+					latestCartState = {...currentState, ...updatedCart};
+
+					return latestCartState;
+				});
+
+				onAddToCart(latestActionURLs, latestCartState);
+			}
+			catch (error) {
+				showErrorNotification(error);
+			}
+		},
+		[onAddToCart]
+	);
 
 	useEffect(() => {
-		resolveCartViews({
-			...DEFAULT_VIEWS,
-			...cartViews,
-		}).then((views) => setCartViews(views));
+		resolveCartViews(cartViews).then((views) => setCartViews(views));
 	}, [cartViews]);
 
 	useEffect(() => {
-		Liferay.on(ADD_TO_ORDER, updateCartModel);
-		Liferay.on(CHANGE_ORDER, updateCartModel);
+		Liferay.on(CURRENT_ORDER_UPDATED, updateCartModel);
 
 		return () => {
-			Liferay.detach(ADD_TO_ORDER, updateCartModel);
-			Liferay.detach(CHANGE_ORDER, updateCartModel);
+			Liferay.detach(CURRENT_ORDER_UPDATED, updateCartModel);
 		};
 	}, [updateCartModel]);
 
 	useEffect(() => {
-		if (orderId && orderId !== 0) {
-			updateCartModel({orderId});
+		if (orderId) {
+			updateCartModel({order: {id: orderId}});
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [orderId]);
+	}, [orderId, updateCartModel]);
 
 	useEffect(() => {
-		if (isOpen) {
-			updateCartModel({orderId});
-		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [isOpen]);
-
-	useEffect(() => {
-		Liferay.on(CHANGE_ACCOUNT, resetCartState);
+		Liferay.on(CURRENT_ACCOUNT_UPDATED, resetCartState);
 
 		return () => {
-			Liferay.detach(CHANGE_ACCOUNT, resetCartState);
+			Liferay.detach(CURRENT_ACCOUNT_UPDATED, resetCartState);
 		};
 	}, [resetCartState]);
 
 	return (
 		<MiniCartContext.Provider
 			value={{
-				CartResource,
 				CartViews,
 				actionURLs,
 				cartState,
@@ -146,12 +160,13 @@ function MiniCart({
 				isOpen,
 				isUpdating,
 				labels: {...DEFAULT_LABELS, ...labels},
+				openCart,
+				productURLSeparator,
 				setIsUpdating,
-				spritemap,
 				summaryDataMapper,
 				toggleable,
 				updateCartModel,
-				updateCartState,
+				updateCartState: setCartState,
 			}}
 		>
 			{!!CartViews[CART] && (
@@ -164,11 +179,11 @@ function MiniCart({
 					{toggleable && (
 						<>
 							<div
-								className={'mini-cart-overlay'}
+								className="mini-cart-overlay"
 								onClick={() => setIsOpen(false)}
 							/>
 
-							<CartViews.Opener openCart={openCart} />
+							<CartViews.Opener />
 						</>
 					)}
 
@@ -180,12 +195,13 @@ function MiniCart({
 }
 
 MiniCart.defaultProps = {
-	cartViews: DEFAULT_VIEWS,
+	cartViews: {},
 	displayDiscountLevels: false,
 	displayTotalItemsQuantity: false,
 	itemsQuantity: 0,
 	labels: DEFAULT_LABELS,
 	onAddToCart: () => {},
+	orderId: 0,
 	summaryDataMapper,
 	toggleable: true,
 };
@@ -194,6 +210,8 @@ MiniCart.propTypes = {
 	cartActionURLs: PropTypes.shape({
 		checkoutURL: PropTypes.string,
 		orderDetailURL: PropTypes.string,
+		productURLSeparator: PropTypes.string,
+		siteDefaultURL: PropTypes.string,
 	}).isRequired,
 	cartViews: PropTypes.shape({
 		[CART]: PropTypes.oneOfType([
@@ -275,7 +293,6 @@ MiniCart.propTypes = {
 	}),
 	onAddToCart: PropTypes.func,
 	orderId: PropTypes.number,
-	spritemap: PropTypes.string,
 	summaryDataMapper: PropTypes.func,
 	toggleable: PropTypes.bool,
 };

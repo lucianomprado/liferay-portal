@@ -58,12 +58,14 @@ const Geolocation = ({
 			{!disabled || viewMode ? (
 				<dl>
 					<dt className="text-capitalize"></dt>
+
 					<dd>
 						<NoRender
 							className="lfr-map"
 							id={`map_${instanceId}`}
 							style={{height: '280px'}}
 						/>
+
 						<input
 							id={`input_value_${instanceId}`}
 							name={name}
@@ -73,8 +75,10 @@ const Geolocation = ({
 				</dl>
 			) : (
 				<img
-					alt={pathThemeImages}
+					alt={Liferay.Language.get('geolocation')}
+					className="w-100"
 					src={`${pathThemeImages}/common/geolocation.png`}
+					style={{maxWidth: '150px'}}
 					title={geolocateTitle}
 				/>
 			)}
@@ -93,7 +97,7 @@ const Main = ({
 	viewMode,
 	...otherProps
 }) => (
-	<FieldBase {...otherProps} name={name}>
+	<FieldBase name={name} readOnly={readOnly} {...otherProps}>
 		<Geolocation
 			disabled={readOnly}
 			googleMapsAPIKey={googleMapsAPIKey}

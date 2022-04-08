@@ -15,24 +15,23 @@
 package com.liferay.dynamic.data.mapping.form.field.type.internal.paragraph;
 
 import com.liferay.dynamic.data.mapping.form.field.type.DDMFormFieldTemplateContextContributor;
+import com.liferay.dynamic.data.mapping.form.field.type.constants.DDMFormFieldTypeConstants;
 import com.liferay.dynamic.data.mapping.model.DDMFormField;
 import com.liferay.dynamic.data.mapping.model.LocalizedValue;
 import com.liferay.dynamic.data.mapping.render.DDMFormFieldRenderingContext;
 import com.liferay.petra.string.StringPool;
-import com.liferay.portal.template.soy.data.SoyDataFactory;
-import com.liferay.portal.template.soy.util.SoyRawData;
+import com.liferay.portal.kernel.util.HashMapBuilder;
 
-import java.util.Collections;
 import java.util.Map;
 
 import org.osgi.service.component.annotations.Component;
-import org.osgi.service.component.annotations.Reference;
 
 /**
  * @author Marcellus Tavares
  */
 @Component(
-	immediate = true, property = "ddm.form.field.type.name=paragraph",
+	immediate = true,
+	property = "ddm.form.field.type.name=" + DDMFormFieldTypeConstants.PARAGRAPH,
 	service = {
 		DDMFormFieldTemplateContextContributor.class,
 		ParagraphDDMFormFieldTemplateContextContributor.class
@@ -46,13 +45,12 @@ public class ParagraphDDMFormFieldTemplateContextContributor
 		DDMFormField ddmFormField,
 		DDMFormFieldRenderingContext ddmFormFieldRenderingContext) {
 
-		SoyRawData soyRawData = _soyDataFactory.createSoyRawData(
-			getText(ddmFormField, ddmFormFieldRenderingContext));
-
-		return Collections.singletonMap("text", soyRawData.getValue());
+		return HashMapBuilder.<String, Object>put(
+			"text", _getText(ddmFormField, ddmFormFieldRenderingContext)
+		).build();
 	}
 
-	protected String getText(
+	private String _getText(
 		DDMFormField ddmFormField,
 		DDMFormFieldRenderingContext ddmFormFieldRenderingContext) {
 
@@ -64,8 +62,5 @@ public class ParagraphDDMFormFieldTemplateContextContributor
 
 		return text.getString(ddmFormFieldRenderingContext.getLocale());
 	}
-
-	@Reference
-	private SoyDataFactory _soyDataFactory;
 
 }

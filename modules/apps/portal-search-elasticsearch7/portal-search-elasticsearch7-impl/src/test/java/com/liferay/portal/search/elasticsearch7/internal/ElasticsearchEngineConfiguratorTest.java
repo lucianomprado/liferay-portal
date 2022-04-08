@@ -22,10 +22,13 @@ import com.liferay.portal.kernel.test.util.PropsTestUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.search.elasticsearch7.internal.BaseSearchEngineConfigurator.DestinationServiceRegistrarHelper;
 import com.liferay.portal.search.elasticsearch7.internal.BaseSearchEngineConfigurator.SearchDestinationHelper;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import java.util.Collections;
 
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 import org.mockito.Mockito;
@@ -38,6 +41,11 @@ import org.osgi.service.component.ComponentContext;
  */
 public class ElasticsearchEngineConfiguratorTest {
 
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
+
 	@BeforeClass
 	public static void setUpClass() {
 		PropsTestUtil.setProps(
@@ -47,10 +55,10 @@ public class ElasticsearchEngineConfiguratorTest {
 	@Test
 	public void testDestroyMustNotCreateDestinationsAgain() {
 		SearchDestinationHelper searchDestinationHelper =
-			createSearchDestinationHelper();
+			_createSearchDestinationHelper();
 
 		ElasticsearchEngineConfigurator elasticsearchEngineConfigurator =
-			createElasticsearchEngineConfigurator(searchDestinationHelper);
+			_createElasticsearchEngineConfigurator(searchDestinationHelper);
 
 		elasticsearchEngineConfigurator.activate(
 			Mockito.mock(ComponentContext.class));
@@ -70,8 +78,8 @@ public class ElasticsearchEngineConfiguratorTest {
 		);
 	}
 
-	protected DestinationServiceRegistrarHelper
-		createDestinationServiceRegistrarHelper() {
+	private DestinationServiceRegistrarHelper
+		_createDestinationServiceRegistrarHelper() {
 
 		DestinationServiceRegistrarHelper destinationServiceRegistrarHelper =
 			Mockito.mock(DestinationServiceRegistrarHelper.class);
@@ -95,14 +103,14 @@ public class ElasticsearchEngineConfiguratorTest {
 		return destinationServiceRegistrarHelper;
 	}
 
-	protected ElasticsearchEngineConfigurator
-		createElasticsearchEngineConfigurator(
+	private ElasticsearchEngineConfigurator
+		_createElasticsearchEngineConfigurator(
 			SearchDestinationHelper searchDestinationHelper) {
 
 		return new ElasticsearchEngineConfigurator() {
 			{
 				setDestinationServiceRegistrarHelper(
-					createDestinationServiceRegistrarHelper());
+					_createDestinationServiceRegistrarHelper());
 				setMessageBus(Mockito.mock(MessageBus.class));
 				setSearchDestinationHelper(searchDestinationHelper);
 				setSearchEngine(
@@ -114,7 +122,7 @@ public class ElasticsearchEngineConfiguratorTest {
 		};
 	}
 
-	protected SearchDestinationHelper createSearchDestinationHelper() {
+	private SearchDestinationHelper _createSearchDestinationHelper() {
 		SearchDestinationHelper searchDestinationHelper = Mockito.mock(
 			SearchDestinationHelper.class);
 

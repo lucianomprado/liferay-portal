@@ -27,8 +27,8 @@ GroupItemSelectorCriterion groupItemSelectorCriterion = siteItemSelectorViewDisp
 String target = ParamUtil.getString(request, "target", groupItemSelectorCriterion.getTarget());
 %>
 
-<clay:management-toolbar-v2
-	displayContext="<%= new SitesItemSelectorViewManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, siteItemSelectorViewDisplayContext) %>"
+<clay:management-toolbar
+	managementToolbarDisplayContext="<%= new SitesItemSelectorViewManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, siteItemSelectorViewDisplayContext) %>"
 />
 
 <aui:form action="<%= siteItemSelectorViewDisplayContext.getPortletURL() %>" cssClass="container-fluid container-fluid-max-xl" method="post" name="selectGroupFm">
@@ -77,11 +77,11 @@ String target = ParamUtil.getString(request, "target", groupItemSelectorCriterio
 			String childGroupsHREF = null;
 
 			if (!childGroups.isEmpty()) {
-				PortletURL childGroupsURL = siteItemSelectorViewDisplayContext.getPortletURL();
-
-				childGroupsURL.setParameter("groupId", String.valueOf(group.getGroupId()));
-
-				childGroupsHREF = childGroupsURL.toString();
+				childGroupsHREF = PortletURLBuilder.create(
+					siteItemSelectorViewDisplayContext.getPortletURL()
+				).setParameter(
+					"groupId", group.getGroupId()
+				).buildString();
 			}
 			%>
 
@@ -138,7 +138,7 @@ String target = ParamUtil.getString(request, "target", groupItemSelectorCriterio
 				<c:when test='<%= displayStyle.equals("icon") %>'>
 
 					<%
-					row.setCssClass("entry-card lfr-asset-item " + row.getCssClass());
+					row.setCssClass("card-page-item card-page-item-directory " + row.getCssClass());
 
 					Map<String, Object> linkData = HashMapBuilder.<String, Object>put(
 						"prevent-selection", true
@@ -190,7 +190,7 @@ String target = ParamUtil.getString(request, "target", groupItemSelectorCriterio
 										</c:choose>
 
 										<c:if test="<%= siteItemSelectorViewDisplayContext.isShowChildSitesLink() %>">
-											<aui:a cssClass='<%= "card-subtitle text-truncate selector-button " + (!childGroups.isEmpty() ? "text-default" : "text-muted") %>' data="<%= linkData %>" href="<%= childGroupsHREF %>" title="<%= siteVerticalCard.getSubtitle() %>">
+											<aui:a cssClass='<%= "card-subtitle text-truncate " + (!childGroups.isEmpty() ? "text-default" : "text-muted") %>' data="<%= linkData %>" href="<%= childGroupsHREF %>" title="<%= siteVerticalCard.getSubtitle() %>">
 												<%= siteVerticalCard.getSubtitle() %>
 											</aui:a>
 										</c:if>
@@ -254,10 +254,3 @@ String target = ParamUtil.getString(request, "target", groupItemSelectorCriterio
 		/>
 	</liferay-ui:search-container>
 </aui:form>
-
-<aui:script use="aui-base">
-	Liferay.Util.selectEntityHandler(
-		'#<portlet:namespace />selectGroupFm',
-		'<%= HtmlUtil.escapeJS(siteItemSelectorViewDisplayContext.getItemSelectedEventName()) %>'
-	);
-</aui:script>

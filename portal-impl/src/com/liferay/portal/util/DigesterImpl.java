@@ -174,34 +174,34 @@ public class DigesterImpl implements Digester {
 			messageDigest.update(byteBuffer);
 		}
 		catch (NoSuchAlgorithmException noSuchAlgorithmException) {
-			_log.error(noSuchAlgorithmException, noSuchAlgorithmException);
+			_log.error(noSuchAlgorithmException);
 		}
 
 		return messageDigest.digest();
 	}
 
 	@Override
-	public byte[] digestRaw(String algorithm, InputStream inputStream) {
+	public byte[] digestRaw(String algorithm, InputStream inputStream1) {
 		MessageDigest messageDigest = null;
 
-		try (InputStream is = inputStream) {
+		try (InputStream inputStream2 = inputStream1) {
 			messageDigest = MessageDigest.getInstance(algorithm);
 
 			byte[] buffer = new byte[StreamUtil.BUFFER_SIZE];
 
 			int read = 0;
 
-			while ((read = is.read(buffer)) != -1) {
+			while ((read = inputStream2.read(buffer)) != -1) {
 				if (read > 0) {
 					messageDigest.update(buffer, 0, read);
 				}
 			}
 		}
 		catch (IOException ioException) {
-			_log.error(ioException, ioException);
+			_log.error(ioException);
 		}
 		catch (NoSuchAlgorithmException noSuchAlgorithmException) {
-			_log.error(noSuchAlgorithmException, noSuchAlgorithmException);
+			_log.error(noSuchAlgorithmException);
 		}
 
 		return messageDigest.digest();
@@ -229,11 +229,10 @@ public class DigesterImpl implements Digester {
 			messageDigest.update(s.getBytes(Digester.ENCODING));
 		}
 		catch (NoSuchAlgorithmException noSuchAlgorithmException) {
-			_log.error(noSuchAlgorithmException, noSuchAlgorithmException);
+			_log.error(noSuchAlgorithmException);
 		}
 		catch (UnsupportedEncodingException unsupportedEncodingException) {
-			_log.error(
-				unsupportedEncodingException, unsupportedEncodingException);
+			_log.error(unsupportedEncodingException);
 		}
 
 		return messageDigest.digest();

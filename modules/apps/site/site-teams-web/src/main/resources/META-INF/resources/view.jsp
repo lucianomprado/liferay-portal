@@ -22,8 +22,9 @@ SiteTeamsDisplayContext siteTeamsDisplayContext = new SiteTeamsDisplayContext(re
 SiteTeamsManagementToolbarDisplayContext siteTeamsManagementToolbarDisplayContext = new SiteTeamsManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, siteTeamsDisplayContext);
 %>
 
-<clay:management-toolbar-v2
-	displayContext="<%= siteTeamsManagementToolbarDisplayContext %>"
+<clay:management-toolbar
+	managementToolbarDisplayContext="<%= siteTeamsManagementToolbarDisplayContext %>"
+	propsTransformer="js/SiteTeamsManagementToolbarPropsTransformer"
 />
 
 <portlet:actionURL name="deleteTeams" var="deleteTeamsURL">
@@ -36,7 +37,6 @@ SiteTeamsManagementToolbarDisplayContext siteTeamsManagementToolbarDisplayContex
 	>
 		<liferay-ui:search-container-row
 			className="com.liferay.portal.kernel.model.Team"
-			cssClass="selectable"
 			escapedModel="<%= true %>"
 			keyProperty="teamId"
 			modelVar="team"
@@ -46,10 +46,13 @@ SiteTeamsManagementToolbarDisplayContext siteTeamsManagementToolbarDisplayContex
 			PortletURL rowURL = null;
 
 			if (TeamPermissionUtil.contains(permissionChecker, team, ActionKeys.ASSIGN_MEMBERS)) {
-				rowURL = renderResponse.createRenderURL();
-
-				rowURL.setParameter("mvcPath", "/edit_team_assignments.jsp");
-				rowURL.setParameter("teamId", String.valueOf(team.getTeamId()));
+				rowURL = PortletURLBuilder.createRenderURL(
+					renderResponse
+				).setMVCPath(
+					"/edit_team_assignments.jsp"
+				).setParameter(
+					"teamId", team.getTeamId()
+				).buildPortletURL();
 			}
 
 			row.setData(
@@ -109,8 +112,3 @@ SiteTeamsManagementToolbarDisplayContext siteTeamsManagementToolbarDisplayContex
 		/>
 	</liferay-ui:search-container>
 </aui:form>
-
-<liferay-frontend:component
-	componentId="<%= siteTeamsManagementToolbarDisplayContext.getDefaultEventHandler() %>"
-	module="js/SiteTeamsManagementToolbarDefaultEventHandler.es"
-/>

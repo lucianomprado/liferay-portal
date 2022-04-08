@@ -23,12 +23,15 @@ import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import java.util.Arrays;
 import java.util.Collections;
 
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -41,6 +44,11 @@ import org.mockito.runners.MockitoJUnitRunner;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class AMImageHTMLTagFactoryImplTest {
+
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
 
 	@Before
 	public void setUp() throws PortalException {
@@ -112,16 +120,14 @@ public class AMImageHTMLTagFactoryImplTest {
 		String originalImgTag =
 			"<img src=\"originalURL\" data-fileentryid=\"1234\"/>";
 
-		StringBundler expectedSB = new StringBundler(3);
-
-		expectedSB.append("<picture data-fileentryid=\"1234\">");
-		expectedSB.append(originalImgTag);
-		expectedSB.append("</picture>");
-
 		String pictureTag = _amImageHTMLTagFactoryImpl.create(
 			originalImgTag, _fileEntry);
 
-		Assert.assertEquals(expectedSB.toString(), pictureTag);
+		Assert.assertEquals(
+			StringBundler.concat(
+				"<picture data-fileentryid=\"1234\">", originalImgTag,
+				"</picture>"),
+			pictureTag);
 	}
 
 	@Test
@@ -192,7 +198,7 @@ public class AMImageHTMLTagFactoryImplTest {
 		);
 	}
 
-	private MediaQuery _createMediaQuery(final int width, String url)
+	private MediaQuery _createMediaQuery(int width, String url)
 		throws Exception {
 
 		return new MediaQuery(

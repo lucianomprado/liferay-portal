@@ -17,7 +17,7 @@
 <%@ include file="/init.jsp" %>
 
 <%
-SelectLayoutPageTemplateEntryDisplayContext selectLayoutPageTemplateEntryDisplayContext = new SelectLayoutPageTemplateEntryDisplayContext(request);
+SelectLayoutPageTemplateEntryDisplayContext selectLayoutPageTemplateEntryDisplayContext = new SelectLayoutPageTemplateEntryDisplayContext(request, liferayPortletResponse);
 
 String backURL = selectLayoutPageTemplateEntryDisplayContext.getBackURL();
 
@@ -37,31 +37,29 @@ renderResponse.setTitle(LanguageUtil.get(request, "select-master-page"));
 	cssClass="container-view"
 	id='<%= liferayPortletResponse.getNamespace() + "layoutPageTemplateEntries" %>'
 >
-	<clay:row>
-		<clay:col>
-			<clay:sheet>
-				<div class="lfr-search-container-wrapper" id="<portlet:namespace />layoutTypes">
-					<ul class="card-page card-page-equal-height">
+	<clay:sheet
+		size="full"
+	>
+		<div class="lfr-search-container-wrapper" id="<portlet:namespace />layoutTypes">
+			<ul class="card-page card-page-equal-height">
 
-						<%
-						for (LayoutPageTemplateEntry masterLayoutPageTemplateEntry : selectLayoutPageTemplateEntryDisplayContext.getMasterLayoutPageTemplateEntries()) {
-						%>
+				<%
+				for (LayoutPageTemplateEntry masterLayoutPageTemplateEntry : selectLayoutPageTemplateEntryDisplayContext.getMasterLayoutPageTemplateEntries()) {
+				%>
 
-							<li class="card-page-item col-md-4 col-sm-6">
-								<clay:vertical-card
-									verticalCard="<%= new SelectLayoutMasterLayoutVerticalCard(masterLayoutPageTemplateEntry, renderRequest, renderResponse) %>"
-								/>
-							</li>
+					<li class="card-page-item card-page-item-asset">
+						<clay:vertical-card
+							verticalCard="<%= new SelectLayoutMasterLayoutVerticalCard(masterLayoutPageTemplateEntry, renderRequest, renderResponse) %>"
+						/>
+					</li>
 
-						<%
-						}
-						%>
+				<%
+				}
+				%>
 
-					</ul>
-				</div>
-			</clay:sheet>
-		</clay:col>
-	</clay:row>
+			</ul>
+		</div>
+	</clay:sheet>
 </clay:container-fluid>
 
 <aui:script require="frontend-js-web/liferay/delegate/delegate.es as delegateModule">
@@ -75,8 +73,9 @@ renderResponse.setTitle(LanguageUtil.get(request, "select-master-page"));
 		layoutPageTemplateEntries,
 		'click',
 		'.add-layout-action-option',
-		function (event) {
+		(event) => {
 			Liferay.Util.openModal({
+				disableAutoClose: true,
 				height: '60vh',
 				id: '<portlet:namespace />addLayoutDialog',
 				size: 'md',

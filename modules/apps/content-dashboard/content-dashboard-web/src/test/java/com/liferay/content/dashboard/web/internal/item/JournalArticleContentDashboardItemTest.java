@@ -19,24 +19,21 @@ import com.liferay.asset.kernel.model.AssetTag;
 import com.liferay.content.dashboard.item.action.ContentDashboardItemAction;
 import com.liferay.content.dashboard.item.action.provider.ContentDashboardItemActionProvider;
 import com.liferay.content.dashboard.web.internal.item.action.ContentDashboardItemActionProviderTracker;
-import com.liferay.content.dashboard.web.internal.item.type.ContentDashboardItemType;
+import com.liferay.content.dashboard.web.internal.item.type.ContentDashboardItemSubtype;
 import com.liferay.info.item.InfoItemReference;
 import com.liferay.journal.model.JournalArticle;
 import com.liferay.petra.string.StringPool;
-import com.liferay.portal.json.JSONFactoryImpl;
-import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.LocaleUtil;
-import com.liferay.portal.kernel.util.Props;
-import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.language.LanguageImpl;
 import com.liferay.portal.language.LanguageResources;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 import com.liferay.portal.util.PortalImpl;
 
 import java.util.Collections;
@@ -49,6 +46,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 import org.mockito.Mockito;
@@ -60,12 +58,12 @@ import org.springframework.mock.web.MockHttpServletRequest;
  */
 public class JournalArticleContentDashboardItemTest {
 
+	@ClassRule
+	public static LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
+
 	@BeforeClass
 	public static void setUpClass() {
-		JSONFactoryUtil jsonFactoryUtil = new JSONFactoryUtil();
-
-		jsonFactoryUtil.setJSONFactory(new JSONFactoryImpl());
-
 		LanguageResources languageResources = new LanguageResources();
 
 		languageResources.setConfig(StringPool.BLANK);
@@ -73,8 +71,6 @@ public class JournalArticleContentDashboardItemTest {
 		LanguageUtil languageUtil = new LanguageUtil();
 
 		languageUtil.setLanguage(new LanguageImpl());
-
-		PropsUtil.setProps(Mockito.mock(Props.class));
 	}
 
 	@Test
@@ -396,7 +392,7 @@ public class JournalArticleContentDashboardItemTest {
 		JournalArticleContentDashboardItem journalArticleContentDashboardItem =
 			new JournalArticleContentDashboardItem(
 				null, null, null,
-				new ContentDashboardItemType() {
+				new ContentDashboardItemSubtype() {
 
 					@Override
 					public String getFullLabel(Locale locale) {
@@ -414,16 +410,6 @@ public class JournalArticleContentDashboardItemTest {
 					}
 
 					@Override
-					public Date getModifiedDate() {
-						return null;
-					}
-
-					@Override
-					public long getUserId() {
-						return 0;
-					}
-
-					@Override
 					public String toJSONString(Locale locale) {
 						return StringPool.BLANK;
 					}
@@ -431,11 +417,11 @@ public class JournalArticleContentDashboardItemTest {
 				},
 				null, null, journalArticle, null, null, null);
 
-		ContentDashboardItemType contentDashboardItemType =
-			journalArticleContentDashboardItem.getContentDashboardItemType();
+		ContentDashboardItemSubtype contentDashboardItemSubtype =
+			journalArticleContentDashboardItem.getContentDashboardItemSubtype();
 
 		Assert.assertEquals(
-			"subtype", contentDashboardItemType.getLabel(LocaleUtil.US));
+			"subtype", contentDashboardItemSubtype.getLabel(LocaleUtil.US));
 	}
 
 	@Test
@@ -450,6 +436,102 @@ public class JournalArticleContentDashboardItemTest {
 		Assert.assertEquals(
 			journalArticle.getTitle(LocaleUtil.US),
 			journalArticleContentDashboardItem.getTitle(LocaleUtil.US));
+	}
+
+	@Test
+	public void testGetUserId() {
+		JournalArticle journalArticle = _getJournalArticle();
+
+		Mockito.when(
+			journalArticle.getUserId()
+		).thenReturn(
+			12345L
+		);
+
+		JournalArticleContentDashboardItem journalArticleContentDashboardItem =
+			new JournalArticleContentDashboardItem(
+				null, null, null, null, null, null, journalArticle, null, null,
+				null);
+
+		Assert.assertEquals(
+			journalArticle.getUserId(),
+			journalArticleContentDashboardItem.getUserId());
+	}
+
+	@Test
+	public void testGetUserIdWithLatestApprovedJournalArticle() {
+		JournalArticle journalArticle1 = _getJournalArticle();
+
+		Mockito.when(
+			journalArticle1.getUserId()
+		).thenReturn(
+			12345L
+		);
+
+		JournalArticle journalArticle2 = _getJournalArticle();
+
+		Mockito.when(
+			journalArticle2.getUserId()
+		).thenReturn(
+			52345L
+		);
+
+		JournalArticleContentDashboardItem journalArticleContentDashboardItem =
+			new JournalArticleContentDashboardItem(
+				null, null, null, null, null, null, journalArticle1, null,
+				journalArticle2, null);
+
+		Assert.assertEquals(
+			journalArticle2.getUserId(),
+			journalArticleContentDashboardItem.getUserId());
+	}
+
+	@Test
+	public void testGetUserName() {
+		JournalArticle journalArticle = _getJournalArticle();
+
+		Mockito.when(
+			journalArticle.getUserName()
+		).thenReturn(
+			"name"
+		);
+
+		JournalArticleContentDashboardItem journalArticleContentDashboardItem =
+			new JournalArticleContentDashboardItem(
+				null, null, null, null, null, null, journalArticle, null, null,
+				null);
+
+		Assert.assertEquals(
+			journalArticle.getUserId(),
+			journalArticleContentDashboardItem.getUserId());
+	}
+
+	@Test
+	public void testGetUserNameWithLatestApprovedJournalArticle() {
+		JournalArticle journalArticle1 = _getJournalArticle();
+
+		Mockito.when(
+			journalArticle1.getUserName()
+		).thenReturn(
+			"name1"
+		);
+
+		JournalArticle journalArticle2 = _getJournalArticle();
+
+		Mockito.when(
+			journalArticle2.getUserName()
+		).thenReturn(
+			"name2"
+		);
+
+		JournalArticleContentDashboardItem journalArticleContentDashboardItem =
+			new JournalArticleContentDashboardItem(
+				null, null, null, null, null, null, journalArticle1, null,
+				journalArticle2, null);
+
+		Assert.assertEquals(
+			journalArticle2.getUserId(),
+			journalArticleContentDashboardItem.getUserId());
 	}
 
 	@Test

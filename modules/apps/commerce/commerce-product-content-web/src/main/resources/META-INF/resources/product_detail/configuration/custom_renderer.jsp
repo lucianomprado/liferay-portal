@@ -27,8 +27,8 @@ CPContentHelper cpContentHelper = (CPContentHelper)request.getAttribute(CPConten
 		for (CPType cpType : cpContentHelper.getCPTypes()) {
 		%>
 
-			<li>
-				<a href="#<%= HtmlUtil.escape(cpType.getName()) %>"><%= HtmlUtil.escape(cpType.getLabel(locale)) %></a>
+			<li class="nav-item">
+				<a class="nav-link" href="#<%= HtmlUtil.escape(cpType.getName()) %>"><%= HtmlUtil.escape(cpType.getLabel(locale)) %></a>
 			</li>
 
 		<%
@@ -48,9 +48,7 @@ CPContentHelper cpContentHelper = (CPContentHelper)request.getAttribute(CPConten
 					<aui:select label='<%= HtmlUtil.escape(cpType.getLabel(locale) + StringPool.SPACE + LanguageUtil.get(request, "cp-type-renderer-key")) %>' name='<%= "preferences--" + cpType.getName() + "--cpTypeRendererKey--" %>'>
 
 						<%
-						List<CPContentRenderer> cpContentRenderers = cpContentHelper.getCPContentRenderers(cpType.getName());
-
-						for (CPContentRenderer cpContentRenderer : cpContentRenderers) {
+						for (CPContentRenderer cpContentRenderer : cpContentHelper.getCPContentRenderers(cpType.getName())) {
 							String key = cpContentRenderer.getKey();
 						%>
 

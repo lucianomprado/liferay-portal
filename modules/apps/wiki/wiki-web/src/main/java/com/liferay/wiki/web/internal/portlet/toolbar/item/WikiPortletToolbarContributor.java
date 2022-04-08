@@ -14,6 +14,7 @@
 
 package com.liferay.wiki.web.internal.portlet.toolbar.item;
 
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.bean.BeanParamUtil;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -48,7 +49,6 @@ import java.util.List;
 
 import javax.portlet.PortletRequest;
 import javax.portlet.PortletResponse;
-import javax.portlet.PortletURL;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -69,7 +69,36 @@ import org.osgi.service.component.annotations.Reference;
 public class WikiPortletToolbarContributor
 	extends BasePortletToolbarContributor {
 
-	protected void addPortletTitleMenuItem(
+	@Override
+	protected List<MenuItem> getPortletTitleMenuItems(
+		PortletRequest portletRequest, PortletResponse portletResponse) {
+
+		ThemeDisplay themeDisplay = (ThemeDisplay)portletRequest.getAttribute(
+			WebKeys.THEME_DISPLAY);
+
+		List<MenuItem> menuItems = new ArrayList<>();
+
+		try {
+			WikiNode node = _getNode(themeDisplay, portletRequest);
+
+			if (node != null) {
+				_addPortletTitleMenuItem(
+					menuItems, node, themeDisplay, portletRequest);
+			}
+		}
+		catch (PortalException portalException) {
+			_log.error("Unable to add page menu item", portalException);
+		}
+
+		return menuItems;
+	}
+
+	@Reference(unbind = "-")
+	protected void setWikiNodeService(WikiNodeService wikiNodeService) {
+		_wikiNodeService = wikiNodeService;
+	}
+
+	private void _addPortletTitleMenuItem(
 			List<MenuItem> menuItems, WikiNode node, ThemeDisplay themeDisplay,
 			PortletRequest portletRequest)
 		throws PortalException {
@@ -90,49 +119,24 @@ public class WikiPortletToolbarContributor
 
 		PortletDisplay portletDisplay = themeDisplay.getPortletDisplay();
 
-		PortletURL portletURL = PortletURLFactoryUtil.create(
-			portletRequest, portletDisplay.getId(),
-			PortletRequest.RENDER_PHASE);
-
-		portletURL.setParameter("mvcRenderCommandName", "/wiki/edit_page");
-		portletURL.setParameter(
-			"redirect", _portal.getCurrentURL(portletRequest));
-		portletURL.setParameter("nodeId", String.valueOf(node.getNodeId()));
-		portletURL.setParameter("title", StringPool.BLANK);
-		portletURL.setParameter("editTitle", "1");
-
-		urlMenuItem.setURL(portletURL.toString());
+		urlMenuItem.setURL(
+			PortletURLBuilder.create(
+				PortletURLFactoryUtil.create(
+					portletRequest, portletDisplay.getId(),
+					PortletRequest.RENDER_PHASE)
+			).setMVCRenderCommandName(
+				"/wiki/edit_page"
+			).setRedirect(
+				_portal.getCurrentURL(portletRequest)
+			).setParameter(
+				"editTitle", "1"
+			).setParameter(
+				"nodeId", node.getNodeId()
+			).setParameter(
+				"title", StringPool.BLANK
+			).buildString());
 
 		menuItems.add(urlMenuItem);
-	}
-
-	@Override
-	protected List<MenuItem> getPortletTitleMenuItems(
-		PortletRequest portletRequest, PortletResponse portletResponse) {
-
-		ThemeDisplay themeDisplay = (ThemeDisplay)portletRequest.getAttribute(
-			WebKeys.THEME_DISPLAY);
-
-		List<MenuItem> menuItems = new ArrayList<>();
-
-		try {
-			WikiNode node = _getNode(themeDisplay, portletRequest);
-
-			if (node != null) {
-				addPortletTitleMenuItem(
-					menuItems, node, themeDisplay, portletRequest);
-			}
-		}
-		catch (PortalException portalException) {
-			_log.error("Unable to add page menu item", portalException);
-		}
-
-		return menuItems;
-	}
-
-	@Reference(unbind = "-")
-	protected void setWikiNodeService(WikiNodeService wikiNodeService) {
-		_wikiNodeService = wikiNodeService;
 	}
 
 	private WikiNode _getNode(
@@ -175,10 +179,14 @@ public class WikiPortletToolbarContributor
 					themeDisplay.getScopeGroupId(), name);
 			}
 			catch (NoSuchNodeException noSuchNodeException) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(noSuchNodeException);
+				}
+
 				node = null;
 			}
 			catch (PortalException portalException) {
-				_log.error(portalException, portalException);
+				_log.error(portalException);
 			}
 		}
 

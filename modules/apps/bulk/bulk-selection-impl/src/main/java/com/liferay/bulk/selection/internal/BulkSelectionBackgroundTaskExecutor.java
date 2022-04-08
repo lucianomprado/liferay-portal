@@ -124,7 +124,7 @@ public class BulkSelectionBackgroundTaskExecutor
 								(BulkSelection<Object>)bulkSelection, inputMap);
 						}
 						catch (Exception exception) {
-							_log.error(exception, exception);
+							_log.error(exception);
 						}
 					});
 			});
@@ -162,6 +162,10 @@ public class BulkSelectionBackgroundTaskExecutor
 			return Optional.empty();
 		}
 		catch (InvalidSyntaxException invalidSyntaxException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(invalidSyntaxException);
+			}
+
 			return Optional.empty();
 		}
 	}

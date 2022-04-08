@@ -62,7 +62,7 @@ public class BNDImportsFormatter extends BaseImportsFormatter {
 			importString = importString.substring(0, pos);
 		}
 
-		return new ImportPackage(importString, false, line, true);
+		return new BNDImportPackage(importString, line);
 	}
 
 	@Override
@@ -84,6 +84,10 @@ public class BNDImportsFormatter extends BaseImportsFormatter {
 		newImports = StringUtil.replace(
 			newImports, new String[] {"\n", "\n,\\"},
 			new String[] {",\\\n", "\n\t\\"});
+
+		if (newImports.contains(",\\\n")) {
+			newImports = newImports.replaceAll("(?m)^\t*", "\t");
+		}
 
 		if (!imports.equals(newImports)) {
 			content = StringUtil.replaceFirst(content, imports, newImports);

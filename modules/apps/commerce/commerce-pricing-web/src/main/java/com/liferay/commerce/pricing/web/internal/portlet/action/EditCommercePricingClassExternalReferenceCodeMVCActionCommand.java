@@ -39,7 +39,7 @@ import org.osgi.service.component.annotations.Reference;
 	enabled = false, immediate = true,
 	property = {
 		"javax.portlet.name=" + CommercePricingPortletKeys.COMMERCE_PRICING_CLASSES,
-		"mvc.command.name=editCommercePricingClassExternalReferenceCode"
+		"mvc.command.name=/commerce_pricing_classes/edit_commerce_pricing_class_external_reference_code"
 	},
 	service = MVCActionCommand.class
 )
@@ -52,7 +52,7 @@ public class EditCommercePricingClassExternalReferenceCodeMVCActionCommand
 		throws Exception {
 
 		try {
-			updateCommercePricingClassExternalReferenceCode(actionRequest);
+			_updateCommercePricingClassExternalReferenceCode(actionRequest);
 		}
 		catch (Exception exception) {
 			if (exception instanceof NoSuchPricingClassException ||
@@ -63,7 +63,7 @@ public class EditCommercePricingClassExternalReferenceCodeMVCActionCommand
 				actionResponse.setRenderParameter("mvcPath", "/error.jsp");
 			}
 			else {
-				_log.error(exception, exception);
+				_log.error(exception);
 
 				String redirect = ParamUtil.getString(
 					actionRequest, "redirect");
@@ -73,7 +73,7 @@ public class EditCommercePricingClassExternalReferenceCodeMVCActionCommand
 		}
 	}
 
-	protected void updateCommercePricingClassExternalReferenceCode(
+	private void _updateCommercePricingClassExternalReferenceCode(
 			ActionRequest actionRequest)
 		throws Exception {
 
@@ -89,8 +89,8 @@ public class EditCommercePricingClassExternalReferenceCodeMVCActionCommand
 
 		_commercePricingClassService.
 			updateCommercePricingClassExternalReferenceCode(
-				commercePricingClass.getCommercePricingClassId(),
-				externalReferenceCode);
+				externalReferenceCode,
+				commercePricingClass.getCommercePricingClassId());
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(

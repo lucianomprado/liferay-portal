@@ -21,10 +21,16 @@ UnicodeProperties properties = PropertiesParamUtil.getProperties(request, "setti
 
 String entityId = properties.getProperty(PortletPropsKeys.SAML_ENTITY_ID, (String)request.getAttribute(SamlWebKeys.SAML_ENTITY_ID));
 
-GeneralTabDefaultViewDisplayContext.X509CertificateStatus x509CertificateStatus = generalTabDefaultViewDisplayContext.getX509CertificateStatus();
+boolean keystoreException = false;
+boolean keystoreIncorrectPassword = false;
 
-boolean keystoreException = x509CertificateStatus.getStatus() == GeneralTabDefaultViewDisplayContext.X509CertificateStatus.Status.SAML_KEYSTORE_EXCEPTION;
-boolean keystoreIncorrectPassword = x509CertificateStatus.getStatus() == GeneralTabDefaultViewDisplayContext.X509CertificateStatus.Status.SAML_KEYSTORE_PASSWORD_INCORRECT;
+if (Validator.isNotNull(entityId)) {
+	GeneralTabDefaultViewDisplayContext.X509CertificateStatus x509CertificateStatus = generalTabDefaultViewDisplayContext.getX509CertificateStatus();
+
+	keystoreException = x509CertificateStatus.getStatus() == GeneralTabDefaultViewDisplayContext.X509CertificateStatus.Status.SAML_KEYSTORE_EXCEPTION;
+	keystoreIncorrectPassword = x509CertificateStatus.getStatus() == GeneralTabDefaultViewDisplayContext.X509CertificateStatus.Status.SAML_KEYSTORE_PASSWORD_INCORRECT;
+}
+
 String samlRole = properties.getProperty(PortletPropsKeys.SAML_ROLE, samlProviderConfiguration.role());
 boolean samlRoleIdpOptionDisabled = StringUtil.equalsIgnoreCase(samlProviderConfiguration.role(), SamlProviderConfigurationKeys.SAML_ROLE_SP) && !generalTabDefaultViewDisplayContext.isRoleIdPAvailable();
 
@@ -78,6 +84,8 @@ if (samlRoleIdpOptionDisabled) {
 	</aui:button-row>
 </aui:form>
 
+<br />
+
 <portlet:actionURL name="/admin/update_certificate" var="updateCertificateURL">
 	<portlet:param name="tabs1" value="general" />
 </portlet:actionURL>
@@ -99,6 +107,8 @@ if (samlRoleIdpOptionDisabled) {
 				<liferay-util:param name="certificateUsage" value="<%= LocalEntityManager.CertificateUsage.SIGNING.name() %>" />
 			</liferay-util:include>
 		</aui:fieldset>
+
+		<br />
 
 		<c:if test="<%= StringUtil.equalsIgnoreCase(samlProviderConfiguration.role(), SamlProviderConfigurationKeys.SAML_ROLE_SP) %>">
 			<aui:fieldset label="encryption-certificate-and-private-key">

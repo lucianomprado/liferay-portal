@@ -27,12 +27,6 @@
 <link class="lfr-css-file" data-senna-track="temporary" href="<%= HtmlUtil.escapeAttribute(PortalUtil.getStaticResourceURL(request, themeDisplay.getPathThemeCss() + "/clay.css")) %>" id="liferayAUICSS" rel="stylesheet" type="text/css" />
 
 <%
-long cssLastModifiedTime = PortalWebResourcesUtil.getLastModified(PortalWebResourceConstants.RESOURCE_TYPE_CSS);
-%>
-
-<link data-senna-track="temporary" href="<%= HtmlUtil.escapeAttribute(PortalUtil.getStaticResourceURL(request, themeDisplay.getCDNDynamicResourcesHost() + PortalWebResourcesUtil.getContextPath(PortalWebResourceConstants.RESOURCE_TYPE_CSS) + "/main.css", cssLastModifiedTime)) %>" id="liferayPortalCSS" rel="stylesheet" type="text/css" />
-
-<%
 List<Portlet> portlets = null;
 
 if (layoutTypePortlet != null) {
@@ -111,17 +105,23 @@ if (layout != null) {
 
 <%
 List<String> markupHeaders = (List<String>)request.getAttribute(MimeResponse.MARKUP_HEAD_ELEMENT);
-
-if (markupHeaders != null) {
-	for (String markupHeader : markupHeaders) {
 %>
+
+<c:if test="<%= markupHeaders != null %>">
+
+	<%
+	for (String markupHeader : markupHeaders) {
+	%>
 
 		<%= markupHeader %>
 
-<%
+	<%
 	}
-}
+	%>
 
+</c:if>
+
+<%
 com.liferay.petra.string.StringBundler pageTopSB = OutputTag.getDataSB(request, WebKeys.PAGE_TOP);
 %>
 
@@ -137,9 +137,7 @@ com.liferay.petra.string.StringBundler pageTopSB = OutputTag.getDataSB(request, 
 boolean portletHubRequired = false;
 
 for (Portlet portlet : portlets) {
-	List<PortletDependency> portletDependencies = portlet.getPortletDependencies();
-
-	for (PortletDependency portletDependency : portletDependencies) {
+	for (PortletDependency portletDependency : portlet.getPortletDependencies()) {
 		if (Objects.equals(portletDependency.getName(), "PortletHub") && Objects.equals(portletDependency.getScope(), "javax.portlet")) {
 			portletHubRequired = true;
 
@@ -220,5 +218,5 @@ private String _escapeCssBlock(String css) {
 	return StringUtil.replace(css, new String[] {"<", "expression("}, new String[] {"\\3c", ""});
 }
 
-private static Log _log = LogFactoryUtil.getLog("portal_web.docroot.html.common.themes.top_head_jsp");
+private static final Log _log = LogFactoryUtil.getLog("portal_web.docroot.html.common.themes.top_head_jsp");
 %>

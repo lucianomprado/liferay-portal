@@ -15,18 +15,19 @@
 package com.liferay.fragment.web.internal.servlet.taglib.clay;
 
 import com.liferay.fragment.constants.FragmentActionKeys;
+import com.liferay.fragment.constants.FragmentConstants;
 import com.liferay.fragment.model.FragmentEntry;
 import com.liferay.fragment.web.internal.constants.FragmentWebKeys;
 import com.liferay.fragment.web.internal.security.permission.resource.FragmentPermission;
 import com.liferay.fragment.web.internal.servlet.taglib.util.ContributedFragmentEntryActionDropdownItemsProvider;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.dao.search.RowChecker;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 
 import java.util.List;
 
-import javax.portlet.PortletURL;
 import javax.portlet.RenderRequest;
 import javax.portlet.RenderResponse;
 
@@ -34,7 +35,7 @@ import javax.portlet.RenderResponse;
  * @author Eudaldo Alonso
  */
 public class ContributedFragmentEntryVerticalCard
-	extends FragmentEntryVerticalCard {
+	extends BaseFragmentEntryVerticalCard {
 
 	public ContributedFragmentEntryVerticalCard(
 		FragmentEntry fragmentEntry, RenderRequest renderRequest,
@@ -59,7 +60,7 @@ public class ContributedFragmentEntryVerticalCard
 		}
 		catch (Exception exception) {
 			if (_log.isDebugEnabled()) {
-				_log.debug(exception, exception);
+				_log.debug(exception);
 			}
 		}
 
@@ -81,25 +82,53 @@ public class ContributedFragmentEntryVerticalCard
 			return null;
 		}
 
-		PortletURL editFragmentEntryURL = _renderResponse.createRenderURL();
-
-		editFragmentEntryURL.setParameter(
-			"mvcRenderCommandName", "/fragment/edit_fragment_entry");
-		editFragmentEntryURL.setParameter(
-			"redirect", themeDisplay.getURLCurrent());
-		editFragmentEntryURL.setParameter(
-			"fragmentCollectionId",
-			String.valueOf(fragmentEntry.getFragmentCollectionId()));
-		editFragmentEntryURL.setParameter(
-			"fragmentEntryKey",
-			String.valueOf(fragmentEntry.getFragmentEntryKey()));
-
-		return editFragmentEntryURL.toString();
+		return PortletURLBuilder.createRenderURL(
+			_renderResponse
+		).setMVCRenderCommandName(
+			"/fragment/edit_fragment_entry"
+		).setRedirect(
+			themeDisplay.getURLCurrent()
+		).setParameter(
+			"fragmentCollectionId", fragmentEntry.getFragmentCollectionId()
+		).setParameter(
+			"fragmentEntryKey", fragmentEntry.getFragmentEntryKey()
+		).buildString();
 	}
 
 	@Override
 	public String getInputValue() {
 		return fragmentEntry.getFragmentEntryKey();
+	}
+
+	@Override
+	public String getStickerCssClass() {
+		int type = fragmentEntry.getType();
+
+		if ((type == FragmentConstants.TYPE_COMPONENT) ||
+			(type == FragmentConstants.TYPE_SECTION) ||
+			(type == FragmentConstants.TYPE_REACT)) {
+
+			return "fragment-entry-sticker";
+		}
+
+		return "fragment-composition-sticker";
+	}
+
+	@Override
+	public String getStickerIcon() {
+		int type = fragmentEntry.getType();
+
+		if ((type == FragmentConstants.TYPE_COMPONENT) ||
+			(type == FragmentConstants.TYPE_SECTION)) {
+
+			return "code";
+		}
+
+		if (type == FragmentConstants.TYPE_REACT) {
+			return "react";
+		}
+
+		return "edit-layout";
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(

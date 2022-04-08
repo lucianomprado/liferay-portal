@@ -125,7 +125,28 @@
 			"tip": {
 				"en_US": ""
 			},
-			"type": "ddm-image"
+			"type": "image"
+		},
+		{
+			"dataType": "double",
+			"fieldNamespace": "ddm",
+			"indexType": "keyword",
+			"label": {
+				"en_US": "Decimal"
+			},
+			"localizable": true,
+			"name": "Double89452576",
+			"predefinedValue": {
+				"en_US": ""
+			},
+			"readOnly": false,
+			"repeatable": false,
+			"required": false,
+			"showLabel": true,
+			"tip": {
+				"en_US": ""
+			},
+			"type": "numeric"
 		},
 		{
 			"dataType": "integer",
@@ -146,7 +167,7 @@
 			"tip": {
 				"en_US": ""
 			},
-			"type": "ddm-integer"
+			"type": "numeric"
 		}
 	],
 	"successPage": {

@@ -299,13 +299,13 @@ if (portletTitleBasedNavigation) {
 	</c:if>
 </div>
 
-<aui:script require="metal-dom/src/all/dom as dom,frontend-js-web/liferay/util/run_scripts_in_element.es as runScriptsInElement">
+<aui:script require="frontend-js-web/liferay/util/run_scripts_in_element.es as runScriptsInElement">
 	var moreMessagesButton = document.getElementById(
 		'<portlet:namespace />moreMessages'
 	);
 
 	if (moreMessagesButton) {
-		moreMessagesButton.addEventListener('click', function (event) {
+		moreMessagesButton.addEventListener('click', (event) => {
 			var form = document.<portlet:namespace />fm;
 
 			var index = Liferay.Util.getFormElement(form, 'index');
@@ -329,10 +329,10 @@ if (portletTitleBasedNavigation) {
 				body: formData,
 				method: 'POST',
 			})
-				.then(function (response) {
+				.then((response) => {
 					return response.text();
 				})
-				.then(function (response) {
+				.then((response) => {
 					var messageContainer = document.getElementById(
 						'<portlet:namespace />messageContainer'
 					);

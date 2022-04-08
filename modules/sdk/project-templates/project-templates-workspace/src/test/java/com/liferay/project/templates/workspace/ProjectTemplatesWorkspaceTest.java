@@ -14,8 +14,6 @@
 
 package com.liferay.project.templates.workspace;
 
-import static org.junit.Assume.assumeTrue;
-
 import com.liferay.maven.executor.MavenExecutor;
 import com.liferay.project.templates.BaseProjectTemplatesTestCase;
 import com.liferay.project.templates.extensions.util.Validator;
@@ -35,6 +33,7 @@ import java.util.Properties;
 import java.util.regex.Matcher;
 
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -77,6 +76,10 @@ public class ProjectTemplatesWorkspaceTest
 		testExists(workspaceProjectDir, "modules");
 		testExists(workspaceProjectDir, "themes");
 
+		testContains(
+			workspaceProjectDir, "GETTING_STARTED.markdown",
+			"liferay.workspace.product\n");
+
 		testNotExists(workspaceProjectDir, "modules/pom.xml");
 		testNotExists(workspaceProjectDir, "themes/pom.xml");
 
@@ -98,11 +101,10 @@ public class ProjectTemplatesWorkspaceTest
 	@Test
 	public void testBuildTemplateWorkspaceDXPProductKey() throws Exception {
 		File workspaceProjectDir = buildWorkspace(
-			temporaryFolder, "gradle", "foows", getDefaultLiferayVersion(),
-			mavenExecutor);
+			temporaryFolder, getDefaultLiferayVersion());
 
 		writeGradlePropertiesInWorkspace(
-			workspaceProjectDir, "liferay.workspace.product=dxp-7.3-ep5");
+			workspaceProjectDir, "liferay.workspace.product=dxp-7.3-ga1");
 
 		File modulesProjectDir = buildTemplateWithGradle(
 			new File(workspaceProjectDir, "modules"), "mvc-portlet",
@@ -173,7 +175,7 @@ public class ProjectTemplatesWorkspaceTest
 
 	@Test
 	public void testBuildTemplateWorkspaceLocalProperties() throws Exception {
-		assumeTrue(isBuildProjects());
+		Assume.assumeTrue(isBuildProjects());
 
 		File workspaceProjectDir = buildWorkspace(
 			temporaryFolder, "gradle", "foo", getDefaultLiferayVersion(),
@@ -249,7 +251,7 @@ public class ProjectTemplatesWorkspaceTest
 
 	@Test
 	public void testBuildTemplateWorkspaceWithPortlet() throws Exception {
-		assumeTrue(isBuildProjects());
+		Assume.assumeTrue(isBuildProjects());
 
 		File gradleWorkspaceProjectDir = buildWorkspace(
 			temporaryFolder, "gradle", "withportlet",
@@ -285,7 +287,7 @@ public class ProjectTemplatesWorkspaceTest
 
 	@Test
 	public void testCompareAntBndPluginVersions() throws Exception {
-		assumeTrue(isBuildProjects());
+		Assume.assumeTrue(isBuildProjects());
 
 		String template = "mvc-portlet";
 		String name = "foo";
@@ -300,14 +302,14 @@ public class ProjectTemplatesWorkspaceTest
 
 		buildTemplateWithGradle(modulesDir, template, name);
 
-		Optional<String> gradleResult = executeGradle(
+		Optional<String> gradleResultOptional = executeGradle(
 			workspaceDir, true, _gradleDistribution,
 			":modules:" + name + GRADLE_TASK_PATH_BUILD);
 
 		String gradleAntBndVersion = null;
 
 		Matcher matcher = antBndPluginVersionPattern.matcher(
-			gradleResult.get());
+			gradleResultOptional.get());
 
 		if (matcher.matches()) {
 			gradleAntBndVersion = matcher.group(1);
@@ -332,16 +334,16 @@ public class ProjectTemplatesWorkspaceTest
 	public void testComparePortalToolsBundleSupportPluginVersions()
 		throws Exception {
 
-		assumeTrue(isBuildProjects());
+		Assume.assumeTrue(isBuildProjects());
 
 		File workspaceDir = buildWorkspace(
 			temporaryFolder, getDefaultLiferayVersion());
 
-		Optional<String> result = executeGradle(
+		Optional<String> resultOptional = executeGradle(
 			workspaceDir, true, _gradleDistribution, ":tasks");
 
 		Matcher matcher = portalToolsBundleSupportVersionPattern.matcher(
-			result.get());
+			resultOptional.get());
 
 		String portalToolsBundleSupportVersion = null;
 
@@ -361,7 +363,7 @@ public class ProjectTemplatesWorkspaceTest
 
 	@Test
 	public void testSassCompilerMavenWorkspace() throws Exception {
-		assumeTrue(isBuildProjects());
+		Assume.assumeTrue(isBuildProjects());
 
 		File nativeSassWorkspaceDir = buildTemplateWithMaven(
 			temporaryFolder, "workspace", "nativeSassMavenWS", "com.test",
@@ -420,7 +422,7 @@ public class ProjectTemplatesWorkspaceTest
 
 	@Test
 	public void testSassCompilerWorkspace() throws Exception {
-		assumeTrue(isBuildProjects());
+		Assume.assumeTrue(isBuildProjects());
 
 		String liferayVersion = getDefaultLiferayVersion();
 
@@ -429,7 +431,7 @@ public class ProjectTemplatesWorkspaceTest
 			mavenExecutor);
 
 		writeGradlePropertiesInWorkspace(
-			nativeSassWorkspaceDir, "liferay.workspace.product=portal-7.3-ga6");
+			nativeSassWorkspaceDir, "liferay.workspace.product=portal-7.3-ga7");
 
 		File nativeSassModulesDir = new File(nativeSassWorkspaceDir, "modules");
 
@@ -449,7 +451,7 @@ public class ProjectTemplatesWorkspaceTest
 			temporaryFolder, WorkspaceUtil.WORKSPACE, "rubySassWorkspace");
 
 		writeGradlePropertiesInWorkspace(
-			rubySassWorkspaceDir, "liferay.workspace.product=portal-7.3-ga6");
+			rubySassWorkspaceDir, "liferay.workspace.product=portal-7.3-ga7");
 
 		writeGradlePropertiesInWorkspace(
 			rubySassWorkspaceDir, "sass.compiler.class.name=ruby");

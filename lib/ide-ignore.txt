@@ -1,4 +1,7 @@
+lib/development/com.liferay.ant.get.file.set.jar
+lib/development/com.liferay.ant.manifest.helper.jar
 lib/development/com.liferay.bnd.invoker.jar
+tmp/lib-pre/com.liferay.osgi.service.tracker.collections.jar
 tmp/lib-pre/com.liferay.petra.concurrent.jar
 tmp/lib-pre/com.liferay.petra.content.jar
 tmp/lib-pre/com.liferay.petra.encryptor.jar
@@ -10,6 +13,7 @@ tmp/lib-pre/com.liferay.petra.log4j.jar
 tmp/lib-pre/com.liferay.petra.mail.jar
 tmp/lib-pre/com.liferay.petra.memory.jar
 tmp/lib-pre/com.liferay.petra.nio.jar
+tmp/lib-pre/com.liferay.petra.portlet.url.builder.jar
 tmp/lib-pre/com.liferay.petra.process.jar
 tmp/lib-pre/com.liferay.petra.reflect.jar
 tmp/lib-pre/com.liferay.petra.sql.dsl.api.jar
@@ -19,3 +23,4 @@ tmp/lib-pre/com.liferay.petra.test.util.jar
 tmp/lib-pre/com.liferay.petra.url.pattern.mapper.jar
 tmp/lib-pre/com.liferay.petra.xml.jar
 tmp/lib-pre/com.liferay.registry.api.jar
+tmp/lib-pre/com.liferay.registry.impl.jar

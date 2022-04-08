@@ -15,6 +15,7 @@
 package com.liferay.commerce.price.list.service;
 
 import com.liferay.commerce.price.list.model.CommercePriceListChannelRel;
+import com.liferay.portal.kernel.change.tracking.CTAware;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.jsonwebservice.JSONWebService;
@@ -41,6 +42,7 @@ import org.osgi.annotation.versioning.ProviderType;
  * @generated
  */
 @AccessControlled
+@CTAware
 @JSONWebService
 @OSGiBeanProperties(
 	property = {
@@ -68,6 +70,10 @@ public interface CommercePriceListChannelRelService extends BaseService {
 
 	public void deleteCommercePriceListChannelRel(
 			long commercePriceListChannelRelId)
+		throws PortalException;
+
+	public void deleteCommercePriceListChannelRelsByCommercePriceListId(
+			long commercePriceListId)
 		throws PortalException;
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)

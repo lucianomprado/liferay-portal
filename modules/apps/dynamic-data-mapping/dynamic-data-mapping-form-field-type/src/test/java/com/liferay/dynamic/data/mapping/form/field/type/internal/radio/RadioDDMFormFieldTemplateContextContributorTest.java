@@ -23,6 +23,7 @@ import com.liferay.portal.json.JSONFactoryImpl;
 import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.LocaleUtil;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,6 +32,8 @@ import java.util.Map;
 
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 import org.powermock.api.mockito.PowerMockito;
@@ -41,12 +44,17 @@ import org.powermock.api.mockito.PowerMockito;
 public class RadioDDMFormFieldTemplateContextContributorTest
 	extends PowerMockito {
 
+	@ClassRule
+	@Rule
+	public static final LiferayUnitTestRule liferayUnitTestRule =
+		LiferayUnitTestRule.INSTANCE;
+
 	@Before
 	public void setUp() throws Exception {
 		_radioDDMFormFieldTemplateContextContributor =
 			new RadioDDMFormFieldTemplateContextContributor();
 
-		setUpJSONFactory();
+		_setUpJSONFactory();
 	}
 
 	@Test
@@ -63,7 +71,7 @@ public class RadioDDMFormFieldTemplateContextContributorTest
 			_radioDDMFormFieldTemplateContextContributor.getParameters(
 				ddmFormField, ddmFormFieldRenderingContext);
 
-		Assert.assertEquals(true, parameters.get("inline"));
+		Assert.assertTrue((boolean)parameters.get("inline"));
 	}
 
 	@Test
@@ -78,7 +86,7 @@ public class RadioDDMFormFieldTemplateContextContributorTest
 		ddmFormFieldRenderingContext.setLocale(LocaleUtil.US);
 
 		ddmFormFieldRenderingContext.setProperty(
-			"options", createDDMFormOptions());
+			"options", _createDDMFormOptions());
 
 		Map<String, Object> parameters =
 			_radioDDMFormFieldTemplateContextContributor.getParameters(
@@ -100,7 +108,7 @@ public class RadioDDMFormFieldTemplateContextContributorTest
 		ddmFormFieldRenderingContext.setLocale(LocaleUtil.US);
 
 		ddmFormFieldRenderingContext.setProperty(
-			"options", createDDMFormOptions());
+			"options", _createDDMFormOptions());
 
 		Map<String, Object> parameters =
 			_radioDDMFormFieldTemplateContextContributor.getParameters(
@@ -135,7 +143,7 @@ public class RadioDDMFormFieldTemplateContextContributorTest
 		ddmFormFieldRenderingContext.setLocale(LocaleUtil.US);
 
 		ddmFormFieldRenderingContext.setProperty(
-			"options", createDDMFormOptions());
+			"options", _createDDMFormOptions());
 
 		LocalizedValue predefinedValue = new LocalizedValue(LocaleUtil.US);
 
@@ -190,7 +198,7 @@ public class RadioDDMFormFieldTemplateContextContributorTest
 		ddmFormFieldRenderingContext.setLocale(LocaleUtil.US);
 
 		ddmFormFieldRenderingContext.setProperty(
-			"options", createDDMFormOptions());
+			"options", _createDDMFormOptions());
 
 		ddmFormFieldRenderingContext.setValue("value");
 
@@ -213,7 +221,7 @@ public class RadioDDMFormFieldTemplateContextContributorTest
 		ddmFormFieldRenderingContext.setLocale(LocaleUtil.US);
 
 		ddmFormFieldRenderingContext.setProperty(
-			"options", createDDMFormOptions());
+			"options", _createDDMFormOptions());
 
 		ddmFormFieldRenderingContext.setValue("[\"value\"]");
 
@@ -229,7 +237,7 @@ public class RadioDDMFormFieldTemplateContextContributorTest
 			"name", false, false, false);
 	}
 
-	protected List<Map<String, String>> createDDMFormOptions() {
+	private List<Map<String, String>> _createDDMFormOptions() {
 		return Arrays.asList(
 			HashMapBuilder.put(
 				"label", "Label 0"
@@ -243,7 +251,7 @@ public class RadioDDMFormFieldTemplateContextContributorTest
 			).build());
 	}
 
-	protected void setUpJSONFactory() throws Exception {
+	private void _setUpJSONFactory() throws Exception {
 		field(
 			RadioDDMFormFieldTemplateContextContributor.class, "jsonFactory"
 		).set(

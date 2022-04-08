@@ -17,11 +17,11 @@ package com.liferay.users.admin.web.internal.upgrade;
 import com.liferay.portal.configuration.upgrade.PrefsPropsToConfigurationUpgradeHelper;
 import com.liferay.portal.kernel.model.Release;
 import com.liferay.portal.kernel.service.ReleaseLocalService;
-import com.liferay.portal.kernel.upgrade.BaseUpgradePortletId;
+import com.liferay.portal.kernel.upgrade.BasePortletIdUpgradeProcess;
 import com.liferay.portal.kernel.upgrade.DummyUpgradeStep;
 import com.liferay.portal.upgrade.registry.UpgradeStepRegistrator;
 import com.liferay.users.admin.constants.UsersAdminPortletKeys;
-import com.liferay.users.admin.web.internal.upgrade.v1_0_0.UpgradeFileUploadsConfiguration;
+import com.liferay.users.admin.web.internal.upgrade.v1_0_0.FileUploadsConfigurationUpgradeProcess;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -43,16 +43,16 @@ public class UsersAdminWebUpgrade implements UpgradeStepRegistrator {
 			_releaseLocalService.updateRelease(release);
 		}
 
-		registry.register("0.0.0", "0.0.1", new DummyUpgradeStep());
+		registry.register("0.0.0", "1.0.1", new DummyUpgradeStep());
 
 		registry.register(
 			"0.0.1", "1.0.0",
-			new UpgradeFileUploadsConfiguration(
+			new FileUploadsConfigurationUpgradeProcess(
 				_prefsPropsToConfigurationUpgradeHelper));
 
 		registry.register(
 			"1.0.0", "1.0.1",
-			new BaseUpgradePortletId() {
+			new BasePortletIdUpgradeProcess() {
 
 				@Override
 				protected String[][] getRenamePortletIdsArray() {

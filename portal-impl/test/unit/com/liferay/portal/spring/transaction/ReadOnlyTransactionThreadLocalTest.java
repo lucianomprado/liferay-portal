@@ -15,9 +15,11 @@
 package com.liferay.portal.spring.transaction;
 
 import com.liferay.portal.kernel.internal.spring.transaction.ReadOnlyTransactionThreadLocal;
+import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.CodeCoverageAssertor;
 import com.liferay.portal.kernel.transaction.TransactionLifecycleManager;
 import com.liferay.portal.kernel.util.ProxyUtil;
+import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import java.util.List;
 import java.util.Objects;
@@ -26,6 +28,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 import org.springframework.transaction.TransactionDefinition;
@@ -37,19 +40,22 @@ import org.springframework.transaction.TransactionStatus;
 public class ReadOnlyTransactionThreadLocalTest {
 
 	@ClassRule
-	public static final CodeCoverageAssertor codeCoverageAssertor =
-		new CodeCoverageAssertor() {
+	@Rule
+	public static final AggregateTestRule aggregateTestRule =
+		new AggregateTestRule(
+			new CodeCoverageAssertor() {
 
-			@Override
-			public void appendAssertClasses(List<Class<?>> assertClasses) {
-				assertClasses.add(ReadOnlyTransactionThreadLocal.class);
+				@Override
+				public void appendAssertClasses(List<Class<?>> assertClasses) {
+					assertClasses.add(ReadOnlyTransactionThreadLocal.class);
 
-				assertClasses.add(
-					ReadOnlyTransactionThreadLocal.
-						TRANSACTION_LIFECYCLE_LISTENER.getClass());
-			}
+					assertClasses.add(
+						ReadOnlyTransactionThreadLocal.
+							TRANSACTION_LIFECYCLE_LISTENER.getClass());
+				}
 
-		};
+			},
+			LiferayUnitTestRule.INSTANCE);
 
 	@Before
 	public void setUp() {
@@ -158,6 +164,53 @@ public class ReadOnlyTransactionThreadLocalTest {
 	}
 
 	@Test
+	public void testStrictReadOnlyIsNotWritable() throws Throwable {
+		try {
+			_transactionExecutor.execute(
+				new TestTransactionAttributeAdapter(false, true),
+				ReadOnlyTransactionThreadLocal::isReadOnly);
+
+			Assert.fail();
+		}
+		catch (IllegalStateException illegalStateException) {
+			Assert.assertEquals(
+				"Strict read only transaction is not writable",
+				illegalStateException.getMessage());
+		}
+	}
+
+	@Test
+	public void testStrictReadOnlyNestedReadOnly() throws Throwable {
+		boolean readOnly = _transactionExecutor.execute(
+			new TestTransactionAttributeAdapter(true, true),
+			() -> _transactionExecutor.execute(
+				new TestTransactionAttributeAdapter(true),
+				ReadOnlyTransactionThreadLocal::isReadOnly));
+
+		Assert.assertTrue(readOnly);
+	}
+
+	@Test
+	public void testStrictReadOnlyNestedTransactionIsNotWritable()
+		throws Throwable {
+
+		try {
+			_transactionExecutor.execute(
+				new TestTransactionAttributeAdapter(true, true),
+				() -> _transactionExecutor.execute(
+					new TestTransactionAttributeAdapter(false),
+					ReadOnlyTransactionThreadLocal::isReadOnly));
+
+			Assert.fail();
+		}
+		catch (IllegalStateException illegalStateException) {
+			Assert.assertEquals(
+				"Nested strict read only transaction is not writable",
+				illegalStateException.getMessage());
+		}
+	}
+
+	@Test
 	public void testWithoutTransaction() {
 		Assert.assertFalse(ReadOnlyTransactionThreadLocal.isReadOnly());
 	}
@@ -179,6 +232,14 @@ public class ReadOnlyTransactionThreadLocalTest {
 
 		private TestTransactionAttributeAdapter(boolean readOnly) {
 			super(null);
+
+			_readOnly = readOnly;
+		}
+
+		private TestTransactionAttributeAdapter(
+			boolean readOnly, boolean strictReadOnly) {
+
+			super(null, strictReadOnly);
 
 			_readOnly = readOnly;
 		}

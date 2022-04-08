@@ -19,8 +19,8 @@ import React, {useState} from 'react';
 import ColorPalette from '../../../common/components/ColorPalette';
 import {ConfigurationFieldPropTypes} from '../../../prop-types/index';
 
-export const ColorPaletteField = ({field, onValueSelect, value}) => {
-	const [nextValue, setNextValue] = useState(value && value.cssClass);
+export function ColorPaletteField({field, onValueSelect, value}) {
+	const [nextValue, setNextValue] = useState(value?.cssClass ?? value);
 
 	return (
 		<ClayForm.Group>
@@ -31,21 +31,16 @@ export const ColorPaletteField = ({field, onValueSelect, value}) => {
 
 					onValueSelect(field.name, '');
 				}}
-				onColorSelect={(color, event) => {
-					setNextValue(color);
+				onColorSelect={(color) => {
+					setNextValue(color.cssClass);
 
-					onValueSelect(field.name, {
-						color,
-						cssClass: color,
-						rgbValue: getComputedStyle(event.target)
-							.backgroundColor,
-					});
+					onValueSelect(field.name, color);
 				}}
 				selectedColor={nextValue}
 			/>
 		</ClayForm.Group>
 	);
-};
+}
 
 ColorPaletteField.propTypes = {
 	field: PropTypes.shape(ConfigurationFieldPropTypes).isRequired,

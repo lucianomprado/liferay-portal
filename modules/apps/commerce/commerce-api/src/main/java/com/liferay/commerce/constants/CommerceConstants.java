@@ -21,18 +21,37 @@ package com.liferay.commerce.constants;
  */
 public class CommerceConstants {
 
-	public static final String ORDER_FIELDS_SERVICE_NAME =
-		"com.liferay.commerce.order.fields";
+	public static final String RESOURCE_NAME_COMMERCE_ADDRESS =
+		"com.liferay.commerce.address";
 
-	public static final String ORDER_SERVICE_NAME =
+	public static final String RESOURCE_NAME_COMMERCE_AVAILABILITY =
+		"com.liferay.commerce.availability";
+
+	public static final String RESOURCE_NAME_COMMERCE_HEALTH =
+		"com.liferay.commerce.health";
+
+	public static final String RESOURCE_NAME_COMMERCE_ORDER_TYPE =
+		"com.liferay.commerce.order.type";
+
+	public static final String RESOURCE_NAME_COMMERCE_SHIPMENT =
+		"com.liferay.commerce.shipment";
+
+	public static final String RESOURCE_NAME_COMMERCE_SUBSCRIPTION =
+		"com.liferay.commerce.subscription";
+
+	public static final String SERVICE_NAME_COMMERCE_ORDER =
 		"com.liferay.commerce.order";
 
-	public static final String PRICE_SERVICE_NAME =
+	public static final String SERVICE_NAME_COMMERCE_ORDER_FIELDS =
+		"com.liferay.commerce.order.fields";
+
+	public static final String SERVICE_NAME_COMMERCE_PRICE =
 		"com.liferay.commerce.price";
 
-	public static final String SHIPPING_SERVICE_NAME =
+	public static final String SERVICE_NAME_COMMERCE_SHIPPING =
 		"com.liferay.commerce.shipping";
 
-	public static final String TAX_SERVICE_NAME = "com.liferay.commerce.tax";
+	public static final String SERVICE_NAME_COMMERCE_TAX =
+		"com.liferay.commerce.tax";
 
 }

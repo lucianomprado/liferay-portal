@@ -69,10 +69,11 @@ public class TimeRange {
 	private TimeRange(
 		boolean includeToday, TimeSpan timeSpan, int timeSpanOffset) {
 
-		_clock = Clock.systemUTC();
 		_includeToday = includeToday;
 		_timeSpan = timeSpan;
 		_timeSpanOffset = timeSpanOffset;
+
+		_clock = Clock.systemUTC();
 	}
 
 	private int _getOffsetDays() {
@@ -84,7 +85,11 @@ public class TimeRange {
 			return _timeSpanOffset;
 		}
 
-		return (_timeSpan.getDays() * _timeSpanOffset) - 1;
+		if (_includeToday) {
+			return (_timeSpan.getDays() * _timeSpanOffset) - 1;
+		}
+
+		return _timeSpan.getDays() * _timeSpanOffset;
 	}
 
 	private final Clock _clock;

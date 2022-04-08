@@ -2,11 +2,13 @@
 <head>
 <title>SiteSettingsStaging</title>
 </head>
+
 <body>
-<table cellpadding="1" cellspacing="1" border="1">
+<table border="1" cellpadding="1" cellspacing="1">
 <thead>
 <tr><td rowspan="1" colspan="3">SiteSettingsStaging</td></tr>
 </thead>
+
 <tbody>
 <!--STAGING-->
 <tr>
@@ -22,6 +24,11 @@
 <tr>
 	<td>STAGING_REMOTE_LIVE</td>
 	<td>//span[contains(.,'Remote Live')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>ENABLED_ON_LOCAL_LIVE_CHECKBOX</td>
+	<td>//label[contains(.,'Local Live')]/input[@checked]</td>
 	<td></td>
 </tr>
 <tr>

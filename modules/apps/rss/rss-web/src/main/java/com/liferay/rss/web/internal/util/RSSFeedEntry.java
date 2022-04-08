@@ -30,10 +30,10 @@ import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.rss.util.RSSUtil;
 
-import com.sun.syndication.feed.synd.SyndContent;
-import com.sun.syndication.feed.synd.SyndEnclosure;
-import com.sun.syndication.feed.synd.SyndEntry;
-import com.sun.syndication.feed.synd.SyndFeed;
+import com.rometools.rome.feed.synd.SyndContent;
+import com.rometools.rome.feed.synd.SyndEnclosure;
+import com.rometools.rome.feed.synd.SyndEntry;
+import com.rometools.rome.feed.synd.SyndFeed;
 
 import java.util.List;
 import java.util.Objects;
@@ -92,7 +92,7 @@ public class RSSFeedEntry {
 		String baseURL = _rssFeed.getBaseURL();
 		SyndFeed syndFeed = _rssFeed.getSyndFeed();
 
-		List<SyndContent> syndContents = getSyndContents();
+		List<SyndContent> syndContents = _getSyndContents();
 
 		StringBundler sb = new StringBundler(syndContents.size());
 
@@ -150,7 +150,7 @@ public class RSSFeedEntry {
 		return _syndEntryLink;
 	}
 
-	protected List<SyndContent> getSyndContents() {
+	private List<SyndContent> _getSyndContents() {
 		SyndContent syndContent = _syndEntry.getDescription();
 
 		if (syndContent == null) {
@@ -177,7 +177,7 @@ public class RSSFeedEntry {
 			// LPS-52675
 
 			if (_log.isDebugEnabled()) {
-				_log.debug(sanitizerException, sanitizerException);
+				_log.debug(sanitizerException);
 			}
 		}
 

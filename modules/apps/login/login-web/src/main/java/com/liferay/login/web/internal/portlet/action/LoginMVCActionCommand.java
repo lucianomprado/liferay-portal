@@ -15,6 +15,7 @@
 package com.liferay.login.web.internal.portlet.action;
 
 import com.liferay.login.web.constants.LoginPortletKeys;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.exception.CompanyMaxUsersException;
 import com.liferay.portal.kernel.exception.CookieNotSupportedException;
@@ -29,7 +30,6 @@ import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
-import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
 import com.liferay.portal.kernel.portlet.PortletPreferencesFactoryUtil;
 import com.liferay.portal.kernel.portlet.PortletURLFactoryUtil;
 import com.liferay.portal.kernel.portlet.bridges.mvc.BaseMVCActionCommand;
@@ -103,16 +103,13 @@ public class LoginMVCActionCommand extends BaseMVCActionCommand {
 				actionRequest, "doActionAfterLogin");
 
 			if (doActionAfterLogin) {
-				LiferayPortletResponse liferayPortletResponse =
-					_portal.getLiferayPortletResponse(actionResponse);
-
-				PortletURL renderURL = liferayPortletResponse.createRenderURL();
-
-				renderURL.setParameter(
-					"mvcRenderCommandName", "/login/login_redirect");
-
 				actionRequest.setAttribute(
-					WebKeys.REDIRECT, renderURL.toString());
+					WebKeys.REDIRECT,
+					PortletURLBuilder.createRenderURL(
+						_portal.getLiferayPortletResponse(actionResponse)
+					).setMVCRenderCommandName(
+						"/login/login_redirect"
+					).buildString());
 			}
 		}
 		catch (Exception exception) {
@@ -147,40 +144,17 @@ public class LoginMVCActionCommand extends BaseMVCActionCommand {
 					actionRequest, exception.getClass(), exception);
 			}
 			else {
-				_log.error(exception, exception);
+				_log.error(exception);
 
 				_portal.sendError(exception, actionRequest, actionResponse);
 
 				return;
 			}
 
-			postProcessAuthFailure(actionRequest, actionResponse);
+			_postProcessAuthFailure(actionRequest, actionResponse);
 
 			hideDefaultErrorMessage(actionRequest);
 		}
-	}
-
-	protected String getCompleteRedirectURL(
-		HttpServletRequest httpServletRequest, String redirect) {
-
-		HttpSession session = httpServletRequest.getSession();
-
-		Boolean httpsInitial = (Boolean)session.getAttribute(
-			WebKeys.HTTPS_INITIAL);
-
-		String portalURL = null;
-
-		if (PropsValues.COMPANY_SECURITY_AUTH_REQUIRES_HTTPS &&
-			!PropsValues.SESSION_ENABLE_PHISHING_PROTECTION &&
-			(httpsInitial != null) && !httpsInitial.booleanValue()) {
-
-			portalURL = _portal.getPortalURL(httpServletRequest, false);
-		}
-		else {
-			portalURL = _portal.getPortalURL(httpServletRequest);
-		}
-
-		return portalURL.concat(redirect);
 	}
 
 	protected void login(
@@ -251,7 +225,8 @@ public class LoginMVCActionCommand extends BaseMVCActionCommand {
 			if (Validator.isNotNull(redirect) &&
 				!redirect.startsWith(Http.HTTP)) {
 
-				redirect = getCompleteRedirectURL(httpServletRequest, redirect);
+				redirect = _getCompleteRedirectURL(
+					httpServletRequest, redirect);
 			}
 		}
 
@@ -270,7 +245,30 @@ public class LoginMVCActionCommand extends BaseMVCActionCommand {
 		}
 	}
 
-	protected void postProcessAuthFailure(
+	private String _getCompleteRedirectURL(
+		HttpServletRequest httpServletRequest, String redirect) {
+
+		HttpSession httpSession = httpServletRequest.getSession();
+
+		Boolean httpsInitial = (Boolean)httpSession.getAttribute(
+			WebKeys.HTTPS_INITIAL);
+
+		String portalURL = null;
+
+		if (PropsValues.COMPANY_SECURITY_AUTH_REQUIRES_HTTPS &&
+			!PropsValues.SESSION_ENABLE_PHISHING_PROTECTION &&
+			(httpsInitial != null) && !httpsInitial.booleanValue()) {
+
+			portalURL = _portal.getPortalURL(httpServletRequest, false);
+		}
+		else {
+			portalURL = _portal.getPortalURL(httpServletRequest);
+		}
+
+		return portalURL.concat(redirect);
+	}
+
+	private void _postProcessAuthFailure(
 			ActionRequest actionRequest, ActionResponse actionResponse)
 		throws Exception {
 
@@ -281,17 +279,24 @@ public class LoginMVCActionCommand extends BaseMVCActionCommand {
 
 		Layout layout = (Layout)actionRequest.getAttribute(WebKeys.LAYOUT);
 
-		PortletURL portletURL = PortletURLFactoryUtil.create(
-			actionRequest, liferayPortletRequest.getPortlet(), layout,
-			PortletRequest.RENDER_PHASE);
+		PortletURL portletURL = PortletURLBuilder.create(
+			PortletURLFactoryUtil.create(
+				actionRequest, liferayPortletRequest.getPortlet(), layout,
+				PortletRequest.RENDER_PHASE)
+		).setRedirect(
+			() -> {
+				String redirect = ParamUtil.getString(
+					actionRequest, "redirect");
 
-		portletURL.setParameter("saveLastPath", Boolean.FALSE.toString());
+				if (Validator.isNotNull(redirect)) {
+					return redirect;
+				}
 
-		String redirect = ParamUtil.getString(actionRequest, "redirect");
-
-		if (Validator.isNotNull(redirect)) {
-			portletURL.setParameter("redirect", redirect);
-		}
+				return null;
+			}
+		).setParameter(
+			"saveLastPath", false
+		).buildPortletURL();
 
 		String login = ParamUtil.getString(actionRequest, "login");
 

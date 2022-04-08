@@ -41,21 +41,12 @@ import org.osgi.service.component.annotations.Reference;
 	enabled = false, immediate = true,
 	property = {
 		"javax.portlet.name=" + CommercePortletKeys.COMMERCE_ORDER,
-		"mvc.command.name=editCommerceOrderNote"
+		"mvc.command.name=/commerce_order/edit_commerce_order_note"
 	},
 	service = MVCActionCommand.class
 )
 public class EditCommerceOrderNoteMVCActionCommand
 	extends BaseMVCActionCommand {
-
-	protected void deleteCommerceOrderNote(ActionRequest actionRequest)
-		throws Exception {
-
-		long commerceOrderNoteId = ParamUtil.getLong(
-			actionRequest, "commerceOrderNoteId");
-
-		_commerceOrderNoteService.deleteCommerceOrderNote(commerceOrderNoteId);
-	}
 
 	@Override
 	protected void doProcessAction(
@@ -66,12 +57,12 @@ public class EditCommerceOrderNoteMVCActionCommand
 
 		try {
 			if (cmd.equals(Constants.DELETE)) {
-				deleteCommerceOrderNote(actionRequest);
+				_deleteCommerceOrderNote(actionRequest);
 			}
 			else if (cmd.equals(Constants.ADD) ||
 					 cmd.equals(Constants.UPDATE)) {
 
-				updateCommerceOrderNote(actionRequest);
+				_updateCommerceOrderNote(actionRequest);
 			}
 		}
 		catch (Exception exception) {
@@ -91,21 +82,31 @@ public class EditCommerceOrderNoteMVCActionCommand
 		}
 	}
 
-	protected void updateCommerceOrderNote(ActionRequest actionRequest)
+	private void _deleteCommerceOrderNote(ActionRequest actionRequest)
 		throws Exception {
 
 		long commerceOrderNoteId = ParamUtil.getLong(
 			actionRequest, "commerceOrderNoteId");
 
-		long commerceOrderId = ParamUtil.getLong(
-			actionRequest, "commerceOrderId");
+		_commerceOrderNoteService.deleteCommerceOrderNote(commerceOrderNoteId);
+	}
+
+	private void _updateCommerceOrderNote(ActionRequest actionRequest)
+		throws Exception {
+
+		long commerceOrderNoteId = ParamUtil.getLong(
+			actionRequest, "commerceOrderNoteId");
+
 		String content = ParamUtil.getString(actionRequest, "content");
 		boolean restricted = ParamUtil.getBoolean(actionRequest, "restricted");
 
-		ServiceContext serviceContext = ServiceContextFactory.getInstance(
-			CommerceOrderNote.class.getName(), actionRequest);
-
 		if (commerceOrderNoteId <= 0) {
+			long commerceOrderId = ParamUtil.getLong(
+				actionRequest, "commerceOrderId");
+
+			ServiceContext serviceContext = ServiceContextFactory.getInstance(
+				CommerceOrderNote.class.getName(), actionRequest);
+
 			_commerceOrderNoteService.addCommerceOrderNote(
 				commerceOrderId, content, restricted, serviceContext);
 		}

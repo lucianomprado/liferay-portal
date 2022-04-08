@@ -19,7 +19,7 @@ export function showNotification(
 	duration = 500
 ) {
 	if (!window.AUI) {
-		return;
+		return window.Liferay?.staticEnvTestUtils?.print(message, type);
 	}
 
 	AUI().use('liferay-notification', () => {
@@ -39,7 +39,7 @@ export function showNotification(
 }
 
 export function showErrorNotification(
-	e = Liferay.Language.get('unexpected-error')
+	error = Liferay.Language.get('unexpected-error')
 ) {
-	showNotification(e, 'danger');
+	showNotification(error, 'danger');
 }

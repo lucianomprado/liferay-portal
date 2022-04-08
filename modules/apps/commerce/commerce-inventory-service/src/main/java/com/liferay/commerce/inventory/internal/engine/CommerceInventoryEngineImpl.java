@@ -14,6 +14,7 @@
 
 package com.liferay.commerce.inventory.internal.engine;
 
+import com.liferay.commerce.inventory.constants.CommerceInventoryAvailabilityConstants;
 import com.liferay.commerce.inventory.constants.CommerceInventoryConstants;
 import com.liferay.commerce.inventory.engine.CommerceInventoryEngine;
 import com.liferay.commerce.inventory.exception.MVCCException;
@@ -39,6 +40,7 @@ import org.osgi.service.component.annotations.Reference;
 /**
  * @author Luca Pellizzon
  * @author Alessio Antonio Rendina
+ * @author Ivica Cardic
  */
 @Component(
 	enabled = false, immediate = true, service = CommerceInventoryEngine.class
@@ -95,14 +97,24 @@ public class CommerceInventoryEngineImpl implements CommerceInventoryEngine {
 	}
 
 	@Override
+	public String getAvailabilityStatus(
+		long companyId, long commerceChannelGroupId, int minStockQuantity,
+		String sku) {
+
+		return _getAvailabilityStatus(
+			minStockQuantity,
+			getStockQuantity(companyId, commerceChannelGroupId, sku));
+	}
+
+	@Override
 	public Map<String, Integer> getStockQuantities(
-		long companyId, long channelGroupId, List<String> skus) {
+		long companyId, long commerceChannelGroupId, List<String> skus) {
 
 		Map<String, Integer> results = new HashMap<>();
 
 		for (String sku : skus) {
 			int stockQuantity = getStockQuantity(
-				companyId, channelGroupId, sku);
+				companyId, commerceChannelGroupId, sku);
 
 			results.put(sku, stockQuantity);
 		}
@@ -112,11 +124,11 @@ public class CommerceInventoryEngineImpl implements CommerceInventoryEngine {
 
 	@Override
 	public int getStockQuantity(
-		long companyId, long channelGroupId, String sku) {
+		long companyId, long commerceChannelGroupId, String sku) {
 
 		int stockQuantity =
 			_commerceInventoryWarehouseItemLocalService.getStockQuantity(
-				companyId, channelGroupId, sku);
+				companyId, commerceChannelGroupId, sku);
 
 		int commerceBookedQuantity =
 			_commerceBookedQuantityLocalService.getCommerceBookedQuantity(
@@ -171,7 +183,7 @@ public class CommerceInventoryEngineImpl implements CommerceInventoryEngine {
 					commerceInventoryWarehouseItem.getMvccVersion());
 		}
 		catch (MVCCException mvccException) {
-			_log.error(mvccException.getMessage(), mvccException);
+			_log.error(mvccException);
 
 			throw mvccException;
 		}
@@ -183,6 +195,26 @@ public class CommerceInventoryEngineImpl implements CommerceInventoryEngine {
 		_commerceInventoryAuditLocalService.addCommerceInventoryAudit(
 			userId, sku, commerceInventoryAuditType.getType(),
 			commerceInventoryAuditType.getLog(null), quantity);
+	}
+
+	private String _getAvailabilityStatus(
+		int minStockQuantity, int stockQuantity) {
+
+		String availabilityStatus =
+			CommerceInventoryAvailabilityConstants.UNAVAILABLE;
+
+		boolean available = false;
+
+		if (stockQuantity > minStockQuantity) {
+			available = true;
+		}
+
+		if (available) {
+			availabilityStatus =
+				CommerceInventoryAvailabilityConstants.AVAILABLE;
+		}
+
+		return availabilityStatus;
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(

@@ -20,8 +20,8 @@
 LayoutPortletsDisplayContext layoutPortletsDisplayContext = new LayoutPortletsDisplayContext(request, renderRequest, renderResponse);
 %>
 
-<clay:management-toolbar-v2
-	displayContext="<%= new LayoutPortletsManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, layoutPortletsDisplayContext) %>"
+<clay:management-toolbar
+	managementToolbarDisplayContext="<%= new LayoutPortletsManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, layoutPortletsDisplayContext) %>"
 />
 
 <aui:form action="" cssClass="container-fluid container-fluid-max-xl" name="fm">
@@ -30,7 +30,6 @@ LayoutPortletsDisplayContext layoutPortletsDisplayContext = new LayoutPortletsDi
 	>
 		<liferay-ui:search-container-row
 			className="com.liferay.portal.kernel.model.Portlet"
-			cssClass="selectable"
 			escapedModel="<%= true %>"
 			keyProperty="portletId"
 			modelVar="portlet"

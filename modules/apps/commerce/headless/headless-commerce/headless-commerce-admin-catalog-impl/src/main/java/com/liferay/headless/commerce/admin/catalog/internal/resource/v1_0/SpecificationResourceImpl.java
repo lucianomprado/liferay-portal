@@ -25,6 +25,7 @@ import com.liferay.headless.commerce.admin.catalog.resource.v1_0.SpecificationRe
 import com.liferay.headless.commerce.core.util.LanguageUtils;
 import com.liferay.headless.commerce.core.util.ServiceContextHelper;
 import com.liferay.petra.function.UnsafeConsumer;
+import com.liferay.portal.kernel.change.tracking.CTAware;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -32,6 +33,7 @@ import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.search.filter.Filter;
+import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.odata.entity.EntityModel;
 import com.liferay.portal.vulcan.dto.converter.DefaultDTOConverterContext;
@@ -39,6 +41,8 @@ import com.liferay.portal.vulcan.pagination.Page;
 import com.liferay.portal.vulcan.pagination.Pagination;
 import com.liferay.portal.vulcan.resource.EntityModelResource;
 import com.liferay.portal.vulcan.util.SearchUtil;
+
+import java.util.Collections;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -56,6 +60,7 @@ import org.osgi.service.component.annotations.ServiceScope;
 	properties = "OSGI-INF/liferay/rest/v1_0/specification.properties",
 	scope = ServiceScope.PROTOTYPE, service = SpecificationResource.class
 )
+@CTAware
 public class SpecificationResourceImpl
 	extends BaseSpecificationResourceImpl implements EntityModelResource {
 
@@ -86,8 +91,9 @@ public class SpecificationResourceImpl
 		throws Exception {
 
 		return SearchUtil.search(
+			Collections.emptyMap(),
 			booleanQuery -> booleanQuery.getPreBooleanFilter(), filter,
-			CPSpecificationOption.class, search, pagination,
+			CPSpecificationOption.class.getName(), search, pagination,
 			queryConfig -> queryConfig.setSelectedFieldNames(
 				Field.ENTRY_CLASS_PK),
 			new UnsafeConsumer() {
@@ -99,9 +105,9 @@ public class SpecificationResourceImpl
 				}
 
 			},
+			sorts,
 			document -> _toSpecification(
-				GetterUtil.getLong(document.get(Field.ENTRY_CLASS_PK))),
-			sorts);
+				GetterUtil.getLong(document.get(Field.ENTRY_CLASS_PK))));
 	}
 
 	@Override
@@ -119,7 +125,66 @@ public class SpecificationResourceImpl
 	public Specification postSpecification(Specification specification)
 		throws Exception {
 
-		return _upsertSpecification(specification);
+		return _addOrUpdateSpecification(specification);
+	}
+
+	private Specification _addOrUpdateSpecification(Specification specification)
+		throws Exception {
+
+		Long specificationId = specification.getId();
+
+		if (specificationId != null) {
+			try {
+				CPSpecificationOption cpSpecificationOption =
+					_updateSpecification(specificationId, specification);
+
+				return _toSpecification(
+					cpSpecificationOption.getCPSpecificationOptionId());
+			}
+			catch (NoSuchCPSpecificationOptionException
+						noSuchCPSpecificationOptionException) {
+
+				if (_log.isDebugEnabled()) {
+					_log.debug(
+						"Unable to find specification with ID: " +
+							specificationId,
+						noSuchCPSpecificationOptionException);
+				}
+			}
+		}
+
+		String specificationKey = specification.getKey();
+
+		if (specificationKey != null) {
+			try {
+				CPSpecificationOption cpSpecificationOption =
+					_updateSpecification(specificationKey, specification);
+
+				return _toSpecification(
+					cpSpecificationOption.getCPSpecificationOptionId());
+			}
+			catch (NoSuchCPSpecificationOptionException
+						noSuchCPSpecificationOptionException) {
+
+				if (_log.isDebugEnabled()) {
+					_log.debug(
+						"Unable to find specification with key: " +
+							specificationKey,
+						noSuchCPSpecificationOptionException);
+				}
+			}
+		}
+
+		CPSpecificationOption cpSpecificationOption =
+			_cpSpecificationOptionService.addCPSpecificationOption(
+				_getCPOptionCategoryId(specification),
+				LanguageUtils.getLocalizedMap(specification.getTitle()),
+				LanguageUtils.getLocalizedMap(specification.getDescription()),
+				_isFacetable(specification), specificationKey,
+				_serviceContextHelper.getServiceContext());
+
+		return _toSpecification(
+			cpSpecificationOption.getCPSpecificationOptionId());
 	}
 
 	private long _getCPOptionCategoryId(Specification specification) {
@@ -167,40 +232,23 @@ public class SpecificationResourceImpl
 			_serviceContextHelper.getServiceContext());
 	}
 
-	private Specification _upsertSpecification(Specification specification)
-		throws Exception {
+	private CPSpecificationOption _updateSpecification(
+			String key, Specification specification)
+		throws PortalException {
 
-		Long specificationId = specification.getId();
-
-		if (specificationId != null) {
-			try {
-				CPSpecificationOption cpSpecificationOption =
-					_updateSpecification(specificationId, specification);
-
-				return _toSpecification(
-					cpSpecificationOption.getCPSpecificationOptionId());
-			}
-			catch (NoSuchCPSpecificationOptionException
-						noSuchCPSpecificationOptionException) {
-
-				if (_log.isDebugEnabled()) {
-					_log.debug(
-						"Unable to find specification with ID: " +
-							specificationId);
-				}
-			}
-		}
+		ServiceContext serviceContext =
+			_serviceContextHelper.getServiceContext();
 
 		CPSpecificationOption cpSpecificationOption =
-			_cpSpecificationOptionService.addCPSpecificationOption(
-				_getCPOptionCategoryId(specification),
-				LanguageUtils.getLocalizedMap(specification.getTitle()),
-				LanguageUtils.getLocalizedMap(specification.getDescription()),
-				_isFacetable(specification), specification.getKey(),
-				_serviceContextHelper.getServiceContext());
+			_cpSpecificationOptionService.getCPSpecificationOption(
+				serviceContext.getCompanyId(), key);
 
-		return _toSpecification(
-			cpSpecificationOption.getCPSpecificationOptionId());
+		return _cpSpecificationOptionService.updateCPSpecificationOption(
+			cpSpecificationOption.getCPSpecificationOptionId(),
+			_getCPOptionCategoryId(specification),
+			LanguageUtils.getLocalizedMap(specification.getTitle()),
+			LanguageUtils.getLocalizedMap(specification.getDescription()),
+			_isFacetable(specification), key, serviceContext);
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(

@@ -35,6 +35,7 @@ import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.test.util.UserTestUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.HashMapDictionary;
+import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.security.service.access.policy.model.SAPEntry;
 import com.liferay.portal.security.service.access.policy.service.SAPEntryLocalService;
@@ -75,10 +76,12 @@ public abstract class BaseTestPreparatorBundleActivator
 
 		autoCloseables = new ArrayList<>();
 
-		Dictionary<String, Object> properties = new HashMapDictionary<>();
-
-		properties.put("osgi.jaxrs.name", "Default");
-		properties.put("service.ranking", Integer.MAX_VALUE);
+		Dictionary<String, Object> properties =
+			HashMapDictionaryBuilder.<String, Object>put(
+				"osgi.jaxrs.name", "Default"
+			).put(
+				"service.ranking", Integer.MAX_VALUE
+			).build();
 
 		registerPrefixHandler(
 			PrefixHandler.PASS_THROUGH_PREFIX_HANDLER, properties);
@@ -137,9 +140,9 @@ public abstract class BaseTestPreparatorBundleActivator
 		CountDownLatch countDownLatch = new CountDownLatch(1);
 
 		Dictionary<String, Object> registrationProperties =
-			new HashMapDictionary<>();
-
-		registrationProperties.put(Constants.SERVICE_PID, factoryPid);
+			HashMapDictionaryBuilder.<String, Object>put(
+				Constants.SERVICE_PID, factoryPid
+			).build();
 
 		ServiceRegistration<ManagedServiceFactory> serviceRegistration =
 			bundleContext.registerService(
@@ -238,18 +241,33 @@ public abstract class BaseTestPreparatorBundleActivator
 
 	protected OAuth2Application createOAuth2Application(
 			long companyId, User user, String clientId,
-			List<GrantType> availableGrants, List<String> availableScopes)
+			List<GrantType> allowedGrantTypesList, boolean rememberDevice,
+			List<String> scopeAliasesList, boolean trustedApplication)
 		throws PortalException {
 
 		return createOAuth2Application(
 			companyId, user, clientId, "oauthTestApplicationSecret",
-			availableGrants, availableScopes,
-			Collections.singletonList("http://redirecturi:8080"));
+			allowedGrantTypesList,
+			Collections.singletonList("http://redirecturi:8080"),
+			rememberDevice, scopeAliasesList, trustedApplication);
 	}
 
 	protected OAuth2Application createOAuth2Application(
 			long companyId, User user, String clientId,
-			List<String> availableScopes)
+			List<GrantType> allowedGrantTypesList,
+			List<String> scopeAliasesList)
+		throws PortalException {
+
+		return createOAuth2Application(
+			companyId, user, clientId, "oauthTestApplicationSecret",
+			allowedGrantTypesList,
+			Collections.singletonList("http://redirecturi:8080"),
+			scopeAliasesList);
+	}
+
+	protected OAuth2Application createOAuth2Application(
+			long companyId, User user, String clientId,
+			List<String> scopeAliasesList)
 		throws PortalException {
 
 		return createOAuth2Application(
@@ -257,13 +275,14 @@ public abstract class BaseTestPreparatorBundleActivator
 			Arrays.asList(
 				GrantType.CLIENT_CREDENTIALS,
 				GrantType.RESOURCE_OWNER_PASSWORD),
-			availableScopes);
+			false, scopeAliasesList, false);
 	}
 
 	protected OAuth2Application createOAuth2Application(
 			long companyId, User user, String clientId, String clientSecret,
-			List<GrantType> availableGrants, List<String> availableScopes,
-			List<String> redirectUris)
+			List<GrantType> allowedGrantTypesList,
+			List<String> redirectURIsList, boolean rememberDevice,
+			List<String> scopeAliasesList, boolean trustedApplication)
 		throws PortalException {
 
 		ServiceReference<OAuth2ApplicationLocalService> serviceReference =
@@ -277,19 +296,30 @@ public abstract class BaseTestPreparatorBundleActivator
 
 		OAuth2Application oAuth2Application =
 			oAuth2ApplicationLocalService.addOAuth2Application(
-				companyId, user.getUserId(), user.getLogin(), availableGrants,
-				user.getUserId(), clientId, 0, clientSecret,
-				"test oauth application",
-				Collections.singletonList("token_introspection"),
+				companyId, user.getUserId(), user.getLogin(),
+				allowedGrantTypesList, user.getUserId(), clientId, 0,
+				clientSecret, "test oauth application",
+				Collections.singletonList("token.introspection"),
 				"http://localhost:8080", 0, "test application",
-				"http://localhost:8080", redirectUris, availableScopes,
-				new ServiceContext());
+				"http://localhost:8080", redirectURIsList, rememberDevice,
+				scopeAliasesList, trustedApplication, new ServiceContext());
 
 		autoCloseables.add(
 			() -> oAuth2ApplicationLocalService.deleteOAuth2Application(
 				oAuth2Application.getOAuth2ApplicationId()));
 
 		return oAuth2Application;
+	}
+
+	protected OAuth2Application createOAuth2Application(
+			long companyId, User user, String clientId, String clientSecret,
+			List<GrantType> allowedGrantTypesList,
+			List<String> redirectURIsList, List<String> scopeAliasesList)
+		throws PortalException {
+
+		return createOAuth2Application(
+			companyId, user, clientId, clientSecret, allowedGrantTypesList,
+			redirectURIsList, false, scopeAliasesList, false);
 	}
 
 	protected void createServiceAccessProfile(
@@ -432,7 +462,7 @@ public abstract class BaseTestPreparatorBundleActivator
 				previousAutoCloseable.close();
 			}
 			catch (Exception exception) {
-				_log.error(exception, exception);
+				_log.error(exception);
 			}
 		}
 	}

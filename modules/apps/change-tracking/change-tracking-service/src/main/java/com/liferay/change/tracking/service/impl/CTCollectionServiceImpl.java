@@ -28,6 +28,7 @@ import com.liferay.change.tracking.model.CTEntry;
 import com.liferay.change.tracking.service.CTProcessLocalService;
 import com.liferay.change.tracking.service.base.CTCollectionServiceBaseImpl;
 import com.liferay.change.tracking.service.persistence.CTAutoResolutionInfoPersistence;
+import com.liferay.change.tracking.service.persistence.CTEntryPersistence;
 import com.liferay.petra.sql.dsl.DSLFunctionFactoryUtil;
 import com.liferay.petra.sql.dsl.DSLQueryFactoryUtil;
 import com.liferay.petra.sql.dsl.expression.Predicate;
@@ -36,18 +37,22 @@ import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.aop.AopService;
 import com.liferay.portal.dao.orm.custom.sql.CustomSQL;
 import com.liferay.portal.kernel.change.tracking.CTColumnResolutionType;
-import com.liferay.portal.kernel.dao.jdbc.CurrentConnectionUtil;
+import com.liferay.portal.kernel.dao.jdbc.CurrentConnection;
 import com.liferay.portal.kernel.dao.orm.WildcardMode;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
+import com.liferay.portal.kernel.model.GroupTable;
+import com.liferay.portal.kernel.model.UserGroupRoleTable;
 import com.liferay.portal.kernel.search.IndexWriterHelper;
 import com.liferay.portal.kernel.search.Indexer;
 import com.liferay.portal.kernel.search.IndexerRegistry;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.security.permission.InlineSQLHelper;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
+import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
 import com.liferay.portal.kernel.security.permission.resource.PortletResourcePermission;
+import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.service.change.tracking.CTService;
 import com.liferay.portal.kernel.transaction.TransactionCommitCallbackUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
@@ -189,7 +194,7 @@ public class CTCollectionServiceImpl extends CTCollectionServiceBaseImpl {
 			long classNameId = parentEntry.getKey();
 			long classPK = parentEntry.getValue();
 
-			int count = ctEntryPersistence.countByC_MCNI_MCPK(
+			int count = _ctEntryPersistence.countByC_MCNI_MCPK(
 				ctCollectionId, classNameId, classPK);
 
 			if (count > 0) {
@@ -210,7 +215,7 @@ public class CTCollectionServiceImpl extends CTCollectionServiceBaseImpl {
 			List<CTEntry> ctEntries = new ArrayList<>(classPKs.size());
 
 			for (long classPK : classPKs) {
-				CTEntry ctEntry = ctEntryPersistence.fetchByC_MCNI_MCPK(
+				CTEntry ctEntry = _ctEntryPersistence.fetchByC_MCNI_MCPK(
 					ctCollectionId, classNameId, classPK);
 
 				if (ctEntry != null) {
@@ -228,21 +233,21 @@ public class CTCollectionServiceImpl extends CTCollectionServiceBaseImpl {
 
 	@Override
 	public List<CTCollection> getCTCollections(
-		long companyId, int status, int start, int end,
+		long companyId, int[] statuses, int start, int end,
 		OrderByComparator<CTCollection> orderByComparator) {
 
-		if (status == WorkflowConstants.STATUS_ANY) {
+		if (statuses == null) {
 			return ctCollectionPersistence.filterFindByCompanyId(
 				companyId, start, end, orderByComparator);
 		}
 
 		return ctCollectionPersistence.filterFindByC_S(
-			companyId, status, start, end, orderByComparator);
+			companyId, statuses, start, end, orderByComparator);
 	}
 
 	@Override
 	public List<CTCollection> getCTCollections(
-		long companyId, int status, String keywords, int start, int end,
+		long companyId, int[] statuses, String keywords, int start, int end,
 		OrderByComparator<CTCollection> orderByComparator) {
 
 		DSLQuery dslQuery = DSLQueryFactoryUtil.select(
@@ -250,7 +255,7 @@ public class CTCollectionServiceImpl extends CTCollectionServiceBaseImpl {
 		).from(
 			CTCollectionTable.INSTANCE
 		).where(
-			_getPredicate(companyId, status, keywords)
+			_getPredicate(companyId, statuses, keywords)
 		).orderBy(
 			CTCollectionTable.INSTANCE, orderByComparator
 		).limit(
@@ -262,18 +267,16 @@ public class CTCollectionServiceImpl extends CTCollectionServiceBaseImpl {
 
 	@Override
 	public int getCTCollectionsCount(
-		long companyId, int status, String keywords) {
+		long companyId, int[] statuses, String keywords) {
 
 		DSLQuery dslQuery = DSLQueryFactoryUtil.count(
 		).from(
 			CTCollectionTable.INSTANCE
 		).where(
-			_getPredicate(companyId, status, keywords)
+			_getPredicate(companyId, statuses, keywords)
 		);
 
-		Long count = ctCollectionPersistence.dslQuery(dslQuery);
-
-		return count.intValue();
+		return ctCollectionPersistence.dslQueryCount(dslQuery);
 	}
 
 	@Override
@@ -354,7 +357,7 @@ public class CTCollectionServiceImpl extends CTCollectionServiceBaseImpl {
 
 				sb.setStringAt(")", sb.index() - 1);
 
-				Connection connection = CurrentConnectionUtil.getConnection(
+				Connection connection = _currentConnection.getConnection(
 					ctPersistence.getDataSource());
 
 				try (PreparedStatement preparedStatement =
@@ -389,7 +392,7 @@ public class CTCollectionServiceImpl extends CTCollectionServiceBaseImpl {
 		for (CTEntry ctEntry : ctEntries) {
 			modelClassPKs.add(ctEntry.getModelClassPK());
 
-			ctEntryPersistence.remove(ctEntry);
+			_ctEntryPersistence.remove(ctEntry);
 		}
 
 		for (CTAutoResolutionInfo ctAutoResolutionInfo :
@@ -431,53 +434,75 @@ public class CTCollectionServiceImpl extends CTCollectionServiceBaseImpl {
 	}
 
 	private Predicate _getPredicate(
-		long companyId, int status, String keywords) {
+		long companyId, int[] statuses, String keywords) {
 
 		Predicate predicate = CTCollectionTable.INSTANCE.companyId.eq(
-			companyId);
+			companyId
+		).and(
+			() -> {
+				if (!ArrayUtil.isEmpty(statuses)) {
+					return CTCollectionTable.INSTANCE.status.in(
+						ArrayUtil.toArray(statuses));
+				}
 
-		if (status != WorkflowConstants.STATUS_ANY) {
-			predicate = predicate.and(
-				CTCollectionTable.INSTANCE.status.eq(status));
+				return null;
+			}
+		);
+
+		String[] keywordsArray = _customSQL.keywords(
+			keywords, true, WildcardMode.SURROUND);
+
+		predicate = predicate.and(
+			Predicate.withParentheses(
+				Predicate.or(
+					_customSQL.getKeywordsPredicate(
+						DSLFunctionFactoryUtil.lower(
+							CTCollectionTable.INSTANCE.name),
+						keywordsArray),
+					_customSQL.getKeywordsPredicate(
+						DSLFunctionFactoryUtil.lower(
+							CTCollectionTable.INSTANCE.description),
+						keywordsArray))));
+
+		Predicate permissionWherePredicate =
+			_inlineSQLHelper.getPermissionWherePredicate(
+				CTCollection.class, CTCollectionTable.INSTANCE.ctCollectionId);
+
+		if (permissionWherePredicate == null) {
+			return predicate;
 		}
 
-		Predicate keywordsPredicate = null;
-
-		for (String keyword :
-				_customSQL.keywords(keywords, true, WildcardMode.SURROUND)) {
-
-			if (keyword == null) {
-				continue;
-			}
-
-			Predicate keywordPredicate = DSLFunctionFactoryUtil.lower(
-				CTCollectionTable.INSTANCE.name
-			).like(
-				keyword
-			).or(
-				DSLFunctionFactoryUtil.lower(
-					CTCollectionTable.INSTANCE.description
-				).like(
-					keyword
-				)
-			);
-
-			if (keywordsPredicate == null) {
-				keywordsPredicate = keywordPredicate;
-			}
-			else {
-				keywordsPredicate = keywordsPredicate.or(keywordPredicate);
-			}
-		}
-
-		if (keywordsPredicate != null) {
-			predicate = predicate.and(keywordsPredicate.withParentheses());
-		}
+		PermissionChecker permissionChecker =
+			PermissionThreadLocal.getPermissionChecker();
 
 		return predicate.and(
-			_inlineSQLHelper.getPermissionWherePredicate(
-				CTCollection.class, CTCollectionTable.INSTANCE.ctCollectionId));
+			permissionWherePredicate.or(
+				CTCollectionTable.INSTANCE.ctCollectionId.in(
+					DSLQueryFactoryUtil.selectDistinct(
+						GroupTable.INSTANCE.classPK
+					).from(
+						GroupTable.INSTANCE
+					).innerJoinON(
+						UserGroupRoleTable.INSTANCE,
+						UserGroupRoleTable.INSTANCE.groupId.eq(
+							GroupTable.INSTANCE.groupId)
+					).where(
+						GroupTable.INSTANCE.companyId.eq(
+							permissionChecker.getCompanyId()
+						).and(
+							GroupTable.INSTANCE.classNameId.eq(
+								_classNameLocalService.getClassNameId(
+									CTCollection.class.getName()))
+						).and(
+							UserGroupRoleTable.INSTANCE.userId.eq(
+								permissionChecker.getUserId())
+						)
+					))
+			).withParentheses());
 	}
+
+	@Reference
+	private ClassNameLocalService _classNameLocalService;
 
 	@Reference
 	private CTAutoResolutionInfoPersistence _ctAutoResolutionInfoPersistence;
@@ -492,10 +517,16 @@ public class CTCollectionServiceImpl extends CTCollectionServiceBaseImpl {
 		_ctCollectionModelResourcePermission;
 
 	@Reference
+	private CTEntryPersistence _ctEntryPersistence;
+
+	@Reference
 	private CTProcessLocalService _ctProcessLocalService;
 
 	@Reference
 	private CTServiceRegistry _ctServiceRegistry;
+
+	@Reference
+	private CurrentConnection _currentConnection;
 
 	@Reference
 	private CustomSQL _customSQL;

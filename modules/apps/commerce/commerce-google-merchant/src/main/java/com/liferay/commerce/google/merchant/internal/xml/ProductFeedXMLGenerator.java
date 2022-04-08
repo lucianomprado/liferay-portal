@@ -28,10 +28,10 @@ import com.liferay.commerce.google.merchant.internal.xml.model.Feed;
 import com.liferay.commerce.google.merchant.internal.xml.model.Link;
 import com.liferay.commerce.product.catalog.CPCatalogEntry;
 import com.liferay.commerce.product.catalog.CPQuery;
+import com.liferay.commerce.product.constants.CommerceChannelConstants;
 import com.liferay.commerce.product.data.source.CPDataSourceResult;
 import com.liferay.commerce.product.exception.InvalidCommerceChannelTypeException;
 import com.liferay.commerce.product.model.CommerceChannel;
-import com.liferay.commerce.product.model.CommerceChannelConstants;
 import com.liferay.commerce.product.service.CommerceChannelLocalService;
 import com.liferay.commerce.product.util.CPDefinitionHelper;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -97,14 +97,13 @@ public class ProductFeedXMLGenerator {
 
 		feed.setLink(link);
 
-		String updated = DateUtil.getCurrentDate(
-			DateUtil.ISO_8601_PATTERN, null, TimeZoneUtil.GMT);
-
-		feed.setUpdated(updated);
+		feed.setUpdated(
+			DateUtil.getCurrentDate(
+				DateUtil.ISO_8601_PATTERN, null, TimeZoneUtil.GMT));
 
 		int total = _countCPCatalogEntriesByChannel(commerceChannel);
 
-		final IntervalActionProcessor<Void> intervalActionProcessor =
+		IntervalActionProcessor<Void> intervalActionProcessor =
 			new IntervalActionProcessor<>(total);
 
 		intervalActionProcessor.setPerformIntervalActionMethod(
@@ -115,7 +114,9 @@ public class ProductFeedXMLGenerator {
 				/* TODO: To be implemented in COMMERCE-2690.
 
 				for (CPCatalogEntry cpCatalogEntry : cpCatalogEntries) {
-					//TODO COMMERCE-2690 add XML for a product here
+
+					// TODO COMMERCE-2690 add XML for a product here
+
 				}
 				*/
 
@@ -153,11 +154,10 @@ public class ProductFeedXMLGenerator {
 
 		long commerceChannelGroupId = commerceChannel.getGroupId();
 
-		SearchContext searchContext = _getSearchContext(commerceChannel);
-
 		return GetterUtil.getInteger(
 			_cpDefinitionHelper.searchCount(
-				commerceChannelGroupId, searchContext, new CPQuery()));
+				commerceChannelGroupId, _getSearchContext(commerceChannel),
+				new CPQuery()));
 	}
 
 	private List<CPCatalogEntry> _getCPCatalogEntriesByChannel(
@@ -166,10 +166,9 @@ public class ProductFeedXMLGenerator {
 
 		long commerceChannelGroupId = commerceChannel.getGroupId();
 
-		SearchContext searchContext = _getSearchContext(commerceChannel);
-
 		CPDataSourceResult cpDataSourceResult = _cpDefinitionHelper.search(
-			commerceChannelGroupId, searchContext, new CPQuery(), start, end);
+			commerceChannelGroupId, _getSearchContext(commerceChannel),
+			new CPQuery(), start, end);
 
 		return cpDataSourceResult.getCPCatalogEntries();
 	}

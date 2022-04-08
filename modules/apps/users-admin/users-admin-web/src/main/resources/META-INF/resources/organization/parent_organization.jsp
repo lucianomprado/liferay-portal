@@ -32,9 +32,7 @@ if (parentOrganizationId <= 0) {
 }
 
 User selUser = (User)request.getAttribute("user.selUser");
-%>
 
-<%
 Organization parentOrganization = null;
 
 if ((organization == null) && (parentOrganizationId == OrganizationConstants.DEFAULT_PARENT_ORGANIZATION_ID) && !permissionChecker.isCompanyAdmin()) {
@@ -211,7 +209,7 @@ if (parentOrganization != null) {
 	if (selectOrganizationLink) {
 		searchContainer.get('contentBox').delegate(
 			'click',
-			function (event) {
+			(event) => {
 				var link = event.currentTarget;
 				var tr = link.ancestor('tr');
 
@@ -224,7 +222,7 @@ if (parentOrganization != null) {
 			'.modify-link'
 		);
 
-		selectOrganizationLink.on('click', function (event) {
+		selectOrganizationLink.on('click', (event) => {
 			var searchContainerData = searchContainer.getData();
 
 			Liferay.Util.openSelectionModal({

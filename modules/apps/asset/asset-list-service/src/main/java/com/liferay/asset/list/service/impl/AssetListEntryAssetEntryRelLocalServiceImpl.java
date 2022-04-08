@@ -26,8 +26,6 @@ import com.liferay.asset.list.service.base.AssetListEntryAssetEntryRelLocalServi
 import com.liferay.petra.sql.dsl.DSLQueryFactoryUtil;
 import com.liferay.petra.sql.dsl.expression.Predicate;
 import com.liferay.petra.sql.dsl.query.DSLQuery;
-import com.liferay.petra.sql.dsl.query.FromStep;
-import com.liferay.petra.sql.dsl.query.GroupByStep;
 import com.liferay.petra.sql.dsl.query.JoinStep;
 import com.liferay.portal.aop.AopService;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -36,6 +34,7 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.SystemEventConstants;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.systemevent.SystemEvent;
 import com.liferay.portal.kernel.transaction.TransactionCommitCallbackUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
@@ -72,7 +71,7 @@ public class AssetListEntryAssetEntryRelLocalServiceImpl
 			throw new AssetListEntryAssetEntryRelPostionException();
 		}
 
-		User user = userLocalService.getUser(serviceContext.getUserId());
+		User user = _userLocalService.getUser(serviceContext.getUserId());
 
 		long assetListEntryAssetEntryRelId = counterLocalService.increment();
 
@@ -189,6 +188,10 @@ public class AssetListEntryAssetEntryRelLocalServiceImpl
 		return _getAssetListEntryAssetEntryRels(assetListEntryAssetEntryRels);
 	}
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
 	@Override
 	public List<AssetListEntryAssetEntryRel> getAssetListEntryAssetEntryRels(
 		long assetListEntryId, long[] segmentsEntryIds,
@@ -199,12 +202,15 @@ public class AssetListEntryAssetEntryRelLocalServiceImpl
 				assetListEntryId, segmentsEntryIds, start, end);
 		}
 
-		GroupByStep groupByStep = _getGroupByStep(
-			DSLQueryFactoryUtil.select(
-				AssetListEntryAssetEntryRelTable.INSTANCE),
-			assetListEntryId, segmentsEntryIds, assetCategoryIds);
-
-		DSLQuery dslQuery = groupByStep.limit(start, end);
+		DSLQuery dslQuery = DSLQueryFactoryUtil.select(
+			AssetListEntryAssetEntryRelTable.INSTANCE
+		).from(
+			AssetListEntryAssetEntryRelTable.INSTANCE
+		).where(
+			_getPredicate(assetListEntryId, segmentsEntryIds, assetCategoryIds)
+		).limit(
+			start, end
+		);
 
 		List<AssetListEntryAssetEntryRel> assetListEntryAssetEntryRels =
 			assetListEntryAssetEntryRelPersistence.dslQuery(dslQuery);
@@ -242,6 +248,10 @@ public class AssetListEntryAssetEntryRelLocalServiceImpl
 			assetListEntryId, segmentsEntryIds);
 	}
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
 	@Override
 	public int getAssetListEntryAssetEntryRelsCount(
 		long assetListEntryId, long[] segmentsEntryIds,
@@ -252,13 +262,14 @@ public class AssetListEntryAssetEntryRelLocalServiceImpl
 				assetListEntryId, segmentsEntryIds);
 		}
 
-		DSLQuery dslQuery = _getGroupByStep(
-			DSLQueryFactoryUtil.count(), assetListEntryId, segmentsEntryIds,
-			assetCategoryIds);
+		DSLQuery dslQuery = DSLQueryFactoryUtil.count(
+		).from(
+			AssetListEntryAssetEntryRelTable.INSTANCE
+		).where(
+			_getPredicate(assetListEntryId, segmentsEntryIds, assetCategoryIds)
+		);
 
-		Long count = assetListEntryAssetEntryRelPersistence.dslQuery(dslQuery);
-
-		return count.intValue();
+		return assetListEntryAssetEntryRelPersistence.dslQueryCount(dslQuery);
 	}
 
 	@Override
@@ -388,11 +399,7 @@ public class AssetListEntryAssetEntryRelLocalServiceImpl
 				AssetEntry assetEntry = _assetEntryLocalService.fetchEntry(
 					assetListEntryAssetEntryRel.getAssetEntryId());
 
-				if (assetEntry == null) {
-					return false;
-				}
-
-				if (!assetEntry.isVisible()) {
+				if ((assetEntry == null) || !assetEntry.isVisible()) {
 					return false;
 				}
 
@@ -418,12 +425,16 @@ public class AssetListEntryAssetEntryRelLocalServiceImpl
 		);
 	}
 
-	private GroupByStep _getGroupByStep(
-		FromStep fromStep, long assetListEntryId, long[] segmentsEntryIds,
+	private Predicate _getPredicate(
+		long assetListEntryId, long[] segmentsEntryIds,
 		long[][] assetCategoryIds) {
 
-		JoinStep joinStep = fromStep.from(
-			AssetListEntryAssetEntryRelTable.INSTANCE);
+		JoinStep joinStep = DSLQueryFactoryUtil.selectDistinct(
+			AssetListEntryAssetEntryRelTable.INSTANCE.
+				assetListEntryAssetEntryRelId
+		).from(
+			AssetListEntryAssetEntryRelTable.INSTANCE
+		);
 
 		for (int i = 0; i < assetCategoryIds.length; i++) {
 			joinStep = joinStep.innerJoinON(
@@ -434,15 +445,19 @@ public class AssetListEntryAssetEntryRelLocalServiceImpl
 						"AssetEntryAssetCategoryRel" + i).assetEntryId));
 		}
 
-		return joinStep.where(
-			_addPredicate(
-				AssetListEntryAssetEntryRelTable.INSTANCE.assetListEntryId.eq(
-					assetListEntryId
-				).and(
-					AssetListEntryAssetEntryRelTable.INSTANCE.segmentsEntryId.
-						in(ArrayUtil.toArray(segmentsEntryIds))
-				),
-				assetCategoryIds));
+		return AssetListEntryAssetEntryRelTable.INSTANCE.
+			assetListEntryAssetEntryRelId.in(
+				joinStep.where(
+					_addPredicate(
+						AssetListEntryAssetEntryRelTable.INSTANCE.
+							assetListEntryId.eq(
+								assetListEntryId
+							).and(
+								AssetListEntryAssetEntryRelTable.INSTANCE.
+									segmentsEntryId.in(
+										ArrayUtil.toArray(segmentsEntryIds))
+							),
+						assetCategoryIds)));
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(
@@ -450,5 +465,8 @@ public class AssetListEntryAssetEntryRelLocalServiceImpl
 
 	@Reference
 	private AssetEntryLocalService _assetEntryLocalService;
+
+	@Reference
+	private UserLocalService _userLocalService;
 
 }

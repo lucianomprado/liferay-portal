@@ -18,12 +18,11 @@
 
 <%
 StyleBookDisplayContext styleBookDisplayContext = new StyleBookDisplayContext(request, liferayPortletRequest, liferayPortletResponse);
-
-StyleBookManagementToolbarDisplayContext styleBookManagementToolbarDisplayContext = new StyleBookManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, styleBookDisplayContext.getStyleBookEntriesSearchContainer());
 %>
 
-<clay:management-toolbar-v2
-	displayContext="<%= styleBookManagementToolbarDisplayContext %>"
+<clay:management-toolbar
+	managementToolbarDisplayContext="<%= new StyleBookManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, styleBookDisplayContext.getStyleBookEntriesSearchContainer()) %>"
+	propsTransformer="js/StyleBookManagementToolbarPropsTransformer"
 />
 
 <portlet:actionURL name="/style_book/delete_style_book_entry" var="deleteStyleBookEntryURL">
@@ -40,13 +39,9 @@ StyleBookManagementToolbarDisplayContext styleBookManagementToolbarDisplayContex
 				keyProperty="styleBookEntryId"
 				modelVar="styleBookEntry"
 			>
-
-				<%
-				row.setCssClass("entry-card lfr-asset-item " + row.getCssClass());
-				%>
-
 				<liferay-ui:search-container-column-text>
 					<clay:vertical-card
+						propsTransformer="js/StylebookEntryActionDropdownPropsTransformer"
 						verticalCard="<%= new StyleBookVerticalCard(styleBookEntry, renderRequest, renderResponse, searchContainer.getRowChecker()) %>"
 					/>
 				</liferay-ui:search-container-column-text>
@@ -72,14 +67,3 @@ StyleBookManagementToolbarDisplayContext styleBookManagementToolbarDisplayContex
 	<aui:input name="styleBookEntryId" type="hidden" />
 	<aui:input name="fileEntryId" type="hidden" />
 </aui:form>
-
-<liferay-frontend:component
-	componentId="<%= StyleBookWebKeys.STYLE_BOOK_ENTRY_DROPDOWN_DEFAULT_EVENT_HANDLER %>"
-	module="js/StyleBookEntryDropdownDefaultEventHandler.es"
-/>
-
-<liferay-frontend:component
-	componentId="<%= styleBookManagementToolbarDisplayContext.getDefaultEventHandler() %>"
-	context="<%= styleBookManagementToolbarDisplayContext.getComponentContext() %>"
-	module="js/ManagementToolbarDefaultEventHandler.es"
-/>

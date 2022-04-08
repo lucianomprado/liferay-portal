@@ -37,6 +37,7 @@ import com.liferay.portal.kernel.test.util.OrganizationTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.util.LocaleUtil;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
@@ -138,7 +139,8 @@ public class OrganizationODataRetrieverTest {
 	public void testGetOrganizationsFilterByCountryAndRegion()
 		throws Exception {
 
-		Country country = _countryService.getCountryByName("spain");
+		Country country = _countryService.getCountryByName(
+			TestPropsValues.getCompanyId(), "spain");
 
 		List<Region> regions = _regionService.getRegions(
 			country.getCountryId());
@@ -161,7 +163,8 @@ public class OrganizationODataRetrieverTest {
 
 		String filterString = String.format(
 			"(country eq '%s') and (region eq '%s')",
-			country.getNameCurrentValue(), region.getName());
+			StringUtil.toLowerCase(country.getName()),
+			StringUtil.toLowerCase(region.getName()));
 
 		int count = _oDataRetriever.getResultsCount(
 			TestPropsValues.getCompanyId(), filterString,

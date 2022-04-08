@@ -14,8 +14,8 @@
 
 package com.liferay.commerce.currency.test.util;
 
+import com.liferay.commerce.currency.constants.CommerceCurrencyConstants;
 import com.liferay.commerce.currency.model.CommerceCurrency;
-import com.liferay.commerce.currency.model.CommerceCurrencyConstants;
 import com.liferay.commerce.currency.service.CommerceCurrencyLocalServiceUtil;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -58,7 +58,7 @@ public class CommerceCurrencyTestUtil {
 			RandomTestUtil.randomLocaleStringMap(), StringPool.DOLLAR,
 			BigDecimal.ONE,
 			HashMapBuilder.put(
-				LocaleUtil.US, CommerceCurrencyConstants.DEFAULT_FORMAT_PATTERN
+				LocaleUtil.US, CommerceCurrencyConstants.DECIMAL_FORMAT_PATTERN
 			).build(),
 			2, 2, StringPool.BLANK, false, RandomTestUtil.randomDouble(), true);
 	}

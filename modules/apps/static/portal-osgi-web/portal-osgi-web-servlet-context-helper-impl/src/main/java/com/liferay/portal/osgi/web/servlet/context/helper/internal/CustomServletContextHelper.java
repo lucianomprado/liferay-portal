@@ -198,7 +198,7 @@ public class CustomServletContextHelper
 		if (path.startsWith("/META-INF/") || path.startsWith("/OSGI-INF/") ||
 			path.startsWith("/OSGI-OPT/") || path.startsWith("/WEB-INF/")) {
 
-			return sendErrorForbidden(
+			return _sendErrorForbidden(
 				httpServletRequest, httpServletResponse, path);
 		}
 
@@ -293,7 +293,7 @@ public class CustomServletContextHelper
 			}
 
 			if (forbidden) {
-				return sendErrorForbidden(
+				return _sendErrorForbidden(
 					httpServletRequest, httpServletResponse, path);
 			}
 		}
@@ -306,7 +306,7 @@ public class CustomServletContextHelper
 		return _string;
 	}
 
-	protected boolean sendErrorForbidden(
+	private boolean _sendErrorForbidden(
 		HttpServletRequest httpServletRequest,
 		HttpServletResponse httpServletResponse, String path) {
 
@@ -323,6 +323,10 @@ public class CustomServletContextHelper
 				HttpServletResponse.SC_FORBIDDEN, path);
 		}
 		catch (IOException ioException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(ioException);
+			}
+
 			httpServletResponse.setStatus(HttpServletResponse.SC_FORBIDDEN);
 		}
 

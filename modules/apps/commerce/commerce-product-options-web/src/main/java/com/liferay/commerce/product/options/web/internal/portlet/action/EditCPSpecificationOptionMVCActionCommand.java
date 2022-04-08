@@ -46,14 +46,55 @@ import org.osgi.service.component.annotations.Reference;
 	enabled = false, immediate = true,
 	property = {
 		"javax.portlet.name=" + CPPortletKeys.CP_SPECIFICATION_OPTIONS,
-		"mvc.command.name=editProductSpecificationOption"
+		"mvc.command.name=/cp_specification_options/edit_cp_specification_option"
 	},
 	service = MVCActionCommand.class
 )
 public class EditCPSpecificationOptionMVCActionCommand
 	extends BaseMVCActionCommand {
 
-	protected void deleteCPSpecificationOptions(ActionRequest actionRequest)
+	@Override
+	protected void doProcessAction(
+			ActionRequest actionRequest, ActionResponse actionResponse)
+		throws Exception {
+
+		String cmd = ParamUtil.getString(actionRequest, Constants.CMD);
+
+		try {
+			if (cmd.equals(Constants.DELETE)) {
+				_deleteCPSpecificationOptions(actionRequest);
+			}
+			else if (cmd.equals(Constants.ADD) ||
+					 cmd.equals(Constants.UPDATE)) {
+
+				_updateCPSpecificationOption(actionRequest);
+			}
+		}
+		catch (Exception exception) {
+			if (exception instanceof NoSuchCPSpecificationOptionException ||
+				exception instanceof PrincipalException) {
+
+				SessionErrors.add(actionRequest, exception.getClass());
+
+				actionResponse.setRenderParameter("mvcPath", "/error.jsp");
+			}
+			else if (exception instanceof CPSpecificationOptionKeyException) {
+				hideDefaultErrorMessage(actionRequest);
+				hideDefaultSuccessMessage(actionRequest);
+
+				SessionErrors.add(actionRequest, exception.getClass());
+
+				actionResponse.setRenderParameter(
+					"mvcRenderCommandName",
+					"/cp_specification_options/edit_cp_specification_option");
+			}
+			else {
+				throw exception;
+			}
+		}
+	}
+
+	private void _deleteCPSpecificationOptions(ActionRequest actionRequest)
 		throws Exception {
 
 		long[] deleteCPSpecificationOptionIds = null;
@@ -81,47 +122,7 @@ public class EditCPSpecificationOptionMVCActionCommand
 		}
 	}
 
-	@Override
-	protected void doProcessAction(
-			ActionRequest actionRequest, ActionResponse actionResponse)
-		throws Exception {
-
-		String cmd = ParamUtil.getString(actionRequest, Constants.CMD);
-
-		try {
-			if (cmd.equals(Constants.DELETE)) {
-				deleteCPSpecificationOptions(actionRequest);
-			}
-			else if (cmd.equals(Constants.ADD) ||
-					 cmd.equals(Constants.UPDATE)) {
-
-				updateCPSpecificationOption(actionRequest);
-			}
-		}
-		catch (Exception exception) {
-			if (exception instanceof NoSuchCPSpecificationOptionException ||
-				exception instanceof PrincipalException) {
-
-				SessionErrors.add(actionRequest, exception.getClass());
-
-				actionResponse.setRenderParameter("mvcPath", "/error.jsp");
-			}
-			else if (exception instanceof CPSpecificationOptionKeyException) {
-				hideDefaultErrorMessage(actionRequest);
-				hideDefaultSuccessMessage(actionRequest);
-
-				SessionErrors.add(actionRequest, exception.getClass());
-
-				actionResponse.setRenderParameter(
-					"mvcRenderCommandName", "editProductSpecificationOption");
-			}
-			else {
-				throw exception;
-			}
-		}
-	}
-
-	protected CPSpecificationOption updateCPSpecificationOption(
+	private CPSpecificationOption _updateCPSpecificationOption(
 			ActionRequest actionRequest)
 		throws Exception {
 

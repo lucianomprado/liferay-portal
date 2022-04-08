@@ -14,6 +14,7 @@
 
 package com.liferay.portal.model;
 
+import com.liferay.asset.kernel.util.NotifiedAssetEntryThreadLocal;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.BaseModelListener;
@@ -45,7 +46,10 @@ public class PortletPreferencesModelListener
 	}
 
 	@Override
-	public void onAfterUpdate(PortletPreferences portletPreferences) {
+	public void onAfterUpdate(
+		PortletPreferences originalPortletPreferences,
+		PortletPreferences portletPreferences) {
+
 		clearCache(portletPreferences);
 
 		updateLayout(portletPreferences);
@@ -82,6 +86,10 @@ public class PortletPreferencesModelListener
 			}
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception);
+			}
+
 			CacheUtil.clearCache();
 		}
 	}
@@ -125,7 +133,10 @@ public class PortletPreferencesModelListener
 				Layout layout = LayoutLocalServiceUtil.fetchLayout(
 					portletPreferences.getPlid());
 
-				if (layout == null) {
+				if ((layout == null) ||
+					NotifiedAssetEntryThreadLocal.
+						isNotifiedAssetEntryIdsModified()) {
+
 					return;
 				}
 

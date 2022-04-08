@@ -14,14 +14,16 @@
 
 package com.liferay.portal.service.impl;
 
+import com.liferay.portal.kernel.bean.BeanReference;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.Country;
 import com.liferay.portal.kernel.model.Region;
 import com.liferay.portal.kernel.security.access.control.AccessControlled;
-import com.liferay.portal.kernel.security.auth.PrincipalException;
-import com.liferay.portal.kernel.security.permission.PermissionChecker;
+import com.liferay.portal.kernel.security.permission.ActionKeys;
+import com.liferay.portal.kernel.service.CountryService;
 import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.service.permission.PortalPermissionUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.OrderByComparatorFactoryUtil;
@@ -42,33 +44,19 @@ public class RegionServiceImpl extends RegionServiceBaseImpl {
 			String regionCode, ServiceContext serviceContext)
 		throws PortalException {
 
-		if (!getPermissionChecker().isOmniadmin()) {
-			throw new PrincipalException.MustBeOmniadmin(
-				getPermissionChecker());
-		}
+		PortalPermissionUtil.check(
+			getPermissionChecker(), ActionKeys.MANAGE_COUNTRIES);
 
 		return regionLocalService.addRegion(
 			countryId, active, name, position, regionCode, serviceContext);
 	}
 
-	/**
-	 * @deprecated As of Cavanaugh (7.4.x)
-	 */
-	@Deprecated
 	@Override
-	public Region addRegion(
-			long countryId, String regionCode, String name, boolean active)
-		throws PortalException {
+	public void deleteRegion(long regionId) throws PortalException {
+		PortalPermissionUtil.check(
+			getPermissionChecker(), ActionKeys.MANAGE_COUNTRIES);
 
-		ServiceContext serviceContext = new ServiceContext();
-
-		PermissionChecker permissionChecker = getPermissionChecker();
-
-		serviceContext.setCompanyId(permissionChecker.getCompanyId());
-		serviceContext.setUserId(permissionChecker.getUserId());
-
-		return addRegion(
-			countryId, active, name, 0, regionCode, serviceContext);
+		regionLocalService.deleteRegion(regionId);
 	}
 
 	@Override
@@ -118,8 +106,66 @@ public class RegionServiceImpl extends RegionServiceBaseImpl {
 			_getOrderByComparator(countryId));
 	}
 
+	@Override
+	public List<Region> getRegions(
+		long countryId, boolean active, int start, int end,
+		OrderByComparator<Region> orderByComparator) {
+
+		return regionLocalService.getRegions(
+			countryId, active, start, end, orderByComparator);
+	}
+
+	@Override
+	public List<Region> getRegions(
+		long countryId, int start, int end,
+		OrderByComparator<Region> orderByComparator) {
+
+		return regionLocalService.getRegions(
+			countryId, start, end, orderByComparator);
+	}
+
+	@Override
+	public List<Region> getRegions(long companyId, String a2, boolean active)
+		throws PortalException {
+
+		return regionLocalService.getRegions(companyId, a2, active);
+	}
+
+	@Override
+	public int getRegionsCount(long countryId) {
+		return regionLocalService.getRegionsCount(countryId);
+	}
+
+	@Override
+	public int getRegionsCount(long countryId, boolean active) {
+		return regionLocalService.getRegionsCount(countryId, active);
+	}
+
+	@Override
+	public Region updateActive(long regionId, boolean active)
+		throws PortalException {
+
+		PortalPermissionUtil.check(
+			getPermissionChecker(), ActionKeys.MANAGE_COUNTRIES);
+
+		return regionLocalService.updateActive(regionId, active);
+	}
+
+	@Override
+	public Region updateRegion(
+			long regionId, boolean active, String name, double position,
+			String regionCode)
+		throws PortalException {
+
+		PortalPermissionUtil.check(
+			getPermissionChecker(), ActionKeys.MANAGE_COUNTRIES);
+
+		return regionLocalService.updateRegion(
+			regionId, active, name, position, regionCode);
+	}
+
 	private OrderByComparator<Region> _getOrderByComparator(long countryId) {
-		Country country = countryService.fetchCountry(countryId);
+		Country country = _countryService.fetchCountry(countryId);
 
 		if (country == null) {
 			return null;
@@ -135,5 +181,8 @@ public class RegionServiceImpl extends RegionServiceBaseImpl {
 				OrderByComparatorFactoryUtil.create(
 					RegionModelImpl.TABLE_NAME, "regionCode", true)
 			).build();
+
+	@BeanReference(type = CountryService.class)
+	private CountryService _countryService;
 
 }

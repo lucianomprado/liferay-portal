@@ -29,7 +29,8 @@ page import="com.liferay.commerce.currency.exception.CommerceCurrencyFractionDig
 page import="com.liferay.commerce.currency.exception.CommerceCurrencyNameException" %><%@
 page import="com.liferay.commerce.currency.model.CommerceCurrency" %><%@
 page import="com.liferay.commerce.currency.web.internal.display.context.CommerceCurrenciesDisplayContext" %><%@
-page import="com.liferay.commerce.currency.web.internal.servlet.taglib.ui.CommerceCurrencyScreenNavigationConstants" %><%@
+page import="com.liferay.commerce.currency.web.internal.servlet.taglib.ui.constants.CommerceCurrencyScreenNavigationConstants" %><%@
+page import="com.liferay.petra.portlet.url.builder.PortletURLBuilder" %><%@
 page import="com.liferay.petra.string.StringPool" %><%@
 page import="com.liferay.portal.kernel.bean.BeanParamUtil" %><%@
 page import="com.liferay.portal.kernel.dao.search.ResultRow" %><%@
@@ -42,8 +43,6 @@ page import="com.liferay.portal.kernel.util.WebKeys" %>
 
 <%@ page import="java.math.BigDecimal" %><%@
 page import="java.math.RoundingMode" %>
-
-<%@ page import="javax.portlet.PortletURL" %>
 
 <liferay-frontend:defineObjects />
 

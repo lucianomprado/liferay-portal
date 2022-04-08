@@ -18,11 +18,13 @@ import com.liferay.document.library.display.context.DLDisplayContextProvider;
 import com.liferay.document.library.display.context.DLViewFileVersionDisplayContext;
 import com.liferay.document.library.kernel.model.DLFileEntryConstants;
 import com.liferay.document.library.kernel.model.DLFolderConstants;
-import com.liferay.document.library.web.internal.display.context.logic.DLPortletInstanceSettingsHelper;
-import com.liferay.document.library.web.internal.display.context.util.DLRequestHelper;
+import com.liferay.document.library.web.internal.display.context.helper.DLPortletInstanceSettingsHelper;
+import com.liferay.document.library.web.internal.display.context.helper.DLRequestHelper;
 import com.liferay.document.library.web.internal.security.permission.resource.DLFileEntryPermission;
 import com.liferay.document.library.web.internal.security.permission.resource.DLFolderPermission;
 import com.liferay.document.library.web.internal.settings.DLPortletInstanceSettings;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.Language;
@@ -40,7 +42,6 @@ import com.liferay.portal.kernel.util.FastDateFormatFactoryUtil;
 import com.liferay.portal.kernel.util.Html;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
-import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.taglib.util.PortalIncludeUtil;
@@ -51,7 +52,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
-import javax.portlet.PortletURL;
 import javax.portlet.RenderRequest;
 import javax.portlet.RenderResponse;
 
@@ -67,17 +67,18 @@ public class DLViewFileEntryDisplayContext {
 	public DLViewFileEntryDisplayContext(
 		DLAdminDisplayContext dlAdminDisplayContext,
 		DLDisplayContextProvider dlDisplayContextProvider, Html html,
-		Language language, Portal portal, RenderRequest renderRequest,
-		RenderResponse renderResponse) {
+		HttpServletRequest httpServletRequest, Language language, Portal portal,
+		RenderRequest renderRequest, RenderResponse renderResponse) {
 
 		_dlAdminDisplayContext = dlAdminDisplayContext;
 		_dlDisplayContextProvider = dlDisplayContextProvider;
 		_html = html;
+		_httpServletRequest = httpServletRequest;
 		_language = language;
 		_portal = portal;
 		_renderRequest = renderRequest;
 		_renderResponse = renderResponse;
-		_httpServletRequest = _portal.getHttpServletRequest(renderRequest);
+
 		_httpServletResponse = _portal.getHttpServletResponse(renderResponse);
 		_themeDisplay = (ThemeDisplay)_renderRequest.getAttribute(
 			WebKeys.THEME_DISPLAY);
@@ -241,8 +242,6 @@ public class DLViewFileEntryDisplayContext {
 			return _redirect;
 		}
 
-		PortletURL portletURL = _renderResponse.createRenderURL();
-
 		long parentFolderId = _getParentFolderId();
 
 		String mvcRenderCommandName = "/document_library/view";
@@ -251,10 +250,13 @@ public class DLViewFileEntryDisplayContext {
 			mvcRenderCommandName = "/document_library/view_folder";
 		}
 
-		portletURL.setParameter("mvcRenderCommandName", mvcRenderCommandName);
-		portletURL.setParameter("folderId", String.valueOf(parentFolderId));
-
-		_redirect = portletURL.toString();
+		_redirect = PortletURLBuilder.createRenderURL(
+			_renderResponse
+		).setMVCRenderCommandName(
+			mvcRenderCommandName
+		).setParameter(
+			"folderId", parentFolderId
+		).buildString();
 
 		return _redirect;
 	}
@@ -300,7 +302,7 @@ public class DLViewFileEntryDisplayContext {
 
 	public boolean isShowComments() {
 		boolean showComments = ParamUtil.getBoolean(
-			_renderRequest, "showComments", true);
+			_httpServletRequest, "showComments", true);
 
 		FileEntry fileEntry = getFileEntry();
 
@@ -315,7 +317,7 @@ public class DLViewFileEntryDisplayContext {
 
 	public boolean isShowHeader() {
 		boolean showHeader = ParamUtil.getBoolean(
-			_renderRequest, "showHeader", true);
+			_httpServletRequest, "showHeader", true);
 
 		FileEntry fileEntry = getFileEntry();
 

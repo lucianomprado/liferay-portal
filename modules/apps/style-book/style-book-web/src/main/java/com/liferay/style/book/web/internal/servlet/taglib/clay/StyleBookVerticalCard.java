@@ -19,6 +19,7 @@ import com.liferay.frontend.taglib.clay.servlet.taglib.soy.VerticalCard;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.LabelItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.LabelItemListBuilder;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.dao.search.RowChecker;
 import com.liferay.portal.kernel.model.BaseModel;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
@@ -27,14 +28,12 @@ import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.style.book.constants.StyleBookActionKeys;
 import com.liferay.style.book.model.StyleBookEntry;
 import com.liferay.style.book.service.StyleBookEntryLocalServiceUtil;
-import com.liferay.style.book.web.internal.constants.StyleBookWebKeys;
 import com.liferay.style.book.web.internal.security.permissions.resource.StyleBookPermission;
 import com.liferay.style.book.web.internal.servlet.taglib.util.StyleBookEntryActionDropdownItemsProvider;
 
 import java.util.Collections;
 import java.util.List;
 
-import javax.portlet.PortletURL;
 import javax.portlet.RenderRequest;
 import javax.portlet.RenderResponse;
 
@@ -50,9 +49,10 @@ public class StyleBookVerticalCard
 
 		super(baseModel, rowChecker);
 
-		_styleBookEntry = (StyleBookEntry)baseModel;
 		_renderRequest = renderRequest;
 		_renderResponse = renderResponse;
+
+		_styleBookEntry = (StyleBookEntry)baseModel;
 
 		_themeDisplay = (ThemeDisplay)renderRequest.getAttribute(
 			WebKeys.THEME_DISPLAY);
@@ -78,31 +78,23 @@ public class StyleBookVerticalCard
 	}
 
 	@Override
-	public String getDefaultEventHandler() {
-		return StyleBookWebKeys.STYLE_BOOK_ENTRY_DROPDOWN_DEFAULT_EVENT_HANDLER;
-	}
-
-	@Override
 	public String getHref() {
 		if (!StyleBookPermission.contains(
 				_themeDisplay.getPermissionChecker(),
 				_themeDisplay.getScopeGroupId(),
-				StyleBookActionKeys.MANAGE_STYLE_BOOK_ENTRIES)) {
+				StyleBookActionKeys.MANAGE_STYLE_BOOK_ENTRIES) ||
+			(_styleBookEntry.getStyleBookEntryId() <= 0)) {
 
 			return null;
 		}
 
-		PortletURL editStyleBookEntryURL = _renderResponse.createRenderURL();
-
-		editStyleBookEntryURL.setParameter(
-			"mvcRenderCommandName", "/style_book/edit_style_book_entry");
-		editStyleBookEntryURL.setParameter(
-			"redirect", _themeDisplay.getURLCurrent());
-		editStyleBookEntryURL.setParameter(
-			"styleBookEntryId",
-			String.valueOf(_styleBookEntry.getStyleBookEntryId()));
-
-		return editStyleBookEntryURL.toString();
+		return PortletURLBuilder.createRenderURL(
+			_renderResponse
+		).setMVCRenderCommandName(
+			"/style_book/edit_style_book_entry"
+		).setParameter(
+			"styleBookEntryId", _styleBookEntry.getStyleBookEntryId()
+		).buildString();
 	}
 
 	@Override
@@ -152,8 +144,22 @@ public class StyleBookVerticalCard
 	}
 
 	@Override
+	public String getStickerStyle() {
+		return "primary";
+	}
+
+	@Override
 	public String getTitle() {
 		return _styleBookEntry.getName();
+	}
+
+	@Override
+	public boolean isSelectable() {
+		if (_styleBookEntry.getStyleBookEntryId() > 0) {
+			return true;
+		}
+
+		return false;
 	}
 
 	private final RenderRequest _renderRequest;

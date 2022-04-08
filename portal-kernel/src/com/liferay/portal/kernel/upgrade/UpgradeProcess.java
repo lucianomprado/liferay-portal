@@ -15,6 +15,7 @@
 package com.liferay.portal.kernel.upgrade;
 
 import com.liferay.counter.kernel.service.CounterLocalServiceUtil;
+import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.db.BaseDBProcess;
@@ -22,7 +23,6 @@ import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBInspector;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
 import com.liferay.portal.kernel.dao.db.DBProcessContext;
-import com.liferay.portal.kernel.dao.db.DBType;
 import com.liferay.portal.kernel.dao.db.IndexMetadata;
 import com.liferay.portal.kernel.dao.db.IndexMetadataFactoryUtil;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
@@ -38,6 +38,7 @@ import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.ObjectValuePair;
 import com.liferay.portal.kernel.util.PortalClassLoaderUtil;
 import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.kernel.util.Validator;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -48,7 +49,6 @@ import java.lang.reflect.Field;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
@@ -57,13 +57,17 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+
+import javax.sql.DataSource;
+
+import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.FrameworkUtil;
+import org.osgi.framework.ServiceReference;
 
 /**
  * @author Brian Wing Shun Chan
@@ -90,18 +94,28 @@ public abstract class UpgradeProcess
 
 		String message = "Completed upgrade process ";
 
-		try (Connection con = DataAccess.getConnection()) {
-			connection = con;
+		try (Connection connection = getConnection()) {
+			this.connection = connection;
 
 			if (isSkipUpgradeProcess()) {
 				return;
 			}
 
-			if (_log.isInfoEnabled()) {
-				_log.info("Upgrading " + ClassUtil.getClassName(this));
-			}
+			process(
+				companyId -> {
+					if (_log.isInfoEnabled()) {
+						String info =
+							"Upgrading " + ClassUtil.getClassName(this);
 
-			doUpgrade();
+						if (Validator.isNotNull(companyId)) {
+							info += "#" + companyId;
+						}
+
+						_log.info(info);
+					}
+
+					doUpgrade();
+				});
 		}
 		catch (Throwable throwable) {
 			message = "Failed upgrade process ";
@@ -109,7 +123,7 @@ public abstract class UpgradeProcess
 			throw new UpgradeException(throwable);
 		}
 		finally {
-			connection = null;
+			this.connection = null;
 
 			if (_log.isInfoEnabled()) {
 				_log.info(
@@ -131,6 +145,10 @@ public abstract class UpgradeProcess
 		upgradeProcess.upgrade();
 	}
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
 	public interface Alterable {
 
 		public static boolean containsIgnoreCase(
@@ -153,53 +171,51 @@ public abstract class UpgradeProcess
 
 	}
 
+	/**
+	 *   @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 *          BaseDBProcess#alterColumnName(String, String, String)}
+	 */
+	@Deprecated
 	public class AlterColumnName implements Alterable {
 
 		public AlterColumnName(String oldColumnName, String newColumn) {
 			_oldColumnName = oldColumnName;
 			_newColumn = newColumn;
+		}
 
-			String newColumnName = StringUtil.extractFirst(
-				newColumn, StringPool.SPACE);
+		public String getNewColumn() {
+			return _newColumn;
+		}
 
-			if (newColumnName != null) {
-				_newColumnName = newColumnName;
-			}
-			else {
-				_newColumnName = _newColumn;
-			}
+		public String getOldColumnName() {
+			return _oldColumnName;
 		}
 
 		@Override
 		public String getSQL(String tableName) {
-			StringBundler sb = new StringBundler(6);
-
-			sb.append("alter_column_name ");
-			sb.append(tableName);
-			sb.append(StringPool.SPACE);
-			sb.append(_oldColumnName);
-			sb.append(StringPool.SPACE);
-			sb.append(_newColumn);
-
-			return sb.toString();
+			return null;
 		}
 
 		@Override
 		public boolean shouldAddIndex(Collection<String> columnNames) {
-			return Alterable.containsIgnoreCase(columnNames, _newColumnName);
+			return false;
 		}
 
 		@Override
 		public boolean shouldDropIndex(Collection<String> columnNames) {
-			return Alterable.containsIgnoreCase(columnNames, _oldColumnName);
+			return false;
 		}
 
 		private final String _newColumn;
-		private final String _newColumnName;
 		private final String _oldColumnName;
 
 	}
 
+	/**
+	 *   @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 *          BaseDBProcess#alterColumnType(String, String, String)}
+	 */
+	@Deprecated
 	public class AlterColumnType implements Alterable {
 
 		public AlterColumnType(String columnName, String newType) {
@@ -207,28 +223,27 @@ public abstract class UpgradeProcess
 			_newType = newType;
 		}
 
+		public String getColumnName() {
+			return _columnName;
+		}
+
+		public String getNewType() {
+			return _newType;
+		}
+
 		@Override
 		public String getSQL(String tableName) {
-			StringBundler sb = new StringBundler(6);
-
-			sb.append("alter_column_type ");
-			sb.append(tableName);
-			sb.append(StringPool.SPACE);
-			sb.append(_columnName);
-			sb.append(StringPool.SPACE);
-			sb.append(_newType);
-
-			return sb.toString();
+			return null;
 		}
 
 		@Override
 		public boolean shouldAddIndex(Collection<String> columnNames) {
-			return Alterable.containsIgnoreCase(columnNames, _columnName);
+			return false;
 		}
 
 		@Override
 		public boolean shouldDropIndex(Collection<String> columnNames) {
-			return Alterable.containsIgnoreCase(columnNames, _columnName);
+			return false;
 		}
 
 		private final String _columnName;
@@ -236,6 +251,11 @@ public abstract class UpgradeProcess
 
 	}
 
+	/**
+	 *   @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 *          BaseDBProcess#alterTableAddColumn(String, String, String)}
+	 */
+	@Deprecated
 	public class AlterTableAddColumn implements Alterable {
 
 		/**
@@ -245,6 +265,7 @@ public abstract class UpgradeProcess
 		@Deprecated
 		public AlterTableAddColumn(String columnName) {
 			_columnName = columnName;
+
 			_columnType = StringPool.BLANK;
 		}
 
@@ -253,23 +274,22 @@ public abstract class UpgradeProcess
 			_columnType = columnType;
 		}
 
+		public String getColumnName() {
+			return _columnName;
+		}
+
+		public String getColumnType() {
+			return _columnType;
+		}
+
 		@Override
 		public String getSQL(String tableName) {
-			StringBundler sb = new StringBundler(6);
-
-			sb.append("alter table ");
-			sb.append(tableName);
-			sb.append(" add ");
-			sb.append(_columnName);
-			sb.append(StringPool.SPACE);
-			sb.append(_columnType);
-
-			return StringUtil.trim(sb.toString());
+			return null;
 		}
 
 		@Override
 		public boolean shouldAddIndex(Collection<String> columnNames) {
-			return Alterable.containsIgnoreCase(columnNames, _columnName);
+			return false;
 		}
 
 		@Override
@@ -282,22 +302,24 @@ public abstract class UpgradeProcess
 
 	}
 
+	/**
+	 *   @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 *          BaseDBProcess#alterTableDropColumn(String, String)}
+	 */
+	@Deprecated
 	public class AlterTableDropColumn implements Alterable {
 
 		public AlterTableDropColumn(String columnName) {
 			_columnName = columnName;
 		}
 
+		public String getColumnName() {
+			return _columnName;
+		}
+
 		@Override
 		public String getSQL(String tableName) {
-			StringBundler sb = new StringBundler(4);
-
-			sb.append("alter table ");
-			sb.append(tableName);
-			sb.append(" drop column ");
-			sb.append(_columnName);
-
-			return sb.toString();
+			return null;
 		}
 
 		@Override
@@ -307,124 +329,137 @@ public abstract class UpgradeProcess
 
 		@Override
 		public boolean shouldDropIndex(Collection<String> columnNames) {
-			return Alterable.containsIgnoreCase(columnNames, _columnName);
+			return false;
 		}
 
 		private final String _columnName;
 
 	}
 
+	protected SafeCloseable addTempIndex(
+			String tableName, boolean unique, String... columnNames)
+		throws Exception {
+
+		IndexMetadata indexMetadata = new IndexMetadata(
+			"IX_TEMP", tableName, unique, columnNames);
+
+		addIndexes(connection, new ArrayList<>(Arrays.asList(indexMetadata)));
+
+		return () -> {
+			try {
+				runSQL("drop index IX_TEMP on " + tableName);
+			}
+			catch (Exception exception) {
+				if (_log.isWarnEnabled()) {
+					_log.warn(
+						"Unable to drop temporary index IX_TEMP on " +
+							tableName);
+				}
+			}
+		};
+	}
+
+	/**
+	 *   @deprecated As of Cavanaugh (7.4.x), replaced by alter* methods
+	 */
+	@Deprecated
 	protected void alter(Class<?> tableClass, Alterable... alterables)
 		throws Exception {
 
 		try (LoggingTimer loggingTimer = new LoggingTimer()) {
 			String tableName = getTableName(tableClass);
 
-			DatabaseMetaData databaseMetaData = connection.getMetaData();
-			DBInspector dbInspector = new DBInspector(connection);
+			for (Alterable alterable : alterables) {
+				if (alterable instanceof AlterColumnName) {
+					AlterColumnName alterColumnName =
+						(AlterColumnName)alterable;
 
-			try (ResultSet rs1 = databaseMetaData.getPrimaryKeys(
-					dbInspector.getCatalog(), dbInspector.getSchema(),
-					tableName);
-				ResultSet rs2 = databaseMetaData.getIndexInfo(
-					dbInspector.getCatalog(), dbInspector.getSchema(),
-					dbInspector.normalizeName(tableName), false, false)) {
-
-				Set<String> primaryKeyNames = new HashSet<>();
-
-				while (rs1.next()) {
-					String primaryKeyName = StringUtil.toUpperCase(
-						rs1.getString("PK_NAME"));
-
-					if (primaryKeyName != null) {
-						primaryKeyNames.add(primaryKeyName);
-					}
+					alterColumnName(
+						tableName, alterColumnName.getOldColumnName(),
+						alterColumnName.getNewColumn());
 				}
+				else if (alterable instanceof AlterColumnType) {
+					AlterColumnType alterColumnType =
+						(AlterColumnType)alterable;
 
-				Map<String, Set<String>> columnNamesMap = new HashMap<>();
-
-				while (rs2.next()) {
-					String indexName = StringUtil.toUpperCase(
-						rs2.getString("INDEX_NAME"));
-
-					if ((indexName == null) ||
-						primaryKeyNames.contains(indexName)) {
-
-						continue;
-					}
-
-					Set<String> columnNames = columnNamesMap.get(indexName);
-
-					if (columnNames == null) {
-						columnNames = new HashSet<>();
-
-						columnNamesMap.put(indexName, columnNames);
-					}
-
-					columnNames.add(
-						StringUtil.toUpperCase(rs2.getString("COLUMN_NAME")));
+					alterColumnType(
+						tableName, alterColumnType.getColumnName(),
+						alterColumnType.getNewType());
 				}
+				else if (alterable instanceof AlterTableAddColumn) {
+					AlterTableAddColumn alterTableAddColumn =
+						(AlterTableAddColumn)alterable;
 
-				for (Alterable alterable : alterables) {
-					for (Map.Entry<String, Set<String>> entry :
-							columnNamesMap.entrySet()) {
-
-						if (alterable.shouldDropIndex(entry.getValue())) {
-							runSQL(
-								StringBundler.concat(
-									"drop index ", entry.getKey(), " on ",
-									tableName));
-						}
-					}
-
-					runSQL(alterable.getSQL(tableName));
-
-					List<String> indexSQLs = getIndexSQLs(
-						tableClass, tableName);
-
-					if (ListUtil.isEmpty(indexSQLs)) {
-						continue;
-					}
-
-					for (String indexSQL : indexSQLs) {
-						if (alterable.shouldAddIndex(
-								_getIndexColumnNames(indexSQL))) {
-
-							runSQLTemplateString(indexSQL, true);
-						}
-					}
+					alterTableAddColumn(
+						tableName, alterTableAddColumn.getColumnName(),
+						alterTableAddColumn.getColumnType());
 				}
-			}
-			catch (SQLException sqlException) {
-				if (_log.isWarnEnabled()) {
-					_log.warn(
-						StringBundler.concat(
-							"Attempting to upgrade table ", tableName,
-							" by recreating the table due to: ",
-							sqlException.getMessage()));
-				}
+				else if (alterable instanceof AlterTableDropColumn) {
+					AlterTableDropColumn alterTableDropColumn =
+						(AlterTableDropColumn)alterable;
 
-				Field tableColumnsField = tableClass.getField("TABLE_COLUMNS");
-				Field tableSQLCreateField = tableClass.getField(
-					"TABLE_SQL_CREATE");
-				Field tableSQLAddIndexesField = tableClass.getField(
-					"TABLE_SQL_ADD_INDEXES");
-
-				upgradeTable(
-					tableName, (Object[][])tableColumnsField.get(null),
-					(String)tableSQLCreateField.get(null),
-					(String[])tableSQLAddIndexesField.get(null));
-
-				if (_log.isWarnEnabled()) {
-					_log.warn(
-						"Successfully recreated and upgraded table " +
-							tableName);
+					alterTableDropColumn(
+						tableName, alterTableDropColumn.getColumnName());
 				}
 			}
 		}
 	}
 
 	protected abstract void doUpgrade() throws Exception;
+
+	protected void ensureTableExists(
+			DatabaseMetaData databaseMetaData, DBInspector dbInspector,
+			String tableName)
+		throws SQLException {
+
+		try (ResultSet resultSet = databaseMetaData.getTables(
+				dbInspector.getCatalog(), dbInspector.getSchema(), tableName,
+				null)) {
+
+			if (!resultSet.next()) {
+				throw new SQLException(
+					StringBundler.concat(
+						"Table with name '", tableName, "' does not exist in ",
+						dbInspector.getSchema()));
+			}
+		}
+	}
+
+	protected Connection getConnection() throws Exception {
+		Bundle bundle = FrameworkUtil.getBundle(getClass());
+
+		if (bundle != null) {
+			BundleContext bundleContext = bundle.getBundleContext();
+
+			Collection<ServiceReference<DataSource>> serviceReferences =
+				bundleContext.getServiceReferences(
+					DataSource.class,
+					StringBundler.concat(
+						"(origin.bundle.symbolic.name=",
+						bundle.getSymbolicName(), ")"));
+
+			Iterator<ServiceReference<DataSource>> iterator =
+				serviceReferences.iterator();
+
+			if (iterator.hasNext()) {
+				ServiceReference<DataSource> serviceReference = iterator.next();
+
+				DataSource dataSource = bundleContext.getService(
+					serviceReference);
+
+				try {
+					if (dataSource != null) {
+						return dataSource.getConnection();
+					}
+				}
+				finally {
+					bundleContext.ungetService(serviceReference);
+				}
+			}
+		}
+
+		return DataAccess.getConnection();
+	}
 
 	/**
 	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
@@ -436,17 +471,17 @@ public abstract class UpgradeProcess
 		throws IOException {
 
 		if (!PortalClassLoaderUtil.isPortalClassLoader(classLoader)) {
-			try (InputStream is = classLoader.getResourceAsStream(
+			try (InputStream inputStream = classLoader.getResourceAsStream(
 					"META-INF/sql/indexes.sql")) {
 
-				if (is == null) {
+				if (inputStream == null) {
 					return null;
 				}
 
 				List<ObjectValuePair<String, IndexMetadata>> objectValuePairs =
 					new ArrayList<>();
 
-				try (Reader reader = new InputStreamReader(is);
+				try (Reader reader = new InputStreamReader(inputStream);
 					UnsyncBufferedReader unsyncBufferedReader =
 						new UnsyncBufferedReader(reader)) {
 
@@ -477,9 +512,9 @@ public abstract class UpgradeProcess
 			return _portalIndexesSQL.get(tableName);
 		}
 
-		try (InputStream is = classLoader.getResourceAsStream(
+		try (InputStream inputStream = classLoader.getResourceAsStream(
 				"com/liferay/portal/tools/sql/dependencies/indexes.sql");
-			Reader reader = new InputStreamReader(is);
+			Reader reader = new InputStreamReader(inputStream);
 			UnsyncBufferedReader unsyncBufferedReader =
 				new UnsyncBufferedReader(reader)) {
 
@@ -513,6 +548,10 @@ public abstract class UpgradeProcess
 		return _portalIndexesSQL.get(tableName);
 	}
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
 	protected List<String> getIndexSQLs(Class<?> tableClass, String tableName)
 		throws Exception {
 
@@ -524,6 +563,10 @@ public abstract class UpgradeProcess
 		return ListUtil.fromArray(indexes);
 	}
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
 	protected Map<String, Integer> getTableColumnsMap(Class<?> tableClass)
 		throws Exception {
 
@@ -532,6 +575,10 @@ public abstract class UpgradeProcess
 		return (Map<String, Integer>)tableNameField.get(null);
 	}
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
 	protected String getTableName(Class<?> tableClass) throws Exception {
 		Field tableNameField = tableClass.getField("TABLE_NAME");
 
@@ -558,93 +605,70 @@ public abstract class UpgradeProcess
 		return false;
 	}
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
 	protected boolean isSupportsAlterColumnName() {
 		DB db = DBManagerUtil.getDB();
 
 		return db.isSupportsAlterColumnName();
 	}
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
 	protected boolean isSupportsAlterColumnType() {
 		DB db = DBManagerUtil.getDB();
 
 		return db.isSupportsAlterColumnType();
 	}
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
 	protected boolean isSupportsStringCaseSensitiveQuery() {
 		DB db = DBManagerUtil.getDB();
 
 		return db.isSupportsStringCaseSensitiveQuery();
 	}
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
 	protected boolean isSupportsUpdateWithInnerJoin() {
 		DB db = DBManagerUtil.getDB();
 
 		return db.isSupportsUpdateWithInnerJoin();
 	}
 
-	protected void removePrimaryKey(String tableName) throws Exception {
-		DatabaseMetaData databaseMetaData = connection.getMetaData();
-
-		DBInspector dbInspector = new DBInspector(connection);
-
-		String normalizedTableName = dbInspector.normalizeName(
-			tableName, databaseMetaData);
-
+	/**
+	 *   @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 *          #addTempIndex(String, boolean, String...)} ()}
+	 */
+	@Deprecated
+	protected void updateIndexes(Class<?> tableClass) throws Exception {
 		DB db = DBManagerUtil.getDB();
 
-		DBType dbType = db.getDBType();
+		Field tableSQLCreateField = tableClass.getField("TABLE_SQL_CREATE");
+		Field tableSQLAddIndexesField = tableClass.getField(
+			"TABLE_SQL_ADD_INDEXES");
 
-		if ((dbType == DBType.SQLSERVER) || (dbType == DBType.SYBASE)) {
-			String primaryKeyConstraintName = null;
-
-			if (dbType == DBType.SQLSERVER) {
-				try (PreparedStatement ps = connection.prepareStatement(
-						StringBundler.concat(
-							"select name from sys.key_constraints where type ",
-							"= 'PK' and OBJECT_NAME(parent_object_id) = '",
-							normalizedTableName, "'"));
-					ResultSet rs = ps.executeQuery()) {
-
-					if (rs.next()) {
-						primaryKeyConstraintName = rs.getString("name");
-					}
-				}
-			}
-			else {
-				try (PreparedStatement ps = connection.prepareStatement(
-						"sp_helpconstraint " + normalizedTableName);
-					ResultSet rs = ps.executeQuery()) {
-
-					while (rs.next()) {
-						String definition = rs.getString("definition");
-
-						if (definition.startsWith("PRIMARY KEY INDEX")) {
-							primaryKeyConstraintName = rs.getString("name");
-
-							break;
-						}
-					}
-				}
-			}
-
-			if (primaryKeyConstraintName == null) {
-				throw new UpgradeException(
-					"No primary key constraint found for " +
-						normalizedTableName);
-			}
-
-			runSQL(
-				StringBundler.concat(
-					"alter table ", normalizedTableName, " drop constraint ",
-					primaryKeyConstraintName));
-		}
-		else {
-			runSQL(
-				StringBundler.concat(
-					"alter table ", normalizedTableName, " drop primary key"));
-		}
+		db.updateIndexes(
+			connection, (String)tableSQLCreateField.get(null),
+			StringUtil.merge(
+				(String[])tableSQLAddIndexesField.get(null),
+				System.lineSeparator()),
+			true);
 	}
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
 	protected void upgradeTable(String tableName, Object[][] tableColumns)
 		throws Exception {
 
@@ -654,6 +678,10 @@ public abstract class UpgradeProcess
 		upgradeTable.updateTable();
 	}
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), with no direct replacement
+	 */
+	@Deprecated
 	protected void upgradeTable(
 			String tableName, Object[][] tableColumns, String createSQL,
 			String[] indexesSQL, UpgradeColumn... upgradeColumns)
@@ -668,27 +696,6 @@ public abstract class UpgradeProcess
 
 			upgradeTable.updateTable();
 		}
-	}
-
-	private Collection<String> _getIndexColumnNames(String indexSQL) {
-		Matcher matcher = _sqlIndexRegexPattern.matcher(indexSQL);
-
-		if (matcher.find()) {
-			String indexColumnNames = matcher.group(1);
-
-			indexColumnNames = indexColumnNames.trim();
-
-			return Stream.of(
-				indexColumnNames.split(StringPool.COMMA)
-			).map(
-				columnName -> columnName.replaceFirst("\\[.*", StringPool.BLANK)
-			).collect(
-				Collectors.toList()
-			);
-		}
-
-		throw new IllegalArgumentException(
-			"Not a valid SQL index: " + indexSQL);
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(UpgradeProcess.class);
@@ -716,17 +723,18 @@ public abstract class UpgradeProcess
 			"journalstructure", "journaltemplate", "layout", "layoutbranch",
 			"layoutfriendlyurl", "layoutprototype", "layoutrevision",
 			"layoutset", "layoutsetbranch", "layoutsetprototype", "listtype",
-			"lock_", "mbban", "mbcategory", "mbdiscussion", "mbmailinglist",
-			"mbmessage", "mbstatsuser", "mbthread", "mbthreadflag", "mdraction",
-			"mdrrule", "mdrrulegroup", "mdrulegroupinstance",
-			"membershiprequest", "organization_", "orggrouprole", "orglabor",
-			"passwordpolicy", "passwordpolicyrel", "passwordtracker", "phone",
-			"pluginsetting", "pollschoice", "pollsquestion", "pollsvote",
-			"portalpreferences", "portlet", "portletitem", "portletpreferences",
-			"ratingsentry", "ratingsstats", "recentlayoutbranch",
-			"recentlayoutrevision", "recentlayoutsetbranch", "region",
-			"release_", "repository", "repositoryentry", "resourceaction",
-			"resourceblock", "resourceblockpermission", "resourcepermission",
+			"lock_", "marketplace_app", "mbban", "mbcategory", "mbdiscussion",
+			"mbmailinglist", "mbmessage", "mbstatsuser", "mbthread",
+			"mbthreadflag", "mdraction", "mdrrule", "mdrrulegroup",
+			"mdrrulegroupinstance", "membershiprequest", "organization_",
+			"orggrouprole", "orglabor", "passwordpolicy", "passwordpolicyrel",
+			"passwordtracker", "phone", "pluginsetting", "pollschoice",
+			"pollsquestion", "pollsvote", "portalpreferences", "portlet",
+			"portletitem", "portletpreferences", "ratingsentry", "ratingsstats",
+			"recentlayoutbranch", "recentlayoutrevision",
+			"recentlayoutsetbranch", "region", "release_", "repository",
+			"repositoryentry", "resourceaction", "resourceblock",
+			"resourceblockpermission", "resourcepermission",
 			"resourcetypepermission", "role_", "servicecomponent",
 			"socialactivity", "socialactivityachievement",
 			"socialactivitycounter", "socialactivitylimit", "socialactivityset",
@@ -742,7 +750,5 @@ public abstract class UpgradeProcess
 	private static final Map
 		<String, List<ObjectValuePair<String, IndexMetadata>>>
 			_portalIndexesSQL = new HashMap<>();
-	private static final Pattern _sqlIndexRegexPattern = Pattern.compile(
-		".+?\\((.*)\\)");
 
 }

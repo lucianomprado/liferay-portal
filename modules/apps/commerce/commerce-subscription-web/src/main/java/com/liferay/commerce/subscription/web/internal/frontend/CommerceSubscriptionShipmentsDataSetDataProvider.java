@@ -26,12 +26,14 @@ import com.liferay.commerce.service.CommerceOrderItemService;
 import com.liferay.commerce.service.CommerceShipmentItemService;
 import com.liferay.commerce.service.CommerceShipmentService;
 import com.liferay.commerce.service.CommerceSubscriptionEntryLocalService;
+import com.liferay.commerce.subscription.web.internal.frontend.constants.CommerceSubscriptionDataSetConstants;
 import com.liferay.commerce.subscription.web.internal.model.Label;
 import com.liferay.commerce.subscription.web.internal.model.Link;
 import com.liferay.commerce.subscription.web.internal.model.Shipment;
 import com.liferay.frontend.taglib.clay.data.Filter;
 import com.liferay.frontend.taglib.clay.data.Pagination;
 import com.liferay.frontend.taglib.clay.data.set.provider.ClayDataSetDataProvider;
+import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -50,8 +52,6 @@ import java.text.Format;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-
-import javax.portlet.PortletURL;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -113,12 +113,6 @@ public class CommerceSubscriptionShipmentsDataSetDataProvider
 				_commerceAddressService.getCommerceAddress(
 					commerceShipment.getCommerceAddressId());
 
-			StringBundler addressSB = new StringBundler(3);
-
-			addressSB.append(commerceAddress.getName());
-			addressSB.append(CharPool.SPACE);
-			addressSB.append(commerceAddress.getStreet1());
-
 			Shipment shipment = new Shipment(
 				dateTimeFormat.format(commerceShipment.getCreateDate()),
 				new Link(
@@ -132,7 +126,9 @@ public class CommerceSubscriptionShipmentsDataSetDataProvider
 					_getEditCommerceOrderURL(
 						commerceOrderItem.getCommerceOrderId(),
 						httpServletRequest)),
-				addressSB.toString(),
+				StringBundler.concat(
+					commerceAddress.getName(), CharPool.SPACE,
+					commerceAddress.getStreet1()),
 				new Link(commerceShipment.getTrackingNumber(), ""));
 
 			shipments.add(shipment);
@@ -162,34 +158,34 @@ public class CommerceSubscriptionShipmentsDataSetDataProvider
 			long commerceOrderId, HttpServletRequest httpServletRequest)
 		throws PortalException {
 
-		PortletURL portletURL = PortletProviderUtil.getPortletURL(
-			httpServletRequest, CommerceOrder.class.getName(),
-			PortletProvider.Action.MANAGE);
-
-		portletURL.setParameter("mvcRenderCommandName", "editCommerceOrder");
-		portletURL.setParameter(
-			"redirect", _portal.getCurrentURL(httpServletRequest));
-		portletURL.setParameter(
-			"commerceOrderId", String.valueOf(commerceOrderId));
-
-		return portletURL.toString();
+		return PortletURLBuilder.create(
+			PortletProviderUtil.getPortletURL(
+				httpServletRequest, CommerceOrder.class.getName(),
+				PortletProvider.Action.MANAGE)
+		).setMVCRenderCommandName(
+			"/commerce_open_order_content/edit_commerce_order"
+		).setRedirect(
+			_portal.getCurrentURL(httpServletRequest)
+		).setParameter(
+			"commerceOrderId", commerceOrderId
+		).buildString();
 	}
 
 	private String _getEditShipmentURL(
 			long commerceShipmentId, HttpServletRequest httpServletRequest)
 		throws PortalException {
 
-		PortletURL portletURL = PortletProviderUtil.getPortletURL(
-			httpServletRequest, CommerceShipment.class.getName(),
-			PortletProvider.Action.MANAGE);
-
-		portletURL.setParameter("mvcRenderCommandName", "editCommerceShipment");
-		portletURL.setParameter(
-			"redirect", _portal.getCurrentURL(httpServletRequest));
-		portletURL.setParameter(
-			"commerceShipmentId", String.valueOf(commerceShipmentId));
-
-		return portletURL.toString();
+		return PortletURLBuilder.create(
+			PortletProviderUtil.getPortletURL(
+				httpServletRequest, CommerceShipment.class.getName(),
+				PortletProvider.Action.MANAGE)
+		).setMVCRenderCommandName(
+			"/commerce_shipment/edit_commerce_shipment"
+		).setRedirect(
+			_portal.getCurrentURL(httpServletRequest)
+		).setParameter(
+			"commerceShipmentId", commerceShipmentId
+		).buildString();
 	}
 
 	private Label _getShipmentStatus(CommerceShipment commerceShipment) {

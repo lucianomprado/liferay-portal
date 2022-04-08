@@ -27,6 +27,8 @@ import com.liferay.journal.service.JournalArticleLocalServiceUtil;
 import com.liferay.journal.test.util.JournalTestUtil;
 import com.liferay.petra.reflect.ReflectionUtil;
 import com.liferay.portal.kernel.exception.NoSuchGroupException;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.SystemEvent;
 import com.liferay.portal.kernel.model.SystemEventConstants;
@@ -146,13 +148,12 @@ public class SystemEventTest {
 			_stagingGroup.getGroupId(), journalArticle.getArticleId(),
 			new ServiceContext());
 
-		SystemEvent systemEvent = SystemEventLocalServiceUtil.fetchSystemEvent(
-			_stagingGroup.getGroupId(),
-			ClassNameLocalServiceUtil.getClassNameId(JournalArticle.class),
-			journalArticle.getResourcePrimKey(),
-			SystemEventConstants.TYPE_DELETE);
-
-		Assert.assertNotNull(systemEvent);
+		Assert.assertNotNull(
+			SystemEventLocalServiceUtil.fetchSystemEvent(
+				_stagingGroup.getGroupId(),
+				ClassNameLocalServiceUtil.getClassNameId(JournalArticle.class),
+				journalArticle.getResourcePrimKey(),
+				SystemEventConstants.TYPE_DELETE));
 
 		GroupUtil.clearCache();
 
@@ -208,6 +209,9 @@ public class SystemEventTest {
 			GroupLocalServiceUtil.deleteGroup(_stagingGroup);
 		}
 		catch (NoSuchGroupException noSuchGroupException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(noSuchGroupException);
+			}
 		}
 	}
 
@@ -257,13 +261,12 @@ public class SystemEventTest {
 
 		JournalArticle firstJournalArticle = articles.get(0);
 
-		systemEvent = SystemEventLocalServiceUtil.fetchSystemEvent(
-			_liveGroup.getGroupId(),
-			ClassNameLocalServiceUtil.getClassNameId(JournalArticle.class),
-			firstJournalArticle.getResourcePrimKey(),
-			SystemEventConstants.TYPE_DELETE);
-
-		Assert.assertNull(systemEvent);
+		Assert.assertNull(
+			SystemEventLocalServiceUtil.fetchSystemEvent(
+				_liveGroup.getGroupId(),
+				ClassNameLocalServiceUtil.getClassNameId(JournalArticle.class),
+				firstJournalArticle.getResourcePrimKey(),
+				SystemEventConstants.TYPE_DELETE));
 	}
 
 	@Test
@@ -272,12 +275,11 @@ public class SystemEventTest {
 
 		long classPK = doTestRemoteStaging();
 
-		SystemEvent systemEvent = SystemEventLocalServiceUtil.fetchSystemEvent(
-			_liveGroup.getGroupId(),
-			ClassNameLocalServiceUtil.getClassNameId(JournalArticle.class),
-			classPK, SystemEventConstants.TYPE_DELETE);
-
-		Assert.assertNull(systemEvent);
+		Assert.assertNull(
+			SystemEventLocalServiceUtil.fetchSystemEvent(
+				_liveGroup.getGroupId(),
+				ClassNameLocalServiceUtil.getClassNameId(JournalArticle.class),
+				classPK, SystemEventConstants.TYPE_DELETE));
 	}
 
 	@Test
@@ -286,13 +288,15 @@ public class SystemEventTest {
 
 		long classPK = doTestRemoteStaging();
 
-		SystemEvent systemEvent = SystemEventLocalServiceUtil.fetchSystemEvent(
-			_liveGroup.getGroupId(),
-			ClassNameLocalServiceUtil.getClassNameId(JournalArticle.class),
-			classPK, SystemEventConstants.TYPE_DELETE);
-
-		Assert.assertNotNull(systemEvent);
+		Assert.assertNotNull(
+			SystemEventLocalServiceUtil.fetchSystemEvent(
+				_liveGroup.getGroupId(),
+				ClassNameLocalServiceUtil.getClassNameId(JournalArticle.class),
+				classPK, SystemEventConstants.TYPE_DELETE));
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		SystemEventTest.class);
 
 	private ExportImportConfiguration _exportImportConfiguration;
 	private Group _liveGroup;

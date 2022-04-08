@@ -14,11 +14,20 @@
 
 package com.liferay.content.dashboard.web.internal.search.request;
 
+import com.liferay.asset.kernel.model.AssetCategory;
+import com.liferay.asset.kernel.model.AssetVocabulary;
+import com.liferay.asset.kernel.model.AssetVocabularyConstants;
+import com.liferay.asset.kernel.service.AssetCategoryLocalService;
+import com.liferay.asset.kernel.service.AssetVocabularyLocalService;
+import com.liferay.document.library.kernel.model.DLFileEntryType;
+import com.liferay.document.library.kernel.service.DLFileEntryTypeLocalServiceUtil;
+import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONException;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.search.BooleanClause;
 import com.liferay.portal.kernel.search.BooleanClauseFactoryUtil;
 import com.liferay.portal.kernel.search.BooleanClauseOccur;
@@ -27,13 +36,19 @@ import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.kernel.search.SearchContextFactory;
 import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.search.filter.BooleanFilter;
+import com.liferay.portal.kernel.search.filter.Filter;
 import com.liferay.portal.kernel.search.filter.TermsFilter;
 import com.liferay.portal.kernel.search.generic.BooleanQueryImpl;
+import com.liferay.portal.kernel.service.CompanyLocalServiceUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
+import com.liferay.portal.kernel.util.PortalUtil;
+import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -45,19 +60,18 @@ import javax.servlet.http.HttpServletRequest;
 public class ContentDashboardSearchContextBuilder {
 
 	public ContentDashboardSearchContextBuilder(
-		HttpServletRequest httpServletRequest) {
+		HttpServletRequest httpServletRequest,
+		AssetCategoryLocalService assetCategoryLocalService,
+		AssetVocabularyLocalService assetVocabularyLocalService) {
 
 		_httpServletRequest = httpServletRequest;
+		_assetCategoryLocalService = assetCategoryLocalService;
+		_assetVocabularyLocalService = assetVocabularyLocalService;
 	}
 
 	public SearchContext build() {
 		SearchContext searchContext = SearchContextFactory.getInstance(
 			_httpServletRequest);
-
-		searchContext.setAssetCategoryIds(
-			ParamUtil.getLongValues(_httpServletRequest, "assetCategoryId"));
-		searchContext.setAssetTagNames(
-			ParamUtil.getStringValues(_httpServletRequest, "assetTagId"));
 
 		Integer status = GetterUtil.getInteger(
 			ParamUtil.getInteger(
@@ -71,29 +85,36 @@ public class ContentDashboardSearchContextBuilder {
 		}
 
 		searchContext.setAttribute("status", status);
-
 		searchContext.setBooleanClauses(
 			_getBooleanClauses(
-				ParamUtil.getLongValues(_httpServletRequest, "authorIds")));
+				new AssetCategoryIds(
+					ParamUtil.getLongValues(
+						_httpServletRequest, "assetCategoryId"),
+					_assetCategoryLocalService, _assetVocabularyLocalService),
+				ParamUtil.getStringValues(_httpServletRequest, "assetTagId"),
+				ParamUtil.getLongValues(_httpServletRequest, "authorIds"),
+				PortalUtil.getCompanyId(_httpServletRequest),
+				ParamUtil.getStringValues(
+					_httpServletRequest, "fileExtension")));
 
-		String[] contentDashboardItemTypePayloads =
+		String[] contentDashboardItemSubtypePayloads =
 			ParamUtil.getParameterValues(
-				_httpServletRequest, "contentDashboardItemTypePayload",
+				_httpServletRequest, "contentDashboardItemSubtypePayload",
 				new String[0], false);
 
-		if (!ArrayUtil.isEmpty(contentDashboardItemTypePayloads)) {
+		if (!ArrayUtil.isEmpty(contentDashboardItemSubtypePayloads)) {
 			searchContext.setClassTypeIds(
 				Stream.of(
-					contentDashboardItemTypePayloads
+					contentDashboardItemSubtypePayloads
 				).map(
-					contentDashboardItemTypePayload -> {
+					contentDashboardItemSubtypePayload -> {
 						try {
 							return Optional.of(
 								JSONFactoryUtil.createJSONObject(
-									contentDashboardItemTypePayload));
+									contentDashboardItemSubtypePayload));
 						}
 						catch (JSONException jsonException) {
-							_log.error(jsonException, jsonException);
+							_log.error(jsonException);
 
 							return Optional.<JSONObject>empty();
 						}
@@ -102,6 +123,8 @@ public class ContentDashboardSearchContextBuilder {
 					Optional::isPresent
 				).map(
 					Optional::get
+				).filter(
+					jsonObject -> !jsonObject.isNull("classPK")
 				).mapToLong(
 					jsonObject -> jsonObject.getLong("classPK")
 				).toArray());
@@ -109,6 +132,36 @@ public class ContentDashboardSearchContextBuilder {
 
 		if (_end != null) {
 			searchContext.setEnd(_end);
+		}
+
+		if (!ArrayUtil.isEmpty(contentDashboardItemSubtypePayloads)) {
+			searchContext.setEntryClassNames(
+				Stream.of(
+					contentDashboardItemSubtypePayloads
+				).map(
+					contentDashboardItemSubtypePayload -> {
+						try {
+							return Optional.of(
+								JSONFactoryUtil.createJSONObject(
+									contentDashboardItemSubtypePayload));
+						}
+						catch (JSONException jsonException) {
+							_log.error(jsonException);
+
+							return Optional.<JSONObject>empty();
+						}
+					}
+				).filter(
+					Optional::isPresent
+				).map(
+					Optional::get
+				).map(
+					jsonObject -> jsonObject.getString(Field.ENTRY_CLASS_NAME)
+				).filter(
+					entryClassName -> Validator.isNotNull(entryClassName)
+				).toArray(
+					size -> new String[size]
+				));
 		}
 
 		long groupId = ParamUtil.getLong(_httpServletRequest, "scopeId");
@@ -121,6 +174,7 @@ public class ContentDashboardSearchContextBuilder {
 		}
 
 		searchContext.setIncludeInternalAssetCategories(true);
+		searchContext.setIncludeStagingGroups(Boolean.FALSE);
 
 		if (_sort != null) {
 			searchContext.setSorts(_sort);
@@ -151,14 +205,65 @@ public class ContentDashboardSearchContextBuilder {
 		return this;
 	}
 
-	private BooleanClause[] _getBooleanClauses(long[] authorIds) {
-		if (ArrayUtil.isEmpty(authorIds)) {
-			return new BooleanClause[0];
+	private Optional<Filter> _getAssetCategoryIdsFilterOptional(
+		AssetCategoryIds assetCategoryIds) {
+
+		if ((assetCategoryIds == null) ||
+			(ArrayUtil.isEmpty(
+				assetCategoryIds.getExternalAssetCategoryIds()) &&
+			 ArrayUtil.isEmpty(
+				 assetCategoryIds.getInternalAssetCategoryIds()))) {
+
+			return Optional.empty();
 		}
 
-		BooleanQueryImpl booleanQueryImpl = new BooleanQueryImpl();
+		BooleanFilter booleanFilter = new BooleanFilter();
+
+		if (!ArrayUtil.isEmpty(
+				assetCategoryIds.getExternalAssetCategoryIds())) {
+
+			booleanFilter.add(
+				_getTermsFilter(
+					Field.ASSET_CATEGORY_IDS,
+					assetCategoryIds.getExternalAssetCategoryIds()),
+				BooleanClauseOccur.MUST);
+		}
+
+		if (!ArrayUtil.isEmpty(
+				assetCategoryIds.getInternalAssetCategoryIds())) {
+
+			booleanFilter.add(
+				_getTermsFilter(
+					Field.ASSET_INTERNAL_CATEGORY_IDS,
+					assetCategoryIds.getInternalAssetCategoryIds()),
+				BooleanClauseOccur.MUST);
+		}
+
+		return Optional.of(booleanFilter);
+	}
+
+	private Optional<Filter> _getAssetTagNamesFilterOptional(
+		String[] assetTagNames) {
+
+		if (ArrayUtil.isEmpty(assetTagNames)) {
+			return Optional.empty();
+		}
 
 		BooleanFilter booleanFilter = new BooleanFilter();
+
+		for (String assetTagName : assetTagNames) {
+			booleanFilter.addTerm(
+				Field.ASSET_TAG_NAMES + ".raw", assetTagName,
+				BooleanClauseOccur.MUST);
+		}
+
+		return Optional.of(booleanFilter);
+	}
+
+	private Optional<Filter> _getAuthorIdsFilterOptional(long[] authorIds) {
+		if (ArrayUtil.isEmpty(authorIds)) {
+			return Optional.empty();
+		}
 
 		TermsFilter termsFilter = new TermsFilter(Field.USER_ID);
 
@@ -166,7 +271,27 @@ public class ContentDashboardSearchContextBuilder {
 			termsFilter.addValue(String.valueOf(authorId));
 		}
 
-		booleanFilter.add(termsFilter, BooleanClauseOccur.MUST);
+		return Optional.of(termsFilter);
+	}
+
+	private BooleanClause[] _getBooleanClauses(
+		AssetCategoryIds assetCategoryIds, String[] assetTagNames,
+		long[] authorIds, long companyId, String[] fileExtensions) {
+
+		BooleanQueryImpl booleanQueryImpl = new BooleanQueryImpl();
+
+		BooleanFilter booleanFilter = new BooleanFilter();
+
+		Stream.of(
+			_getAssetCategoryIdsFilterOptional(assetCategoryIds),
+			_getAssetTagNamesFilterOptional(assetTagNames),
+			_getAuthorIdsFilterOptional(authorIds),
+			_getFileExtensionsFilterOptional(fileExtensions),
+			_getGoogleDriveShortcutFilterOptional(companyId)
+		).forEach(
+			filterOptional -> filterOptional.map(
+				filter -> booleanFilter.add(filter, BooleanClauseOccur.MUST))
+		);
 
 		booleanQueryImpl.setPreBooleanFilter(booleanFilter);
 
@@ -176,12 +301,119 @@ public class ContentDashboardSearchContextBuilder {
 		};
 	}
 
+	private Optional<Filter> _getFileExtensionsFilterOptional(
+		String[] fileExtensions) {
+
+		if (ArrayUtil.isEmpty(fileExtensions)) {
+			return Optional.empty();
+		}
+
+		TermsFilter termsFilter = new TermsFilter("fileExtension");
+
+		for (String fileExtension : fileExtensions) {
+			termsFilter.addValue(fileExtension);
+		}
+
+		return Optional.of(termsFilter);
+	}
+
+	private Optional<Filter> _getGoogleDriveShortcutFilterOptional(
+		long companyId) {
+
+		try {
+			Company company = CompanyLocalServiceUtil.getCompany(companyId);
+
+			DLFileEntryType googleDocsDLFileEntryType =
+				DLFileEntryTypeLocalServiceUtil.fetchFileEntryType(
+					company.getGroupId(), "GOOGLE_DOCS");
+
+			if (googleDocsDLFileEntryType == null) {
+				return Optional.empty();
+			}
+
+			BooleanFilter booleanFilter = new BooleanFilter();
+
+			booleanFilter.addTerm(
+				"classTypeId",
+				String.valueOf(googleDocsDLFileEntryType.getFileEntryTypeId()),
+				BooleanClauseOccur.MUST_NOT);
+
+			return Optional.of(booleanFilter);
+		}
+		catch (PortalException portalException) {
+			_log.error(portalException);
+		}
+
+		return Optional.empty();
+	}
+
+	private BooleanFilter _getTermsFilter(String field, long[] values) {
+		BooleanFilter booleanFilter = new BooleanFilter();
+
+		for (Long value : values) {
+			booleanFilter.addTerm(
+				field, String.valueOf(value), BooleanClauseOccur.MUST);
+		}
+
+		return booleanFilter;
+	}
+
 	private static final Log _log = LogFactoryUtil.getLog(
 		ContentDashboardSearchContextBuilder.class);
 
+	private final AssetCategoryLocalService _assetCategoryLocalService;
+	private final AssetVocabularyLocalService _assetVocabularyLocalService;
 	private Integer _end;
 	private final HttpServletRequest _httpServletRequest;
 	private Sort _sort;
 	private Integer _start;
+
+	private static class AssetCategoryIds {
+
+		public AssetCategoryIds(
+			long[] assetCategoryIds,
+			AssetCategoryLocalService assetCategoryLocalService,
+			AssetVocabularyLocalService assetVocabularyLocalService) {
+
+			List<Long> externalAssetCategoryIds = new ArrayList<>();
+			List<Long> internalAssetCategoryIds = new ArrayList<>();
+
+			for (long assetCategoryId : assetCategoryIds) {
+				AssetCategory assetCategory =
+					assetCategoryLocalService.fetchAssetCategory(
+						assetCategoryId);
+
+				AssetVocabulary assetVocabulary =
+					assetVocabularyLocalService.fetchAssetVocabulary(
+						assetCategory.getVocabularyId());
+
+				if (assetVocabulary.getVisibilityType() ==
+						AssetVocabularyConstants.VISIBILITY_TYPE_INTERNAL) {
+
+					internalAssetCategoryIds.add(assetCategoryId);
+				}
+				else {
+					externalAssetCategoryIds.add(assetCategoryId);
+				}
+			}
+
+			_externalAssetCategoryIds = ArrayUtil.toLongArray(
+				externalAssetCategoryIds);
+			_internalAssetCategoryIds = ArrayUtil.toLongArray(
+				internalAssetCategoryIds);
+		}
+
+		public long[] getExternalAssetCategoryIds() {
+			return _externalAssetCategoryIds;
+		}
+
+		public long[] getInternalAssetCategoryIds() {
+			return _internalAssetCategoryIds;
+		}
+
+		private final long[] _externalAssetCategoryIds;
+		private final long[] _internalAssetCategoryIds;
+
+	}
 
 }

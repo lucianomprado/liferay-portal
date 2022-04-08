@@ -16,7 +16,7 @@ package com.liferay.oauth2.provider.service.base;
 
 import com.liferay.oauth2.provider.model.OAuth2ApplicationScopeAliases;
 import com.liferay.oauth2.provider.service.OAuth2ApplicationScopeAliasesLocalService;
-import com.liferay.oauth2.provider.service.persistence.OAuth2ApplicationPersistence;
+import com.liferay.oauth2.provider.service.OAuth2ApplicationScopeAliasesLocalServiceUtil;
 import com.liferay.oauth2.provider.service.persistence.OAuth2ApplicationScopeAliasesPersistence;
 import com.liferay.petra.sql.dsl.query.DSLQuery;
 import com.liferay.portal.aop.AopService;
@@ -45,10 +45,13 @@ import com.liferay.portal.kernel.util.PortalUtil;
 
 import java.io.Serializable;
 
+import java.lang.reflect.Field;
+
 import java.util.List;
 
 import javax.sql.DataSource;
 
+import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 
 /**
@@ -70,7 +73,7 @@ public abstract class OAuth2ApplicationScopeAliasesLocalServiceBaseImpl
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. Use <code>OAuth2ApplicationScopeAliasesLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>com.liferay.oauth2.provider.service.OAuth2ApplicationScopeAliasesLocalServiceUtil</code>.
+	 * Never modify or reference this class directly. Use <code>OAuth2ApplicationScopeAliasesLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>OAuth2ApplicationScopeAliasesLocalServiceUtil</code>.
 	 */
 
 	/**
@@ -152,6 +155,13 @@ public abstract class OAuth2ApplicationScopeAliasesLocalServiceBaseImpl
 	@Override
 	public <T> T dslQuery(DSLQuery dslQuery) {
 		return oAuth2ApplicationScopeAliasesPersistence.dslQuery(dslQuery);
+	}
+
+	@Override
+	public int dslQueryCount(DSLQuery dslQuery) {
+		Long count = dslQuery(dslQuery);
+
+		return count.intValue();
 	}
 
 	@Override
@@ -402,6 +412,11 @@ public abstract class OAuth2ApplicationScopeAliasesLocalServiceBaseImpl
 			oAuth2ApplicationScopeAliases);
 	}
 
+	@Deactivate
+	protected void deactivate() {
+		_setLocalServiceUtilService(null);
+	}
+
 	@Override
 	public Class<?>[] getAopInterfaces() {
 		return new Class<?>[] {
@@ -414,6 +429,8 @@ public abstract class OAuth2ApplicationScopeAliasesLocalServiceBaseImpl
 	public void setAopProxy(Object aopProxy) {
 		oAuth2ApplicationScopeAliasesLocalService =
 			(OAuth2ApplicationScopeAliasesLocalService)aopProxy;
+
+		_setLocalServiceUtilService(oAuth2ApplicationScopeAliasesLocalService);
 	}
 
 	/**
@@ -459,6 +476,24 @@ public abstract class OAuth2ApplicationScopeAliasesLocalServiceBaseImpl
 		}
 	}
 
+	private void _setLocalServiceUtilService(
+		OAuth2ApplicationScopeAliasesLocalService
+			oAuth2ApplicationScopeAliasesLocalService) {
+
+		try {
+			Field field =
+				OAuth2ApplicationScopeAliasesLocalServiceUtil.class.
+					getDeclaredField("_service");
+
+			field.setAccessible(true);
+
+			field.set(null, oAuth2ApplicationScopeAliasesLocalService);
+		}
+		catch (ReflectiveOperationException reflectiveOperationException) {
+			throw new RuntimeException(reflectiveOperationException);
+		}
+	}
+
 	protected OAuth2ApplicationScopeAliasesLocalService
 		oAuth2ApplicationScopeAliasesLocalService;
 
@@ -469,8 +504,5 @@ public abstract class OAuth2ApplicationScopeAliasesLocalServiceBaseImpl
 	@Reference
 	protected com.liferay.counter.kernel.service.CounterLocalService
 		counterLocalService;
-
-	@Reference
-	protected OAuth2ApplicationPersistence oAuth2ApplicationPersistence;
 
 }

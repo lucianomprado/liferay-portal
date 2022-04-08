@@ -32,6 +32,7 @@ import com.liferay.portal.kernel.service.LayoutSetLocalServiceUtil;
 import com.liferay.portal.kernel.service.LayoutSetPrototypeLocalServiceUtil;
 import com.liferay.portal.kernel.service.ThemeLocalServiceUtil;
 import com.liferay.portal.kernel.service.VirtualHostLocalServiceUtil;
+import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.TreeMapBuilder;
 import com.liferay.portal.kernel.util.UnicodeProperties;
@@ -154,6 +155,10 @@ public class LayoutSetImpl extends LayoutSetBaseImpl {
 			}
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception);
+			}
+
 			return logoId;
 		}
 
@@ -204,7 +209,7 @@ public class LayoutSetImpl extends LayoutSetBaseImpl {
 				_settingsUnicodeProperties.load(super.getSettings());
 			}
 			catch (IOException ioException) {
-				_log.error(ioException, ioException);
+				_log.error(ioException);
 			}
 		}
 
@@ -246,7 +251,7 @@ public class LayoutSetImpl extends LayoutSetBaseImpl {
 	 * Returns the name of the layout set's default virtual host.
 	 *
 	 * <p>
-	 * When accessing a layout set that has a the virtual host, the URL elements
+	 * When accessing a layout set that has a virtual host, the URL elements
 	 * "/web/sitename" or "/group/sitename" can be omitted.
 	 * </p>
 	 *
@@ -271,17 +276,20 @@ public class LayoutSetImpl extends LayoutSetBaseImpl {
 	 * Returns the names of the layout set's virtual hosts.
 	 *
 	 * <p>
-	 * When accessing a layout set that has a the virtual host, the URL elements
+	 * When accessing a layout set that has a virtual host, the URL elements
 	 * "/web/sitename" or "/group/sitename" can be omitted.
 	 * </p>
 	 *
-	 * @return the layout set's virtual host names, or an empty string if the
-	 *         layout set has no virtual hosts configured
+	 * @return a map from the layout set's virtual host names to the language
+	 *         ids configured for them. If the virtual host is configured
+	 *         for the default language, it will map to the empty string instead
+	 *         of a language id. If the layout set has no virtual hosts
+	 *         configured, the returned map will be empty.
 	 */
 	@Override
 	public TreeMap<String, String> getVirtualHostnames() {
 		if (_virtualHostnames != null) {
-			return _virtualHostnames;
+			return new TreeMap<>(_virtualHostnames);
 		}
 
 		List<VirtualHost> virtualHosts = null;
@@ -291,10 +299,10 @@ public class LayoutSetImpl extends LayoutSetBaseImpl {
 				getCompanyId(), getLayoutSetId());
 		}
 		catch (PortalException portalException) {
-			_log.error(portalException, portalException);
+			_log.error(portalException);
 		}
 
-		if ((virtualHosts == null) || virtualHosts.isEmpty()) {
+		if (ListUtil.isEmpty(virtualHosts)) {
 			_virtualHostnames = new TreeMap<>();
 		}
 		else {
@@ -308,7 +316,7 @@ public class LayoutSetImpl extends LayoutSetBaseImpl {
 			_virtualHostnames = virtualHostnames;
 		}
 
-		return _virtualHostnames;
+		return new TreeMap<>(_virtualHostnames);
 	}
 
 	@Override
@@ -379,7 +387,7 @@ public class LayoutSetImpl extends LayoutSetBaseImpl {
 	 * @see   #getVirtualHostnames()
 	 */
 	@Override
-	public void setVirtualHostnames(TreeMap virtualHostnames) {
+	public void setVirtualHostnames(TreeMap<String, String> virtualHostnames) {
 		_virtualHostnames = virtualHostnames;
 	}
 
@@ -392,6 +400,9 @@ public class LayoutSetImpl extends LayoutSetBaseImpl {
 			controlPanel = group.isControlPanel();
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception);
+			}
 		}
 
 		if (controlPanel) {

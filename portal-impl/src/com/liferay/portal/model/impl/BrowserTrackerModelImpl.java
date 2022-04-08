@@ -29,18 +29,22 @@ import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
+import com.liferay.portal.kernel.util.StringUtil;
 
 import java.io.Serializable;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
 
+import java.sql.Blob;
 import java.sql.Types;
 
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
@@ -118,14 +122,14 @@ public class BrowserTrackerModelImpl
 	public static final boolean COLUMN_BITMASK_ENABLED = true;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long USERID_COLUMN_BITMASK = 1L;
 
 	/**
 	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-	 *		#getColumnBitmask(String)
+	 *		#getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long BROWSERTRACKERID_COLUMN_BITMASK = 2L;
@@ -398,7 +402,9 @@ public class BrowserTrackerModelImpl
 		for (Map.Entry<String, Object> entry :
 				_columnOriginalValues.entrySet()) {
 
-			if (entry.getValue() != getColumnValue(entry.getKey())) {
+			if (!Objects.equals(
+					entry.getValue(), getColumnValue(entry.getKey()))) {
+
 				_columnBitmask |= _columnBitmasks.get(entry.getKey());
 			}
 		}
@@ -445,6 +451,24 @@ public class BrowserTrackerModelImpl
 		browserTrackerImpl.setBrowserKey(getBrowserKey());
 
 		browserTrackerImpl.resetOriginalValues();
+
+		return browserTrackerImpl;
+	}
+
+	@Override
+	public BrowserTracker cloneWithOriginalValues() {
+		BrowserTrackerImpl browserTrackerImpl = new BrowserTrackerImpl();
+
+		browserTrackerImpl.setMvccVersion(
+			this.<Long>getColumnOriginalValue("mvccVersion"));
+		browserTrackerImpl.setBrowserTrackerId(
+			this.<Long>getColumnOriginalValue("browserTrackerId"));
+		browserTrackerImpl.setCompanyId(
+			this.<Long>getColumnOriginalValue("companyId"));
+		browserTrackerImpl.setUserId(
+			this.<Long>getColumnOriginalValue("userId"));
+		browserTrackerImpl.setBrowserKey(
+			this.<Long>getColumnOriginalValue("browserKey"));
 
 		return browserTrackerImpl;
 	}
@@ -540,7 +564,7 @@ public class BrowserTrackerModelImpl
 			getAttributeGetterFunctions();
 
 		StringBundler sb = new StringBundler(
-			(4 * attributeGetterFunctions.size()) + 2);
+			(5 * attributeGetterFunctions.size()) + 2);
 
 		sb.append("{");
 
@@ -551,9 +575,26 @@ public class BrowserTrackerModelImpl
 			Function<BrowserTracker, Object> attributeGetterFunction =
 				entry.getValue();
 
+			sb.append("\"");
 			sb.append(attributeName);
-			sb.append("=");
-			sb.append(attributeGetterFunction.apply((BrowserTracker)this));
+			sb.append("\": ");
+
+			Object value = attributeGetterFunction.apply((BrowserTracker)this);
+
+			if (value == null) {
+				sb.append("null");
+			}
+			else if (value instanceof Blob || value instanceof Date ||
+					 value instanceof Map || value instanceof String) {
+
+				sb.append(
+					"\"" + StringUtil.replace(value.toString(), "\"", "'") +
+						"\"");
+			}
+			else {
+				sb.append(value);
+			}
+
 			sb.append(", ");
 		}
 

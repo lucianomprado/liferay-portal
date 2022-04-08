@@ -65,11 +65,15 @@ if (expandoColumn != null) {
 	}
 }
 
-PortletURL portletURL = renderResponse.createRenderURL();
-
-portletURL.setParameter("mvcPath", "/view_attributes.jsp");
-portletURL.setParameter("redirect", redirect);
-portletURL.setParameter("modelResource", modelResource);
+PortletURL portletURL = PortletURLBuilder.createRenderURL(
+	renderResponse
+).setMVCPath(
+	"/view_attributes.jsp"
+).setRedirect(
+	redirect
+).setParameter(
+	"modelResource", modelResource
+).buildPortletURL();
 
 portletDisplay.setShowBackIcon(true);
 portletDisplay.setURLBack(redirect);
@@ -84,13 +88,17 @@ if (expandoColumn != null) {
 	PortalUtil.addPortletBreadcrumbEntry(request, LanguageUtil.format(request, "edit-x", new Object[] {expandoColumn.getName()}, false), null);
 }
 else {
-	PortletURL newCustomFieldURL = renderResponse.createRenderURL();
-
-	newCustomFieldURL.setParameter("mvcPath", "/edit/select_field_type.jsp");
-	newCustomFieldURL.setParameter("redirect", redirect);
-	newCustomFieldURL.setParameter("modelResource", modelResource);
-
-	PortalUtil.addPortletBreadcrumbEntry(request, LanguageUtil.get(request, "new-custom-field"), newCustomFieldURL.toString());
+	PortalUtil.addPortletBreadcrumbEntry(
+		request, LanguageUtil.get(request, "new-custom-field"),
+		PortletURLBuilder.createRenderURL(
+			renderResponse
+		).setMVCPath(
+			"/edit/select_field_type.jsp"
+		).setRedirect(
+			redirect
+		).setParameter(
+			"modelResource", modelResource
+		).buildString());
 
 	PortalUtil.addPortletBreadcrumbEntry(request, LanguageUtil.format(request, "new-x", new Object[] {propertyDisplayType}), null);
 }
@@ -115,57 +123,59 @@ else {
 	<portlet:param name="mvcPath" value="/edit/expando.jsp" />
 </portlet:actionURL>
 
-<clay:container-fluid>
+<clay:container-fluid
+	cssClass="container-view"
+>
 	<liferay-ui:breadcrumb
 		showCurrentGroup="<%= false %>"
 		showGuestGroup="<%= false %>"
 		showLayout="<%= false %>"
 		showPortletBreadcrumb="<%= true %>"
 	/>
+
+	<liferay-frontend:edit-form
+		action="<%= editExpandoURL %>"
+	>
+		<aui:input name="redirect" type="hidden" value="<%= portletURL %>" />
+		<aui:input name="columnId" type="hidden" value="<%= columnId %>" />
+		<aui:input name="modelResource" type="hidden" value="<%= modelResource %>" />
+		<aui:input name="type" type="hidden" value="<%= type %>" />
+
+		<aui:input name="Property--display-type--" type="hidden" value="<%= propertyDisplayType %>" />
+
+		<liferay-frontend:edit-form-body>
+			<h2 class="sheet-title">
+				<%= LanguageUtil.format(request, expandoColumn != null ? "edit-x" : "new-x", new Object[] {propertyDisplayType}) %>
+			</h2>
+
+			<liferay-frontend:fieldset-group>
+				<aui:field-wrapper cssClass="form-group lfr-input-text-container">
+					<c:choose>
+						<c:when test="<%= expandoColumn != null %>">
+							<aui:input name="name" type="hidden" value="<%= expandoColumn.getName() %>" />
+
+							<aui:input label="field-name" name="key" type="resource" value="<%= expandoColumn.getName() %>" />
+						</c:when>
+						<c:otherwise>
+							<aui:input autoFocus="<%= windowState.equals(WindowState.MAXIMIZED) %>" label="field-name" maxlength='<%= ModelHintsUtil.getMaxLength(ExpandoColumn.class.getName(), "name") %>' name="name" required="<%= true %>" />
+						</c:otherwise>
+					</c:choose>
+
+					<div class="form-text">
+						<liferay-ui:message arguments="&lt;liferay-expando:custom-attribute /&gt;" key="custom-field-key-help" translateArguments="<%= false %>" />
+					</div>
+				</aui:field-wrapper>
+
+				<%@ include file="/edit/default_value_input.jspf" %>
+
+				<%@ include file="/edit/advanced_properties.jspf" %>
+			</liferay-frontend:fieldset-group>
+		</liferay-frontend:edit-form-body>
+
+		<liferay-frontend:edit-form-footer>
+			<aui:button type="submit" />
+
+			<aui:button href="<%= redirect %>" type="cancel" />
+		</liferay-frontend:edit-form-footer>
+	</liferay-frontend:edit-form>
 </clay:container-fluid>
-
-<liferay-frontend:edit-form
-	action="<%= editExpandoURL %>"
->
-	<aui:input name="redirect" type="hidden" value="<%= portletURL %>" />
-	<aui:input name="columnId" type="hidden" value="<%= columnId %>" />
-	<aui:input name="modelResource" type="hidden" value="<%= modelResource %>" />
-	<aui:input name="type" type="hidden" value="<%= type %>" />
-
-	<aui:input name="Property--display-type--" type="hidden" value="<%= propertyDisplayType %>" />
-
-	<liferay-frontend:edit-form-body>
-		<h2 class="sheet-title">
-			<%= LanguageUtil.format(request, expandoColumn != null ? "edit-x" : "new-x", new Object[] {propertyDisplayType}) %>
-		</h2>
-
-		<liferay-frontend:fieldset-group>
-			<aui:field-wrapper cssClass="form-group lfr-input-text-container">
-				<c:choose>
-					<c:when test="<%= expandoColumn != null %>">
-						<aui:input name="name" type="hidden" value="<%= expandoColumn.getName() %>" />
-
-						<aui:input label="field-name" name="key" type="resource" value="<%= expandoColumn.getName() %>" />
-					</c:when>
-					<c:otherwise>
-						<aui:input autoFocus="<%= windowState.equals(WindowState.MAXIMIZED) %>" label="field-name" maxlength='<%= ModelHintsUtil.getMaxLength(ExpandoColumn.class.getName(), "name") %>' name="name" required="<%= true %>" />
-					</c:otherwise>
-				</c:choose>
-
-				<div class="form-text">
-					<liferay-ui:message arguments="&lt;liferay-expando:custom-attribute /&gt;" key="custom-field-key-help" translateArguments="<%= false %>" />
-				</div>
-			</aui:field-wrapper>
-
-			<%@ include file="/edit/default_value_input.jspf" %>
-
-			<%@ include file="/edit/advanced_properties.jspf" %>
-		</liferay-frontend:fieldset-group>
-	</liferay-frontend:edit-form-body>
-
-	<liferay-frontend:edit-form-footer>
-		<aui:button type="submit" />
-
-		<aui:button href="<%= redirect %>" type="cancel" />
-	</liferay-frontend:edit-form-footer>
-</liferay-frontend:edit-form>

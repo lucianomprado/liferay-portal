@@ -69,6 +69,10 @@ public class ReinvokeRule {
 	}
 
 	public boolean matches(Build build) {
+		if (build == null) {
+			return false;
+		}
+
 		Matcher matcher = null;
 
 		if (axisVariablePattern != null) {
@@ -86,7 +90,13 @@ public class ReinvokeRule {
 		}
 
 		if (jobVariantPattern != null) {
-			matcher = jobVariantPattern.matcher(build.getJobVariant());
+			String jobVariant = build.getJobVariant();
+
+			if (jobVariant == null) {
+				jobVariant = "";
+			}
+
+			matcher = jobVariantPattern.matcher(jobVariant);
 
 			if (!matcher.find()) {
 				return false;

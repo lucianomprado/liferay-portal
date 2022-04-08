@@ -1,12 +1,12 @@
 definition {
 
-	macro activateAppCP {
+	macro activateApp {
 		LexiconEntry.openEntryMenu(rowEntry = "${appName}");
 
 		MenuItem.clickNoError(menuItem = "Activate");
 	}
 
-	macro deactivateAppCP {
+	macro deactivateApp {
 		LexiconEntry.openEntryMenu(rowEntry = "${appName}");
 
 		MenuItem.clickNoError(menuItem = "Deactivate");
@@ -14,19 +14,7 @@ definition {
 		AssertConfirm(value1 = "Are you sure you want to deactivate this?");
 	}
 
-	macro selectAppCP {
-		var key_appName = "${appName}";
-
-		while (IsElementNotPresent(locator1 = "AppManager#APP_NAME")) {
-			Click(locator1 = "Pagination#NEXT_LINK");
-		}
-
-		AssertClick(
-			locator1 = "AppManager#APP_NAME",
-			value1 = "${appName}");
-	}
-
-	macro uninstallAppCP {
+	macro uninstallApp {
 		LexiconEntry.openEntryMenu(rowEntry = "${appName}");
 
 		MenuItem.clickNoError(menuItem = "Uninstall");
@@ -36,7 +24,7 @@ definition {
 		Pause(locator1 = "15000");
 	}
 
-	macro uploadAppCP {
+	macro uploadApp {
 		var key_appName = "${appName}";
 
 		Click(locator1 = "Portlet#OPTIONS_ICON");
@@ -47,9 +35,7 @@ definition {
 
 		AssertElementPresent(locator1 = "TextInput#FILE");
 
-		UploadCommonFile.uploadCommonFileHiddenNoMouseOver(
-			locator1 = "TextInput#FILE",
-			value1 = "${warFileName}");
+		UploadDependencyFile.uploadArchiveFile(fileName = "${warFileName}");
 
 		Button.clickInstall();
 
@@ -70,7 +56,7 @@ definition {
 		AssertConsoleTextNotPresent(value1 = "HotDeployException: Error registering portlets for ${appName}");
 	}
 
-	macro viewAppCP {
+	macro viewApp {
 		var key_appName = "${appName}";
 
 		if (isSet(searchTerm)) {
@@ -85,39 +71,12 @@ definition {
 			value1 = "${appName}");
 
 		if (isSet(appStatus)) {
-			AppManager.viewStatus(
-				appName = "${appName}",
-				appStatus = "${appStatus}");
+			var key_appStatus = "${appStatus}";
+
+			AssertTextEquals.assertPartialText(
+				locator1 = "AppManager#APP_STATUS",
+				value1 = "${appStatus}");
 		}
-	}
-
-	macro viewNoAppCP {
-		var key_appName = "${appName}";
-
-		AssertElementNotPresent(locator1 = "AppManager#APP_NAME");
-
-		while (IsElementPresent(locator1 = "Pagination#NEXT_LINK")) {
-			Click(locator1 = "Pagination#NEXT_LINK");
-
-			AssertElementNotPresent(locator1 = "AppManager#APP_NAME");
-		}
-	}
-
-	macro viewStatus {
-		var key_appName = "${appName}";
-		var key_appStatus = "${appStatus}";
-
-		AssertTextEquals.assertPartialText(
-			locator1 = "AppManager#APP_STATUS",
-			value1 = "${appStatus}");
-	}
-
-	macro viewUninstallAppCP {
-		Search.searchCP(searchTerm = "${appName}");
-
-		AssertElementNotPresent(
-			key_appName = "${appName}",
-			locator1 = "AppManager#APP_NAME");
 	}
 
 }

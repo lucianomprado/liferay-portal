@@ -39,19 +39,6 @@ import javax.servlet.http.HttpServletResponse;
  */
 public abstract class BaseTemplate implements Template {
 
-	/**
-	 * @deprecated As of Mueller (7.2.x), replaced by {@link
-	 *             #BaseTemplate(TemplateResource, Map, TemplateContextHelper,
-	 *             boolean)}
-	 */
-	@Deprecated
-	public BaseTemplate(
-		TemplateResource templateResource, Map<String, Object> context,
-		TemplateContextHelper templateContextHelper) {
-
-		this(templateResource, context, templateContextHelper, false);
-	}
-
 	public BaseTemplate(
 		TemplateResource templateResource, Map<String, Object> context,
 		TemplateContextHelper templateContextHelper, boolean restricted) {
@@ -111,6 +98,10 @@ public abstract class BaseTemplate implements Template {
 	@Override
 	public boolean isEmpty() {
 		return context.isEmpty();
+	}
+
+	public boolean isRestricted() {
+		return _restricted;
 	}
 
 	@Override

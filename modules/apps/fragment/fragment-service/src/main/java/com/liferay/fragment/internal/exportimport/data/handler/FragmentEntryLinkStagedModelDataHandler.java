@@ -27,10 +27,14 @@ import com.liferay.fragment.model.FragmentEntry;
 import com.liferay.fragment.model.FragmentEntryLink;
 import com.liferay.fragment.service.FragmentEntryLinkLocalService;
 import com.liferay.fragment.service.FragmentEntryLocalService;
+import com.liferay.portal.kernel.model.Group;
+import com.liferay.portal.kernel.service.GroupLocalService;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.xml.Element;
+import com.liferay.segments.model.SegmentsExperience;
 
 import java.util.Map;
 
@@ -112,6 +116,25 @@ public class FragmentEntryLinkStagedModelDataHandler
 
 		fragmentEntryLink.setEditableValues(editableValues);
 
+		FragmentEntry fragmentEntry =
+			_fragmentEntryLocalService.fetchFragmentEntry(
+				fragmentEntryLink.getFragmentEntryId());
+
+		if ((fragmentEntry != null) &&
+			(fragmentEntry.getGroupId() != fragmentEntryLink.getGroupId())) {
+
+			Group group = _groupLocalService.fetchGroup(
+				fragmentEntry.getGroupId());
+
+			if (group != null) {
+				fragmentEntryLinkElement.addAttribute(
+					"fragment-entry-group-key", group.getGroupKey());
+			}
+
+			fragmentEntryLinkElement.addAttribute(
+				"fragment-entry-key", fragmentEntry.getFragmentEntryKey());
+		}
+
 		portletDataContext.addClassedModel(
 			fragmentEntryLinkElement,
 			ExportImportPathUtil.getModelPath(fragmentEntryLink),
@@ -182,6 +205,32 @@ public class FragmentEntryLinkStagedModelDataHandler
 					fragmentEntryId = fragmentEntryLink.getFragmentEntryId();
 				}
 			}
+			else {
+				Element fragmentEntryLinkElement =
+					portletDataContext.getImportDataStagedModelElement(
+						fragmentEntryLink);
+
+				String fragmentEntryGroupKey = GetterUtil.getString(
+					fragmentEntryLinkElement.attributeValue(
+						"fragment-entry-group-key"));
+
+				Group group = _groupLocalService.fetchGroup(
+					fragmentEntryLink.getCompanyId(), fragmentEntryGroupKey);
+
+				if (group != null) {
+					String fragmentEntryKey = GetterUtil.getString(
+						fragmentEntryLinkElement.attributeValue(
+							"fragment-entry-key"));
+
+					fragmentEntry =
+						_fragmentEntryLocalService.fetchFragmentEntry(
+							group.getGroupId(), fragmentEntryKey);
+				}
+
+				if (fragmentEntry != null) {
+					fragmentEntryId = fragmentEntry.getFragmentEntryId();
+				}
+			}
 		}
 
 		Map<Long, Long> referenceClassPKs =
@@ -200,6 +249,17 @@ public class FragmentEntryLinkStagedModelDataHandler
 		importedFragmentEntryLink.setOriginalFragmentEntryLinkId(
 			originalFragmentEntryLinkId);
 		importedFragmentEntryLink.setFragmentEntryId(fragmentEntryId);
+
+		Map<Long, Long> segmentsExperienceIds =
+			(Map<Long, Long>)portletDataContext.getNewPrimaryKeysMap(
+				SegmentsExperience.class);
+
+		long segmentsExperienceId = MapUtil.getLong(
+			segmentsExperienceIds, fragmentEntryLink.getSegmentsExperienceId(),
+			fragmentEntryLink.getSegmentsExperienceId());
+
+		importedFragmentEntryLink.setSegmentsExperienceId(segmentsExperienceId);
+
 		importedFragmentEntryLink.setClassPK(referenceClassPK);
 		importedFragmentEntryLink.setPlid(referenceClassPK);
 
@@ -269,6 +329,9 @@ public class FragmentEntryLinkStagedModelDataHandler
 
 	@Reference
 	private FragmentEntryLocalService _fragmentEntryLocalService;
+
+	@Reference
+	private GroupLocalService _groupLocalService;
 
 	@Reference
 	private Portal _portal;

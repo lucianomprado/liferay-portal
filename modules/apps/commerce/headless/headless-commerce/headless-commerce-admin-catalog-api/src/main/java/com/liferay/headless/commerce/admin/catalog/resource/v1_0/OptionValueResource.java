@@ -15,13 +15,22 @@
 package com.liferay.headless.commerce.admin.catalog.resource.v1_0;
 
 import com.liferay.headless.commerce.admin.catalog.dto.v1_0.OptionValue;
+import com.liferay.portal.kernel.search.Sort;
+import com.liferay.portal.kernel.search.filter.Filter;
 import com.liferay.portal.kernel.service.GroupLocalService;
+import com.liferay.portal.kernel.service.ResourceActionLocalService;
+import com.liferay.portal.kernel.service.ResourcePermissionLocalService;
 import com.liferay.portal.kernel.service.RoleLocalService;
+import com.liferay.portal.odata.filter.ExpressionConvert;
+import com.liferay.portal.odata.filter.FilterParserProvider;
 import com.liferay.portal.vulcan.accept.language.AcceptLanguage;
 import com.liferay.portal.vulcan.pagination.Page;
 import com.liferay.portal.vulcan.pagination.Pagination;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import javax.annotation.Generated;
 
@@ -49,8 +58,32 @@ public interface OptionValueResource {
 		return FactoryHolder.factory.create();
 	}
 
+	public Response deleteOptionValueByExternalReferenceCode(
+			String externalReferenceCode)
+		throws Exception;
+
+	public OptionValue getOptionValueByExternalReferenceCode(
+			String externalReferenceCode)
+		throws Exception;
+
+	public Response patchOptionValueByExternalReferenceCode(
+			String externalReferenceCode, OptionValue optionValue)
+		throws Exception;
+
+	public Response deleteOptionValue(Long id) throws Exception;
+
+	public Response deleteOptionValueBatch(
+			Long id, String callbackURL, Object object)
+		throws Exception;
+
+	public OptionValue getOptionValue(Long id) throws Exception;
+
+	public Response patchOptionValue(Long id, OptionValue optionValue)
+		throws Exception;
+
 	public Page<OptionValue> getOptionByExternalReferenceCodeOptionValuesPage(
-			String externalReferenceCode, Pagination pagination)
+			String externalReferenceCode, String search, Pagination pagination,
+			Sort[] sorts)
 		throws Exception;
 
 	public OptionValue postOptionByExternalReferenceCodeOptionValue(
@@ -58,7 +91,7 @@ public interface OptionValueResource {
 		throws Exception;
 
 	public Page<OptionValue> getOptionIdOptionValuesPage(
-			Long id, Pagination pagination)
+			Long id, String search, Pagination pagination, Sort[] sorts)
 		throws Exception;
 
 	public OptionValue postOptionIdOptionValue(Long id, OptionValue optionValue)
@@ -89,9 +122,32 @@ public interface OptionValueResource {
 	public void setContextUser(
 		com.liferay.portal.kernel.model.User contextUser);
 
+	public void setExpressionConvert(
+		ExpressionConvert<Filter> expressionConvert);
+
+	public void setFilterParserProvider(
+		FilterParserProvider filterParserProvider);
+
 	public void setGroupLocalService(GroupLocalService groupLocalService);
 
+	public void setResourceActionLocalService(
+		ResourceActionLocalService resourceActionLocalService);
+
+	public void setResourcePermissionLocalService(
+		ResourcePermissionLocalService resourcePermissionLocalService);
+
 	public void setRoleLocalService(RoleLocalService roleLocalService);
+
+	public default Filter toFilter(String filterString) {
+		return toFilter(
+			filterString, Collections.<String, List<String>>emptyMap());
+	}
+
+	public default Filter toFilter(
+		String filterString, Map<String, List<String>> multivaluedMap) {
+
+		return null;
+	}
 
 	public static class FactoryHolder {
 
@@ -108,6 +164,9 @@ public interface OptionValueResource {
 
 		public Builder httpServletRequest(
 			HttpServletRequest httpServletRequest);
+
+		public Builder httpServletResponse(
+			HttpServletResponse httpServletResponse);
 
 		public Builder preferredLocale(Locale preferredLocale);
 

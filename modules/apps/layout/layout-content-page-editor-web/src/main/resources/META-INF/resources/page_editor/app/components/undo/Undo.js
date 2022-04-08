@@ -16,7 +16,7 @@ import ClayButton, {ClayButtonWithIcon} from '@clayui/button';
 import PropTypes from 'prop-types';
 import React from 'react';
 
-import {useSelector} from '../../store/index';
+import {useSelector} from '../../contexts/StoreContext';
 import UndoHistory from './UndoHistory';
 
 export default function Undo({onRedo = () => {}, onUndo = () => {}}) {
@@ -25,7 +25,7 @@ export default function Undo({onRedo = () => {}, onUndo = () => {}}) {
 
 	return (
 		<>
-			<ClayButton.Group className="d-block d-none mr-2">
+			<ClayButton.Group className="flex-nowrap">
 				<ClayButtonWithIcon
 					aria-label={Liferay.Language.get('undo')}
 					className="btn-monospaced"
@@ -36,6 +36,7 @@ export default function Undo({onRedo = () => {}, onUndo = () => {}}) {
 					symbol="undo"
 					title={Liferay.Language.get('undo')}
 				/>
+
 				<ClayButtonWithIcon
 					aria-label={Liferay.Language.get('redo')}
 					className="btn-monospaced"
@@ -47,7 +48,10 @@ export default function Undo({onRedo = () => {}, onUndo = () => {}}) {
 					title={Liferay.Language.get('redo')}
 				/>
 			</ClayButton.Group>
-			<UndoHistory />
+
+			<span className="d-none d-sm-block">
+				<UndoHistory />
+			</span>
 		</>
 	);
 }

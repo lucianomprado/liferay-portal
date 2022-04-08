@@ -28,6 +28,7 @@ taglib uri="http://liferay.com/tld/ui" prefix="liferay-ui" %><%@
 taglib uri="http://liferay.com/tld/util" prefix="liferay-util" %>
 
 <%@ page import="com.liferay.frontend.taglib.clay.servlet.taglib.util.JSPNavigationItemList" %><%@
+page import="com.liferay.petra.portlet.url.builder.PortletURLBuilder" %><%@
 page import="com.liferay.petra.string.StringBundler" %><%@
 page import="com.liferay.petra.string.StringPool" %><%@
 page import="com.liferay.portal.kernel.bean.BeanParamUtil" %><%@
@@ -75,7 +76,7 @@ page import="com.liferay.portal.reports.engine.console.status.ReportStatus" %><%
 page import="com.liferay.portal.reports.engine.console.util.ReportsEngineConsoleUtil" %><%@
 page import="com.liferay.portal.reports.engine.console.web.internal.admin.constants.ReportsEngineWebKeys" %><%@
 page import="com.liferay.portal.reports.engine.console.web.internal.admin.display.context.ReportsEngineDisplayContext" %><%@
-page import="com.liferay.portal.reports.engine.console.web.internal.admin.display.context.util.ReportsEngineRequestHelper" %><%@
+page import="com.liferay.portal.reports.engine.console.web.internal.admin.display.context.helper.ReportsEngineRequestHelper" %><%@
 page import="com.liferay.portal.reports.engine.console.web.internal.admin.util.EmailConfigurationUtil" %><%@
 page import="com.liferay.portal.reports.engine.console.web.internal.permission.AdminResourcePermissionChecker" %><%@
 page import="com.liferay.portal.reports.engine.console.web.internal.permission.DefinitionPermissionChecker" %><%@

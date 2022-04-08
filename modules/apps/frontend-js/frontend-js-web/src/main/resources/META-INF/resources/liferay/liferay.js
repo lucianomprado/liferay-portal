@@ -14,7 +14,7 @@
 
 Liferay = window.Liferay || {};
 
-(function (Liferay) {
+(function () {
 	var isFunction = function (val) {
 		return typeof val === 'function';
 	};
@@ -27,25 +27,25 @@ Liferay = window.Liferay || {};
 
 	var STR_MULTIPART = 'multipart/form-data';
 
-	Liferay.namespace = function namespace(obj, path) {
+	Liferay.namespace = function namespace(object, path) {
 		if (path === undefined) {
-			path = obj;
+			path = object;
 
-			obj = this;
+			object = this;
 		}
 
 		var parts = path.split('.');
 
 		for (var part; parts.length && (part = parts.shift()); ) {
-			if (obj[part] && obj[part] !== Object.prototype[part]) {
-				obj = obj[part];
+			if (object[part] && object[part] !== Object.prototype[part]) {
+				object = object[part];
 			}
 			else {
-				obj = obj[part] = {};
+				object = object[part] = {};
 			}
 		}
 
-		return obj;
+		return object;
 	};
 
 	/**
@@ -123,7 +123,7 @@ Liferay = window.Liferay || {};
 
 			ioConfig.complete = function (response) {
 				if (
-					response !== null &&
+					Object.keys(response).length > 0 &&
 					!Object.prototype.hasOwnProperty.call(response, 'exception')
 				) {
 					if (callbackSuccess) {
@@ -154,7 +154,7 @@ Liferay = window.Liferay || {};
 		var form = args[1];
 
 		if (isNode(form)) {
-			if (form.enctype == STR_MULTIPART) {
+			if (form.enctype === STR_MULTIPART) {
 				ioConfig.contentType = 'multipart/form-data';
 			}
 
@@ -196,8 +196,17 @@ Liferay = window.Liferay || {};
 			},
 			method: 'POST',
 		})
-			.then((response) => response.json())
-			.then(ioConfig.complete)
+			.then((response) =>
+				Promise.all([Promise.resolve(response), response.json()])
+			)
+			.then(([response, content]) => {
+				if (response.ok) {
+					ioConfig.complete(content);
+				}
+				else {
+					ioConfig.error();
+				}
+			})
 			.catch(ioConfig.error);
 	};
 
@@ -225,4 +234,4 @@ Liferay = window.Liferay || {};
 		PORTLET:
 			'<div class="portlet"><div class="portlet-topper"><div class="portlet-title"></div></div><div class="portlet-content"></div><div class="forbidden-action"></div></div>',
 	};
-})(Liferay);
+})();

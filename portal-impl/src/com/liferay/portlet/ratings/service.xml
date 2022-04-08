@@ -32,17 +32,13 @@
 		<finder name="U_C_C" return-type="Collection" unique="true">
 			<finder-column name="userId" />
 			<finder-column name="classNameId" />
-			<finder-column arrayable-operator="OR" name="classPK" />
+			<finder-column arrayable-operator="OR" arrayable-pagination="true" name="classPK" />
 		</finder>
 		<finder name="C_C_S" return-type="Collection">
 			<finder-column name="classNameId" />
 			<finder-column name="classPK" />
 			<finder-column name="score" />
 		</finder>
-
-		<!-- References -->
-
-		<reference entity="AssetEntry" package-path="com.liferay.portlet.asset" />
 	</entity>
 	<entity local-service="true" name="RatingsStats" remote-service="false">
 

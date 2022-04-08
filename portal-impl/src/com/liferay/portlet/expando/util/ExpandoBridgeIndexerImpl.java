@@ -33,6 +33,7 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.search.Document;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portlet.expando.model.impl.ExpandoValueImpl;
@@ -42,7 +43,9 @@ import java.util.List;
 
 /**
  * @author Raymond Augé
+ * @deprecated As of Cavanaugh (7.4.x)
  */
+@Deprecated
 public class ExpandoBridgeIndexerImpl implements ExpandoBridgeIndexer {
 
 	@Override
@@ -55,20 +58,19 @@ public class ExpandoBridgeIndexerImpl implements ExpandoBridgeIndexer {
 			doAddAttributes(document, expandoBridge);
 		}
 		catch (SystemException systemException) {
-			_log.error(systemException, systemException);
+			_log.error(systemException);
 		}
 	}
 
 	@Override
 	public String encodeFieldName(String columnName, int indexType) {
-		StringBundler sb = new StringBundler(7);
+		StringBundler sb = new StringBundler(6);
 
 		sb.append(FIELD_NAMESPACE);
 		sb.append(StringPool.DOUBLE_UNDERLINE);
 
 		if (indexType == ExpandoColumnConstants.INDEX_TYPE_KEYWORD) {
-			sb.append("keyword");
-			sb.append(StringPool.DOUBLE_UNDERLINE);
+			sb.append("keyword__");
 		}
 
 		sb.append(
@@ -179,9 +181,8 @@ public class ExpandoBridgeIndexerImpl implements ExpandoBridgeIndexer {
 			}
 		}
 		else if (type == ExpandoColumnConstants.NUMBER) {
-			Number number = expandoValue.getNumber();
-
-			document.addKeyword(fieldName, number.toString());
+			document.addKeyword(
+				fieldName, String.valueOf(expandoValue.getNumber()));
 		}
 		else if (type == ExpandoColumnConstants.NUMBER_ARRAY) {
 			if (!defaultValue) {
@@ -255,7 +256,7 @@ public class ExpandoBridgeIndexerImpl implements ExpandoBridgeIndexer {
 			ExpandoColumnLocalServiceUtil.getDefaultTableColumns(
 				expandoBridge.getCompanyId(), expandoBridge.getClassName());
 
-		if ((expandoColumns == null) || expandoColumns.isEmpty()) {
+		if (ListUtil.isEmpty(expandoColumns)) {
 			return;
 		}
 

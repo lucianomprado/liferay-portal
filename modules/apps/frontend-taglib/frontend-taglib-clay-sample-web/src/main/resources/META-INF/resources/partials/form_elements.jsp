@@ -140,3 +140,25 @@ for (int i = 0; i < 8; i++) {
 	name="name"
 	options="<%= selectOptions %>"
 />
+
+<h3>MULTISELECT</h3>
+
+<clay:multiselect
+	helpText="Help text is displayed here."
+	id="multiselect-1"
+	inputName="multiSelectInput1"
+	label="Multiselect 1"
+	multiselectLocator="<%= multiselectDisplayContext.getMultiselectLocator() %>"
+	selectedMultiselectItems="<%= multiselectDisplayContext.getSelectedMultiselectItemsWithCustomProperties() %>"
+	sourceMultiselectItems="<%= multiselectDisplayContext.getSourceMultiselectItemsWithCustomProperties() %>"
+/>
+
+<clay:multiselect
+	helpText="Help text is displayed here."
+	id="multiselect-2"
+	inputName="multiSelectInput2"
+	label="Multiselect with Custom Menu Renderer"
+	propsTransformer="js/ClaySampleMultiselectPropsTransformer"
+	selectedMultiselectItems="<%= multiselectDisplayContext.getSelectedMultiselectItems() %>"
+	sourceMultiselectItems="<%= multiselectDisplayContext.getSourceMultiselectItems() %>"
+/>

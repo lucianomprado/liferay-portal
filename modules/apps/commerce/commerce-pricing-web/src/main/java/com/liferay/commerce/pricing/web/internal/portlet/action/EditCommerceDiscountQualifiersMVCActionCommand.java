@@ -40,7 +40,7 @@ import org.osgi.service.component.annotations.Reference;
 	enabled = false, immediate = true,
 	property = {
 		"javax.portlet.name=" + CommercePricingPortletKeys.COMMERCE_DISCOUNT,
-		"mvc.command.name=editCommerceDiscountQualifiers"
+		"mvc.command.name=/commerce_discount/edit_commerce_discount_qualifiers"
 	},
 	service = MVCActionCommand.class
 )
@@ -56,7 +56,7 @@ public class EditCommerceDiscountQualifiersMVCActionCommand
 
 		try {
 			if (cmd.equals(Constants.ADD) || cmd.equals(Constants.UPDATE)) {
-				updateCommerceDiscountQualifiers(actionRequest);
+				_updateCommerceDiscountQualifiers(actionRequest);
 			}
 		}
 		catch (Exception exception) {
@@ -66,7 +66,41 @@ public class EditCommerceDiscountQualifiersMVCActionCommand
 		}
 	}
 
-	protected void updateCommerceDiscountQualifiers(ActionRequest actionRequest)
+	private void _deleteCommerceDiscountAccountGroupRels(
+			long commerceDiscountId)
+		throws Exception {
+
+		int count =
+			_commerceDiscountCommerceAccountGroupRelService.
+				getCommerceDiscountCommerceAccountGroupRelsCount(
+					commerceDiscountId);
+
+		if (count == 0) {
+			return;
+		}
+
+		_commerceDiscountCommerceAccountGroupRelService.
+			deleteCommerceDiscountCommerceAccountGroupRelsByCommerceDiscountId(
+				commerceDiscountId);
+	}
+
+	private void _deleteCommerceDiscountAccountRels(long commerceDiscountId)
+		throws Exception {
+
+		int count =
+			_commerceDiscountAccountRelService.
+				getCommerceDiscountAccountRelsCount(commerceDiscountId);
+
+		if (count == 0) {
+			return;
+		}
+
+		_commerceDiscountAccountRelService.
+			deleteCommerceDiscountAccountRelsByCommerceDiscountId(
+				commerceDiscountId);
+	}
+
+	private void _updateCommerceDiscountQualifiers(ActionRequest actionRequest)
 		throws Exception {
 
 		long commerceDiscountId = ParamUtil.getLong(
@@ -93,36 +127,6 @@ public class EditCommerceDiscountQualifiersMVCActionCommand
 			_commerceChannelRelService.deleteCommerceChannelRels(
 				CommerceDiscount.class.getName(), commerceDiscountId);
 		}
-	}
-
-	private void _deleteCommerceDiscountAccountGroupRels(
-			long commerceDiscountId)
-		throws Exception {
-
-		if (_commerceDiscountCommerceAccountGroupRelService.
-				getCommerceDiscountCommerceAccountGroupRelsCount(
-					commerceDiscountId) == 0) {
-
-			return;
-		}
-
-		_commerceDiscountCommerceAccountGroupRelService.
-			deleteCommerceDiscountCommerceAccountGroupRelsByCommerceDiscountId(
-				commerceDiscountId);
-	}
-
-	private void _deleteCommerceDiscountAccountRels(long commerceDiscountId)
-		throws Exception {
-
-		if (_commerceDiscountAccountRelService.
-				getCommerceDiscountAccountRelsCount(commerceDiscountId) == 0) {
-
-			return;
-		}
-
-		_commerceDiscountAccountRelService.
-			deleteCommerceDiscountAccountRelsByCommerceDiscountId(
-				commerceDiscountId);
 	}
 
 	@Reference

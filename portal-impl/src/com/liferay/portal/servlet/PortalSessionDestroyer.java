@@ -24,13 +24,10 @@ import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.messaging.DestinationNames;
 import com.liferay.portal.kernel.messaging.MessageBusUtil;
-import com.liferay.portal.kernel.security.auth.AuthenticatedUserUUIDStoreUtil;
 import com.liferay.portal.kernel.service.CompanyLocalServiceUtil;
 import com.liferay.portal.kernel.servlet.PortalSessionContext;
 import com.liferay.portal.kernel.util.BasePortalLifecycle;
-import com.liferay.portal.kernel.util.CookieKeys;
 import com.liferay.portal.kernel.util.PropsKeys;
-import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.util.PropsValues;
 
@@ -53,10 +50,6 @@ public class PortalSessionDestroyer extends BasePortalLifecycle {
 
 	@Override
 	protected void doPortalInit() {
-		if (PropsValues.SESSION_DISABLED) {
-			return;
-		}
-
 		PortalSessionContext.remove(_httpSession.getId());
 
 		try {
@@ -66,9 +59,7 @@ public class PortalSessionDestroyer extends BasePortalLifecycle {
 				if (_log.isWarnEnabled()) {
 					_log.warn("User id is not in the session");
 				}
-			}
 
-			if (userIdObj == null) {
 				return;
 			}
 
@@ -103,24 +94,16 @@ public class PortalSessionDestroyer extends BasePortalLifecycle {
 				MessageBusUtil.sendMessage(
 					DestinationNames.LIVE_USERS, jsonObject.toString());
 			}
-
-			if (PropsValues.AUTH_USER_UUID_STORE_ENABLED) {
-				String userUUID = (String)_httpSession.getAttribute(
-					CookieKeys.USER_UUID);
-
-				if (Validator.isNotNull(userUUID)) {
-					AuthenticatedUserUUIDStoreUtil.unregister(userUUID);
-				}
-			}
 		}
 		catch (IllegalStateException illegalStateException) {
 			if (_log.isWarnEnabled()) {
 				_log.warn(
-					"Please upgrade to a Servlet 2.4 compliant container");
+					"Please upgrade to a Servlet 2.4 compliant container",
+					illegalStateException);
 			}
 		}
 		catch (Exception exception) {
-			_log.error(exception, exception);
+			_log.error(exception);
 		}
 
 		// Process session destroyed events
@@ -131,7 +114,7 @@ public class PortalSessionDestroyer extends BasePortalLifecycle {
 				PropsValues.SERVLET_SESSION_DESTROY_EVENTS, _httpSession);
 		}
 		catch (ActionException actionException) {
-			_log.error(actionException, actionException);
+			_log.error(actionException);
 		}
 	}
 

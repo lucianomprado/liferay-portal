@@ -16,6 +16,8 @@ package com.liferay.talend.avro;
 
 import com.liferay.talend.avro.exception.ConverterException;
 import com.liferay.talend.common.json.JsonFinder;
+import com.liferay.talend.common.oas.OASException;
+import com.liferay.talend.common.oas.OASExtensions;
 
 import java.math.BigDecimal;
 
@@ -226,14 +228,30 @@ public class JsonObjectIndexedRecordConverter {
 	}
 
 	private String _getValueFinderPath(String name) {
-		if (name.indexOf("_") == -1) {
+		if ((name.indexOf("_") == -1) ||
+			(_isI18nFieldName(name) && !_isI18nFieldNameNested(name))) {
+
 			return name;
 		}
 
 		return name.replaceFirst("_", ">");
 	}
 
-	private static Logger _logger = LoggerFactory.getLogger(
+	private boolean _isI18nFieldName(String name) {
+		try {
+			return _oasExtensions.isI18nFieldName(name);
+		}
+		catch (OASException oasException) {
+			throw new ConverterException(
+				"Unable to check il8n filed name", oasException);
+		}
+	}
+
+	private boolean _isI18nFieldNameNested(String name) {
+		return _oasExtensions.isI18nFieldNameNested(name);
+	}
+
+	private static final Logger _logger = LoggerFactory.getLogger(
 		JsonObjectIndexedRecordConverter.class);
 
 	private static final Map<Schema.Type, AvroConverter> _converterRegistry =
@@ -248,6 +266,7 @@ public class JsonObjectIndexedRecordConverter {
 			}
 		};
 	private static final JsonFinder _jsonFinder = new JsonFinder();
+	private static final OASExtensions _oasExtensions = new OASExtensions();
 
 	private final Schema _schema;
 

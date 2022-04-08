@@ -16,7 +16,6 @@ package com.liferay.dynamic.data.mapping.model.impl;
 
 import com.liferay.dynamic.data.mapping.model.DDMFormInstanceRecord;
 import com.liferay.dynamic.data.mapping.model.DDMFormInstanceRecordModel;
-import com.liferay.dynamic.data.mapping.model.DDMFormInstanceRecordSoap;
 import com.liferay.expando.kernel.model.ExpandoBridge;
 import com.liferay.expando.kernel.util.ExpandoBridgeFactoryUtil;
 import com.liferay.exportimport.kernel.lar.StagedModelType;
@@ -33,21 +32,22 @@ import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
+import com.liferay.portal.kernel.util.StringUtil;
 
 import java.io.Serializable;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
 
+import java.sql.Blob;
 import java.sql.Types;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
@@ -83,7 +83,8 @@ public class DDMFormInstanceRecordModelImpl
 		{"createDate", Types.TIMESTAMP}, {"modifiedDate", Types.TIMESTAMP},
 		{"formInstanceId", Types.BIGINT},
 		{"formInstanceVersion", Types.VARCHAR}, {"storageId", Types.BIGINT},
-		{"version", Types.VARCHAR}, {"lastPublishDate", Types.TIMESTAMP}
+		{"version", Types.VARCHAR}, {"ipAddress", Types.VARCHAR},
+		{"lastPublishDate", Types.TIMESTAMP}
 	};
 
 	public static final Map<String, Integer> TABLE_COLUMNS_MAP =
@@ -106,11 +107,12 @@ public class DDMFormInstanceRecordModelImpl
 		TABLE_COLUMNS_MAP.put("formInstanceVersion", Types.VARCHAR);
 		TABLE_COLUMNS_MAP.put("storageId", Types.BIGINT);
 		TABLE_COLUMNS_MAP.put("version", Types.VARCHAR);
+		TABLE_COLUMNS_MAP.put("ipAddress", Types.VARCHAR);
 		TABLE_COLUMNS_MAP.put("lastPublishDate", Types.TIMESTAMP);
 	}
 
 	public static final String TABLE_SQL_CREATE =
-		"create table DDMFormInstanceRecord (mvccVersion LONG default 0 not null,ctCollectionId LONG default 0 not null,uuid_ VARCHAR(75) null,formInstanceRecordId LONG not null,groupId LONG,companyId LONG,userId LONG,userName VARCHAR(75) null,versionUserId LONG,versionUserName VARCHAR(75) null,createDate DATE null,modifiedDate DATE null,formInstanceId LONG,formInstanceVersion VARCHAR(75) null,storageId LONG,version VARCHAR(75) null,lastPublishDate DATE null,primary key (formInstanceRecordId, ctCollectionId))";
+		"create table DDMFormInstanceRecord (mvccVersion LONG default 0 not null,ctCollectionId LONG default 0 not null,uuid_ VARCHAR(75) null,formInstanceRecordId LONG not null,groupId LONG,companyId LONG,userId LONG,userName VARCHAR(75) null,versionUserId LONG,versionUserName VARCHAR(75) null,createDate DATE null,modifiedDate DATE null,formInstanceId LONG,formInstanceVersion VARCHAR(75) null,storageId LONG,version VARCHAR(75) null,ipAddress VARCHAR(75) null,lastPublishDate DATE null,primary key (formInstanceRecordId, ctCollectionId))";
 
 	public static final String TABLE_SQL_DROP =
 		"drop table DDMFormInstanceRecord";
@@ -128,44 +130,44 @@ public class DDMFormInstanceRecordModelImpl
 	public static final String TX_MANAGER = "liferayTransactionManager";
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long COMPANYID_COLUMN_BITMASK = 1L;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long FORMINSTANCEID_COLUMN_BITMASK = 2L;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long FORMINSTANCEVERSION_COLUMN_BITMASK = 4L;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long GROUPID_COLUMN_BITMASK = 8L;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long USERID_COLUMN_BITMASK = 16L;
 
 	/**
-	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link #getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long UUID_COLUMN_BITMASK = 32L;
 
 	/**
 	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
-	 *		#getColumnBitmask(String)
+	 *		#getColumnBitmask(String)}
 	 */
 	@Deprecated
 	public static final long FORMINSTANCERECORDID_COLUMN_BITMASK = 64L;
@@ -182,69 +184,6 @@ public class DDMFormInstanceRecordModelImpl
 	 */
 	@Deprecated
 	public static void setFinderCacheEnabled(boolean finderCacheEnabled) {
-	}
-
-	/**
-	 * Converts the soap model instance into a normal model instance.
-	 *
-	 * @param soapModel the soap model instance to convert
-	 * @return the normal model instance
-	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
-	 */
-	@Deprecated
-	public static DDMFormInstanceRecord toModel(
-		DDMFormInstanceRecordSoap soapModel) {
-
-		if (soapModel == null) {
-			return null;
-		}
-
-		DDMFormInstanceRecord model = new DDMFormInstanceRecordImpl();
-
-		model.setMvccVersion(soapModel.getMvccVersion());
-		model.setCtCollectionId(soapModel.getCtCollectionId());
-		model.setUuid(soapModel.getUuid());
-		model.setFormInstanceRecordId(soapModel.getFormInstanceRecordId());
-		model.setGroupId(soapModel.getGroupId());
-		model.setCompanyId(soapModel.getCompanyId());
-		model.setUserId(soapModel.getUserId());
-		model.setUserName(soapModel.getUserName());
-		model.setVersionUserId(soapModel.getVersionUserId());
-		model.setVersionUserName(soapModel.getVersionUserName());
-		model.setCreateDate(soapModel.getCreateDate());
-		model.setModifiedDate(soapModel.getModifiedDate());
-		model.setFormInstanceId(soapModel.getFormInstanceId());
-		model.setFormInstanceVersion(soapModel.getFormInstanceVersion());
-		model.setStorageId(soapModel.getStorageId());
-		model.setVersion(soapModel.getVersion());
-		model.setLastPublishDate(soapModel.getLastPublishDate());
-
-		return model;
-	}
-
-	/**
-	 * Converts the soap model instances into normal model instances.
-	 *
-	 * @param soapModels the soap model instances to convert
-	 * @return the normal model instances
-	 * @deprecated As of Athanasius (7.3.x), with no direct replacement
-	 */
-	@Deprecated
-	public static List<DDMFormInstanceRecord> toModels(
-		DDMFormInstanceRecordSoap[] soapModels) {
-
-		if (soapModels == null) {
-			return null;
-		}
-
-		List<DDMFormInstanceRecord> models =
-			new ArrayList<DDMFormInstanceRecord>(soapModels.length);
-
-		for (DDMFormInstanceRecordSoap soapModel : soapModels) {
-			models.add(toModel(soapModel));
-		}
-
-		return models;
 	}
 
 	public DDMFormInstanceRecordModelImpl() {
@@ -473,6 +412,12 @@ public class DDMFormInstanceRecordModelImpl
 			"version",
 			(BiConsumer<DDMFormInstanceRecord, String>)
 				DDMFormInstanceRecord::setVersion);
+		attributeGetterFunctions.put(
+			"ipAddress", DDMFormInstanceRecord::getIpAddress);
+		attributeSetterBiConsumers.put(
+			"ipAddress",
+			(BiConsumer<DDMFormInstanceRecord, String>)
+				DDMFormInstanceRecord::setIpAddress);
 		attributeGetterFunctions.put(
 			"lastPublishDate", DDMFormInstanceRecord::getLastPublishDate);
 		attributeSetterBiConsumers.put(
@@ -847,6 +792,26 @@ public class DDMFormInstanceRecordModelImpl
 
 	@JSON
 	@Override
+	public String getIpAddress() {
+		if (_ipAddress == null) {
+			return "";
+		}
+		else {
+			return _ipAddress;
+		}
+	}
+
+	@Override
+	public void setIpAddress(String ipAddress) {
+		if (_columnOriginalValues == Collections.EMPTY_MAP) {
+			_setColumnOriginalValues();
+		}
+
+		_ipAddress = ipAddress;
+	}
+
+	@JSON
+	@Override
 	public Date getLastPublishDate() {
 		return _lastPublishDate;
 	}
@@ -880,7 +845,9 @@ public class DDMFormInstanceRecordModelImpl
 		for (Map.Entry<String, Object> entry :
 				_columnOriginalValues.entrySet()) {
 
-			if (entry.getValue() != getColumnValue(entry.getKey())) {
+			if (!Objects.equals(
+					entry.getValue(), getColumnValue(entry.getKey()))) {
+
 				_columnBitmask |= _columnBitmasks.get(entry.getKey());
 			}
 		}
@@ -940,9 +907,55 @@ public class DDMFormInstanceRecordModelImpl
 			getFormInstanceVersion());
 		ddmFormInstanceRecordImpl.setStorageId(getStorageId());
 		ddmFormInstanceRecordImpl.setVersion(getVersion());
+		ddmFormInstanceRecordImpl.setIpAddress(getIpAddress());
 		ddmFormInstanceRecordImpl.setLastPublishDate(getLastPublishDate());
 
 		ddmFormInstanceRecordImpl.resetOriginalValues();
+
+		return ddmFormInstanceRecordImpl;
+	}
+
+	@Override
+	public DDMFormInstanceRecord cloneWithOriginalValues() {
+		DDMFormInstanceRecordImpl ddmFormInstanceRecordImpl =
+			new DDMFormInstanceRecordImpl();
+
+		ddmFormInstanceRecordImpl.setMvccVersion(
+			this.<Long>getColumnOriginalValue("mvccVersion"));
+		ddmFormInstanceRecordImpl.setCtCollectionId(
+			this.<Long>getColumnOriginalValue("ctCollectionId"));
+		ddmFormInstanceRecordImpl.setUuid(
+			this.<String>getColumnOriginalValue("uuid_"));
+		ddmFormInstanceRecordImpl.setFormInstanceRecordId(
+			this.<Long>getColumnOriginalValue("formInstanceRecordId"));
+		ddmFormInstanceRecordImpl.setGroupId(
+			this.<Long>getColumnOriginalValue("groupId"));
+		ddmFormInstanceRecordImpl.setCompanyId(
+			this.<Long>getColumnOriginalValue("companyId"));
+		ddmFormInstanceRecordImpl.setUserId(
+			this.<Long>getColumnOriginalValue("userId"));
+		ddmFormInstanceRecordImpl.setUserName(
+			this.<String>getColumnOriginalValue("userName"));
+		ddmFormInstanceRecordImpl.setVersionUserId(
+			this.<Long>getColumnOriginalValue("versionUserId"));
+		ddmFormInstanceRecordImpl.setVersionUserName(
+			this.<String>getColumnOriginalValue("versionUserName"));
+		ddmFormInstanceRecordImpl.setCreateDate(
+			this.<Date>getColumnOriginalValue("createDate"));
+		ddmFormInstanceRecordImpl.setModifiedDate(
+			this.<Date>getColumnOriginalValue("modifiedDate"));
+		ddmFormInstanceRecordImpl.setFormInstanceId(
+			this.<Long>getColumnOriginalValue("formInstanceId"));
+		ddmFormInstanceRecordImpl.setFormInstanceVersion(
+			this.<String>getColumnOriginalValue("formInstanceVersion"));
+		ddmFormInstanceRecordImpl.setStorageId(
+			this.<Long>getColumnOriginalValue("storageId"));
+		ddmFormInstanceRecordImpl.setVersion(
+			this.<String>getColumnOriginalValue("version"));
+		ddmFormInstanceRecordImpl.setIpAddress(
+			this.<String>getColumnOriginalValue("ipAddress"));
+		ddmFormInstanceRecordImpl.setLastPublishDate(
+			this.<Date>getColumnOriginalValue("lastPublishDate"));
 
 		return ddmFormInstanceRecordImpl;
 	}
@@ -1105,6 +1118,14 @@ public class DDMFormInstanceRecordModelImpl
 			ddmFormInstanceRecordCacheModel.version = null;
 		}
 
+		ddmFormInstanceRecordCacheModel.ipAddress = getIpAddress();
+
+		String ipAddress = ddmFormInstanceRecordCacheModel.ipAddress;
+
+		if ((ipAddress != null) && (ipAddress.length() == 0)) {
+			ddmFormInstanceRecordCacheModel.ipAddress = null;
+		}
+
 		Date lastPublishDate = getLastPublishDate();
 
 		if (lastPublishDate != null) {
@@ -1124,7 +1145,7 @@ public class DDMFormInstanceRecordModelImpl
 			attributeGetterFunctions = getAttributeGetterFunctions();
 
 		StringBundler sb = new StringBundler(
-			(4 * attributeGetterFunctions.size()) + 2);
+			(5 * attributeGetterFunctions.size()) + 2);
 
 		sb.append("{");
 
@@ -1135,10 +1156,27 @@ public class DDMFormInstanceRecordModelImpl
 			Function<DDMFormInstanceRecord, Object> attributeGetterFunction =
 				entry.getValue();
 
+			sb.append("\"");
 			sb.append(attributeName);
-			sb.append("=");
-			sb.append(
-				attributeGetterFunction.apply((DDMFormInstanceRecord)this));
+			sb.append("\": ");
+
+			Object value = attributeGetterFunction.apply(
+				(DDMFormInstanceRecord)this);
+
+			if (value == null) {
+				sb.append("null");
+			}
+			else if (value instanceof Blob || value instanceof Date ||
+					 value instanceof Map || value instanceof String) {
+
+				sb.append(
+					"\"" + StringUtil.replace(value.toString(), "\"", "'") +
+						"\"");
+			}
+			else {
+				sb.append(value);
+			}
+
 			sb.append(", ");
 		}
 
@@ -1207,6 +1245,7 @@ public class DDMFormInstanceRecordModelImpl
 	private String _formInstanceVersion;
 	private long _storageId;
 	private String _version;
+	private String _ipAddress;
 	private Date _lastPublishDate;
 
 	public <T> T getColumnValue(String columnName) {
@@ -1255,6 +1294,7 @@ public class DDMFormInstanceRecordModelImpl
 		_columnOriginalValues.put("formInstanceVersion", _formInstanceVersion);
 		_columnOriginalValues.put("storageId", _storageId);
 		_columnOriginalValues.put("version", _version);
+		_columnOriginalValues.put("ipAddress", _ipAddress);
 		_columnOriginalValues.put("lastPublishDate", _lastPublishDate);
 	}
 
@@ -1311,7 +1351,9 @@ public class DDMFormInstanceRecordModelImpl
 
 		columnBitmasks.put("version", 32768L);
 
-		columnBitmasks.put("lastPublishDate", 65536L);
+		columnBitmasks.put("ipAddress", 65536L);
+
+		columnBitmasks.put("lastPublishDate", 131072L);
 
 		_columnBitmasks = Collections.unmodifiableMap(columnBitmasks);
 	}

@@ -24,9 +24,9 @@ import com.liferay.portal.kernel.webcache.WebCacheItem;
 import com.liferay.portal.kernel.webcache.WebCachePoolUtil;
 import com.liferay.rss.web.internal.configuration.RSSWebCacheConfiguration;
 
-import com.sun.syndication.feed.synd.SyndEntry;
-import com.sun.syndication.feed.synd.SyndFeed;
-import com.sun.syndication.feed.synd.SyndImage;
+import com.rometools.rome.feed.synd.SyndEntry;
+import com.rometools.rome.feed.synd.SyndFeed;
+import com.rometools.rome.feed.synd.SyndImage;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,11 +46,12 @@ public class RSSFeed {
 		SyndFeed syndFeed = getSyndFeed();
 
 		if (syndFeed == null) {
+			_title = title;
+
 			_baseURL = StringPool.BLANK;
 			_syndFeedImageLink = StringPool.BLANK;
 			_syndFeedImageURL = StringPool.BLANK;
 			_syndFeedLink = StringPool.BLANK;
-			_title = title;
 
 			return;
 		}
@@ -100,11 +101,12 @@ public class RSSFeed {
 			}
 		}
 
+		_title = title;
+
 		_baseURL = baseURL;
 		_syndFeedImageLink = syndFeedImageLink;
 		_syndFeedImageURL = syndFeedImageURL;
 		_syndFeedLink = syndFeedLink;
-		_title = title;
 	}
 
 	public String getBaseURL() {
@@ -139,10 +141,11 @@ public class RSSFeed {
 			return _syndFeed;
 		}
 
-		WebCacheItem wci = new RSSWebCacheItem(_rssWebCacheConfiguration, _url);
+		WebCacheItem webCacheItem = new RSSWebCacheItem(
+			_rssWebCacheConfiguration, _url);
 
 		_syndFeed = (SyndFeed)WebCachePoolUtil.get(
-			RSSFeed.class.getName() + StringPool.PERIOD + _url, wci);
+			RSSFeed.class.getName() + StringPool.POUND + _url, webCacheItem);
 
 		return _syndFeed;
 	}

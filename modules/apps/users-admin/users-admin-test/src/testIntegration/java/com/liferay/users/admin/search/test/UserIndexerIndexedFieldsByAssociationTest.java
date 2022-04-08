@@ -54,6 +54,7 @@ import com.liferay.users.admin.test.util.search.UserSearchFixture;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -121,7 +122,7 @@ public class UserIndexerIndexedFieldsByAssociationTest {
 
 		User user = addUser();
 
-		final Map<String, String> map = getBaseFieldValuesMap(user);
+		Map<String, String> map = new HashMap<>();
 
 		indexedFieldsFixture.populateUID(user, map);
 
@@ -151,8 +152,12 @@ public class UserIndexerIndexedFieldsByAssociationTest {
 
 		User user = addUser();
 
-		final Map<String, String> map1 = HashMapBuilder.putAll(
-			getBaseFieldValuesMap(user)
+		Map<String, String> map1 = HashMapBuilder.put(
+			Field.COMPANY_ID, String.valueOf(user.getCompanyId())
+		).put(
+			Field.ENTRY_CLASS_NAME, user.getModelClassName()
+		).put(
+			Field.ENTRY_CLASS_PK, String.valueOf(user.getPrimaryKeyObj())
 		).put(
 			Field.USER_ID, String.valueOf(user.getPrimaryKeyObj())
 		).put(
@@ -173,7 +178,7 @@ public class UserIndexerIndexedFieldsByAssociationTest {
 
 		_userLocalService.addOrganizationUser(organizationId, user);
 
-		final Map<String, String> map2 = HashMapBuilder.putAll(
+		Map<String, String> map2 = HashMapBuilder.putAll(
 			map1
 		).put(
 			"organizationCount", "1"
@@ -187,7 +192,7 @@ public class UserIndexerIndexedFieldsByAssociationTest {
 
 		_userLocalService.addUserGroupUser(userGroupId, user);
 
-		final Map<String, String> map3 = HashMapBuilder.putAll(
+		Map<String, String> map3 = HashMapBuilder.putAll(
 			map2
 		).put(
 			"userGroupIds", String.valueOf(userGroupId)
@@ -275,16 +280,6 @@ public class UserIndexerIndexedFieldsByAssociationTest {
 
 		FieldValuesAssert.assertFieldValues(
 			String.valueOf(user), searchUser(user, fieldNames), map);
-	}
-
-	protected Map<String, String> getBaseFieldValuesMap(User user) {
-		return HashMapBuilder.put(
-			Field.COMPANY_ID, String.valueOf(user.getCompanyId())
-		).put(
-			Field.ENTRY_CLASS_NAME, user.getModelClassName()
-		).put(
-			Field.ENTRY_CLASS_PK, String.valueOf(user.getPrimaryKeyObj())
-		).build();
 	}
 
 	protected SearchRequestBuilder getSearchRequestBuilder(long companyId) {

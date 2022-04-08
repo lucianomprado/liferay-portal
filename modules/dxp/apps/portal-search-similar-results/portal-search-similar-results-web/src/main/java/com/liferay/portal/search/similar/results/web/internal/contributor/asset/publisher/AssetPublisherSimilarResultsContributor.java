@@ -25,8 +25,8 @@ import com.liferay.portal.kernel.model.ClassedModel;
 import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.search.model.uid.UIDFactory;
 import com.liferay.portal.search.similar.results.web.internal.builder.AssetTypeUtil;
+import com.liferay.portal.search.similar.results.web.internal.helper.HttpHelper;
 import com.liferay.portal.search.similar.results.web.internal.util.SearchStringUtil;
-import com.liferay.portal.search.similar.results.web.internal.util.http.HttpHelper;
 import com.liferay.portal.search.similar.results.web.spi.contributor.SimilarResultsContributor;
 import com.liferay.portal.search.similar.results.web.spi.contributor.helper.CriteriaBuilder;
 import com.liferay.portal.search.similar.results.web.spi.contributor.helper.CriteriaHelper;
@@ -60,13 +60,13 @@ public class AssetPublisherSimilarResultsContributor
 
 		SearchStringUtil.requireEquals("asset_publisher", parameters[0]);
 
-		putAttribute(parameters[2], "type", routeBuilder);
+		_putAttribute(parameters[2], "type", routeBuilder);
 
 		String assetEntryId = _httpHelper.getPortletIdParameter(
 			urlString, "assetEntryId",
 			_getAssetPublisherPortletId(parameters[1]));
 
-		putAttribute(Long.valueOf(assetEntryId), "entryId", routeBuilder);
+		_putAttribute(Long.valueOf(assetEntryId), "entryId", routeBuilder);
 	}
 
 	@Override
@@ -107,12 +107,6 @@ public class AssetPublisherSimilarResultsContributor
 		).replace(
 			String.valueOf(entryId), String.valueOf(assetEntry.getEntryId())
 		);
-	}
-
-	protected void putAttribute(
-		Object value, String name, RouteBuilder routeBuilder) {
-
-		routeBuilder.addAttribute(name, value);
 	}
 
 	@Reference(unbind = "-")
@@ -185,6 +179,12 @@ public class AssetPublisherSimilarResultsContributor
 
 		return Field.getUID(
 			assetEntry.getClassName(), String.valueOf(assetEntry.getClassPK()));
+	}
+
+	private void _putAttribute(
+		Object value, String name, RouteBuilder routeBuilder) {
+
+		routeBuilder.addAttribute(name, value);
 	}
 
 	private AssetEntryLocalService _assetEntryLocalService;

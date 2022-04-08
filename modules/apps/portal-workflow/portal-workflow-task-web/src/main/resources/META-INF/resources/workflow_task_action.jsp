@@ -25,9 +25,11 @@ ResultRow row = (ResultRow)request.getAttribute(WebKeys.SEARCH_CONTAINER_RESULT_
 
 WorkflowTask workflowTask = workflowTaskDisplayContext.getWorkflowTask();
 
-PortletURL redirectURL = renderResponse.createRenderURL();
-
-redirectURL.setParameter("mvcPath", "/view.jsp");
+PortletURL redirectURL = PortletURLBuilder.createRenderURL(
+	renderResponse
+).setMVCPath(
+	"/view.jsp"
+).buildPortletURL();
 %>
 
 <liferay-ui:icon-menu
@@ -43,9 +45,7 @@ redirectURL.setParameter("mvcPath", "/view.jsp");
 			<c:when test="<%= workflowTaskDisplayContext.isAssignedToUser(workflowTask) %>">
 
 				<%
-				List<String> transitionNames = workflowTaskDisplayContext.getTransitionNames(workflowTask);
-
-				for (String transitionName : transitionNames) {
+				for (String transitionName : workflowTaskDisplayContext.getTransitionNames(workflowTask)) {
 					String message = workflowTaskDisplayContext.getTransitionMessage(transitionName);
 				%>
 
@@ -133,9 +133,7 @@ redirectURL.setParameter("mvcPath", "/view.jsp");
 	<c:if test="<%= !workflowTask.isCompleted() && workflowTaskDisplayContext.isAssignedToUser(workflowTask) %>">
 
 		<%
-		List<String> transitionNames = workflowTaskDisplayContext.getTransitionNames(workflowTask);
-
-		for (String transitionName : transitionNames) {
+		for (String transitionName : workflowTaskDisplayContext.getTransitionNames(workflowTask)) {
 		%>
 
 			Liferay.delegateClick(

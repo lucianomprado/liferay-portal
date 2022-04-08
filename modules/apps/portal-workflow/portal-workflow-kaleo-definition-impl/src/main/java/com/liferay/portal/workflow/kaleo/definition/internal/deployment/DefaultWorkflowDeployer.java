@@ -69,7 +69,7 @@ public class DefaultWorkflowDeployer implements WorkflowDeployer {
 			ServiceContext serviceContext)
 		throws PortalException {
 
-		checkPermissions(serviceContext);
+		_checkPermissions(serviceContext);
 
 		KaleoDefinition kaleoDefinition = _addOrUpdateKaleoDefinition(
 			title, name, scope, definition, serviceContext);
@@ -161,7 +161,8 @@ public class DefaultWorkflowDeployer implements WorkflowDeployer {
 			kaleoNode.getKaleoNodeId(), serviceContext);
 
 		return _kaleoWorkflowModelConverter.toWorkflowDefinition(
-			kaleoDefinition);
+			_kaleoDefinitionLocalService.getKaleoDefinition(
+				kaleoDefinition.getKaleoDefinitionId()));
 	}
 
 	@Override
@@ -186,34 +187,6 @@ public class DefaultWorkflowDeployer implements WorkflowDeployer {
 
 		_companyAdministratorCanPublish =
 			workflowDefinitionConfiguration.companyAdministratorCanPublish();
-	}
-
-	protected void checkPermissions(ServiceContext serviceContext)
-		throws PrincipalException {
-
-		PermissionChecker permissionChecker =
-			PermissionThreadLocal.getPermissionChecker();
-
-		if ((permissionChecker == null) ||
-			!GetterUtil.getBoolean(
-				serviceContext.getAttribute("checkPermission"), true)) {
-
-			return;
-		}
-
-		if (!permissionChecker.isCompanyAdmin()) {
-			throw new PrincipalException.MustBeCompanyAdmin(
-				permissionChecker.getUserId());
-		}
-
-		if (_companyAdministratorCanPublish) {
-			return;
-		}
-
-		if (!permissionChecker.isOmniadmin()) {
-			throw new PrincipalException.MustBeOmniadmin(
-				permissionChecker.getUserId());
-		}
 	}
 
 	private KaleoDefinition _addOrUpdateKaleoDefinition(
@@ -241,7 +214,35 @@ public class DefaultWorkflowDeployer implements WorkflowDeployer {
 		return kaleoDefinition;
 	}
 
-	private boolean _companyAdministratorCanPublish;
+	private void _checkPermissions(ServiceContext serviceContext)
+		throws PrincipalException {
+
+		PermissionChecker permissionChecker =
+			PermissionThreadLocal.getPermissionChecker();
+
+		if ((permissionChecker == null) ||
+			!GetterUtil.getBoolean(
+				serviceContext.getAttribute("checkPermission"), true)) {
+
+			return;
+		}
+
+		if (!permissionChecker.isCompanyAdmin()) {
+			throw new PrincipalException.MustBeCompanyAdmin(
+				permissionChecker.getUserId());
+		}
+
+		if (_companyAdministratorCanPublish) {
+			return;
+		}
+
+		if (!permissionChecker.isOmniadmin()) {
+			throw new PrincipalException.MustBeOmniadmin(
+				permissionChecker.getUserId());
+		}
+	}
+
+	private volatile boolean _companyAdministratorCanPublish;
 
 	@Reference
 	private KaleoConditionLocalService _kaleoConditionLocalService;

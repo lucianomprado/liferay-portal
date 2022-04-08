@@ -67,7 +67,7 @@ public class SharepointDocumentWorkspaceServlet extends HttpServlet {
 			getDwsMetaDataResponse(httpServletRequest, httpServletResponse);
 		}
 		catch (Exception exception) {
-			_log.error(exception, exception);
+			_log.error(exception);
 		}
 	}
 
@@ -143,9 +143,10 @@ public class SharepointDocumentWorkspaceServlet extends HttpServlet {
 		boolean minimal = false;
 
 		beginPos = xml.lastIndexOf("<minimal>");
-		endPos = xml.lastIndexOf("</minimal>");
 
 		if (beginPos != -1) {
+			endPos = xml.lastIndexOf("</minimal>");
+
 			minimal = GetterUtil.getBoolean(
 				xml.substring(beginPos + 9, endPos));
 		}
@@ -289,9 +290,9 @@ public class SharepointDocumentWorkspaceServlet extends HttpServlet {
 
 		resultsEl.addElement("LastUpdate");
 
-		HttpSession session = httpServletRequest.getSession();
+		HttpSession httpSession = httpServletRequest.getSession();
 
-		User user = (User)session.getAttribute(WebKeys.USER);
+		User user = (User)httpSession.getAttribute(WebKeys.USER);
 
 		ResponseElement responseElement = new MemberResponseElement(
 			user, false);

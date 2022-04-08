@@ -22,10 +22,9 @@ import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.security.auth.GuestOrUserUtil;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.service.GroupLocalService;
-import com.liferay.portal.kernel.service.GroupService;
 import com.liferay.portal.kernel.service.GroupServiceWrapper;
 import com.liferay.portal.kernel.service.ServiceWrapper;
-import com.liferay.portal.kernel.service.permission.GroupPermissionUtil;
+import com.liferay.portal.kernel.service.permission.GroupPermission;
 import com.liferay.portal.kernel.util.Http;
 import com.liferay.portal.kernel.util.Portal;
 
@@ -38,14 +37,6 @@ import org.osgi.service.component.annotations.Reference;
 @Component(service = ServiceWrapper.class)
 public class DepotGroupLocalServiceWrapper extends GroupServiceWrapper {
 
-	public DepotGroupLocalServiceWrapper() {
-		super(null);
-	}
-
-	public DepotGroupLocalServiceWrapper(GroupService groupService) {
-		super(groupService);
-	}
-
 	@Override
 	public String getGroupDisplayURL(
 			long groupId, boolean privateLayout, boolean secureConnection)
@@ -54,7 +45,7 @@ public class DepotGroupLocalServiceWrapper extends GroupServiceWrapper {
 		Group group = _groupLocalService.getGroup(groupId);
 
 		if (group.isDepot()) {
-			GroupPermissionUtil.check(
+			_groupPermission.check(
 				GuestOrUserUtil.getPermissionChecker(), group,
 				ActionKeys.UPDATE);
 
@@ -86,6 +77,9 @@ public class DepotGroupLocalServiceWrapper extends GroupServiceWrapper {
 
 	@Reference
 	private GroupLocalService _groupLocalService;
+
+	@Reference
+	private GroupPermission _groupPermission;
 
 	@Reference
 	private Http _http;

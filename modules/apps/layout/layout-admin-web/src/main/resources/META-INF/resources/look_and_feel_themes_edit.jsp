@@ -30,11 +30,11 @@ else {
 }
 %>
 
-<h1 class="h4 text-default"><liferay-ui:message key="current-theme" /></h1>
+<h1 class="c-mb-4 h4 text-default"><liferay-ui:message key="current-theme" /></h1>
 
-<div class="card-horizontal main-content-card">
+<div class="card">
 	<div class="card-body">
-		<div id="<portlet:namespace />themeContainer">
+		<div id="<portlet:namespace />currentThemeContainer">
 			<liferay-util:include page="/look_and_feel_theme_details.jsp" servletContext="<%= application %>" />
 		</div>
 
@@ -49,7 +49,7 @@ else {
 	<portlet:param name="redirect" value="<%= currentURL %>" />
 </portlet:renderURL>
 
-<portlet:renderURL var="lookAndFeelDetailURL" windowState="<%= LiferayWindowState.EXCLUSIVE.toString() %>">
+<portlet:renderURL copyCurrentRenderParameters="<%= true %>" var="lookAndFeelDetailURL" windowState="<%= LiferayWindowState.EXCLUSIVE.toString() %>">
 	<portlet:param name="mvcPath" value="/look_and_feel_theme_details.jsp" />
 </portlet:renderURL>
 
@@ -64,7 +64,7 @@ else {
 		).put(
 			"selectThemeURL", selectThemeURL
 		).put(
-			"themeContainerId", liferayPortletResponse.getNamespace() + "themeContainer"
+			"themeContainerId", liferayPortletResponse.getNamespace() + "currentThemeContainer"
 		).build()
 	%>'
 	module="js/LookAndFeelThemeEdit"

@@ -17,6 +17,7 @@ package com.liferay.analytics.message.storage.service.base;
 import com.liferay.analytics.message.storage.model.AnalyticsMessage;
 import com.liferay.analytics.message.storage.model.AnalyticsMessageBodyBlobModel;
 import com.liferay.analytics.message.storage.service.AnalyticsMessageLocalService;
+import com.liferay.analytics.message.storage.service.AnalyticsMessageLocalServiceUtil;
 import com.liferay.analytics.message.storage.service.persistence.AnalyticsMessagePersistence;
 import com.liferay.petra.io.AutoDeleteFileInputStream;
 import com.liferay.petra.sql.dsl.query.DSLQuery;
@@ -51,6 +52,8 @@ import com.liferay.portal.kernel.util.PortalUtil;
 import java.io.InputStream;
 import java.io.Serializable;
 
+import java.lang.reflect.Field;
+
 import java.sql.Blob;
 
 import java.util.List;
@@ -58,6 +61,7 @@ import java.util.List;
 import javax.sql.DataSource;
 
 import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 
 /**
@@ -79,7 +83,7 @@ public abstract class AnalyticsMessageLocalServiceBaseImpl
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never modify or reference this class directly. Use <code>AnalyticsMessageLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>com.liferay.analytics.message.storage.service.AnalyticsMessageLocalServiceUtil</code>.
+	 * Never modify or reference this class directly. Use <code>AnalyticsMessageLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>AnalyticsMessageLocalServiceUtil</code>.
 	 */
 
 	/**
@@ -154,6 +158,13 @@ public abstract class AnalyticsMessageLocalServiceBaseImpl
 	@Override
 	public <T> T dslQuery(DSLQuery dslQuery) {
 		return analyticsMessagePersistence.dslQuery(dslQuery);
+	}
+
+	@Override
+	public int dslQueryCount(DSLQuery dslQuery) {
+		Long count = dslQuery(dslQuery);
+
+		return count.intValue();
 	}
 
 	@Override
@@ -448,6 +459,11 @@ public abstract class AnalyticsMessageLocalServiceBaseImpl
 		}
 	}
 
+	@Deactivate
+	protected void deactivate() {
+		_setLocalServiceUtilService(null);
+	}
+
 	@Override
 	public Class<?>[] getAopInterfaces() {
 		return new Class<?>[] {
@@ -459,6 +475,8 @@ public abstract class AnalyticsMessageLocalServiceBaseImpl
 	@Override
 	public void setAopProxy(Object aopProxy) {
 		analyticsMessageLocalService = (AnalyticsMessageLocalService)aopProxy;
+
+		_setLocalServiceUtilService(analyticsMessageLocalService);
 	}
 
 	/**
@@ -503,6 +521,23 @@ public abstract class AnalyticsMessageLocalServiceBaseImpl
 		}
 	}
 
+	private void _setLocalServiceUtilService(
+		AnalyticsMessageLocalService analyticsMessageLocalService) {
+
+		try {
+			Field field =
+				AnalyticsMessageLocalServiceUtil.class.getDeclaredField(
+					"_service");
+
+			field.setAccessible(true);
+
+			field.set(null, analyticsMessageLocalService);
+		}
+		catch (ReflectiveOperationException reflectiveOperationException) {
+			throw new RuntimeException(reflectiveOperationException);
+		}
+	}
+
 	protected AnalyticsMessageLocalService analyticsMessageLocalService;
 
 	@Reference
@@ -511,10 +546,6 @@ public abstract class AnalyticsMessageLocalServiceBaseImpl
 	@Reference
 	protected com.liferay.counter.kernel.service.CounterLocalService
 		counterLocalService;
-
-	@Reference
-	protected com.liferay.portal.kernel.service.UserLocalService
-		userLocalService;
 
 	@Reference
 	protected File _file;

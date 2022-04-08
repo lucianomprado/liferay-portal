@@ -21,6 +21,7 @@ List<ScopeDisplay> scopeDisplays = (List<ScopeDisplay>)request.getAttribute(UADW
 int totalReviewableUADEntitiesCount = (int)request.getAttribute(UADWebKeys.TOTAL_UAD_ENTITIES_COUNT);
 List<UADApplicationSummaryDisplay> uadApplicationSummaryDisplays = (List<UADApplicationSummaryDisplay>)request.getAttribute(UADWebKeys.UAD_APPLICATION_SUMMARY_DISPLAY_LIST);
 List<UADDisplay<?>> uadDisplays = (List<UADDisplay<?>>)request.getAttribute(UADWebKeys.APPLICATION_UAD_DISPLAYS);
+
 ViewUADEntitiesDisplay viewUADEntitiesDisplay = (ViewUADEntitiesDisplay)request.getAttribute(UADWebKeys.VIEW_UAD_ENTITIES_DISPLAY);
 
 long[] groupIds = viewUADEntitiesDisplay.getGroupIds();
@@ -237,9 +238,7 @@ renderResponse.setTitle(StringBundler.concat(selectedUser.getFullName(), " - ", 
 		clickListeners.push(delegate(element, 'click', 'input', clickHandlerFn));
 	};
 
-	registerClickHandler(<portlet:namespace />applicationPanelBody, function (
-		event
-	) {
+	registerClickHandler(<portlet:namespace />applicationPanelBody, (event) => {
 		var url = new URL(baseURL, window.location.origin);
 
 		url.searchParams.set(
@@ -251,9 +250,7 @@ renderResponse.setTitle(StringBundler.concat(selectedUser.getFullName(), " - ", 
 	});
 
 	<c:if test="<%= !Objects.equals(viewUADEntitiesDisplay.getApplicationKey(), UADConstants.ALL_APPLICATIONS) %>">
-		registerClickHandler(<portlet:namespace />entitiesTypePanelBody, function (
-			event
-		) {
+		registerClickHandler(<portlet:namespace />entitiesTypePanelBody, (event) => {
 			var url = new URL(baseURL, window.location.origin);
 
 			url.searchParams.set(
@@ -265,7 +262,7 @@ renderResponse.setTitle(StringBundler.concat(selectedUser.getFullName(), " - ", 
 		});
 	</c:if>
 
-	registerClickHandler(<portlet:namespace />scopePanelBody, function (event) {
+	registerClickHandler(<portlet:namespace />scopePanelBody, (event) => {
 		var url = new URL(baseURL, window.location.origin);
 
 		url.searchParams.set('<portlet:namespace />applicationKey', '');

@@ -19,6 +19,8 @@ import com.liferay.asset.kernel.AssetRendererFactoryRegistryUtil;
 import com.liferay.asset.kernel.model.AssetRenderer;
 import com.liferay.asset.kernel.model.AssetRendererFactory;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.portlet.LiferayWindowState;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
@@ -92,10 +94,6 @@ public class AssetInfoEditURLProviderImpl implements AssetInfoEditURLProvider {
 				}
 			}
 
-			redirect = _http.addParameter(
-				redirect, "portletResource",
-				assetRendererFactory.getPortletId());
-
 			PortletURL editAssetEntryURL = assetRenderer.getURLEdit(
 				httpServletRequest, LiferayWindowState.NORMAL, redirect);
 
@@ -109,10 +107,16 @@ public class AssetInfoEditURLProviderImpl implements AssetInfoEditURLProvider {
 			return editAssetEntryURL.toString();
 		}
 		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception);
+			}
 		}
 
 		return StringPool.BLANK;
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		AssetInfoEditURLProviderImpl.class);
 
 	@Reference
 	private Http _http;

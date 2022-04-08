@@ -35,7 +35,7 @@ import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
-import com.liferay.portal.kernel.util.HashMapDictionary;
+import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.WebKeys;
@@ -192,11 +192,11 @@ public class LayoutSEOLinkManagerCanonicalLayoutSEOLinkTest {
 		themeDisplay.setPermissionChecker(
 			PermissionThreadLocal.getPermissionChecker());
 		themeDisplay.setPlid(_layout.getPlid());
+		themeDisplay.setScopeGroupId(_group.getGroupId());
 		themeDisplay.setSecure(false);
 		themeDisplay.setServerName(_VIRTUAL_HOSTNAME);
 		themeDisplay.setServerPort(_SERVER_PORT);
 		themeDisplay.setSiteGroupId(_group.getGroupId());
-		themeDisplay.setScopeGroupId(_group.getGroupId());
 
 		return themeDisplay;
 	}
@@ -208,11 +208,9 @@ public class LayoutSEOLinkManagerCanonicalLayoutSEOLinkTest {
 		try (ConfigurationTemporarySwapper configurationTemporarySwapper =
 				new ConfigurationTemporarySwapper(
 					_LAYOUT_SEO_CONFIGURATION_PID,
-					new HashMapDictionary<String, Object>() {
-						{
-							put("canonicalURL", "localized-url");
-						}
-					})) {
+					HashMapDictionaryBuilder.<String, Object>put(
+						"canonicalURL", "localized-url"
+					).build())) {
 
 			unsafeRunnable.run();
 		}

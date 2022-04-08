@@ -15,6 +15,8 @@
 package com.liferay.dynamic.data.mapping.form.field.type.internal.grid;
 
 import com.liferay.dynamic.data.mapping.form.field.type.DDMFormFieldTemplateContextContributor;
+import com.liferay.dynamic.data.mapping.form.field.type.constants.DDMFormFieldTypeConstants;
+import com.liferay.dynamic.data.mapping.form.field.type.internal.grid.helper.GridDDMFormFieldContextHelper;
 import com.liferay.dynamic.data.mapping.model.DDMFormField;
 import com.liferay.dynamic.data.mapping.model.DDMFormFieldOptions;
 import com.liferay.dynamic.data.mapping.render.DDMFormFieldRenderingContext;
@@ -32,7 +34,8 @@ import org.osgi.service.component.annotations.Reference;
  * @author Pedro Queiroz
  */
 @Component(
-	immediate = true, property = "ddm.form.field.type.name=grid",
+	immediate = true,
+	property = "ddm.form.field.type.name=" + DDMFormFieldTypeConstants.GRID,
 	service = {
 		DDMFormFieldTemplateContextContributor.class,
 		GridDDMFormFieldTemplateContextContributor.class
@@ -48,10 +51,10 @@ public class GridDDMFormFieldTemplateContextContributor
 
 		return HashMapBuilder.<String, Object>put(
 			"columns",
-			getOptions("columns", ddmFormField, ddmFormFieldRenderingContext)
+			_getOptions("columns", ddmFormField, ddmFormFieldRenderingContext)
 		).put(
 			"rows",
-			getOptions("rows", ddmFormField, ddmFormFieldRenderingContext)
+			_getOptions("rows", ddmFormField, ddmFormFieldRenderingContext)
 		).put(
 			"value",
 			() -> {
@@ -72,7 +75,10 @@ public class GridDDMFormFieldTemplateContextContributor
 		return (DDMFormFieldOptions)ddmFormField.getProperty(optionType);
 	}
 
-	protected List<Object> getOptions(
+	@Reference
+	protected JSONFactory jsonFactory;
+
+	private List<Object> _getOptions(
 		String key, DDMFormField ddmFormField,
 		DDMFormFieldRenderingContext ddmFormFieldRenderingContext) {
 
@@ -84,8 +90,5 @@ public class GridDDMFormFieldTemplateContextContributor
 		return gridDDMFormFieldContextHelper.getOptions(
 			ddmFormFieldRenderingContext);
 	}
-
-	@Reference
-	protected JSONFactory jsonFactory;
 
 }

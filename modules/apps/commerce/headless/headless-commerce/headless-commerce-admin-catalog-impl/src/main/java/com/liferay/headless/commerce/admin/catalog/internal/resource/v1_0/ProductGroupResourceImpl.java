@@ -32,11 +32,11 @@ import com.liferay.headless.commerce.core.util.ExpandoUtil;
 import com.liferay.headless.commerce.core.util.LanguageUtils;
 import com.liferay.headless.commerce.core.util.ServiceContextHelper;
 import com.liferay.petra.function.UnsafeConsumer;
+import com.liferay.portal.kernel.change.tracking.CTAware;
 import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.search.filter.Filter;
-import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.odata.entity.EntityModel;
 import com.liferay.portal.vulcan.dto.converter.DefaultDTOConverterContext;
@@ -62,6 +62,7 @@ import org.osgi.service.component.annotations.ServiceScope;
 	properties = "OSGI-INF/liferay/rest/v1_0/product-group.properties",
 	scope = ServiceScope.PROTOTYPE, service = ProductGroupResource.class
 )
+@CTAware
 public class ProductGroupResourceImpl
 	extends BaseProductGroupResourceImpl implements EntityModelResource {
 
@@ -77,11 +78,11 @@ public class ProductGroupResourceImpl
 
 		CommercePricingClass commercePricingClass =
 			_commercePricingClassService.fetchByExternalReferenceCode(
-				contextCompany.getCompanyId(), externalReferenceCode);
+				externalReferenceCode, contextCompany.getCompanyId());
 
 		if (commercePricingClass == null) {
 			throw new NoSuchPricingClassException(
-				"Unable to find Product Group with externalReferenceCode: " +
+				"Unable to find product group with external reference code " +
 					externalReferenceCode);
 		}
 
@@ -108,11 +109,11 @@ public class ProductGroupResourceImpl
 
 		CommercePricingClass commercePricingClass =
 			_commercePricingClassService.fetchByExternalReferenceCode(
-				contextCompany.getCompanyId(), externalReferenceCode);
+				externalReferenceCode, contextCompany.getCompanyId());
 
 		if (commercePricingClass == null) {
 			throw new NoSuchPricingClassException(
-				"Unable to find Product Group with externalReferenceCode: " +
+				"Unable to find product group with external reference code " +
 					externalReferenceCode);
 		}
 
@@ -127,7 +128,7 @@ public class ProductGroupResourceImpl
 
 		return SearchUtil.search(
 			null, booleanQuery -> booleanQuery.getPreBooleanFilter(), filter,
-			CommercePricingClass.class, search, pagination,
+			CommercePricingClass.class.getName(), search, pagination,
 			queryConfig -> queryConfig.setSelectedFieldNames(
 				Field.ENTRY_CLASS_PK),
 			new UnsafeConsumer() {
@@ -164,11 +165,11 @@ public class ProductGroupResourceImpl
 
 		CommercePricingClass commercePricingClass =
 			_commercePricingClassService.fetchByExternalReferenceCode(
-				contextCompany.getCompanyId(), externalReferenceCode);
+				externalReferenceCode, contextCompany.getCompanyId());
 
 		if (commercePricingClass == null) {
 			throw new NoSuchPricingClassException(
-				"Unable to find Product Group with externalReferenceCode: " +
+				"Unable to find product group with external reference code " +
 					externalReferenceCode);
 		}
 
@@ -183,11 +184,27 @@ public class ProductGroupResourceImpl
 	public ProductGroup postProductGroup(ProductGroup productGroup)
 		throws Exception {
 
-		CommercePricingClass commercePricingClass = _upsertProductGroup(
+		CommercePricingClass commercePricingClass = _addOrUpdateProductGroup(
 			productGroup);
 
 		return _toProductGroup(
 			commercePricingClass.getCommercePricingClassId());
+	}
+
+	private CommercePricingClass _addOrUpdateProductGroup(
+			ProductGroup productGroup)
+		throws Exception {
+
+		CommercePricingClass commercePricingClass =
+			_commercePricingClassService.addOrUpdateCommercePricingClass(
+				productGroup.getExternalReferenceCode(), 0L,
+				LanguageUtils.getLocalizedMap(productGroup.getTitle()),
+				LanguageUtils.getLocalizedMap(productGroup.getDescription()),
+				_serviceContextHelper.getServiceContext());
+
+		// Update nested resources
+
+		return _updateNestedResources(productGroup, commercePricingClass);
 	}
 
 	private ProductGroup _toProductGroup(Long commercePricingClassId)
@@ -217,17 +234,20 @@ public class ProductGroupResourceImpl
 
 				if (cProduct == null) {
 					cProduct =
-						_cProductLocalService.fetchCProductByReferenceCode(
-							contextCompany.getCompanyId(),
-							productGroupProduct.
-								getProductExternalReferenceCode());
+						_cProductLocalService.
+							fetchCProductByExternalReferenceCode(
+								contextCompany.getCompanyId(),
+								productGroupProduct.
+									getProductExternalReferenceCode());
 				}
 
 				if (cProduct == null) {
+					String productExternalReferenceCode =
+						productGroupProduct.getProductExternalReferenceCode();
+
 					throw new NoSuchCProductException(
-						"Unable to find Product with externalReferenceCode: " +
-							productGroupProduct.
-								getProductExternalReferenceCode());
+						"Unable to find product with external reference code " +
+							productExternalReferenceCode);
 				}
 
 				CommercePricingClassCPDefinitionRel
@@ -258,16 +278,12 @@ public class ProductGroupResourceImpl
 			ProductGroup productGroup)
 		throws Exception {
 
-		ServiceContext serviceContext =
-			_serviceContextHelper.getServiceContext();
-
 		commercePricingClass =
 			_commercePricingClassService.updateCommercePricingClass(
 				commercePricingClass.getCommercePricingClassId(),
-				commercePricingClass.getUserId(),
 				LanguageUtils.getLocalizedMap(productGroup.getTitle()),
 				LanguageUtils.getLocalizedMap(productGroup.getDescription()),
-				serviceContext);
+				_serviceContextHelper.getServiceContext());
 
 		// Expando
 
@@ -278,24 +294,6 @@ public class ProductGroupResourceImpl
 				contextCompany.getCompanyId(), CommercePricingClass.class,
 				commercePricingClass.getPrimaryKey(), customFields);
 		}
-
-		// Update nested resources
-
-		return _updateNestedResources(productGroup, commercePricingClass);
-	}
-
-	private CommercePricingClass _upsertProductGroup(ProductGroup productGroup)
-		throws Exception {
-
-		ServiceContext serviceContext =
-			_serviceContextHelper.getServiceContext();
-
-		CommercePricingClass commercePricingClass =
-			_commercePricingClassService.upsertCommercePricingClass(
-				0L, contextUser.getUserId(),
-				LanguageUtils.getLocalizedMap(productGroup.getTitle()),
-				LanguageUtils.getLocalizedMap(productGroup.getDescription()),
-				productGroup.getExternalReferenceCode(), serviceContext);
 
 		// Update nested resources
 

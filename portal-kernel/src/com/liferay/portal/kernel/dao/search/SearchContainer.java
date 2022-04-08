@@ -14,7 +14,10 @@
 
 package com.liferay.portal.kernel.dao.search;
 
+import com.liferay.petra.function.UnsafeSupplier;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.model.BaseModel;
+import com.liferay.portal.kernel.search.BaseModelSearchResult;
 import com.liferay.portal.kernel.util.DeterminateKeyGenerator;
 import com.liferay.portal.kernel.util.FriendlyURLNormalizerUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
@@ -66,7 +69,8 @@ public class SearchContainer<R> {
 
 	public static final String DEFAULT_VAR = "searchContainer";
 
-	public static final int MAX_DELTA = 200;
+	public static final int MAX_DELTA = GetterUtil.getInteger(
+		PropsUtil.get(PropsKeys.SEARCH_CONTAINER_PAGE_MAX_DELTA), 200);
 
 	public SearchContainer() {
 		_curParam = DEFAULT_CUR_PARAM;
@@ -95,7 +99,6 @@ public class SearchContainer<R> {
 		_portletRequest = portletRequest;
 		_displayTerms = displayTerms;
 		_searchTerms = searchTerms;
-
 		_curParam = curParam;
 
 		boolean resetCur = ParamUtil.getBoolean(portletRequest, "resetCur");
@@ -483,8 +486,30 @@ public class SearchContainer<R> {
 		_orderByTypeParam = orderByTypeParam;
 	}
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 *             #setResultsAndTotal(UnsafeSupplier, int)}
+	 */
+	@Deprecated
 	public void setResults(List<R> results) {
-		_results = results;
+		_setResults(results);
+	}
+
+	public <T extends BaseModel<T>> void setResultsAndTotal(
+		BaseModelSearchResult<T> baseModelSearchResult) {
+
+		setResultsAndTotal(
+			() -> (List<R>)baseModelSearchResult.getBaseModels(),
+			baseModelSearchResult.getLength());
+	}
+
+	public <E extends Throwable> void setResultsAndTotal(
+			UnsafeSupplier<List<R>, E> setResultsSupplier, int total)
+		throws E {
+
+		_setTotal(total);
+
+		_setResults(setResultsSupplier.get());
 	}
 
 	public void setRowChecker(RowChecker rowChecker) {
@@ -503,11 +528,13 @@ public class SearchContainer<R> {
 		_summary = summary;
 	}
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 *             #setResultsAndTotal(UnsafeSupplier, int)}
+	 */
+	@Deprecated
 	public void setTotal(int total) {
-		_total = total;
-
-		_calculateCur();
-		_calculateStartAndEnd();
+		_setTotal(total);
 	}
 
 	public void setTotalVar(String totalVar) {
@@ -565,6 +592,17 @@ public class SearchContainer<R> {
 		if (value != null) {
 			_iteratorURL.setParameter(name, value);
 		}
+	}
+
+	private void _setResults(List<R> results) {
+		_results = results;
+	}
+
+	private void _setTotal(int total) {
+		_total = total;
+
+		_calculateCur();
+		_calculateStartAndEnd();
 	}
 
 	private String _className;

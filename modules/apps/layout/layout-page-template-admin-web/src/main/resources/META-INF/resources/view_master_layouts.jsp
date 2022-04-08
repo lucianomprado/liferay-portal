@@ -29,11 +29,12 @@ MasterLayoutDisplayContext masterLayoutDisplayContext = new MasterLayoutDisplayC
 MasterLayoutManagementToolbarDisplayContext masterLayoutManagementToolbarDisplayContext = new MasterLayoutManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, masterLayoutDisplayContext);
 %>
 
-<clay:management-toolbar-v2
-	displayContext="<%= masterLayoutManagementToolbarDisplayContext %>"
+<clay:management-toolbar
+	managementToolbarDisplayContext="<%= masterLayoutManagementToolbarDisplayContext %>"
+	propsTransformer="js/propsTransformers/MasterLayoutManagementToolbarPropsTransformer"
 />
 
-<liferay-ui:success key="masterPagePublished" message="the-master-page-was-published-succesfully" />
+<liferay-ui:success key="masterPagePublished" message="the-master-page-was-published-successfully" />
 
 <portlet:actionURL name="/layout_page_template_admin/delete_master_layout" var="deleteMasterLayoutURL">
 	<portlet:param name="redirect" value="<%= currentURL %>" />
@@ -49,15 +50,12 @@ MasterLayoutManagementToolbarDisplayContext masterLayoutManagementToolbarDisplay
 	>
 		<liferay-ui:search-container-row
 			className="com.liferay.layout.page.template.model.LayoutPageTemplateEntry"
-			cssClass="selectable"
 			escapedModel="<%= true %>"
 			keyProperty="layoutPrototypeId"
 			modelVar="layoutPageTemplateEntry"
 		>
 
 			<%
-			row.setCssClass("entry-card lfr-asset-item");
-
 			row.setData(
 				HashMapBuilder.<String, Object>put(
 					"actions", masterLayoutManagementToolbarDisplayContext.getAvailableActions(layoutPageTemplateEntry)
@@ -87,8 +85,3 @@ MasterLayoutManagementToolbarDisplayContext masterLayoutManagementToolbarDisplay
 	<aui:input name="layoutPageTemplateEntryId" type="hidden" />
 	<aui:input name="fileEntryId" type="hidden" />
 </aui:form>
-
-<liferay-frontend:component
-	componentId="<%= masterLayoutManagementToolbarDisplayContext.getDefaultEventHandler() %>"
-	module="js/MasterLayoutManagementToolbarDefaultEventHandler.es"
-/>

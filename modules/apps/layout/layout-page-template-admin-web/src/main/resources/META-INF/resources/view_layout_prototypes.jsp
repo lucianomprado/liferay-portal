@@ -29,8 +29,9 @@ LayoutPrototypeDisplayContext layoutPrototypeDisplayContext = new LayoutPrototyp
 LayoutPrototypeManagementToolbarDisplayContext layoutPrototypeManagementToolbarDisplayContext = new LayoutPrototypeManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, layoutPrototypeDisplayContext);
 %>
 
-<clay:management-toolbar-v2
-	displayContext="<%= layoutPrototypeManagementToolbarDisplayContext %>"
+<clay:management-toolbar
+	managementToolbarDisplayContext="<%= layoutPrototypeManagementToolbarDisplayContext %>"
+	propsTransformer="js/propsTransformers/LayoutPrototypeManagementToolbarPropsTransformer"
 />
 
 <portlet:actionURL name="/layout_page_template_admin/delete_layout_prototype" var="deleteLayoutPrototypesURL">
@@ -45,7 +46,6 @@ LayoutPrototypeManagementToolbarDisplayContext layoutPrototypeManagementToolbarD
 	>
 		<liferay-ui:search-container-row
 			className="com.liferay.layout.page.template.model.LayoutPageTemplateEntry"
-			cssClass="selectable"
 			escapedModel="<%= true %>"
 			keyProperty="layoutPrototypeId"
 			modelVar="layoutPageTemplateEntry"
@@ -53,8 +53,6 @@ LayoutPrototypeManagementToolbarDisplayContext layoutPrototypeManagementToolbarD
 
 			<%
 			LayoutPrototype layoutPrototype = LayoutPrototypeServiceUtil.getLayoutPrototype(layoutPageTemplateEntry.getLayoutPrototypeId());
-
-			row.setCssClass("entry-card lfr-asset-item");
 
 			row.setData(
 				HashMapBuilder.<String, Object>put(
@@ -76,8 +74,3 @@ LayoutPrototypeManagementToolbarDisplayContext layoutPrototypeManagementToolbarD
 		/>
 	</liferay-ui:search-container>
 </aui:form>
-
-<liferay-frontend:component
-	componentId="<%= layoutPrototypeManagementToolbarDisplayContext.getDefaultEventHandler() %>"
-	module="js/LayoutPrototypeManagementToolbarDefaultEventHandler.es"
-/>

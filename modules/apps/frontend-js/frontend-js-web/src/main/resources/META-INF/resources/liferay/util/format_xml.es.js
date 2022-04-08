@@ -12,8 +12,6 @@
  * details.
  */
 
-import {isString} from 'metal';
-
 const NEW_LINE = '\r\n';
 
 const REGEX_CDATA = /<!\[CDATA\[.*?\]\]>/gs;
@@ -75,7 +73,7 @@ export default function formatXML(content, options = {}) {
 		...options,
 	};
 
-	if (!isString(content)) {
+	if (typeof content !== 'string') {
 		throw new TypeError('Parameter content must be a string');
 	}
 
@@ -128,11 +126,10 @@ export default function formatXML(content, options = {}) {
 		else if (
 			REGEX_ELEMENT.exec(items[index - 1]) &&
 			REGEX_ELEMENT_CLOSE.exec(item) &&
-			REGEX_ELEMENT_NAMESPACED.exec(items[index - 1]) ==
-				REGEX_ELEMENT_NAMESPACED_CLOSE.exec(item)[0].replace(
-					'/',
-					STR_BLANK
-				)
+			REGEX_ELEMENT_NAMESPACED.exec(items[index - 1]).toString() ===
+				REGEX_ELEMENT_NAMESPACED_CLOSE.exec(item)[0]
+					.replace('/', STR_BLANK)
+					.toString()
 		) {
 			result += item;
 

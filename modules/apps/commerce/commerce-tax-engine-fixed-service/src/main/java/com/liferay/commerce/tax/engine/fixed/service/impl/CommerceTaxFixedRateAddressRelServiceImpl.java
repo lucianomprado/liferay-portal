@@ -37,17 +37,16 @@ public class CommerceTaxFixedRateAddressRelServiceImpl
 
 	@Override
 	public CommerceTaxFixedRateAddressRel addCommerceTaxFixedRateAddressRel(
-			long userId, long groupId, long commerceTaxMethodId,
-			long cpTaxCategoryId, long commerceCountryId, long commerceRegionId,
-			String zip, double rate)
+			long groupId, long commerceTaxMethodId, long cpTaxCategoryId,
+			long countryId, long regionId, String zip, double rate)
 		throws PortalException {
 
 		_checkCommerceChannel(groupId);
 
 		return commerceTaxFixedRateAddressRelLocalService.
 			addCommerceTaxFixedRateAddressRel(
-				userId, groupId, commerceTaxMethodId, cpTaxCategoryId,
-				commerceCountryId, commerceRegionId, zip, rate);
+				getUserId(), groupId, commerceTaxMethodId, cpTaxCategoryId,
+				countryId, regionId, zip, rate);
 	}
 
 	/**
@@ -56,16 +55,15 @@ public class CommerceTaxFixedRateAddressRelServiceImpl
 	@Deprecated
 	@Override
 	public CommerceTaxFixedRateAddressRel addCommerceTaxFixedRateAddressRel(
-			long commerceTaxMethodId, long cpTaxCategoryId,
-			long commerceCountryId, long commerceRegionId, String zip,
-			double rate, ServiceContext serviceContext)
+			long commerceTaxMethodId, long cpTaxCategoryId, long countryId,
+			long regionId, String zip, double rate,
+			ServiceContext serviceContext)
 		throws PortalException {
 
 		return commerceTaxFixedRateAddressRelService.
 			addCommerceTaxFixedRateAddressRel(
-				serviceContext.getUserId(), serviceContext.getScopeGroupId(),
-				commerceTaxMethodId, cpTaxCategoryId, commerceCountryId,
-				commerceRegionId, zip, rate);
+				serviceContext.getScopeGroupId(), commerceTaxMethodId,
+				cpTaxCategoryId, countryId, regionId, zip, rate);
 	}
 
 	@Override
@@ -130,8 +128,8 @@ public class CommerceTaxFixedRateAddressRelServiceImpl
 
 	@Override
 	public CommerceTaxFixedRateAddressRel updateCommerceTaxFixedRateAddressRel(
-			long commerceTaxFixedRateAddressRelId, long commerceCountryId,
-			long commerceRegionId, String zip, double rate)
+			long commerceTaxFixedRateAddressRelId, long countryId,
+			long regionId, String zip, double rate)
 		throws PortalException {
 
 		CommerceTaxFixedRateAddressRel commerceTaxFixedRateAddressRel =
@@ -143,8 +141,8 @@ public class CommerceTaxFixedRateAddressRelServiceImpl
 
 		return commerceTaxFixedRateAddressRelLocalService.
 			updateCommerceTaxFixedRateAddressRel(
-				commerceTaxFixedRateAddressRelId, commerceCountryId,
-				commerceRegionId, zip, rate);
+				commerceTaxFixedRateAddressRelId, countryId, regionId, zip,
+				rate);
 	}
 
 	private void _checkCommerceChannel(long groupId) throws PortalException {

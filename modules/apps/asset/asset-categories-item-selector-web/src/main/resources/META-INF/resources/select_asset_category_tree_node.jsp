@@ -17,7 +17,7 @@
 <%@ include file="/init.jsp" %>
 
 <%
-SelectAssetCategoryTreeNodeDisplayContext selectAssetCategoryTreeNodeDisplayContext = (SelectAssetCategoryTreeNodeDisplayContext)request.getAttribute(AssetCategoryTreeNodeItemSelectorWebKeys.SELECT_ASSET_CATEGORY_TREE_NODE_ITEM_SELECTOR_DISPLAY_CONTEXT);
+SelectAssetCategoryTreeNodeDisplayContext selectAssetCategoryTreeNodeDisplayContext = (SelectAssetCategoryTreeNodeDisplayContext)request.getAttribute(AssetCategoryItemSelectorWebKeys.SELECT_ASSET_CATEGORY_TREE_NODE_ITEM_SELECTOR_DISPLAY_CONTEXT);
 %>
 
 <div class="container-fluid container-fluid-max-xl p-4" id="<portlet:namespace />assetCategoryTreeNodeSelector">
@@ -33,7 +33,7 @@ SelectAssetCategoryTreeNodeDisplayContext selectAssetCategoryTreeNodeDisplayCont
 		<clay:button
 			cssClass="asset-category-tree-node-selector"
 			data-category-tree-node-id="<%= selectAssetCategoryTreeNodeDisplayContext.getAssetCategoryTreeNodeId() %>"
-			data-category-tree-node-type="Vocabulary"
+			data-category-tree-node-type="<%= selectAssetCategoryTreeNodeDisplayContext.getAssetCategoryTreeNodeType() %>"
 			data-title="<%= selectAssetCategoryTreeNodeDisplayContext.getAssetCategoryTreeNodeName() %>"
 			displayType="primary"
 			label='<%= LanguageUtil.get(resourceBundle, "select-this-level") %>'
@@ -56,11 +56,13 @@ SelectAssetCategoryTreeNodeDisplayContext selectAssetCategoryTreeNodeDisplayCont
 			>
 				<clay:sticker
 					cssClass="bg-light mr-3"
-					displayType="light"
+					displayType="dark"
 					icon="categories"
 				/>
 
-				<%= assetCategory.getName() %>
+				<a href="<%= selectAssetCategoryTreeNodeDisplayContext.getAssetCategoryURL(assetCategory.getCategoryId()) %>">
+					<b><%= HtmlUtil.escape(assetCategory.getName()) %></b>
+				</a>
 			</liferay-ui:search-container-column-text>
 		</liferay-ui:search-container-row>
 

@@ -16,16 +16,16 @@
 
 <%@ include file="/init.jsp" %>
 
-<%
-PortletURL portletURL = renderResponse.createRenderURL();
-
-portletURL.setParameter("tabs1", "service-provider-connections");
-%>
-
 <liferay-ui:search-container
 	emptyResultsMessage="there-are-no-service-providers"
 	headerNames="name"
-	iteratorURL="<%= portletURL %>"
+	iteratorURL='<%=
+		PortletURLBuilder.createRenderURL(
+			renderResponse
+		).setTabs1(
+			"service-provider-connections"
+		).buildPortletURL()
+	%>'
 	total="<%= GetterUtil.getInteger(renderRequest.getAttribute(SamlWebKeys.SAML_IDP_SP_CONNECTIONS_COUNT)) %>"
 >
 	<liferay-ui:search-container-results
@@ -75,7 +75,7 @@ portletURL.setParameter("tabs1", "service-provider-connections");
 		<portlet:param name="redirect" value="<%= currentURL %>" />
 	</portlet:renderURL>
 
-	<aui:button-row>
+	<aui:button-row cssClass="sheet-footer">
 		<aui:button href="<%= addServiceProviderURL %>" label="add-service-provider" value="add-service-provider" />
 	</aui:button-row>
 

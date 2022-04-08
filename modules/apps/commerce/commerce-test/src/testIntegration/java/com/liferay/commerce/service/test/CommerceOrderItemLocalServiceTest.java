@@ -15,8 +15,10 @@
 package com.liferay.commerce.service.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
+import com.liferay.commerce.account.exception.CommerceAccountTypeException;
 import com.liferay.commerce.account.model.CommerceAccount;
 import com.liferay.commerce.account.service.CommerceAccountLocalService;
+import com.liferay.commerce.account.service.CommerceAccountLocalServiceUtil;
 import com.liferay.commerce.context.CommerceContext;
 import com.liferay.commerce.currency.model.CommerceCurrency;
 import com.liferay.commerce.currency.test.util.CommerceCurrencyTestUtil;
@@ -33,11 +35,11 @@ import com.liferay.commerce.price.list.service.CommercePriceListLocalService;
 import com.liferay.commerce.price.list.test.util.CommercePriceEntryTestUtil;
 import com.liferay.commerce.product.CommerceProductTestUtil;
 import com.liferay.commerce.product.constants.CPConstants;
+import com.liferay.commerce.product.constants.CPInstanceConstants;
 import com.liferay.commerce.product.model.CPDefinition;
 import com.liferay.commerce.product.model.CPDefinitionOptionRel;
 import com.liferay.commerce.product.model.CPDefinitionOptionValueRel;
 import com.liferay.commerce.product.model.CPInstance;
-import com.liferay.commerce.product.model.CPInstanceConstants;
 import com.liferay.commerce.product.model.CPOption;
 import com.liferay.commerce.product.model.CPOptionValue;
 import com.liferay.commerce.product.model.CommerceCatalog;
@@ -60,16 +62,14 @@ import com.liferay.commerce.service.CommerceOrderItemLocalService;
 import com.liferay.commerce.service.CommerceOrderLocalService;
 import com.liferay.commerce.test.util.CommerceInventoryTestUtil;
 import com.liferay.commerce.test.util.CommerceTestUtil;
-import com.liferay.commerce.test.util.TestCommerceContext;
+import com.liferay.commerce.test.util.context.TestCommerceContext;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
-import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
-import com.liferay.portal.kernel.test.util.CompanyTestUtil;
 import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
@@ -114,12 +114,9 @@ public class CommerceOrderItemLocalServiceTest {
 
 	@Before
 	public void setUp() throws Exception {
-		_company = CompanyTestUtil.addCompany();
+		_group = GroupTestUtil.addGroup();
 
-		_user = UserTestUtil.addUser(_company);
-
-		_group = GroupTestUtil.addGroup(
-			_company.getCompanyId(), _user.getUserId(), 0);
+		_user = UserTestUtil.addUser();
 
 		List<CommerceInventoryBookedQuantity>
 			commerceInventoryBookedQuantities =
@@ -144,14 +141,21 @@ public class CommerceOrderItemLocalServiceTest {
 		_commerceChannel = CommerceTestUtil.addCommerceChannel(
 			_group.getGroupId(), _commerceCurrency.getCode());
 
-		_commerceAccount =
-			_commerceAccountLocalService.addPersonalCommerceAccount(
-				_user.getUserId(), StringPool.BLANK, StringPool.BLANK,
-				_serviceContext);
+		try {
+			_commerceAccount =
+				CommerceAccountLocalServiceUtil.addPersonalCommerceAccount(
+					_user.getUserId(), StringPool.BLANK, StringPool.BLANK,
+					_serviceContext);
+		}
+		catch (CommerceAccountTypeException commerceAccountTypeException) {
+			_commerceAccount =
+				CommerceAccountLocalServiceUtil.getPersonalCommerceAccount(
+					_user.getUserId());
+		}
 
 		_commerceCatalog = CommerceCatalogLocalServiceUtil.addCommerceCatalog(
-			RandomTestUtil.randomString(), _commerceCurrency.getCode(),
-			LocaleUtil.US.getDisplayLanguage(), null, _serviceContext);
+			null, RandomTestUtil.randomString(), _commerceCurrency.getCode(),
+			LocaleUtil.US.getDisplayLanguage(), _serviceContext);
 
 		_commerceContext = new TestCommerceContext(
 			_commerceCurrency, _commerceChannel, _user, _group, null, null);
@@ -161,7 +165,7 @@ public class CommerceOrderItemLocalServiceTest {
 	public void tearDown() throws Exception {
 		_deleteCommerceAccountTestOrderItems();
 
-		_cpOptionLocalService.deleteCPOptions(_company.getCompanyId());
+		_cpOptionLocalService.deleteCPOptions(_group.getCompanyId());
 	}
 
 	@Test
@@ -202,12 +206,12 @@ public class CommerceOrderItemLocalServiceTest {
 			_commerceOrderLocalService.addCommerceOrder(
 				_user.getUserId(), _commerceChannel.getGroupId(),
 				_commerceAccount.getCommerceAccountId(),
-				_commerceCurrency.getCommerceCurrencyId());
+				_commerceCurrency.getCommerceCurrencyId(), 0);
 
 		CommerceOrderItem commerceOrderItem =
 			_commerceOrderItemLocalService.addCommerceOrderItem(
 				commerceOrder.getCommerceOrderId(),
-				cpInstance.getCPInstanceId(), 1, 0, null, _commerceContext,
+				cpInstance.getCPInstanceId(), null, 1, 0, _commerceContext,
 				_serviceContext);
 
 		List<CommerceOrderItem> commerceOrderItems =
@@ -268,11 +272,11 @@ public class CommerceOrderItemLocalServiceTest {
 			_commerceOrderLocalService.addCommerceOrder(
 				_user.getUserId(), _commerceChannel.getGroupId(),
 				_commerceAccount.getCommerceAccountId(),
-				_commerceCurrency.getCommerceCurrencyId());
+				_commerceCurrency.getCommerceCurrencyId(), 0);
 
 		_commerceOrderItemLocalService.addCommerceOrderItem(
-			commerceOrder.getCommerceOrderId(), cpInstance.getCPInstanceId(), 1,
-			0, null, _commerceContext, _serviceContext);
+			commerceOrder.getCommerceOrderId(), cpInstance.getCPInstanceId(),
+			null, 1, 0, _commerceContext, _serviceContext);
 	}
 
 	@Test(expected = CommerceOrderValidatorException.class)
@@ -317,11 +321,11 @@ public class CommerceOrderItemLocalServiceTest {
 			_commerceOrderLocalService.addCommerceOrder(
 				_user.getUserId(), _commerceChannel.getGroupId(),
 				_commerceAccount.getCommerceAccountId(),
-				_commerceCurrency.getCommerceCurrencyId());
+				_commerceCurrency.getCommerceCurrencyId(), 0);
 
 		_commerceOrderItemLocalService.addCommerceOrderItem(
-			commerceOrder.getCommerceOrderId(), cpInstance.getCPInstanceId(), 1,
-			0, null, _commerceContext, _serviceContext);
+			commerceOrder.getCommerceOrderId(), cpInstance.getCPInstanceId(),
+			null, 1, 0, _commerceContext, _serviceContext);
 	}
 
 	@Test
@@ -462,7 +466,7 @@ public class CommerceOrderItemLocalServiceTest {
 			_commerceOrderLocalService.addCommerceOrder(
 				_user.getUserId(), _commerceChannel.getGroupId(),
 				_commerceAccount.getCommerceAccountId(),
-				_commerceCurrency.getCommerceCurrencyId());
+				_commerceCurrency.getCommerceCurrencyId(), 0);
 
 		String option1Key = RandomTestUtil.randomString();
 		BigDecimal option1Price = new BigDecimal("100");
@@ -515,7 +519,7 @@ public class CommerceOrderItemLocalServiceTest {
 		CommerceOrderItem commerceOrderItem =
 			_commerceOrderItemLocalService.addCommerceOrderItem(
 				commerceOrder.getCommerceOrderId(),
-				bundleCPInstance.getCPInstanceId(), quantity, 0, null,
+				bundleCPInstance.getCPInstanceId(), null, quantity, 0,
 				_commerceContext, _serviceContext);
 
 		List<CommerceOrderItem> commerceOrderItems =
@@ -648,8 +652,8 @@ public class CommerceOrderItemLocalServiceTest {
 		}
 
 		_commerceOrderItemLocalService.addCommerceOrderItem(
-			commerceOrder.getCommerceOrderId(), cpInstance.getCPInstanceId(), 1,
-			0, null, _commerceContext, _serviceContext);
+			commerceOrder.getCommerceOrderId(), cpInstance.getCPInstanceId(),
+			null, 1, 0, _commerceContext, _serviceContext);
 
 		commerceOrderItems = commerceOrder.getCommerceOrderItems();
 
@@ -657,9 +661,9 @@ public class CommerceOrderItemLocalServiceTest {
 			commerceOrderItems.size(), 3, commerceOrderItems.size());
 
 		CommerceOrderItem commerceOrderItem3 =
-			_commerceOrderItemLocalService.upsertCommerceOrderItem(
+			_commerceOrderItemLocalService.addOrUpdateCommerceOrderItem(
 				commerceOrder.getCommerceOrderId(),
-				cpInstance.getCPInstanceId(), 1, 0, "[]", _commerceContext,
+				cpInstance.getCPInstanceId(), "[]", 1, 0, _commerceContext,
 				_serviceContext);
 
 		commerceOrderItems = commerceOrder.getCommerceOrderItems();
@@ -707,9 +711,10 @@ public class CommerceOrderItemLocalServiceTest {
 			commerceOrder.getCommerceOrderItems();
 
 		CommerceOrderItem commerceOrderItem1 = commerceOrderItems.get(0);
-		CommerceOrderItem commerceOrderItem2 = commerceOrderItems.get(1);
 
 		if (commerceOrderItem1.getParentCommerceOrderItemId() == 0) {
+			CommerceOrderItem commerceOrderItem2 = commerceOrderItems.get(1);
+
 			_assertDeleteOrderItem(commerceOrderItem2);
 		}
 		else {
@@ -737,12 +742,13 @@ public class CommerceOrderItemLocalServiceTest {
 			commerceOrder.getCommerceOrderItems();
 
 		CommerceOrderItem commerceOrderItem1 = commerceOrderItems.get(0);
-		CommerceOrderItem commerceOrderItem2 = commerceOrderItems.get(1);
 
 		if (commerceOrderItem1.getParentCommerceOrderItemId() == 0) {
 			_assertDeleteOrderItem(commerceOrderItem1);
 		}
 		else {
+			CommerceOrderItem commerceOrderItem2 = commerceOrderItems.get(1);
+
 			_assertDeleteOrderItem(commerceOrderItem2);
 		}
 	}
@@ -856,12 +862,12 @@ public class CommerceOrderItemLocalServiceTest {
 
 		for (CommerceOptionValue commerceOptionValue : commerceOptionValues) {
 			CPOption cpOption = CPOptionLocalServiceUtil.addCPOption(
-				_serviceContext.getUserId(),
+				null, _serviceContext.getUserId(),
 				RandomTestUtil.randomLocaleStringMap(),
 				RandomTestUtil.randomLocaleStringMap(),
 				CPTestUtil.getDefaultDDMFormFieldType(skuContributor),
 				RandomTestUtil.randomBoolean(), RandomTestUtil.randomBoolean(),
-				skuContributor, commerceOptionValue.getOptionKey(), null,
+				skuContributor, commerceOptionValue.getOptionKey(),
 				_serviceContext);
 
 			CPOptionValue cpOptionValue =
@@ -970,7 +976,7 @@ public class CommerceOrderItemLocalServiceTest {
 			_commerceOrderLocalService.addCommerceOrder(
 				_user.getUserId(), _commerceChannel.getGroupId(),
 				_commerceAccount.getCommerceAccountId(),
-				_commerceCurrency.getCommerceCurrencyId());
+				_commerceCurrency.getCommerceCurrencyId(), 0);
 
 		String option1Key = FriendlyURLNormalizerUtil.normalize(
 			RandomTestUtil.randomString());
@@ -1033,9 +1039,9 @@ public class CommerceOrderItemLocalServiceTest {
 		CommerceOrderItem commerceOrderItem =
 			_commerceOrderItemLocalService.addCommerceOrderItem(
 				commerceOrder.getCommerceOrderId(),
-				bundleCPInstance.getCPInstanceId(), quantity, 0,
-				"[" + testCommerceOptionValue.toJSON() + "]", _commerceContext,
-				_serviceContext);
+				bundleCPInstance.getCPInstanceId(),
+				"[" + testCommerceOptionValue.toJSON() + "]", quantity, 0,
+				_commerceContext, _serviceContext);
 
 		List<CommerceOrderItem> commerceOrderItems =
 			commerceOrder.getCommerceOrderItems();
@@ -1088,8 +1094,9 @@ public class CommerceOrderItemLocalServiceTest {
 
 		CommerceCatalog commerceCatalog =
 			CommerceCatalogLocalServiceUtil.addCommerceCatalog(
-				RandomTestUtil.randomString(), _commerceCurrency.getCode(),
-				LocaleUtil.US.getDisplayLanguage(), null, _serviceContext);
+				null, RandomTestUtil.randomString(),
+				_commerceCurrency.getCode(), LocaleUtil.US.getDisplayLanguage(),
+				_serviceContext);
 
 		CPDefinition bundleCPDefinition = CPTestUtil.addCPDefinitionFromCatalog(
 			commerceCatalog.getGroupId(), SimpleCPTypeConstants.NAME, true,
@@ -1176,12 +1183,12 @@ public class CommerceOrderItemLocalServiceTest {
 			_commerceOrderLocalService.addCommerceOrder(
 				_user.getUserId(), _commerceChannel.getGroupId(),
 				_commerceAccount.getCommerceAccountId(),
-				_commerceCurrency.getCommerceCurrencyId());
+				_commerceCurrency.getCommerceCurrencyId(), 0);
 
 		_commerceOrderItemLocalService.addCommerceOrderItem(
 			commerceOrder.getCommerceOrderId(),
-			bundleCPInstanceWithUnavailableChildSKU.getCPInstanceId(), 1, 1,
-			null, _commerceContext, _serviceContext);
+			bundleCPInstanceWithUnavailableChildSKU.getCPInstanceId(), null, 1,
+			1, _commerceContext, _serviceContext);
 
 		commerceOrder = _commerceOrderLocalService.getCommerceOrder(
 			commerceOrder.getCommerceOrderId());
@@ -1243,13 +1250,13 @@ public class CommerceOrderItemLocalServiceTest {
 			_commerceOrderLocalService.addCommerceOrder(
 				_user.getUserId(), _commerceChannel.getGroupId(),
 				_commerceAccount.getCommerceAccountId(),
-				_commerceCurrency.getCommerceCurrencyId());
+				_commerceCurrency.getCommerceCurrencyId(), 0);
 
 		int nonbundleQuantity = 10;
 
 		_commerceOrderItemLocalService.addCommerceOrderItem(
 			commerceOrder.getCommerceOrderId(), optionSKU1.getCPInstanceId(),
-			nonbundleQuantity, 0, null, _commerceContext, _serviceContext);
+			null, nonbundleQuantity, 0, _commerceContext, _serviceContext);
 
 		BigDecimal option1Price = new BigDecimal("100");
 		BigDecimal option2Price = new BigDecimal("200");
@@ -1326,7 +1333,7 @@ public class CommerceOrderItemLocalServiceTest {
 		CommerceOrderItem commerceOrderItem =
 			_commerceOrderItemLocalService.addCommerceOrderItem(
 				commerceOrder.getCommerceOrderId(),
-				bundleCPInstance.getCPInstanceId(), quantity, 0, null,
+				bundleCPInstance.getCPInstanceId(), null, quantity, 0,
 				_commerceContext, _serviceContext);
 
 		List<CommerceOrderItem> commerceOrderItems =
@@ -1552,7 +1559,8 @@ public class CommerceOrderItemLocalServiceTest {
 		return "value-key-for-" + optionKey;
 	}
 
-	@DeleteAfterTestRun
+	private static User _user;
+
 	private CommerceAccount _commerceAccount;
 
 	@Inject
@@ -1582,9 +1590,6 @@ public class CommerceOrderItemLocalServiceTest {
 	@Inject
 	private CommercePriceListLocalService _commercePriceListLocalService;
 
-	@DeleteAfterTestRun
-	private Company _company;
-
 	@Inject
 	private CPDefinitionLocalService _cpDefinitionLocalService;
 
@@ -1603,8 +1608,5 @@ public class CommerceOrderItemLocalServiceTest {
 
 	private Group _group;
 	private ServiceContext _serviceContext;
-
-	@DeleteAfterTestRun
-	private User _user;
 
 }

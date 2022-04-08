@@ -18,6 +18,14 @@
 
 <%
 CPCategoryContentDisplayContext cpCategoryContentDisplayContext = (CPCategoryContentDisplayContext)request.getAttribute(WebKeys.PORTLET_DISPLAY_CONTEXT);
+
+long assetCategoryId = 0;
+
+AssetCategory assetCategory = cpCategoryContentDisplayContext.getAssetCategory();
+
+if (assetCategory != null) {
+	assetCategoryId = assetCategory.getCategoryId();
+}
 %>
 
 <liferay-portlet:actionURL portletConfiguration="<%= true %>" var="configurationActionURL" />
@@ -33,7 +41,7 @@ CPCategoryContentDisplayContext cpCategoryContentDisplayContext = (CPCategoryCon
 			<aui:fieldset-group markupView="lexicon">
 				<aui:fieldset>
 					<div class="display-template">
-						<liferay-ddm:template-selector
+						<liferay-template:template-selector
 							className="<%= CPCategoryContentPortlet.class.getName() %>"
 							displayStyle="<%= cpCategoryContentDisplayContext.getDisplayStyle() %>"
 							displayStyleGroupId="<%= cpCategoryContentDisplayContext.getDisplayStyleGroupId() %>"
@@ -48,7 +56,7 @@ CPCategoryContentDisplayContext cpCategoryContentDisplayContext = (CPCategoryCon
 						</div>
 
 						<div class="lfr-use-asset-category-content toggler-content-collapsed">
-							<aui:input id="preferencesAssetCategoryId" name="preferences--assetCategoryId--" type="number" />
+							<aui:input id="preferencesAssetCategoryId" name="preferences--assetCategoryId--" type="number" value="<%= assetCategoryId %>" />
 						</div>
 					</div>
 				</aui:fieldset>

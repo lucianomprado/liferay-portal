@@ -54,6 +54,18 @@ public class AccountEntryTable extends BaseTable<AccountEntryTable> {
 		createColumn(
 			"defaultBillingAddressId", Long.class, Types.BIGINT,
 			Column.FLAG_DEFAULT);
+	public final Column<AccountEntryTable, String> defaultCPaymentMethodKey =
+		createColumn(
+			"defaultCPaymentMethodKey", String.class, Types.VARCHAR,
+			Column.FLAG_DEFAULT);
+	public final Column<AccountEntryTable, Long> defaultDeliveryCTermEntryId =
+		createColumn(
+			"defaultDeliveryCTermEntryId", Long.class, Types.BIGINT,
+			Column.FLAG_DEFAULT);
+	public final Column<AccountEntryTable, Long> defaultPaymentCTermEntryId =
+		createColumn(
+			"defaultPaymentCTermEntryId", Long.class, Types.BIGINT,
+			Column.FLAG_DEFAULT);
 	public final Column<AccountEntryTable, Long> defaultShippingAddressId =
 		createColumn(
 			"defaultShippingAddressId", Long.class, Types.BIGINT,
@@ -66,10 +78,16 @@ public class AccountEntryTable extends BaseTable<AccountEntryTable> {
 		"description", String.class, Types.VARCHAR, Column.FLAG_DEFAULT);
 	public final Column<AccountEntryTable, String> domains = createColumn(
 		"domains", String.class, Types.VARCHAR, Column.FLAG_DEFAULT);
+	public final Column<AccountEntryTable, String> emailAddress = createColumn(
+		"emailAddress", String.class, Types.VARCHAR, Column.FLAG_DEFAULT);
 	public final Column<AccountEntryTable, Long> logoId = createColumn(
 		"logoId", Long.class, Types.BIGINT, Column.FLAG_DEFAULT);
 	public final Column<AccountEntryTable, String> name = createColumn(
 		"name", String.class, Types.VARCHAR, Column.FLAG_DEFAULT);
+	public final Column<AccountEntryTable, String> taxExemptionCode =
+		createColumn(
+			"taxExemptionCode", String.class, Types.VARCHAR,
+			Column.FLAG_DEFAULT);
 	public final Column<AccountEntryTable, String> taxIdNumber = createColumn(
 		"taxIdNumber", String.class, Types.VARCHAR, Column.FLAG_DEFAULT);
 	public final Column<AccountEntryTable, String> type = createColumn(
